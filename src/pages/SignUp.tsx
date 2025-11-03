@@ -74,20 +74,22 @@ export default function SignUp() {
       if (error) throw error;
 
       if (data.user) {
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .maybeSingle();
+        console.log('User created successfully:', data.user.id);
 
-        if (!existingProfile) {
-          await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              full_name: null,
-              roles: [selectedRole]
-            });
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            full_name: null,
+            roles: [selectedRole]
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileError) {
+          console.error('Profile creation failed:', profileError);
+        } else {
+          console.log('Profile created for user:', data.user.id);
         }
       }
 
