@@ -17,6 +17,13 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface TeacherAvailability {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+}
+
 interface Learner {
   id: string;
   name: string;
@@ -42,6 +49,7 @@ export default function BookingModal({
   const [error, setError] = useState('');
   const [weekOffset, setWeekOffset] = useState(0);
   const [isFreeSession, setIsFreeSession] = useState(false);
+  const [teacherAvailability, setTeacherAvailability] = useState<TeacherAvailability[]>([]);
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }), i)
@@ -59,6 +67,7 @@ export default function BookingModal({
   useEffect(() => {
     if (isOpen) {
       fetchLearners();
+      fetchTeacherAvailability();
     }
   }, [isOpen]);
 
@@ -110,6 +119,21 @@ export default function BookingModal({
     }
   }
 
+  async function fetchTeacherAvailability() {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_availability')
+        .select('day_of_week, start_time, end_time, is_available')
+        .eq('teacher_id', teacherId)
+        .eq('is_available', true);
+
+      if (error) throw error;
+      setTeacherAvailability(data || []);
+    } catch (err) {
+      console.error('Error fetching teacher availability:', err);
+    }
+  }
+
   function createTimeSlot(date: Date, timeStr: string): Date {
     const [hours, minutes] = timeStr.split(':').map(Number);
     const slot = new Date(date);
@@ -120,7 +144,14 @@ export default function BookingModal({
   function isTimeSlotAvailable(date: Date, timeStr: string): boolean {
     const slot = createTimeSlot(date, timeStr);
     const now = new Date();
-    return slot > now;
+    if (slot <= now) return false;
+
+    const dayOfWeek = date.getDay();
+    const availability = teacherAvailability.find(
+      (a) => a.day_of_week === dayOfWeek && a.start_time === timeStr && a.is_available
+    );
+
+    return !!availability;
   }
 
   async function handleBooking() {
@@ -381,9 +412,9 @@ export default function BookingModal({
                               disabled={!available}
                               className={`p-2 rounded-lg border text-sm transition ${
                                 selectedTime && selectedTime.getTime() === slot.getTime()
-                                  ? 'border-cyan-500 bg-cyan-500/10 text-white'
+                                  ? 'border-cyan-500 bg-cyan-500/10 text-white font-semibold'
                                   : available
-                                  ? 'border-slate-700 bg-slate-800/50 hover:border-slate-600 text-slate-300'
+                                  ? 'border-green-600 bg-green-500/20 hover:bg-green-500/30 text-green-300 font-semibold'
                                   : 'border-slate-800 bg-slate-900 text-slate-600 cursor-not-allowed'
                               }`}
                             >

@@ -29,6 +29,7 @@ import RecordingsHistory from './pages/RecordingsHistory';
 import ReferralLanding from './pages/ReferralLanding';
 import TeacherProfileSetup from './pages/TeacherProfileSetup';
 import TeacherPendingApproval from './pages/TeacherPendingApproval';
+import TeacherAvailability from './pages/TeacherAvailability';
 import VirtualImamAbout from './pages/VirtualImamAbout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -119,6 +120,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherPendingApproval />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/availability"
+          element={
+            <ProtectedRoute>
+              <TeacherAvailability />
             </ProtectedRoute>
           }
         />
