@@ -252,7 +252,10 @@ export default function Dashboard() {
           <div className="max-w-[1600px] mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-2">
-                <DashboardHeader userName={profile?.full_name?.split(' ')[0] || 'Student'} />
+                <DashboardHeader
+                  userName={profile?.full_name?.split(' ')[0] || 'Student'}
+                  userRole={userRole}
+                />
               </div>
 
               <div className="lg:col-span-1">

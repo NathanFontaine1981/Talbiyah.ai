@@ -5,6 +5,7 @@ interface DashboardHeaderProps {
   userName: string;
   userLevel?: number;
   userPoints?: number;
+  userRole?: string;
 }
 
 interface PrayerTime {
@@ -13,7 +14,7 @@ interface PrayerTime {
   isPassed: boolean;
 }
 
-export default function DashboardHeader({ userName, userLevel = 1, userPoints = 75 }: DashboardHeaderProps) {
+export default function DashboardHeader({ userName, userLevel = 1, userPoints = 75, userRole = 'Student' }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentVerse, setCurrentVerse] = useState(0);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
@@ -95,17 +96,71 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
   });
 
   const islamicDate = '11 Jumādá al-ūlá, 1447 AH';
-  const nextPrayer = prayerTimes.find(p => !p.isPassed) || prayerTimes[0];
   const verse = verses[currentVerse];
 
+  const getColorClasses = () => {
+    switch (userRole) {
+      case 'Student':
+        return {
+          mainBg: 'bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800',
+          cardBg: 'bg-emerald-900/30',
+          cardBorder: 'border-emerald-600/30',
+          levelBg: 'bg-emerald-900/50',
+          levelBorder: 'border-emerald-600/30',
+          levelIcon: 'text-amber-400',
+          textPrimary: 'text-white',
+          textSecondary: 'text-white/80',
+          iconPrimary: 'text-pink-300',
+        };
+      case 'Teacher':
+        return {
+          mainBg: 'bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800',
+          cardBg: 'bg-blue-900/30',
+          cardBorder: 'border-blue-600/30',
+          levelBg: 'bg-blue-900/50',
+          levelBorder: 'border-blue-600/30',
+          levelIcon: 'text-amber-400',
+          textPrimary: 'text-white',
+          textSecondary: 'text-white/80',
+          iconPrimary: 'text-cyan-300',
+        };
+      case 'Admin':
+        return {
+          mainBg: 'bg-gradient-to-br from-amber-600 via-amber-500 to-amber-700',
+          cardBg: 'bg-amber-900/30',
+          cardBorder: 'border-amber-600/30',
+          levelBg: 'bg-amber-900/50',
+          levelBorder: 'border-amber-600/30',
+          levelIcon: 'text-amber-300',
+          textPrimary: 'text-white',
+          textSecondary: 'text-white/80',
+          iconPrimary: 'text-amber-200',
+        };
+      default:
+        return {
+          mainBg: 'bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800',
+          cardBg: 'bg-emerald-900/30',
+          cardBorder: 'border-emerald-600/30',
+          levelBg: 'bg-emerald-900/50',
+          levelBorder: 'border-emerald-600/30',
+          levelIcon: 'text-amber-400',
+          textPrimary: 'text-white',
+          textSecondary: 'text-white/80',
+          iconPrimary: 'text-pink-300',
+        };
+    }
+  };
+
+  const colors = getColorClasses();
+
   return (
-    <div className="bg-gradient-to-br from-teal-800 via-teal-700 to-teal-900 rounded-3xl p-8 shadow-2xl">
+    <div className={`${colors.mainBg} rounded-3xl p-8 shadow-2xl`}>
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
             {getGreeting()}, {userName} <span className="text-2xl">👋</span>
           </h1>
-          <div className="flex items-center gap-4 text-white/80 text-sm">
+          <div className={`flex items-center gap-4 ${colors.textSecondary} text-sm`}>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{gregorianDate}</span>
@@ -117,9 +172,9 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
           </div>
         </div>
 
-        <div className="bg-teal-900/50 backdrop-blur-sm rounded-2xl px-6 py-3 border border-teal-600/30">
+        <div className={`${colors.levelBg} backdrop-blur-sm rounded-2xl px-6 py-3 border ${colors.levelBorder}`}>
           <div className="flex items-center gap-3">
-            <Zap className="w-5 h-5 text-amber-400" />
+            <Zap className={`w-5 h-5 ${colors.levelIcon}`} />
             <div className="flex items-center gap-4">
               <div className="text-white/90">
                 <span className="text-sm">Level {userLevel}</span>
@@ -131,10 +186,10 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6">
-        <div className="bg-teal-900/30 backdrop-blur-sm rounded-2xl p-6 border border-teal-600/30">
+      <div className="grid grid-cols-1 gap-6">
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl p-6 border ${colors.cardBorder}`}>
           <div className="flex items-center gap-3 mb-4">
-            <BookOpen className="w-5 h-5 text-pink-300" />
+            <BookOpen className={`w-5 h-5 ${colors.iconPrimary}`} />
             <h3 className="text-white font-semibold">Daily Quran Verse</h3>
           </div>
 
@@ -159,18 +214,6 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
             </div>
           </div>
         </div>
-
-        {nextPrayer && (
-          <div className="bg-teal-900/30 backdrop-blur-sm rounded-2xl p-6 border border-teal-600/30 flex flex-col items-center justify-center text-center min-w-[280px]">
-            <p className="text-white/70 text-sm mb-2">Next Prayer</p>
-            <p className="text-white text-3xl font-bold mb-1">{nextPrayer.name}</p>
-            <p className="text-white text-4xl font-bold mb-4">{nextPrayer.time}</p>
-            <button className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-medium transition shadow-lg">
-              <Zap className="w-4 h-4" />
-              Daily Login
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
