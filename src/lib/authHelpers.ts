@@ -16,16 +16,6 @@ export async function getDashboardRoute(): Promise<string> {
       return '/admin';
     }
 
-    const { data: teacher } = await supabase
-      .from('teacher_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (teacher) {
-      return '/teacher-dashboard';
-    }
-
     return '/dashboard';
   } catch (error) {
     console.error('Error determining dashboard route:', error);

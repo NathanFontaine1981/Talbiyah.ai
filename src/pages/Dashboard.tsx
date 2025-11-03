@@ -32,6 +32,9 @@ import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
 import PointsRedemption from '../components/PointsRedemption';
 import DashboardHeader from '../components/DashboardHeader';
+import TeacherSessionsCard from '../components/TeacherSessionsCard';
+import TeacherStatsWidget from '../components/TeacherStatsWidget';
+import TeacherStudentsCard from '../components/TeacherStudentsCard';
 
 interface UserProfile {
   full_name: string | null;
@@ -323,39 +326,55 @@ export default function Dashboard() {
               </div>
             )}
 
-            {userRole === 'Teacher' && (
-              <div className="mb-6">
-                <button
-                  onClick={() => navigate('/teacher/availability')}
-                  className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition shadow-lg flex items-center space-x-3"
-                >
-                  <Settings className="w-5 h-5" />
-                  <span>Set Your Availability</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div>
+            {userRole === 'Teacher' ? (
+              <>
+                <div className="mb-6">
+                  <button
+                    onClick={() => navigate('/teacher/availability')}
+                    className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition shadow-lg flex items-center space-x-3"
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span>Set Your Availability</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-3 space-y-6">
+                    <TeacherSessionsCard />
+                    <TeacherStudentsCard />
+                  </div>
+
+                  <div className="lg:col-span-1 space-y-6">
+                    <TeacherStatsWidget />
+                    <AnnouncementsCard />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-3 space-y-6">
+                    <UpcomingSessionsCard />
+                    <RecentRecordingsCard />
+                    <MyLearningJourneyCard />
+                  </div>
+
+                  <div className="lg:col-span-1 space-y-6">
+                    <LearningStatsWidget />
+                    {learner && (
+                      <PointsRedemption
+                        learnerId={learner.id}
+                        currentPoints={learner.total_xp || 0}
+                        onRedemption={loadUserAndProfile}
+                      />
+                    )}
+                    <RecommendedActionsCard />
+                    <AnnouncementsCard />
+                  </div>
+                </div>
+              </>
             )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-              <div className="lg:col-span-3 space-y-6">
-                <UpcomingSessionsCard />
-                <RecentRecordingsCard />
-                <MyLearningJourneyCard />
-              </div>
-
-              <div className="lg:col-span-1 space-y-6">
-                <LearningStatsWidget />
-                {learner && (
-                  <PointsRedemption
-                    learnerId={learner.id}
-                    currentPoints={learner.total_xp || 0}
-                    onRedemption={loadUserAndProfile}
-                  />
-                )}
-                <RecommendedActionsCard />
-                <AnnouncementsCard />
-              </div>
-            </div>
           </div>
         </main>
       </div>
