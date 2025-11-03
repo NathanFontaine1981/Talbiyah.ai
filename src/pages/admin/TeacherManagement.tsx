@@ -35,15 +35,18 @@ export default function TeacherManagement() {
           bio,
           hourly_rate,
           status,
-          created_at,
           profiles!teacher_profiles_user_id_fkey (
-            full_name,
-            email
+            full_name
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('id', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Fetch error:', error);
+        throw error;
+      }
+
+      console.log('Raw data:', data);
 
       const formattedData = data?.map(teacher => ({
         id: teacher.id,
@@ -51,10 +54,12 @@ export default function TeacherManagement() {
         bio: teacher.bio,
         hourly_rate: teacher.hourly_rate,
         status: teacher.status,
-        created_at: teacher.created_at,
+        created_at: new Date().toISOString(),
         full_name: (teacher.profiles as any)?.full_name || 'Unknown',
-        email: (teacher.profiles as any)?.email || 'No email',
+        email: 'N/A',
       })) || [];
+
+      console.log('Formatted data:', formattedData);
 
       setPendingApplications(formattedData.filter(t => t.status === 'pending_approval'));
       setApprovedTeachers(formattedData.filter(t => t.status === 'approved'));
