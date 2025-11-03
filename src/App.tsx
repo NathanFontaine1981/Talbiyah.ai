@@ -28,6 +28,7 @@ import CoursesOverview from './pages/CoursesOverview';
 import RecordingsHistory from './pages/RecordingsHistory';
 import ReferralLanding from './pages/ReferralLanding';
 import TeacherProfileSetup from './pages/TeacherProfileSetup';
+import TeacherPendingApproval from './pages/TeacherPendingApproval';
 import VirtualImamAbout from './pages/VirtualImamAbout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -110,6 +111,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/pending-approval"
+          element={
+            <ProtectedRoute>
+              <TeacherPendingApproval />
             </ProtectedRoute>
           }
         />

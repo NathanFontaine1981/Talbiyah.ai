@@ -84,11 +84,18 @@ export default function Dashboard() {
       } else {
         const { data: teacherProfile } = await supabase
           .from('teacher_profiles')
-          .select('id')
+          .select('id, status')
           .eq('user_id', user.id)
           .maybeSingle();
 
         if (teacherProfile) {
+          if (teacherProfile.status === 'pending_approval') {
+            navigate('/teacher/pending-approval');
+            return;
+          } else if (teacherProfile.status === 'rejected') {
+            navigate('/teacher/rejected');
+            return;
+          }
           setUserRole('Teacher');
         } else {
           setUserRole('Student');
@@ -313,6 +320,19 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {userRole === 'Teacher' && (
+              <div className="mb-6">
+                <button
+                  onClick={() => navigate('/teacher/availability')}
+                  className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition shadow-lg flex items-center space-x-3"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Set Your Availability</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
             )}
 
