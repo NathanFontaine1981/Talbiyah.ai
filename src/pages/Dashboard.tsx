@@ -19,7 +19,8 @@ import {
   Copy,
   CheckCircle,
   ArrowRight,
-  MessageCircle
+  MessageCircle,
+  Calendar
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -133,17 +134,20 @@ export default function Dashboard() {
     setTimeout(() => setReferralCopied(false), 2000);
   }
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true },
-    { icon: MessageCircle, label: 'Virtual Imam', path: '/about/virtual-imam', active: false },
-    { icon: Search, label: 'Book a Class', path: '/choose-course', active: false },
-    { icon: Users, label: 'Group Sessions', path: '/group-sessions', active: false },
-    { icon: Video, label: 'Recordings', path: '/recordings/history', active: false },
-    { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false },
-    { icon: Gift, label: 'Refer & Earn', path: '/refer', active: false },
-    { icon: Award, label: 'Achievements', path: '/achievements', active: false },
-    { icon: Settings, label: 'Settings', path: '/account/settings', active: false },
+  const baseMenuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin'] },
+    { icon: MessageCircle, label: 'Virtual Imam', path: '/about/virtual-imam', active: false, roles: ['Student', 'Teacher', 'Admin'] },
+    { icon: Calendar, label: 'Set Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
+    { icon: Search, label: 'Book a Class', path: '/choose-course', active: false, roles: ['Student'] },
+    { icon: Users, label: 'Group Sessions', path: '/group-sessions', active: false, roles: ['Student'] },
+    { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student', 'Teacher'] },
+    { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student'] },
+    { icon: Gift, label: 'Refer & Earn', path: '/refer', active: false, roles: ['Student'] },
+    { icon: Award, label: 'Achievements', path: '/achievements', active: false, roles: ['Student'] },
+    { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
   ];
+
+  const menuItems = baseMenuItems.filter(item => item.roles.includes(userRole));
 
   if (loading) {
     return (
