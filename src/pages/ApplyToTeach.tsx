@@ -220,10 +220,10 @@ export default function ApplyToTeach() {
 
       if (profileError) throw profileError;
 
-      setSuccessMessage('Success! Your application has been submitted. Please complete your profile.');
+      setSuccessMessage('Success! Your application has been submitted for review.');
 
       setTimeout(() => {
-        navigate('/teacher/setup-profile');
+        navigate('/teacher/pending-approval');
       }, 2000);
     } catch (err: any) {
       console.error('Error submitting application:', err);
