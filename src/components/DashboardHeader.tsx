@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Zap, BookOpen } from 'lucide-react';
+import { Calendar, Zap, BookOpen, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string;
@@ -16,40 +16,46 @@ interface PrayerTime {
 
 export default function DashboardHeader({ userName, userLevel = 1, userPoints = 75, userRole = 'Student' }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [currentVerse, setCurrentVerse] = useState(0);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselType, setCarouselType] = useState<'names' | 'hadiths' | 'ayahs'>('names');
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
 
-  const verses = [
-    {
-      arabic: 'وَمَن يَتَّقِ ٱللَّهَ يَجْعَل لَّهُۥ مَخْرَجًا',
-      translation: '"And whoever fears Allah - He will make for him a way out"',
-      reference: 'At-Talaq 65:2'
-    },
-    {
-      arabic: 'إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا',
-      translation: '"Indeed, with hardship comes ease"',
-      reference: 'Ash-Sharh 94:6'
-    },
-    {
-      arabic: 'رَبِّ زِدْنِي عِلْمًا',
-      translation: '"My Lord, increase me in knowledge"',
-      reference: 'Ta-Ha 20:114'
-    }
-  ];
+  const ISLAMIC_CONTENT = {
+    names: [
+      { arabic: 'ٱلرَّحْمَـٰنُ', transliteration: 'Ar-Rahman', meaning: 'The Most Merciful' },
+      { arabic: 'ٱلرَّحِيمُ', transliteration: 'Ar-Rahim', meaning: 'The Most Compassionate' },
+      { arabic: 'ٱلْمَلِكُ', transliteration: 'Al-Malik', meaning: 'The King' },
+      { arabic: 'ٱلْقُدُّوسُ', transliteration: 'Al-Quddus', meaning: 'The Most Holy' },
+      { arabic: 'ٱلسَّلَامُ', transliteration: 'As-Salam', meaning: 'The Source of Peace' },
+    ],
+    hadiths: [
+      { text: 'The best among you are those who learn the Quran and teach it.', source: 'Sahih al-Bukhari' },
+      { text: 'Whoever treads a path in search of knowledge, Allah will make easy the path to Paradise.', source: 'Sahih Muslim' },
+      { text: 'The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry.', source: 'Sahih al-Bukhari' },
+    ],
+    ayahs: [
+      { arabic: 'رَبِّ زِدْنِي عِلْمًا', translation: 'My Lord, increase me in knowledge', reference: 'Surah Ta-Ha 20:114' },
+      { arabic: 'إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا', translation: 'Indeed, with hardship comes ease', reference: 'Surah Ash-Sharh 94:6' },
+      { arabic: 'وَمَن يَتَّقِ ٱللَّهَ يَجْعَل لَّهُۥ مَخْرَجًا', translation: 'And whoever fears Allah - He will make for him a way out', reference: 'Surah At-Talaq 65:2' },
+    ]
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    const verseTimer = setInterval(() => {
-      setCurrentVerse(prev => (prev + 1) % verses.length);
-    }, 15000);
+    const carousel = setInterval(() => {
+      setCarouselIndex(prev => {
+        const content = ISLAMIC_CONTENT[carouselType];
+        return (prev + 1) % content.length;
+      });
+    }, 10000);
 
     fetchPrayerTimes();
 
     return () => {
       clearInterval(timer);
-      clearInterval(verseTimer);
+      clearInterval(carousel);
     };
-  }, []);
+  }, [carouselType]);
 
   async function fetchPrayerTimes() {
     const now = new Date();
@@ -96,7 +102,11 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
   });
 
   const islamicDate = '11 Jumādá al-ūlá, 1447 AH';
-  const verse = verses[currentVerse];
+  const currentContent = ISLAMIC_CONTENT[carouselType][carouselIndex];
+  const contentArray = ISLAMIC_CONTENT[carouselType];
+
+  const handleNext = () => setCarouselIndex((prev) => (prev + 1) % contentArray.length);
+  const handlePrev = () => setCarouselIndex((prev) => (prev - 1 + contentArray.length) % contentArray.length);
 
   const getColorClasses = () => {
     switch (userRole) {
@@ -186,32 +196,89 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl p-6 border ${colors.cardBorder}`}>
-          <div className="flex items-center gap-3 mb-4">
-            <BookOpen className={`w-5 h-5 ${colors.iconPrimary}`} />
-            <h3 className="text-white font-semibold">Daily Quran Verse</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6">
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder}`}>
+          <div className="flex items-center space-x-3 mb-2">
+            <Calendar className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="text-white font-semibold">{gregorianDate}</p>
+              <p className="text-slate-400 text-xs">{islamicDate}</p>
+            </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-3 mb-2">
-            {verses.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-2 w-2 rounded-full transition-colors ${
-                  idx === currentVerse ? 'bg-white' : 'bg-white/30'
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-6 py-4 border ${colors.cardBorder} lg:col-span-1`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => { setCarouselType('names'); setCarouselIndex(0); }}
+                className={`px-2 py-1 text-xs font-medium rounded transition ${
+                  carouselType === 'names' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
                 }`}
-              />
-            ))}
+              >
+                Names
+              </button>
+              <button
+                onClick={() => { setCarouselType('hadiths'); setCarouselIndex(0); }}
+                className={`px-2 py-1 text-xs font-medium rounded transition ${
+                  carouselType === 'hadiths' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Hadith
+              </button>
+              <button
+                onClick={() => { setCarouselType('ayahs'); setCarouselIndex(0); }}
+                className={`px-2 py-1 text-xs font-medium rounded transition ${
+                  carouselType === 'ayahs' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Ayah
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button onClick={handlePrev} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button onClick={handleNext} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between gap-8">
-            <div className="flex-1">
-              <p className="text-white/90 text-lg italic mb-2">{verse.translation}</p>
-              <p className="text-white/60 text-sm">— {verse.reference}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white font-arabic text-3xl leading-relaxed">{verse.arabic}</p>
-            </div>
+          <div className="min-h-[70px] flex items-center justify-center text-center">
+            {carouselType === 'names' && 'arabic' in currentContent && (
+              <div>
+                <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
+                <p className="text-xs text-slate-400">{currentContent.meaning}</p>
+              </div>
+            )}
+
+            {carouselType === 'hadiths' && 'text' in currentContent && (
+              <div className="max-w-2xl">
+                <p className="text-sm text-slate-200 italic">"{currentContent.text}"</p>
+                <p className="text-xs text-cyan-400 mt-1">{currentContent.source}</p>
+              </div>
+            )}
+
+            {carouselType === 'ayahs' && 'arabic' in currentContent && 'translation' in currentContent && (
+              <div>
+                <p className="text-xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                <p className="text-sm text-slate-200">{currentContent.translation}</p>
+                <p className="text-xs text-cyan-400 mt-1">{currentContent.reference}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder} flex items-center space-x-3`}>
+          <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+          <div>
+            <p className="text-xs text-slate-400 mb-0.5">Current Time</p>
+            <p className="text-xl font-bold text-white">
+              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </p>
           </div>
         </div>
       </div>
