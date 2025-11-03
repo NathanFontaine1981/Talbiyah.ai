@@ -86,16 +86,35 @@ export default function Welcome() {
         return;
       }
 
-      const { error: updateError } = await supabase
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
-          timezone: formData.timezone
-        })
-        .eq('id', user.id);
+        .select('id, roles')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (updateError) throw updateError;
+      if (!existingProfile) {
+        const userRole = user.user_metadata?.selected_role || 'student';
+        await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            full_name: formData.full_name,
+            phone_number: formData.phone_number,
+            timezone: formData.timezone,
+            roles: [userRole]
+          });
+      } else {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: formData.full_name,
+            phone_number: formData.phone_number,
+            timezone: formData.timezone
+          })
+          .eq('id', user.id);
+
+        if (updateError) throw updateError;
+      }
 
       const userRole = user.user_metadata?.selected_role;
 
