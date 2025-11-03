@@ -196,18 +196,18 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[auto,1fr,auto] gap-4">
         <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder}`}>
-          <div className="flex items-center space-x-3 mb-2">
+          <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="text-white font-semibold">{gregorianDate}</p>
-              <p className="text-slate-400 text-xs">{islamicDate}</p>
+            <div className="text-xs">
+              <p className="text-white font-medium">{gregorianDate}</p>
+              <p className="text-slate-400 text-[10px]">{islamicDate}</p>
             </div>
           </div>
         </div>
 
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-6 py-4 border ${colors.cardBorder} lg:col-span-1`}>
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-8 py-5 border ${colors.cardBorder}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex space-x-2">
               <button
@@ -246,38 +246,38 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
             </div>
           </div>
 
-          <div className="min-h-[70px] flex items-center justify-center text-center">
+          <div className="min-h-[100px] flex items-center justify-center text-center">
             {carouselType === 'names' && 'arabic' in currentContent && (
               <div>
-                <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
-                <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
-                <p className="text-xs text-slate-400">{currentContent.meaning}</p>
+                <p className="text-4xl font-arabic text-cyan-400 mb-2">{currentContent.arabic}</p>
+                <p className="text-base text-white font-semibold">{currentContent.transliteration}</p>
+                <p className="text-sm text-slate-400">{currentContent.meaning}</p>
               </div>
             )}
 
             {carouselType === 'hadiths' && 'text' in currentContent && (
-              <div className="max-w-2xl">
-                <p className="text-sm text-slate-200 italic">"{currentContent.text}"</p>
-                <p className="text-xs text-cyan-400 mt-1">{currentContent.source}</p>
+              <div className="max-w-3xl">
+                <p className="text-base text-slate-200 italic">"{currentContent.text}"</p>
+                <p className="text-sm text-cyan-400 mt-2">{currentContent.source}</p>
               </div>
             )}
 
             {carouselType === 'ayahs' && 'arabic' in currentContent && 'translation' in currentContent && (
               <div>
-                <p className="text-xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
-                <p className="text-sm text-slate-200">{currentContent.translation}</p>
-                <p className="text-xs text-cyan-400 mt-1">{currentContent.reference}</p>
+                <p className="text-3xl font-arabic text-cyan-400 mb-2">{currentContent.arabic}</p>
+                <p className="text-base text-slate-200">{currentContent.translation}</p>
+                <p className="text-sm text-cyan-400 mt-2">{currentContent.reference}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder} flex items-center space-x-3`}>
-          <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder} flex items-center space-x-2`}>
+          <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <div>
-            <p className="text-xs text-slate-400 mb-0.5">Current Time</p>
-            <p className="text-xl font-bold text-white">
-              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            <p className="text-[10px] text-slate-400 mb-0.5">Time</p>
+            <p className="text-base font-bold text-white">
+              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
         </div>
