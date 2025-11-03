@@ -61,6 +61,8 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userRole, setUserRole] = useState<string>('Student');
   const [referralCopied, setReferralCopied] = useState(false);
+  const [hasAvailability, setHasAvailability] = useState(true);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUserAndProfile();
@@ -101,6 +103,16 @@ export default function Dashboard() {
             return;
           }
           setUserRole('Teacher');
+          setTeacherId(teacherProfile.id);
+
+          const { data: availabilityData } = await supabase
+            .from('teacher_availability')
+            .select('id')
+            .eq('teacher_id', teacherProfile.id)
+            .eq('is_available', true)
+            .limit(1);
+
+          setHasAvailability((availabilityData?.length || 0) > 0);
         } else {
           setUserRole('Student');
         }
@@ -332,13 +344,37 @@ export default function Dashboard() {
 
             {userRole === 'Teacher' ? (
               <>
+                {!hasAvailability && (
+                  <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 border-2 border-amber-400 shadow-xl">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-white mb-2">Set Your Availability to Receive Bookings!</h3>
+                        <p className="text-amber-50 mb-4 text-sm">
+                          Students can't book lessons with you yet. Set your weekly schedule so students can see when you're available and start booking sessions with you.
+                        </p>
+                        <button
+                          onClick={() => navigate('/teacher/availability')}
+                          className="px-6 py-3 bg-white hover:bg-amber-50 text-amber-600 rounded-xl font-bold transition shadow-lg flex items-center space-x-2"
+                        >
+                          <Calendar className="w-5 h-5" />
+                          <span>Set Availability Now</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-6">
                   <button
                     onClick={() => navigate('/teacher/availability')}
                     className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition shadow-lg flex items-center space-x-3"
                   >
                     <Settings className="w-5 h-5" />
-                    <span>Set Your Availability</span>
+                    <span>Manage Your Availability</span>
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>

@@ -73,15 +73,45 @@ export default function TeacherManagement() {
   async function handleApprove(teacherId: string) {
     setProcessingId(teacherId);
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('teacher_profiles')
         .update({ status: 'approved' })
         .eq('id', teacherId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      const availabilitySlots = [];
+      const days = [1, 2, 3, 4, 5];
+
+      for (let hour = 9; hour < 17; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endHour = minute === 30 ? hour + 1 : hour;
+          const endMinute = minute === 30 ? '00' : '30';
+          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute}`;
+
+          for (const day of days) {
+            availabilitySlots.push({
+              teacher_id: teacherId,
+              day_of_week: day,
+              start_time: startTime,
+              end_time: endTime,
+              is_available: true
+            });
+          }
+        }
+      }
+
+      const { error: availError } = await supabase
+        .from('teacher_availability')
+        .insert(availabilitySlots);
+
+      if (availError) {
+        console.warn('Could not create default availability:', availError);
+      }
 
       await fetchTeachers();
-      alert('Teacher approved successfully!');
+      alert('Teacher approved successfully with default Mon-Fri 9AM-5PM availability!');
     } catch (error) {
       console.error('Error approving teacher:', error);
       alert('Failed to approve teacher. Please try again.');
