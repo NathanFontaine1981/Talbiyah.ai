@@ -1,0 +1,18 @@
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminHome />} />
+          <Route path="users" element={<div className="text-white">Users Management Coming Soon</div>} />
+          <Route path="teachers" element={<TeacherManagement />} />
+          <Route path="sessions" element={<div className="text-white">Sessions Management Coming Soon</div>} />
+          <Route path="recordings" element={<div className="text-white">Recordings Management Coming Soon</div>} />
+          <Route path="finance" element={<div className="text-white">Finance Management Coming Soon</div>} />
+          <Route path="analytics" element={<div className="text-white">Analytics Coming Soon</div>} />
+          <Route path="reports" element={<div className="text-white">Reports Coming Soon</div>} />
+          <Route path="settings" element={<div className="text-white">Settings Coming Soon</div>} />
+        </Route>

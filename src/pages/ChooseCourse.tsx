@@ -1,0 +1,172 @@
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Languages, GraduationCap, ArrowLeft, ArrowRight, Sparkles, Clock } from 'lucide-react';
+
+export default function ChooseCourse() {
+  const navigate = useNavigate();
+
+  const courses = [
+    {
+      id: 'quran-understanding',
+      title: "Qur'an with Understanding",
+      subtitle: 'Recitation, Tajweed & Tafsir',
+      description: 'Master Quranic recitation with proper Tajweed while understanding the profound meanings through expert guidance.',
+      icon: BookOpen,
+      gradient: 'from-emerald-500 to-teal-600',
+      shadowColor: 'emerald-500',
+      available: true,
+      featured: true
+    },
+    {
+      id: 'arabic-language',
+      title: 'Arabic Language',
+      subtitle: 'Classical & Modern Standard Arabic',
+      description: 'Learn the language of the Quran from basics to fluency. Understand classical texts and communicate confidently.',
+      icon: Languages,
+      gradient: 'from-blue-500 to-cyan-600',
+      shadowColor: 'blue-500',
+      available: true,
+      featured: false
+    },
+    {
+      id: 'islamic-studies',
+      title: 'Islamic Studies',
+      subtitle: 'Comprehensive Islamic Knowledge',
+      description: 'Deep dive into Islamic theology, jurisprudence, history, and contemporary issues with scholarly teachers.',
+      icon: GraduationCap,
+      gradient: 'from-slate-600 to-slate-700',
+      shadowColor: 'slate-500',
+      available: false,
+      featured: false
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <nav className="fixed top-0 w-full bg-slate-900/80 backdrop-blur-lg z-50 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+            <BookOpen className="w-7 h-7 text-cyan-400" />
+            <span className="text-2xl font-bold">Talbiyah.ai</span>
+          </div>
+
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </button>
+        </div>
+      </nav>
+
+      <div className="pt-32 pb-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full"></div>
+                <Sparkles className="w-12 h-12 text-cyan-400 relative animate-pulse" />
+              </div>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
+                Choose Your Path
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed mb-8">
+              Start your Islamic learning journey with a <span className="text-cyan-400 font-semibold">free 30-minute taster session</span>
+            </p>
+            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+              <Clock className="w-5 h-5 text-cyan-400" />
+              <span className="text-cyan-400 font-semibold">30 Minutes Free • No Credit Card Required</span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {courses.map((course) => {
+              const Icon = course.icon;
+              return (
+                <div key={course.id} className="group relative">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${course.gradient} opacity-0 ${course.available ? 'group-hover:opacity-10' : ''} rounded-3xl blur-xl transition-all duration-500`}></div>
+
+                  <div className={`relative h-full bg-slate-900/80 backdrop-blur-sm p-8 rounded-3xl border transition-all duration-300 ${
+                    course.available
+                      ? `border-slate-800 hover:border-${course.shadowColor}/50 cursor-pointer`
+                      : 'border-slate-800/50 opacity-60'
+                  }`}
+                  onClick={() => {
+                    if (!course.available) return;
+                    const routeMap: Record<string, string> = {
+                      'quran-understanding': '/course/quran-understanding',
+                      'arabic-language': '/course/arabic-language',
+                      'islamic-studies': '/courses/islamic-studies'
+                    };
+                    const route = routeMap[course.id];
+                    navigate(route);
+                    window.scrollTo(0, 0);
+                  }}
+                  >
+                    {course.featured && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <div className="px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full text-sm font-bold shadow-lg">
+                          Most Popular
+                        </div>
+                      </div>
+                    )}
+
+                    {!course.available && (
+                      <div className="absolute -top-4 right-4">
+                        <div className="px-4 py-1 bg-slate-700 border border-slate-600 rounded-full text-sm font-semibold text-slate-300">
+                          Coming Soon
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col h-full">
+                      <div className={`w-20 h-20 bg-gradient-to-br ${course.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-lg ${course.available ? `shadow-${course.shadowColor}/30` : 'shadow-slate-500/20'}`}>
+                        <Icon className="w-10 h-10 text-white" />
+                      </div>
+
+                      <h3 className="text-2xl font-bold text-white mb-2">
+                        {course.title}
+                      </h3>
+                      <p className="text-cyan-400 text-sm font-semibold mb-4">
+                        {course.subtitle}
+                      </p>
+                      <p className="text-slate-300 leading-relaxed mb-6 flex-grow">
+                        {course.description}
+                      </p>
+
+                      {course.available ? (
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                          <span className="text-sm text-slate-400 font-medium">Learn More</span>
+                          <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      ) : (
+                        <div className="pt-4 border-t border-slate-800">
+                          <span className="text-sm text-slate-500 font-medium">Launching Soon</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-16 text-center">
+            <p className="text-slate-400 mb-6">
+              Not sure which course to choose?
+            </p>
+            <button
+              onClick={() => navigate('/teachers')}
+              className="px-8 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg font-semibold transition"
+            >
+              Browse All Teachers
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

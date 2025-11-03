@@ -1,0 +1,722 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Upload, User, ArrowLeft, Check } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
+import VideoRecorder from '../components/VideoRecorder';
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  date_of_birth: string | null;
+  location: string | null;
+  timezone: string | null;
+  gender: string | null;
+  avatar_url: string | null;
+  roles: string[];
+}
+
+interface TeacherProfile {
+  bio: string | null;
+  education_level: string | null;
+  islamic_learning_interests: string[];
+  hourly_rate: number | null;
+  video_intro_url: string | null;
+}
+
+export default function AccountSettings() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingEducation, setSavingEducation] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
+
+  const [profileData, setProfileData] = useState({
+    full_name: '',
+    email: '',
+    avatar_url: ''
+  });
+
+  const [personalData, setPersonalData] = useState({
+    date_of_birth: '',
+    location: '',
+    timezone: '',
+    about_me: ''
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    new_password: '',
+    confirm_password: ''
+  });
+
+  const [teacherData, setTeacherData] = useState({
+    education_level: '',
+    hourly_rate: ''
+  });
+
+  const islamicInterests = [
+    'Quran Recitation',
+    'Tajweed',
+    'Quran Memorization',
+    'Arabic Grammar',
+    'Fiqh',
+    'Hadith Studies',
+    'Islamic History',
+    'Aqeedah'
+  ];
+
+  const educationLevels = [
+    'High School',
+    'Bachelor\'s Degree',
+    'Master\'s Degree',
+    'PhD',
+    'Islamic Seminary (Madrasah)',
+    'Ijazah Certification',
+    'Other'
+  ];
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  async function loadUserData() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile) {
+        setProfileData({
+          full_name: profile.full_name || '',
+          email: user.email || '',
+          avatar_url: profile.avatar_url || ''
+        });
+
+        setPersonalData({
+          date_of_birth: profile.date_of_birth || '',
+          location: profile.location || '',
+          timezone: profile.timezone || '',
+          about_me: profile.bio || ''
+        });
+
+        if (profile.avatar_url) {
+          setAvatarPreview(profile.avatar_url);
+        }
+
+        const userRoles = profile.roles || [];
+        const teacherRole = userRoles.includes('teacher');
+        setIsTeacher(teacherRole);
+
+        if (teacherRole) {
+          const { data: teacherProfile } = await supabase
+            .from('teacher_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (teacherProfile) {
+            setTeacherData({
+              education_level: teacherProfile.education_level || '',
+              hourly_rate: teacherProfile.hourly_rate?.toString() || ''
+            });
+
+            setSelectedInterests(teacherProfile.islamic_learning_interests || []);
+            setExistingVideoUrl(teacherProfile.video_intro_url || null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading user data:', err);
+      setError('Failed to load user data.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function handleInterestToggle(interest: string) {
+    setSelectedInterests(prev => {
+      if (prev.includes(interest)) {
+        return prev.filter(i => i !== interest);
+      } else {
+        return [...prev, interest];
+      }
+    });
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      setSavingProfile(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      let avatarUrl = profileData.avatar_url;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile);
+
+        if (uploadError) {
+          console.error('Avatar upload error:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+          avatarUrl = publicUrl;
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.full_name,
+          avatar_url: avatarUrl
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setSuccessMessage('Profile updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      setError(err.message || 'Failed to save profile.');
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleSaveDetails(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      setSavingDetails(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          date_of_birth: personalData.date_of_birth || null,
+          location: personalData.location || null,
+          timezone: personalData.timezone || null
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      if (isTeacher) {
+        const { error: teacherUpdateError } = await supabase
+          .from('teacher_profiles')
+          .update({
+            bio: personalData.about_me || null
+          })
+          .eq('user_id', user.id);
+
+        if (teacherUpdateError) throw teacherUpdateError;
+      }
+
+      setSuccessMessage('Personal details updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving details:', err);
+      setError(err.message || 'Failed to save details.');
+    } finally {
+      setSavingDetails(false);
+    }
+  }
+
+  async function handleUpdatePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (passwordData.new_password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.new_password
+      });
+
+      if (updateError) throw updateError;
+
+      setPasswordData({ new_password: '', confirm_password: '' });
+      setSuccessMessage('Password updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error updating password:', err);
+      setError(err.message || 'Failed to update password.');
+    } finally {
+      setSavingPassword(false);
+    }
+  }
+
+  function handleVideoRecorded(blob: Blob) {
+    setVideoBlob(blob);
+  }
+
+  async function handleSaveEducation(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      setSavingEducation(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      let videoIntroUrl = existingVideoUrl;
+
+      if (videoBlob) {
+        const videoFileName = `${user.id}-${Date.now()}.webm`;
+        const videoFilePath = `${videoFileName}`;
+
+        const { error: videoUploadError } = await supabase.storage
+          .from('teacher_audio')
+          .upload(videoFilePath, videoBlob);
+
+        if (videoUploadError) {
+          console.error('Video upload error:', videoUploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('teacher_audio')
+            .getPublicUrl(videoFilePath);
+          videoIntroUrl = publicUrl;
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('teacher_profiles')
+        .update({
+          education_level: teacherData.education_level || null,
+          islamic_learning_interests: selectedInterests,
+          hourly_rate: teacherData.hourly_rate ? parseFloat(teacherData.hourly_rate) : null,
+          video_intro_url: videoIntroUrl
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setExistingVideoUrl(videoIntroUrl);
+      setVideoBlob(null);
+      setSuccessMessage('Educational background and teaching offer updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving education:', err);
+      setError(err.message || 'Failed to save educational details.');
+    } finally {
+      setSavingEducation(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-emerald-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Talbiyah.ai</h1>
+              <p className="text-sm text-gray-600">Account Settings</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2 text-gray-700"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+        </div>
+      </nav>
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h2>
+          <p className="text-gray-600">Manage your account settings and preferences</p>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
+            <Check className="w-5 h-5 text-green-600" />
+            <p className="text-green-800 text-sm font-medium">{successMessage}</p>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+              Profile Information
+            </h3>
+
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Avatar
+                </label>
+                <div className="flex items-center space-x-6">
+                  <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-10 h-10 text-gray-400" />
+                    )}
+                  </div>
+                  <label className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium cursor-pointer transition flex items-center space-x-2">
+                    <Upload className="w-4 h-4" />
+                    <span>Change Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.full_name}
+                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    disabled
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingProfile ? 'Saving...' : 'Save Profile'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+              Personal Details
+            </h3>
+
+            <form onSubmit={handleSaveDetails} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={personalData.date_of_birth}
+                    onChange={(e) => setPersonalData({ ...personalData, date_of_birth: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={personalData.location}
+                    onChange={(e) => setPersonalData({ ...personalData, location: e.target.value })}
+                    placeholder="City, Country"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Timezone
+                  </label>
+                  <input
+                    type="text"
+                    value={personalData.timezone}
+                    onChange={(e) => setPersonalData({ ...personalData, timezone: e.target.value })}
+                    placeholder="e.g. UTC, EST"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  About Me
+                </label>
+                <textarea
+                  value={personalData.about_me}
+                  onChange={(e) => setPersonalData({ ...personalData, about_me: e.target.value })}
+                  rows={4}
+                  placeholder="Tell us about yourself..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={savingDetails}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingDetails ? 'Saving...' : 'Save Details'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+              Change Password
+            </h3>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordData.new_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordData.confirm_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={savingPassword}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {isTeacher && (
+            <>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+                  Educational Background
+                </h3>
+
+                <form onSubmit={handleSaveEducation} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Education Level
+                    </label>
+                    <select
+                      value={teacherData.education_level}
+                      onChange={(e) => setTeacherData({ ...teacherData, education_level: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    >
+                      <option value="">Select your highest education level</option>
+                      {educationLevels.map(level => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-3">
+                      Islamic Learning Interests
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {islamicInterests.map(interest => (
+                        <label
+                          key={interest}
+                          className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedInterests.includes(interest)}
+                            onChange={() => handleInterestToggle(interest)}
+                            className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 rounded"
+                          />
+                          <span className="text-gray-700">{interest}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-gray-200">
+                    <button
+                      type="submit"
+                      disabled={savingEducation}
+                      className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingEducation ? 'Saving...' : 'Save Details'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+                  Your Teaching Offer
+                </h3>
+
+                <form onSubmit={handleSaveEducation} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Your Requested Hourly Rate (in GBP)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={teacherData.hourly_rate}
+                      onChange={(e) => setTeacherData({ ...teacherData, hourly_rate: e.target.value })}
+                      placeholder="e.g. 25.00"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-3">
+                      Video Introduction (Optional)
+                    </label>
+                    <VideoRecorder
+                      onVideoRecorded={handleVideoRecorded}
+                      maxDurationSeconds={120}
+                      existingVideoUrl={existingVideoUrl}
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-gray-200">
+                    <button
+                      type="submit"
+                      disabled={savingEducation}
+                      className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingEducation ? 'Saving...' : 'Save Details'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

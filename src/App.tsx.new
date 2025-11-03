@@ -1,0 +1,32 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import SignUp from './pages/SignUp';
+import ChooseCourse from './pages/ChooseCourse';
+import CourseQuranExplanation from './pages/CourseQuranExplanation';
+import CourseArabic from './pages/CourseArabic';
+import Checkout from './pages/Checkout';
+import Admin from './pages/Admin';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminHome from './pages/admin/AdminHome';
+import TeacherManagement from './pages/admin/TeacherManagement';
+import ApplyToTeach from './pages/ApplyToTeach';
+import AccountSettings from './pages/AccountSettings';
+import Dashboard from './pages/Dashboard';
+import Teachers from './pages/Teachers';
+import TeacherProfile from './pages/TeacherProfile';
+import Counselling from './pages/Counselling';
+import Matchmaking from './pages/Matchmaking';
+import Welcome from './pages/Welcome';
+import BookSession from './pages/BookSession';
+import PaymentSuccess from './pages/PaymentSuccess';
+import QuranProgress from './pages/QuranProgress';
+import CoursesOverview from './pages/CoursesOverview';
+import RecordingsHistory from './pages/RecordingsHistory';
+import ProtectedRoute from './components/ProtectedRoute';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<SignUp />} />
