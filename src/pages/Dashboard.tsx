@@ -229,7 +229,12 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-white">{profile?.full_name || 'Student'}</p>
                   <p className="text-xs text-slate-400">{userRole}</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  userRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
+                  userRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
+                  userRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
+                  'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                }`}>
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   ) : (
@@ -259,7 +264,7 @@ export default function Dashboard() {
               </div>
 
               <div className="lg:col-span-1">
-                <PrayerTimesWidget />
+                <PrayerTimesWidget userRole={userRole} />
               </div>
             </div>
 
