@@ -126,11 +126,11 @@ export default function TeacherManagement() {
           </div>
         </div>
         <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          teacher.status === 'Pending' ? 'bg-amber-500/20 text-amber-400' :
-          teacher.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
+          teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-400' :
+          teacher.status === 'approved' ? 'bg-green-500/20 text-green-400' :
           'bg-red-500/20 text-red-400'
         }`}>
-          {teacher.status}
+          {teacher.status === 'pending_approval' ? 'Pending' : teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
         </div>
       </div>
 
@@ -153,8 +153,8 @@ export default function TeacherManagement() {
         </div>
       )}
 
-      {teacher.status === 'Pending' && (
-        <div className="flex space-x-3">
+      {teacher.status === 'pending_approval' && (
+        <div className="flex space-x-3 mt-4 pt-4 border-t border-slate-700">
           <button
             onClick={() => handleApprove(teacher.id)}
             disabled={processingId === teacher.id}
