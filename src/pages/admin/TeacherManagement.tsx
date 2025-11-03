@@ -56,8 +56,8 @@ export default function TeacherManagement() {
         email: (teacher.profiles as any)?.email || 'No email',
       })) || [];
 
-      setPendingApplications(formattedData.filter(t => t.status === 'Pending'));
-      setApprovedTeachers(formattedData.filter(t => t.status === 'Approved'));
+      setPendingApplications(formattedData.filter(t => t.status === 'pending_approval'));
+      setApprovedTeachers(formattedData.filter(t => t.status === 'approved'));
     } catch (error) {
       console.error('Error fetching teachers:', error);
     } finally {
@@ -70,7 +70,7 @@ export default function TeacherManagement() {
     try {
       const { error } = await supabase
         .from('teacher_profiles')
-        .update({ status: 'Approved' })
+        .update({ status: 'approved' })
         .eq('id', teacherId);
 
       if (error) throw error;
@@ -90,7 +90,7 @@ export default function TeacherManagement() {
     try {
       const { error } = await supabase
         .from('teacher_profiles')
-        .update({ status: 'Inactive' })
+        .update({ status: 'rejected' })
         .eq('id', teacherId);
 
       if (error) throw error;
