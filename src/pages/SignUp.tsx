@@ -73,6 +73,24 @@ export default function SignUp() {
 
       if (error) throw error;
 
+      if (data.user) {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (!existingProfile) {
+          await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              full_name: null,
+              roles: [selectedRole]
+            });
+        }
+      }
+
       if (data.user && referralCode) {
         const { data: newLearner } = await supabase
           .from('learners')
