@@ -26,18 +26,30 @@ export default function AdminHome() {
 
   async function fetchDashboardStats() {
     try {
-      const [studentsCount, teachersCount, bookingsCount, completedCount] = await Promise.all([
-        supabase.from('learners').select('id', { count: 'exact', head: true }),
-        supabase.from('teacher_profiles').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('lessons').select('id', { count: 'exact', head: true }).in('status', ['scheduled', 'confirmed']),
-        supabase.from('lessons').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
-      ]);
+      const { count: studentsCount } = await supabase
+        .from('learners')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: teachersCount } = await supabase
+        .from('teacher_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved');
+
+      const { count: bookingsCount } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['booked', 'confirmed', 'scheduled']);
+
+      const { count: completedCount } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed');
 
       setStats({
-        totalStudents: studentsCount.count || 0,
-        totalTeachers: teachersCount.count || 0,
-        activeBookings: bookingsCount.count || 0,
-        completedSessions: completedCount.count || 0,
+        totalStudents: studentsCount || 0,
+        totalTeachers: teachersCount || 0,
+        activeBookings: bookingsCount || 0,
+        completedSessions: completedCount || 0,
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
