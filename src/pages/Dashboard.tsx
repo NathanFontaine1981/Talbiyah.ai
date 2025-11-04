@@ -86,7 +86,8 @@ export default function Dashboard() {
       setProfile(profileData);
 
       if (profileData?.is_admin) {
-        setUserRole('Admin');
+        navigate('/admin');
+        return;
       } else {
         const { data: teacherProfile } = await supabase
           .from('teacher_profiles')
