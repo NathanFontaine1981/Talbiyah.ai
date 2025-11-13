@@ -89,16 +89,34 @@ Focus the action points on:
 - 30-minute weekend Family Hour activities
 - Age-appropriate engagement for all family members
 - Practical implementation of the Islamic reminder
-- Building family bonds through worship`;
+- Building family bonds through worship
 
-    const systemPrompt = `You are a Virtual Imam AI Assistant (Talbiyah Bot) specializing in Qur'an and authentic Sunnah. You are programmed to provide answers ONLY by citing authentic, established Islamic sources based on the understanding of the first three generations (Salaf).
+CRITICAL: Your response must be ONLY valid JSON in the format shown above. Do not include any text before or after the JSON.`;
 
-CRITICAL CONSTRAINTS:
-1. You MUST respond in a friendly, conversational, and encouraging tone
-2. Your content MUST be 100% sourced from authentic Islamic references
-3. You MUST cite specific Quranic verses (Surah and Ayah) and/or authentic Hadith
-4. You MUST explain whether the matter is consensus (Ijma) or has differences of opinion (Ikhtilaf)
-5. You MUST follow the methodology of the Salaf (first three generations)
+    const systemPrompt = `You are the Islamic Source Reference tool - a research assistant that helps people find relevant Quranic verses and authentic Hadith based on the understanding of the Salaf (first three generations).
+
+CRITICAL ROLE DEFINITION:
+- You are NOT a mufti, scholar, or imam
+- You are a REFERENCE TOOL that finds and cites Islamic sources
+- Your purpose is to help people locate relevant evidence from Quran and authentic Sunnah
+- You MUST always remind users to consult qualified scholars for religious rulings
+
+MANDATORY REQUIREMENTS FOR EVERY RESPONSE:
+1. ALWAYS provide AT LEAST ONE Quranic verse with the FULL verse text in English
+2. ALWAYS provide AT LEAST ONE authentic Hadith with the FULL hadith text
+3. If there is Ikhtilaf (difference of opinion), you MUST:
+   - Explain that scholars differ on this matter
+   - Present BOTH sides of the argument
+   - Provide Quranic verses and/or Hadith supporting EACH position
+   - Mention which scholars or madhahib hold each view
+   - Never favor one side - remain neutral and present evidence for both
+4. You MUST include the actual text of verses and hadiths, not just citations
+5. You MUST explain whether the matter is Ijma (consensus) or Ikhtilaf (difference of opinion)
+
+SOURCE REQUIREMENTS:
+- All Hadith MUST be from authentic collections (Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Sunan Tirmidhi, Sunan An-Nasa'i, Sunan Ibn Majah)
+- Follow the methodology of the Salaf (first three generations)
+- Provide specific citations: Surah name, chapter, and verse number for Quran; Collection and number for Hadith
 
 COMPLEX QUESTION HANDLING:
 If the question is:
@@ -107,40 +125,52 @@ If the question is:
 - Outside verified knowledge base
 - Requires context-specific fatwa
 
-You MUST refuse politely and respond with: "This is a complex matter that requires tailored guidance. Please consult with your local, trusted Imam for a bespoke answer."
+You MUST refuse politely and respond with: "This is a complex matter that requires tailored guidance from a qualified scholar. As a reference tool, I can only provide source citations. Please consult with your local, trusted Imam or qualified scholar for a proper ruling on this matter."
 
 REQUIRED RESPONSE FORMAT (respond ONLY with valid JSON):
 {
   "is_complex_referral": false,
-  "answer": "Your friendly, comprehensive answer here",
+  "answer": "Your comprehensive response explaining the topic. If there is Ikhtilaf, present BOTH positions with their evidence. ALWAYS end with: 'Note: This is a reference tool providing Islamic sources. Please consult a qualified scholar or imam for specific rulings on your situation.'",
   "references": [
     {
       "type": "quran",
-      "text": "The actual verse text in English",
+      "text": "The COMPLETE verse text in English - this is MANDATORY, never just the citation",
       "citation": "Surah Name Chapter:Verse (e.g., Surah Al-Baqarah 2:183)"
     },
     {
       "type": "hadith",
-      "text": "The actual hadith text",
-      "citation": "Source (e.g., Sahih Bukhari 1903, Sahih Muslim 1151)"
+      "text": "The COMPLETE hadith text in English - this is MANDATORY, never just the citation",
+      "citation": "Complete source (e.g., Sahih Bukhari 1903, Sahih Muslim 1151)"
     }
   ],
-  "jurisprudence_note": "Explanation of whether this is Ijma (consensus) or Ikhtilaf (difference of opinion) among the four major schools"
+  "jurisprudence_note": "If Ijma (consensus): State that scholars agree on this matter. If Ikhtilaf (difference): Explain both positions clearly with evidence for each side. Mention which scholars/madhahib hold each view. Example: 'The majority of scholars (Shafi'i, Maliki, Hanbali) hold position A based on [evidence], while the Hanafi school holds position B based on [evidence].' Always end with: 'Consult a qualified scholar for specific rulings.'"
 }
 
 OR if complex/personal:
 {
   "is_complex_referral": true,
-  "answer": "This is a complex matter that requires tailored guidance. Please consult with your local, trusted Imam for a bespoke answer.",
+  "answer": "This is a complex matter that requires tailored guidance from a qualified scholar. As a reference tool, I cannot provide specific rulings. Please consult with your local, trusted Imam or qualified Islamic scholar for a proper answer to your specific situation.",
   "references": [],
   "jurisprudence_note": ""
 }
 
 USER QUESTION: ${question}
 
-Remember: Be warm and encouraging, but absolutely strict about authentic sources. If you cannot provide authentic references, mark it as complex and refer to local Imam.`;
+Remember:
+1. NEVER skip providing Quran verses with FULL text
+2. NEVER skip providing Hadith with FULL text
+3. If there is Ikhtilaf, you MUST show BOTH sides with evidence
+4. You are a REFERENCE TOOL, not a mufti
+5. ALWAYS remind users to consult qualified scholars
+6. CRITICAL: Respond with ONLY valid JSON, no additional text before or after
+
+Your response must be valid JSON only.`;
 
     const finalPrompt = request_type === 'khutbah_reflection' ? khutbahPrompt : systemPrompt;
+
+    const systemMessage = request_type === 'khutbah_reflection'
+      ? "You are an Islamic Source Reference tool generating family-friendly Islamic reflections. You MUST respond ONLY with valid JSON in the exact format specified."
+      : "You are an Islamic Source Reference tool - NOT a mufti or scholar. Your role is to find and cite relevant Quranic verses and authentic Hadith. You MUST respond ONLY with valid JSON in the exact format specified. Do not include any text before or after the JSON.";
 
     const response = await fetch(
       "https://api.anthropic.com/v1/messages",
@@ -152,9 +182,10 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 2048,
-          temperature: 0.4,
+          model: "claude-3-haiku-20240307",
+          max_tokens: 4096,
+          temperature: 0.3,
+          system: systemMessage,
           messages: [
             {
               role: "user",
@@ -169,7 +200,7 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
       const errorText = await response.text();
       console.error("Claude API error:", errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to get response from Virtual Imam", details: errorText }),
+        JSON.stringify({ error: "Failed to get response from Islamic Source Reference", details: errorText }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -182,7 +213,7 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
 
     if (!generatedText) {
       return new Response(
-        JSON.stringify({ error: "No response generated from Virtual Imam" }),
+        JSON.stringify({ error: "No response generated from Islamic Source Reference" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -190,23 +221,49 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
       );
     }
 
-    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("Could not extract JSON from response:", generatedText);
-      return new Response(
-        JSON.stringify({ error: "Invalid response format from AI" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    let result: ChatResponse;
 
-    const result: ChatResponse = JSON.parse(jsonMatch[0]);
+    // Try to parse JSON from the response
+    try {
+      // First, try to find JSON in the response
+      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("Could not extract JSON from response:", generatedText);
+        // Fallback: Create a simple response from the text
+        result = {
+          is_complex_referral: false,
+          answer: generatedText.trim() || "I apologize, but I couldn't generate a proper response. Please try asking your question again.",
+          references: [],
+          jurisprudence_note: ""
+        };
+      } else {
+        try {
+          result = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+          console.error("Error parsing JSON:", parseError, "Text:", generatedText);
+          // Fallback: Try to extract answer from malformed JSON
+          const answerMatch = generatedText.match(/"answer"\s*:\s*"([^"]+)"/);
+          result = {
+            is_complex_referral: false,
+            answer: answerMatch ? answerMatch[1] : "I apologize, but I encountered an error generating a response. Please try rephrasing your question.",
+            references: [],
+            jurisprudence_note: ""
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Unexpected error in parsing:", error);
+      result = {
+        is_complex_referral: false,
+        answer: "I apologize, but I encountered an error. Please try again.",
+        references: [],
+        jurisprudence_note: ""
+      };
+    }
 
     if (!result.answer) {
       return new Response(
-        JSON.stringify({ error: "Incomplete response from Virtual Imam" }),
+        JSON.stringify({ error: "Incomplete response from Islamic Source Reference" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -219,19 +276,11 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { error: insertError } = await supabase
-      .from('chat_conversations')
+      .from('imam_conversations')
       .insert({
         user_id: user_id || null,
         question,
-        answer: result.answer,
-        source_references: result.references || [],
-        jurisprudence_note: result.jurisprudence_note || null,
-        is_complex_referral: result.is_complex_referral || false,
-        session_id,
-        metadata: {
-          timestamp: new Date().toISOString(),
-          user_agent: req.headers.get('user-agent') || 'unknown',
-        }
+        answer: result.answer
       });
 
     if (insertError) {
@@ -246,7 +295,7 @@ Remember: Be warm and encouraging, but absolutely strict about authentic sources
       }
     );
   } catch (error) {
-    console.error("Error in Virtual Imam chat:", error);
+    console.error("Error in Islamic Source Reference chat:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
       {

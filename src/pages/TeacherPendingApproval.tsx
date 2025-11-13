@@ -9,6 +9,7 @@ export default function TeacherPendingApproval() {
 
   useEffect(() => {
     checkApprovalStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function checkApprovalStatus() {
@@ -90,13 +91,19 @@ export default function TeacherPendingApproval() {
 
             <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
               <BookOpen className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-slate-300 mb-3">
                 Once approved, you'll be able to set your availability, create your profile, and start teaching students around the world.
+              </p>
+              <p className="text-xs text-slate-400">
+                You can safely close this page now. You'll receive an email notification when your application is approved.
               </p>
             </div>
 
             <button
-              onClick={() => navigate('/')}
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate('/');
+              }}
               className="px-8 py-3 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white rounded-lg font-semibold transition shadow-lg"
             >
               Return to Home
@@ -104,7 +111,7 @@ export default function TeacherPendingApproval() {
 
             <div className="mt-8 pt-6 border-t border-slate-700">
               <p className="text-sm text-slate-500">
-                Questions? Contact us at <a href="mailto:support@talbiyah.com" className="text-blue-400 hover:text-blue-300">support@talbiyah.com</a>
+                Questions? Contact us at <a href="mailto:contact@talbiyah.ai" className="text-blue-400 hover:text-blue-300">contact@talbiyah.ai</a>
               </p>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, CreditCard, Gift, CheckCircle, Loader2 } from 'lucide-react';
+import { X, User, CreditCard, Gift, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, addDays, startOfWeek, addWeeks, isSameDay } from 'date-fns';
 
@@ -12,13 +12,15 @@ interface BookingModalProps {
   subjectName: string;
 }
 
-interface TimeSlot {
-  time: Date;
-  available: boolean;
-}
-
 interface TeacherAvailability {
   day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+}
+
+interface OneOffAvailability {
+  date: string;
   start_time: string;
   end_time: string;
   is_available: boolean;
@@ -50,17 +52,18 @@ export default function BookingModal({
   const [weekOffset, setWeekOffset] = useState(0);
   const [isFreeSession, setIsFreeSession] = useState(false);
   const [teacherAvailability, setTeacherAvailability] = useState<TeacherAvailability[]>([]);
+  const [oneOffAvailability, setOneOffAvailability] = useState<OneOffAvailability[]>([]);
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }), i)
   );
 
-  const timeSlots: string[] = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-    '18:00', '18:30', '19:00', '19:30', '20:00'
-  ];
+  // Generate 24-hour time slots
+  const timeSlots: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+  }
 
   const price = duration === 30 ? 7.50 : 15.00;
 
@@ -69,6 +72,7 @@ export default function BookingModal({
       fetchLearners();
       fetchTeacherAvailability();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -84,6 +88,13 @@ export default function BookingModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get user's profile for default name
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
       const { data, error } = await supabase
         .from('learners')
         .select('id, name')
@@ -91,8 +102,52 @@ export default function BookingModal({
 
       if (error) throw error;
 
+      let learnerData = data || [];
+
+      // If no learners exist, create a default one
+      if (learnerData.length === 0) {
+        // Double-check that learner doesn't exist (in case of race condition)
+        const { data: existingCheck } = await supabase
+          .from('learners')
+          .select('id, name')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (existingCheck) {
+          learnerData = [existingCheck];
+        } else {
+          const { data: newLearner, error: createError } = await supabase
+            .from('learners')
+            .insert({
+              parent_id: user.id,
+              name: userProfile?.full_name || 'Student',
+              gamification_points: 0
+            })
+            .select('id, name')
+            .single();
+
+          if (createError) {
+            console.error('Error creating default learner:', createError);
+            // If error is due to unique constraint, try fetching again
+            if (createError.message?.includes('duplicate') || createError.message?.includes('unique') || createError.message?.includes('already exists')) {
+              const { data: retryLearner } = await supabase
+                .from('learners')
+                .select('id, name')
+                .eq('parent_id', user.id)
+                .maybeSingle();
+
+              if (retryLearner) {
+                learnerData = [retryLearner];
+              }
+            }
+          } else if (newLearner) {
+            learnerData = [newLearner];
+          }
+        }
+      }
+
       const learnersWithTrialStatus = await Promise.all(
-        (data || []).map(async (learner) => {
+        learnerData.map(async (learner) => {
           const { data: trialLesson } = await supabase
             .from('lessons')
             .select('id')
@@ -121,14 +176,31 @@ export default function BookingModal({
 
   async function fetchTeacherAvailability() {
     try {
-      const { data, error } = await supabase
+      // Fetch recurring availability
+      const { data: recurringData, error: recurringError } = await supabase
         .from('teacher_availability')
         .select('day_of_week, start_time, end_time, is_available')
         .eq('teacher_id', teacherId)
         .eq('is_available', true);
 
-      if (error) throw error;
-      setTeacherAvailability(data || []);
+      if (recurringError) throw recurringError;
+      setTeacherAvailability(recurringData || []);
+
+      // Fetch one-off availability for next 30 days
+      const today = new Date();
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + 30);
+
+      const { data: oneOffData, error: oneOffError } = await supabase
+        .from('teacher_availability_one_off')
+        .select('date, start_time, end_time, is_available')
+        .eq('teacher_id', teacherId)
+        .eq('is_available', true)
+        .gte('date', today.toISOString().split('T')[0])
+        .lte('date', futureDate.toISOString().split('T')[0]);
+
+      if (oneOffError) throw oneOffError;
+      setOneOffAvailability(oneOffData || []);
     } catch (err) {
       console.error('Error fetching teacher availability:', err);
     }
@@ -144,14 +216,32 @@ export default function BookingModal({
   function isTimeSlotAvailable(date: Date, timeStr: string): boolean {
     const slot = createTimeSlot(date, timeStr);
     const now = new Date();
+
+    // Must be in the future
     if (slot <= now) return false;
 
-    const dayOfWeek = date.getDay();
-    const availability = teacherAvailability.find(
-      (a) => a.day_of_week === dayOfWeek && a.start_time === timeStr && a.is_available
+    // Must be at least 2 hours from now
+    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    if (slot < twoHoursFromNow) return false;
+
+    // Normalize time format (database returns HH:MM:SS, we have HH:MM)
+    const normalizeTime = (t: string) => t.substring(0, 5);
+    const dateKey = format(date, 'yyyy-MM-dd');
+
+    // Check one-off availability first (takes precedence over recurring)
+    const oneOff = oneOffAvailability.find(
+      (a) => a.date === dateKey && normalizeTime(a.start_time) === timeStr && a.is_available
     );
 
-    return !!availability;
+    if (oneOff) return true;
+
+    // Fall back to recurring availability
+    const dayOfWeek = date.getDay();
+    const recurring = teacherAvailability.find(
+      (a) => a.day_of_week === dayOfWeek && normalizeTime(a.start_time) === timeStr && a.is_available
+    );
+
+    return !!recurring;
   }
 
   async function handleBooking() {

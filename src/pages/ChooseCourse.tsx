@@ -14,7 +14,8 @@ export default function ChooseCourse() {
       gradient: 'from-emerald-500 to-teal-600',
       shadowColor: 'emerald-500',
       available: true,
-      featured: true
+      featured: true,
+      subjectFilter: 'quran'
     },
     {
       id: 'arabic-language',
@@ -25,18 +26,8 @@ export default function ChooseCourse() {
       gradient: 'from-blue-500 to-cyan-600',
       shadowColor: 'blue-500',
       available: true,
-      featured: false
-    },
-    {
-      id: 'islamic-studies',
-      title: 'Islamic Studies',
-      subtitle: 'Comprehensive Islamic Knowledge',
-      description: 'Deep dive into Islamic theology, jurisprudence, history, and contemporary issues with scholarly teachers.',
-      icon: GraduationCap,
-      gradient: 'from-slate-600 to-slate-700',
-      shadowColor: 'slate-500',
-      available: false,
-      featured: false
+      featured: false,
+      subjectFilter: 'arabic'
     }
   ];
 
@@ -82,7 +73,7 @@ export default function ChooseCourse() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {courses.map((course) => {
               const Icon = course.icon;
               return (
@@ -91,20 +82,9 @@ export default function ChooseCourse() {
 
                   <div className={`relative h-full bg-slate-900/80 backdrop-blur-sm p-8 rounded-3xl border transition-all duration-300 ${
                     course.available
-                      ? `border-slate-800 hover:border-${course.shadowColor}/50 cursor-pointer`
+                      ? `border-slate-800 hover:border-${course.shadowColor}/50`
                       : 'border-slate-800/50 opacity-60'
                   }`}
-                  onClick={() => {
-                    if (!course.available) return;
-                    const routeMap: Record<string, string> = {
-                      'quran-understanding': '/course/quran-understanding',
-                      'arabic-language': '/course/arabic-language',
-                      'islamic-studies': '/courses/islamic-studies'
-                    };
-                    const route = routeMap[course.id];
-                    navigate(route);
-                    window.scrollTo(0, 0);
-                  }}
                   >
                     {course.featured && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -138,9 +118,32 @@ export default function ChooseCourse() {
                       </p>
 
                       {course.available ? (
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-                          <span className="text-sm text-slate-400 font-medium">Learn More</span>
-                          <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+                        <div className="flex flex-col gap-3 pt-4 border-t border-slate-800">
+                          <button
+                            onClick={() => {
+                              navigate(`/teachers?subject=${course.subjectFilter}`);
+                              window.scrollTo(0, 0);
+                            }}
+                            className={`w-full px-6 py-3 bg-gradient-to-r ${course.gradient} hover:opacity-90 text-white rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl group/btn`}
+                          >
+                            <span>Book Now</span>
+                            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              const routeMap: Record<string, string> = {
+                                'quran-understanding': '/course/quran-understanding',
+                                'arabic-language': '/course/arabic-language',
+                                'islamic-studies': '/courses/islamic-studies'
+                              };
+                              const route = routeMap[course.id];
+                              navigate(route);
+                              window.scrollTo(0, 0);
+                            }}
+                            className="w-full px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-medium transition-all duration-300 border border-slate-700"
+                          >
+                            Learn More
+                          </button>
                         </div>
                       ) : (
                         <div className="pt-4 border-t border-slate-800">

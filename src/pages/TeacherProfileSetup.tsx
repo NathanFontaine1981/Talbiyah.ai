@@ -23,6 +23,7 @@ export default function TeacherProfileSetup() {
 
   useEffect(() => {
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadProfile() {
@@ -105,13 +106,16 @@ export default function TeacherProfileSetup() {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      // Round hourly rate to 2 decimal places to avoid floating-point precision issues
+      const hourlyRateRounded = Math.round(parseFloat(formData.hourly_rate) * 100) / 100;
+
       if (existingTeacher) {
         const { error: teacherError } = await supabase
           .from('teacher_profiles')
           .update({
             bio: formData.bio || null,
             education_level: formData.education_level || null,
-            hourly_rate: parseFloat(formData.hourly_rate),
+            hourly_rate: hourlyRateRounded,
             status: 'pending_approval',
           })
           .eq('user_id', user.id);
@@ -124,7 +128,7 @@ export default function TeacherProfileSetup() {
             user_id: user.id,
             bio: formData.bio || null,
             education_level: formData.education_level || null,
-            hourly_rate: parseFloat(formData.hourly_rate),
+            hourly_rate: hourlyRateRounded,
             status: 'pending_approval',
           });
 

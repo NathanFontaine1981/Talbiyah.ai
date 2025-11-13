@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Insights Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .prose { max-width: none; }
+        .prose h1 { @apply text-3xl font-bold mt-8 mb-4; }
+        .prose h2 { @apply text-2xl font-semibold mt-6 mb-3; }
+        .prose h3 { @apply text-xl font-semibold mt-5 mb-2; }
+        .prose p { @apply mb-4 leading-relaxed; }
+        .prose ul { @apply list-disc list-inside mb-4 space-y-2; }
+        .prose ol { @apply list-decimal list-inside mb-4 space-y-2; }
+        .prose table { @apply w-full border-collapse mb-6; }
+        .prose th { @apply bg-gray-100 border border-gray-300 px-4 py-2 text-left font-semibold; }
+        .prose td { @apply border border-gray-300 px-4 py-2; }
+        .prose blockquote { @apply border-l-4 border-gray-300 pl-4 italic my-4; }
+        .prose strong { @apply font-semibold text-gray-900; }
+        .prose code { @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 min-h-screen">
+    <div class="max-w-5xl mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 mb-8 text-white shadow-xl">
+            <div class="flex items-center space-x-3 mb-4">
+                <span class="text-4xl">🕌</span>
+                <h1 class="text-3xl font-bold">Talbiyah Insights Preview</h1>
+            </div>
+            <p class="text-emerald-100">Test insights generated from lesson transcripts</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex space-x-4 mb-6">
+            <button onclick="showInsight('quran')" id="btn-quran" class="px-6 py-3 bg-white rounded-lg font-semibold shadow-md hover:shadow-lg transition">
+                🕌 Quran Understanding
+            </button>
+            <button onclick="showInsight('arabic')" id="btn-arabic" class="px-6 py-3 bg-white rounded-lg font-semibold shadow-md hover:shadow-lg transition">
+                📚 Arabic Language
+            </button>
+        </div>
+
+        <!-- Quran Insight -->
+        <div id="insight-quran" class="bg-white rounded-2xl shadow-xl p-8 prose prose-sm max-w-none" style="display:none;">
+            <div id="quran-content"></div>
+        </div>
+
+        <!-- Arabic Insight -->
+        <div id="insight-arabic" class="bg-white rounded-2xl shadow-xl p-8 prose prose-sm max-w-none" style="display:none;">
+            <div id="arabic-content"></div>
+        </div>
+
+        <!-- Loading Message -->
+        <div id="loading" class="bg-white rounded-2xl shadow-xl p-12 text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            <p class="mt-4 text-gray-600">Loading insights...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        let currentInsight = null;
+
+        // Load insights
+        fetch('./test-data/QURAN_UNDERSTANDING_INSIGHT_EXAMPLE.md')
+            .then(res => res.text())
+            .then(content => {
+                document.getElementById('quran-content').innerHTML = marked.parse(content);
+                document.getElementById('loading').style.display = 'none';
+                showInsight('quran');
+            })
+            .catch(err => console.error('Error loading Quran insight:', err));
+
+        fetch('./test-data/ARABIC_LANGUAGE_INSIGHT_EXAMPLE.md')
+            .then(res => res.text())
+            .then(content => {
+                document.getElementById('arabic-content').innerHTML = marked.parse(content);
+            })
+            .catch(err => console.error('Error loading Arabic insight:', err));
+
+        function showInsight(type) {
+            // Hide all
+            document.getElementById('insight-quran').style.display = 'none';
+            document.getElementById('insight-arabic').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+
+            // Reset button styles
+            document.getElementById('btn-quran').className = 'px-6 py-3 bg-white rounded-lg font-semibold shadow-md hover:shadow-lg transition';
+            document.getElementById('btn-arabic').className = 'px-6 py-3 bg-white rounded-lg font-semibold shadow-md hover:shadow-lg transition';
+
+            // Show selected and highlight button
+            if (type === 'quran') {
+                document.getElementById('insight-quran').style.display = 'block';
+                document.getElementById('btn-quran').className = 'px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold shadow-lg transition';
+            } else {
+                document.getElementById('insight-arabic').style.display = 'block';
+                document.getElementById('btn-arabic').className = 'px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold shadow-lg transition';
+            }
+
+            currentInsight = type;
+        }
+    </script>
+</body>
+</html>

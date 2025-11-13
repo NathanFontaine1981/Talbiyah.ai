@@ -4,26 +4,6 @@ import { BookOpen, Upload, User, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
 
-interface UserProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  date_of_birth: string | null;
-  location: string | null;
-  timezone: string | null;
-  gender: string | null;
-  avatar_url: string | null;
-  roles: string[];
-}
-
-interface TeacherProfile {
-  bio: string | null;
-  education_level: string | null;
-  islamic_learning_interests: string[];
-  hourly_rate: number | null;
-  video_intro_url: string | null;
-}
-
 export default function AccountSettings() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -86,6 +66,7 @@ export default function AccountSettings() {
 
   useEffect(() => {
     loadUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadUserData() {
@@ -346,12 +327,17 @@ export default function AccountSettings() {
         }
       }
 
+      // Round hourly rate to 2 decimal places to avoid floating-point precision issues
+      const hourlyRateRounded = teacherData.hourly_rate
+        ? Math.round(parseFloat(teacherData.hourly_rate) * 100) / 100
+        : null;
+
       const { error: updateError } = await supabase
         .from('teacher_profiles')
         .update({
           education_level: teacherData.education_level || null,
           islamic_learning_interests: selectedInterests,
-          hourly_rate: teacherData.hourly_rate ? parseFloat(teacherData.hourly_rate) : null,
+          hourly_rate: hourlyRateRounded,
           video_intro_url: videoIntroUrl
         })
         .eq('user_id', user.id);

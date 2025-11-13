@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Check, Star, Calendar as CalendarIcon, Clock, User, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, Check, Star, Clock, User, ShoppingCart } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
+import { X } from 'lucide-react';
 import TalbiyahBot from '../components/TalbiyahBot';
 import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, setMinutes } from 'date-fns';
 
@@ -29,7 +30,7 @@ interface Subject {
 export default function BookSession() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToCart, cartItems, totalPrice, discount, finalPrice } = useCart();
+  const { addToCart, removeFromCart, clearCart, cartItems, totalPrice, discount, finalPrice } = useCart();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [subject, setSubject] = useState<Subject | null>(null);
@@ -39,6 +40,7 @@ export default function BookSession() {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
 
@@ -46,23 +48,26 @@ export default function BookSession() {
 
   useEffect(() => {
     loadSubject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectId]);
 
   useEffect(() => {
     if (currentStep === 2) {
       loadTeachers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, subjectId]);
 
   useEffect(() => {
     if (currentStep === 3 && selectedTeacher) {
       loadAvailability();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, selectedTeacher, duration, selectedWeek]);
 
   async function loadSubject() {
     if (!subjectId) {
-      navigate('/choose-course');
+      navigate('/subjects');
       return;
     }
 
@@ -78,7 +83,7 @@ export default function BookSession() {
       setCurrentStep(2);
     } catch (error) {
       console.error('Error loading subject:', error);
-      navigate('/choose-course');
+      navigate('/subjects');
     } finally {
       setLoading(false);
     }
@@ -123,29 +128,66 @@ export default function BookSession() {
   }
 
   async function loadAvailability() {
-    if (!selectedTeacher) return;
+    if (!selectedTeacher || !subject) return;
 
-    const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
-    const slots: TimeSlot[] = [];
+    setLoadingSlots(true);
+    try {
+      const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+      const weekEnd = addDays(weekStart, 6);
 
-    for (let day = 0; day < 7; day++) {
-      const currentDay = addDays(weekStart, day);
-
-      for (let hour = 9; hour < 18; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const slotTime = setMinutes(setHours(currentDay, hour), minute);
-
-          if (slotTime < new Date()) continue;
-
-          slots.push({
-            time: slotTime,
-            available: Math.random() > 0.3
-          });
-        }
+      // Get auth session for API call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No active session');
+        setTimeSlots([]);
+        return;
       }
-    }
 
-    setTimeSlots(slots);
+      // Call the edge function to get available slots
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-available-slots?` +
+        `from=${format(weekStart, 'yyyy-MM-dd')}&` +
+        `to=${format(weekEnd, 'yyyy-MM-dd')}&` +
+        `teacher_id=${selectedTeacher.user_id}&` +
+        `subject=${subject.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch availability');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.slots) {
+        console.error('Invalid response from availability API');
+        setTimeSlots([]);
+        return;
+      }
+
+      // Filter slots by selected duration and convert to TimeSlot format
+      const filteredSlots = data.slots
+        .filter((slot: any) => slot.duration === duration)
+        .map((slot: any) => {
+          const slotDate = new Date(`${slot.date}T${slot.time}`);
+          return {
+            time: slotDate,
+            available: true
+          };
+        });
+
+      setTimeSlots(filteredSlots);
+    } catch (error) {
+      console.error('Error loading availability:', error);
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
   }
 
   function handleSelectTeacher(teacher: Teacher) {
@@ -156,21 +198,32 @@ export default function BookSession() {
   async function handleSelectTimeSlot(slot: TimeSlot) {
     if (!slot.available || !selectedTeacher || !subject) return;
 
-    const price = duration === 30 ? 7.50 : 15.00;
+    // Check if this slot is already in the cart
+    const existingCartItem = cartItems.find(item =>
+      new Date(item.scheduled_time).getTime() === slot.time.getTime()
+    );
 
     try {
-      await addToCart({
-        teacher_id: selectedTeacher.id,
-        teacher_name: selectedTeacher.full_name,
-        subject_id: subject.id,
-        subject_name: subject.name,
-        scheduled_time: slot.time.toISOString(),
-        duration_minutes: duration,
-        price
-      });
+      if (existingCartItem) {
+        // Remove from cart if already added
+        await removeFromCart(existingCartItem.id);
+      } else {
+        // Add to cart if not already there
+        const price = duration === 30 ? 7.50 : 15.00;
+
+        await addToCart({
+          teacher_id: selectedTeacher.id,
+          teacher_name: selectedTeacher.full_name,
+          subject_id: subject.id,
+          subject_name: subject.name,
+          scheduled_time: slot.time.toISOString(),
+          duration_minutes: duration,
+          price
+        });
+      }
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Failed to add session to cart. Please try again.');
+      console.error('Error updating cart:', error);
+      alert('Failed to update cart. Please try again.');
     }
   }
 
@@ -187,9 +240,9 @@ export default function BookSession() {
   }
 
   const steps = [
-    { number: 1, label: 'Subject', completed: currentStep > 1 },
-    { number: 2, label: 'Choose Teacher', completed: currentStep > 2 },
-    { number: 3, label: 'Session & Payment', completed: false }
+    { number: 1, label: 'Choose Teacher', completed: currentStep > 2 },
+    { number: 2, label: 'Time & Duration', completed: currentStep > 3 },
+    { number: 3, label: 'Review & Payment', completed: false }
   ];
 
   const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
@@ -214,7 +267,7 @@ export default function BookSession() {
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => currentStep > 2 ? setCurrentStep(2) : navigate('/choose-course')}
+              onClick={() => currentStep > 2 ? setCurrentStep(2) : navigate('/subjects')}
               className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -229,6 +282,16 @@ export default function BookSession() {
       </header>
 
       <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
+        {/* Subject Header */}
+        {subject && (
+          <div className="mb-6 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl p-4 border border-cyan-500/30">
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-slate-400 text-sm">Booking:</span>
+              <span className="text-cyan-400 font-bold text-lg">{subject.name}</span>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-4">
             {steps.map((step, index) => (
@@ -265,8 +328,8 @@ export default function BookSession() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+        <div className={`grid grid-cols-1 gap-8 ${currentStep === 3 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
+          <div className={currentStep === 3 ? 'lg:col-span-3' : 'lg:col-span-2'}>
             {currentStep === 1 && subject && (
               <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
                 <h2 className="text-2xl font-bold text-white mb-4">Selected Subject</h2>
@@ -327,99 +390,136 @@ export default function BookSession() {
 
             {currentStep === 3 && selectedTeacher && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
-                  <h2 className="text-2xl font-bold text-white mb-6">Session Duration</h2>
+                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50">
+                  <h2 className="text-xl font-bold text-white mb-4">Session Duration</h2>
 
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => setDuration(30)}
-                      className={`p-6 rounded-xl border-2 transition ${
+                      className={`p-4 rounded-xl border-2 transition ${
                         duration === 30
                           ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
                           : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
                       }`}
                     >
-                      <Clock className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-lg font-semibold">30 Minutes</p>
-                      <p className="text-2xl font-bold mt-2">£7.50</p>
+                      <Clock className="w-6 h-6 mx-auto mb-2" />
+                      <p className="text-base font-semibold">30 Minutes</p>
+                      <p className="text-xl font-bold mt-1">£7.50</p>
+                      <p className="text-xs text-slate-500 mt-2">30-min slots</p>
                     </button>
 
                     <button
                       onClick={() => setDuration(60)}
-                      className={`p-6 rounded-xl border-2 transition ${
+                      className={`p-4 rounded-xl border-2 transition ${
                         duration === 60
                           ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
                           : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
                       }`}
                     >
-                      <Clock className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-lg font-semibold">60 Minutes</p>
-                      <p className="text-2xl font-bold mt-2">£15.00</p>
+                      <Clock className="w-6 h-6 mx-auto mb-2" />
+                      <p className="text-base font-semibold">60 Minutes</p>
+                      <p className="text-xl font-bold mt-1">£15.00</p>
+                      <p className="text-xs text-slate-500 mt-2">Hourly slots</p>
                     </button>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+                    <p className="text-xs text-slate-400">
+                      {duration === 30
+                        ? '⏱️ Showing 30-minute intervals (9:00, 9:30, 10:00...)'
+                        : '⏱️ Showing hourly intervals (9:00, 10:00, 11:00...)'}
+                    </p>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white">Select Time Slot</h2>
+                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-white">Select Time Slots</h2>
 
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
-                        className="p-2 text-slate-400 hover:text-cyan-400 transition"
+                        className="p-1.5 text-slate-400 hover:text-cyan-400 transition"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4" />
                       </button>
-                      <span className="text-slate-300 font-medium">
+                      <span className="text-slate-300 font-medium text-sm">
                         {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
                       </span>
                       <button
                         onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
-                        className="p-2 text-slate-400 hover:text-cyan-400 transition"
+                        className="p-1.5 text-slate-400 hover:text-cyan-400 transition"
                       >
-                        <ChevronLeft className="w-5 h-5 rotate-180" />
+                        <ChevronLeft className="w-4 h-4 rotate-180" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2">
-                    {weekDays.map((day) => (
-                      <div key={day.toISOString()} className="text-center">
-                        <p className="text-xs text-slate-500 font-medium mb-2">
-                          {format(day, 'EEE')}
-                        </p>
-                        <p className="text-sm text-white font-semibold mb-3">
-                          {format(day, 'd')}
-                        </p>
-
-                        <div className="space-y-2">
-                          {timeSlots
-                            .filter((slot) => isSameDay(slot.time, day))
-                            .slice(0, 8)
-                            .map((slot, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => handleSelectTimeSlot(slot)}
-                                disabled={!slot.available}
-                                className={`w-full text-xs py-2 rounded transition ${
-                                  slot.available
-                                    ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30'
-                                    : 'bg-slate-800/30 text-slate-600 cursor-not-allowed'
-                                }`}
-                              >
-                                {format(slot.time, 'HH:mm')}
-                              </button>
-                            ))}
-                        </div>
+                  {loadingSlots ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-slate-400 text-sm">Loading available time slots...</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : timeSlots.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-slate-400 text-sm mb-2">No available slots for this week</p>
+                      <p className="text-slate-500 text-xs">Try selecting a different week or duration</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-7 gap-1">
+                      {weekDays.map((day) => {
+                        const daySlots = timeSlots.filter((slot) => isSameDay(slot.time, day)).slice(0, 10);
+
+                        return (
+                          <div key={day.toISOString()} className="text-center">
+                            <p className="text-[10px] text-slate-500 font-medium mb-1">
+                              {format(day, 'EEE')}
+                            </p>
+                            <p className="text-xs text-white font-semibold mb-2">
+                              {format(day, 'd')}
+                            </p>
+
+                            <div className="space-y-1">
+                              {daySlots.length === 0 ? (
+                                <p className="text-[10px] text-slate-600 py-2">No slots</p>
+                              ) : (
+                                daySlots.map((slot, idx) => {
+                                  const isInCart = cartItems.some(item =>
+                                    new Date(item.scheduled_time).getTime() === slot.time.getTime()
+                                  );
+
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => handleSelectTimeSlot(slot)}
+                                      disabled={!slot.available}
+                                      className={`w-full text-[10px] py-1.5 px-1 rounded transition ${
+                                        isInCart
+                                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 font-semibold'
+                                          : slot.available
+                                          ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30'
+                                          : 'bg-slate-800/30 text-slate-600 cursor-not-allowed'
+                                      }`}
+                                    >
+                                      {format(slot.time, 'HH:mm')}
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className={currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-1'}>
             <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 sticky top-24">
               <div className="flex items-center space-x-2 mb-6">
                 <ShoppingCart className="w-5 h-5 text-cyan-400" />
@@ -438,9 +538,16 @@ export default function BookSession() {
                     {cartItems.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
+                        className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 relative group"
                       >
-                        <p className="text-sm font-semibold text-white mb-1">{item.subject_name}</p>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded text-red-400 opacity-0 group-hover:opacity-100 transition"
+                          title="Remove from cart"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                        <p className="text-sm font-semibold text-white mb-1 pr-6">{item.subject_name}</p>
                         <p className="text-xs text-slate-400 mb-2">with {item.teacher_name}</p>
                         <div className="flex items-center justify-between text-xs">
                           <div className="text-slate-400">
@@ -505,12 +612,25 @@ export default function BookSession() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleCheckout}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
-                  >
-                    Proceed to Checkout
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to clear all items from your cart?')) {
+                          clearCart();
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition text-sm font-medium"
+                    >
+                      Clear Cart
+                    </button>
+
+                    <button
+                      onClick={handleCheckout}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
+                    >
+                      Proceed to Checkout
+                    </button>
+                  </div>
                 </>
               )}
             </div>

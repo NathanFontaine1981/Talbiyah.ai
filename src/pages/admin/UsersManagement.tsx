@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, UserPlus, Shield, AlertTriangle, Users as UsersIcon, GraduationCap, User } from 'lucide-react';
+import { Search, Filter, Shield, AlertTriangle, Users as UsersIcon, GraduationCap, User } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 interface UserProfile {
@@ -7,7 +7,6 @@ interface UserProfile {
   full_name: string;
   email: string;
   roles: string[];
-  is_admin: boolean;
   created_at: string;
   avatar_url: string | null;
 }
@@ -31,20 +30,24 @@ export default function UsersManagement() {
   async function fetchUsers() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch profiles with email
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, roles, is_admin, created_at, avatar_url')
+        .select('id, full_name, email, roles, created_at, avatar_url')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
-      const usersData = data?.map(user => ({
+      const usersData = profilesData?.map(user => ({
         id: user.id,
         full_name: user.full_name || 'Unknown User',
         email: user.email || 'No email',
         roles: user.roles || ['student'],
-        is_admin: user.is_admin || false,
-        created_at: user.created_at,
+        created_at: user.created_at || new Date().toISOString(),
         avatar_url: user.avatar_url,
       })) || [];
 
@@ -194,7 +197,7 @@ export default function UsersManagement() {
             <Filter className="w-5 h-5 text-slate-400" />
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as any)}
+              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'teacher' | 'student')}
               className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             >
               <option value="all">All Roles</option>

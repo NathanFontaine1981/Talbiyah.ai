@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { SURAHS_DATA, TOTAL_AYAHS, SURAH_AYAH_COUNTS, calculateOverallProgress } from '../lib/quranData';
+import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
 import TalbiyahBot from '../components/TalbiyahBot';
 
 interface AyahProgress {
@@ -32,6 +32,7 @@ export default function QuranProgress() {
 
   useEffect(() => {
     loadProgress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadProgress() {
@@ -42,23 +43,133 @@ export default function QuranProgress() {
         return;
       }
 
-      const { data: learner } = await supabase
+      console.log('=== QURAN PROGRESS TRACKER DEBUG ===');
+      console.log('Current User ID:', user.id);
+
+      // Try multiple ways to find the learner:
+      // 1. Check if current user is a parent and has a learner record (student case)
+      let learner = null;
+
+      const { data: learnerAsParent } = await supabase
         .from('learners')
         .select('id')
         .eq('parent_id', user.id)
         .maybeSingle();
 
-      if (!learner) {
-        setLoading(false);
-        return;
+      if (learnerAsParent) {
+        learner = learnerAsParent;
+        console.log('Found learner as parent (student account):', learner.id);
       }
 
-      setLearnerId(learner.id);
+      // 2. If not found, check if there's a profile with linked_parent_id (child with full account)
+      if (!learner) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('linked_parent_id')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      const { data: ayahProgressData } = await supabase
-        .from('ayah_progress')
-        .select('*')
-        .eq('learner_id', learner.id);
+        if (profile?.linked_parent_id) {
+          // This is a child with a full account - find their learner record
+          const { data: childLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', user.id)
+            .maybeSingle();
+
+          if (childLearner) {
+            learner = childLearner;
+            console.log('Found learner as child with full account:', learner.id);
+          }
+        }
+      }
+
+      // 3. If still not found, check parent_children table (lightweight child case)
+      if (!learner) {
+        const { data: parentChild } = await supabase
+          .from('parent_children')
+          .select('id, child_name, child_age, child_gender')
+          .eq('account_id', user.id)
+          .maybeSingle();
+
+        if (parentChild) {
+          // Create or find learner for this lightweight child
+          const { data: existingLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', user.id)
+            .maybeSingle();
+
+          if (existingLearner) {
+            learner = existingLearner;
+            console.log('Found existing learner for lightweight child:', learner.id);
+          } else {
+            // Create new learner record
+            const { data: newLearner } = await supabase
+              .from('learners')
+              .insert({
+                parent_id: user.id,
+                name: parentChild.child_name,
+                age: parentChild.child_age,
+                gender: parentChild.child_gender,
+                gamification_points: 0
+              })
+              .select('id')
+              .single();
+
+            if (newLearner) {
+              learner = newLearner;
+              console.log('Created new learner for lightweight child:', learner.id);
+            }
+          }
+        }
+      }
+
+      if (!learner) {
+        console.log('No learner found for this user - creating default learner');
+
+        // Last resort: Create a default learner for this user
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const { data: newLearner, error: createError } = await supabase
+          .from('learners')
+          .insert({
+            parent_id: user.id,
+            name: userProfile?.full_name || 'Student',
+            gamification_points: 0
+          })
+          .select('id')
+          .single();
+
+        if (newLearner) {
+          learner = newLearner;
+          console.log('Created default learner:', learner.id);
+        } else {
+          console.log('Failed to create learner:', createError);
+          // Continue anyway and load Surahs in read-only mode
+        }
+      }
+
+      // Load Surahs data regardless of learner status
+      let ayahProgressData: any[] = [];
+
+      if (learner) {
+        console.log('Final Learner ID:', learner.id);
+        setLearnerId(learner.id);
+
+        const { data: progressData } = await supabase
+          .from('ayah_progress')
+          .select('*')
+          .eq('learner_id', learner.id);
+
+        ayahProgressData = progressData || [];
+      } else {
+        console.log('No learner - showing Surahs in read-only mode');
+      }
 
       const surahsWithProgress: SurahProgress[] = SURAHS_DATA.map(surah => {
         const ayahs: AyahProgress[] = [];
@@ -88,7 +199,18 @@ export default function QuranProgress() {
         };
       });
 
+      console.log('Setting surahs array with', surahsWithProgress.length, 'surahs');
       setSurahs(surahsWithProgress);
+
+      const completedSurahs = surahsWithProgress.filter(surah =>
+        surah.ayahs.length > 0 &&
+        surah.ayahs.every(ayah => ayah.understanding && ayah.fluency && ayah.memorization)
+      ).length;
+
+      console.log('Total Surahs:', surahsWithProgress.length);
+      console.log('Ayah Progress Records:', ayahProgressData?.length || 0);
+      console.log('Completed Surahs (all 3 criteria):', completedSurahs);
+      console.log('===================================');
     } catch (error) {
       console.error('Error loading progress:', error);
     } finally {
@@ -171,6 +293,13 @@ export default function QuranProgress() {
     sum + surah.ayahs.filter(a => a.fluency).length, 0
   );
 
+  const completedSurahs = surahs.filter(surah =>
+    surah.ayahs.length > 0 &&
+    surah.ayahs.every(ayah => ayah.understanding && ayah.fluency && ayah.memorization)
+  ).length;
+
+  const totalSurahs = surahs.length;
+
   const overallProgress = calculateOverallProgress(totalAyahsMemorized);
 
   if (loading) {
@@ -211,7 +340,16 @@ export default function QuranProgress() {
         <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl mb-8">
           <h2 className="text-2xl font-bold text-white mb-6">Overall Progress</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-6 border border-purple-500/50">
+              <div className="flex items-center justify-between mb-2">
+                <Book className="w-8 h-8 text-purple-400" />
+              </div>
+              <p className="text-4xl font-bold text-purple-400 mb-1">{completedSurahs}</p>
+              <p className="text-sm text-purple-300 font-semibold">of {totalSurahs} Surahs</p>
+              <p className="text-xs text-purple-400/70 mt-1">Fully Completed</p>
+            </div>
+
             <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
               <div className="flex items-center justify-between mb-2">
                 <BookOpen className="w-8 h-8 text-slate-400" />

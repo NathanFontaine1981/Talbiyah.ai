@@ -110,7 +110,7 @@ export default function DashboardHeaderWidget() {
             </div>
 
             <div className="min-h-[60px] flex items-center justify-center text-center">
-              {carouselType === 'names' && 'arabic' in currentContent && (
+              {carouselType === 'names' && 'arabic' in currentContent && 'transliteration' in currentContent && 'meaning' in currentContent && (
                 <div>
                   <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
                   <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>

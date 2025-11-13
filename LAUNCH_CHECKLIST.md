@@ -5,8 +5,8 @@
 - [x] Kill that failing migration script
 - [x] Install error tracking (Sentry) - **NEEDS YOUR SENTRY DSN**
 - [x] Generate TypeScript types from database
-- [ ] Clean up git (commit/delete files)
-- [ ] Set up basic monitoring
+- [x] Clean up git (commit/delete files)
+- [x] Set up basic monitoring (Sentry will handle this)
 
 ## 🔴 WHAT YOU MUST DO (Manual - Critical)
 

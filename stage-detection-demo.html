@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson Stage Detection Demo - Talbiyah.ai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Lesson Stage Detection Demo</h1>
+            <p class="text-gray-600">
+                This system automatically analyzes Quran lesson transcripts to determine which learning stage
+                (Understanding, Fluency, or Memorization) the lesson focuses on.
+            </p>
+        </div>
+
+        <!-- Example Transcripts -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Sample Transcripts</h2>
+            <div class="space-y-3">
+                <button onclick="loadSample('understanding')" class="w-full text-left px-4 py-3 rounded-lg border-2 border-blue-200 bg-blue-50 hover:border-blue-300 transition-all">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-blue-900">📖 Understanding (Tadabbur) Example</span>
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </button>
+                <button onclick="loadSample('fluency')" class="w-full text-left px-4 py-3 rounded-lg border-2 border-emerald-200 bg-emerald-50 hover:border-emerald-300 transition-all">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-emerald-900">🎵 Fluency (Tajweed) Example</span>
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </button>
+                <button onclick="loadSample('memorization')" class="w-full text-left px-4 py-3 rounded-lg border-2 border-purple-200 bg-purple-50 hover:border-purple-300 transition-all">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-purple-900">🧠 Memorization (Hifz) Example</span>
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <label class="block text-sm font-medium text-gray-900 mb-2">Lesson Transcript</label>
+            <textarea
+                id="transcript-input"
+                class="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono text-sm"
+                placeholder="Paste or type a lesson transcript here..."
+            ></textarea>
+            <button
+                onclick="analyzeTranscript()"
+                id="analyze-btn"
+                class="mt-4 w-full bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Analyze Stage
+            </button>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-container" class="hidden bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Analysis Results</h2>
+            <div id="results-content"></div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-blue-900 mb-3">How It Works</h2>
+            <div class="text-sm text-blue-800 space-y-2">
+                <p><strong>Stage 1 - Understanding (Tadabbur):</strong> Focuses on meaning, translation, context, and lessons from the Quran. Keywords: "means", "teaches us", "tafsir", "context".</p>
+                <p><strong>Stage 2 - Fluency (Tajweed):</strong> Focuses on pronunciation, recitation practice, and correct articulation. Keywords: "pronounce", "read again", "tajweed", "makhraj".</p>
+                <p><strong>Stage 3 - Memorization (Hifz):</strong> Focuses on memorizing verses from memory without looking. Keywords: "from memory", "forgot", "what comes next", "without looking".</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://boyrjgivpepjiboekwuu.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJveXJqZ2l2cGVwamlib2Vrd3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjk3ODExMzUsImV4cCI6MjA0NTM1NzEzNX0.xA3HA2aUIa3IQFn3r9GCXPfkQDNn3pSMKnIW_ULBLfo';
+        const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+
+        const samples = {
+            understanding: `Teacher: Assalamu alaikum! Today we're going to understand Surah An-Nazi'at, verses 15-26. Let's start by reading the English translation together.
+
+Student: "Has there reached you the story of Musa? When his Lord called him in the sacred valley of Tuwa, 'Go to Pharaoh. Indeed, he has transgressed. And say to him, Would you purify yourself and let me guide you to your Lord so you would fear Him?'"
+
+Teacher: Excellent! Now, let's understand what this means. Allah is telling us the story of Prophet Musa, peace be upon him. Where did Allah call Musa?
+
+Student: In the Sacred Valley of Tuwa.
+
+Teacher: Exactly! This is where Musa received his prophethood. Now, what was Musa's mission? What did Allah tell him to do?
+
+Student: To go to Pharaoh because he had transgressed.
+
+Teacher: Very good! The word "transgressed" means he went beyond all limits - Pharaoh claimed to be a god. Can you imagine? Now, look at how gentle the approach is. Musa was told to say "Would you purify yourself?" This teaches us something important about dawah - inviting people to Islam. Even when someone is as evil as Pharaoh, we start with gentleness and wisdom.
+
+The verse says "let me guide you to your Lord so you would fear Him." What does this mean?
+
+Student: That Musa wanted to guide Pharaoh to worship Allah and have taqwa?
+
+Teacher: Exactly! Even Pharaoh was given a chance. This shows Allah's mercy and patience. Now, in the next verses, what happened?
+
+Student: "So he showed him the great sign, but he denied and disobeyed. Then he turned his back, striving."
+
+Teacher: Yes! Musa showed him the miracles - his staff turning into a snake, his hand glowing white. But what did Pharaoh do?
+
+Student: He denied and disobeyed.
+
+Teacher: Correct. And then what? "Then he gathered and called out, saying 'I am your lord, most high!'" Can you believe the arrogance? After seeing clear miracles, Pharaoh still claimed divinity. And what did Allah do?
+
+Student: "So Allah seized him with exemplary punishment for the last and the first transgression."
+
+Teacher: Exactly! This is a powerful lesson for us. The context here is that these verses were revealed to warn the Quraysh of Makkah who were denying the Prophet Muhammad, peace be upon him. Allah is saying: look what happened to Pharaoh who had more power than you, yet Allah destroyed him. So fear Allah and don't transgress.
+
+What's the main lesson we learn from this story?
+
+Student: That no matter how powerful someone is, if they transgress against Allah, they will be punished?
+
+Teacher: Excellent! And also that Allah gives chances - He sent Musa with a gentle message first. But when Pharaoh persisted in his arrogance, Allah's punishment came. This teaches us about Allah's mercy, His justice, and that we should never be arrogant. Even when we have power or wealth, we must remember that everything is from Allah.`,
+
+            fluency: `Teacher: Assalamu alaikum! Today we're going to practice reciting Surah Al-Fatiha with proper tajweed. Let's start with Bismillah.
+
+Student: Bismillah-ir-Rahman-ir-Rahim
+
+Teacher: Good, but you need to elongate the "Rahman" more. Remember, the madd - the elongation - should be held for two counts. Try again, and really stretch that "Raaaaaahman".
+
+Student: Bismillah-ir-Raaaaahman-ir-Rahim
+
+Teacher: Better! Now let's do the whole surah. Start from the beginning. Remember your ghunnah on the "n" sounds.
+
+Student: Bismillah-ir-Rahman-ir-Rahim, Alhamdu lillahi rabbil aalameen...
+
+Teacher: Stop, stop. The "lam" in "lillahi" - your tongue needs to touch the roof of your mouth properly. That's the makhraj of lam. Watch me: Lil-lahi. See how my tongue hits right there? Now you try.
+
+Student: Lil-lahi.
+
+Teacher: Good! Now continue from Alhamdu.
+
+Student: Alhamdu lillahi rabbil aalameen, Ar-Rahman-ir-Rahim, Maliki yawmid deen
+
+Teacher: Okay, let's pause. "Maliki" - you're not giving enough emphasis to the "k" sound. It's a qaf, not a kaf. From the back of the throat. Maaaaliki. Again.
+
+Student: Maaaaliki yawmid deen
+
+Teacher: Better! Now do it faster, but keep the pronunciation clear. Don't rush through it - speed with accuracy. Start from Alhamdu again.
+
+Student: Alhamdu lillahi rabbil aalameen, Ar-Rahman-ir-Rahim, Maliki yawmid deen, Iyyaka na'budu wa iyyaka nasta'een
+
+Teacher: Much better! But "nasta'een" needs more ghunnah - the nasal sound. Hold that "n" in your nose. Nastaaaaa'eeeeen. Again.
+
+Student: Nastaaaaa'eeeeen
+
+Teacher: Perfect! Keep going from the beginning one more time, and focus on connecting the words smoothly while keeping each letter clear. Don't forget your stopping points - pause slightly after each verse. Ready? Bismillah.
+
+Student: Bismillah-ir-Rahman-ir-Rahim, Alhamdu lillahi rabbil aalameen, Ar-Rahman-ir-Rahim, Maliki yawmid deen, Iyyaka na'budu wa iyyaka nasta'een, Ihdinas siratal mustaqeem...
+
+Teacher: Good! Siratal - give me a clean "s" sound at the start, not "th". Again.
+
+Student: Sssiratal mustaqeem
+
+Teacher: Excellent! Continue to the end.
+
+Student: Siratal latheena an'amta 'alayhim, ghayril maghdubi 'alayhim wa lad daaaaaalleen
+
+Teacher: Beautiful! That was much better. The only thing - "ghayril" needs to flow into "maghdubi" more smoothly. One more time, the last two verses. Read!
+
+Student: Siratal latheena an'amta 'alayhim, ghayril maghdubi 'alayhim wa lad daalleen
+
+Teacher: Alhamdulillah! That was excellent. Do you feel the difference when you pronounce each letter from its proper place?
+
+Student: Yes, it feels cleaner and more clear.
+
+Teacher: Exactly. Now, one more time from the top - faster this time but maintain accuracy. Go!`,
+
+            memorization: `Teacher: Assalamu alaikum! Today we're going to memorize Surah Al-Mulk, verses 1-5. Have you reviewed what we memorized last week?
+
+Student: Yes, I practiced it every day after Fajr.
+
+Teacher: Alhamdulillah! Let's check. Recite verses 1-2 from memory, without looking.
+
+Student: Tabarak allathee biyadihil mulk, wa huwa 'ala kulli shay'in qadeer, Allathee khalaqal mawta wal hayata liyabluwakum ayyukum ahsanu 'amala, wa huwal 'azeezul ghafoor
+
+Teacher: Masha'Allah, perfect! You remembered it exactly. Now, today we'll add verses 3-5. First, let me read it once, and you listen carefully.
+
+[Teacher reads]: "Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut, farji'il basara hal tara min futoor. Thummarji'il basara karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer."
+
+Now you read after me, line by line. Allathee khalaqa sab'a samawatin tibaaqa...
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa...
+
+Teacher: Good! Ma tara fee khalqir Rahmaani min tafaawut...
+
+Student: Ma tara fee khalqir Rahmaani min tafaawut...
+
+Teacher: Farji'il basara hal tara min futoor...
+
+Student: Farji'il basara hal tara min futoor...
+
+Teacher: Excellent! Now, the next verse. Thummarji'il basara karratayni...
+
+Student: Thummarji'il basara karratayni...
+
+Teacher: Yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Student: Yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Teacher: Good! Now, let's break it down for memorization. I'll say the first part three times, then you repeat it from memory. Allathee khalaqa sab'a samawatin tibaaqa. [Repeats 3 times]
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa.
+
+Teacher: Again, without looking!
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa.
+
+Teacher: Perfect! Now add the next part: ma tara fee khalqir Rahmaani min tafaawut. Say the whole thing from "Allathee khalaqa".
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut
+
+Teacher: Excellent! One more time from memory.
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut
+
+Teacher: Beautiful! Now add: farji'il basara hal tara min futoor. Say all three parts together from memory.
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut, farji'il basara hal tara min futoor
+
+Teacher: Masha'Allah! You're getting it quickly. Now the last part of verse 4: Thummarji'il basara karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer. This is a bit longer. Let's break it. First: Thummarji'il basara karratayni. Repeat 5 times.
+
+Student: [Repeats 5 times] Thummarji'il basara karratayni...
+
+Teacher: Good. Now add: yanqalib ilaykal basaru. From "Thummar".
+
+Student: Thummarji'il basara karratayni yanqalib ilaykal basaru...
+
+Teacher: Excellent! Now finish it: khaasi'an wa huwa haseer.
+
+Student: Thummarji'il basara karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Teacher: Perfect! Now, close your eyes and recite the entire new section - verses 3 and 4 - from memory. Start with "Allathee khalaqa".
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut, farji'il basara hal tara min futoor. Thummarji'il basara... what comes next?
+
+Teacher: Karratayni. Keep going.
+
+Student: Karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Teacher: Good! You almost had it. The only part you forgot was "karratayni" - that means "twice". Let's repeat that part 10 more times to lock it in your memory. Ready? Thummarji'il basara karratayni...
+
+Student: [Repeats 10 times]
+
+Teacher: Excellent! Now from the top - recite verses 3-4 completely from memory, without any help.
+
+Student: Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut, farji'il basara hal tara min futoor. Thummarji'il basara karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Teacher: Masha'Allah, perfect! Now before we finish, recite everything we've memorized so far - verses 1-4, from the beginning, from memory.
+
+Student: Tabarak allathee biyadihil mulk, wa huwa 'ala kulli shay'in qadeer, Allathee khalaqal mawta wal hayata liyabluwakum ayyukum ahsanu 'amala, wa huwal 'azeezul ghafoor. Allathee khalaqa sab'a samawatin tibaaqa, ma tara fee khalqir Rahmaani min tafaawut, farji'il basara hal tara min futoor. Thummarji'il basara karratayni yanqalib ilaykal basaru khaasi'an wa huwa haseer.
+
+Teacher: Alhamdulillah! Excellent work! For homework, I want you to recite this 10 times from memory every day. Next week we'll add verse 5. May Allah make it easy for you!`
+        };
+
+        function loadSample(stage) {
+            document.getElementById('transcript-input').value = samples[stage];
+            document.getElementById('transcript-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function analyzeTranscript() {
+            const transcript = document.getElementById('transcript-input').value.trim();
+
+            if (!transcript) {
+                alert('Please enter a transcript first');
+                return;
+            }
+
+            if (transcript.length < 50) {
+                alert('Transcript must be at least 50 characters long');
+                return;
+            }
+
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const resultsContent = document.getElementById('results-content');
+
+            // Show loading state
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+            resultsContainer.classList.add('hidden');
+
+            try {
+                // Call the Edge Function
+                const { data, error } = await supabase.functions.invoke('detect-lesson-stage', {
+                    body: {
+                        transcript: transcript,
+                        prompt: `You are analyzing a Quran lesson transcript to determine which learning stage it represents... [prompt will be filled by the function]`
+                    }
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                // Display results
+                displayResults(data);
+            } catch (error) {
+                console.error('Error:', error);
+                resultsContent.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800 font-medium">Error analyzing transcript:</p>
+                        <p class="text-red-600 text-sm mt-1">${error.message}</p>
+                    </div>
+                `;
+                resultsContainer.classList.remove('hidden');
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze Stage';
+            }
+        }
+
+        function displayResults(result) {
+            const stageColors = {
+                understanding: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', icon: '📖' },
+                fluency: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', icon: '🎵' },
+                memorization: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900', icon: '🧠' }
+            };
+
+            const stageNames = {
+                understanding: 'Understanding (Tadabbur)',
+                fluency: 'Fluency (Tajweed)',
+                memorization: 'Memorization (Hifz)'
+            };
+
+            const colors = stageColors[result.detected_stage];
+            const stageName = stageNames[result.detected_stage];
+            const confidencePercent = Math.round(result.confidence * 100);
+
+            let html = `
+                <!-- Primary Stage -->
+                <div class="${colors.bg} ${colors.border} border-2 rounded-lg p-6 mb-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="text-4xl">${colors.icon}</span>
+                        <div>
+                            <h3 class="${colors.text} text-2xl font-bold">${stageName}</h3>
+                            <p class="text-gray-600">Primary Stage • ${confidencePercent}% confidence</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage Breakdown -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Stage Breakdown</h3>
+                    <div class="space-y-3">
+                        ${Object.entries(result.stage_breakdown).map(([stage, value]) => {
+                            const percent = Math.round(value * 100);
+                            return `
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="font-medium text-gray-700">${stageNames[stage]}</span>
+                                        <span class="text-gray-600">${percent}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="${stageColors[stage].bg.replace('50', '500')} h-2 rounded-full" style="width: ${percent}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- Evidence -->
+                ${result.evidence && result.evidence.length > 0 ? `
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">Evidence from Transcript</h3>
+                        <ul class="space-y-2">
+                            ${result.evidence.map((quote, idx) => `
+                                <li class="flex items-start space-x-2">
+                                    <span class="text-emerald-600 font-bold">${idx + 1}.</span>
+                                    <span class="text-gray-700 italic">"${quote}"</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                ${result.mixed_stage && result.secondary_stage ? `
+                    <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <p class="text-amber-800 text-sm">
+                            <strong>Note:</strong> This lesson includes elements of ${stageNames[result.secondary_stage]} as a secondary focus.
+                        </p>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('results-content').innerHTML = html;
+            document.getElementById('results-container').classList.remove('hidden');
+            document.getElementById('results-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

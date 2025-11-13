@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Loader2, Mail, Calendar, User, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Check, X, Loader2, Mail, Calendar, User, Clock, CheckCircle, ChevronDown, ChevronUp, MapPin, Phone, Globe, GraduationCap, BookOpen, Video } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 interface TeacherApplication {
@@ -11,6 +11,14 @@ interface TeacherApplication {
   full_name: string;
   email: string;
   created_at: string;
+  phone_number: string | null;
+  location: string | null;
+  timezone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  education_level: string | null;
+  islamic_learning_interests: string[] | null;
+  video_intro_url: string | null;
 }
 
 export default function TeacherManagement() {
@@ -19,6 +27,7 @@ export default function TeacherManagement() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeachers();
@@ -27,39 +36,61 @@ export default function TeacherManagement() {
   async function fetchTeachers() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('teacher_profiles')
-        .select(`
-          id,
-          user_id,
-          bio,
-          hourly_rate,
-          status,
-          profiles!teacher_profiles_user_id_fkey (
-            full_name
-          )
-        `)
-        .order('id', { ascending: false });
 
-      if (error) {
-        console.error('Fetch error:', error);
-        throw error;
+      // Fetch teacher profiles
+      const { data: teacherProfilesData, error: teacherError } = await supabase
+        .from('teacher_profiles')
+        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_learning_interests, video_intro_url')
+        .order('created_at', { ascending: false });
+
+      if (teacherError) {
+        console.error('Fetch error:', teacherError);
+        throw teacherError;
       }
 
-      console.log('Raw data:', data);
+      if (!teacherProfilesData || teacherProfilesData.length === 0) {
+        setPendingApplications([]);
+        setApprovedTeachers([]);
+        setLoading(false);
+        return;
+      }
 
-      const formattedData = data?.map(teacher => ({
-        id: teacher.id,
-        user_id: teacher.user_id,
-        bio: teacher.bio,
-        hourly_rate: teacher.hourly_rate,
-        status: teacher.status,
-        created_at: new Date().toISOString(),
-        full_name: (teacher.profiles as any)?.full_name || 'Unknown',
-        email: 'N/A',
-      })) || [];
+      // Fetch corresponding profiles
+      const userIds = teacherProfilesData.map(tp => tp.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, phone_number, location, timezone, date_of_birth, gender')
+        .in('id', userIds);
 
-      console.log('Formatted data:', formattedData);
+      if (profilesError) {
+        console.error('Profiles fetch error:', profilesError);
+        throw profilesError;
+      }
+
+      // Create a map of user_id to profile data
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      const formattedData = teacherProfilesData?.map(teacher => {
+        const profile = profilesMap.get(teacher.user_id);
+        return {
+          id: teacher.id,
+          user_id: teacher.user_id,
+          bio: teacher.bio,
+          hourly_rate: teacher.hourly_rate,
+          status: teacher.status,
+          created_at: teacher.created_at,
+          education_level: teacher.education_level,
+          islamic_learning_interests: teacher.islamic_learning_interests,
+          video_intro_url: teacher.video_intro_url,
+          full_name: profile?.full_name || 'Unknown',
+          email: profile?.email || 'N/A',
+          phone_number: profile?.phone_number || null,
+          location: profile?.location || null,
+          timezone: profile?.timezone || null,
+          date_of_birth: profile?.date_of_birth || null,
+          gender: profile?.gender || null,
+        };
+      }) || [];
 
       setPendingApplications(formattedData.filter(t => t.status === 'pending_approval'));
       setApprovedTeachers(formattedData.filter(t => t.status === 'approved'));
@@ -80,38 +111,8 @@ export default function TeacherManagement() {
 
       if (updateError) throw updateError;
 
-      const availabilitySlots = [];
-      const days = [1, 2, 3, 4, 5];
-
-      for (let hour = 9; hour < 17; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          const endHour = minute === 30 ? hour + 1 : hour;
-          const endMinute = minute === 30 ? '00' : '30';
-          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute}`;
-
-          for (const day of days) {
-            availabilitySlots.push({
-              teacher_id: teacherId,
-              day_of_week: day,
-              start_time: startTime,
-              end_time: endTime,
-              is_available: true
-            });
-          }
-        }
-      }
-
-      const { error: availError } = await supabase
-        .from('teacher_availability')
-        .insert(availabilitySlots);
-
-      if (availError) {
-        console.warn('Could not create default availability:', availError);
-      }
-
       await fetchTeachers();
-      alert('Teacher approved successfully with default Mon-Fri 9AM-5PM availability!');
+      alert('Teacher approved successfully! They will need to set their availability before students can book.');
     } catch (error) {
       console.error('Error approving teacher:', error);
       alert('Failed to approve teacher. Please try again.');
@@ -140,83 +141,212 @@ export default function TeacherManagement() {
     }
   }
 
-  const TeacherCard = ({ teacher }: { teacher: TeacherApplication }) => (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
-            <User className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">{teacher.full_name}</h3>
-            <div className="flex items-center space-x-2 mt-1">
-              <Mail className="w-4 h-4 text-slate-400" />
-              <span className="text-sm text-slate-400">{teacher.email}</span>
+  const TeacherCard = ({ teacher }: { teacher: TeacherApplication }) => {
+    const isExpanded = expandedId === teacher.id;
+
+    return (
+      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden hover:border-slate-600 transition">
+        {/* Header - Always visible */}
+        <div
+          className="p-6 cursor-pointer"
+          onClick={() => setExpandedId(isExpanded ? null : teacher.id)}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4 flex-1">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <h3 className="text-lg font-semibold text-white">{teacher.full_name}</h3>
+                  {teacher.gender && (
+                    <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-400 rounded">
+                      {teacher.gender}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-4 text-sm">
+                  <span className="text-cyan-400 font-semibold">£{teacher.hourly_rate}/hr</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">Applied {new Date(teacher.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 ml-4">
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-400' :
+                teacher.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                'bg-red-500/20 text-red-400'
+              }`}>
+                {teacher.status === 'pending_approval' ? 'Pending' : teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
+              </div>
+              {isExpanded ? (
+                <ChevronUp className="w-5 h-5 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-slate-400" />
+              )}
             </div>
           </div>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-400' :
-          teacher.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-          'bg-red-500/20 text-red-400'
-        }`}>
-          {teacher.status === 'pending_approval' ? 'Pending' : teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
-        </div>
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <div className="px-6 pb-6 border-t border-slate-700">
+            <div className="pt-6 space-y-6">
+              {/* Contact Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+                  <Mail className="w-4 h-4 text-cyan-400" />
+                  <span>Contact Information</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Mail className="w-4 h-4 text-slate-500" />
+                    <span className="text-slate-400">Email:</span>
+                    <a href={`mailto:${teacher.email}`} className="text-cyan-400 hover:text-cyan-300">
+                      {teacher.email}
+                    </a>
+                  </div>
+                  {teacher.phone_number && (
+                    <div className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4 text-slate-500" />
+                      <span className="text-slate-400">Phone:</span>
+                      <span className="text-white">{teacher.phone_number}</span>
+                    </div>
+                  )}
+                  {teacher.location && (
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-slate-500" />
+                      <span className="text-slate-400">Location:</span>
+                      <span className="text-white">{teacher.location}</span>
+                    </div>
+                  )}
+                  {teacher.timezone && (
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-4 h-4 text-slate-500" />
+                      <span className="text-slate-400">Timezone:</span>
+                      <span className="text-white">{teacher.timezone}</span>
+                    </div>
+                  )}
+                  {teacher.date_of_birth && (
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-slate-500" />
+                      <span className="text-slate-400">Date of Birth:</span>
+                      <span className="text-white">{new Date(teacher.date_of_birth).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Education & Qualifications */}
+              <div>
+                <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+                  <GraduationCap className="w-4 h-4 text-cyan-400" />
+                  <span>Education & Qualifications</span>
+                </h4>
+                <div className="space-y-3 text-sm">
+                  {teacher.education_level && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-slate-400">Education Level:</span>
+                      <span className="text-white">{teacher.education_level}</span>
+                    </div>
+                  )}
+                  {teacher.islamic_learning_interests && teacher.islamic_learning_interests.length > 0 && (
+                    <div>
+                      <span className="text-slate-400 block mb-2">Teaching Subjects:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {teacher.islamic_learning_interests.map((subject, idx) => (
+                          <span key={idx} className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-full text-xs">
+                            {subject}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bio */}
+              {teacher.bio && (
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                    <span>About</span>
+                  </h4>
+                  <p className="text-sm text-slate-300 leading-relaxed">{teacher.bio}</p>
+                </div>
+              )}
+
+              {/* Video Introduction */}
+              {teacher.video_intro_url && (
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
+                    <Video className="w-4 h-4 text-cyan-400" />
+                    <span>Video Introduction</span>
+                  </h4>
+                  <video
+                    src={teacher.video_intro_url}
+                    controls
+                    className="w-full max-w-md rounded-lg bg-slate-900"
+                  />
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex space-x-3 pt-4 border-t border-slate-700">
+                <a
+                  href={`mailto:${teacher.email}`}
+                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Contact Teacher</span>
+                </a>
+
+                {teacher.status === 'pending_approval' && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApprove(teacher.id);
+                      }}
+                      disabled={processingId === teacher.id}
+                      className="flex-1 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      {processingId === teacher.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Approve</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(teacher.id);
+                      }}
+                      disabled={processingId === teacher.id}
+                      className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      {processingId === teacher.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          <span>Reject</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-400">Hourly Rate:</span>
-          <span className="text-white font-semibold">${teacher.hourly_rate}/hr</span>
-        </div>
-        <div className="flex items-center space-x-2 text-sm">
-          <Calendar className="w-4 h-4 text-slate-400" />
-          <span className="text-slate-400">Applied:</span>
-          <span className="text-white">{new Date(teacher.created_at).toLocaleDateString()}</span>
-        </div>
-      </div>
-
-      {teacher.bio && (
-        <div className="mb-4">
-          <p className="text-sm text-slate-400 mb-1">Bio:</p>
-          <p className="text-sm text-slate-300">{teacher.bio.substring(0, 150)}...</p>
-        </div>
-      )}
-
-      {teacher.status === 'pending_approval' && (
-        <div className="flex space-x-3 mt-4 pt-4 border-t border-slate-700">
-          <button
-            onClick={() => handleApprove(teacher.id)}
-            disabled={processingId === teacher.id}
-            className="flex-1 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
-          >
-            {processingId === teacher.id ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Check className="w-4 h-4" />
-                <span>Approve</span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => handleReject(teacher.id)}
-            disabled={processingId === teacher.id}
-            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
-          >
-            {processingId === teacher.id ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <X className="w-4 h-4" />
-                <span>Reject</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -271,7 +401,7 @@ export default function TeacherManagement() {
               <p className="text-slate-400">No pending applications at this time</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
               {pendingApplications.map(teacher => (
                 <TeacherCard key={teacher.id} teacher={teacher} />
               ))}
@@ -289,7 +419,7 @@ export default function TeacherManagement() {
               <p className="text-slate-400">No approved teachers yet</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
               {approvedTeachers.map(teacher => (
                 <TeacherCard key={teacher.id} teacher={teacher} />
               ))}

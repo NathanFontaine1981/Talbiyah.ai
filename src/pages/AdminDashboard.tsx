@@ -9,25 +9,23 @@ import {
   Users,
   GraduationCap,
   Video,
-  DollarSign,
   Settings,
   TrendingUp,
   Calendar,
-  FileText,
-  ChevronLeft
+  ChevronLeft,
+  Award
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
-  is_admin?: boolean;
+  roles?: string[];
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,7 +34,9 @@ export default function AdminDashboard() {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', exact: true },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: GraduationCap, label: 'Teachers', path: '/admin/teachers' },
+    { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
     { icon: Calendar, label: 'Sessions', path: '/admin/sessions' },
+    { icon: Users, label: 'Group Sessions', path: '/admin/group-sessions' },
     { icon: BookOpen, label: 'Courses', path: '/admin/courses' },
     { icon: Video, label: 'Recordings', path: '/admin/recordings' },
     { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
@@ -45,6 +45,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     checkAdminAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function checkAdminAccess() {
@@ -54,17 +55,16 @@ export default function AdminDashboard() {
         navigate('/');
         return;
       }
-      setUser(user);
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, is_admin')
+        .select('full_name, avatar_url, roles')
         .eq('id', user.id)
         .single();
 
       setProfile(profileData);
 
-      if (!profileData?.is_admin) {
+      if (!profileData?.roles || !profileData.roles.includes('admin')) {
         navigate('/dashboard');
         return;
       }

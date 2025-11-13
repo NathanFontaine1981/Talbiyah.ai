@@ -13,45 +13,124 @@ interface PrayerTimesWidgetProps {
 
 export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesWidgetProps) {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
-  const [location, setLocation] = useState('Loading...');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [location, setLocation] = useState('Detecting location...');
+  const [locationPermission, setLocationPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    fetchPrayerTimes();
-
-    return () => clearInterval(timer);
+    requestLocationAndFetchPrayers();
   }, []);
 
-  async function fetchPrayerTimes() {
-    setLocation('London, UK');
+  async function requestLocationAndFetchPrayers() {
+    // Check if geolocation is available
+    if (!navigator.geolocation) {
+      setLocation('London, UK (default)');
+      fetchPrayerTimesForCoordinates(51.5074, -0.1278); // London fallback
+      return;
+    }
 
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    // Request location permission
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        setLocationPermission('granted');
+        const { latitude, longitude } = position.coords;
 
-    const times = [
-      { name: 'Fajr', time: '05:45', isPassed: false },
-      { name: 'Dhuhr', time: '12:15', isPassed: false },
-      { name: 'Asr', time: '14:30', isPassed: false },
-      { name: 'Maghrib', time: '16:45', isPassed: false },
-      { name: 'Isha', time: '18:30', isPassed: false },
-    ];
+        // Get city name from reverse geocoding
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || 'Your location';
+          const country = data.address?.country || '';
+          setLocation(`${city}${country ? ', ' + country : ''}`);
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          setLocation('Your location');
+        }
 
-    const updatedTimes = times.map(prayer => {
-      const [hours, minutes] = prayer.time.split(':').map(Number);
-      const prayerTimeInMinutes = hours * 60 + minutes;
-      return {
-        ...prayer,
-        isPassed: currentTimeInMinutes > prayerTimeInMinutes
-      };
-    });
+        // Fetch prayer times for this location
+        await fetchPrayerTimesForCoordinates(latitude, longitude);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationPermission('denied');
+        setLocation('London, UK (default)');
+        fetchPrayerTimesForCoordinates(51.5074, -0.1278); // London fallback
+      }
+    );
+  }
 
-    setPrayerTimes(updatedTimes);
+  async function fetchPrayerTimesForCoordinates(latitude: number, longitude: number) {
+    try {
+      // Get current date
+      const now = new Date();
+      const day = now.getDate();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      // Use Aladhan API with Shafi method (method=2)
+      const response = await fetch(
+        `https://api.aladhan.com/v1/timings/${day}-${month}-${year}?latitude=${latitude}&longitude=${longitude}&method=2`
+      );
+
+      const data = await response.json();
+
+      if (data.code === 200 && data.data) {
+        const timings = data.data.timings;
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+        const times = [
+          { name: 'Fajr', time: timings.Fajr, isPassed: false },
+          { name: 'Dhuhr', time: timings.Dhuhr, isPassed: false },
+          { name: 'Asr', time: timings.Asr, isPassed: false },
+          { name: 'Maghrib', time: timings.Maghrib, isPassed: false },
+          { name: 'Isha', time: timings.Isha, isPassed: false },
+        ];
+
+        const updatedTimes = times.map(prayer => {
+          // Remove timezone suffix if present (e.g., "05:45 (GMT)" -> "05:45")
+          const cleanTime = prayer.time.split(' ')[0];
+          const [hours, minutes] = cleanTime.split(':').map(Number);
+          const prayerTimeInMinutes = hours * 60 + minutes;
+          return {
+            ...prayer,
+            time: cleanTime,
+            isPassed: currentTimeInMinutes > prayerTimeInMinutes
+          };
+        });
+
+        setPrayerTimes(updatedTimes);
+      }
+    } catch (error) {
+      console.error('Error fetching prayer times:', error);
+      // Fallback to default times
+      setLocation('London, UK (default)');
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+      const times = [
+        { name: 'Fajr', time: '05:45', isPassed: false },
+        { name: 'Dhuhr', time: '12:15', isPassed: false },
+        { name: 'Asr', time: '14:30', isPassed: false },
+        { name: 'Maghrib', time: '16:45', isPassed: false },
+        { name: 'Isha', time: '18:30', isPassed: false },
+      ];
+
+      const updatedTimes = times.map(prayer => {
+        const [hours, minutes] = prayer.time.split(':').map(Number);
+        const prayerTimeInMinutes = hours * 60 + minutes;
+        return {
+          ...prayer,
+          isPassed: currentTimeInMinutes > prayerTimeInMinutes
+        };
+      });
+
+      setPrayerTimes(updatedTimes);
+    }
   }
 
   const nextPrayer = prayerTimes.find(p => !p.isPassed) || prayerTimes[0];
@@ -66,6 +145,15 @@ export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesW
           nextPrayerBg: 'bg-emerald-900/30',
           nextPrayerBorder: 'border-emerald-600/30',
           nextPrayerAccent: 'text-emerald-400',
+        };
+      case 'Parent':
+        return {
+          mainBg: 'bg-gradient-to-br from-purple-700 via-purple-600 to-purple-800',
+          border: 'border-purple-600/30',
+          iconColor: 'text-purple-300',
+          nextPrayerBg: 'bg-purple-900/30',
+          nextPrayerBorder: 'border-purple-600/30',
+          nextPrayerAccent: 'text-purple-400',
         };
       case 'Teacher':
         return {

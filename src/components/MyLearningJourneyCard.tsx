@@ -13,35 +13,51 @@ interface CourseProgress {
   action: string;
 }
 
-export default function MyLearningJourneyCard() {
+interface MyLearningJourneyCardProps {
+  learnerId?: string;
+}
+
+export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCardProps) {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadProgress();
-  }, []);
+  }, [learnerId]);
 
   async function loadProgress() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      let targetLearnerId = learnerId;
 
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+      // If no learnerId provided, get current user's learner
+      if (!targetLearnerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (!learner) {
+          setLoading(false);
+          return;
+        }
+
+        targetLearnerId = learner.id;
+      }
 
       let quranProgress = 0;
       let arabicProgress = 0;
       let islamicProgress = 0;
 
-      if (learner) {
+      if (targetLearnerId) {
         const { data: quranData } = await supabase
           .from('lesson_progress_tracker')
           .select('understanding_complete, fluency_complete, memorization_complete')
-          .eq('learner_id', learner.id)
+          .eq('learner_id', targetLearnerId)
           .like('topic', 'Surah%');
 
         if (quranData && quranData.length > 0) {
@@ -62,7 +78,7 @@ export default function MyLearningJourneyCard() {
           const { data: arabicData } = await supabase
             .from('lesson_progress_tracker')
             .select('understanding_complete')
-            .eq('learner_id', learner.id)
+            .eq('learner_id', targetLearnerId)
             .eq('subject_id', arabicSubject.id);
 
           if (arabicData && arabicData.length > 0) {
@@ -81,7 +97,7 @@ export default function MyLearningJourneyCard() {
           const { data: islamicData } = await supabase
             .from('lesson_progress_tracker')
             .select('understanding_complete')
-            .eq('learner_id', learner.id)
+            .eq('learner_id', targetLearnerId)
             .eq('subject_id', islamicSubject.id);
 
           if (islamicData && islamicData.length > 0) {

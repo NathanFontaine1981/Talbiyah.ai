@@ -20,7 +20,8 @@ import {
   CheckCircle,
   ArrowRight,
   MessageCircle,
-  Calendar
+  Calendar,
+  Edit
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -36,11 +37,13 @@ import DashboardHeader from '../components/DashboardHeader';
 import TeacherSessionsCard from '../components/TeacherSessionsCard';
 import TeacherStatsWidget from '../components/TeacherStatsWidget';
 import TeacherStudentsCard from '../components/TeacherStudentsCard';
+import ReferralWidget from '../components/ReferralWidget';
+import TeacherAvailabilityCard from '../components/TeacherAvailabilityCard';
 
 interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
-  is_admin?: boolean;
+  roles?: string[];
 }
 
 interface LearnerData {
@@ -52,9 +55,18 @@ interface LearnerData {
   learning_credits?: number;
 }
 
+interface ChildLink {
+  id: string;
+  child_id: string;
+  child_name: string;
+  child_age: number | null;
+  child_gender: string | null;
+  has_account: boolean;
+  account_id: string | null;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [learner, setLearner] = useState<LearnerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,10 +74,13 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState<string>('Student');
   const [referralCopied, setReferralCopied] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(true);
-  const [teacherId, setTeacherId] = useState<string | null>(null);
+  const [hasChildren, setHasChildren] = useState(true);
+  const [isParent, setIsParent] = useState(false);
+  const [children, setChildren] = useState<ChildLink[]>([]);
 
   useEffect(() => {
     loadUserAndProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadUserAndProfile() {
@@ -75,19 +90,33 @@ export default function Dashboard() {
         navigate('/');
         return;
       }
-      setUser(user);
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, is_admin')
+        .select('full_name, avatar_url, roles')
         .eq('id', user.id)
         .single();
 
       setProfile(profileData);
 
-      if (profileData?.is_admin) {
-        navigate('/admin');
-        return;
+      // Check if user is a parent
+      const userIsParent = profileData?.roles?.includes('parent') || false;
+      setIsParent(userIsParent);
+
+      // If user is a parent, load their children
+      if (userIsParent) {
+        const { data: childrenData } = await supabase
+          .from('parent_children')
+          .select('id, child_id, child_name, child_age, child_gender, has_account, account_id')
+          .eq('parent_id', user.id);
+
+        const childrenList = childrenData || [];
+        setChildren(childrenList);
+        setHasChildren(childrenList.length > 0);
+      }
+
+      if (profileData?.roles && profileData.roles.includes('admin')) {
+        setUserRole('Admin');
       } else {
         const { data: teacherProfile } = await supabase
           .from('teacher_profiles')
@@ -104,7 +133,6 @@ export default function Dashboard() {
             return;
           }
           setUserRole('Teacher');
-          setTeacherId(teacherProfile.id);
 
           const { data: availabilityData } = await supabase
             .from('teacher_availability')
@@ -149,22 +177,33 @@ export default function Dashboard() {
 
   const baseMenuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin'] },
-    { icon: MessageCircle, label: 'Virtual Imam', path: '/about/virtual-imam', active: false, roles: ['Student', 'Teacher', 'Admin'] },
-    { icon: Calendar, label: 'Set Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
-    { icon: Search, label: 'Book a Class', path: '/choose-course', active: false, roles: ['Student'] },
+    { icon: Calendar, label: 'My Classes', path: '/my-classes', active: false, roles: ['Student', 'Teacher', 'Parent'] },
+    { icon: MessageCircle, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
+    { icon: Users, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
+    { icon: Calendar, label: 'My Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
+    { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
+    { icon: Search, label: 'Book a Class', path: '/subjects', active: false, roles: ['Student'] },
     { icon: Users, label: 'Group Sessions', path: '/group-sessions', active: false, roles: ['Student'] },
     { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student', 'Teacher'] },
     { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student'] },
-    { icon: Gift, label: 'Refer & Earn', path: '/refer', active: false, roles: ['Student'] },
+    { icon: Gift, label: 'My Referrals', path: '/my-referrals', active: false, roles: ['Student', 'Admin'] },
     { icon: Award, label: 'Achievements', path: '/achievements', active: false, roles: ['Student'] },
     { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
   ];
 
-  const menuItems = baseMenuItems.filter(item => item.roles.includes(userRole));
+  const menuItems = baseMenuItems.filter(item => {
+    // Show menu item if it matches the current role
+    if (item.roles.includes(userRole)) return true;
+
+    // Show "My Children" if user has parent role (even if they're also a student)
+    if (item.label === 'My Children' && profile?.roles?.includes('parent')) return true;
+
+    return false;
+  });
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-600">Loading your dashboard...</p>
@@ -174,7 +213,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-white flex">
       <aside
         className={`${
           sidebarCollapsed ? 'w-20' : 'w-64'
@@ -254,9 +293,10 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <p className="text-sm font-semibold text-white">{profile?.full_name || 'Student'}</p>
-                  <p className="text-xs text-slate-400">{userRole}</p>
+                  <p className="text-xs text-slate-400">{isParent ? 'Parent' : userRole}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  isParent ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
                   userRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
                   userRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
                   userRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
@@ -286,43 +326,77 @@ export default function Dashboard() {
               <div className="lg:col-span-2">
                 <DashboardHeader
                   userName={profile?.full_name?.split(' ')[0] || 'Student'}
-                  userRole={userRole}
+                  userRole={isParent ? 'Parent' : userRole}
                 />
               </div>
 
               <div className="lg:col-span-1">
-                <PrayerTimesWidget userRole={userRole} />
+                <PrayerTimesWidget userRole={isParent ? 'Parent' : userRole} />
               </div>
             </div>
 
-            {learner?.referral_code && (
-              <div className="bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-2xl p-8 mb-6 border border-emerald-400/20 shadow-xl">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                  <div className="flex-1 text-white">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Gift className="w-8 h-8" />
-                      <h3 className="text-2xl font-bold">Earn Free Lessons</h3>
-                    </div>
-                    <p className="text-emerald-50 mb-2 text-lg">
-                      Share Talbiyah.ai with friends and earn 1 free hour for every 10 hours they complete!
+            {/* Teacher Availability Warning Banner */}
+            {userRole === 'Teacher' && !hasAvailability && (
+              <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 mb-6 border border-amber-400/30 shadow-xl">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2">Set Your Availability</h3>
+                    <p className="text-amber-50 mb-4">
+                      Students can't book lessons with you until you set your available time slots. Set your schedule now to start receiving bookings!
                     </p>
-                    <div className="flex items-center space-x-4 text-sm">
+                    <button
+                      onClick={() => navigate('/teacher/availability')}
+                      className="px-6 py-3 bg-white hover:bg-amber-50 text-amber-600 rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+                    >
+                      <Calendar className="w-5 h-5" />
+                      <span>Set Availability Now</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {learner?.referral_code && (
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 mb-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                        <Gift className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white">🎮 Gamified Referrals</h3>
+                    </div>
+                    <p className="text-slate-300 mb-2 text-lg">
+                      Share Talbiyah.ai and earn £15 discount for every 10 hours your referrals learn! Your balance automatically applies at checkout.
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                      Climb tiers to unlock transfer ability and compete on the leaderboard
+                    </p>
+                    <div className="flex items-center space-x-4 text-sm flex-wrap gap-2">
                       <div className="flex items-center space-x-2">
-                        <Trophy className="w-5 h-5 text-amber-300" />
-                        <span className="font-semibold">{learner.learning_credits?.toFixed(1) || 0} Free Hours Earned</span>
+                        <Trophy className="w-5 h-5 text-amber-400" />
+                        <span className="font-semibold text-white">{learner.learning_credits?.toFixed(1) || '0.0'}h Free Lessons</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-slate-400">•</span>
+                        <span className="text-slate-300">5 Tiers • 10 Achievements</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl p-6 min-w-[320px]">
-                    <label className="text-sm font-semibold text-slate-700 mb-2 block">Your Referral Code</label>
+                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-w-[320px]">
+                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Your Referral Code</label>
                     <div className="flex items-center space-x-2 mb-3">
-                      <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xl font-bold text-emerald-600 text-center">
+                      <div className="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg font-mono text-xl font-bold text-cyan-400 text-center">
                         {learner.referral_code}
                       </div>
                       <button
                         onClick={copyReferralLink}
-                        className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
+                        className="px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
                       >
                         {referralCopied ? (
                           <CheckCircle className="w-5 h-5" />
@@ -333,9 +407,9 @@ export default function Dashboard() {
                     </div>
                     <button
                       onClick={() => navigate('/refer')}
-                      className="w-full px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                      className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                     >
-                      <span>View Full Details</span>
+                      <span>View Referral Dashboard</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -343,32 +417,135 @@ export default function Dashboard() {
               </div>
             )}
 
-            {userRole === 'Teacher' ? (
-              <>
-                {!hasAvailability && (
-                  <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 border-2 border-amber-400 shadow-xl">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-6 h-6 text-white" />
+            {isParent && !hasChildren && (
+              <div className="mb-6 bg-gradient-to-r from-purple-500 to-violet-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2">Add Your First Child</h3>
+                    <p className="text-purple-50 mb-4 text-sm">
+                      Create student accounts for your children to manage their learning journey, book lessons on their behalf, and track their progress all in one place.
+                    </p>
+                    <button
+                      onClick={() => navigate('/my-children')}
+                      className="px-6 py-3 bg-white hover:bg-purple-50 text-purple-600 rounded-xl font-bold transition shadow-lg flex items-center space-x-2"
+                    >
+                      <Users className="w-5 h-5" />
+                      <span>Add Child Now</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isParent && hasChildren && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Users className="w-6 h-6 text-purple-600" />
+                    My Children
+                  </h2>
+                  <button
+                    onClick={() => navigate('/my-children')}
+                    className="text-purple-600 hover:text-purple-700 font-semibold text-sm flex items-center gap-1"
+                  >
+                    Manage All
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {children.map((child) => (
+                    <div
+                      key={child.id}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            {child.child_name?.[0] || '?'}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{child.child_name}</h3>
+                            {child.child_age && (
+                              <p className="text-sm text-gray-500">Age {child.child_age}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-white mb-2">Set Your Availability to Receive Bookings!</h3>
-                        <p className="text-amber-50 mb-4 text-sm">
-                          Students can't book lessons with you yet. Set your weekly schedule so students can see when you're available and start booking sessions with you.
-                        </p>
+
+                      <div className="mb-3">
+                        {child.has_account ? (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                            Full Account
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
+                            No account yet
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
                         <button
-                          onClick={() => navigate('/teacher/availability')}
-                          className="px-6 py-3 bg-white hover:bg-amber-50 text-amber-600 rounded-xl font-bold transition shadow-lg flex items-center space-x-2"
+                          onClick={() => navigate(`/child/${child.id}/dashboard`)}
+                          className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition text-sm"
                         >
-                          <Calendar className="w-5 h-5" />
-                          <span>Set Availability Now</span>
-                          <ArrowRight className="w-5 h-5" />
+                          View Dashboard
                         </button>
+                        {!child.has_account && (
+                          <button
+                            onClick={() => {
+                              // TODO: Open upgrade modal
+                              alert('Create Login feature coming soon!');
+                            }}
+                            className="w-full px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-1"
+                          >
+                            <span>🔓</span>
+                            Create Login
+                          </button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
+            )}
 
+            {/* Islamic Source Reference Card - For All Users */}
+            <div className="mb-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-white mb-2">📖 Need Islamic Guidance?</h3>
+                  <p className="text-slate-300 mb-4">
+                    Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
+                  </p>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => navigate('/islamic-source-reference')}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>Find Sources Now</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/about/islamic-source-reference')}
+                      className="px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition"
+                    >
+                      Learn More
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {userRole === 'Teacher' ? (
+              <>
                 <div className="mb-6">
                   <button
                     onClick={() => navigate('/teacher/availability')}
@@ -383,6 +560,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <TeacherSessionsCard />
+                    <TeacherAvailabilityCard />
                     <TeacherStudentsCard />
                   </div>
 
@@ -403,6 +581,7 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <LearningStatsWidget />
+                    <ReferralWidget />
                     {learner && (
                       <PointsRedemption
                         learnerId={learner.id}

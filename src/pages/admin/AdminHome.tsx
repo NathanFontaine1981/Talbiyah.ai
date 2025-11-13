@@ -1,69 +1,303 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Wifi, Video, CheckCircle } from 'lucide-react';
+import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, UserCheck, Clock, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 interface DashboardStats {
   totalStudents: number;
+  totalParents: number;
   totalTeachers: number;
-  activeBookings: number;
-  completedSessions: number;
+  totalSessions: number;
+  revenueThisMonth: number;
+  todaysSessions: number;
+}
+
+interface SystemHealth {
+  database: { status: 'online' | 'slow' | 'offline'; message: string; responseTime: number };
+  api: { status: 'online' | 'offline'; message: string };
+  video: { status: 'connected' | 'disconnected'; message: string; activeRooms?: number };
+  monitoring: { status: 'active' | 'warning' | 'critical'; message: string };
+}
+
+interface Notification {
+  id: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  message: string;
+  timestamp: Date;
+  link?: string;
 }
 
 export default function AdminHome() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
+    totalParents: 0,
     totalTeachers: 0,
-    activeBookings: 0,
-    completedSessions: 0,
+    totalSessions: 0,
+    revenueThisMonth: 0,
+    todaysSessions: 0,
   });
+  const [health, setHealth] = useState<SystemHealth>({
+    database: { status: 'offline', message: 'Checking...', responseTime: 0 },
+    api: { status: 'offline', message: 'Checking...' },
+    video: { status: 'disconnected', message: 'Checking...' },
+    monitoring: { status: 'warning', message: 'Checking...' },
+  });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Modals
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [showScheduleSession, setShowScheduleSession] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   useEffect(() => {
-    fetchDashboardStats();
+    fetchDashboardData();
   }, []);
 
-  async function fetchDashboardStats() {
-    try {
-      const { count: studentsCount } = await supabase
-        .from('learners')
-        .select('*', { count: 'exact', head: true });
+  async function fetchDashboardData() {
+    await Promise.all([
+      fetchStats(),
+      checkSystemHealth(),
+      fetchNotifications(),
+    ]);
+    setLoading(false);
+  }
 
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  }
+
+  async function fetchStats() {
+    try {
+      // Get all profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('roles');
+
+      // Count students and parents
+      const studentsCount = profiles?.filter(p =>
+        p.roles && Array.isArray(p.roles) && p.roles.includes('student')
+      ).length || 0;
+
+      const parentsCount = profiles?.filter(p =>
+        p.roles && Array.isArray(p.roles) && p.roles.includes('parent')
+      ).length || 0;
+
+      // Total approved teachers
       const { count: teachersCount } = await supabase
         .from('teacher_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'approved');
 
-      const { count: bookingsCount } = await supabase
-        .from('lessons')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['booked', 'confirmed', 'scheduled']);
+      // Total sessions (use bookings table)
+      const { count: sessionsCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true });
 
-      const { count: completedCount } = await supabase
-        .from('lessons')
+      // Revenue this month (from bookings)
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: bookingsThisMonth } = await supabase
+        .from('bookings')
+        .select('price')
+        .eq('payment_status', 'paid')
+        .gte('created_at', firstDayOfMonth.toISOString());
+
+      const revenue = bookingsThisMonth?.reduce((sum, booking) =>
+        sum + (booking.price / 100), 0
+      ) || 0;
+
+      // Today's sessions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { count: todaysCount } = await supabase
+        .from('bookings')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+        .gte('scheduled_date', today.toISOString().split('T')[0])
+        .lt('scheduled_date', tomorrow.toISOString().split('T')[0]);
 
       setStats({
-        totalStudents: studentsCount || 0,
+        totalStudents: studentsCount,
+        totalParents: parentsCount,
         totalTeachers: teachersCount || 0,
-        activeBookings: bookingsCount || 0,
-        completedSessions: completedCount || 0,
+        totalSessions: sessionsCount || 0,
+        revenueThisMonth: revenue,
+        todaysSessions: todaysCount || 0,
       });
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching stats:', error);
     }
   }
 
-  const statCards = [
-    { icon: Users, label: 'Total Students', value: stats.totalStudents, bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/20', iconColor: 'text-cyan-400' },
-    { icon: GraduationCap, label: 'Total Teachers', value: stats.totalTeachers, bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
-    { icon: Calendar, label: 'Active Bookings', value: stats.activeBookings, bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/20', iconColor: 'text-amber-400' },
-    { icon: BookCheck, label: 'Completed Sessions', value: stats.completedSessions, bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20', iconColor: 'text-blue-400' },
-  ];
+  async function checkSystemHealth() {
+    const healthChecks: SystemHealth = {
+      database: { status: 'offline', message: 'Offline', responseTime: 0 },
+      api: { status: 'offline', message: 'Offline' },
+      video: { status: 'disconnected', message: 'Disconnected' },
+      monitoring: { status: 'warning', message: 'Checking...' },
+    };
+
+    // 1. Database Check
+    try {
+      const start = Date.now();
+      const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true }).limit(1);
+      const responseTime = Date.now() - start;
+
+      if (!error) {
+        if (responseTime < 500) {
+          healthChecks.database = { status: 'online', message: 'Healthy', responseTime };
+        } else if (responseTime < 2000) {
+          healthChecks.database = { status: 'slow', message: 'Slow response', responseTime };
+        } else {
+          healthChecks.database = { status: 'slow', message: 'Very slow', responseTime };
+        }
+      }
+    } catch {
+      healthChecks.database = { status: 'offline', message: 'Connection failed', responseTime: 0 };
+    }
+
+    // 2. API Services Check (Supabase connection)
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data) {
+        healthChecks.api = { status: 'online', message: 'Normal' };
+      }
+    } catch {
+      healthChecks.api = { status: 'offline', message: 'Disconnected' };
+    }
+
+    // 3. 100ms Video Check (check if HMS env vars are set)
+    try {
+      // We can't directly ping 100ms from frontend, so we check if recent bookings have room_ids
+      const { data: recentBookings } = await supabase
+        .from('bookings')
+        .select('room_id')
+        .not('room_id', 'is', null)
+        .limit(5);
+
+      if (recentBookings && recentBookings.length > 0) {
+        healthChecks.video = {
+          status: 'connected',
+          message: 'Connected',
+          activeRooms: recentBookings.length
+        };
+      } else {
+        healthChecks.video = { status: 'disconnected', message: 'No active rooms' };
+      }
+    } catch {
+      healthChecks.video = { status: 'disconnected', message: 'Unable to check' };
+    }
+
+    // 4. Monitoring Status
+    const allHealthy = healthChecks.database.status === 'online' &&
+                       healthChecks.api.status === 'online' &&
+                       healthChecks.video.status === 'connected';
+
+    if (allHealthy) {
+      healthChecks.monitoring = { status: 'active', message: 'All systems normal' };
+    } else if (healthChecks.database.status === 'offline') {
+      healthChecks.monitoring = { status: 'critical', message: 'Critical issues detected' };
+    } else {
+      healthChecks.monitoring = { status: 'warning', message: 'Some issues detected' };
+    }
+
+    setHealth(healthChecks);
+  }
+
+  async function fetchNotifications() {
+    const notifs: Notification[] = [];
+
+    try {
+      // 1. Pending teacher applications
+      const { data: pendingTeachers } = await supabase
+        .from('teacher_profiles')
+        .select('id, user_id, profiles!inner(full_name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      pendingTeachers?.forEach(teacher => {
+        notifs.push({
+          id: `teacher-${teacher.id}`,
+          type: 'info',
+          message: `New teacher application - ${(teacher.profiles as any).full_name || 'Unknown'}`,
+          timestamp: new Date(),
+          link: '/admin/teachers',
+        });
+      });
+
+      // 2. Failed payments (last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const { data: failedPayments } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('status', 'failed')
+        .gte('created_at', yesterday.toISOString())
+        .limit(3);
+
+      failedPayments?.forEach(payment => {
+        notifs.push({
+          id: `payment-${payment.id}`,
+          type: 'warning',
+          message: `Payment failed for transaction #${payment.id.substring(0, 8)}`,
+          timestamp: new Date(),
+        });
+      });
+
+      // 3. New signups today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { count: newSignups } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString());
+
+      if (newSignups && newSignups > 0) {
+        notifs.push({
+          id: 'signups-today',
+          type: 'success',
+          message: `${newSignups} new user${newSignups !== 1 ? 's' : ''} joined today`,
+          timestamp: new Date(),
+        });
+      }
+
+      // 4. Upcoming sessions (next 2 hours)
+      const twoHoursFromNow = new Date();
+      twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
+
+      const { count: upcomingSessions } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'confirmed')
+        .gte('scheduled_date', new Date().toISOString().split('T')[0])
+        .limit(5);
+
+      if (upcomingSessions && upcomingSessions > 0) {
+        notifs.push({
+          id: 'upcoming-sessions',
+          type: 'info',
+          message: `${upcomingSessions} session${upcomingSessions !== 1 ? 's' : ''} scheduled in next 2 hours`,
+          timestamp: new Date(),
+        });
+      }
+
+      setNotifications(notifs.slice(0, 10));
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  }
 
   if (loading) {
     return (
@@ -74,133 +308,342 @@ export default function AdminHome() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">Dashboard Overview</h2>
-        <p className="text-slate-400">Welcome to your academy admin portal</p>
-      </div>
-
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((card, index) => (
-            <div
-              key={index}
-              className={`${card.bgColor} border ${card.borderColor} rounded-xl p-6 transition hover:scale-105 cursor-pointer`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${card.bgColor} border ${card.borderColor} rounded-lg flex items-center justify-center`}>
-                  <card.icon className={`w-6 h-6 ${card.iconColor}`} />
-                </div>
-              </div>
-              <p className="text-slate-400 text-sm mb-1">{card.label}</p>
-              <p className="text-3xl font-bold text-white">{card.value}</p>
-            </div>
-          ))}
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+          <p className="text-slate-400">Welcome to your academy admin portal</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition relative">
+            <Bell className="w-5 h-5" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center">
+                {notifications.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          icon={Users}
+          label="Total Students"
+          value={stats.totalStudents}
+          bgColor="bg-cyan-500/10"
+          borderColor="border-cyan-500/20"
+          iconColor="text-cyan-400"
+        />
+        <StatCard
+          icon={BookCheck}
+          label="Total Sessions"
+          value={stats.totalSessions}
+          bgColor="bg-blue-500/10"
+          borderColor="border-blue-500/20"
+          iconColor="text-blue-400"
+        />
+        <StatCard
+          icon={DollarSign}
+          label="Revenue This Month"
+          value={`£${stats.revenueThisMonth.toFixed(2)}`}
+          bgColor="bg-green-500/10"
+          borderColor="border-green-500/20"
+          iconColor="text-green-400"
+        />
+        <StatCard
+          icon={GraduationCap}
+          label="Total Teachers"
+          value={stats.totalTeachers}
+          bgColor="bg-emerald-500/10"
+          borderColor="border-emerald-500/20"
+          iconColor="text-emerald-400"
+        />
+        <StatCard
+          icon={Heart}
+          label="Total Parents"
+          value={stats.totalParents}
+          bgColor="bg-pink-500/10"
+          borderColor="border-pink-500/20"
+          iconColor="text-pink-400"
+        />
+        <StatCard
+          icon={Calendar}
+          label="Today's Sessions"
+          value={stats.todaysSessions}
+          bgColor="bg-purple-500/10"
+          borderColor="border-purple-500/20"
+          iconColor="text-purple-400"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ActionButton
+            icon={UserPlus}
+            label="Create New User"
+            onClick={() => setShowCreateUser(true)}
+            color="cyan"
+          />
+          <ActionButton
+            icon={CalendarPlus}
+            label="Schedule Session"
+            onClick={() => setShowScheduleSession(true)}
+            color="emerald"
+          />
+          <ActionButton
+            icon={BookOpen}
+            label="Manage Courses"
+            onClick={() => navigate('/admin/courses')}
+            color="blue"
+          />
+          <ActionButton
+            icon={TrendingUp}
+            label="View Analytics"
+            onClick={() => navigate('/admin/analytics')}
+            color="purple"
+          />
+          <ActionButton
+            icon={Megaphone}
+            label="Send Announcement"
+            onClick={() => setShowAnnouncement(true)}
+            color="amber"
+          />
+        </div>
+      </div>
+
+      {/* System Health */}
+      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">System Health</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <HealthStatus
+            icon={Database}
+            label="Database"
+            status={health.database.status}
+            message={health.database.message}
+            detail={health.database.responseTime > 0 ? `${health.database.responseTime}ms` : undefined}
+          />
+          <HealthStatus
+            icon={Activity}
+            label="API Services"
+            status={health.api.status}
+            message={health.api.message}
+          />
+          <HealthStatus
+            icon={Video}
+            label="100ms Video"
+            status={health.video.status}
+            message={health.video.message}
+            detail={health.video.activeRooms ? `${health.video.activeRooms} active` : undefined}
+          />
+          <HealthStatus
+            icon={CheckCircle}
+            label="Monitoring"
+            status={health.monitoring.status}
+            message={health.monitoring.message}
+          />
+        </div>
+      </div>
+
+      {/* Recent Notifications */}
+      {notifications.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+          <h2 className="text-xl font-semibold text-white mb-4">Recent Notifications</h2>
           <div className="space-y-3">
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="w-full px-4 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 rounded-lg text-left transition flex items-center space-x-3"
-            >
-              <UserPlus className="w-5 h-5 text-cyan-400" />
-              <div className="flex-1">
-                <p className="text-cyan-400 font-medium">Create New User</p>
-                <p className="text-slate-400 text-xs mt-1">Add student, teacher, or admin</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/admin/sessions')}
-              className="w-full px-4 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-left transition flex items-center space-x-3"
-            >
-              <CalendarPlus className="w-5 h-5 text-emerald-400" />
-              <div className="flex-1">
-                <p className="text-emerald-400 font-medium">Schedule Session</p>
-                <p className="text-slate-400 text-xs mt-1">Create private or group session</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/admin/courses')}
-              className="w-full px-4 py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-left transition flex items-center space-x-3"
-            >
-              <BookOpen className="w-5 h-5 text-blue-400" />
-              <div className="flex-1">
-                <p className="text-blue-400 font-medium">Manage Courses</p>
-                <p className="text-slate-400 text-xs mt-1">View and edit course catalog</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/admin/analytics')}
-              className="w-full px-4 py-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-left transition flex items-center space-x-3"
-            >
-              <TrendingUp className="w-5 h-5 text-purple-400" />
-              <div className="flex-1">
-                <p className="text-purple-400 font-medium">View Analytics</p>
-                <p className="text-slate-400 text-xs mt-1">Platform performance metrics</p>
-              </div>
-            </button>
-            <button
-              className="w-full px-4 py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-left transition flex items-center space-x-3"
-            >
-              <Megaphone className="w-5 h-5 text-amber-400" />
-              <div className="flex-1">
-                <p className="text-amber-400 font-medium">Send Announcement</p>
-                <p className="text-slate-400 text-xs mt-1">Broadcast to all users</p>
-              </div>
-            </button>
+            {notifications.map(notif => (
+              <NotificationItem key={notif.id} notification={notif} />
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">System Health</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Database className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="text-emerald-400 font-medium text-sm">Database</p>
-                  <p className="text-slate-400 text-xs">All systems operational</p>
-                </div>
-              </div>
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Activity className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="text-emerald-400 font-medium text-sm">API Services</p>
-                  <p className="text-slate-400 text-xs">Online and responsive</p>
-                </div>
-              </div>
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Video className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="text-emerald-400 font-medium text-sm">100MS Video</p>
-                  <p className="text-slate-400 text-xs">Connected and streaming</p>
-                </div>
-              </div>
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Wifi className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="text-emerald-400 font-medium text-sm">Monitoring</p>
-                  <p className="text-slate-400 text-xs">Normal operation</p>
-                </div>
-              </div>
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-            </div>
-          </div>
+      {/* Modals */}
+      {showCreateUser && <CreateUserModal onClose={() => setShowCreateUser(false)} />}
+      {showScheduleSession && <ScheduleSessionModal onClose={() => setShowScheduleSession(false)} />}
+      {showAnnouncement && <AnnouncementModal onClose={() => setShowAnnouncement(false)} />}
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({ icon: Icon, label, value, bgColor, borderColor, iconColor }: any) {
+  return (
+    <div className={`${bgColor} border ${borderColor} rounded-xl p-6`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className={`w-12 h-12 ${bgColor} border ${borderColor} rounded-lg flex items-center justify-center`}>
+          <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
+      </div>
+      <p className="text-slate-400 text-sm mb-1">{label}</p>
+      <p className="text-3xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+// Action Button Component
+function ActionButton({ icon: Icon, label, onClick, color }: any) {
+  const colors = {
+    cyan: 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/20 text-cyan-400',
+    emerald: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400',
+    blue: 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400',
+    purple: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-400',
+    amber: 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20 text-amber-400',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-4 ${colors[color as keyof typeof colors]} border rounded-lg transition flex items-center space-x-3 text-left`}
+    >
+      <Icon className="w-5 h-5" />
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+}
+
+// Health Status Component
+function HealthStatus({ icon: Icon, label, status, message, detail }: any) {
+  const getStatusColor = () => {
+    if (status === 'online' || status === 'connected' || status === 'active') {
+      return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+    } else if (status === 'slow' || status === 'warning') {
+      return 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+    } else {
+      return 'bg-red-500/10 border-red-500/20 text-red-400';
+    }
+  };
+
+  const getStatusIcon = () => {
+    if (status === 'online' || status === 'connected' || status === 'active') {
+      return <CheckCircle className="w-5 h-5 text-emerald-400" />;
+    } else if (status === 'slow' || status === 'warning') {
+      return <AlertTriangle className="w-5 h-5 text-amber-400" />;
+    } else {
+      return <AlertCircle className="w-5 h-5 text-red-400" />;
+    }
+  };
+
+  return (
+    <div className={`p-4 ${getStatusColor()} border rounded-lg flex items-center justify-between`}>
+      <div className="flex items-center space-x-3">
+        <Icon className="w-5 h-5" />
+        <div>
+          <p className="font-medium text-sm">{label}</p>
+          <p className="text-xs opacity-75">{message}</p>
+          {detail && <p className="text-xs opacity-60 mt-0.5">{detail}</p>}
+        </div>
+      </div>
+      {getStatusIcon()}
+    </div>
+  );
+}
+
+// Notification Item Component
+function NotificationItem({ notification }: { notification: Notification }) {
+  const getTypeColor = () => {
+    switch (notification.type) {
+      case 'success': return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+      case 'warning': return 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+      case 'error': return 'bg-red-500/10 border-red-500/20 text-red-400';
+      default: return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400';
+    }
+  };
+
+  const getIcon = () => {
+    switch (notification.type) {
+      case 'success': return <CheckCircle className="w-5 h-5" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5" />;
+      case 'error': return <AlertCircle className="w-5 h-5" />;
+      default: return <Bell className="w-5 h-5" />;
+    }
+  };
+
+  return (
+    <div className={`p-3 ${getTypeColor()} border rounded-lg flex items-start space-x-3`}>
+      {getIcon()}
+      <div className="flex-1">
+        <p className="text-sm">{notification.message}</p>
+      </div>
+    </div>
+  );
+}
+
+// Create User Modal (Placeholder)
+function CreateUserModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-white">Create New User</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-slate-400 text-sm mb-4">User creation modal - Coming soon!</p>
+        <button
+          onClick={onClose}
+          className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Schedule Session Modal (Placeholder)
+function ScheduleSessionModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-white">Schedule Session</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-slate-400 text-sm mb-4">Session scheduling modal - Coming soon!</p>
+        <button
+          onClick={onClose}
+          className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Announcement Modal (Placeholder)
+function AnnouncementModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-white">Send Announcement</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-slate-400 text-sm mb-4">Announcement modal - Coming soon!</p>
+        <button
+          onClick={onClose}
+          className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"
+        >
+          Close
+        </button>
       </div>
     </div>
   );

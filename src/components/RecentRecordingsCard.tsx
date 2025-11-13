@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, PlayCircle, ChevronRight, Calendar, RefreshCw } from 'lucide-react';
+import { FileText, PlayCircle, ChevronRight, Calendar, RefreshCw, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 
 interface RecentRecording {
   id: string;
@@ -11,31 +11,43 @@ interface RecentRecording {
   scheduled_time: string;
   recording_url: string | null;
   has_insights: boolean;
+  duration_minutes: number;
 }
 
-export default function RecentRecordingsCard() {
+interface RecentRecordingsCardProps {
+  learnerId?: string;
+}
+
+export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCardProps) {
   const navigate = useNavigate();
   const [recordings, setRecordings] = useState<RecentRecording[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadRecentRecordings();
-  }, []);
+  }, [learnerId]);
 
   async function loadRecentRecordings() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      let targetLearnerId = learnerId;
 
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+      // If no learnerId provided, get current user's learner
+      if (!targetLearnerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      if (!learner) {
-        setLoading(false);
-        return;
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (!learner) {
+          setLoading(false);
+          return;
+        }
+
+        targetLearnerId = learner.id;
       }
 
       const { data: lessonsData, error } = await supabase
@@ -45,6 +57,7 @@ export default function RecentRecordingsCard() {
           scheduled_time,
           recording_url,
           status,
+          duration_minutes,
           teacher_profiles!inner(
             user_id,
             profiles!inner(
@@ -53,15 +66,25 @@ export default function RecentRecordingsCard() {
           ),
           subjects!inner(
             name
-          ),
-          talbiyah_insights(id)
+          )
         `)
-        .eq('learner_id', learner.id)
+        .eq('learner_id', targetLearnerId)
         .in('status', ['completed', 'in_progress'])
         .order('scheduled_time', { ascending: false })
-        .limit(3);
+        .limit(5);
 
       if (error) throw error;
+
+      // Get insights for these lessons
+      const lessonIds = lessonsData?.map(l => l.id) || [];
+      const { data: insightsData } = await supabase
+        .from('lesson_insights')
+        .select('lesson_id, id')
+        .in('lesson_id', lessonIds);
+
+      if (error) throw error;
+
+      const insightLessonIds = new Set(insightsData?.map(i => i.lesson_id) || []);
 
       if (lessonsData) {
         const formattedRecordings: RecentRecording[] = lessonsData.map((lesson: any) => ({
@@ -70,7 +93,8 @@ export default function RecentRecordingsCard() {
           teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
           scheduled_time: lesson.scheduled_time,
           recording_url: lesson.recording_url,
-          has_insights: lesson.talbiyah_insights && lesson.talbiyah_insights.length > 0
+          has_insights: insightLessonIds.has(lesson.id),
+          duration_minutes: lesson.duration_minutes
         }));
         setRecordings(formattedRecordings);
       }
@@ -130,52 +154,82 @@ export default function RecentRecordingsCard() {
       </div>
 
       <div className="space-y-3">
-        {recordings.map((recording) => (
-          <div
-            key={recording.id}
-            className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/30 transition group"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-cyan-400 transition">
-                  {recording.subject_name}
-                </h4>
-                <p className="text-sm text-slate-400 mb-2">with {recording.teacher_name}</p>
-                <div className="flex items-center space-x-2 text-xs text-slate-500">
-                  <Calendar className="w-3 h-3" />
-                  <span>{format(parseISO(recording.scheduled_time), 'MMM d, yyyy')}</span>
+        {recordings.map((recording) => {
+          const lessonDate = parseISO(recording.scheduled_time);
+          const lessonEndDate = new Date(lessonDate.getTime() + recording.duration_minutes * 60 * 1000);
+          const recordingExpiryDate = addDays(lessonEndDate, 7);
+          const daysUntilExpiry = differenceInDays(recordingExpiryDate, new Date());
+          const isRecordingExpired = daysUntilExpiry < 0;
+          const isRecordingExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 2;
+
+          return (
+            <div
+              key={recording.id}
+              className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/30 transition group"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-cyan-400 transition">
+                    {recording.subject_name}
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">with {recording.teacher_name}</p>
+                  <div className="flex items-center space-x-2 text-xs text-slate-500">
+                    <Calendar className="w-3 h-3" />
+                    <span>{format(lessonDate, 'MMM d, yyyy')}</span>
+                  </div>
+
+                  {/* Recording expiry warning */}
+                  {recording.recording_url && !isRecordingExpired && isRecordingExpiringSoon && (
+                    <div className="flex items-center space-x-1 mt-2 text-xs text-amber-400">
+                      <Clock className="w-3 h-3" />
+                      <span>Video expires in {daysUntilExpiry} {daysUntilExpiry === 1 ? 'day' : 'days'}</span>
+                    </div>
+                  )}
+
+                  {recording.recording_url && isRecordingExpired && (
+                    <div className="flex items-center space-x-1 mt-2 text-xs text-red-400">
+                      <Clock className="w-3 h-3" />
+                      <span>Video expired</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-3">
-              {recording.has_insights && (
-                <button
-                  onClick={() => navigate(`/insights/${recording.id}`)}
-                  className="flex-1 px-4 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-cyan-500/20"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>View Notes</span>
-                </button>
-              )}
+              <div className="flex items-center space-x-3">
+                {/* Insights button - always available when insights exist */}
+                {recording.has_insights && (
+                  <button
+                    onClick={() => navigate(`/lesson/${recording.id}/insights`)}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-emerald-500/30"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>View Insights</span>
+                  </button>
+                )}
 
-              {recording.recording_url ? (
-                <button
-                  onClick={() => window.open(recording.recording_url!, '_blank')}
-                  className="flex-1 px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-blue-500/20"
-                >
-                  <PlayCircle className="w-4 h-4" />
-                  <span>Watch Recording</span>
-                </button>
-              ) : (
-                <div className="flex-1 px-4 py-2.5 bg-slate-700/30 text-slate-500 rounded-lg font-medium flex items-center justify-center space-x-2 border border-slate-700/50">
-                  <PlayCircle className="w-4 h-4" />
-                  <span>Processing...</span>
-                </div>
-              )}
+                {/* Watch video button - available for 7 days */}
+                {recording.recording_url && !isRecordingExpired ? (
+                  <button
+                    onClick={() => window.open(recording.recording_url!, '_blank')}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-cyan-500/30"
+                  >
+                    <PlayCircle className="w-4 h-4" />
+                    <span>Watch Video</span>
+                  </button>
+                ) : recording.recording_url && isRecordingExpired ? (
+                  <div className="flex-1 px-4 py-2.5 bg-red-500/10 text-red-400 rounded-lg font-medium flex items-center justify-center space-x-2 border border-red-500/30">
+                    <PlayCircle className="w-4 h-4" />
+                    <span>Video Expired</span>
+                  </div>
+                ) : !recording.has_insights && (
+                  <div className="flex-1 px-4 py-2.5 bg-slate-700/30 text-slate-500 rounded-lg font-medium flex items-center justify-center space-x-2 border border-slate-700/50">
+                    <span>Processing...</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

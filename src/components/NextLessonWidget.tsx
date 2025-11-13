@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Clock, Video, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Clock, Video, User, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, isFuture } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface NextLesson {
   id: string;
@@ -13,6 +14,7 @@ interface NextLesson {
 }
 
 export default function NextLessonWidget() {
+  const navigate = useNavigate();
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -173,10 +175,22 @@ export default function NextLessonWidget() {
           </div>
         </div>
 
-        <button className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2">
-          <Video className="w-5 h-5" />
-          <span>Join Lesson</span>
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate(`/lesson/${nextLesson.id}`)}
+            className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+          >
+            <Video className="w-5 h-5" />
+            <span>Join</span>
+          </button>
+          <button
+            onClick={() => navigate('/my-classes')}
+            className="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition flex items-center justify-center space-x-2"
+          >
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
 
         <p className="text-xs text-center text-slate-500">
           Duration: {nextLesson.duration_minutes} minutes

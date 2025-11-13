@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, LogOut, User, ShoppingCart } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import CartDrawer from '../components/CartDrawer';
@@ -22,6 +22,7 @@ interface Subject {
 
 export default function Teachers() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { cartCount } = useCart();
   const [user, setUser] = useState<any>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -53,9 +54,40 @@ export default function Teachers() {
     applyFilters();
   }, [teachers, selectedSubjects, selectedGenders]);
 
+  // Auto-select subject from query parameter
+  useEffect(() => {
+    const subjectParam = searchParams.get('subject');
+    if (subjectParam && subjects.length > 0 && selectedSubjects.length === 0) {
+      // First check if it's a UUID (direct subject ID)
+      const subjectById = subjects.find(s => s.id === subjectParam);
+      if (subjectById) {
+        console.log(`🔍 Auto-selecting subject by ID: ${subjectById.name}`);
+        setSelectedSubjects([subjectById.id]);
+        return;
+      }
+
+      // Fall back to legacy subject filter names
+      const subjectMap: Record<string, string> = {
+        'quran': 'Quran with Understanding',
+        'arabic': 'Arabic Language',
+        'islamic': 'Islamic Studies'
+      };
+
+      const subjectName = subjectMap[subjectParam.toLowerCase()];
+      if (subjectName) {
+        const subject = subjects.find(s => s.name.toLowerCase().includes(subjectName.toLowerCase()));
+        if (subject) {
+          console.log(`🔍 Auto-selecting subject filter: ${subject.name} (from URL parameter: ${subjectParam})`);
+          setSelectedSubjects([subject.id]);
+        }
+      }
+    }
+  }, [searchParams, subjects]);
+
   async function fetchTeachers() {
     setLoading(true);
     try {
+      // First get approved teachers
       const { data, error } = await supabase
         .from('teacher_profiles')
         .select(`
@@ -72,16 +104,38 @@ export default function Teachers() {
 
       if (error) throw error;
 
-      const teachersData = data?.map((teacher: any) => ({
-        id: teacher.id,
-        user_id: teacher.user_id,
-        bio: teacher.bio,
-        hourly_rate: teacher.hourly_rate,
-        full_name: teacher.profiles?.full_name || 'Unknown Teacher',
-        gender: teacher.profiles?.gender || null
-      })) || [];
+      // Get teachers who have availability set (with is_available = true)
+      const { data: availabilityData } = await supabase
+        .from('teacher_availability')
+        .select('teacher_id')
+        .eq('is_available', true);
 
+      const teachersWithAvailability = new Set(availabilityData?.map(a => a.teacher_id) || []);
+
+      console.log('Teachers with availability:', Array.from(teachersWithAvailability));
+
+      // Filter to only include teachers with availability (using teacher profile ID, not user_id)
+      const teachersData = data
+        ?.filter((teacher: any) => {
+          const hasAvailability = teachersWithAvailability.has(teacher.id);
+          console.log(`Teacher ${teacher.profiles?.full_name} (ID: ${teacher.id}): has availability = ${hasAvailability}`);
+          return hasAvailability;
+        })
+        .map((teacher: any) => ({
+          id: teacher.id,
+          user_id: teacher.user_id,
+          bio: teacher.bio,
+          hourly_rate: teacher.hourly_rate,
+          full_name: teacher.profiles?.full_name || 'Unknown Teacher',
+          gender: teacher.profiles?.gender || null
+        })) || [];
+
+      console.log('Fetched teachers:', teachersData);
       setTeachers(teachersData);
+      // Initialize filtered teachers with all teachers if no filters applied
+      if (selectedSubjects.length === 0 && selectedGenders.length === 0) {
+        setFilteredTeachers(teachersData);
+      }
     } catch (error) {
       console.error('Error fetching teachers:', error);
     } finally {
@@ -105,26 +159,76 @@ export default function Teachers() {
   }
 
   async function applyFilters() {
+    console.log('=== TEACHERS FILTER DEBUG ===');
+    console.log('Total teachers loaded:', teachers.length);
+    console.log('Selected subjects:', selectedSubjects);
+    console.log('Selected genders:', selectedGenders);
+
     let filtered = [...teachers];
 
     if (selectedSubjects.length > 0) {
-      const { data: teacherSubjects, error } = await supabase
-        .from('teacher_subjects')
-        .select('teacher_id, subject_id')
-        .in('subject_id', selectedSubjects);
+      // Get all subjects for name/ID mapping
+      const { data: allSubjectsData } = await supabase
+        .from('subjects')
+        .select('id, name');
 
-      if (!error && teacherSubjects) {
-        const teacherIdsWithSubjects = teacherSubjects.map(ts => ts.teacher_id);
-        filtered = filtered.filter(teacher => teacherIdsWithSubjects.includes(teacher.id));
+      const subjectIdToName = new Map(allSubjectsData?.map(s => [s.id, s.name]) || []);
+      const subjectNameToId = new Map(allSubjectsData?.map(s => [s.name.toLowerCase(), s.id]) || []);
+
+      const selectedSubjectNames = selectedSubjects.map(id => subjectIdToName.get(id)).filter(Boolean) as string[];
+      console.log('Selected subject IDs:', selectedSubjects);
+      console.log('Selected subject names:', selectedSubjectNames);
+
+      // Get teachers who have availability with these subjects
+      const { data: availabilityWithSubjects, error } = await supabase
+        .from('teacher_availability')
+        .select('teacher_id, subjects')
+        .eq('is_available', true);
+
+      console.log('Availability with subjects query result:', availabilityWithSubjects);
+
+      if (!error && availabilityWithSubjects) {
+        const teacherIdsWithSubjects = new Set<string>();
+
+        availabilityWithSubjects.forEach(avail => {
+          if (avail.subjects && Array.isArray(avail.subjects)) {
+            // Check if any of the subjects match (handle both ID and name formats)
+            const hasMatchingSubject = avail.subjects.some((subject: string) => {
+              // Check if subject is an ID (UUID format)
+              if (selectedSubjects.includes(subject)) {
+                return true;
+              }
+
+              // Check if subject is a name and matches selected subject names
+              return selectedSubjectNames.some(selectedName =>
+                subject.toLowerCase().includes(selectedName.toLowerCase()) ||
+                selectedName.toLowerCase().includes(subject.toLowerCase())
+              );
+            });
+
+            if (hasMatchingSubject) {
+              teacherIdsWithSubjects.add(avail.teacher_id);
+            }
+          }
+        });
+
+        console.log('Teacher IDs with selected subjects:', Array.from(teacherIdsWithSubjects));
+        filtered = filtered.filter(teacher => teacherIdsWithSubjects.has(teacher.id));
+        console.log('Filtered teachers after subject filter:', filtered.length);
       }
     }
 
     if (selectedGenders.length > 0) {
+      console.log('Teachers before gender filter:', filtered.map(t => ({ name: t.full_name, gender: t.gender })));
       filtered = filtered.filter(teacher =>
         teacher.gender && selectedGenders.includes(teacher.gender)
       );
+      console.log('Filtered teachers after gender filter:', filtered.length);
+      console.log('Teachers after gender filter:', filtered.map(t => ({ name: t.full_name, gender: t.gender })));
     }
 
+    console.log('Final filtered teachers:', filtered);
+    console.log('===========================');
     setFilteredTeachers(filtered);
   }
 
@@ -153,9 +257,20 @@ export default function Teachers() {
     <div className="min-h-screen bg-gray-50">
       <nav className="fixed top-0 w-full bg-white backdrop-blur-md z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-            <BookOpen className="w-7 h-7 text-emerald-500" />
-            <span className="text-2xl font-semibold text-gray-900">Talbiyah.ai</span>
+          <div className="flex items-center space-x-4">
+            {searchParams.get('subject') && (
+              <button
+                onClick={() => navigate('/subjects')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span>Back to Subjects</span>
+              </button>
+            )}
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+              <BookOpen className="w-7 h-7 text-emerald-500" />
+              <span className="text-2xl font-semibold text-gray-900">Talbiyah.ai</span>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -202,7 +317,23 @@ export default function Teachers() {
 
       <div className="pt-24 pb-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
+          <div className="mb-8">
+            {searchParams.get('subject') && (
+              <button
+                onClick={() => navigate('/subjects')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-emerald-600 transition mb-4 font-medium group"
+              >
+                <div className="w-8 h-8 rounded-full bg-gray-200 group-hover:bg-emerald-100 flex items-center justify-center transition">
+                  <ChevronLeft className="w-5 h-5" />
+                </div>
+                <span>Back to Subject Selection</span>
+              </button>
+            )}
+            <div className="flex items-center justify-center space-x-2 mb-6">
+              <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-100 border border-emerald-300 rounded-full">
+                <span className="text-emerald-600 font-semibold text-sm">Step 2 of 3: Choose Your Teacher</span>
+              </div>
+            </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Find a Teacher</h1>
             <p className="text-lg text-gray-600">
               Connect with experienced, approved teachers for personalized learning
@@ -237,8 +368,8 @@ export default function Teachers() {
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={selectedGenders.includes('Male')}
-                        onChange={() => handleGenderToggle('Male')}
+                        checked={selectedGenders.includes('male')}
+                        onChange={() => handleGenderToggle('male')}
                         className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                       />
                       <span className="text-sm text-gray-700">Male</span>
@@ -246,8 +377,8 @@ export default function Teachers() {
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={selectedGenders.includes('Female')}
-                        onChange={() => handleGenderToggle('Female')}
+                        checked={selectedGenders.includes('female')}
+                        onChange={() => handleGenderToggle('female')}
                         className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                       />
                       <span className="text-sm text-gray-700">Female</span>
@@ -302,12 +433,23 @@ export default function Teachers() {
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => navigate(`/teacher/${teacher.id}`)}
-                          className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition"
-                        >
-                          View Profile & Book
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => navigate(`/teacher/${teacher.id}`)}
+                            className="px-4 py-2 border border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-medium transition"
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            onClick={() => {
+                              const subjectParam = searchParams.get('subject');
+                              navigate(`/teacher/${teacher.id}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
+                            }}
+                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition"
+                          >
+                            Book Now
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

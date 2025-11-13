@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, User, RefreshCw, BookOpen, Clock } from 'lucide-react';
+import { Users, User, RefreshCw, BookOpen, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface Student {
@@ -8,6 +8,9 @@ interface Student {
   avatar_url: string | null;
   total_lessons: number;
   total_hours: number;
+  is_assigned: boolean;
+  assigned_at?: string;
+  notes?: string;
 }
 
 export default function TeacherStudentsCard() {
@@ -34,6 +37,46 @@ export default function TeacherStudentsCard() {
         return;
       }
 
+      const studentMap = new Map<string, Student>();
+
+      // Load assigned students from student_teachers table
+      const { data: assignedStudents } = await supabase
+        .from('student_teachers')
+        .select(`
+          assigned_at,
+          notes,
+          learners!inner(
+            id,
+            parent_id,
+            profiles!inner(
+              full_name,
+              avatar_url
+            )
+          )
+        `)
+        .eq('teacher_id', teacherProfile.id)
+        .eq('is_active', true);
+
+      // Add assigned students to map
+      if (assignedStudents) {
+        assignedStudents.forEach((assignment: any) => {
+          const learner = assignment.learners;
+          const learnerId = learner.id;
+
+          studentMap.set(learnerId, {
+            id: learnerId,
+            name: learner.profiles.full_name || 'Student',
+            avatar_url: learner.profiles.avatar_url,
+            total_lessons: 0,
+            total_hours: 0,
+            is_assigned: true,
+            assigned_at: assignment.assigned_at,
+            notes: assignment.notes
+          });
+        });
+      }
+
+      // Load students from completed lessons
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select(`
@@ -50,18 +93,19 @@ export default function TeacherStudentsCard() {
         .eq('teacher_id', teacherProfile.id)
         .eq('status', 'completed');
 
+      // Merge lesson data with assigned students
       if (lessonsData) {
-        const studentMap = new Map<string, Student>();
-
         lessonsData.forEach((lesson: any) => {
           const learnerId = lesson.learner_id;
+
           if (!studentMap.has(learnerId)) {
             studentMap.set(learnerId, {
               id: learnerId,
               name: lesson.learners.profiles.full_name || 'Student',
               avatar_url: lesson.learners.profiles.avatar_url,
               total_lessons: 0,
-              total_hours: 0
+              total_hours: 0,
+              is_assigned: false
             });
           }
 
@@ -69,13 +113,16 @@ export default function TeacherStudentsCard() {
           student.total_lessons += 1;
           student.total_hours += lesson.duration_minutes / 60;
         });
-
-        const studentsArray = Array.from(studentMap.values())
-          .sort((a, b) => b.total_lessons - a.total_lessons)
-          .slice(0, 10);
-
-        setStudents(studentsArray);
       }
+
+      // Sort: assigned students first, then by total lessons
+      const studentsArray = Array.from(studentMap.values()).sort((a, b) => {
+        if (a.is_assigned && !b.is_assigned) return -1;
+        if (!a.is_assigned && b.is_assigned) return 1;
+        return b.total_lessons - a.total_lessons;
+      });
+
+      setStudents(studentsArray);
     } catch (error) {
       console.error('Error loading students:', error);
     } finally {
@@ -105,7 +152,7 @@ export default function TeacherStudentsCard() {
             <Users className="w-10 h-10 text-slate-600" />
           </div>
           <p className="text-xl text-slate-300 mb-2">No students yet.</p>
-          <p className="text-slate-500 mb-8">Students will appear here once you complete your first lesson</p>
+          <p className="text-slate-500 mb-8">Students will appear here when they assign you as their teacher or after completing lessons</p>
 
           <button
             onClick={loadStudents}
@@ -151,18 +198,36 @@ export default function TeacherStudentsCard() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="text-base font-semibold text-white truncate mb-1">
-                  {student.name}
-                </h4>
-                <div className="flex items-center space-x-4 text-xs">
-                  <div className="flex items-center space-x-1 text-slate-400">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>{student.total_lessons} lessons</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-slate-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{student.total_hours.toFixed(1)}h</span>
-                  </div>
+                <div className="flex items-center space-x-2 mb-1">
+                  <h4 className="text-base font-semibold text-white truncate">
+                    {student.name}
+                  </h4>
+                  {student.is_assigned && (
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 rounded text-xs font-medium text-cyan-400">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Assigned</span>
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs">
+                  {student.total_lessons > 0 && (
+                    <>
+                      <div className="flex items-center space-x-1 text-slate-400">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>{student.total_lessons} lessons</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-slate-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{student.total_hours.toFixed(1)}h</span>
+                      </div>
+                    </>
+                  )}
+                  {student.is_assigned && student.assigned_at && (
+                    <div className="flex items-center space-x-1 text-slate-500">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Since {new Date(student.assigned_at).toLocaleDateString()}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -22,17 +22,23 @@ Your live Stripe payment integration is **WORKING**!
 - Lesson created
 - But success page showed "Oops! Booking not found"
 
-**Root Cause:**
+**Root Cause 1:**
 - Success page was looking for lesson by `stripe_checkout_session_id`
 - That field wasn't being set by the webhook
 - So it couldn't find the lesson (even though it existed)
 
-**Fix Applied:**
-- Updated `src/pages/PaymentSuccess.tsx`
-- Now finds lessons by recent creation + paid status
-- More reliable method that works with current webhook implementation
+**Root Cause 2 (discovered during testing):**
+- Multiple components trying to query `profiles.role` column (doesn't exist)
+- Database only has `profiles.roles` column (array)
+- This blocked pages from loading at all
 
-**Status:** ✅ FIXED - Test again and it should show success page
+**Fix Applied:**
+- Updated `src/pages/PaymentSuccess.tsx` - proper lesson lookup via pending_bookings
+- Updated `src/components/ProtectedRoute.tsx` - use `roles` array instead of `role`
+- Updated `src/components/ReferralWidget.tsx` - use `roles` array instead of `role`
+- Updated `src/pages/Checkout.tsx` - use `roles` array instead of `role`
+
+**Status:** ✅ FIXED - All database schema mismatches resolved
 
 ---
 

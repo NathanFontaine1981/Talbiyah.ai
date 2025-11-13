@@ -127,7 +127,7 @@ export default function IslamicCarousel() {
       </div>
 
       <div className="min-h-[120px] flex items-center justify-center">
-        {carouselType === 'names' && 'arabic' in current && (
+        {carouselType === 'names' && 'arabic' in current && 'transliteration' in current && 'meaning' in current && (
           <div className="text-center space-y-2">
             <p className="text-4xl font-arabic text-cyan-400 mb-3">{current.arabic}</p>
             <p className="text-lg font-semibold text-white">{current.transliteration}</p>

@@ -88,12 +88,18 @@ export default function CourseArabic() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-3xl p-1 mb-8 shadow-2xl">
-                <div className="bg-slate-100 rounded-[22px] h-80 flex items-center justify-center">
-                  <div className="text-center">
-                    <ImageIcon className="w-24 h-24 text-blue-500 mx-auto mb-4" />
-                    <p className="text-slate-600 font-semibold">Arabic Language Course Image</p>
-                    <p className="text-sm text-slate-500 mt-2">Beautiful Arabic calligraphy</p>
+              <div className="relative bg-gradient-to-br from-blue-500 to-cyan-600 rounded-3xl p-1 mb-8 shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-20 blur-2xl"></div>
+                <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[22px] h-80 flex items-center justify-center">
+                  <div className="text-center flex flex-col items-center justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full"></div>
+                      <Languages className="relative w-32 h-32 text-blue-400 mb-6 drop-shadow-2xl" />
+                    </div>
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-6 py-3">
+                      <p className="text-blue-300 font-bold text-xl">Arabic Language</p>
+                      <p className="text-blue-400/80 text-sm mt-1">Classical & Modern Standard Arabic</p>
+                    </div>
                   </div>
                 </div>
               </div>

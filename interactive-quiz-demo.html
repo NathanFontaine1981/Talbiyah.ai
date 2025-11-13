@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz Demo - Talbiyah Insights</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Interactive Quiz Demo</h1>
+
+        <!-- Quiz Section -->
+        <div class="space-y-2">
+            <div class="flex items-center space-x-2 px-4 py-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <h3 class="text-sm font-semibold text-indigo-900">Mini Quiz (Comprehension Check)</h3>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-lg p-6 ml-2">
+                <div id="quiz-container" class="space-y-6"></div>
+            </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h2 class="font-semibold text-blue-900 mb-2">How it works:</h2>
+            <ul class="text-sm text-blue-800 space-y-1">
+                <li>• Click on any answer option to select it</li>
+                <li>• Green = Correct answer</li>
+                <li>• Red = Incorrect answer (correct answer will also be shown in green)</li>
+                <li>• Click "Try again" to reset and try again</li>
+                <li>• Answer options are hidden until you click!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Where did Allah call Musa (peace be upon him)?",
+                options: [
+                    "Mount Uhud",
+                    "Madīnah",
+                    "Sacred Valley of Ṭuwā",
+                    "Mount Sinai"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "What did Pharaoh claim about himself?",
+                options: [
+                    "I am your guide",
+                    "I am your provider",
+                    "I am your lord, most high",
+                    "I am your messenger"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "What did Allah do to Pharaoh as an example and warning?",
+                options: [
+                    "Forgave him",
+                    "Guided him to the truth",
+                    "Sent him wealth and prosperity",
+                    "Seized him with exemplary punishment"
+                ],
+                correctAnswer: 3
+            }
+        ];
+
+        const quizContainer = document.getElementById('quiz-container');
+
+        questions.forEach((q, qIndex) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'space-y-3';
+            questionDiv.id = `question-${qIndex}`;
+
+            // Question text
+            const questionText = document.createElement('p');
+            questionText.className = 'font-semibold text-gray-900';
+            questionText.innerHTML = `<strong>Q${qIndex + 1}.</strong> ${q.question}`;
+            questionDiv.appendChild(questionText);
+
+            // Options container
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'space-y-2';
+
+            q.options.forEach((option, oIndex) => {
+                const optionButton = document.createElement('button');
+                optionButton.className = 'w-full text-left px-4 py-3 rounded-lg border-2 transition-all border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer';
+                optionButton.id = `q${qIndex}-option-${oIndex}`;
+
+                const optionContent = document.createElement('div');
+                optionContent.className = 'flex items-center justify-between';
+
+                const optionText = document.createElement('span');
+                optionText.className = 'text-sm';
+                optionText.textContent = `${String.fromCharCode(65 + oIndex)}) ${option}`;
+
+                optionContent.appendChild(optionText);
+                optionButton.appendChild(optionContent);
+                optionsDiv.appendChild(optionButton);
+
+                // Click handler
+                optionButton.addEventListener('click', () => {
+                    handleAnswer(qIndex, oIndex, q.correctAnswer, questionDiv);
+                });
+            });
+
+            questionDiv.appendChild(optionsDiv);
+            quizContainer.appendChild(questionDiv);
+        });
+
+        function handleAnswer(qIndex, selectedIndex, correctIndex, questionDiv) {
+            const options = questionDiv.querySelectorAll('button');
+
+            // Disable all buttons
+            options.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('cursor-pointer', 'hover:border-indigo-300', 'hover:bg-indigo-50');
+                btn.classList.add('cursor-not-allowed');
+
+                const optionContent = btn.querySelector('div');
+                const isSelected = idx === selectedIndex;
+                const isCorrect = idx === correctIndex;
+
+                // Remove existing border colors
+                btn.classList.remove('border-gray-200', 'bg-white');
+
+                if (isSelected) {
+                    if (isCorrect) {
+                        // Selected and correct
+                        btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+                        const checkIcon = document.createElement('span');
+                        checkIcon.innerHTML = `
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        `;
+                        optionContent.appendChild(checkIcon);
+                    } else {
+                        // Selected but incorrect
+                        btn.classList.add('border-red-500', 'bg-red-50', 'text-red-900');
+                        const xIcon = document.createElement('span');
+                        xIcon.innerHTML = `
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        `;
+                        optionContent.appendChild(xIcon);
+                    }
+                } else if (isCorrect) {
+                    // Show correct answer
+                    btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+                    const checkIcon = document.createElement('span');
+                    checkIcon.innerHTML = `
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    `;
+                    optionContent.appendChild(checkIcon);
+                } else {
+                    // Other options
+                    btn.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-500');
+                }
+            });
+
+            // Add feedback message
+            const isCorrect = selectedIndex === correctIndex;
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'flex items-center justify-between pt-2';
+            feedbackDiv.innerHTML = `
+                <p class="text-sm font-medium ${isCorrect ? 'text-emerald-600' : 'text-red-600'}">
+                    ${isCorrect ? '✓ Correct!' : '✗ Incorrect - see the correct answer above'}
+                </p>
+                <button onclick="resetQuestion(${qIndex})" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                    Try again
+                </button>
+            `;
+            questionDiv.appendChild(feedbackDiv);
+        }
+
+        function resetQuestion(qIndex) {
+            const questionDiv = document.getElementById(`question-${qIndex}`);
+            const options = questionDiv.querySelectorAll('button');
+
+            // Remove feedback
+            const feedback = questionDiv.querySelector('.flex.items-center.justify-between');
+            if (feedback) feedback.remove();
+
+            // Reset all buttons
+            options.forEach((btn) => {
+                btn.disabled = false;
+                btn.className = 'w-full text-left px-4 py-3 rounded-lg border-2 transition-all border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer';
+
+                const optionContent = btn.querySelector('div');
+                // Remove any icons
+                const icons = optionContent.querySelectorAll('svg');
+                icons.forEach(icon => icon.parentElement.remove());
+            });
+        }
+
+        // Make resetQuestion available globally
+        window.resetQuestion = resetQuestion;
+    </script>
+</body>
+</html>

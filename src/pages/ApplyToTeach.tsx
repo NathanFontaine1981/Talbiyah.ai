@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, User, ArrowLeft } from 'lucide-react';
+import { BookOpen, Upload, User, ArrowLeft, Award, FileText, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
-
-interface Subject {
-  id: string;
-  name: string;
-}
 
 export default function ApplyToTeach() {
   const navigate = useNavigate();
@@ -15,11 +10,19 @@ export default function ApplyToTeach() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+
+  // Qualifications state
+  const [hasIjazah, setHasIjazah] = useState(false);
+  const [hasDegree, setHasDegree] = useState(false);
+  const [ijazahTypes, setIjazahTypes] = useState<string[]>([]);
+  const [ijazahFiles, setIjazahFiles] = useState<File[]>([]);
+  const [degreeFiles, setDegreeFiles] = useState<File[]>([]);
+  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -29,7 +32,10 @@ export default function ApplyToTeach() {
     gender: '',
     about_me: '',
     education_level: '',
-    hourly_rate: ''
+    hourly_rate: '',
+    years_experience: '0',
+    english_level: '',
+    degree_type: ''
   });
 
   const islamicInterests = [
@@ -55,6 +61,7 @@ export default function ApplyToTeach() {
 
   useEffect(() => {
     loadUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadUserProfile() {
@@ -115,6 +122,23 @@ export default function ApplyToTeach() {
         return [...prev, interest];
       }
     });
+  }
+
+  function handleIjazahTypeToggle(type: string) {
+    setIjazahTypes(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(t => t !== type);
+      } else {
+        return [...prev, type];
+      }
+    });
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File[]>>) {
+    const files = e.target.files;
+    if (files) {
+      setter(Array.from(files));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -206,16 +230,89 @@ export default function ApplyToTeach() {
         }
       }
 
+      // Upload certificate files
+      const certificates = [];
+
+      // Upload Ijazah certificates
+      for (const file of ijazahFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-ijazah-${Date.now()}.${fileExt}`;
+        const filePath = `certificates/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('teacher_audio')
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('teacher_audio')
+            .getPublicUrl(filePath);
+          certificates.push({ type: 'ijazah', url: publicUrl, name: file.name });
+        }
+      }
+
+      // Upload Degree certificates
+      for (const file of degreeFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-degree-${Date.now()}.${fileExt}`;
+        const filePath = `certificates/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('teacher_audio')
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('teacher_audio')
+            .getPublicUrl(filePath);
+          certificates.push({ type: 'degree', url: publicUrl, name: file.name });
+        }
+      }
+
+      // Upload other certificates
+      for (const file of certificateFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-cert-${Date.now()}.${fileExt}`;
+        const filePath = `certificates/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('teacher_audio')
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('teacher_audio')
+            .getPublicUrl(filePath);
+          certificates.push({ type: 'other', url: publicUrl, name: file.name });
+        }
+      }
+
+      // Round hourly rate to 2 decimal places
+      const hourlyRateRounded = Math.round(parseFloat(formData.hourly_rate) * 100) / 100;
+
+      // Determine if interview is required (for Expert/Master tier candidates)
+      const interviewRequired = hasIjazah || hasDegree || hourlyRateRounded >= 8.50;
+
       const { error: profileError } = await supabase
         .from('teacher_profiles')
         .insert({
           user_id: user.id,
           bio: formData.about_me || null,
-          hourly_rate: parseFloat(formData.hourly_rate),
+          hourly_rate: hourlyRateRounded,
           video_intro_url: videoIntroUrl,
+          intro_video_url: videoIntroUrl,
           education_level: formData.education_level,
           islamic_learning_interests: selectedInterests,
-          status: 'pending_approval'
+          status: 'pending_approval',
+          years_experience: parseInt(formData.years_experience),
+          english_level: formData.english_level,
+          has_ijazah: hasIjazah,
+          ijazah_type: hasIjazah ? ijazahTypes : null,
+          has_degree: hasDegree,
+          degree_type: hasDegree ? formData.degree_type : null,
+          certificates: certificates.length > 0 ? certificates : null,
+          interview_required: interviewRequired,
+          current_tier: 'newcomer'
         });
 
       if (profileError) throw profileError;
@@ -481,6 +578,202 @@ export default function ApplyToTeach() {
                         <span className="text-gray-700">{interest}</span>
                       </label>
                     ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200 flex items-center space-x-2">
+                <Award className="w-6 h-6 text-emerald-500" />
+                <span>Qualifications & Experience</span>
+              </h3>
+
+              <div className="space-y-6">
+                {/* Years of Experience */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Years of Teaching Experience *
+                  </label>
+                  <select
+                    value={formData.years_experience}
+                    onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="0">Less than 1 year</option>
+                    <option value="1">1-2 years</option>
+                    <option value="3">3-5 years</option>
+                    <option value="6">5-10 years</option>
+                    <option value="11">10+ years</option>
+                  </select>
+                </div>
+
+                {/* English Proficiency */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                    <Globe className="w-4 h-4" />
+                    <span>English Proficiency Level *</span>
+                  </label>
+                  <select
+                    value={formData.english_level}
+                    onChange={(e) => setFormData({ ...formData, english_level: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select your English level</option>
+                    <option value="basic">Basic (A1-A2) - Can understand simple phrases</option>
+                    <option value="intermediate">Intermediate (B1-B2) - Can hold conversations</option>
+                    <option value="fluent">Fluent (C1-C2) - Advanced proficiency</option>
+                    <option value="native">Native Speaker</option>
+                  </select>
+                </div>
+
+                {/* Ijazah Section */}
+                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                  <label className="flex items-center space-x-3 mb-4">
+                    <input
+                      type="checkbox"
+                      checked={hasIjazah}
+                      onChange={(e) => setHasIjazah(e.target.checked)}
+                      className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
+                    />
+                    <span className="text-lg font-semibold text-gray-900">
+                      I have Ijazah (Quranic certification)
+                    </span>
+                  </label>
+
+                  {hasIjazah && (
+                    <div className="ml-8 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-3">
+                          Ijazah Type (select all that apply):
+                        </label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {['Hafs', 'Warsh', 'Qalun', 'Other'].map(type => (
+                            <label
+                              key={type}
+                              className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-white cursor-pointer transition"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={ijazahTypes.includes(type)}
+                                onChange={() => handleIjazahTypeToggle(type)}
+                                className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 rounded"
+                              />
+                              <span className="text-gray-700">{type}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span>Upload Ijazah Certificate(s) *</span>
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          multiple
+                          onChange={(e) => handleFileUpload(e, setIjazahFiles)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Accepted formats: PDF, JPG, PNG (max 10MB per file)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Degree Section */}
+                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                  <label className="flex items-center space-x-3 mb-4">
+                    <input
+                      type="checkbox"
+                      checked={hasDegree}
+                      onChange={(e) => setHasDegree(e.target.checked)}
+                      className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
+                    />
+                    <span className="text-lg font-semibold text-gray-900">
+                      I have a degree in Islamic Studies or Arabic
+                    </span>
+                  </label>
+
+                  {hasDegree && (
+                    <div className="ml-8 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Degree Type *
+                        </label>
+                        <select
+                          value={formData.degree_type}
+                          onChange={(e) => setFormData({ ...formData, degree_type: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          required
+                        >
+                          <option value="">Select degree type</option>
+                          <option value="al-azhar">Al-Azhar University</option>
+                          <option value="islamic_studies">Islamic Studies Degree</option>
+                          <option value="arabic_language">Arabic Language Degree</option>
+                          <option value="sharia">Sharia Law Degree</option>
+                          <option value="quran_tafsir">Quran & Tafsir</option>
+                          <option value="hadith">Hadith Studies</option>
+                          <option value="other">Other Islamic Studies</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span>Upload Degree Certificate *</span>
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          multiple
+                          onChange={(e) => handleFileUpload(e, setDegreeFiles)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Accepted formats: PDF, JPG, PNG (max 10MB per file)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Other Certificates */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                    <FileText className="w-4 h-4" />
+                    <span>Other Teaching Certificates (Optional)</span>
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    multiple
+                    onChange={(e) => handleFileUpload(e, setCertificateFiles)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Any additional certificates, diplomas, or training qualifications
+                  </p>
+                </div>
+
+                {/* Tier Information Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 About Teacher Tiers</h4>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Your qualifications will help us determine your initial teacher tier. Higher tiers earn more per hour!
+                  </p>
+                  <div className="space-y-1 text-xs text-blue-700">
+                    <div>🌱 <strong>Newcomer:</strong> £5/hr (starting tier)</div>
+                    <div>📚 <strong>Apprentice:</strong> £6/hr (after 50+ hours)</div>
+                    <div>🎯 <strong>Skilled:</strong> £7/hr (after 150+ hours)</div>
+                    <div>🏆 <strong>Expert:</strong> £8.50/hr (with Ijazah or degree + 400+ hours)</div>
+                    <div>💎 <strong>Master:</strong> £10/hr (multiple certifications + 1000+ hours)</div>
                   </div>
                 </div>
               </div>

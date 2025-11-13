@@ -49,6 +49,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
     } else {
       initializeProgress();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
 
   async function loadProgress() {

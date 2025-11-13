@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Zap, BookOpen, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Calendar, Zap, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string;
@@ -8,17 +8,10 @@ interface DashboardHeaderProps {
   userRole?: string;
 }
 
-interface PrayerTime {
-  name: string;
-  time: string;
-  isPassed: boolean;
-}
-
 export default function DashboardHeader({ userName, userLevel = 1, userPoints = 75, userRole = 'Student' }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselType, setCarouselType] = useState<'names' | 'hadiths' | 'ayahs'>('names');
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
 
   const ISLAMIC_CONTENT = {
     names: [
@@ -49,39 +42,12 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
       });
     }, 10000);
 
-    fetchPrayerTimes();
-
     return () => {
       clearInterval(timer);
       clearInterval(carousel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carouselType]);
-
-  async function fetchPrayerTimes() {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-
-    const times = [
-      { name: 'Fajr', time: '05:45', isPassed: false },
-      { name: 'Dhuhr', time: '11:53', isPassed: false },
-      { name: 'Asr', time: '14:30', isPassed: false },
-      { name: 'Maghrib', time: '16:45', isPassed: false },
-      { name: 'Isha', time: '18:30', isPassed: false },
-    ];
-
-    const updatedTimes = times.map(prayer => {
-      const [hours, minutes] = prayer.time.split(':').map(Number);
-      const prayerTimeInMinutes = hours * 60 + minutes;
-      return {
-        ...prayer,
-        isPassed: currentTimeInMinutes > prayerTimeInMinutes
-      };
-    });
-
-    setPrayerTimes(updatedTimes);
-  }
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
@@ -121,6 +87,18 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
           textPrimary: 'text-white',
           textSecondary: 'text-white/80',
           iconPrimary: 'text-pink-300',
+        };
+      case 'Parent':
+        return {
+          mainBg: 'bg-gradient-to-br from-purple-700 via-purple-600 to-purple-800',
+          cardBg: 'bg-purple-900/30',
+          cardBorder: 'border-purple-600/30',
+          levelBg: 'bg-purple-900/50',
+          levelBorder: 'border-purple-600/30',
+          levelIcon: 'text-amber-400',
+          textPrimary: 'text-white',
+          textSecondary: 'text-white/80',
+          iconPrimary: 'text-purple-300',
         };
       case 'Teacher':
         return {
@@ -164,51 +142,39 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
   const colors = getColorClasses();
 
   return (
-    <div className={`${colors.mainBg} rounded-3xl p-8 shadow-2xl`}>
-      <div className="flex items-start justify-between mb-6">
+    <div className={`${colors.mainBg} rounded-3xl p-6 shadow-2xl`}>
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-            {getGreeting()}, {userName} <span className="text-2xl">👋</span>
+          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+            {getGreeting()}, {userName} <span className="text-xl">👋</span>
           </h1>
-          <div className={`flex items-center gap-4 ${colors.textSecondary} text-sm`}>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+          <div className={`flex items-center gap-3 ${colors.textSecondary} text-xs`}>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
               <span>{gregorianDate}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
               <span>{islamicDate}</span>
             </div>
           </div>
         </div>
 
-        <div className={`${colors.levelBg} backdrop-blur-sm rounded-2xl px-6 py-3 border ${colors.levelBorder}`}>
-          <div className="flex items-center gap-3">
-            <Zap className={`w-5 h-5 ${colors.levelIcon}`} />
-            <div className="flex items-center gap-4">
-              <div className="text-white/90">
-                <span className="text-sm">Level {userLevel}</span>
-                <span className="mx-2">•</span>
-                <span className="font-bold">{userPoints} pts</span>
-              </div>
+        <div className={`${colors.levelBg} backdrop-blur-sm rounded-xl px-4 py-2 border ${colors.levelBorder}`}>
+          <div className="flex items-center gap-2">
+            <Zap className={`w-4 h-4 ${colors.levelIcon}`} />
+            <div className="text-white/90 text-sm">
+              <span className="text-xs">Level {userLevel}</span>
+              <span className="mx-1.5">•</span>
+              <span className="font-bold">{userPoints} pts</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[auto,1fr,auto] gap-4">
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder}`}>
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-            <div className="text-xs">
-              <p className="text-white font-medium">{gregorianDate}</p>
-              <p className="text-slate-400 text-[10px]">{islamicDate}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-8 py-5 border ${colors.cardBorder}`}>
-          <div className="flex items-center justify-between mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-3">
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-xl px-6 py-4 border ${colors.cardBorder}`}>
+          <div className="flex items-center justify-between mb-2">
             <div className="flex space-x-2">
               <button
                 onClick={() => { setCarouselType('names'); setCarouselIndex(0); }}
@@ -236,7 +202,7 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
               </button>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <button onClick={handlePrev} className="p-1 text-slate-400 hover:text-cyan-400 transition">
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -246,37 +212,37 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
             </div>
           </div>
 
-          <div className="min-h-[100px] flex items-center justify-center text-center">
-            {carouselType === 'names' && 'arabic' in currentContent && (
+          <div className="min-h-[70px] flex items-center justify-center text-center">
+            {carouselType === 'names' && 'arabic' in currentContent && 'transliteration' in currentContent && 'meaning' in currentContent && (
               <div>
-                <p className="text-4xl font-arabic text-cyan-400 mb-2">{currentContent.arabic}</p>
-                <p className="text-base text-white font-semibold">{currentContent.transliteration}</p>
-                <p className="text-sm text-slate-400">{currentContent.meaning}</p>
+                <p className="text-3xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
+                <p className="text-xs text-slate-400">{currentContent.meaning}</p>
               </div>
             )}
 
             {carouselType === 'hadiths' && 'text' in currentContent && (
               <div className="max-w-3xl">
-                <p className="text-base text-slate-200 italic">"{currentContent.text}"</p>
-                <p className="text-sm text-cyan-400 mt-2">{currentContent.source}</p>
+                <p className="text-sm text-slate-200 italic">"{currentContent.text}"</p>
+                <p className="text-xs text-cyan-400 mt-1">{currentContent.source}</p>
               </div>
             )}
 
             {carouselType === 'ayahs' && 'arabic' in currentContent && 'translation' in currentContent && (
               <div>
-                <p className="text-3xl font-arabic text-cyan-400 mb-2">{currentContent.arabic}</p>
-                <p className="text-base text-slate-200">{currentContent.translation}</p>
-                <p className="text-sm text-cyan-400 mt-2">{currentContent.reference}</p>
+                <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                <p className="text-sm text-slate-200">{currentContent.translation}</p>
+                <p className="text-xs text-cyan-400 mt-1">{currentContent.reference}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className={`${colors.cardBg} backdrop-blur-sm rounded-2xl px-4 py-3 border ${colors.cardBorder} flex items-center space-x-2`}>
+        <div className={`${colors.cardBg} backdrop-blur-sm rounded-xl px-3 py-2 border ${colors.cardBorder} flex items-center space-x-2`}>
           <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <div>
             <p className="text-[10px] text-slate-400 mb-0.5">Time</p>
-            <p className="text-base font-bold text-white">
+            <p className="text-sm font-bold text-white">
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>

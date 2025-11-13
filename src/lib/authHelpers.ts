@@ -8,11 +8,11 @@ export async function getDashboardRoute(): Promise<string> {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('roles')
       .eq('id', user.id)
       .single();
 
-    if (profile?.is_admin) {
+    if (profile?.roles && profile.roles.includes('admin')) {
       return '/admin';
     }
 

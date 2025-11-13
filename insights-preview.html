@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talbiyah Insights Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Base prose styling */
+        .prose { max-width: none; line-height: 1.7; }
+        .prose h1 { font-size: 2rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #111827; }
+        .prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1f2937; }
+        .prose p { margin-bottom: 1rem; color: #374151; }
+        .prose ul { list-style-type: disc; list-style-position: inside; margin-bottom: 1rem; }
+        .prose ul li { margin-bottom: 0.5rem; }
+        .prose ol { list-style-type: decimal; list-style-position: inside; margin-bottom: 1rem; }
+        .prose ol li { margin-bottom: 0.5rem; }
+        .prose blockquote { border-left: 4px solid #10b981; padding-left: 1rem; font-style: italic; margin: 1rem 0; color: #6b7280; }
+        .prose strong { font-weight: 600; color: #111827; }
+        .prose code { background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: monospace; color: #059669; }
+        .prose em { font-style: italic; color: #6b7280; }
+
+        /* Section cards with color coding */
+        .section-card {
+            margin-bottom: 1.5rem;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .section-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Color themes for different section types */
+        .section-summary .section-header { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; border: 1px solid #93c5fd; }
+        .section-breakdown .section-header { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; border: 1px solid #86efac; }
+        .section-flow .section-header { background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%); color: #115e59; border: 1px solid #5eead4; }
+        .section-vocabulary .section-header { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; border: 1px solid #86efac; }
+        .section-grammar .section-header { background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); color: #9a3412; border: 1px solid #fb923c; }
+        .section-lessons .section-header { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; border: 1px solid #fbbf24; }
+        .section-reflection .section-header { background: linear-gradient(135deg, #fecdd3 0%, #fda4af 100%); color: #9f1239; border: 1px solid #fb7185; }
+        .section-quiz .section-header { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); color: #3730a3; border: 1px solid #a5b4fc; }
+        .section-homework .section-header { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; border: 1px solid #6ee7b7; }
+        .section-progress .section-header { background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%); color: #155e75; border: 1px solid #67e8f9; }
+        .section-pronunciation .section-header { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); color: #831843; border: 1px solid #f9a8d4; }
+        .section-tajweed .section-header { background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); color: #6b21a8; border: 1px solid #c084fc; }
+        .section-memory .section-header { background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%); color: #5b21b6; border: 1px solid #a78bfa; }
+
+        /* Tables with better styling */
+        .prose table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+        .prose th { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: 1px solid #059669; padding: 0.75rem 1rem; text-align: left; font-weight: 600; font-size: 0.875rem; }
+        .prose td { border: 1px solid #d1d5db; padding: 0.75rem 1rem; color: #374151; }
+        .prose tr:nth-child(even) { background-color: #f9fafb; }
+        .prose tr:hover { background-color: #f3f4f6; }
+
+        /* Horizontal rules between major sections */
+        .prose hr { margin: 2rem 0; border: none; border-top: 3px solid #e5e7eb; opacity: 0.6; }
+
+        /* Tab styling */
+        .active-tab {
+            background: linear-gradient(to right, #10b981, #14b8a6);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .inactive-tab {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+        .inactive-tab:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* Print styles */
+        @media print {
+            .section-header, .prose th {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 min-h-screen">
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 mb-8 text-white shadow-2xl">
+            <div class="flex items-center space-x-4 mb-4">
+                <span class="text-5xl">🕌</span>
+                <div>
+                    <h1 class="text-4xl font-bold">Talbiyah Insights Preview</h1>
+                    <p class="text-emerald-100 mt-2">AI-Generated Post-Lesson Study Materials</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-emerald-100 text-sm mt-4">
+                <span>✨ Comprehensive</span>
+                <span>•</span>
+                <span>📚 Personalized</span>
+                <span>•</span>
+                <span>🎯 Actionable</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <button onclick="loadInsight('quran-understanding')" id="btn-quran-understanding"
+                class="px-6 py-4 rounded-xl font-semibold shadow-lg transition transform hover:scale-105 inactive-tab">
+                <div class="text-2xl mb-2">📖</div>
+                <div class="text-sm">Quran Understanding</div>
+                <div class="text-xs text-gray-500 mt-1">Tadabbur</div>
+            </button>
+
+            <button onclick="loadInsight('quran-fluency')" id="btn-quran-fluency"
+                class="px-6 py-4 rounded-xl font-semibold shadow-lg transition transform hover:scale-105 inactive-tab">
+                <div class="text-2xl mb-2">🎵</div>
+                <div class="text-sm">Quran Fluency</div>
+                <div class="text-xs text-gray-500 mt-1">Tajweed</div>
+            </button>
+
+            <button onclick="loadInsight('quran-memorization')" id="btn-quran-memorization"
+                class="px-6 py-4 rounded-xl font-semibold shadow-lg transition transform hover:scale-105 inactive-tab">
+                <div class="text-2xl mb-2">🧠</div>
+                <div class="text-sm">Quran Memorization</div>
+                <div class="text-xs text-gray-500 mt-1">Hifz</div>
+            </button>
+
+            <button onclick="loadInsight('arabic-language')" id="btn-arabic-language"
+                class="px-6 py-4 rounded-xl font-semibold shadow-lg transition transform hover:scale-105 inactive-tab">
+                <div class="text-2xl mb-2">🗣️</div>
+                <div class="text-sm">Arabic Language</div>
+                <div class="text-xs text-gray-500 mt-1">Grammar & Vocab</div>
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="bg-white rounded-2xl shadow-xl p-12 text-center hidden">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-emerald-600"></div>
+            <p class="mt-4 text-gray-600 font-medium">Loading insight...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="bg-red-50 border-2 border-red-300 rounded-2xl p-8 text-center hidden">
+            <div class="text-6xl mb-4">⚠️</div>
+            <h3 class="text-xl font-bold text-red-800 mb-2">Error Loading Insight</h3>
+            <p class="text-red-600" id="error-message"></p>
+        </div>
+
+        <!-- Content -->
+        <div id="content" class="bg-white rounded-2xl shadow-2xl p-8 prose prose-sm max-w-none hidden">
+            <div id="insight-content"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-sm text-gray-600">
+            <p class="mb-2">Generated by <strong class="text-emerald-600">Talbiyah.ai Insights System</strong></p>
+            <p class="text-xs">Powered by Claude Code | Making Islamic learning deeply personal</p>
+        </div>
+    </div>
+
+    <script>
+        let currentInsight = null;
+
+        // Section type detector - maps keywords to section classes
+        const sectionTypeMap = {
+            'summary': 'summary',
+            'lesson summary': 'summary',
+            'breakdown': 'breakdown',
+            'ayah-by-ayah': 'breakdown',
+            'flow of meaning': 'flow',
+            'tafsir': 'flow',
+            'tafsīr': 'flow',
+            'vocabulary': 'vocabulary',
+            'key arabic': 'vocabulary',
+            'key terms': 'vocabulary',
+            'grammar': 'grammar',
+            'grammatical': 'grammar',
+            'verb': 'grammar',
+            'pronunciation': 'pronunciation',
+            'makhraj': 'pronunciation',
+            'sounds': 'pronunciation',
+            'tajweed': 'tajweed',
+            'rules applied': 'tajweed',
+            'memory jogger': 'memory',
+            'memorization': 'memory',
+            'chunking': 'memory',
+            'repetition': 'memory',
+            'key lessons': 'lessons',
+            'lessons': 'lessons',
+            'tadabbur': 'lessons',
+            'reflection': 'reflection',
+            'questions': 'reflection',
+            'quiz': 'quiz',
+            'test': 'quiz',
+            'comprehension': 'quiz',
+            'homework': 'homework',
+            'practice': 'homework',
+            'next steps': 'homework',
+            'progress': 'progress',
+            'tracking': 'progress',
+            'assessment': 'progress'
+        };
+
+        // Icons for different section types
+        const sectionIcons = {
+            'summary': '📝',
+            'breakdown': '📖',
+            'flow': '🔗',
+            'vocabulary': '📚',
+            'grammar': '⚙️',
+            'pronunciation': '🗣️',
+            'tajweed': '🎵',
+            'memory': '🧠',
+            'lessons': '💡',
+            'reflection': '🤔',
+            'quiz': '✅',
+            'homework': '📋',
+            'progress': '📊'
+        };
+
+        function getSectionType(title) {
+            const lowerTitle = title.toLowerCase();
+            for (const [keyword, type] of Object.entries(sectionTypeMap)) {
+                if (lowerTitle.includes(keyword)) {
+                    return type;
+                }
+            }
+            return 'summary'; // default
+        }
+
+        function wrapSections(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const container = document.createElement('div');
+
+            let currentSection = null;
+            let currentContent = [];
+
+            Array.from(doc.body.childNodes).forEach(node => {
+                if (node.nodeName === 'H2') {
+                    // Save previous section
+                    if (currentSection) {
+                        const sectionType = getSectionType(currentSection);
+                        const sectionCard = createSectionCard(currentSection, currentContent.join(''), sectionType);
+                        container.appendChild(sectionCard);
+                    }
+
+                    // Start new section
+                    currentSection = node.textContent;
+                    currentContent = [];
+                } else if (node.nodeName === 'HR') {
+                    // Save current section before HR
+                    if (currentSection) {
+                        const sectionType = getSectionType(currentSection);
+                        const sectionCard = createSectionCard(currentSection, currentContent.join(''), sectionType);
+                        container.appendChild(sectionCard);
+                        currentSection = null;
+                        currentContent = [];
+                    }
+                    // Add HR
+                    container.appendChild(node.cloneNode(true));
+                } else {
+                    if (currentSection) {
+                        currentContent.push(node.outerHTML || node.textContent);
+                    } else {
+                        // Content before first H2
+                        container.appendChild(node.cloneNode(true));
+                    }
+                }
+            });
+
+            // Add last section
+            if (currentSection) {
+                const sectionType = getSectionType(currentSection);
+                const sectionCard = createSectionCard(currentSection, currentContent.join(''), sectionType);
+                container.appendChild(sectionCard);
+            }
+
+            return container.innerHTML;
+        }
+
+        function createSectionCard(title, content, type) {
+            const card = document.createElement('div');
+            card.className = `section-card section-${type}`;
+
+            const icon = sectionIcons[type] || '📄';
+
+            card.innerHTML = `
+                <div class="section-header">
+                    <span>${icon}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="section-content">
+                    ${content}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function loadInsight(key) {
+            // Update tabs
+            ['quran-understanding', 'quran-fluency', 'quran-memorization', 'arabic-language'].forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                if (k === key) {
+                    btn.className = btn.className.replace('inactive-tab', 'active-tab');
+                } else {
+                    btn.className = btn.className.replace('active-tab', 'inactive-tab');
+                }
+            });
+
+            // Show loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('content').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            // Fetch insight
+            fetch(`/insight/${key}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    // Parse markdown
+                    const rawHtml = marked.parse(data.content);
+
+                    // Wrap in color-coded sections
+                    const wrappedHtml = wrapSections(rawHtml);
+
+                    // Display
+                    document.getElementById('insight-content').innerHTML = wrappedHtml;
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('content').classList.remove('hidden');
+                    currentInsight = key;
+
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Error loading insight:', error);
+                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                });
+        }
+
+        // Load first insight on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadInsight('quran-understanding');
+        });
+    </script>
+</body>
+</html>

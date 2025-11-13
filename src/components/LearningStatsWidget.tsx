@@ -11,7 +11,11 @@ interface LearningStats {
   level: number;
 }
 
-export default function LearningStatsWidget() {
+interface LearningStatsWidgetProps {
+  learnerId?: string;
+}
+
+export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetProps) {
   const [stats, setStats] = useState<LearningStats>({
     totalHours: 0,
     quizzesPassed: 0,
@@ -24,28 +28,51 @@ export default function LearningStatsWidget() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [learnerId]);
 
   async function loadStats() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      let targetLearnerId = learnerId;
+      let learnerData;
 
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id, current_streak, total_xp, current_level')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+      // If no learnerId provided, get current user's learner
+      if (!targetLearnerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      if (!learner) {
-        setLoading(false);
-        return;
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id, current_streak, total_xp, current_level')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (!learner) {
+          setLoading(false);
+          return;
+        }
+
+        targetLearnerId = learner.id;
+        learnerData = learner;
+      } else {
+        // Fetch learner data for provided learnerId
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id, current_streak, total_xp, current_level')
+          .eq('id', targetLearnerId)
+          .maybeSingle();
+
+        if (!learner) {
+          setLoading(false);
+          return;
+        }
+
+        learnerData = learner;
       }
 
       const { data: lessons } = await supabase
         .from('lessons')
         .select('duration_minutes, status')
-        .eq('learner_id', learner.id)
+        .eq('learner_id', targetLearnerId)
         .eq('status', 'completed');
 
       const totalMinutes = lessons?.reduce((sum, lesson) => sum + lesson.duration_minutes, 0) || 0;
@@ -54,10 +81,10 @@ export default function LearningStatsWidget() {
       setStats({
         totalHours,
         quizzesPassed: 12,
-        currentStreak: learner.current_streak || 0,
+        currentStreak: learnerData.current_streak || 0,
         totalLessons: lessons?.length || 0,
-        xpPoints: learner.total_xp || 0,
-        level: learner.current_level || 1
+        xpPoints: learnerData.total_xp || 0,
+        level: learnerData.current_level || 1
       });
     } catch (error) {
       console.error('Error loading stats:', error);

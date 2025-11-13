@@ -58,6 +58,8 @@ export default function Welcome() {
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('student');
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -71,7 +73,45 @@ export default function Welcome() {
     if (code) {
       setReferralCode(code);
     }
+    loadUserData();
   }, [searchParams]);
+
+  async function loadUserData() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      // Get role from metadata
+      const role = user.user_metadata?.selected_role || 'student';
+      setUserRole(role);
+
+      // Try to get name from user metadata (signup) or profile
+      const nameFromSignup = user.user_metadata?.full_name || '';
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone_number, timezone')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      // Auto-detect timezone
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      setFormData({
+        full_name: profile?.full_name || nameFromSignup,
+        phone_number: profile?.phone_number || '',
+        timezone: profile?.timezone || detectedTimezone,
+        learner_name: ''
+      });
+    } catch (err) {
+      console.error('Error loading user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,6 +195,14 @@ export default function Welcome() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl">
@@ -163,7 +211,14 @@ export default function Welcome() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <User className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white">Welcome! Let's complete your profile.</h1>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">
+                {formData.full_name ? `Welcome, ${formData.full_name.split(' ')[0]}!` : 'Welcome!'}
+              </h1>
+              <p className="text-slate-400 mt-1">
+                {userRole === 'teacher' ? 'Just a few quick details before your application...' : 'Let\'s complete your profile.'}
+              </p>
+            </div>
           </div>
 
           {error && (
@@ -181,34 +236,40 @@ export default function Welcome() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-slate-300 mb-3">
-                Your Full Name (Parent/Guardian) <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                id="full_name"
-                required
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-3.5 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                placeholder="Enter your full name"
-              />
-            </div>
+            {/* Name field - hidden for teachers with pre-filled name */}
+            {userRole !== 'teacher' && (
+              <div>
+                <label htmlFor="full_name" className="block text-sm font-medium text-slate-300 mb-3">
+                  Your Full Name {userRole === 'parent' ? '(Parent/Guardian)' : ''} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="full_name"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  className="w-full px-4 py-3.5 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  placeholder="Enter your full name"
+                />
+              </div>
+            )}
 
-            <div>
-              <label htmlFor="learner_name" className="block text-sm font-medium text-slate-300 mb-3">
-                Student's Name <span className="text-slate-500">(Optional - defaults to your name)</span>
-              </label>
-              <input
-                type="text"
-                id="learner_name"
-                value={formData.learner_name}
-                onChange={(e) => setFormData({ ...formData, learner_name: e.target.value })}
-                className="w-full px-4 py-3.5 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                placeholder="If different from your name"
-              />
-            </div>
+            {/* Student name field - only for parents/students */}
+            {userRole !== 'teacher' && (
+              <div>
+                <label htmlFor="learner_name" className="block text-sm font-medium text-slate-300 mb-3">
+                  Student's Name <span className="text-slate-500">(Optional - defaults to your name)</span>
+                </label>
+                <input
+                  type="text"
+                  id="learner_name"
+                  value={formData.learner_name}
+                  onChange={(e) => setFormData({ ...formData, learner_name: e.target.value })}
+                  className="w-full px-4 py-3.5 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  placeholder="If different from your name"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="phone_number" className="block text-sm font-medium text-slate-300 mb-3">
@@ -256,7 +317,7 @@ export default function Welcome() {
                   <span>Saving...</span>
                 </>
               ) : (
-                <span>Save and Continue</span>
+                <span>{userRole === 'teacher' ? 'Continue to Application' : 'Save and Continue'}</span>
               )}
             </button>
           </form>

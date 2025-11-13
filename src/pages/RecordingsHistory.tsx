@@ -18,9 +18,11 @@ export default function RecordingsHistory() {
   const navigate = useNavigate();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
     loadRecordings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadRecordings() {
@@ -31,52 +33,104 @@ export default function RecordingsHistory() {
         return;
       }
 
-      const { data: learner } = await supabase
-        .from('learners')
+      // Check if user is a teacher
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
         .select('id')
-        .eq('parent_id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!learner) {
-        setLoading(false);
-        return;
-      }
+      if (teacherProfile) {
+        // Load recordings as teacher
+        setIsTeacher(true);
 
-      const { data: lessonsData, error } = await supabase
-        .from('lessons')
-        .select(`
-          id,
-          scheduled_time,
-          duration_minutes,
-          recording_url,
-          teacher_profiles!inner(
-            user_id,
-            profiles!inner(
-              full_name
-            )
-          ),
-          subjects!inner(
-            name
-          ),
-          talbiyah_insights(id)
-        `)
-        .eq('learner_id', learner.id)
-        .eq('status', 'completed')
-        .order('scheduled_time', { ascending: false });
+        const { data: lessonsData, error } = await supabase
+          .from('lessons')
+          .select(`
+            id,
+            scheduled_time,
+            duration_minutes,
+            recording_url,
+            learners!inner(
+              parent_id,
+              profiles!inner(
+                full_name
+              )
+            ),
+            subjects!inner(
+              name
+            ),
+            talbiyah_insights(id)
+          `)
+          .eq('teacher_id', teacherProfile.id)
+          .eq('status', 'completed')
+          .order('scheduled_time', { ascending: false });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (lessonsData) {
-        const formattedRecordings: Recording[] = lessonsData.map((lesson: any) => ({
-          id: lesson.id,
-          scheduled_time: lesson.scheduled_time,
-          duration_minutes: lesson.duration_minutes,
-          subject_name: lesson.subjects.name,
-          teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
-          has_insights: lesson.talbiyah_insights && lesson.talbiyah_insights.length > 0,
-          recording_url: lesson.recording_url
-        }));
-        setRecordings(formattedRecordings);
+        if (lessonsData) {
+          const formattedRecordings: Recording[] = lessonsData.map((lesson: any) => ({
+            id: lesson.id,
+            scheduled_time: lesson.scheduled_time,
+            duration_minutes: lesson.duration_minutes,
+            subject_name: lesson.subjects.name,
+            teacher_name: lesson.learners.profiles.full_name || 'Student',
+            has_insights: lesson.talbiyah_insights && lesson.talbiyah_insights.length > 0,
+            recording_url: lesson.recording_url
+          }));
+          setRecordings(formattedRecordings);
+        }
+      } else {
+        // Load recordings as student
+        setIsTeacher(false);
+
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (!learner) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: lessonsData, error } = await supabase
+          .from('lessons')
+          .select(`
+            id,
+            scheduled_time,
+            duration_minutes,
+            recording_url,
+            teacher_profiles!inner(
+              user_id,
+              profiles!inner(
+                full_name
+              )
+            ),
+            subjects!inner(
+              name
+            ),
+            talbiyah_insights(id)
+          `)
+          .eq('learner_id', learner.id)
+          .eq('status', 'completed')
+          .order('scheduled_time', { ascending: false });
+
+        if (error) throw error;
+
+        if (lessonsData) {
+          const formattedRecordings: Recording[] = lessonsData.map((lesson: any) => ({
+            id: lesson.id,
+            scheduled_time: lesson.scheduled_time,
+            duration_minutes: lesson.duration_minutes,
+            subject_name: lesson.subjects.name,
+            teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
+            has_insights: lesson.talbiyah_insights && lesson.talbiyah_insights.length > 0,
+            recording_url: lesson.recording_url
+          }));
+          setRecordings(formattedRecordings);
+        }
       }
     } catch (error) {
       console.error('Error loading recordings:', error);
@@ -130,13 +184,20 @@ export default function RecordingsHistory() {
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
             <Video className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-900 mb-2">No recordings yet</h3>
-            <p className="text-slate-600 mb-6">Complete some lessons to see your recordings here</p>
-            <button
-              onClick={() => navigate('/choose-course')}
-              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
-            >
-              Book a Lesson
-            </button>
+            <p className="text-slate-600 mb-6">
+              {isTeacher
+                ? 'Your completed lessons will appear here with recordings'
+                : 'Complete some lessons to see your recordings here'
+              }
+            </p>
+            {!isTeacher && (
+              <button
+                onClick={() => navigate('/subjects')}
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+              >
+                Book a Lesson
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -153,7 +214,9 @@ export default function RecordingsHistory() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">{recording.subject_name}</h3>
-                        <p className="text-sm text-slate-600">with {recording.teacher_name}</p>
+                        <p className="text-sm text-slate-600">
+                          {isTeacher ? `Student: ${recording.teacher_name}` : `with ${recording.teacher_name}`}
+                        </p>
                       </div>
                     </div>
 

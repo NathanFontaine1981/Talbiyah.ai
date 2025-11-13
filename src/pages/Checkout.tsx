@@ -1,16 +1,193 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, Lock, CheckCircle, Loader2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, CreditCard, Lock, CheckCircle, Loader2, ShoppingCart, User, Gift } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface Child {
+  id: string;
+  child_name: string;
+  child_age: number | null;
+  has_account: boolean;
+  learner_id: string | null;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, cartCount, totalPrice, discount, finalPrice, clearCart } = useCart();
+  const { cartItems, cartCount, totalPrice, discount, finalPrice, loading: cartLoading, clearCart } = useCart();
+  const { initiateBookingCheckout, loading: checkoutLoading } = useBookingAPI();
+
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [isParent, setIsParent] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [referralBalance, setReferralBalance] = useState(0);
+  const [referralDiscount, setReferralDiscount] = useState(0);
+
+  useEffect(() => {
+    loadUserAndChildren();
+    loadReferralBalance();
+  }, []);
+
+  useEffect(() => {
+    // Auto-calculate referral discount based on available balance
+    if (referralBalance > 0 && finalPrice > 0) {
+      const appliedAmount = Math.min(referralBalance, finalPrice - promoDiscount);
+      setReferralDiscount(appliedAmount);
+    } else {
+      setReferralDiscount(0);
+    }
+  }, [referralBalance, finalPrice, promoDiscount]);
+
+  async function loadUserAndChildren() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('roles')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.roles && profile.roles.includes('parent')) {
+        setIsParent(true);
+
+        const { data: childrenData } = await supabase
+          .from('parent_children')
+          .select('*')
+          .eq('parent_id', user.id);
+
+        const childrenWithLearners = await Promise.all(
+          (childrenData || []).map(async (child) => {
+            let learnerId = child.learner_id;
+
+            if (!learnerId) {
+              const { data: newLearner } = await supabase
+                .from('learners')
+                .insert({
+                  parent_id: user.id,
+                  name: child.child_name,
+                  age: child.child_age
+                })
+                .select()
+                .single();
+
+              if (newLearner) {
+                learnerId = newLearner.id;
+
+                await supabase
+                  .from('parent_children')
+                  .update({ learner_id: learnerId })
+                  .eq('id', child.id);
+              }
+            }
+
+            return {
+              ...child,
+              learner_id: learnerId
+            };
+          })
+        );
+
+        setChildren(childrenWithLearners);
+
+        if (childrenWithLearners.length === 1) {
+          setSelectedChildId(childrenWithLearners[0].id);
+        }
+      } else {
+        // Student booking for themselves
+        setSelectedChildId('self');
+      }
+    } catch (err: any) {
+      console.error('Error loading user/children:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadReferralBalance() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get or create referral credits
+      let { data: credits } = await supabase
+        .from('referral_credits')
+        .select('available_balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!credits) {
+        const { data: newCredits } = await supabase
+          .from('referral_credits')
+          .insert({ user_id: user.id })
+          .select('available_balance')
+          .single();
+        credits = newCredits;
+      }
+
+      setReferralBalance(credits?.available_balance || 0);
+    } catch (error) {
+      console.error('Error loading referral balance:', error);
+      setReferralBalance(0);
+    }
+  }
+
+  async function applyPromoCode() {
+    if (!promoCode.trim()) {
+      setError('Please enter a promo code');
+      return;
+    }
+
+    setApplyingPromo(true);
+    setError('');
+
+    try {
+      // Handle special promo codes
+      if (promoCode.toUpperCase() === '100HONOR' || promoCode.toUpperCase() === '100OWNER') {
+        // Check if user has any completed lessons (must be first lesson)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { count } = await supabase
+          .from('lessons')
+          .select('id', { count: 'exact', head: true })
+          .eq('student_id', user.id)
+          .eq('status', 'completed');
+
+        if (count && count > 0) {
+          throw new Error('This promo code is only valid for your first lesson');
+        }
+
+        // Apply 100% discount
+        setPromoDiscount(finalPrice);
+        setPromoApplied(true);
+        setError('');
+      } else {
+        throw new Error('Invalid promo code');
+      }
+    } catch (err: any) {
+      console.error('Promo code error:', err);
+      setError(err.message || 'Invalid promo code');
+      setPromoDiscount(0);
+      setPromoApplied(false);
+    } finally {
+      setApplyingPromo(false);
+    }
+  }
 
   async function handleCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -18,56 +195,185 @@ export default function Checkout() {
     setProcessing(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('You must be signed in to complete checkout');
-
-      const { data: learnerData } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
-
-      if (!learnerData) {
-        throw new Error('No learner profile found. Please complete your profile first.');
+      if (isParent && !selectedChildId) {
+        throw new Error('Please select which child these sessions are for');
       }
 
-      const lessonsToCreate = cartItems.map(item => ({
-        learner_id: learnerData.id,
-        teacher_id: item.teacher_id,
-        subject_id: item.subject_id,
-        scheduled_time: item.scheduled_time,
-        duration_minutes: item.duration_minutes,
-        status: 'booked',
-        is_free_trial: false,
-        teacher_rate_at_booking: item.duration_minutes === 30 ? 7.50 : 15.00,
-        platform_fee: 10.00,
-        total_cost_paid: item.price,
-        payment_id: `payment_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      }));
+      // Get subject slugs from database
+      const subjectIds = [...new Set(cartItems.map(item => item.subject_id))];
+      const { data: subjects, error: subjectsError } = await supabase
+        .from('subjects')
+        .select('id, slug')
+        .in('id', subjectIds);
 
-      const { error: insertError } = await supabase
-        .from('lessons')
-        .insert(lessonsToCreate);
+      if (subjectsError) throw subjectsError;
 
-      if (insertError) throw insertError;
+      const subjectMap = new Map(subjects?.map(s => [s.id, s.slug]) || []);
 
-      await clearCart();
+      // Calculate total discount and price per item
+      const totalDiscount = promoDiscount + referralDiscount;
+      const discountRatio = totalDiscount / finalPrice;
 
-      setSuccess(true);
+      const bookings = cartItems.map(item => {
+        let itemPrice = item.price;
 
-      setTimeout(() => {
-        navigate('/payment-success');
-      }, 2000);
+        // Apply proportional discount if not 100% promo
+        if (totalDiscount > 0 && totalDiscount < finalPrice) {
+          itemPrice = Math.max(0, item.price * (1 - discountRatio));
+        } else if (totalDiscount >= finalPrice) {
+          itemPrice = 0;
+        }
 
+        return {
+          teacher_id: item.teacher_id,
+          date: item.scheduled_time.split('T')[0],
+          time: item.scheduled_time.split('T')[1].substring(0, 5),
+          subject: subjectMap.get(item.subject_id) || 'general',
+          duration: item.duration_minutes,
+          price: itemPrice,
+          use_free_session: false
+        };
+      });
+
+      // If 100% discount applied, create bookings directly without Stripe
+      if (totalDiscount >= finalPrice) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
+
+        // Determine learner_id
+        let learnerId: string;
+        if (isParent && selectedChildId) {
+          const selectedChild = children.find(c => c.id === selectedChildId);
+          if (!selectedChild?.learner_id) {
+            throw new Error('Selected child has no learner profile');
+          }
+          learnerId = selectedChild.learner_id;
+        } else {
+          // Student booking for themselves - get or create learner
+          const { data: existingLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', session.user.id)
+            .maybeSingle();
+
+          if (existingLearner) {
+            learnerId = existingLearner.id;
+          } else {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .single();
+
+            const { data: newLearner } = await supabase
+              .from('learners')
+              .insert({
+                parent_id: session.user.id,
+                name: profile?.full_name || 'Student',
+                gamification_points: 0
+              })
+              .select('id')
+              .single();
+
+            if (!newLearner) throw new Error('Failed to create learner profile');
+            learnerId = newLearner.id;
+          }
+        }
+
+        // Call edge function to create bookings with 100ms rooms
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              cart_items: cartItems,
+              learner_id: learnerId,
+              promo_code: promoCode
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create booking');
+        }
+
+        const result = await response.json();
+        console.log('Booking created:', result);
+
+        // Deduct referral balance if used
+        if (referralDiscount > 0) {
+          const { data: credits } = await supabase
+            .from('referral_credits')
+            .select('available_balance, available_hours, total_used')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (credits) {
+            const hoursUsed = referralDiscount / 15; // £15 per hour
+            await supabase
+              .from('referral_credits')
+              .update({
+                available_balance: Math.max(0, credits.available_balance - referralDiscount),
+                available_hours: Math.max(0, credits.available_hours - hoursUsed),
+                total_used: credits.total_used + referralDiscount
+              })
+              .eq('user_id', session.user.id);
+
+            // Record transaction
+            await supabase
+              .from('referral_transactions')
+              .insert({
+                user_id: session.user.id,
+                type: 'used',
+                credit_amount: -referralDiscount,
+                hours_amount: -hoursUsed,
+                description: `Used £${referralDiscount.toFixed(2)} referral balance for booking`
+              });
+          }
+        }
+
+        // Clear cart
+        await clearCart();
+
+        // Redirect to success page
+        navigate('/payment-success?promo=true');
+        return;
+      }
+
+      const response = await initiateBookingCheckout(bookings, {
+        referral_discount: referralDiscount
+      });
+
+      if (response.checkout_url) {
+        window.location.href = response.checkout_url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setError(err.message || 'Failed to complete checkout. Please try again.');
+      setError(err.message || 'Failed to initiate checkout');
     } finally {
       setProcessing(false);
     }
   }
 
-  if (cartItems.length === 0 && !success) {
+  if (loading || cartLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mx-auto mb-4" />
+          <p className="text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
         <div className="text-center">
@@ -87,21 +393,6 @@ export default function Checkout() {
     );
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
-            <CheckCircle className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-3">Booking Confirmed!</h2>
-          <p className="text-slate-300 mb-6">
-            Your lessons have been successfully booked. Redirecting to your dashboard...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white py-12 px-6">
@@ -148,30 +439,96 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <CreditCard className="w-5 h-5" />
-                <span>Payment Method</span>
-              </h2>
-              <p className="text-slate-400 mb-4">
-                Payment processing will be integrated in production.
-              </p>
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">Demo Payment</p>
-                    <p className="text-sm text-slate-400">Test mode - no actual charge</p>
+            {!(promoApplied && promoDiscount >= finalPrice) && (
+              <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                  <CreditCard className="w-5 h-5" />
+                  <span>Payment Method</span>
+                </h2>
+                <p className="text-slate-400 mb-4">
+                  You'll be redirected to Stripe for secure payment.
+                </p>
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Stripe Checkout</p>
+                      <p className="text-sm text-slate-400">Secure payment processing</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {promoApplied && promoDiscount >= finalPrice && (
+              <div className="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-500/30">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  <span>Free Booking Confirmed</span>
+                </h2>
+                <p className="text-slate-300 mb-4">
+                  Your promo code <span className="font-bold text-emerald-400">{promoCode.toUpperCase()}</span> has been applied! This booking is completely free.
+                </p>
+                <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/30">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-emerald-400">No payment required</p>
+                      <p className="text-sm text-slate-300 mt-1">Click "Confirm Free Booking" to complete your booking.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {isParent && children.length > 0 && (
+              <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                  <User className="w-5 h-5" />
+                  <span>Who is this for?</span>
+                </h3>
+                <div className="space-y-3">
+                  {children.map((child) => (
+                    <button
+                      key={child.id}
+                      onClick={() => setSelectedChildId(child.id)}
+                      className={`w-full p-4 rounded-xl text-left transition ${
+                        selectedChildId === child.id
+                          ? 'bg-cyan-500 text-white'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <User className="w-5 h-5" />
+                        <div>
+                          <div className="font-semibold">{child.child_name}</div>
+                          {child.child_age && (
+                            <div className="text-sm opacity-75">Age {child.child_age}</div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 sticky top-6">
+              {referralBalance > 0 && (
+                <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Gift className="w-5 h-5 text-amber-400" />
+                    <span className="text-sm font-bold text-amber-300">Referral Balance Available</span>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    You have £{referralBalance.toFixed(2)} in referral rewards. {referralDiscount > 0 ? `£${referralDiscount.toFixed(2)} will be automatically applied to this order!` : 'Will be applied automatically.'}
+                  </p>
+                </div>
+              )}
               <h3 className="text-lg font-bold text-white mb-4">Price Breakdown</h3>
               <div className="space-y-3 mb-6">
                 <div className="flex items-center justify-between text-slate-300">
@@ -184,10 +541,59 @@ export default function Checkout() {
                     <span>-£{discount.toFixed(2)}</span>
                   </div>
                 )}
+                {promoApplied && promoDiscount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-400">
+                    <span>Promo Code ({promoCode.toUpperCase()})</span>
+                    <span>-£{promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {referralDiscount > 0 && (
+                  <div className="flex items-center justify-between text-amber-400">
+                    <span>Referral Balance (Auto-applied) 🎁</span>
+                    <span>-£{referralDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="pt-3 border-t border-slate-700 flex items-center justify-between text-xl font-bold text-white">
                   <span>Total</span>
-                  <span>£{finalPrice.toFixed(2)}</span>
+                  <span>£{Math.max(0, finalPrice - promoDiscount - referralDiscount).toFixed(2)}</span>
                 </div>
+              </div>
+
+              {/* Promo Code Section */}
+              <div className="mb-6 pb-6 border-b border-slate-700">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Promo Code
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter promo code"
+                    disabled={promoApplied || applyingPromo}
+                    className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    onClick={applyPromoCode}
+                    disabled={promoApplied || applyingPromo || !promoCode.trim()}
+                    className="px-6 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 whitespace-nowrap"
+                  >
+                    {applyingPromo ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Applying...</span>
+                      </>
+                    ) : (
+                      <span>Apply</span>
+                    )}
+                  </button>
+                </div>
+                {promoApplied && (
+                  <div className="mt-2 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm text-emerald-400">Promo code applied!</span>
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -198,25 +604,37 @@ export default function Checkout() {
 
               <button
                 onClick={handleCheckout}
-                disabled={processing}
-                className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-lg font-bold transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 flex items-center justify-center space-x-2"
+                disabled={processing || checkoutLoading || (isParent && !selectedChildId)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-lg font-bold transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {processing ? (
+                {processing || checkoutLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
                   </>
+                ) : promoApplied && promoDiscount >= finalPrice ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Confirm Free Booking</span>
+                  </>
                 ) : (
                   <>
-                    <Lock className="w-5 h-5" />
-                    <span>Complete Booking</span>
+                    <CreditCard className="w-5 h-5" />
+                    <span>Proceed to Payment</span>
                   </>
                 )}
               </button>
 
-              <p className="text-xs text-center text-slate-500 mt-4">
-                By completing this booking, you agree to our Terms of Service
-              </p>
+              {!(promoApplied && promoDiscount >= finalPrice) && (
+                <p className="text-xs text-center text-slate-500 mt-4">
+                  Secure payment powered by Stripe
+                </p>
+              )}
+              {promoApplied && promoDiscount >= finalPrice && (
+                <p className="text-xs text-center text-emerald-400 mt-4">
+                  Your booking is completely free with promo code {promoCode.toUpperCase()}!
+                </p>
+              )}
             </div>
           </div>
         </div>
