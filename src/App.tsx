@@ -1,24 +1,31 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { initSentry } from './sentryConfig';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
+
+// Initialize Sentry error tracking
+initSentry();
 import ChooseCourse from './pages/ChooseCourse';
+import SubjectSelection from './pages/SubjectSelection';
 import CourseQuranExplanation from './pages/CourseQuranExplanation';
 import CourseArabic from './pages/CourseArabic';
 import Checkout from './pages/Checkout';
-import Admin from './pages/Admin';
+import Cart from './pages/Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminHome from './pages/admin/AdminHome';
 import TeacherManagement from './pages/admin/TeacherManagement';
-import UsersManagement from './pages/admin/UsersManagement';
-import SessionsManagement from './pages/admin/SessionsManagement';
+import TeacherTiers from './pages/admin/TeacherTiers';
+import UserManagement from './pages/admin/UserManagement';
+import Sessions from './pages/admin/Sessions';
+import GroupSessions from './pages/admin/GroupSessions';
 import CoursesManagement from './pages/admin/CoursesManagement';
-import AnalyticsPage from './pages/admin/AnalyticsPage';
+import Recordings from './pages/admin/Recordings';
+import Analytics from './pages/admin/Analytics';
 import ApplyToTeach from './pages/ApplyToTeach';
 import AccountSettings from './pages/AccountSettings';
 import Dashboard from './pages/Dashboard';
 import Teachers from './pages/Teachers';
 import TeacherProfile from './pages/TeacherProfile';
-import Counselling from './pages/Counselling';
 import Matchmaking from './pages/Matchmaking';
 import Welcome from './pages/Welcome';
 import BookSession from './pages/BookSession';
@@ -26,12 +33,29 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import QuranProgress from './pages/QuranProgress';
 import CoursesOverview from './pages/CoursesOverview';
 import RecordingsHistory from './pages/RecordingsHistory';
-import ReferralLanding from './pages/ReferralLanding';
 import TeacherProfileSetup from './pages/TeacherProfileSetup';
 import TeacherPendingApproval from './pages/TeacherPendingApproval';
 import TeacherAvailability from './pages/TeacherAvailability';
-import VirtualImamAbout from './pages/VirtualImamAbout';
+import TeacherEditProfile from './pages/teacher/EditProfile';
+import IslamicSourceReferenceAbout from './pages/IslamicSourceReferenceAbout';
+import IslamicSourceReference from './pages/IslamicSourceReference';
 import ProtectedRoute from './components/ProtectedRoute';
+import MyChildren from './pages/MyChildren';
+import ChildDashboardView from './pages/ChildDashboardView';
+import ParentOnboarding from './pages/parent/ParentOnboarding';
+import TeacherBooking from './pages/TeacherBooking';
+import ManageTeachers from './pages/student/ManageTeachers';
+import Lesson from './pages/Lesson';
+import VerifyEmail from './pages/VerifyEmail';
+import MyReferrals from './pages/MyReferrals';
+import AuthCallback from './pages/AuthCallback';
+import LessonInsights from './pages/student/LessonInsights';
+import RecordingWithInsights from './pages/student/RecordingWithInsights';
+import ReferralDashboard from './pages/ReferralDashboard';
+import ReferralLeaderboard from './pages/ReferralLeaderboard';
+import TeacherTierDashboard from './pages/TeacherTierDashboard';
+import RescheduleLesson from './pages/RescheduleLesson';
+import MyClasses from './pages/MyClasses';
 
 function App() {
   return (
@@ -39,7 +63,17 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
+        <Route
+          path="/subjects"
+          element={
+            <ProtectedRoute>
+              <SubjectSelection />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/course/quran-understanding" element={<CourseQuranExplanation />} />
         <Route path="/course/arabic-language" element={<CourseArabic />} />
         <Route
@@ -75,10 +109,34 @@ function App() {
           }
         />
         <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reschedule-lesson"
+          element={
+            <ProtectedRoute>
+              <RescheduleLesson />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-classes"
+          element={
+            <ProtectedRoute>
+              <MyClasses />
             </ProtectedRoute>
           }
         />
@@ -91,12 +149,14 @@ function App() {
           }
         >
           <Route index element={<AdminHome />} />
-          <Route path="users" element={<UsersManagement />} />
+          <Route path="users" element={<UserManagement />} />
           <Route path="teachers" element={<TeacherManagement />} />
-          <Route path="sessions" element={<SessionsManagement />} />
+          <Route path="teacher-tiers" element={<TeacherTiers />} />
+          <Route path="sessions" element={<Sessions />} />
+          <Route path="group-sessions" element={<GroupSessions />} />
           <Route path="courses" element={<CoursesManagement />} />
-          <Route path="recordings" element={<div className="text-white">Recordings Management Coming Soon</div>} />
-          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="recordings" element={<Recordings />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<div className="text-white">Settings Coming Soon</div>} />
         </Route>
         <Route
@@ -132,6 +192,22 @@ function App() {
           }
         />
         <Route
+          path="/teacher/edit-profile"
+          element={
+            <ProtectedRoute>
+              <TeacherEditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/tiers"
+          element={
+            <ProtectedRoute>
+              <TeacherTierDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/progress/quran"
           element={
             <ProtectedRoute>
@@ -147,9 +223,40 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/lesson/:lessonId"
+          element={
+            <ProtectedRoute>
+              <Lesson />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lesson/:lessonId/insights"
+          element={
+            <ProtectedRoute>
+              <LessonInsights />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recording/:recordingId"
+          element={
+            <ProtectedRoute>
+              <RecordingWithInsights />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/teachers" element={<Teachers />} />
         <Route path="/teacher/:id" element={<TeacherProfile />} />
-        <Route path="/counselling" element={<Counselling />} />
+        <Route
+          path="/teacher/:id/book"
+          element={
+            <ProtectedRoute>
+              <TeacherBooking />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/matchmaking" element={<Matchmaking />} />
         <Route
           path="/welcome"
@@ -186,12 +293,68 @@ function App() {
         <Route
           path="/refer"
           element={
-            <ProtectedRoute>
-              <ReferralLanding />
+            <ProtectedRoute excludeTeachers={true}>
+              <ReferralDashboard />
             </ProtectedRoute>
           }
         />
-        <Route path="/about/virtual-imam" element={<VirtualImamAbout />} />
+        <Route
+          path="/referral/leaderboard"
+          element={
+            <ProtectedRoute excludeTeachers={true}>
+              <ReferralLeaderboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/parent/onboarding"
+          element={
+            <ProtectedRoute>
+              <ParentOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-children"
+          element={
+            <ProtectedRoute>
+              <MyChildren />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/child/:childId/dashboard"
+          element={
+            <ProtectedRoute>
+              <ChildDashboardView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/my-teachers"
+          element={
+            <ProtectedRoute>
+              <ManageTeachers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-referrals"
+          element={
+            <ProtectedRoute excludeTeachers={true}>
+              <MyReferrals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/islamic-source-reference"
+          element={
+            <ProtectedRoute>
+              <IslamicSourceReference />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/about/islamic-source-reference" element={<IslamicSourceReferenceAbout />} />
       </Routes>
     </BrowserRouter>
   );
