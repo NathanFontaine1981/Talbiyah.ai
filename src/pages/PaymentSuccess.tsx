@@ -40,6 +40,7 @@ export default function PaymentSuccess() {
   async function verifyPaymentAndLoadDetails() {
     try {
       const sessionId = searchParams.get('session_id');
+      console.log('🔍 Payment Success - Session ID:', sessionId);
 
       if (!sessionId) {
         // No session ID - might be coming from promo code checkout
@@ -49,19 +50,24 @@ export default function PaymentSuccess() {
       }
 
       // Find the pending booking to get user ID
-      const { data: pendingBooking } = await supabase
+      const { data: pendingBooking, error: pendingError } = await supabase
         .from('pending_bookings')
         .select('user_id, created_at')
         .eq('stripe_session_id', sessionId)
         .maybeSingle();
 
+      console.log('🔍 Pending booking query result:', { pendingBooking, pendingError });
+
       if (!pendingBooking) {
         // Fallback: try to find lesson directly (shouldn't happen normally)
+        console.error('❌ No pending booking found for session:', sessionId);
         setError('Could not find booking. Please check your dashboard.');
         setVerifying(false);
         setLoading(false);
         return;
       }
+
+      console.log('✅ Found pending booking for user:', pendingBooking.user_id);
 
       // Find the most recent lesson for this user (created after the pending booking)
       const { data: lesson, error: lessonError } = await supabase
@@ -88,10 +94,67 @@ export default function PaymentSuccess() {
         .limit(1)
         .maybeSingle();
 
+      console.log('🔍 Lesson query result:', { lesson, lessonError });
+
       if (lessonError) {
-        console.error('Error loading lesson:', lessonError);
+        console.error('❌ Error loading lesson:', lessonError);
         setError('Could not load booking details');
-      } else if (lesson) {
+      } else if (!lesson) {
+        // Lesson not found yet - webhook might still be processing
+        console.log('⏳ Lesson not found yet, will poll for updates...');
+
+        // Poll for lesson creation (webhook might be delayed)
+        let attempts = 0;
+        const maxAttempts = 15; // 30 seconds (15 attempts * 2 seconds)
+
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          console.log(`🔄 Polling attempt ${attempts}/${maxAttempts}`);
+
+          const { data: polledLesson } = await supabase
+            .from('lessons')
+            .select(`
+              id,
+              scheduled_time,
+              duration_minutes,
+              total_cost_paid,
+              payment_status,
+              teacher_profiles!teacher_id (
+                id,
+                profiles:user_id (
+                  full_name
+                )
+              ),
+              subjects!subject_id (
+                name
+              )
+            `)
+            .eq('student_id', pendingBooking.user_id)
+            .gte('created_at', pendingBooking.created_at)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (polledLesson) {
+            console.log('✅ Lesson found on polling:', polledLesson.id);
+            setLessonDetails(polledLesson as any);
+
+            if (polledLesson.payment_status === 'paid' || polledLesson.payment_status === 'completed') {
+              setVerifying(false);
+            }
+
+            clearInterval(pollInterval);
+          } else if (attempts >= maxAttempts) {
+            console.error('❌ Lesson not found after polling');
+            setError('Booking not found. Please check your dashboard.');
+            setVerifying(false);
+            clearInterval(pollInterval);
+          }
+        }, 2000);
+
+        return; // Exit early, polling will continue
+      } else {
+        console.log('✅ Found lesson:', lesson.id, 'Status:', lesson.payment_status);
         setLessonDetails(lesson as any);
 
         // Check payment status (can be 'paid', 'pending', or 'failed')
@@ -100,33 +163,8 @@ export default function PaymentSuccess() {
         } else if (lesson.payment_status === 'failed') {
           setError('Payment failed. Please contact support.');
           setVerifying(false);
-        } else {
-          // Still processing - poll for updates
-          const pollInterval = setInterval(async () => {
-            const { data: updatedLesson } = await supabase
-              .from('lessons')
-              .select('payment_status')
-              .eq('id', lesson.id)
-              .single();
-
-            if (updatedLesson?.payment_status === 'paid' || updatedLesson?.payment_status === 'completed') {
-              setVerifying(false);
-              clearInterval(pollInterval);
-            } else if (updatedLesson?.payment_status === 'failed') {
-              setError('Payment failed. Please contact support.');
-              setVerifying(false);
-              clearInterval(pollInterval);
-            }
-          }, 2000);
-
-          // Stop polling after 30 seconds
-          setTimeout(() => {
-            clearInterval(pollInterval);
-            setVerifying(false);
-          }, 30000);
         }
-      } else {
-        setError('Booking not found. Please check your dashboard.');
+        // If status is still 'pending', verifying state will remain true (handled by UI)
       }
     } catch (err: any) {
       console.error('Error verifying payment:', err);
