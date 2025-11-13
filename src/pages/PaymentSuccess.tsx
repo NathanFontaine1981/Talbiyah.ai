@@ -8,8 +8,8 @@ import { format } from 'date-fns';
 interface LessonDetails {
   id: string;
   scheduled_time: string;
-  duration: number;
-  payment_amount: number;
+  duration_minutes: number;
+  total_cost_paid: number;
   payment_status: string;
   teacher_profiles: {
     id: string;
@@ -48,23 +48,29 @@ export default function PaymentSuccess() {
         return;
       }
 
-      // Get lesson by checking payments table first (more reliable)
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('id')
+      // Find the pending booking to get user ID
+      const { data: pendingBooking } = await supabase
+        .from('pending_bookings')
+        .select('user_id, created_at')
         .eq('stripe_session_id', sessionId)
         .maybeSingle();
 
-      // If no payment record yet, try finding by user ID and recent creation (last 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      if (!pendingBooking) {
+        // Fallback: try to find lesson directly (shouldn't happen normally)
+        setError('Could not find booking. Please check your dashboard.');
+        setVerifying(false);
+        setLoading(false);
+        return;
+      }
 
+      // Find the most recent lesson for this user (created after the pending booking)
       const { data: lesson, error: lessonError } = await supabase
         .from('lessons')
         .select(`
           id,
           scheduled_time,
-          duration,
-          payment_amount,
+          duration_minutes,
+          total_cost_paid,
           payment_status,
           teacher_profiles!teacher_id (
             id,
@@ -76,8 +82,8 @@ export default function PaymentSuccess() {
             name
           )
         `)
-        .gte('created_at', fiveMinutesAgo)
-        .eq('payment_status', 'paid')
+        .eq('student_id', pendingBooking.user_id)
+        .gte('created_at', pendingBooking.created_at)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -88,8 +94,8 @@ export default function PaymentSuccess() {
       } else if (lesson) {
         setLessonDetails(lesson as any);
 
-        // Check payment status
-        if (lesson.payment_status === 'completed') {
+        // Check payment status (can be 'paid', 'pending', or 'failed')
+        if (lesson.payment_status === 'paid' || lesson.payment_status === 'completed') {
           setVerifying(false);
         } else if (lesson.payment_status === 'failed') {
           setError('Payment failed. Please contact support.');
@@ -103,7 +109,7 @@ export default function PaymentSuccess() {
               .eq('id', lesson.id)
               .single();
 
-            if (updatedLesson?.payment_status === 'completed') {
+            if (updatedLesson?.payment_status === 'paid' || updatedLesson?.payment_status === 'completed') {
               setVerifying(false);
               clearInterval(pollInterval);
             } else if (updatedLesson?.payment_status === 'failed') {
@@ -208,11 +214,11 @@ export default function PaymentSuccess() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Duration:</span>
-                      <span className="text-white font-medium">{lessonDetails.duration} minutes</span>
+                      <span className="text-white font-medium">{lessonDetails.duration_minutes} minutes</span>
                     </div>
                     <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
                       <span className="text-slate-400">Amount Paid:</span>
-                      <span className="text-emerald-400 font-bold text-lg">£{lessonDetails.payment_amount.toFixed(2)}</span>
+                      <span className="text-emerald-400 font-bold text-lg">£{lessonDetails.total_cost_paid.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
