@@ -88,7 +88,7 @@ export default function PaymentSuccess() {
             name
           )
         `)
-        .eq('student_id', pendingBooking.user_id)
+        .eq('learner_id', pendingBooking.user_id)
         .gte('created_at', pendingBooking.created_at)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -129,7 +129,7 @@ export default function PaymentSuccess() {
                 name
               )
             `)
-            .eq('student_id', pendingBooking.user_id)
+            .eq('learner_id', pendingBooking.user_id)
             .gte('created_at', pendingBooking.created_at)
             .order('created_at', { ascending: false })
             .limit(1)

@@ -50,7 +50,7 @@ export default function ReferralWidget() {
         .from('referral_credits')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!credits && !creditsError) {
         const { data: newCredits, error: insertError } = await supabase
