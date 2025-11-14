@@ -209,7 +209,7 @@ serve(async (req) => {
             lastError: lastError,
             troubleshooting: {
               checkRoomCode: 'Verify the room code exists in your 100ms dashboard',
-              checkTemplate: 'Ensure your Azhari Academy template is configured correctly',
+              checkTemplate: 'Ensure your Talbiyah.ai template is configured correctly',
               checkToken: 'Verify HMS_MANAGEMENT_TOKEN is valid and has proper permissions',
               timing: 'Room codes might need a few moments to become available after creation'
             },

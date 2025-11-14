@@ -59,7 +59,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         description: description || `Live Islamic Learning Session: ${roomName}`,
-        template_id: '684b54d6033903926e6127a1', // Your Azhari Academy template
+        template_id: '684b54d6033903926e6127a1', // Your Talbiyah.ai template
         region: 'in', // India region
       })
     })
