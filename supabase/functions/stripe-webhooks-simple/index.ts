@@ -54,20 +54,58 @@ serve(async (req) => {
       ? pendingBooking.booking_data[0]
       : pendingBooking.booking_data
 
-    // Create lesson directly
+    // Get learner_id (from booking_data or fall back to finding/creating learner for user)
+    let learnerId = bookingData.learner_id;
+
+    if (!learnerId) {
+      console.log('⚠️ No learner_id in booking_data, determining for user:', pendingBooking.user_id);
+
+      const { data: existingLearner } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', pendingBooking.user_id)
+        .maybeSingle();
+
+      if (existingLearner) {
+        learnerId = existingLearner.id;
+        console.log('   ✅ Found existing learner:', learnerId);
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', pendingBooking.user_id)
+          .maybeSingle();
+
+        const { data: newLearner } = await supabase
+          .from('learners')
+          .insert({
+            parent_id: pendingBooking.user_id,
+            name: profile?.full_name || 'Student',
+            gamification_points: 0
+          })
+          .select('id')
+          .single();
+
+        learnerId = newLearner?.id;
+        console.log('   ✅ Created new learner:', learnerId);
+      }
+    }
+
+    // Create lesson directly with correct Talbiyah schema
     const { data: lesson, error: lessonError } = await supabase
       .from('lessons')
       .insert({
-        student_id: pendingBooking.user_id,
+        learner_id: learnerId,
         teacher_id: bookingData.teacher_id,
         subject_id: bookingData.subject_id,
         scheduled_time: bookingData.scheduled_time,
         duration_minutes: bookingData.duration || 30,
         total_cost_paid: bookingData.price,
         payment_status: 'paid',
-        status: 'scheduled',
-        room_code_student: `STU_${Date.now()}`,
-        room_code_teacher: `TCH_${Date.now()}`,
+        status: 'booked',
+        teacher_room_code: null,
+        student_room_code: null,
+        '100ms_room_id': null,
       })
       .select()
       .single()

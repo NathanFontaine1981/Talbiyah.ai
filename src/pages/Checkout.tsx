@@ -226,6 +226,8 @@ export default function Checkout() {
 
         return {
           teacher_id: item.teacher_id,
+          subject_id: item.subject_id,
+          scheduled_time: item.scheduled_time,
           date: item.scheduled_time.split('T')[0],
           time: item.scheduled_time.split('T')[1].substring(0, 5),
           subject: subjectMap.get(item.subject_id) || 'general',
@@ -340,8 +342,8 @@ export default function Checkout() {
         // Clear cart
         await clearCart();
 
-        // Redirect to success page
-        navigate('/payment-success?promo=true');
+        // Redirect to dashboard (no Stripe session for 100% discount)
+        navigate('/dashboard?booking_success=true');
         return;
       }
 

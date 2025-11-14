@@ -120,8 +120,54 @@ serve(async (req) => {
       })
     );
 
+    // Determine learner_id for the bookings
+    console.log('👶 Determining learner_id for user:', user.id);
+    let learnerId: string;
+
+    const { data: existingLearner } = await supabaseClient
+      .from('learners')
+      .select('id')
+      .eq('parent_id', user.id)
+      .maybeSingle();
+
+    if (existingLearner) {
+      learnerId = existingLearner.id;
+      console.log('   ✅ Found existing learner:', learnerId);
+    } else {
+      // Create new learner for this user
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const { data: newLearner, error: learnerError } = await supabaseClient
+        .from('learners')
+        .insert({
+          parent_id: user.id,
+          name: profile?.full_name || 'Student',
+          gamification_points: 0
+        })
+        .select('id')
+        .single();
+
+      if (learnerError || !newLearner) {
+        console.error('❌ Failed to create learner:', learnerError);
+        throw new Error('Failed to create learner profile');
+      }
+
+      learnerId = newLearner.id;
+      console.log('   ✅ Created new learner:', learnerId);
+    }
+
+    // Add learner_id to all bookings
+    const bookingsWithLearner = bookingsWithPriceLocks.map((booking: any) => ({
+      ...booking,
+      learner_id: learnerId
+    }));
+
     // Calculate total amount from the booking prices (with price locks applied)
-    const totalAmount = bookingsWithPriceLocks.reduce((sum: number, booking: BookingRequest) => {
+    const totalAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
       return sum + Math.round(booking.price * 100); // Convert pounds to pence
     }, 0);
 
@@ -133,12 +179,12 @@ serve(async (req) => {
       sessionCount
     });
 
-    // Create a single pending booking record (using bookings with price locks applied)
+    // Create a single pending booking record (with learner_id and price locks applied)
     const { data: pendingBooking, error: pendingError } = await supabaseClient
       .from('pending_bookings')
       .insert({
         user_id: user.id,
-        booking_data: bookingsWithPriceLocks,
+        booking_data: bookingsWithLearner,
         total_amount: totalAmount,
         session_count: sessionCount,
         status: 'pending'
