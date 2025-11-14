@@ -48,7 +48,7 @@ export default function TeacherStudentsCard() {
           learners!inner(
             id,
             parent_id,
-            profiles!inner(
+            profiles!parent_id(
               full_name,
               avatar_url
             )
@@ -84,7 +84,7 @@ export default function TeacherStudentsCard() {
           duration_minutes,
           learners!inner(
             id,
-            profiles!inner(
+            profiles!parent_id(
               full_name,
               avatar_url
             )
