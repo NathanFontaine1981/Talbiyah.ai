@@ -13,7 +13,10 @@ import {
   Info,
   Send,
   X,
+  BookOpen,
+  ArrowLeft,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TierInfo {
   tier: string;
@@ -72,6 +75,7 @@ interface Application {
 }
 
 export default function TeacherTierDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<TeacherStats | null>(null);
   const [allTiers, setAllTiers] = useState<TierInfo[]>([]);
   const [history, setHistory] = useState<TierHistory[]>([]);
@@ -100,18 +104,8 @@ export default function TeacherTierDashboard() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
 
-      // Get teacher stats
-      const { data: statsData } = await supabase
-        .from('teacher_tier_stats')
-        .select('*')
-        .eq('teacher_id', user.id)
-        .single();
-
-      setStats(statsData);
-
-      // Get all tiers
+      // Get all tiers (public info)
       const { data: tiersData } = await supabase
         .from('teacher_tiers')
         .select('*')
@@ -119,11 +113,39 @@ export default function TeacherTierDashboard() {
 
       setAllTiers(tiersData || []);
 
+      // If user is logged in, try to get their teacher stats
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // First, get the teacher profile to get the teacher_id
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .single();
+
+      if (!teacherProfile) {
+        setLoading(false);
+        return;
+      }
+
+      // Get teacher stats using the teacher_profile.id
+      const { data: statsData } = await supabase
+        .from('teacher_tier_stats')
+        .select('*')
+        .eq('teacher_id', teacherProfile.id)
+        .single();
+
+      setStats(statsData);
+
       // Get tier history
       const { data: historyData } = await supabase
         .from('teacher_tier_history')
         .select('*')
-        .eq('teacher_id', user.id)
+        .eq('teacher_id', teacherProfile.id)
         .order('promoted_at', { ascending: false });
 
       setHistory(historyData || []);
@@ -132,7 +154,7 @@ export default function TeacherTierDashboard() {
       const { data: appsData } = await supabase
         .from('teacher_tier_applications')
         .select('*')
-        .eq('teacher_id', user.id)
+        .eq('teacher_id', teacherProfile.id)
         .order('created_at', { ascending: false });
 
       setApplications(appsData || []);
@@ -224,10 +246,27 @@ export default function TeacherTierDashboard() {
 
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-center">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <p className="text-xl">Teacher profile not found</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+        <div className="text-white text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Teacher Profile Required</h2>
+          <p className="text-slate-300 mb-6">
+            You need to be an approved teacher to view this page.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.href = '/apply-to-teach'}
+              className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg"
+            >
+              Apply to Teach
+            </button>
+            <button
+              onClick={() => window.location.href = '/teacher/tier-info'}
+              className="w-full px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg font-semibold transition"
+            >
+              View Tier Information
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -239,6 +278,15 @@ export default function TeacherTierDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="mb-6 flex items-center space-x-2 text-slate-400 hover:text-cyan-400 transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Back to Dashboard</span>
+        </button>
+
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-8 border border-cyan-500/30 shadow-xl mb-8">
           <div className="flex items-start justify-between">
@@ -256,23 +304,30 @@ export default function TeacherTierDashboard() {
                 <p className="text-slate-300">
                   Your current earnings rate and tier status
                 </p>
+                <button
+                  onClick={() => navigate('/teacher/tier-info')}
+                  className="mt-3 inline-flex items-center space-x-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 text-sm font-medium transition"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Learn About All Tiers</span>
+                </button>
               </div>
             </div>
 
             <div className="text-right">
-              <p className="text-sm text-slate-400 mb-1">Hourly Rate</p>
+              <p className="text-sm text-slate-400 mb-1">Your Hourly Rate</p>
               <p className="text-4xl font-bold text-emerald-400">
                 £{stats.teacher_hourly_rate.toFixed(2)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Students pay: £{stats.student_hourly_price.toFixed(2)}
+              <p className="text-xs text-slate-500 mt-1">
+                Earnings per hour taught
               </p>
             </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Tooltip
             id="hours-taught"
             text="Total hours you've taught on the platform. More hours = higher tier eligibility."
@@ -319,22 +374,6 @@ export default function TeacherTierDashboard() {
               <p className="text-xs text-slate-500 mt-1">
                 {stats.grandfathered_students} with locked pricing
               </p>
-            </div>
-          </Tooltip>
-
-          <Tooltip
-            id="platform-margin"
-            text="Platform fee per hour. Locked at £8 from Skilled tier onwards."
-          >
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-emerald-500/50 transition">
-              <div className="flex items-center justify-between mb-2">
-                <DollarSign className="w-6 h-6 text-emerald-400" />
-                <Info className="w-4 h-4 text-slate-600" />
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">
-                £{stats.platform_margin.toFixed(2)}
-              </p>
-              <p className="text-sm text-slate-400">Platform Margin</p>
             </div>
           </Tooltip>
         </div>
@@ -446,18 +485,13 @@ export default function TeacherTierDashboard() {
                   {/* Earnings */}
                   <div className="bg-slate-900/50 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-400">You Earn</span>
-                      <span className="text-2xl font-bold text-emerald-400">
+                      <span className="text-sm text-slate-400">Hourly Rate</span>
+                      <span className="text-3xl font-bold text-emerald-400">
                         £{tier.teacher_hourly_rate.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span>Student Pays</span>
-                      <span>£{tier.student_hourly_price.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>Platform Margin</span>
-                      <span>£{tier.platform_margin.toFixed(2)} ({tier.margin_percentage.toFixed(0)}%)</span>
+                    <div className="text-xs text-slate-500 text-center mt-1">
+                      Your earnings per hour taught
                     </div>
                   </div>
 

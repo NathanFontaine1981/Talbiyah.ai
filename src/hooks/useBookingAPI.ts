@@ -128,9 +128,12 @@ export function useBookingAPI() {
       } else if (response.status === 404) {
         throw new Error('The requested resource was not found.');
       } else if (response.status >= 500) {
-        throw new Error('Server error. Please try again in a few moments.');
+        // For 500 errors, include the details if available
+        const errorMsg = errorData.details || errorData.error || 'Server error. Please try again in a few moments.';
+        console.error('💥 Server error details:', errorData);
+        throw new Error(errorMsg);
       }
-      
+
       throw new Error(errorData.error || 'Request failed. Please try again.');
     }
 
@@ -298,16 +301,25 @@ export function useBookingAPI() {
       console.log('✅ Checkout initiated successfully:', {
         sessionId: data.session_id,
         checkoutUrl: data.checkout_url,
-        totalAmount: data.total_amount
+        totalAmount: data.total_amount,
+        paidWithCredits: data.paid_with_credits,
+        lessonsCreated: data.lessons?.length || 0
       });
-      
+
+      // Return all response data to support both Stripe and credit payments
       return {
         success: data.success,
         checkout_url: data.checkout_url,
         session_id: data.session_id,
         pending_booking_id: data.pending_booking_id,
         total_amount: data.total_amount,
-        session_count: data.session_count
+        session_count: data.session_count,
+        // Credit payment fields
+        paid_with_credits: data.paid_with_credits,
+        lessons: data.lessons,
+        credits_used: data.credits_used,
+        new_credit_balance: data.new_credit_balance,
+        message: data.message
       };
     } catch (err: any) {
       console.error('❌ Checkout initiation failed:', err);

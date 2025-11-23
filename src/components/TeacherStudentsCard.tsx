@@ -19,6 +19,7 @@ export default function TeacherStudentsCard() {
 
   useEffect(() => {
     loadStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadStudents() {
@@ -40,18 +41,18 @@ export default function TeacherStudentsCard() {
       const studentMap = new Map<string, Student>();
 
       // Load assigned students from student_teachers table
+      // Note: We join through profiles since student_teachers.student_id -> profiles.id
+      // and learners.parent_id -> profiles.id
       const { data: assignedStudents } = await supabase
         .from('student_teachers')
         .select(`
           assigned_at,
           notes,
-          learners!inner(
+          student_id,
+          profiles!student_id(
             id,
-            parent_id,
-            profiles!parent_id(
-              full_name,
-              avatar_url
-            )
+            full_name,
+            avatar_url
           )
         `)
         .eq('teacher_id', teacherProfile.id)
@@ -60,19 +61,21 @@ export default function TeacherStudentsCard() {
       // Add assigned students to map
       if (assignedStudents) {
         assignedStudents.forEach((assignment: any) => {
-          const learner = assignment.learners;
-          const learnerId = learner.id;
+          const studentId = assignment.student_id;
+          const profile = assignment.profiles;
 
-          studentMap.set(learnerId, {
-            id: learnerId,
-            name: learner.profiles.full_name || 'Student',
-            avatar_url: learner.profiles.avatar_url,
-            total_lessons: 0,
-            total_hours: 0,
-            is_assigned: true,
-            assigned_at: assignment.assigned_at,
-            notes: assignment.notes
-          });
+          if (profile) {
+            studentMap.set(studentId, {
+              id: studentId,
+              name: profile.full_name || 'Student',
+              avatar_url: profile.avatar_url,
+              total_lessons: 0,
+              total_hours: 0,
+              is_assigned: true,
+              assigned_at: assignment.assigned_at,
+              notes: assignment.notes
+            });
+          }
         });
       }
 

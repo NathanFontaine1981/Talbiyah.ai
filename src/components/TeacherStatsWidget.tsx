@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Clock, Users, BookOpen, DollarSign, Star, TrendingUp } from 'lucide-react';
+import { Clock, Users, BookOpen, DollarSign, Star, TrendingUp, Award } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 interface TeacherStats {
   totalHours: number;
@@ -9,21 +10,31 @@ interface TeacherStats {
   upcomingLessons: number;
   averageRating: number;
   totalEarnings: number;
+  tier: string;
+  tierName: string;
+  tierIcon: string;
+  teacherHourlyRate: number;
 }
 
 export default function TeacherStatsWidget() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<TeacherStats>({
     totalHours: 0,
     totalStudents: 0,
     completedLessons: 0,
     upcomingLessons: 0,
     averageRating: 5.0,
-    totalEarnings: 0
+    totalEarnings: 0,
+    tier: 'newcomer',
+    tierName: 'Newcomer',
+    tierIcon: '🌱',
+    teacherHourlyRate: 5.0
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadStats() {
@@ -31,22 +42,34 @@ export default function TeacherStatsWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: teacherProfile } = await supabase
+      const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id, hourly_rate')
+        .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching teacher profile:', profileError);
+        setLoading(false);
+        return;
+      }
 
       if (!teacherProfile) {
         setLoading(false);
         return;
       }
 
-      const { data: completedLessons } = await supabase
-        .from('lessons')
-        .select('duration_minutes, learner_id')
+      // Get tier stats from the teacher_tier_stats view
+      const { data: tierStats, error: tierError } = await supabase
+        .from('teacher_tier_stats')
+        .select('*')
         .eq('teacher_id', teacherProfile.id)
-        .eq('status', 'completed');
+        .single();
+
+      if (tierError) {
+        console.error('Error fetching tier stats:', tierError);
+        console.log('Attempting to query teacher_profile_id:', teacherProfile.id);
+      }
 
       const { data: upcomingLessons } = await supabase
         .from('lessons')
@@ -55,22 +78,24 @@ export default function TeacherStatsWidget() {
         .eq('status', 'booked')
         .gte('scheduled_time', new Date().toISOString());
 
-      const totalMinutes = completedLessons?.reduce((sum, lesson) => sum + lesson.duration_minutes, 0) || 0;
-      const totalHours = Math.floor(totalMinutes / 60);
+      if (tierStats) {
+        const totalEarnings = tierStats.hours_taught * tierStats.teacher_hourly_rate;
 
-      const uniqueStudents = new Set(completedLessons?.map(lesson => lesson.learner_id) || []);
-
-      const hourlyRate = teacherProfile.hourly_rate || 0;
-      const totalEarnings = (totalMinutes / 60) * hourlyRate;
-
-      setStats({
-        totalHours,
-        totalStudents: uniqueStudents.size,
-        completedLessons: completedLessons?.length || 0,
-        upcomingLessons: upcomingLessons?.length || 0,
-        averageRating: 5.0,
-        totalEarnings
-      });
+        setStats({
+          totalHours: Math.floor(tierStats.hours_taught || 0),
+          totalStudents: tierStats.total_students || 0,
+          completedLessons: tierStats.completed_lessons || 0,
+          upcomingLessons: upcomingLessons?.length || 0,
+          averageRating: tierStats.average_rating || 0,
+          totalEarnings,
+          tier: tierStats.tier || 'bronze',
+          tierName: tierStats.tier_name || 'Bronze',
+          tierIcon: tierStats.tier_icon || '🥉',
+          teacherHourlyRate: tierStats.teacher_hourly_rate || 15.0
+        });
+      } else {
+        console.warn('No tier stats found for teacher:', teacherProfile.id);
+      }
     } catch (error) {
       console.error('Error loading teacher stats:', error);
     } finally {
@@ -111,7 +136,7 @@ export default function TeacherStatsWidget() {
     {
       icon: BookOpen,
       label: 'Lessons Completed',
-      value: stats.completedLessons.toString(),
+      value: (stats.completedLessons ?? 0).toString(),
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/20'
@@ -145,6 +170,32 @@ export default function TeacherStatsWidget() {
   return (
     <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
       <h3 className="text-xl font-bold text-white mb-6">Teaching Stats</h3>
+
+      {/* Teacher Tier Badge */}
+      <div
+        onClick={() => navigate('/teacher/tiers')}
+        className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 rounded-xl p-4 border border-cyan-500/30 mb-4 cursor-pointer hover:border-cyan-500/50 transition"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="text-3xl">{stats.tierIcon}</div>
+            <div>
+              <p className="text-xs text-slate-400">Current Tier</p>
+              <p className="text-lg font-bold text-white">{stats.tierName}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Hourly Rate</p>
+            <p className="text-lg font-bold text-emerald-400">£{stats.teacherHourlyRate.toFixed(2)}</p>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-center">
+          <button className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center space-x-1">
+            <Award className="w-3 h-3" />
+            <span>View Tier Progress</span>
+          </button>
+        </div>
+      </div>
 
       <div className="space-y-3">
         {statItems.map((item, index) => (

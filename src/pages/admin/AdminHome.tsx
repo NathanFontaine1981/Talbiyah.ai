@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, UserCheck, Clock, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, UserCheck, Clock, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 interface DashboardStats {
@@ -10,6 +10,17 @@ interface DashboardStats {
   totalSessions: number;
   revenueThisMonth: number;
   todaysSessions: number;
+}
+
+interface TierInfo {
+  tier: string;
+  tier_level: number;
+  tier_name: string;
+  tier_icon: string;
+  teacher_hourly_rate: number;
+  student_hourly_price: number;
+  platform_margin: number;
+  teacher_count?: number;
 }
 
 interface SystemHealth {
@@ -46,6 +57,7 @@ export default function AdminHome() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [tiers, setTiers] = useState<TierInfo[]>([]);
 
   // Modals
   const [showCreateUser, setShowCreateUser] = useState(false);
@@ -61,6 +73,7 @@ export default function AdminHome() {
       fetchStats(),
       checkSystemHealth(),
       fetchNotifications(),
+      fetchTierInfo(),
     ]);
     setLoading(false);
   }
@@ -235,25 +248,25 @@ export default function AdminHome() {
         });
       });
 
-      // 2. Failed payments (last 24 hours)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+      // 2. Failed payments (last 24 hours) - DISABLED: payments table doesn't exist yet
+      // const yesterday = new Date();
+      // yesterday.setDate(yesterday.getDate() - 1);
 
-      const { data: failedPayments } = await supabase
-        .from('payments')
-        .select('id')
-        .eq('status', 'failed')
-        .gte('created_at', yesterday.toISOString())
-        .limit(3);
+      // const { data: failedPayments } = await supabase
+      //   .from('payments')
+      //   .select('id')
+      //   .eq('status', 'failed')
+      //   .gte('created_at', yesterday.toISOString())
+      //   .limit(3);
 
-      failedPayments?.forEach(payment => {
-        notifs.push({
-          id: `payment-${payment.id}`,
-          type: 'warning',
-          message: `Payment failed for transaction #${payment.id.substring(0, 8)}`,
-          timestamp: new Date(),
-        });
-      });
+      // failedPayments?.forEach(payment => {
+      //   notifs.push({
+      //     id: `payment-${payment.id}`,
+      //     type: 'warning',
+      //     message: `Payment failed for transaction #${payment.id.substring(0, 8)}`,
+      //     timestamp: new Date(),
+      //   });
+      // });
 
       // 3. New signups today
       const today = new Date();
@@ -296,6 +309,37 @@ export default function AdminHome() {
       setNotifications(notifs.slice(0, 10));
     } catch (error) {
       console.error('Error fetching notifications:', error);
+    }
+  }
+
+  async function fetchTierInfo() {
+    try {
+      // Get all tier info
+      const { data: tiersData } = await supabase
+        .from('teacher_tiers')
+        .select('*')
+        .order('tier_level');
+
+      // Get teacher counts per tier
+      const { data: teacherStats } = await supabase
+        .from('teacher_tier_stats')
+        .select('tier');
+
+      // Count teachers per tier
+      const tierCounts: { [key: string]: number } = {};
+      teacherStats?.forEach((teacher) => {
+        tierCounts[teacher.tier] = (tierCounts[teacher.tier] || 0) + 1;
+      });
+
+      // Merge counts with tier info
+      const tiersWithCounts = tiersData?.map((tier) => ({
+        ...tier,
+        teacher_count: tierCounts[tier.tier] || 0,
+      }));
+
+      setTiers(tiersWithCounts || []);
+    } catch (error) {
+      console.error('Error fetching tier info:', error);
     }
   }
 
@@ -386,6 +430,91 @@ export default function AdminHome() {
           iconColor="text-purple-400"
         />
       </div>
+
+      {/* Teacher Tier Structure */}
+      {tiers.length > 0 && (
+        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <Award className="w-6 h-6 text-amber-400" />
+              <h2 className="text-2xl font-semibold text-white">Teacher Tier Structure</h2>
+            </div>
+            <button
+              onClick={() => navigate('/admin/teacher-tiers')}
+              className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg transition flex items-center space-x-2"
+            >
+              <span>Manage Tiers</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {tiers.map((tier) => (
+              <div
+                key={tier.tier}
+                className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-5 hover:border-cyan-500/30 transition group"
+              >
+                {/* Tier Icon & Name */}
+                <div className="text-center mb-4">
+                  <div className="text-5xl mb-2">{tier.tier_icon}</div>
+                  <h3 className="text-lg font-bold text-white capitalize">{tier.tier_name}</h3>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">Level {tier.tier_level}</p>
+                </div>
+
+                {/* Teacher Count */}
+                <div className="mb-4 p-3 bg-cyan-500/5 border border-cyan-500/10 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-cyan-400">{tier.teacher_count}</p>
+                  <p className="text-xs text-slate-400">Teacher{tier.teacher_count !== 1 ? 's' : ''}</p>
+                </div>
+
+                {/* Rates */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center p-2 bg-emerald-500/5 border border-emerald-500/10 rounded">
+                    <span className="text-xs text-slate-400">Teacher Rate</span>
+                    <span className="text-sm font-bold text-emerald-400">£{tier.teacher_hourly_rate.toFixed(2)}/h</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-blue-500/5 border border-blue-500/10 rounded">
+                    <span className="text-xs text-slate-400">Student Price</span>
+                    <span className="text-sm font-bold text-blue-400">£{tier.student_hourly_price.toFixed(2)}/h</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-purple-500/5 border border-purple-500/10 rounded">
+                    <span className="text-xs text-slate-400">Platform</span>
+                    <span className="text-sm font-bold text-purple-400">£{tier.platform_margin.toFixed(2)}/h</span>
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                {tier.requires_manual_approval ? (
+                  <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded text-center">
+                    <p className="text-xs text-amber-400 font-semibold">Manual Approval</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-xs text-slate-500">
+                    <p>Min {tier.min_hours_taught}h taught</p>
+                    <p>Min {tier.min_rating.toFixed(1)}★ rating</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Key Info */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-sm text-green-400 font-semibold mb-1">Automatic Progression</p>
+              <p className="text-xs text-slate-400">Tiers 1-3 auto-promote based on hours & ratings</p>
+            </div>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="text-sm text-amber-400 font-semibold mb-1">Manual Review</p>
+              <p className="text-xs text-slate-400">Expert & Master tiers require admin approval</p>
+            </div>
+            <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+              <p className="text-sm text-cyan-400 font-semibold mb-1">Price Protection</p>
+              <p className="text-xs text-slate-400">Students keep rates for 12 months after booking</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">

@@ -25,6 +25,7 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
 
   useEffect(() => {
     loadRecentRecordings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
 
   async function loadRecentRecordings() {
@@ -69,9 +70,9 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
           )
         `)
         .eq('learner_id', targetLearnerId)
-        .in('status', ['completed', 'in_progress'])
+        .eq('status', 'completed')
         .order('scheduled_time', { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
 
@@ -87,15 +88,30 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
       const insightLessonIds = new Set(insightsData?.map(i => i.lesson_id) || []);
 
       if (lessonsData) {
-        const formattedRecordings: RecentRecording[] = lessonsData.map((lesson: any) => ({
-          id: lesson.id,
-          subject_name: lesson.subjects.name,
-          teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
-          scheduled_time: lesson.scheduled_time,
-          recording_url: lesson.recording_url,
-          has_insights: insightLessonIds.has(lesson.id),
-          duration_minutes: lesson.duration_minutes
-        }));
+        const formattedRecordings: RecentRecording[] = lessonsData
+          .map((lesson: any) => ({
+            id: lesson.id,
+            subject_name: lesson.subjects.name,
+            teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
+            scheduled_time: lesson.scheduled_time,
+            recording_url: lesson.recording_url,
+            has_insights: insightLessonIds.has(lesson.id),
+            duration_minutes: lesson.duration_minutes
+          }))
+          .filter((recording) => {
+            // Calculate when the lesson ended
+            const lessonDate = parseISO(recording.scheduled_time);
+            const lessonEndTime = new Date(lessonDate.getTime() + recording.duration_minutes * 60 * 1000);
+            const hoursSinceEnd = (new Date().getTime() - lessonEndTime.getTime()) / (1000 * 60 * 60);
+
+            // Only show recordings that have:
+            // 1. A recording URL, OR
+            // 2. Insights available, OR
+            // 3. Are recent enough to still be processing (< 24 hours since lesson ended)
+            return recording.recording_url || recording.has_insights || hoursSinceEnd < 24;
+          })
+          .slice(0, 5); // Limit to 5 most recent after filtering
+
         setRecordings(formattedRecordings);
       }
     } catch (error) {
@@ -126,7 +142,8 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
           <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <PlayCircle className="w-8 h-8 text-slate-600" />
           </div>
-          <p className="text-slate-400">No recordings available yet</p>
+          <p className="text-slate-400">You don't have any recordings yet</p>
+          <p className="text-slate-500 text-sm mt-2">Complete a lesson to get your first recording</p>
         </div>
       </div>
     );
@@ -221,11 +238,12 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
                     <PlayCircle className="w-4 h-4" />
                     <span>Video Expired</span>
                   </div>
-                ) : !recording.has_insights && (
-                  <div className="flex-1 px-4 py-2.5 bg-slate-700/30 text-slate-500 rounded-lg font-medium flex items-center justify-center space-x-2 border border-slate-700/50">
-                    <span>Processing...</span>
+                ) : !recording.has_insights ? (
+                  <div className="flex-1 px-4 py-2.5 bg-amber-500/10 text-amber-400 rounded-lg font-medium flex items-center justify-center space-x-2 border border-amber-500/30">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Processing (up to 24h)</span>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           );

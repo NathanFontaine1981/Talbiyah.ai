@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
 );
 
 -- Index for faster queries
-CREATE INDEX idx_cart_items_user_id ON cart_items(user_id);
-CREATE INDEX idx_cart_items_expires_at ON cart_items(expires_at);
+CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_expires_at ON cart_items(expires_at);
 
 -- RLS Policies
 ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;

@@ -783,7 +783,7 @@ export default function MyReferrals() {
                       <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-xs font-semibold">
                         ✓ Free group sessions
                       </span>
-                      <span className="px-3 py-1 bg-pink-500/20 text-pink-400 rounded-full text-xs font-semibold">
+                      <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-xs font-semibold">
                         ✓ Dedicated support
                       </span>
                       <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">
@@ -964,9 +964,9 @@ export default function MyReferrals() {
 
             {/* Transfer Hours (Silver+ only) */}
             {tierInfo?.benefits?.can_transfer && (
-              <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 rounded-2xl p-6 border border-purple-500/30">
+              <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-600/10 rounded-2xl p-6 border border-emerald-500/30">
                 <h2 className="text-xl font-bold mb-4 flex items-center space-x-2">
-                  <Send className="w-5 h-5 text-purple-400" />
+                  <Send className="w-5 h-5 text-emerald-400" />
                   <span>Transfer Hours</span>
                 </h2>
 
@@ -984,7 +984,7 @@ export default function MyReferrals() {
 
                 <button
                   onClick={() => setShowTransferModal(true)}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-lg font-semibold transition"
+                  className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-lg font-semibold transition"
                 >
                   Transfer Hours
                 </button>
@@ -1289,7 +1289,7 @@ export default function MyReferrals() {
               <button
                 onClick={handleTransfer}
                 disabled={transferring || !transferEmail || !transferHours}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {transferring ? 'Transferring...' : 'Transfer'}
               </button>

@@ -21,7 +21,9 @@ import {
   ArrowRight,
   MessageCircle,
   Calendar,
-  Edit
+  Edit,
+  CreditCard,
+  Briefcase
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -39,6 +41,8 @@ import TeacherStatsWidget from '../components/TeacherStatsWidget';
 import TeacherStudentsCard from '../components/TeacherStudentsCard';
 import ReferralWidget from '../components/ReferralWidget';
 import TeacherAvailabilityCard from '../components/TeacherAvailabilityCard';
+import CreditBalanceWidget from '../components/CreditBalanceWidget';
+import MyTeachersSection from '../components/student/MyTeachersSection';
 
 interface UserProfile {
   full_name: string | null;
@@ -177,7 +181,9 @@ export default function Dashboard() {
 
   const baseMenuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin'] },
+    { icon: Briefcase, label: 'Teacher Account', path: '/teacher/hub', active: false, roles: ['Teacher'] },
     { icon: Calendar, label: 'My Classes', path: '/my-classes', active: false, roles: ['Student', 'Teacher', 'Parent'] },
+    { icon: CreditCard, label: 'My Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
     { icon: MessageCircle, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
     { icon: Users, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
     { icon: Calendar, label: 'My Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
@@ -574,12 +580,14 @@ export default function Dashboard() {
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
+                    <MyTeachersSection />
                     <UpcomingSessionsCard />
                     <RecentRecordingsCard />
                     <MyLearningJourneyCard />
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
+                    <CreditBalanceWidget />
                     <LearningStatsWidget />
                     <ReferralWidget />
                     {learner && (

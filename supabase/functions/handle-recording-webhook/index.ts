@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
@@ -28,6 +28,17 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Handle GET requests (for 100ms webhook verification)
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({ status: "ok", message: "Webhook endpoint is ready" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const webhookData: RecordingWebhookPayload = await req.json();
     console.log("Received recording webhook:", webhookData);
@@ -45,10 +56,14 @@ Deno.serve(async (req: Request) => {
 
     if (lessonError || !lesson) {
       console.error("Lesson not found for room_id:", webhookData.room_id);
+      // Return 200 OK even if lesson not found (for webhook verification tests)
       return new Response(
-        JSON.stringify({ error: "Lesson not found" }),
+        JSON.stringify({
+          success: true,
+          message: "Webhook received but lesson not found (this is OK for test webhooks)"
+        }),
         {
-          status: 404,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );

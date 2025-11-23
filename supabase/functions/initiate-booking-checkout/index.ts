@@ -179,6 +179,200 @@ serve(async (req) => {
       sessionCount
     });
 
+    // ✨ NEW: Check if parent has sufficient credits to cover booking
+    console.log('💳 Checking parent credit balance...');
+    const { data: parentCredits, error: creditsError } = await supabaseClient
+      .from('user_credits')
+      .select('credits_remaining')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (creditsError) {
+      console.error('⚠️ Error checking credits:', creditsError);
+    }
+
+    // Calculate total credits needed (duration in hours)
+    const totalCreditsNeeded = bookingsWithLearner.reduce((sum: number, booking: any) => {
+      const hours = (booking.duration || 60) / 60; // Convert minutes to hours
+      return sum + hours;
+    }, 0);
+
+    console.log('💳 Credit check:', {
+      parentCreditsAvailable: parentCredits?.credits_remaining || 0,
+      totalCreditsNeeded,
+      canPayWithCredits: (parentCredits?.credits_remaining || 0) >= totalCreditsNeeded
+    });
+
+    // If parent has sufficient credits, use them instead of Stripe
+    if (parentCredits && parentCredits.credits_remaining >= totalCreditsNeeded) {
+      console.log('✅ Parent has sufficient credits! Processing with credits...');
+
+      try {
+        // Deduct credits from parent's account
+        const { data: newBalance, error: deductError } = await supabaseClient
+          .rpc('deduct_user_credits', {
+            p_user_id: user.id,
+            p_credits: totalCreditsNeeded,
+            p_lesson_id: null, // Will update after lessons are created
+            p_notes: `Used for ${sessionCount} lesson booking(s)`
+          });
+
+        if (deductError) {
+          console.error('❌ Failed to deduct credits:', deductError);
+          throw new Error(`Failed to deduct credits: ${deductError.message}`);
+        }
+
+        console.log('✅ Credits deducted successfully. New balance:', newBalance);
+
+        // Create lessons using minimal required columns only
+        // This avoids schema cache issues with newer columns
+        console.log('📝 Creating lessons with booking data:');
+        bookingsWithLearner.forEach((booking: any, index: number) => {
+          console.log(`Lesson ${index + 1}:`, {
+            date: booking.date,
+            time: booking.time,
+            scheduled_time: booking.scheduled_time,
+            learner_id: booking.learner_id,
+            teacher_id: booking.teacher_id,
+            subject: booking.subject,
+            duration: booking.duration
+          });
+        });
+
+        const lessonsToCreate = bookingsWithLearner.map((booking: any) => {
+          // Construct proper timestamp
+          let scheduledTime: string;
+
+          if (booking.scheduled_time) {
+            // If full timestamp already provided
+            scheduledTime = booking.scheduled_time;
+          } else if (booking.date && booking.time) {
+            // Construct from separate date and time
+            // booking.date format: "2025-11-20" (YYYY-MM-DD)
+            // booking.time format: "11:00" (HH:MM)
+            scheduledTime = `${booking.date}T${booking.time}:00+00:00`;
+          } else {
+            console.error('❌ Missing date/time for booking:', JSON.stringify(booking, null, 2));
+            throw new Error(`Missing scheduled_time or date/time for booking. Date: ${booking.date}, Time: ${booking.time}`);
+          }
+
+          // Validate timestamp format
+          const timestamp = new Date(scheduledTime);
+          if (isNaN(timestamp.getTime())) {
+            console.error('❌ Invalid timestamp:', scheduledTime);
+            console.error('Booking data:', JSON.stringify(booking, null, 2));
+            throw new Error(`Invalid timestamp format: ${scheduledTime}`);
+          }
+
+          console.log(`✓ Constructed timestamp: ${scheduledTime}`);
+
+          // Only insert columns that exist in schema cache
+          // Schema cache doesn't recognize: price, payment_method, payment_status, booked_at, is_trial
+          return {
+            learner_id: booking.learner_id,
+            teacher_id: booking.teacher_id,
+            subject_id: booking.subject,
+            scheduled_time: scheduledTime,
+            duration_minutes: booking.duration || 60,
+            status: 'booked'
+          };
+        });
+
+        console.log('📋 Final lessons to create:', JSON.stringify(lessonsToCreate, null, 2));
+
+        const { data: createdLessons, error: lessonsError } = await supabaseClient
+          .from('lessons')
+          .insert(lessonsToCreate)
+          .select('id');
+
+        if (lessonsError) {
+          console.error('❌ Failed to create lessons:', lessonsError);
+          // Refund the credits since lesson creation failed
+          await supabaseClient.rpc('add_user_credits', {
+            p_user_id: user.id,
+            p_credits: totalCreditsNeeded,
+            p_purchase_id: null,
+            p_notes: 'Refund: Lesson creation failed'
+          });
+          throw new Error(`Failed to create lessons: ${lessonsError.message}`);
+        }
+
+        console.log('✅ Lessons created successfully. Now updating payment fields...');
+
+        // Update payment fields using UPDATE (bypasses schema cache)
+        const lessonIds = createdLessons.map((l: any) => l.id);
+        const { error: updateError } = await supabaseClient
+          .from('lessons')
+          .update({
+            payment_method: 'credits',
+            payment_status: 'paid',
+            booked_at: new Date().toISOString(),
+            price: bookingsWithLearner[0]?.price || 15.00,
+            is_trial: false
+          })
+          .in('id', lessonIds);
+
+        if (updateError) {
+          console.error('⚠️ Failed to update payment fields:', updateError);
+          // Don't throw - lessons are created, just payment fields missing
+        } else {
+          console.log('✅ Payment fields updated successfully');
+        }
+
+        console.log('✅ Credit booking complete:', {
+          lessonsCount: createdLessons.length,
+          lessonIds,
+          creditsUsed: totalCreditsNeeded,
+          newBalance
+        });
+
+        // Return success response (no Stripe checkout needed)
+        return new Response(
+          JSON.stringify({
+            success: true,
+            paid_with_credits: true,
+            lessons: createdLessons,
+            credits_used: totalCreditsNeeded,
+            new_credit_balance: newBalance,
+            message: 'Lessons booked successfully using your credits!'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      } catch (creditError: any) {
+        console.error('💥 Credit payment failed:', {
+          error: creditError,
+          message: creditError.message,
+          stack: creditError.stack,
+          userId: user.id,
+          creditsNeeded: totalCreditsNeeded
+        });
+
+        // Return error instead of falling back to Stripe
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Credit payment failed',
+            details: creditError.message,
+            fallback_to_stripe: true
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    } else if (parentCredits && parentCredits.credits_remaining > 0) {
+      console.log('⚠️ Parent has some credits but not enough:', {
+        available: parentCredits.credits_remaining,
+        needed: totalCreditsNeeded,
+        shortfall: totalCreditsNeeded - parentCredits.credits_remaining
+      });
+      // TODO: Future enhancement - allow partial credit payment + Stripe for remainder
+    } else {
+      console.log('ℹ️ Parent has no credits. Proceeding with Stripe checkout...');
+    }
+
     // Create a single pending booking record (with learner_id and price locks applied)
     const { data: pendingBooking, error: pendingError } = await supabaseClient
       .from('pending_bookings')
@@ -234,6 +428,8 @@ serve(async (req) => {
       'metadata[user_id]': user.id,
       'metadata[session_count]': sessionCount.toString(),
       'metadata[total_amount]': totalAmount.toString(),
+      'payment_intent_data[metadata][pending_booking_id]': pendingBooking.id,
+      'payment_intent_data[metadata][user_id]': user.id,
       'customer_email': user.email || ''
     })
 

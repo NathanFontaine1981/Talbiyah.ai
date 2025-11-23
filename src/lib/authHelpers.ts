@@ -16,6 +16,8 @@ export async function getDashboardRoute(): Promise<string> {
       return '/admin';
     }
 
+    // Everyone goes to the main dashboard
+    // Teachers can access Teacher Hub from the navigation menu
     return '/dashboard';
   } catch (error) {
     console.error('Error determining dashboard route:', error);

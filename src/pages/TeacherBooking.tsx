@@ -140,10 +140,40 @@ export default function TeacherBooking() {
     const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
     const weekEnd = addDays(weekStart, 6);
 
-    const slots: TimeSlot[] = [];
-
     // Set time increment based on session duration
     const minuteIncrement = duration; // 30 or 60 minutes
+
+    // Fetch all existing bookings for this teacher in the selected week
+    const { data: existingLessons, error } = await supabase
+      .from('lessons')
+      .select('scheduled_time, duration_minutes, status')
+      .eq('teacher_id', id)
+      .gte('scheduled_time', weekStart.toISOString())
+      .lte('scheduled_time', weekEnd.toISOString())
+      .not('status', 'in', '(cancelled_by_teacher,cancelled_by_student)'); // Exclude cancelled lessons
+
+    if (error) {
+      console.error('Error fetching existing lessons:', error);
+    }
+
+    // Create a set of booked time slots for quick lookup
+    const bookedSlots = new Set<string>();
+    if (existingLessons) {
+      existingLessons.forEach(lesson => {
+        const lessonStart = new Date(lesson.scheduled_time);
+        const lessonEnd = new Date(lessonStart.getTime() + lesson.duration_minutes * 60 * 1000);
+
+        // Mark all time slots that overlap with this lesson as booked
+        // We need to check every potential slot within this lesson's duration
+        let currentSlot = new Date(lessonStart);
+        while (currentSlot < lessonEnd) {
+          bookedSlots.add(currentSlot.toISOString());
+          currentSlot = new Date(currentSlot.getTime() + minuteIncrement * 60 * 1000);
+        }
+      });
+    }
+
+    const slots: TimeSlot[] = [];
 
     for (let day = 0; day < 7; day++) {
       const currentDay = addDays(weekStart, day);
@@ -153,9 +183,22 @@ export default function TeacherBooking() {
           const slotTime = setMinutes(setHours(currentDay, hour), minute);
 
           if (slotTime > new Date()) {
+            // Check if this slot conflicts with any existing booking
+            const slotEnd = new Date(slotTime.getTime() + duration * 60 * 1000);
+            let hasConflict = false;
+
+            // Check if this slot or any time within it is already booked
+            let checkTime = new Date(slotTime);
+            while (checkTime < slotEnd && !hasConflict) {
+              if (bookedSlots.has(checkTime.toISOString())) {
+                hasConflict = true;
+              }
+              checkTime = new Date(checkTime.getTime() + minuteIncrement * 60 * 1000);
+            }
+
             slots.push({
               time: slotTime,
-              available: Math.random() > 0.3 // Simulated availability
+              available: !hasConflict // Available if no conflict with existing bookings
             });
           }
         }

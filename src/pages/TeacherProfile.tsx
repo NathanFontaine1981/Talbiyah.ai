@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, ArrowLeft, Play, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import BookingModal from '../components/BookingModal';
+import TeacherRatingDisplay from '../components/TeacherRatingDisplay';
 
 interface ProfileData {
   full_name: string;
@@ -325,11 +326,16 @@ export default function TeacherProfile() {
             </div>
           </div>
 
+          {/* Teacher Ratings Section */}
+          <div className="mb-12">
+            <TeacherRatingDisplay teacherId={teacher.id} />
+          </div>
+
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-12 text-center">
             <div className="max-w-2xl mx-auto">
               <h3 className="text-3xl font-bold text-white mb-4">Ready to Start Learning?</h3>
               <p className="text-gray-300 text-lg mb-8">
-                Book your first lesson with {teacherName.split(' ')[0]} and experience personalized Islamic education with AI-powered insights.
+                Book your first lesson with {teacherName.split(' ')[0]} and experience personalised Islamic education with AI-powered insights.
               </p>
               <button
                 onClick={() => setBookingModalOpen(true)}

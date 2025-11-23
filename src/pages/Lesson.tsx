@@ -10,12 +10,18 @@ import {
   Smartphone,
   Laptop,
   Copy,
-  CheckCircle
+  CheckCircle,
+  MessageCircle,
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import QuickLessonFeedback from '../components/QuickLessonFeedback';
+import DetailedTeacherRating from '../components/DetailedTeacherRating';
+import LessonMessaging from '../components/messaging/LessonMessaging';
 
 interface LessonData {
   id: string;
+  teacher_id: string;
   teacher_name: string;
   subject_name: string;
   scheduled_time: string;
@@ -36,6 +42,13 @@ export default function Lesson() {
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [showQuickFeedback, setShowQuickFeedback] = useState(false);
+  const [showDetailedRating, setShowDetailedRating] = useState(false);
+  const [milestoneData, setMilestoneData] = useState<{
+    milestoneType: string;
+    lessonCount: number;
+  } | null>(null);
+  const [showMessaging, setShowMessaging] = useState(true);
 
   useEffect(() => {
     loadLesson();
@@ -103,6 +116,7 @@ export default function Lesson() {
 
       setLesson({
         id: lessonData.id,
+        teacher_id: lessonData.teacher_id,
         teacher_name: lessonData.teacher_profiles.profiles.full_name || 'Teacher',
         subject_name: lessonData.subjects.name,
         scheduled_time: lessonData.scheduled_time,
@@ -122,6 +136,68 @@ export default function Lesson() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleLessonEnd() {
+    // Only show feedback for students
+    if (userRole !== 'student' || !lesson || !user) {
+      navigate('/dashboard');
+      return;
+    }
+
+    try {
+      // Mark lesson as completed
+      await supabase
+        .from('lessons')
+        .update({ status: 'completed' })
+        .eq('id', lesson.id);
+
+      // Show quick feedback first
+      setShowQuickFeedback(true);
+    } catch (error) {
+      console.error('Error handling lesson end:', error);
+      navigate('/dashboard');
+    }
+  }
+
+  async function handleQuickFeedbackComplete() {
+    setShowQuickFeedback(false);
+
+    if (!lesson || !user) {
+      navigate('/dashboard');
+      return;
+    }
+
+    try {
+      // Check if we should request detailed rating
+      const { data, error } = await supabase
+        .rpc('should_request_detailed_rating', {
+          p_teacher_id: lesson.teacher_id,
+          p_student_id: user.id
+        });
+
+      if (error) throw error;
+
+      if (data && data.length > 0 && data[0].should_request) {
+        // Show detailed rating at milestone
+        setMilestoneData({
+          milestoneType: data[0].milestone_type,
+          lessonCount: data[0].lesson_count
+        });
+        setShowDetailedRating(true);
+      } else {
+        // No milestone, go to dashboard
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking milestone:', error);
+      navigate('/dashboard');
+    }
+  }
+
+  function handleDetailedRatingComplete() {
+    setShowDetailedRating(false);
+    navigate('/dashboard');
   }
 
   function handleLeave() {
@@ -460,28 +536,77 @@ export default function Lesson() {
         </div>
       </div>
 
-      {/* HMSPrebuilt Component */}
-      <div className="w-full h-full pt-20">
-        <HMSPrebuilt
-          roomCode={lesson.room_code}
-          options={{
-            userName: user?.email || 'Student',
-            userId: user?.id || `user_${Date.now()}`,
-          }}
-          onJoinRoom={(data) => {
-            console.log('✅ Successfully joined lesson:', data);
-          }}
-          onLeaveRoom={(data) => {
-            console.log('👋 Left lesson:', data);
-            handleLeave();
-          }}
-          onError={(error) => {
-            console.error('❌ 100ms error:', error);
-            setError(error.message || 'Failed to join the video session');
-            setIsVideoReady(false);
-          }}
-        />
+      {/* Main Content Area */}
+      <div className="flex h-full pt-20">
+        {/* HMSPrebuilt Component */}
+        <div className={`${showMessaging ? 'w-2/3' : 'w-full'} h-full transition-all duration-300`}>
+          <HMSPrebuilt
+            roomCode={lesson.room_code}
+            options={{
+              userName: user?.email || 'Student',
+              userId: user?.id || `user_${Date.now()}`,
+            }}
+            onJoinRoom={(data) => {
+              console.log('✅ Successfully joined lesson:', data);
+            }}
+            onLeaveRoom={(data) => {
+              console.log('👋 Left lesson:', data);
+              handleLessonEnd();
+            }}
+            onError={(error) => {
+              console.error('❌ 100ms error:', error);
+              setError(error.message || 'Failed to join the video session');
+              setIsVideoReady(false);
+            }}
+          />
+        </div>
+
+        {/* Messaging Sidebar */}
+        {showMessaging && (
+          <div className="w-1/3 h-full bg-gray-50 border-l border-gray-200 overflow-hidden flex flex-col">
+            <LessonMessaging
+              lessonId={lessonId!}
+              currentUserId={user?.id}
+              userRole={userRole}
+              onClose={() => setShowMessaging(false)}
+            />
+          </div>
+        )}
+
+        {/* Toggle Messaging Button (when hidden) */}
+        {!showMessaging && (
+          <button
+            onClick={() => setShowMessaging(true)}
+            className="fixed bottom-6 right-6 bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2 z-50"
+            title="Open messages"
+          >
+            <MessageCircle className="w-6 h-6" />
+            <span className="font-medium">Messages</span>
+          </button>
+        )}
       </div>
+
+      {/* Quick Feedback Modal */}
+      {showQuickFeedback && lesson && user && (
+        <QuickLessonFeedback
+          lessonId={lesson.id}
+          teacherId={lesson.teacher_id}
+          studentId={user.id}
+          onComplete={handleQuickFeedbackComplete}
+        />
+      )}
+
+      {/* Detailed Rating Modal */}
+      {showDetailedRating && lesson && user && milestoneData && (
+        <DetailedTeacherRating
+          teacherId={lesson.teacher_id}
+          teacherName={lesson.teacher_name}
+          studentId={user.id}
+          milestoneType={milestoneData.milestoneType}
+          lessonCount={milestoneData.lessonCount}
+          onComplete={handleDetailedRatingComplete}
+        />
+      )}
     </div>
   );
 }

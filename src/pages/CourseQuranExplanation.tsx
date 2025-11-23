@@ -73,7 +73,7 @@ export default function CourseQuranExplanation() {
     {
       name: 'Aisha M.',
       role: 'Student',
-      text: 'The personalized approach helped me correct years of incorrect pronunciation. My teacher is patient and knowledgeable.',
+      text: 'The personalised approach helped me correct years of incorrect pronunciation. My teacher is patient and knowledgeable.',
       rating: 5
     },
     {
@@ -256,7 +256,7 @@ export default function CourseQuranExplanation() {
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-white mb-4">Experience Talbiyah Insights</h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              After every session, receive comprehensive AI-generated study materials personalized to your learning
+              After every session, receive comprehensive AI-generated study materials personalised to your learning
             </p>
           </div>
 

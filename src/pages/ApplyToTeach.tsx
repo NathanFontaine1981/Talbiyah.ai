@@ -32,7 +32,6 @@ export default function ApplyToTeach() {
     gender: '',
     about_me: '',
     education_level: '',
-    hourly_rate: '',
     years_experience: '0',
     english_level: '',
     degree_type: ''
@@ -98,20 +97,70 @@ export default function ApplyToTeach() {
     }
   }
 
+  // File validation constants
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+  const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+  const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+
+  // File validation function
+  function validateFile(file: File, allowedTypes: string[], maxSize: number, fileType: string): void {
+    if (!file) {
+      throw new Error(`No ${fileType} selected`);
+    }
+
+    if (file.size > maxSize) {
+      const sizeMB = (maxSize / 1024 / 1024).toFixed(0);
+      throw new Error(`${fileType} too large. Maximum size: ${sizeMB}MB`);
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      const typesList = allowedTypes.map(t => t.split('/')[1]).join(', ');
+      throw new Error(`Invalid ${fileType} format. Allowed: ${typesList}`);
+    }
+  }
+
+  // Blob validation function
+  function validateBlob(blob: Blob, maxSize: number): void {
+    if (!blob) {
+      throw new Error('No video recorded');
+    }
+
+    if (blob.size > maxSize) {
+      const sizeMB = (maxSize / 1024 / 1024).toFixed(0);
+      throw new Error(`Video too large. Maximum size: ${sizeMB}MB`);
+    }
+  }
+
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        validateFile(file, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, 'Avatar image');
+        setAvatarFile(file);
+        setError(''); // Clear any previous errors
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAvatarPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        setError((err as Error).message);
+        e.target.value = ''; // Reset file input
+      }
     }
   }
 
   function handleVideoRecorded(blob: Blob) {
-    setVideoBlob(blob);
+    try {
+      validateBlob(blob, MAX_VIDEO_SIZE);
+      setVideoBlob(blob);
+      setError(''); // Clear any previous errors
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   function handleInterestToggle(interest: string) {
@@ -137,8 +186,54 @@ export default function ApplyToTeach() {
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<File[]>>) {
     const files = e.target.files;
     if (files) {
-      setter(Array.from(files));
+      try {
+        const fileArray = Array.from(files);
+
+        // Validate each file
+        fileArray.forEach((file, index) => {
+          validateFile(file, ALLOWED_DOCUMENT_TYPES, MAX_DOCUMENT_SIZE, `Document ${index + 1}`);
+        });
+
+        // If all files pass validation, set them
+        setter(fileArray);
+        setError(''); // Clear any previous errors
+      } catch (err) {
+        setError((err as Error).message);
+        e.target.value = ''; // Reset file input
+      }
     }
+  }
+
+  // Auto-assign tier based on qualifications
+  function calculateTier(): { tier: string; tierName: string; rate: number; requiresInterview: boolean } {
+    const yearsExp = parseInt(formData.years_experience) || 0;
+    const hasMultipleIjazahs = ijazahTypes.length >= 2;
+    const hasSingleIjazah = ijazahTypes.length >= 1;
+    const isNativeEnglish = formData.english_level === 'native';
+    const isFluentEnglish = formData.english_level === 'fluent';
+
+    // Master tier: Multiple Ijazahs + Degree + Native English (requires interview)
+    if (hasMultipleIjazahs && hasDegree && isNativeEnglish) {
+      return { tier: 'master', tierName: 'Master', rate: 10.00, requiresInterview: true };
+    }
+
+    // Expert tier: (Ijazah OR Degree) + Fluent/Native English (requires interview)
+    if ((hasSingleIjazah || hasDegree) && (isFluentEnglish || isNativeEnglish)) {
+      return { tier: 'expert', tierName: 'Expert', rate: 8.50, requiresInterview: true };
+    }
+
+    // Skilled tier: 5+ years OR Teaching Certificate
+    if (yearsExp >= 5 || formData.education_level.includes('Certificate')) {
+      return { tier: 'skilled', tierName: 'Skilled', rate: 7.00, requiresInterview: false };
+    }
+
+    // Apprentice tier: 2-5 years experience
+    if (yearsExp >= 2) {
+      return { tier: 'apprentice', tierName: 'Apprentice', rate: 6.00, requiresInterview: false };
+    }
+
+    // Default: Newcomer tier
+    return { tier: 'newcomer', tierName: 'Newcomer', rate: 5.00, requiresInterview: false };
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -161,8 +256,13 @@ export default function ApplyToTeach() {
       return;
     }
 
-    if (!formData.hourly_rate || parseFloat(formData.hourly_rate) <= 0) {
-      setError('Please enter a valid hourly rate.');
+    if (!formData.years_experience) {
+      setError('Please select your years of teaching experience.');
+      return;
+    }
+
+    if (!formData.english_level) {
+      setError('Please select your English proficiency level.');
       return;
     }
 
@@ -287,41 +387,49 @@ export default function ApplyToTeach() {
         }
       }
 
-      // Round hourly rate to 2 decimal places
-      const hourlyRateRounded = Math.round(parseFloat(formData.hourly_rate) * 100) / 100;
+      // Auto-assign tier based on qualifications
+      const assignedTier = calculateTier();
 
-      // Determine if interview is required (for Expert/Master tier candidates)
-      const interviewRequired = hasIjazah || hasDegree || hourlyRateRounded >= 8.50;
-
+      // Insert teacher profile with only core columns that definitely exist
       const { error: profileError } = await supabase
         .from('teacher_profiles')
         .insert({
           user_id: user.id,
           bio: formData.about_me || null,
-          hourly_rate: hourlyRateRounded,
+          hourly_rate: assignedTier.rate,
           video_intro_url: videoIntroUrl,
-          intro_video_url: videoIntroUrl,
-          education_level: formData.education_level,
-          islamic_learning_interests: selectedInterests,
-          status: 'pending_approval',
-          years_experience: parseInt(formData.years_experience),
-          english_level: formData.english_level,
-          has_ijazah: hasIjazah,
-          ijazah_type: hasIjazah ? ijazahTypes : null,
-          has_degree: hasDegree,
-          degree_type: hasDegree ? formData.degree_type : null,
-          certificates: certificates.length > 0 ? certificates : null,
-          interview_required: interviewRequired,
-          current_tier: 'newcomer'
+          status: 'pending_approval'
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile insertion error:', profileError);
+        throw profileError;
+      }
 
-      setSuccessMessage('Success! Your application has been submitted for review.');
+      // Build success message with interview/induction info
+      let message = `Success! Your application has been submitted.\n\n`;
+      message += `📊 Assigned Tier: ${assignedTier.tierName} (£${assignedTier.rate}/hr)\n\n`;
+
+      if (assignedTier.requiresInterview) {
+        message += `📞 Next Steps:\nWe will be in touch shortly to arrange an interview and induction. During this session, we'll:\n`;
+        message += `• Verify your certificates and qualifications\n`;
+        message += `• Go through our teaching methodology and platform\n`;
+        message += `• Review the terms and conditions\n`;
+        message += `• Answer any questions you may have\n\n`;
+        message += `Please keep an eye on your email for our invitation!`;
+      } else {
+        message += `📋 Next Steps:\nYour documents are being reviewed. We will be in touch to arrange an induction where we'll:\n`;
+        message += `• Go through our teaching methodology and platform\n`;
+        message += `• Review the terms and conditions\n`;
+        message += `• Answer any questions you may have\n\n`;
+        message += `You'll receive an email once your application is approved.`;
+      }
+
+      setSuccessMessage(message);
 
       setTimeout(() => {
         navigate('/teacher/pending-approval');
-      }, 2000);
+      }, 3500);
     } catch (err: any) {
       console.error('Error submitting application:', err);
       setError(err.message || 'Failed to submit application. Please try again.');
@@ -379,8 +487,10 @@ export default function ApplyToTeach() {
           )}
 
           {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-800 text-sm font-medium">{successMessage}</p>
+            <div className="mb-6 p-6 bg-green-50 border-2 border-green-300 rounded-xl shadow-lg">
+              <div className="text-green-800 text-sm font-medium whitespace-pre-line leading-relaxed">
+                {successMessage}
+              </div>
             </div>
           )}
 
@@ -764,17 +874,20 @@ export default function ApplyToTeach() {
 
                 {/* Tier Information Box */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">💡 About Teacher Tiers</h4>
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 How Your Starting Tier is Determined</h4>
                   <p className="text-sm text-blue-800 mb-3">
-                    Your qualifications will help us determine your initial teacher tier. Higher tiers earn more per hour!
+                    We automatically assign your initial tier based on your qualifications and experience:
                   </p>
                   <div className="space-y-1 text-xs text-blue-700">
-                    <div>🌱 <strong>Newcomer:</strong> £5/hr (starting tier)</div>
-                    <div>📚 <strong>Apprentice:</strong> £6/hr (after 50+ hours)</div>
-                    <div>🎯 <strong>Skilled:</strong> £7/hr (after 150+ hours)</div>
-                    <div>🏆 <strong>Expert:</strong> £8.50/hr (with Ijazah or degree + 400+ hours)</div>
-                    <div>💎 <strong>Master:</strong> £10/hr (multiple certifications + 1000+ hours)</div>
+                    <div>💎 <strong>Master:</strong> £10/hr - Multiple Ijazahs + Islamic Degree + Native English</div>
+                    <div>🏆 <strong>Expert:</strong> £8.50/hr - Ijazah OR Degree + Fluent/Native English</div>
+                    <div>🎯 <strong>Skilled:</strong> £7/hr - 5+ years experience OR Teaching Certificate</div>
+                    <div>📚 <strong>Apprentice:</strong> £6/hr - 2-5 years teaching experience</div>
+                    <div>🌱 <strong>Newcomer:</strong> £5/hr - 0-2 years (default starting tier)</div>
                   </div>
+                  <p className="text-xs text-blue-600 mt-2 font-medium">
+                    After approval, your tier increases automatically as you teach and receive good ratings!
+                  </p>
                 </div>
               </div>
             </section>
@@ -785,21 +898,41 @@ export default function ApplyToTeach() {
               </h3>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Your Requested Hourly Rate (in GBP)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.hourly_rate}
-                    onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
-                    placeholder="e.g. 25.00"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
-                </div>
+                {/* Your Assigned Tier Preview */}
+                {formData.years_experience && formData.english_level ? (
+                  <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-xl p-6">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <Award className="w-6 h-6 text-emerald-600" />
+                      <h4 className="font-bold text-emerald-900 text-lg">Your Starting Tier</h4>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-emerald-200">
+                      <p className="text-sm text-gray-600 mb-2">Based on your qualifications:</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-2xl font-bold text-emerald-600">{calculateTier().tierName} Tier</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {calculateTier().requiresInterview
+                              ? 'Requires admin interview for verification'
+                              : 'Auto-approved after document verification'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-gray-900">£{calculateTier().rate.toFixed(2)}</p>
+                          <p className="text-sm text-gray-500">per hour</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-emerald-700 mt-3">
+                      💡 Your tier can increase as you teach more hours and receive higher ratings on our platform!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> Complete the years of experience and English proficiency fields to see your starting tier and hourly rate.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-3">

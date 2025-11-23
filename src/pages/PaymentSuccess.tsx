@@ -10,7 +10,7 @@ interface LessonDetails {
   scheduled_time: string;
   duration_minutes: number;
   total_cost_paid: number;
-  payment_status: string;
+  status: string;
   teacher_profiles: {
     id: string;
     profiles: {
@@ -43,33 +43,13 @@ export default function PaymentSuccess() {
       console.log('🔍 Payment Success - Session ID:', sessionId);
 
       if (!sessionId) {
-        // No session ID - might be coming from promo code checkout
+        setError('No session ID found');
         setVerifying(false);
         setLoading(false);
         return;
       }
 
-      // Find the pending booking to get user ID
-      const { data: pendingBooking, error: pendingError } = await supabase
-        .from('pending_bookings')
-        .select('user_id, created_at')
-        .eq('stripe_session_id', sessionId)
-        .maybeSingle();
-
-      console.log('🔍 Pending booking query result:', { pendingBooking, pendingError });
-
-      if (!pendingBooking) {
-        // Fallback: try to find lesson directly (shouldn't happen normally)
-        console.error('❌ No pending booking found for session:', sessionId);
-        setError('Could not find booking. Please check your dashboard.');
-        setVerifying(false);
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ Found pending booking for user:', pendingBooking.user_id);
-
-      // Find the most recent lesson for this user (created after the pending booking)
+      // Query lessons directly by stripe_checkout_session_id
       const { data: lesson, error: lessonError } = await supabase
         .from('lessons')
         .select(`
@@ -77,29 +57,27 @@ export default function PaymentSuccess() {
           scheduled_time,
           duration_minutes,
           total_cost_paid,
-          payment_status,
-          teacher_profiles!teacher_id (
-            id,
-            profiles:user_id (
-              full_name
-            )
-          ),
-          subjects!subject_id (
-            name
-          )
+          status,
+          teacher_id,
+          subject_id,
+          student_room_code,
+          teacher_room_code,
+          100ms_room_id
         `)
-        .eq('learner_id', pendingBooking.user_id)
-        .gte('created_at', pendingBooking.created_at)
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('stripe_checkout_session_id', sessionId)
         .maybeSingle();
 
       console.log('🔍 Lesson query result:', { lesson, lessonError });
 
       if (lessonError) {
         console.error('❌ Error loading lesson:', lessonError);
-        setError('Could not load booking details');
-      } else if (!lesson) {
+        setError('Could not load lesson details');
+        setVerifying(false);
+        setLoading(false);
+        return;
+      }
+
+      if (!lesson) {
         // Lesson not found yet - webhook might still be processing
         console.log('⏳ Lesson not found yet, will poll for updates...');
 
@@ -118,57 +96,86 @@ export default function PaymentSuccess() {
               scheduled_time,
               duration_minutes,
               total_cost_paid,
-              payment_status,
-              teacher_profiles!teacher_id (
-                id,
-                profiles:user_id (
-                  full_name
-                )
-              ),
-              subjects!subject_id (
-                name
-              )
+              status,
+              teacher_id,
+              subject_id,
+              student_room_code,
+              teacher_room_code,
+              100ms_room_id
             `)
-            .eq('learner_id', pendingBooking.user_id)
-            .gte('created_at', pendingBooking.created_at)
-            .order('created_at', { ascending: false })
-            .limit(1)
+            .eq('stripe_checkout_session_id', sessionId)
             .maybeSingle();
 
           if (polledLesson) {
             console.log('✅ Lesson found on polling:', polledLesson.id);
+
+            // Fetch teacher and subject details
+            const { data: subject } = await supabase
+              .from('subjects')
+              .select('name')
+              .eq('id', polledLesson.subject_id)
+              .single();
+
+            const { data: teacherProfile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', polledLesson.teacher_id)
+              .single();
+
+            // Merge the data
+            polledLesson.subjects = subject;
+            polledLesson.teacher_profiles = teacherProfile ? {
+              id: polledLesson.teacher_id,
+              profiles: {
+                full_name: teacherProfile.full_name
+              }
+            } : null;
+
             setLessonDetails(polledLesson as any);
-
-            if (polledLesson.payment_status === 'paid' || polledLesson.payment_status === 'completed') {
-              setVerifying(false);
-            }
-
+            setVerifying(false);
             clearInterval(pollInterval);
           } else if (attempts >= maxAttempts) {
             console.error('❌ Lesson not found after polling');
-            setError('Booking not found. Please check your dashboard.');
+            setError('Lesson not found. Please check your dashboard.');
             setVerifying(false);
             clearInterval(pollInterval);
           }
         }, 2000);
 
         return; // Exit early, polling will continue
-      } else {
-        console.log('✅ Found lesson:', lesson.id, 'Status:', lesson.payment_status);
-        setLessonDetails(lesson as any);
-
-        // Check payment status (can be 'paid', 'pending', or 'failed')
-        if (lesson.payment_status === 'paid' || lesson.payment_status === 'completed') {
-          setVerifying(false);
-        } else if (lesson.payment_status === 'failed') {
-          setError('Payment failed. Please contact support.');
-          setVerifying(false);
-        }
-        // If status is still 'pending', verifying state will remain true (handled by UI)
       }
+
+      // Lesson found! Fetch teacher and subject details
+      console.log('✅ Found lesson:', lesson.id, 'Status:', lesson.status);
+
+      const { data: subject } = await supabase
+        .from('subjects')
+        .select('name')
+        .eq('id', lesson.subject_id)
+        .single();
+
+      const { data: teacherProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', lesson.teacher_id)
+        .single();
+
+      // Merge the data
+      lesson.subjects = subject;
+      lesson.teacher_profiles = teacherProfile ? {
+        id: lesson.teacher_id,
+        profiles: {
+          full_name: teacherProfile.full_name
+        }
+      } : null;
+
+      setLessonDetails(lesson as any);
+      setVerifying(false);
+
     } catch (err: any) {
       console.error('Error verifying payment:', err);
       setError(err.message || 'Failed to verify payment');
+      setVerifying(false);
     } finally {
       setLoading(false);
     }
@@ -299,7 +306,7 @@ export default function PaymentSuccess() {
                 <div className="flex-1">
                   <p className="text-white font-medium mb-1">Prepare for Your Sessions</p>
                   <p className="text-sm text-slate-400">
-                    Make sure you have a quiet space and good internet connection. You'll receive a reminder 15 minutes before each session.
+                    Make sure you have a quiet space and good internet connection. You'll receive a reminder 15 minutes before each session. You can reschedule anytime up to 30 mins before the session starts.
                   </p>
                 </div>
               </div>

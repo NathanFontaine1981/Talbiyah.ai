@@ -25,6 +25,7 @@ export default function ReferralWidget() {
 
   useEffect(() => {
     loadReferralStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadReferralStats() {
@@ -120,10 +121,10 @@ export default function ReferralWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/30">
+      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-amber-500/20 rounded w-32"></div>
-          <div className="h-20 bg-amber-500/20 rounded"></div>
+          <div className="h-6 bg-slate-700/50 rounded w-32"></div>
+          <div className="h-20 bg-slate-700/50 rounded"></div>
         </div>
       </div>
     );
@@ -135,15 +136,15 @@ export default function ReferralWidget() {
   if (!stats) return null;
 
   return (
-    <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/30 shadow-xl">
+    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
             <span className="text-3xl">{stats.tierIcon}</span>
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">Referral Rewards</h3>
-            <p className="text-xs text-amber-300 uppercase font-semibold">{stats.tier} Tier</p>
+            <p className="text-xs text-emerald-300 uppercase font-semibold">{stats.tier} Tier</p>
           </div>
         </div>
       </div>
@@ -171,7 +172,7 @@ export default function ReferralWidget() {
 
         <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/50">
           <div className="flex items-center space-x-2 mb-2">
-            <Gift className="w-4 h-4 text-amber-400" />
+            <Gift className="w-4 h-4 text-cyan-400" />
             <span className="text-xs text-slate-400">Referred Hours</span>
           </div>
           <p className="text-2xl font-bold text-white">{stats.referredHours.toFixed(1)}</p>
@@ -187,11 +188,11 @@ export default function ReferralWidget() {
             type="text"
             value={getReferralUrl()}
             readOnly
-            className="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+            className="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           />
           <button
             onClick={copyReferralLink}
-            className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition flex items-center space-x-1"
+            className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-1"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
@@ -199,8 +200,8 @@ export default function ReferralWidget() {
       </div>
 
       {/* How it Works */}
-      <div className="bg-amber-900/20 rounded-xl p-4 border border-amber-500/20 mb-4">
-        <h4 className="text-sm font-bold text-amber-300 mb-3 flex items-center space-x-2">
+      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mb-4">
+        <h4 className="text-sm font-bold text-emerald-300 mb-3 flex items-center space-x-2">
           <Share2 className="w-4 h-4" />
           <span>How It Works</span>
         </h4>
@@ -216,8 +217,8 @@ export default function ReferralWidget() {
               📊 Track: {stats.referredHours.toFixed(1)} / {Math.ceil(stats.referredHours / 10) * 10} hours to next reward
             </p>
           </div>
-          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg p-3 border border-amber-500/30 mt-2">
-            <p className="text-amber-200 font-semibold text-xs text-center">
+          <div className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 rounded-lg p-3 border border-cyan-500/30 mt-2">
+            <p className="text-cyan-200 font-semibold text-xs text-center">
               🎁 Share your link and start earning!
             </p>
           </div>
@@ -227,7 +228,7 @@ export default function ReferralWidget() {
       {/* View Full Dashboard */}
       <button
         onClick={() => navigate('/my-referrals')}
-        className="w-full px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+        className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
       >
         <span>View Full Dashboard</span>
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

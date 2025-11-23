@@ -55,7 +55,7 @@ export default function UserManagement() {
   const [showUserDetails, setShowUserDetails] = useState(false);
 
   // Bulk actions
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(new Set());
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -236,6 +236,120 @@ export default function UserManagement() {
     }
   }
 
+  async function handleClearAllExceptAdmin() {
+    const confirmText = 'DELETE ALL USERS';
+    const userConfirm = prompt(
+      `⚠️ DANGER: This will delete ALL users except admins!\n\n` +
+      `This will delete:\n` +
+      `- All student accounts\n` +
+      `- All teacher accounts\n` +
+      `- All parent accounts\n` +
+      `- All lessons and bookings\n` +
+      `- All related data\n\n` +
+      `Type "${confirmText}" to confirm:`
+    );
+
+    if (userConfirm !== confirmText) {
+      alert('Action cancelled');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Get all non-admin user IDs
+      const nonAdminUsers = users.filter(u => !u.roles?.includes('admin'));
+
+      if (nonAdminUsers.length === 0) {
+        alert('No non-admin users to delete');
+        return;
+      }
+
+      console.log(`Deleting ${nonAdminUsers.length} non-admin users...`);
+
+      // Delete all related data for non-admin users
+      const nonAdminIds = nonAdminUsers.map(u => u.id);
+
+      console.log('Step 1: Getting learner IDs...');
+      // Get all learner IDs for these users
+      const { data: learnersData } = await supabase
+        .from('learners')
+        .select('id')
+        .in('parent_id', nonAdminIds);
+
+      const learnerIds = learnersData?.map(l => l.id) || [];
+      console.log(`Found ${learnerIds.length} learners to delete`);
+
+      // Delete in order to respect foreign key constraints
+      if (learnerIds.length > 0) {
+        console.log('Step 2: Deleting lessons...');
+        await supabase.from('lessons').delete().in('learner_id', learnerIds);
+
+        console.log('Step 3: Deleting student_teacher_relationships...');
+        await supabase.from('student_teacher_relationships').delete().in('student_id', learnerIds);
+      }
+
+      console.log('Step 4: Deleting teacher data...');
+      await supabase.from('teacher_availability').delete().in('teacher_id', nonAdminIds);
+      await supabase.from('teacher_profiles').delete().in('user_id', nonAdminIds);
+
+      console.log('Step 5: Deleting bookings and credits...');
+      await supabase.from('pending_bookings').delete().in('user_id', nonAdminIds);
+      await supabase.from('credit_transactions').delete().in('user_id', nonAdminIds);
+      await supabase.from('credit_purchases').delete().in('user_id', nonAdminIds);
+      await supabase.from('user_credits').delete().in('user_id', nonAdminIds);
+
+      console.log('Step 6: Deleting learners...');
+      if (learnerIds.length > 0) {
+        await supabase.from('learners').delete().in('id', learnerIds);
+      }
+
+      console.log('Step 7: Deleting parent_children relationships...');
+      // Delete both as parent and as child
+      const { error: parentChildError1 } = await supabase
+        .from('parent_children')
+        .delete()
+        .in('parent_id', nonAdminIds);
+
+      if (parentChildError1) {
+        console.warn('Error deleting parent_children (as parent):', parentChildError1);
+      }
+
+      const { error: parentChildError2 } = await supabase
+        .from('parent_children')
+        .delete()
+        .in('child_id', nonAdminIds);
+
+      if (parentChildError2) {
+        console.warn('Error deleting parent_children (as child):', parentChildError2);
+      }
+
+      console.log('Step 8: Deleting profiles...');
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .in('id', nonAdminIds);
+
+      if (profileError) {
+        console.error('Profile deletion error:', profileError);
+        throw profileError;
+      }
+
+      await fetchUsers();
+      alert(
+        `✅ Successfully deleted ${nonAdminUsers.length} users!\n\n` +
+        `⚠️ Note: You still need to delete these users from Supabase Authentication:\n` +
+        `https://supabase.com/dashboard/project/boyrjgivpepjiboekwuu/auth/users\n\n` +
+        `Or the database cleanup will be undone when they log in again.`
+      );
+    } catch (error) {
+      console.error('Error clearing users:', error);
+      alert('Failed to clear users. Please check console for details.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function toggleUserSelection(userId: string) {
     setSelectedUserIds(prev => {
       const newSet = new Set(prev);
@@ -280,6 +394,13 @@ export default function UserManagement() {
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
+          </button>
+          <button
+            onClick={handleClearAllExceptAdmin}
+            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg transition flex items-center space-x-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Clear All Users</span>
           </button>
           <button
             onClick={() => setShowCreateUser(true)}

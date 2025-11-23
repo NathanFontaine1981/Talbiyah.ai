@@ -6,23 +6,32 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
   excludeTeachers?: boolean;
+  requireTeacherOrAdmin?: boolean;
 }
 
-export default function ProtectedRoute({ children, requireAdmin = false, excludeTeachers = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, requireAdmin = false, excludeTeachers = false, requireTeacherOrAdmin = false }: ProtectedRouteProps) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
+  const [isApprovedTeacher, setIsApprovedTeacher] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    let isMounted = true;
 
-  async function checkAuth() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+    async function checkAuth() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+      if (error) {
+        console.error('Session error:', error);
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
 
       if (!session) {
         setIsAuthenticated(false);
@@ -37,14 +46,14 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
       setIsEmailVerified(!!user?.email_confirmed_at);
 
       // Check user role
-      const { data: profile, error } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('roles')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
       } else if (profile) {
         // Check if admin (for requireAdmin prop)
         if (profile.roles && profile.roles.includes('admin')) {
@@ -56,13 +65,38 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
           setIsTeacher(true);
         }
       }
-    } catch (error) {
-      console.error('Error checking auth:', error);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
+
+      // Check if user is an approved teacher (for requireTeacherOrAdmin prop)
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('status')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (teacherProfile?.status === 'approved') {
+        setIsApprovedTeacher(true);
+      }
+
+      // All checks passed, set loading to false
+      if (isMounted) {
+        setLoading(false);
+      }
+    } catch (error: any) {
+        console.error('Error checking auth:', error);
+        if (isMounted) {
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
+      }
     }
-  }
+
+    checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -85,6 +119,10 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
   }
 
   if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireTeacherOrAdmin && !isAdmin && !isApprovedTeacher) {
     return <Navigate to="/" replace />;
   }
 

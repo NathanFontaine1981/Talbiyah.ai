@@ -30,6 +30,9 @@ import Matchmaking from './pages/Matchmaking';
 import Welcome from './pages/Welcome';
 import BookSession from './pages/BookSession';
 import PaymentSuccess from './pages/PaymentSuccess';
+import BuyCredits from './pages/BuyCredits';
+import CreditPurchaseSuccess from './pages/CreditPurchaseSuccess';
+import BookingOptions from './pages/BookingOptions';
 import QuranProgress from './pages/QuranProgress';
 import CoursesOverview from './pages/CoursesOverview';
 import RecordingsHistory from './pages/RecordingsHistory';
@@ -37,6 +40,8 @@ import TeacherProfileSetup from './pages/TeacherProfileSetup';
 import TeacherPendingApproval from './pages/TeacherPendingApproval';
 import TeacherAvailability from './pages/TeacherAvailability';
 import TeacherEditProfile from './pages/teacher/EditProfile';
+import TeacherHub from './pages/teacher/TeacherHub';
+import MyStudents from './pages/teacher/MyStudents';
 import IslamicSourceReferenceAbout from './pages/IslamicSourceReferenceAbout';
 import IslamicSourceReference from './pages/IslamicSourceReference';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -54,8 +59,14 @@ import RecordingWithInsights from './pages/student/RecordingWithInsights';
 import ReferralDashboard from './pages/ReferralDashboard';
 import ReferralLeaderboard from './pages/ReferralLeaderboard';
 import TeacherTierDashboard from './pages/TeacherTierDashboard';
+import TeacherTierInfo from './pages/TeacherTierInfo';
 import RescheduleLesson from './pages/RescheduleLesson';
 import MyClasses from './pages/MyClasses';
+import TeacherEarnings from './pages/TeacherEarnings';
+import TeacherPayouts from './pages/admin/TeacherPayouts';
+import TeacherPaymentSettings from './pages/TeacherPaymentSettings';
+import MissedLessons from './pages/MissedLessons';
+import TierDiagnostic from './pages/TierDiagnostic';
 
 function App() {
   return (
@@ -141,6 +152,14 @@ function App() {
           }
         />
         <Route
+          path="/missed-lessons"
+          element={
+            <ProtectedRoute>
+              <MissedLessons />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin"
           element={
             <ProtectedRoute requireAdmin={true}>
@@ -152,6 +171,7 @@ function App() {
           <Route path="users" element={<UserManagement />} />
           <Route path="teachers" element={<TeacherManagement />} />
           <Route path="teacher-tiers" element={<TeacherTiers />} />
+          <Route path="teacher-payouts" element={<TeacherPayouts />} />
           <Route path="sessions" element={<Sessions />} />
           <Route path="group-sessions" element={<GroupSessions />} />
           <Route path="courses" element={<CoursesManagement />} />
@@ -184,6 +204,22 @@ function App() {
           }
         />
         <Route
+          path="/teacher/hub"
+          element={
+            <ProtectedRoute>
+              <TeacherHub />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/my-students"
+          element={
+            <ProtectedRoute>
+              <MyStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/teacher/availability"
           element={
             <ProtectedRoute>
@@ -202,8 +238,40 @@ function App() {
         <Route
           path="/teacher/tiers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTeacherOrAdmin={true}>
               <TeacherTierDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/tier-info"
+          element={
+            <ProtectedRoute requireTeacherOrAdmin={true}>
+              <TeacherTierInfo />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/tier-diagnostic"
+          element={
+            <ProtectedRoute>
+              <TierDiagnostic />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/earnings"
+          element={
+            <ProtectedRoute>
+              <TeacherEarnings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/payment-settings"
+          element={
+            <ProtectedRoute>
+              <TeacherPaymentSettings />
             </ProtectedRoute>
           }
         />
@@ -279,6 +347,30 @@ function App() {
           element={
             <ProtectedRoute>
               <PaymentSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/booking-options"
+          element={
+            <ProtectedRoute>
+              <BookingOptions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/buy-credits"
+          element={
+            <ProtectedRoute>
+              <BuyCredits />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/credit-purchase-success"
+          element={
+            <ProtectedRoute>
+              <CreditPurchaseSuccess />
             </ProtectedRoute>
           }
         />

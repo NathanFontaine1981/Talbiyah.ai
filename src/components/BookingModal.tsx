@@ -53,6 +53,7 @@ export default function BookingModal({
   const [isFreeSession, setIsFreeSession] = useState(false);
   const [teacherAvailability, setTeacherAvailability] = useState<TeacherAvailability[]>([]);
   const [oneOffAvailability, setOneOffAvailability] = useState<OneOffAvailability[]>([]);
+  const [existingBookings, setExistingBookings] = useState<Array<{scheduled_time: string, duration_minutes: number}>>([]);
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }), i)
@@ -201,6 +202,18 @@ export default function BookingModal({
 
       if (oneOffError) throw oneOffError;
       setOneOffAvailability(oneOffData || []);
+
+      // Fetch existing bookings for next 30 days (to prevent double booking)
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('lessons')
+        .select('scheduled_time, duration_minutes')
+        .eq('teacher_id', teacherId)
+        .gte('scheduled_time', today.toISOString())
+        .lte('scheduled_time', futureDate.toISOString())
+        .not('status', 'in', '(cancelled_by_teacher,cancelled_by_student)'); // Exclude cancelled lessons
+
+      if (bookingsError) throw bookingsError;
+      setExistingBookings(bookingsData || []);
     } catch (err) {
       console.error('Error fetching teacher availability:', err);
     }
@@ -223,6 +236,18 @@ export default function BookingModal({
     // Must be at least 2 hours from now
     const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
     if (slot < twoHoursFromNow) return false;
+
+    // Check for conflicts with existing bookings
+    const slotEnd = new Date(slot.getTime() + duration * 60 * 1000);
+    const hasConflict = existingBookings.some(booking => {
+      const bookingStart = new Date(booking.scheduled_time);
+      const bookingEnd = new Date(bookingStart.getTime() + booking.duration_minutes * 60 * 1000);
+
+      // Check if there's any overlap between the slot and the booking
+      return (slot < bookingEnd && slotEnd > bookingStart);
+    });
+
+    if (hasConflict) return false;
 
     // Normalize time format (database returns HH:MM:SS, we have HH:MM)
     const normalizeTime = (t: string) => t.substring(0, 5);

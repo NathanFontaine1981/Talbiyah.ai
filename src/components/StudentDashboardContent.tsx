@@ -42,6 +42,7 @@ export default function StudentDashboardContent({
 
   useEffect(() => {
     loadLearnerData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
 
   async function loadLearnerData() {
@@ -157,8 +158,8 @@ export default function StudentDashboardContent({
                 Share Talbiyah.ai with friends and earn 1 free hour for every 10 hours they complete!
               </p>
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                  <Trophy className="w-5 h-5 text-amber-600" />
+                <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <Trophy className="w-5 h-5 text-emerald-600" />
                   <span className="font-semibold text-slate-900">{learner.learning_credits?.toFixed(1) || 0} Free Hours Earned</span>
                 </div>
               </div>

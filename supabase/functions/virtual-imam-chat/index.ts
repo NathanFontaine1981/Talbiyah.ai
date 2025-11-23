@@ -61,6 +61,12 @@ Deno.serve(async (req: Request) => {
 
 Generate a reflection based on: ${question}
 
+CRITICAL CITATION REQUIREMENTS:
+- EVERY Quran reference MUST include the COMPLETE verse text in English + exact citation (Surah name Chapter:Verse)
+- EVERY Hadith reference MUST include the COMPLETE hadith text in English + exact source (Book name and number, e.g., "Sahih Bukhari 1903")
+- NEVER provide empty citations or references without full text
+- If you cannot find an exact reference, acknowledge this rather than providing incomplete information
+
 REQUIRED RESPONSE FORMAT (respond ONLY with valid JSON):
 {
   "is_complex_referral": false,
@@ -68,13 +74,13 @@ REQUIRED RESPONSE FORMAT (respond ONLY with valid JSON):
   "references": [
     {
       "type": "quran",
-      "text": "The actual verse text in English",
-      "citation": "Surah Name Chapter:Verse"
+      "text": "By time, indeed mankind is in loss, except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
+      "citation": "Surah Al-Asr 103:1-3"
     },
     {
       "type": "hadith",
-      "text": "The actual hadith text",
-      "citation": "Source (e.g., Sahih Bukhari 1903)"
+      "text": "The Prophet (ﷺ) said: 'The best of you are those who are best to their families, and I am the best among you to my family.'",
+      "citation": "Jami' at-Tirmidhi 3895"
     }
   ],
   "jurisprudence_note": "Brief scholarly context if relevant",
@@ -113,10 +119,23 @@ MANDATORY REQUIREMENTS FOR EVERY RESPONSE:
 4. You MUST include the actual text of verses and hadiths, not just citations
 5. You MUST explain whether the matter is Ijma (consensus) or Ikhtilaf (difference of opinion)
 
-SOURCE REQUIREMENTS:
+SOURCE REQUIREMENTS - ABSOLUTELY MANDATORY:
 - All Hadith MUST be from authentic collections (Sahih Bukhari, Sahih Muslim, Sunan Abu Dawud, Sunan Tirmidhi, Sunan An-Nasa'i, Sunan Ibn Majah)
 - Follow the methodology of the Salaf (first three generations)
-- Provide specific citations: Surah name, chapter, and verse number for Quran; Collection and number for Hadith
+- EVERY Quran reference MUST include:
+  * Full Surah name in English
+  * Chapter number
+  * Verse number
+  * The COMPLETE verse text in English
+  * Format: "Surah Al-Baqarah 2:183"
+- EVERY Hadith reference MUST include:
+  * The exact book name (e.g., "Sahih Bukhari", "Sahih Muslim", "Sunan Abu Dawud")
+  * The specific hadith number from that collection
+  * The COMPLETE hadith text in English (narrator chain not required, but the full content is mandatory)
+  * Format: "Sahih Bukhari 1903" or "Sahih Muslim 2564"
+- NEVER provide just citations without the full text
+- NEVER say "as mentioned in the Quran" without citing the specific verse
+- NEVER reference a hadith without providing the exact book and number
 
 COMPLEX QUESTION HANDLING:
 If the question is:
@@ -134,17 +153,24 @@ REQUIRED RESPONSE FORMAT (respond ONLY with valid JSON):
   "references": [
     {
       "type": "quran",
-      "text": "The COMPLETE verse text in English - this is MANDATORY, never just the citation",
-      "citation": "Surah Name Chapter:Verse (e.g., Surah Al-Baqarah 2:183)"
+      "text": "O you who have believed, decreed upon you is fasting as it was decreed upon those before you that you may become righteous.",
+      "citation": "Surah Al-Baqarah 2:183"
     },
     {
       "type": "hadith",
-      "text": "The COMPLETE hadith text in English - this is MANDATORY, never just the citation",
-      "citation": "Complete source (e.g., Sahih Bukhari 1903, Sahih Muslim 1151)"
+      "text": "The Prophet (ﷺ) said: 'Islam is built upon five pillars: testifying that there is no god but Allah and that Muhammad is the Messenger of Allah, establishing prayer, paying zakah, fasting Ramadan, and performing Hajj.'",
+      "citation": "Sahih Bukhari 8"
     }
   ],
   "jurisprudence_note": "If Ijma (consensus): State that scholars agree on this matter. If Ikhtilaf (difference): Explain both positions clearly with evidence for each side. Mention which scholars/madhahib hold each view. Example: 'The majority of scholars (Shafi'i, Maliki, Hanbali) hold position A based on [evidence], while the Hanafi school holds position B based on [evidence].' Always end with: 'Consult a qualified scholar for specific rulings.'"
 }
+
+CRITICAL CITATION RULES:
+- For Quran: MUST include full surah name, chapter:verse number AND complete verse text
+- For Hadith: MUST include exact book name (Sahih Bukhari, Sahih Muslim, etc.), hadith number AND complete hadith text
+- EXAMPLE GOOD CITATION: {"type": "hadith", "text": "The Prophet (ﷺ) said: 'Whoever fasts Ramadan with faith and seeking reward from Allah, his previous sins will be forgiven.'", "citation": "Sahih Bukhari 1901"}
+- EXAMPLE BAD CITATION: {"type": "hadith", "text": "", "citation": "Bukhari"} ❌ NEVER DO THIS
+- If you cannot find the exact hadith number or verse, say "I cannot locate the specific reference for this" rather than providing incomplete citations
 
 OR if complex/personal:
 {
@@ -157,12 +183,20 @@ OR if complex/personal:
 USER QUESTION: ${question}
 
 Remember:
-1. NEVER skip providing Quran verses with FULL text
-2. NEVER skip providing Hadith with FULL text
-3. If there is Ikhtilaf, you MUST show BOTH sides with evidence
-4. You are a REFERENCE TOOL, not a mufti
-5. ALWAYS remind users to consult qualified scholars
-6. CRITICAL: Respond with ONLY valid JSON, no additional text before or after
+1. NEVER skip providing Quran verses with FULL text - must include complete verse in English
+2. NEVER skip providing Hadith with FULL text - must include complete hadith in English
+3. EVERY Quran citation MUST have: Surah name + chapter:verse number (e.g., "Surah Al-Baqarah 2:183")
+4. EVERY Hadith citation MUST have: Exact book name + hadith number (e.g., "Sahih Bukhari 1903")
+5. If there is Ikhtilaf, you MUST show BOTH sides with evidence from Quran/Hadith for each position
+6. You are a REFERENCE TOOL, not a mufti - always remind users to consult scholars
+7. CRITICAL: Respond with ONLY valid JSON, no additional text before or after
+8. Citations without full text are FORBIDDEN - if you don't know the exact reference, say so clearly
+
+EXAMPLES OF PROPER REFERENCES:
+✅ CORRECT: {"type": "quran", "text": "Indeed, prayer prohibits immorality and wrongdoing, and the remembrance of Allah is greater. And Allah knows that which you do.", "citation": "Surah Al-Ankabut 29:45"}
+✅ CORRECT: {"type": "hadith", "text": "The Prophet (ﷺ) said: 'The best of you are those who are best to their families.'", "citation": "Jami' at-Tirmidhi 3895"}
+❌ WRONG: {"type": "hadith", "text": "", "citation": "Bukhari"}
+❌ WRONG: {"type": "quran", "text": "", "citation": "Quran"}
 
 Your response must be valid JSON only.`;
 

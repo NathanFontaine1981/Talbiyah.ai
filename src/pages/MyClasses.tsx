@@ -23,6 +23,7 @@ export default function MyClasses() {
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isTeacher, setIsTeacher] = useState(false);
   const [filter, setFilter] = useState<'upcoming' | 'past' | 'missed' | 'all'>('upcoming');
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState<string>('');
@@ -37,13 +38,39 @@ export default function MyClasses() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Check if user is a teacher
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (teacherProfile?.status === 'approved') {
+        setIsTeacher(true);
+      }
+
       const { data: learner } = await supabase
         .from('learners')
         .select('id')
         .eq('parent_id', user.id)
         .maybeSingle();
 
-      if (!learner) {
+      let learnerId = learner?.id;
+
+      if (!learnerId) {
+        // Check if user IS a learner (not just a parent)
+        const { data: directLearner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (directLearner) {
+          learnerId = directLearner.id;
+        }
+      }
+
+      if (!learnerId) {
         setLoading(false);
         return;
       }
@@ -69,7 +96,7 @@ export default function MyClasses() {
             name
           )
         `)
-        .eq('learner_id', learner.id);
+        .eq('learner_id', learnerId);
 
       // Apply filter
       if (filter === 'upcoming') {
@@ -269,9 +296,10 @@ export default function MyClasses() {
               {filter === 'all' && 'No classes found'}
             </p>
             <p className="text-slate-500 mb-8">
-              {filter === 'upcoming' && 'Start your learning journey by booking your first session'}
+              {filter === 'upcoming' && !isTeacher && 'Start your learning journey by booking your first session'}
+              {filter === 'upcoming' && isTeacher && 'You are viewing this as a teacher. Your teaching schedule is on your teacher dashboard.'}
             </p>
-            {filter === 'upcoming' && (
+            {filter === 'upcoming' && !isTeacher && (
               <button
                 onClick={() => navigate('/subjects')}
                 className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
@@ -361,15 +389,22 @@ export default function MyClasses() {
                             {format(lessonDate, 'MMM d, yyyy')}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-2 text-cyan-400">
+                        <div className="flex items-center space-x-2 text-cyan-400 mb-1">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm font-semibold">
                             {format(lessonDate, 'h:mm a')}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {lesson.duration_minutes} minutes
-                        </p>
+                        <div className="flex items-center justify-end space-x-1 mb-1">
+                          <span className="px-2 py-1 bg-cyan-500/10 text-cyan-300 text-sm font-semibold rounded-lg border border-cyan-500/20">
+                            {lesson.duration_minutes} min
+                          </span>
+                        </div>
+                        {!lessonIsPast && (
+                          <p className="text-xs text-cyan-400/70">
+                            Room opens 6hrs before
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center space-x-3">

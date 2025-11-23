@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Calendar,
   ChevronLeft,
-  Award
+  Award,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: GraduationCap, label: 'Teachers', path: '/admin/teachers' },
     { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
+    { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
     { icon: Calendar, label: 'Sessions', path: '/admin/sessions' },
     { icon: Users, label: 'Group Sessions', path: '/admin/group-sessions' },
     { icon: BookOpen, label: 'Courses', path: '/admin/courses' },

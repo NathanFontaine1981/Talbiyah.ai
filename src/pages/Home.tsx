@@ -8,6 +8,7 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
+  const [isTeacher, setIsTeacher] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -30,6 +31,22 @@ export default function Home() {
       setShowSignInModal(true);
     }
   }, [location]);
+
+  useEffect(() => {
+    async function checkTeacherStatus() {
+      if (user) {
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('status')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        setIsTeacher(teacherProfile?.status === 'approved');
+      } else {
+        setIsTeacher(false);
+      }
+    }
+    checkTeacherStatus();
+  }, [user]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -81,21 +98,34 @@ export default function Home() {
 
             {user ? (
               <>
-                <button
-                  onClick={() => navigate('/apply-to-teach')}
-                  className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25"
-                >
-                  Apply to Teach
-                </button>
-                <button
-                  onClick={async () => {
-                    const dashboardRoute = await getDashboardRoute();
-                    navigate(dashboardRoute);
-                  }}
-                  className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition border border-slate-700"
-                >
-                  Dashboard
-                </button>
+                {isTeacher ? (
+                  <>
+                    <button
+                      onClick={() => navigate('/dashboard')}
+                      className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25"
+                    >
+                      Go to Dashboard
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => navigate('/apply-to-teach')}
+                      className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25"
+                    >
+                      Apply to Teach
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const dashboardRoute = await getDashboardRoute();
+                        navigate(dashboardRoute);
+                      }}
+                      className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition border border-slate-700"
+                    >
+                      Dashboard
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="px-5 py-2.5 border border-slate-700 rounded-lg hover:bg-slate-800 transition flex items-center space-x-2 text-slate-300 hover:text-white"
@@ -146,7 +176,7 @@ export default function Home() {
             </h1>
 
             <p className="text-xl md:text-2xl text-slate-300 mb-10 leading-relaxed max-w-3xl mx-auto">
-              Talbiyah.ai is the <span className="text-white font-semibold">first Islamic learning hub</span> that uses AI to automatically create personalized study notes and quizzes from your live 1-to-1 lessons.
+              Talbiyah.ai is the <span className="text-white font-semibold">first Islamic learning hub</span> that uses AI to automatically create personalised study notes and quizzes from your live 1-to-1 lessons.
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 mb-12">
@@ -191,7 +221,7 @@ export default function Home() {
                   <h3 className="text-2xl font-bold text-white">Choose Your Lesson</h3>
                 </div>
                 <p className="text-slate-300 leading-relaxed flex-grow">
-                  Select your subject: Qur'an with Understanding or Arabic Language. One-to-one personalized lessons.
+                  Select your subject: Qur'an with Understanding or Arabic Language. One-to-one personalised lessons.
                 </p>
               </div>
             </div>
@@ -206,7 +236,7 @@ export default function Home() {
                   <h3 className="text-2xl font-bold text-white">Take Your Lesson</h3>
                 </div>
                 <p className="text-slate-300 leading-relaxed flex-grow">
-                  Join your live 1-to-1 session with a vetted teacher.
+                  Join your live 1-to-1 session with a qualified teacher.
                 </p>
               </div>
             </div>
@@ -221,7 +251,7 @@ export default function Home() {
                   <h3 className="text-2xl font-bold text-white">Get Your AI Notes</h3>
                 </div>
                 <p className="text-slate-300 leading-relaxed flex-grow">
-                  Receive your personalized Talbiyah Insights and quizzes immediately after class.
+                  Receive your personalised Talbiyah Insights and quizzes immediately after class.
                 </p>
               </div>
             </div>
@@ -399,13 +429,13 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Can Trust.</span>
               </h2>
               <p className="text-xl text-slate-300 leading-relaxed mb-8">
-                Every teacher on Talbiyah.ai is hand-picked, vetted, and monitored by our Supervisor team to ensure the highest quality of teaching.
+                Every teacher on Talbiyah.ai is hand-picked, qualified, and monitored by our Supervisor team to ensure the highest quality of teaching.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               {[
-                { icon: Shield, label: 'Vetted', desc: 'Background checked' },
+                { icon: Shield, label: 'Qualified', desc: 'Background checked' },
                 { icon: Star, label: 'Rated', desc: 'Student reviews' },
                 { icon: Users, label: 'Supervised', desc: 'Quality monitored' },
                 { icon: Heart, label: 'Trusted', desc: 'Community approved' }
@@ -529,67 +559,181 @@ export default function Home() {
               <span className="text-cyan-300 font-semibold text-sm">Transparent Pricing</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Simple Pricing.</span>
+              <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Flexible Pricing.</span>
               <br />
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">No Surprises.</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Better Value.</span>
             </h2>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              No subscriptions. No hidden fees. You only pay for the lessons you book.
+              Pay as you go or save with credit packs. No subscriptions, cancel anytime.
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto">
+          {/* Pay As You Go */}
+          <div className="max-w-6xl mx-auto mb-12">
             <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-3xl border-2 border-slate-700/50 overflow-hidden shadow-2xl">
-              <div className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 px-8 py-6 border-b border-slate-700/50">
-                <h3 className="text-2xl font-bold text-white text-center">Flexible Lesson Rates</h3>
+              <div className="bg-gradient-to-r from-slate-700/50 to-slate-800/50 px-8 py-6 border-b border-slate-700/50">
+                <h3 className="text-2xl font-bold text-white text-center">Pay As You Go</h3>
+                <p className="text-center text-slate-400 mt-1">Book individual lessons when you need them</p>
               </div>
 
-              <div className="p-8 space-y-8">
-                {/* 30-min lesson */}
-                <div className="group relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
-                  <div className="relative bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/50 hover:border-cyan-500/50 transition">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h4 className="text-xl font-bold text-white">30-min Lesson</h4>
-                        <p className="text-sm text-slate-400 mt-1">Perfect for younger learners</p>
+              <div className="p-8">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* 30-min lesson */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
+                    <div className="relative bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/50 hover:border-cyan-500/50 transition">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="text-xl font-bold text-white">30-min Lesson</h4>
+                          <p className="text-sm text-slate-400 mt-1">Perfect for younger learners</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£7.50</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£7.50</div>
+                    </div>
+                  </div>
+
+                  {/* 60-min lesson */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-600/10 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
+                    <div className="relative bg-gradient-to-br from-cyan-500/5 to-blue-600/5 backdrop-blur-sm p-6 rounded-2xl border-2 border-cyan-500/50 hover:border-cyan-400/70 transition">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="text-xl font-bold text-white">60-min Lesson</h4>
+                          <p className="text-sm text-cyan-300 mt-1 font-semibold">Most popular</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£15.00</div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                {/* 60-min lesson */}
-                <div className="group relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-600/10 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
-                  <div className="relative bg-gradient-to-br from-cyan-500/5 to-blue-600/5 backdrop-blur-sm p-6 rounded-2xl border-2 border-cyan-500/50 hover:border-cyan-400/70 transition">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h4 className="text-xl font-bold text-white">60-min Lesson</h4>
-                        <p className="text-sm text-cyan-300 mt-1 font-semibold">Our most popular option</p>
+          {/* Credit Packs */}
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-gradient-to-br from-emerald-900/20 to-cyan-900/20 backdrop-blur-sm rounded-3xl border-2 border-emerald-500/30 overflow-hidden shadow-2xl">
+              <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 px-8 py-6 border-b border-emerald-500/30">
+                <h3 className="text-2xl font-bold text-white text-center">Credit Packs - Save More</h3>
+                <p className="text-center text-emerald-300 mt-1 font-semibold">Buy in bulk and get better rates on every lesson</p>
+              </div>
+
+              <div className="p-8">
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  {/* Starter Pack */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
+                    <div className="relative bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/50 hover:border-emerald-500/50 transition">
+                      <div className="mb-4">
+                        <h4 className="text-xl font-bold text-white mb-2">Starter Pack</h4>
+                        <div className="flex items-baseline space-x-2">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">£58</span>
+                          <span className="text-slate-400 line-through text-sm">£60</span>
+                        </div>
+                        <p className="text-emerald-400 text-sm font-semibold mt-1">£14.50 per lesson</p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£15.00</div>
+                      <div className="space-y-2 text-sm text-slate-300">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>4 lesson credits (4 hours)</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>8 x 30min sessions</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>1 lesson/week for 1 month</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Standard Pack - Most Popular */}
+                  <div className="group relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
+                    <div className="relative bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 backdrop-blur-sm p-6 rounded-2xl border-2 border-emerald-500/50 hover:border-emerald-400/70 transition">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span className="px-4 py-1 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold rounded-full shadow-lg">
+                          MOST POPULAR
+                        </span>
+                      </div>
+                      <div className="mb-4 mt-2">
+                        <h4 className="text-xl font-bold text-white mb-2">Standard Pack</h4>
+                        <div className="flex items-baseline space-x-2">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">£108</span>
+                          <span className="text-slate-400 line-through text-sm">£120</span>
+                        </div>
+                        <p className="text-emerald-400 text-sm font-semibold mt-1">£13.50 per lesson</p>
+                      </div>
+                      <div className="space-y-2 text-sm text-slate-300">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>8 lesson credits (8 hours)</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>16 x 30min sessions</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>2 lessons/week for 1 month</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Intensive Pack */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition"></div>
+                    <div className="relative bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-emerald-500/30 hover:border-emerald-500/50 transition">
+                      <div className="mb-4">
+                        <h4 className="text-xl font-bold text-white mb-2">Intensive Pack</h4>
+                        <div className="flex items-baseline space-x-2">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">£208</span>
+                          <span className="text-slate-400 line-through text-sm">£240</span>
+                        </div>
+                        <p className="text-emerald-400 text-sm font-semibold mt-1">£13 per lesson</p>
+                      </div>
+                      <div className="space-y-2 text-sm text-slate-300">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>16 lesson credits (16 hours)</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>32 x 30min sessions</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span>4 lessons/week for 1 month</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Benefits list */}
-                <div className="grid md:grid-cols-2 gap-4 pt-4">
-                  {[
-                    'No subscription fees',
-                    'Pay per lesson',
-                    'Cancel anytime',
-                    'First trial FREE'
-                  ].map((benefit, i) => (
-                    <div key={i} className="flex items-center space-x-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                      <span className="text-slate-300 font-medium">{benefit}</span>
-                    </div>
-                  ))}
+                <div className="bg-slate-800/30 rounded-2xl p-6 border border-slate-700/50">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {[
+                      'Credits never expire',
+                      'Use for 30 or 60-min lessons',
+                      'Share with family members',
+                      'Cancel unused anytime',
+                      'No subscription fees',
+                      'First trial still FREE'
+                    ].map((benefit, i) => (
+                      <div key={i} className="flex items-center space-x-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span className="text-slate-300 font-medium">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -618,6 +762,170 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-slate-900/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+              <Target className="w-4 h-4 text-cyan-400" />
+              <span className="text-cyan-300 font-semibold text-sm">Our Story</span>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">From the Premier League to</span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Serving Your Learning</span>
+            </h2>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-start mb-12">
+            {/* Photo & Floating Cards */}
+            <div className="relative">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition"></div>
+                <div className="relative aspect-[3/4] bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-600/10"></div>
+                  {/* Placeholder for founder photo */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-slate-400">
+                      <Users className="w-16 h-16 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Founder Photo</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Achievement Cards with Slow Scroll Animation */}
+              <style>{`
+                @keyframes slowFloat1 {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-20px); }
+                }
+                @keyframes slowFloat2 {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-15px); }
+                }
+                @keyframes slowFloat3 {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-25px); }
+                }
+                .float-card-1 {
+                  animation: slowFloat1 8s ease-in-out infinite;
+                }
+                .float-card-2 {
+                  animation: slowFloat2 10s ease-in-out infinite 2s;
+                }
+                .float-card-3 {
+                  animation: slowFloat3 9s ease-in-out infinite 4s;
+                }
+              `}</style>
+
+              <div className="float-card-1 absolute -right-4 top-1/4 bg-slate-800/90 backdrop-blur-sm rounded-xl p-4 border border-cyan-500/50 shadow-xl max-w-[200px] hidden lg:block transition-all duration-300 hover:scale-105">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-semibold text-cyan-400">Bristol Rovers</span>
+                </div>
+                <p className="text-xs text-slate-300">2005-2007</p>
+              </div>
+
+              <div className="float-card-2 absolute -left-4 top-1/2 bg-slate-800/90 backdrop-blur-sm rounded-xl p-4 border border-blue-500/50 shadow-xl max-w-[200px] hidden lg:block transition-all duration-300 hover:scale-105">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-semibold text-blue-400">Wigan Athletic</span>
+                </div>
+                <p className="text-xs text-slate-300">2007-2010</p>
+              </div>
+
+              <div className="float-card-3 absolute -right-4 bottom-1/4 bg-slate-800/90 backdrop-blur-sm rounded-xl p-4 border border-purple-500/50 shadow-xl max-w-[200px] hidden lg:block transition-all duration-300 hover:scale-105">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-semibold text-purple-400">West Bromwich Albion</span>
+                </div>
+                <p className="text-xs text-slate-300">2010-2012</p>
+              </div>
+            </div>
+
+            {/* Story Content */}
+            <div className="space-y-6">
+              <div className="prose prose-invert max-w-none">
+                <p className="text-lg text-slate-300 leading-relaxed">
+                  My journey began on the football pitch—playing for <span className="text-cyan-400 font-semibold">Bristol Rovers</span>, <span className="text-blue-400 font-semibold">Wigan Athletic</span>, and <span className="text-purple-400 font-semibold">West Bromwich Albion</span>. But the most important goal I ever scored was finding Islam.
+                </p>
+
+                <div className="my-8 pl-6 border-l-4 border-cyan-500/50 bg-slate-800/30 p-6 rounded-r-xl">
+                  <p className="text-xl text-white italic leading-relaxed">
+                    "I embraced Islam the year of promotion to the Premier League with Wigan—a journey of enlightenment that transformed my life forever."
+                  </p>
+                </div>
+
+                <p className="text-lg text-slate-300 leading-relaxed">
+                  Over 20 years as a Muslim, I've dedicated my life to learning and sharing Islamic knowledge. After retiring from football, I founded <span className="text-cyan-400 font-semibold">Nexum Learning</span>, and now Talbiyah.ai represents the next evolution of that mission.
+                </p>
+
+                <p className="text-lg text-slate-300 leading-relaxed">
+                  <span className="text-white font-semibold">At your service using the latest tech</span>—that's not just a tagline, it's a commitment. Just as I gave everything on the pitch, I'm now giving everything to help you and your family grow closer to Allah through proper Islamic education.
+                </p>
+              </div>
+
+              {/* Why Different Section */}
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                  <CheckCircle2 className="w-6 h-6 text-cyan-400" />
+                  <span>Why Talbiyah.ai is Different</span>
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { text: 'Built by someone who understands dedication and discipline', icon: Target },
+                    { text: 'Combines traditional Islamic learning with modern technology', icon: Sparkles },
+                    { text: 'Every feature designed as Sadaqah Jariyah for ongoing rewards', icon: Heart },
+                    { text: 'Transparent, fair pricing that rewards quality teaching', icon: Shield }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <item.icon className="w-4 h-4 text-cyan-400" />
+                      </div>
+                      <p className="text-slate-300 leading-relaxed">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Bar */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-cyan-500/30 text-center">
+              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">20+ Years</div>
+              <p className="text-slate-300 font-medium">as a Muslim</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 text-center">
+              <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">Premier League</div>
+              <p className="text-slate-300 font-medium">Journey</p>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30 text-center">
+              <div className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent mb-2">Sadaqah Jariyah</div>
+              <p className="text-slate-300 font-medium">Ongoing Reward</p>
+            </div>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => navigate('/signup')}
+              className="px-10 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-lg font-bold transition shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/75 inline-flex items-center space-x-2"
+            >
+              <span>Start Learning Today</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate('/apply-to-teach')}
+              className="px-10 py-4 bg-slate-800 hover:bg-slate-700 border-2 border-cyan-500/50 hover:border-cyan-400/70 text-white rounded-xl text-lg font-bold transition inline-flex items-center space-x-2"
+            >
+              <span>Join Our Teaching Team</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
 
@@ -16,6 +16,8 @@ interface UpcomingLesson {
   '100ms_room_id': string | null;
   has_insights: boolean;
   unread_messages: number;
+  confirmation_status: string;
+  teacher_acknowledgment_message: string | null;
 }
 
 interface UpcomingSessionsCardProps {
@@ -31,32 +33,93 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
   useEffect(() => {
     loadUpcomingSessions();
+
+    // Set up real-time subscription for lesson updates
+    const channel = supabase
+      .channel('lesson-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'lessons'
+        },
+        (payload) => {
+          console.log('📡 Lesson updated in real-time:', payload);
+          // Refresh lessons when any lesson is updated (without showing loading spinner)
+          loadUpcomingSessions(false);
+        }
+      )
+      .subscribe();
+
+    // Polling fallback: refresh every 30 seconds to catch any missed updates
+    const pollInterval = setInterval(() => {
+      console.log('🔄 Polling for lesson updates...');
+      loadUpcomingSessions(false);
+    }, 30000); // 30 seconds
+
+    // Cleanup subscription and polling on unmount
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
 
-  async function loadUpcomingSessions() {
+  async function loadUpcomingSessions(showLoading = true) {
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
       let targetLearnerId = learnerId;
 
       // If no learnerId provided, get current user's learner
       if (!targetLearnerId) {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: learner } = await supabase
-          .from('learners')
-          .select('id')
-          .eq('parent_id', user.id)
-          .maybeSingle();
-
-        if (!learner) {
+        if (!user) {
+          console.log('❌ No authenticated user found');
           setLoading(false);
           return;
         }
 
-        targetLearnerId = learner.id;
+        // Get learner(s) for this parent - use limit(1) to avoid duplicate errors
+        const { data: learners, error: learnerError } = await supabase
+          .from('learners')
+          .select('id, name, parent_id')
+          .eq('parent_id', user.id)
+          .limit(1);
+
+        if (learnerError) {
+          console.error('Error fetching learner:', learnerError);
+          setLoading(false);
+          return;
+        }
+
+        const learner = learners?.[0];
+
+        if (!learner) {
+          // Check if this user IS a learner (user_id in learners table)
+          const { data: directLearners } = await supabase
+            .from('learners')
+            .select('id, name')
+            .eq('user_id', user.id)
+            .limit(1);
+
+          const directLearner = directLearners?.[0];
+
+          if (directLearner) {
+            targetLearnerId = directLearner.id;
+          } else {
+            setLoading(false);
+            return;
+          }
+        } else {
+          targetLearnerId = learner.id;
+        }
       }
 
-      const { data: lessonsData, error } = await supabase
+      // Get all booked lessons and filter client-side to show until lesson ends
+      const { data: lessonsData, error} = await supabase
         .from('lessons')
         .select(`
           id,
@@ -66,6 +129,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           teacher_id,
           subject_id,
           "100ms_room_id",
+          confirmation_status,
+          teacher_acknowledgment_message,
           teacher_profiles!inner(
             user_id,
             profiles!inner(
@@ -79,11 +144,12 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         `)
         .eq('learner_id', targetLearnerId)
         .eq('status', 'booked')
-        .gte('scheduled_time', new Date().toISOString())
-        .order('scheduled_time', { ascending: true })
-        .limit(5);
+        .order('scheduled_time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching lessons:', error);
+        throw error;
+      }
 
       if (lessonsData) {
         // Check which lessons have insights
@@ -102,33 +168,52 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         // Get unread message counts for each lesson
         const unreadMessageCounts = new Map<string, number>();
         if (currentUserId) {
-          const { data: messagesData } = await supabase
-            .from('lesson_messages')
-            .select('lesson_id', { count: 'exact' })
-            .in('lesson_id', lessonIds)
-            .eq('receiver_id', currentUserId)
-            .eq('is_read', false);
+          try {
+            const { data: messagesData } = await supabase
+              .from('lesson_messages')
+              .select('lesson_id', { count: 'exact' })
+              .in('lesson_id', lessonIds)
+              .eq('receiver_id', currentUserId)
+              .eq('is_read', false);
 
-          // Count messages per lesson
-          messagesData?.forEach((msg: any) => {
-            const count = unreadMessageCounts.get(msg.lesson_id) || 0;
-            unreadMessageCounts.set(msg.lesson_id, count + 1);
-          });
+            // Count messages per lesson
+            messagesData?.forEach((msg: any) => {
+              const count = unreadMessageCounts.get(msg.lesson_id) || 0;
+              unreadMessageCounts.set(msg.lesson_id, count + 1);
+            });
+          } catch (msgError) {
+            console.log('Note: Could not load message counts (table may not exist yet)');
+          }
         }
 
-        const formattedLessons: UpcomingLesson[] = lessonsData.map((lesson: any) => ({
-          id: lesson.id,
-          teacher_id: lesson.teacher_id,
-          teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
-          teacher_avatar: lesson.teacher_profiles.profiles.avatar_url,
-          subject_id: lesson.subject_id,
-          subject_name: lesson.subjects.name,
-          scheduled_time: lesson.scheduled_time,
-          duration_minutes: lesson.duration_minutes,
-          '100ms_room_id': lesson['100ms_room_id'],
-          has_insights: lessonsWithInsights.has(lesson.id),
-          unread_messages: unreadMessageCounts.get(lesson.id) || 0
-        }));
+        const now = new Date();
+
+        const formattedLessons: UpcomingLesson[] = lessonsData
+          .map((lesson: any) => ({
+            id: lesson.id,
+            teacher_id: lesson.teacher_id,
+            teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
+            teacher_avatar: lesson.teacher_profiles.profiles.avatar_url,
+            subject_id: lesson.subject_id,
+            subject_name: lesson.subjects.name,
+            scheduled_time: lesson.scheduled_time,
+            duration_minutes: lesson.duration_minutes,
+            '100ms_room_id': lesson['100ms_room_id'],
+            has_insights: lessonsWithInsights.has(lesson.id),
+            unread_messages: unreadMessageCounts.get(lesson.id) || 0,
+            confirmation_status: lesson.confirmation_status || 'pending',
+            teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
+          }))
+          .filter((lesson) => {
+            // Calculate lesson end time (scheduled_time + duration)
+            const lessonStart = new Date(lesson.scheduled_time);
+            const lessonEnd = new Date(lessonStart.getTime() + lesson.duration_minutes * 60000);
+
+            // Show lesson if it hasn't ended yet
+            return lessonEnd > now;
+          })
+          .slice(0, 5); // Limit to 5 lessons
+
         setLessons(formattedLessons);
       }
     } catch (error) {
@@ -216,8 +301,9 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
             </button>
 
             <button
-              onClick={loadUpcomingSessions}
+              onClick={() => loadUpcomingSessions(true)}
               className="px-6 py-4 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition flex items-center space-x-2"
+              title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -240,8 +326,9 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
-            onClick={loadUpcomingSessions}
-            className="p-2 text-slate-400 hover:text-cyan-400 transition"
+            onClick={() => loadUpcomingSessions(true)}
+            className="p-2 text-slate-400 hover:text-cyan-400 transition hover:rotate-180 duration-500"
+            title="Refresh lessons"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
@@ -293,7 +380,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                   </div>
 
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
+                    <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
                       <h4 className="text-lg font-semibold text-white">{lesson.subject_name}</h4>
                       {isToday && (
                         <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full">
@@ -305,8 +392,33 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                           READY
                         </span>
                       )}
+                      {lesson.confirmation_status === 'pending' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full border border-orange-500/30">
+                          <AlertCircle className="w-3 h-3" />
+                          Awaiting Acknowledgment
+                        </span>
+                      )}
+                      {lesson.confirmation_status === 'acknowledged' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                          <CheckCircle className="w-3 h-3" />
+                          Acknowledged
+                        </span>
+                      )}
+                      {lesson.confirmation_status === 'auto_acknowledged' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30">
+                          <CheckCircle className="w-3 h-3" />
+                          Auto-confirmed
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-400">with {lesson.teacher_name}</p>
+                    {lesson.teacher_acknowledgment_message && (
+                      <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <p className="text-xs text-green-300 italic">
+                          "{lesson.teacher_acknowledgment_message}"
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -318,14 +430,19 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         {format(lessonDate, 'MMM d, yyyy')}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-2 text-cyan-400">
+                    <div className="flex items-center space-x-2 text-cyan-400 mb-1">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-semibold">
                         {format(lessonDate, 'h:mm a')}
                       </span>
                     </div>
+                    <div className="flex items-center justify-end space-x-1 mb-1">
+                      <span className="px-2 py-1 bg-cyan-500/10 text-cyan-300 text-sm font-semibold rounded-lg border border-cyan-500/20">
+                        {lesson.duration_minutes} min
+                      </span>
+                    </div>
                     {!canJoin && minutesUntilStart > 360 && (
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500">
                         Opens 6 hours before
                       </p>
                     )}

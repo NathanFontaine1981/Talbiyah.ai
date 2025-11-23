@@ -26,7 +26,7 @@ export default function TeacherPendingApproval() {
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
         .select('status')
-        .eq('parent_id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (teacherProfile) {
