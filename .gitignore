@@ -21,6 +21,16 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.*
+*.backup
+
+# Sensitive files
+set-anthropic-key.sh
+update-stripe-credit-packs.cjs
+check-stripe-webhook.mjs
+check-webhook-deliveries.mjs
+STRIPE_STATUS_SUMMARY.md
+STRIPE_WEBHOOK_FIX.md
 
 # Local Netlify folder
 .netlify
