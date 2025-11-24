@@ -31,6 +31,43 @@ check-stripe-webhook.mjs
 check-webhook-deliveries.mjs
 STRIPE_STATUS_SUMMARY.md
 STRIPE_WEBHOOK_FIX.md
+*-secret*.sh
+*-token*.sh
+configure-*.sh
+setup-*.sh
+
+# Test and temporary files
+*test*.mjs
+*check*.mjs
+*verify*.mjs
+*fix*.mjs
+*apply*.mjs
+*create*.mjs
+*deploy*.sh
+*run*.mjs
+*.sql
+*.html
+*diagnostic*.mjs
+add-*.mjs
+enable-*.mjs
+find-*.mjs
+recover-*.mjs
+
+# Duplicate files
+* 2.*
+
+# Documentation drafts (keep main docs only)
+*_SUMMARY*.md
+*_STATUS*.md
+*_COMPLETE*.md
+*_FIXED*.md
+*_SETUP*.md
+*_GUIDE*.md
+*_APPLIED*.md
+*_INSTRUCTIONS*.md
+*_REPORT*.md
+EMAIL_NOTIFICATION_SYSTEM.md
+HOW_TO_ADD_CHILDREN_AND_BOOK.md
 
 # Local Netlify folder
 .netlify
