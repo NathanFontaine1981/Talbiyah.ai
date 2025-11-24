@@ -108,7 +108,21 @@ export default function Lesson() {
         ? lessonData.teacher_room_code
         : lessonData.student_room_code;
 
+      console.log('🔍 Lesson Debug:', {
+        lessonId: lessonData.id,
+        isTeacher,
+        teacher_room_code: lessonData.teacher_room_code,
+        student_room_code: lessonData.student_room_code,
+        selectedRoomCode: roomCode,
+        '100ms_room_id': lessonData['100ms_room_id']
+      });
+
       if (!roomCode) {
+        console.error('❌ Missing room code:', {
+          isTeacher,
+          teacher_code: lessonData.teacher_room_code,
+          student_code: lessonData.student_room_code
+        });
         setError('Video room is not ready yet. Please try again in a few moments or contact support.');
         setLoading(false);
         return;

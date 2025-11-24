@@ -78,14 +78,17 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
 
       // Get insights for these lessons
       const lessonIds = lessonsData?.map(l => l.id) || [];
-      const { data: insightsData } = await supabase
-        .from('lesson_insights')
-        .select('lesson_id, id')
-        .in('lesson_id', lessonIds);
 
       if (error) throw error;
 
-      const insightLessonIds = new Set(insightsData?.map(i => i.lesson_id) || []);
+      let insightLessonIds = new Set();
+      if (lessonIds.length > 0) {
+        const { data: insightsData } = await supabase
+          .from('lesson_insights')
+          .select('lesson_id, id')
+          .in('lesson_id', lessonIds);
+        insightLessonIds = new Set(insightsData?.map(i => i.lesson_id) || []);
+      }
 
       if (lessonsData) {
         const formattedRecordings: RecentRecording[] = lessonsData

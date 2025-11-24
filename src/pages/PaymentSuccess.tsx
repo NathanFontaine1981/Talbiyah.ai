@@ -22,6 +22,13 @@ interface LessonDetails {
   } | null;
 }
 
+interface PendingBooking {
+  id: string;
+  booking_data: any[];
+  total_amount: number;
+  status: string;
+}
+
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const { clearCart } = useCart();
@@ -29,6 +36,8 @@ export default function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lessonDetails, setLessonDetails] = useState<LessonDetails | null>(null);
+  const [lessons, setLessons] = useState<LessonDetails[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
@@ -49,8 +58,8 @@ export default function PaymentSuccess() {
         return;
       }
 
-      // Query lessons directly by stripe_checkout_session_id
-      const { data: lesson, error: lessonError } = await supabase
+      // Query ALL lessons for this checkout session (could be multiple)
+      const { data: lessonsData, error: lessonError } = await supabase
         .from('lessons')
         .select(`
           id,
@@ -64,22 +73,21 @@ export default function PaymentSuccess() {
           teacher_room_code,
           100ms_room_id
         `)
-        .eq('stripe_checkout_session_id', sessionId)
-        .maybeSingle();
+        .eq('stripe_checkout_session_id', sessionId);
 
-      console.log('🔍 Lesson query result:', { lesson, lessonError });
+      console.log('🔍 Lessons query result:', { lessonsData, lessonError, count: lessonsData?.length });
 
       if (lessonError) {
-        console.error('❌ Error loading lesson:', lessonError);
+        console.error('❌ Error loading lessons:', lessonError);
         setError('Could not load lesson details');
         setVerifying(false);
         setLoading(false);
         return;
       }
 
-      if (!lesson) {
-        // Lesson not found yet - webhook might still be processing
-        console.log('⏳ Lesson not found yet, will poll for updates...');
+      if (!lessonsData || lessonsData.length === 0) {
+        // Lessons not found yet - webhook might still be processing
+        console.log('⏳ Lessons not found yet, will poll for updates...');
 
         // Poll for lesson creation (webhook might be delayed)
         let attempts = 0;
@@ -89,7 +97,7 @@ export default function PaymentSuccess() {
           attempts++;
           console.log(`🔄 Polling attempt ${attempts}/${maxAttempts}`);
 
-          const { data: polledLesson } = await supabase
+          const { data: polledLessons } = await supabase
             .from('lessons')
             .select(`
               id,
@@ -103,40 +111,45 @@ export default function PaymentSuccess() {
               teacher_room_code,
               100ms_room_id
             `)
-            .eq('stripe_checkout_session_id', sessionId)
-            .maybeSingle();
+            .eq('stripe_checkout_session_id', sessionId);
 
-          if (polledLesson) {
-            console.log('✅ Lesson found on polling:', polledLesson.id);
+          if (polledLessons && polledLessons.length > 0) {
+            console.log('✅ Lessons found on polling:', polledLessons.length);
 
-            // Fetch teacher and subject details
-            const { data: subject } = await supabase
-              .from('subjects')
-              .select('name')
-              .eq('id', polledLesson.subject_id)
-              .single();
+            // Fetch teacher and subject details for all lessons
+            const enrichedLessons = await Promise.all(polledLessons.map(async (lesson) => {
+              const { data: subject } = await supabase
+                .from('subjects')
+                .select('name')
+                .eq('id', lesson.subject_id)
+                .maybeSingle();
 
-            const { data: teacherProfile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', polledLesson.teacher_id)
-              .single();
+              const { data: teacherProfile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', lesson.teacher_id)
+                .maybeSingle();
 
-            // Merge the data
-            polledLesson.subjects = subject;
-            polledLesson.teacher_profiles = teacherProfile ? {
-              id: polledLesson.teacher_id,
-              profiles: {
-                full_name: teacherProfile.full_name
-              }
-            } : null;
+              return {
+                ...lesson,
+                subjects: subject,
+                teacher_profiles: teacherProfile ? {
+                  id: lesson.teacher_id,
+                  profiles: {
+                    full_name: teacherProfile.full_name
+                  }
+                } : null
+              };
+            }));
 
-            setLessonDetails(polledLesson as any);
+            setLessons(enrichedLessons as any);
+            setLessonDetails(enrichedLessons[0] as any); // Keep first for backward compat
+            setTotalAmount(enrichedLessons.reduce((sum, l) => sum + l.total_cost_paid, 0));
             setVerifying(false);
             clearInterval(pollInterval);
           } else if (attempts >= maxAttempts) {
-            console.error('❌ Lesson not found after polling');
-            setError('Lesson not found. Please check your dashboard.');
+            console.error('❌ Lessons not found after polling');
+            setError('Lessons not found. Please check your dashboard.');
             setVerifying(false);
             clearInterval(pollInterval);
           }
@@ -145,31 +158,37 @@ export default function PaymentSuccess() {
         return; // Exit early, polling will continue
       }
 
-      // Lesson found! Fetch teacher and subject details
-      console.log('✅ Found lesson:', lesson.id, 'Status:', lesson.status);
+      // Lessons found! Fetch teacher and subject details for all
+      console.log('✅ Found lessons:', lessonsData.length);
 
-      const { data: subject } = await supabase
-        .from('subjects')
-        .select('name')
-        .eq('id', lesson.subject_id)
-        .single();
+      const enrichedLessons = await Promise.all(lessonsData.map(async (lesson) => {
+        const { data: subject } = await supabase
+          .from('subjects')
+          .select('name')
+          .eq('id', lesson.subject_id)
+          .maybeSingle();
 
-      const { data: teacherProfile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', lesson.teacher_id)
-        .single();
+        const { data: teacherProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', lesson.teacher_id)
+          .maybeSingle();
 
-      // Merge the data
-      lesson.subjects = subject;
-      lesson.teacher_profiles = teacherProfile ? {
-        id: lesson.teacher_id,
-        profiles: {
-          full_name: teacherProfile.full_name
-        }
-      } : null;
+        return {
+          ...lesson,
+          subjects: subject,
+          teacher_profiles: teacherProfile ? {
+            id: lesson.teacher_id,
+            profiles: {
+              full_name: teacherProfile.full_name
+            }
+          } : null
+        };
+      }));
 
-      setLessonDetails(lesson as any);
+      setLessons(enrichedLessons as any);
+      setLessonDetails(enrichedLessons[0] as any); // Keep first for backward compat
+      setTotalAmount(enrichedLessons.reduce((sum, l) => sum + l.total_cost_paid, 0));
       setVerifying(false);
 
     } catch (err: any) {
@@ -234,38 +253,82 @@ export default function PaymentSuccess() {
 
               <h1 className="text-4xl font-bold text-white mb-4">Payment Successful!</h1>
               <p className="text-xl text-slate-300 mb-8">
-                Your lesson has been booked successfully
+                {lessons.length === 1
+                  ? 'Your lesson has been booked successfully'
+                  : `${lessons.length} lessons have been booked successfully`}
               </p>
 
-              {lessonDetails && (
+              {lessons.length > 0 && (
                 <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8 text-left">
-                  <h2 className="text-lg font-semibold text-white mb-4">Booking Details</h2>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Teacher:</span>
-                      <span className="text-white font-medium">{lessonDetails.teacher_profiles?.profiles?.full_name}</span>
-                    </div>
-                    {lessonDetails.subjects && (
+                  <h2 className="text-lg font-semibold text-white mb-4">
+                    {lessons.length === 1 ? 'Booking Details' : 'Booking Details (All Lessons)'}
+                  </h2>
+
+                  {lessons.length === 1 ? (
+                    <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Subject:</span>
-                        <span className="text-white font-medium">{lessonDetails.subjects.name}</span>
+                        <span className="text-slate-400">Teacher:</span>
+                        <span className="text-white font-medium">{lessons[0].teacher_profiles?.profiles?.full_name}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Date & Time:</span>
-                      <span className="text-white font-medium">
-                        {format(new Date(lessonDetails.scheduled_time), 'PPP p')}
-                      </span>
+                      {lessons[0].subjects && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Subject:</span>
+                          <span className="text-white font-medium">{lessons[0].subjects.name}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Date & Time:</span>
+                        <span className="text-white font-medium">
+                          {format(new Date(lessons[0].scheduled_time), 'PPP p')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Duration:</span>
+                        <span className="text-white font-medium">{lessons[0].duration_minutes} minutes</span>
+                      </div>
+                      <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
+                        <span className="text-slate-400">Amount Paid:</span>
+                        <span className="text-emerald-400 font-bold text-lg">£{lessons[0].total_cost_paid.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Duration:</span>
-                      <span className="text-white font-medium">{lessonDetails.duration_minutes} minutes</span>
+                  ) : (
+                    <div className="space-y-4">
+                      {lessons.map((lesson, index) => (
+                        <div key={lesson.id} className="pb-4 border-b border-slate-700/50 last:border-0 last:pb-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-slate-500">LESSON {index + 1}</span>
+                            <span className="text-xs text-emerald-400 font-medium">£{lesson.total_cost_paid.toFixed(2)}</span>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Teacher:</span>
+                              <span className="text-white font-medium">{lesson.teacher_profiles?.profiles?.full_name}</span>
+                            </div>
+                            {lesson.subjects && (
+                              <div className="flex justify-between">
+                                <span className="text-slate-400">Subject:</span>
+                                <span className="text-white font-medium">{lesson.subjects.name}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">When:</span>
+                              <span className="text-white font-medium">
+                                {format(new Date(lesson.scheduled_time), 'PPP p')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Duration:</span>
+                              <span className="text-white font-medium">{lesson.duration_minutes} min</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
+                        <span className="text-slate-400 font-semibold">Total Amount Paid:</span>
+                        <span className="text-emerald-400 font-bold text-xl">£{totalAmount.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
-                      <span className="text-slate-400">Amount Paid:</span>
-                      <span className="text-emerald-400 font-bold text-lg">£{lessonDetails.total_cost_paid.toFixed(2)}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
             </>

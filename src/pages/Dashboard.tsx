@@ -23,11 +23,13 @@ import {
   Calendar,
   Edit,
   CreditCard,
-  Briefcase
+  Briefcase,
+  Scroll
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
 import RecentRecordingsCard from '../components/RecentRecordingsCard';
+import RecentMessagesCard from '../components/RecentMessagesCard';
 import LearningStatsWidget from '../components/LearningStatsWidget';
 import RecommendedActionsCard from '../components/RecommendedActionsCard';
 import TalbiyahBot from '../components/TalbiyahBot';
@@ -183,8 +185,9 @@ export default function Dashboard() {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin'] },
     { icon: Briefcase, label: 'Teacher Account', path: '/teacher/hub', active: false, roles: ['Teacher'] },
     { icon: Calendar, label: 'My Classes', path: '/my-classes', active: false, roles: ['Student', 'Teacher', 'Parent'] },
+    { icon: MessageCircle, label: 'Messages', path: '/messages', active: false, roles: ['Student', 'Teacher'] },
     { icon: CreditCard, label: 'My Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
-    { icon: MessageCircle, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
+    { icon: Scroll, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
     { icon: Users, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
     { icon: Calendar, label: 'My Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
     { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
@@ -566,6 +569,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <TeacherSessionsCard />
+                    <RecentMessagesCard />
                     <TeacherAvailabilityCard />
                     <TeacherStudentsCard />
                   </div>
@@ -582,6 +586,7 @@ export default function Dashboard() {
                   <div className="lg:col-span-3 space-y-6">
                     <MyTeachersSection />
                     <UpcomingSessionsCard />
+                    <RecentMessagesCard />
                     <RecentRecordingsCard />
                     <MyLearningJourneyCard />
                   </div>

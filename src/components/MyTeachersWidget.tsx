@@ -21,11 +21,20 @@ export default function MyTeachersWidget({ learnerId }: MyTeachersWidgetProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get learner ID
+      const { data: learnerData } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', user.id)
+        .maybeSingle();
+
+      if (!learnerData) return;
+
       const { count, error } = await supabase
-        .from('student_teachers')
+        .from('student_teacher_relationships')
         .select('id', { count: 'exact', head: true })
-        .eq('student_id', user.id)
-        .eq('is_active', true);
+        .eq('student_id', learnerData.id)
+        .eq('status', 'active');
 
       if (error) throw error;
 
@@ -63,7 +72,7 @@ export default function MyTeachersWidget({ learnerId }: MyTeachersWidgetProps) {
       <div className="p-4 space-y-2">
         {teacherCount === 0 ? (
           <button
-            onClick={() => navigate('/student/my-teachers')}
+            onClick={() => navigate('/my-teachers')}
             className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
           >
             <Plus className="w-4 h-4" />
@@ -71,7 +80,7 @@ export default function MyTeachersWidget({ learnerId }: MyTeachersWidgetProps) {
           </button>
         ) : (
           <button
-            onClick={() => navigate('/student/my-teachers')}
+            onClick={() => navigate('/my-teachers')}
             className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-lg font-semibold transition flex items-center justify-between group"
           >
             <span>View Teachers</span>

@@ -159,6 +159,27 @@ export default function SignUp() {
                 });
 
               console.log('Referral tracked successfully');
+
+              // Send email notification to referrer
+              try {
+                const { data: supabaseData } = await supabase.auth.getSession();
+                await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-referral-signup`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                  },
+                  body: JSON.stringify({
+                    referrer_id: referrerProfile.id,
+                    referred_id: data.user.id,
+                    referral_code: referralCode.trim()
+                  })
+                });
+                console.log('Referral notification sent');
+              } catch (emailError) {
+                console.error('Error sending referral notification:', emailError);
+                // Don't block signup if email fails
+              }
             }
           } catch (refError) {
             console.error('Error creating referral record:', refError);

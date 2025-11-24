@@ -97,9 +97,18 @@ export default function Checkout() {
         } else {
           const childrenWithLearners = await Promise.all(
             (childrenData || []).map(async (child) => {
-              let learnerId = child.learner_id;
+              // Check if learner already exists for this child
+              const { data: existingLearner } = await supabase
+                .from('learners')
+                .select('id')
+                .eq('parent_id', user.id)
+                .eq('name', child.child_name)
+                .maybeSingle();
+
+              let learnerId = existingLearner?.id;
 
               if (!learnerId) {
+                // Create new learner for this child
                 const { data: newLearner } = await supabase
                   .from('learners')
                   .insert({
@@ -112,11 +121,6 @@ export default function Checkout() {
 
                 if (newLearner) {
                   learnerId = newLearner.id;
-
-                  await supabase
-                    .from('parent_children')
-                    .update({ learner_id: learnerId })
-                    .eq('id', child.id);
                 }
               }
 
@@ -293,9 +297,22 @@ export default function Checkout() {
         // Clear cart
         await clearCart();
 
-        // Redirect to dashboard with detailed success info
-        navigate('/dashboard?booking_success=true&payment_method=credits&credits_used=' +
-                 (response as any).credits_used + '&new_balance=' + (response as any).new_credit_balance);
+        // Redirect to success page with booking details
+        navigate('/booking-success', {
+          state: {
+            payment_method: 'credits',
+            lessons_created: (response as any).lessons?.length || 1,
+            credits_used: (response as any).credits_used || creditsNeeded,
+            new_balance: (response as any).new_credit_balance || (creditBalance - creditsNeeded),
+            bookings: cartItems.map(item => ({
+              teacher_name: item.teacher_name,
+              subject: item.subject_name,
+              date: item.scheduled_time.split('T')[0],
+              time: item.scheduled_time.split('T')[1].substring(0, 5),
+              duration: item.duration_minutes
+            }))
+          }
+        });
         return;
       }
 
@@ -494,8 +511,22 @@ export default function Checkout() {
         // Clear cart
         await clearCart();
 
-        // Redirect to dashboard with success message
-        navigate('/dashboard?booking_success=true&paid_with_credits=true');
+        // Redirect to success page with booking details
+        navigate('/booking-success', {
+          state: {
+            payment_method: 'credits',
+            lessons_created: (response as any).lessons?.length || bookings.length,
+            credits_used: (response as any).credits_used || creditsNeeded,
+            new_balance: (response as any).new_credit_balance || (creditBalance - creditsNeeded),
+            bookings: bookings.map(b => ({
+              teacher_name: b.teacher_name,
+              subject: b.subject_name,
+              date: b.date,
+              time: b.time,
+              duration: b.duration_minutes
+            }))
+          }
+        });
         return;
       }
 

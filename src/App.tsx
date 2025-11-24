@@ -30,6 +30,7 @@ import Matchmaking from './pages/Matchmaking';
 import Welcome from './pages/Welcome';
 import BookSession from './pages/BookSession';
 import PaymentSuccess from './pages/PaymentSuccess';
+import BookingSuccess from './pages/BookingSuccess';
 import BuyCredits from './pages/BuyCredits';
 import CreditPurchaseSuccess from './pages/CreditPurchaseSuccess';
 import BookingOptions from './pages/BookingOptions';
@@ -50,9 +51,11 @@ import ChildDashboardView from './pages/ChildDashboardView';
 import ParentOnboarding from './pages/parent/ParentOnboarding';
 import TeacherBooking from './pages/TeacherBooking';
 import ManageTeachers from './pages/student/ManageTeachers';
+import MyTeachers from './pages/student/MyTeachers';
 import Lesson from './pages/Lesson';
 import VerifyEmail from './pages/VerifyEmail';
 import MyReferrals from './pages/MyReferrals';
+import Messages from './pages/Messages';
 import AuthCallback from './pages/AuthCallback';
 import LessonInsights from './pages/student/LessonInsights';
 import RecordingWithInsights from './pages/student/RecordingWithInsights';
@@ -351,6 +354,14 @@ function App() {
           }
         />
         <Route
+          path="/booking-success"
+          element={
+            <ProtectedRoute>
+              <BookingSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/booking-options"
           element={
             <ProtectedRoute>
@@ -431,10 +442,26 @@ function App() {
           }
         />
         <Route
+          path="/my-teachers"
+          element={
+            <ProtectedRoute>
+              <MyTeachers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/my-referrals"
           element={
             <ProtectedRoute excludeTeachers={true}>
               <MyReferrals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
             </ProtectedRoute>
           }
         />

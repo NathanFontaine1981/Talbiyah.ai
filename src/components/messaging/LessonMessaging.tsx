@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { MessageCircle, Send, Shield, X } from 'lucide-react';
+import { MessageCircle, Send, Shield, X, Reply } from 'lucide-react';
 import MessageTemplateSelector from './MessageTemplateSelector';
 import MessageThread from './MessageThread';
 
@@ -49,6 +49,7 @@ export default function LessonMessaging({
   const [loading, setLoading] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [sending, setSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -143,6 +144,11 @@ export default function LessonMessaging({
     }
   };
 
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+    setShowTemplates(true);
+  };
+
   const handleSendMessage = async (templateCode: string, data: any) => {
     setSending(true);
     try {
@@ -153,6 +159,7 @@ export default function LessonMessaging({
             lesson_id: lessonId,
             template_code: templateCode,
             message_data: data,
+            reply_to_message_id: replyingTo?.id || null,
           },
         }
       );
@@ -160,6 +167,7 @@ export default function LessonMessaging({
       if (error) throw error;
 
       setShowTemplates(false);
+      setReplyingTo(null);
       // Message will appear via real-time subscription
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -218,9 +226,36 @@ export default function LessonMessaging({
             </p>
           </div>
         ) : (
-          <MessageThread messages={messages} currentUserId={currentUserId} />
+          <MessageThread
+            messages={messages}
+            currentUserId={currentUserId}
+            onReply={handleReply}
+          />
         )}
       </div>
+
+      {/* Reply Context */}
+      {replyingTo && (
+        <div className="border-t p-3 bg-blue-50 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <Reply className="w-4 h-4 text-blue-600" />
+            <span className="text-blue-800">
+              Replying to <strong>{replyingTo.sender.full_name}</strong>:{' '}
+              <span className="text-blue-600 italic">
+                {replyingTo.message_text.substring(0, 50)}
+                {replyingTo.message_text.length > 50 ? '...' : ''}
+              </span>
+            </span>
+          </div>
+          <button
+            onClick={() => setReplyingTo(null)}
+            className="p-1 hover:bg-blue-100 rounded transition"
+            title="Cancel reply"
+          >
+            <X className="w-4 h-4 text-blue-600" />
+          </button>
+        </div>
+      )}
 
       {/* Send Message */}
       <div className="border-t p-4 bg-gray-50">

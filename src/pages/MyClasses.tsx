@@ -62,7 +62,7 @@ export default function MyClasses() {
         const { data: directLearner } = await supabase
           .from('learners')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('parent_id', user.id)
           .maybeSingle();
 
         if (directLearner) {
@@ -122,26 +122,31 @@ export default function MyClasses() {
       if (lessonsData) {
         // Check which lessons have insights
         const lessonIds = lessonsData.map((l: any) => l.id);
-        const { data: insightsData } = await supabase
-          .from('lesson_insights')
-          .select('lesson_id')
-          .in('lesson_id', lessonIds);
 
-        const lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+        let lessonsWithInsights = new Set();
+        if (lessonIds.length > 0) {
+          const { data: insightsData } = await supabase
+            .from('lesson_insights')
+            .select('lesson_id')
+            .in('lesson_id', lessonIds);
+          lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+        }
 
         // Get unread message counts
         const unreadMessageCounts = new Map<string, number>();
-        const { data: messagesData } = await supabase
-          .from('lesson_messages')
-          .select('lesson_id', { count: 'exact' })
-          .in('lesson_id', lessonIds)
-          .eq('receiver_id', user.id)
-          .eq('is_read', false);
+        if (lessonIds.length > 0) {
+          const { data: messagesData } = await supabase
+            .from('lesson_messages')
+            .select('lesson_id', { count: 'exact' })
+            .in('lesson_id', lessonIds)
+            .eq('receiver_id', user.id)
+            .eq('is_read', false);
 
-        messagesData?.forEach((msg: any) => {
-          const count = unreadMessageCounts.get(msg.lesson_id) || 0;
-          unreadMessageCounts.set(msg.lesson_id, count + 1);
-        });
+          messagesData?.forEach((msg: any) => {
+            const count = unreadMessageCounts.get(msg.lesson_id) || 0;
+            unreadMessageCounts.set(msg.lesson_id, count + 1);
+          });
+        }
 
         const formattedLessons: Lesson[] = lessonsData.map((lesson: any) => ({
           id: lesson.id,

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Clock, CheckCheck } from 'lucide-react';
+import { Clock, CheckCheck, Reply } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -10,6 +10,7 @@ interface Message {
   status: string;
   read_at: string | null;
   created_at: string;
+  message_data?: any;
   sender: {
     full_name: string;
     avatar_url: string | null;
@@ -19,11 +20,13 @@ interface Message {
 interface MessageThreadProps {
   messages: Message[];
   currentUserId: string;
+  onReply?: (message: Message) => void;
 }
 
 export default function MessageThread({
   messages,
   currentUserId,
+  onReply,
 }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -116,19 +119,36 @@ export default function MessageThread({
               {/* Message text */}
               <p className="text-sm leading-relaxed">{message.message_text}</p>
 
-              {/* Timestamp and read status */}
-              <div
-                className={`flex items-center gap-1 mt-2 text-xs ${
-                  isSent ? 'text-cyan-100' : 'text-gray-500'
-                }`}
-              >
-                <Clock className="w-3 h-3" />
-                <span>{formatTime(message.created_at)}</span>
-                {isSent && message.read_at && (
-                  <>
-                    <CheckCheck className="w-3 h-3 ml-1" />
-                    <span>Read</span>
-                  </>
+              {/* Timestamp, read status, and reply button */}
+              <div className="flex items-center justify-between mt-2">
+                <div
+                  className={`flex items-center gap-1 text-xs ${
+                    isSent ? 'text-cyan-100' : 'text-gray-500'
+                  }`}
+                >
+                  <Clock className="w-3 h-3" />
+                  <span>{formatTime(message.created_at)}</span>
+                  {isSent && message.read_at && (
+                    <>
+                      <CheckCheck className="w-3 h-3 ml-1" />
+                      <span>Read</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Reply button (only show for received messages) */}
+                {!isSent && onReply && (
+                  <button
+                    onClick={() => onReply(message)}
+                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-opacity-20 transition ${
+                      isStudent
+                        ? 'text-purple-700 hover:bg-purple-700'
+                        : 'text-green-700 hover:bg-green-700'
+                    }`}
+                  >
+                    <Reply className="w-3 h-3" />
+                    Reply
+                  </button>
                 )}
               </div>
             </div>

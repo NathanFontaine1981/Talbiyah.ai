@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { lesson_id, template_code, message_data } = await req.json();
+    const { lesson_id, template_code, message_data, reply_to_message_id } = await req.json();
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
@@ -232,6 +232,7 @@ Deno.serve(async (req: Request) => {
         message_text: messageText,
         message_data: message_data,
         status: "sent",
+        parent_message_id: reply_to_message_id || null,
       })
       .select(
         `
@@ -244,6 +245,45 @@ Deno.serve(async (req: Request) => {
     if (messageError) {
       console.error("Message insert error:", messageError);
       throw messageError;
+    }
+
+    // Auto-reschedule logic: If teacher approves a student's reschedule request
+    if (
+      template_code === "teacher_approve" &&
+      reply_to_message_id &&
+      isTeacher
+    ) {
+      // Get the parent message to see if it was a reschedule request
+      const { data: parentMessage } = await supabase
+        .from("lesson_messages")
+        .select("template_code, message_data")
+        .eq("id", reply_to_message_id)
+        .single();
+
+      if (
+        parentMessage &&
+        (parentMessage.template_code === "student_reschedule" ||
+          parentMessage.template_code === "teacher_counter") &&
+        parentMessage.message_data?.value
+      ) {
+        // Update the lesson time
+        const newDatetime = new Date(parentMessage.message_data.value);
+        const { error: updateError } = await supabase
+          .from("lessons")
+          .update({
+            scheduled_time: newDatetime.toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", lesson_id);
+
+        if (updateError) {
+          console.error("Failed to update lesson time:", updateError);
+        } else {
+          console.log(
+            `✅ Lesson ${lesson_id} rescheduled to ${newDatetime.toISOString()}`
+          );
+        }
+      }
     }
 
     console.log(`✅ Message sent: ${template_code} for lesson ${lesson_id}`);

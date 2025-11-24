@@ -430,11 +430,7 @@ export default function EditProfile() {
       return;
     }
 
-    const rate = parseFloat(hourlyRate);
-    if (isNaN(rate) || rate < 5) {
-      setError('Hourly rate must be at least £5');
-      return;
-    }
+    // Note: hourly_rate is NOT updated here - it's managed by the tier system
 
     try {
       setSaving(true);
@@ -447,7 +443,7 @@ export default function EditProfile() {
         .update({
           bio: finalBio.trim(),
           education_level: educationLevel.trim() || null,
-          hourly_rate: rate,
+          // hourly_rate is NOT updated - managed by tier system
           video_intro_url: introType === 'video' ? (videoUrl.trim() || currentIntroUrl) : null,
           youtube_intro_url: introType === 'youtube' ? (youtubeUrl.trim() || currentIntroUrl) : null,
           islamic_learning_interests: specializations.length > 0 ? specializations : null,
@@ -758,22 +754,8 @@ export default function EditProfile() {
             </div>
           </div>
 
-          {/* Hourly Rate */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Hourly Rate (£) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={hourlyRate}
-              onChange={(e) => setHourlyRate(e.target.value)}
-              min="5"
-              step="0.50"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="10.00"
-            />
-            <p className="text-xs text-gray-500 mt-1">Minimum rate is £5.00 per hour</p>
-          </div>
+          {/* Hourly Rate - REMOVED: Teachers cannot edit their rate */}
+          {/* Rate is automatically determined by teacher tier system based on qualifications */}
 
           {/* Video/Audio Introduction */}
           <div className="border-2 border-blue-200 rounded-xl p-6 bg-blue-50">

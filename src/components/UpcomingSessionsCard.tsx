@@ -98,21 +98,10 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         const learner = learners?.[0];
 
         if (!learner) {
-          // Check if this user IS a learner (user_id in learners table)
-          const { data: directLearners } = await supabase
-            .from('learners')
-            .select('id, name')
-            .eq('user_id', user.id)
-            .limit(1);
-
-          const directLearner = directLearners?.[0];
-
-          if (directLearner) {
-            targetLearnerId = directLearner.id;
-          } else {
-            setLoading(false);
-            return;
-          }
+          // No learner found - this could be a lightweight child view
+          // In this case, learnerId should be passed as a prop
+          setLoading(false);
+          return;
         } else {
           targetLearnerId = learner.id;
         }
@@ -154,12 +143,16 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       if (lessonsData) {
         // Check which lessons have insights
         const lessonIds = lessonsData.map((l: any) => l.id);
-        const { data: insightsData } = await supabase
-          .from('lesson_insights')
-          .select('lesson_id')
-          .in('lesson_id', lessonIds);
 
-        const lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+        // Only query if we have lessons
+        let lessonsWithInsights = new Set();
+        if (lessonIds.length > 0) {
+          const { data: insightsData } = await supabase
+            .from('lesson_insights')
+            .select('lesson_id')
+            .in('lesson_id', lessonIds);
+          lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+        }
 
         // Get current user ID to check for unread messages
         const { data: { user } } = await supabase.auth.getUser();
@@ -167,7 +160,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
         // Get unread message counts for each lesson
         const unreadMessageCounts = new Map<string, number>();
-        if (currentUserId) {
+        if (currentUserId && lessonIds.length > 0) {
           try {
             const { data: messagesData } = await supabase
               .from('lesson_messages')
@@ -473,6 +466,15 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         <span>View Insights</span>
                       </button>
                     )}
+
+                    {/* Always show Message Teacher button */}
+                    <button
+                      onClick={() => navigate('/messages')}
+                      className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 rounded-lg font-medium transition flex items-center space-x-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Message</span>
+                    </button>
 
                     {!lessonIsPast && canReschedule && (
                       <button
