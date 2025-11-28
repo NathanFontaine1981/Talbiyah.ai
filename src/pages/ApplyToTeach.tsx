@@ -214,26 +214,26 @@ export default function ApplyToTeach() {
 
     // Master tier: Multiple Ijazahs + Degree + Native English (requires interview)
     if (hasMultipleIjazahs && hasDegree && isNativeEnglish) {
-      return { tier: 'master', tierName: 'Master', rate: 10.00, requiresInterview: true };
+      return { tier: 'master', tierName: 'Master', rate: 8.00, requiresInterview: true };
     }
 
     // Expert tier: (Ijazah OR Degree) + Fluent/Native English (requires interview)
     if ((hasSingleIjazah || hasDegree) && (isFluentEnglish || isNativeEnglish)) {
-      return { tier: 'expert', tierName: 'Expert', rate: 8.50, requiresInterview: true };
+      return { tier: 'expert', tierName: 'Expert', rate: 7.00, requiresInterview: true };
     }
 
     // Skilled tier: 5+ years OR Teaching Certificate
     if (yearsExp >= 5 || formData.education_level.includes('Certificate')) {
-      return { tier: 'skilled', tierName: 'Skilled', rate: 7.00, requiresInterview: false };
+      return { tier: 'skilled', tierName: 'Skilled', rate: 6.00, requiresInterview: false };
     }
 
     // Apprentice tier: 2-5 years experience
     if (yearsExp >= 2) {
-      return { tier: 'apprentice', tierName: 'Apprentice', rate: 6.00, requiresInterview: false };
+      return { tier: 'apprentice', tierName: 'Apprentice', rate: 5.00, requiresInterview: false };
     }
 
     // Default: Newcomer tier
-    return { tier: 'newcomer', tierName: 'Newcomer', rate: 5.00, requiresInterview: false };
+    return { tier: 'newcomer', tierName: 'Newcomer', rate: 4.00, requiresInterview: false };
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -408,7 +408,6 @@ export default function ApplyToTeach() {
 
       // Build success message with interview/induction info
       let message = `Success! Your application has been submitted.\n\n`;
-      message += `📊 Assigned Tier: ${assignedTier.tierName} (£${assignedTier.rate}/hr)\n\n`;
 
       if (assignedTier.requiresInterview) {
         message += `📞 Next Steps:\nWe will be in touch shortly to arrange an interview and induction. During this session, we'll:\n`;
@@ -440,32 +439,32 @@ export default function ApplyToTeach() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-slate-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
+    <div className="min-h-screen bg-slate-950">
+      <nav className="bg-slate-900 border-b border-slate-800 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-emerald-500" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Talbiyah.ai</h1>
-              <p className="text-sm text-gray-600">Teacher Application</p>
+              <h1 className="text-xl font-bold text-white">Talbiyah.ai</h1>
+              <p className="text-sm text-slate-400">Teacher Application</p>
             </div>
           </div>
 
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2 text-gray-700"
+            className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2 text-slate-300"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
@@ -475,8 +474,8 @@ export default function ApplyToTeach() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Apply to Teach at Talbiyah.ai</h2>
-          <p className="text-gray-600">Complete your teacher profile and application</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Apply to Teach at Talbiyah.ai</h2>
+          <p className="text-slate-400">Complete your teacher profile and application</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
@@ -506,7 +505,7 @@ export default function ApplyToTeach() {
                     Upload Photo
                   </label>
                   <div className="flex items-center space-x-6">
-                    <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="w-24 h-24 rounded-full bg-slate-700 border-2 border-slate-700 flex items-center justify-center overflow-hidden">
                       {avatarPreview ? (
                         <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -548,7 +547,7 @@ export default function ApplyToTeach() {
                       type="email"
                       value={formData.email}
                       disabled
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      className="w-full px-4 py-3 border border-slate-600 rounded-lg bg-slate-800 text-slate-400"
                     />
                   </div>
                 </div>
@@ -872,68 +871,15 @@ export default function ApplyToTeach() {
                   </p>
                 </div>
 
-                {/* Tier Information Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">💡 How Your Starting Tier is Determined</h4>
-                  <p className="text-sm text-blue-800 mb-3">
-                    We automatically assign your initial tier based on your qualifications and experience:
-                  </p>
-                  <div className="space-y-1 text-xs text-blue-700">
-                    <div>💎 <strong>Master:</strong> £10/hr - Multiple Ijazahs + Islamic Degree + Native English</div>
-                    <div>🏆 <strong>Expert:</strong> £8.50/hr - Ijazah OR Degree + Fluent/Native English</div>
-                    <div>🎯 <strong>Skilled:</strong> £7/hr - 5+ years experience OR Teaching Certificate</div>
-                    <div>📚 <strong>Apprentice:</strong> £6/hr - 2-5 years teaching experience</div>
-                    <div>🌱 <strong>Newcomer:</strong> £5/hr - 0-2 years (default starting tier)</div>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-2 font-medium">
-                    After approval, your tier increases automatically as you teach and receive good ratings!
-                  </p>
-                </div>
               </div>
             </section>
 
             <section>
               <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-                Your Teaching Offer
+                Video Introduction
               </h3>
 
               <div className="space-y-6">
-                {/* Your Assigned Tier Preview */}
-                {formData.years_experience && formData.english_level ? (
-                  <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-xl p-6">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Award className="w-6 h-6 text-emerald-600" />
-                      <h4 className="font-bold text-emerald-900 text-lg">Your Starting Tier</h4>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border border-emerald-200">
-                      <p className="text-sm text-gray-600 mb-2">Based on your qualifications:</p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-2xl font-bold text-emerald-600">{calculateTier().tierName} Tier</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {calculateTier().requiresInterview
-                              ? 'Requires admin interview for verification'
-                              : 'Auto-approved after document verification'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-3xl font-bold text-gray-900">£{calculateTier().rate.toFixed(2)}</p>
-                          <p className="text-sm text-gray-500">per hour</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-emerald-700 mt-3">
-                      💡 Your tier can increase as you teach more hours and receive higher ratings on our platform!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> Complete the years of experience and English proficiency fields to see your starting tier and hourly rate.
-                    </p>
-                  </div>
-                )}
-
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-3">
                     Video Introduction (Optional)
