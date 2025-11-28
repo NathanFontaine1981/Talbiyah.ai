@@ -79,22 +79,21 @@ export default function TeacherStudentsCard() {
         });
       }
 
-      // Load students from completed lessons
+      // Load students from all lessons (booked or completed)
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select(`
           learner_id,
           duration_minutes,
+          status,
           learners!inner(
             id,
-            profiles!parent_id(
-              full_name,
-              avatar_url
-            )
+            name,
+            parent_id
           )
         `)
         .eq('teacher_id', teacherProfile.id)
-        .eq('status', 'completed');
+        .in('status', ['booked', 'completed']);
 
       // Merge lesson data with assigned students
       if (lessonsData) {
@@ -104,8 +103,8 @@ export default function TeacherStudentsCard() {
           if (!studentMap.has(learnerId)) {
             studentMap.set(learnerId, {
               id: learnerId,
-              name: lesson.learners.profiles.full_name || 'Student',
-              avatar_url: lesson.learners.profiles.avatar_url,
+              name: lesson.learners?.name || 'Student',
+              avatar_url: null,
               total_lessons: 0,
               total_hours: 0,
               is_assigned: false
@@ -113,8 +112,11 @@ export default function TeacherStudentsCard() {
           }
 
           const student = studentMap.get(learnerId)!;
-          student.total_lessons += 1;
-          student.total_hours += lesson.duration_minutes / 60;
+          // Only count completed lessons towards totals
+          if (lesson.status === 'completed') {
+            student.total_lessons += 1;
+            student.total_hours += lesson.duration_minutes / 60;
+          }
         });
       }
 
