@@ -27,26 +27,71 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
   }, [learnerId]);
 
   async function loadProgress() {
+    // Default courses to show even if no learner data exists
+    const defaultCourses: CourseProgress[] = [
+      {
+        name: "Qur'an with Understanding",
+        progress: 0,
+        icon: BookOpen,
+        color: 'text-emerald-400',
+        bgColor: 'from-emerald-500/20 to-green-500/20',
+        route: '/progress/quran',
+        action: 'Start Learning'
+      },
+      {
+        name: 'Arabic Language',
+        progress: 0,
+        icon: Languages,
+        color: 'text-cyan-400',
+        bgColor: 'from-cyan-500/20 to-blue-500/20',
+        route: '/courses/arabic',
+        action: 'Start Learning'
+      },
+      {
+        name: 'Islamic Studies',
+        progress: 0,
+        icon: Star,
+        color: 'text-purple-400',
+        bgColor: 'from-purple-500/20 to-pink-500/20',
+        route: '/courses/islamic-studies',
+        action: 'Explore'
+      }
+    ];
+
     try {
       let targetLearnerId = learnerId;
 
       // If no learnerId provided, get current user's learner
       if (!targetLearnerId) {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          // No user - still show default courses
+          setCourses(defaultCourses);
+          setLoading(false);
+          return;
+        }
 
+        // First try to find learner where user is the parent
         const { data: learner } = await supabase
           .from('learners')
           .select('id')
           .eq('parent_id', user.id)
           .maybeSingle();
 
-        if (!learner) {
-          setLoading(false);
-          return;
-        }
+        if (learner) {
+          targetLearnerId = learner.id;
+        } else {
+          // For parents with children in parent_children table, get first child's learner
+          const { data: children } = await supabase
+            .from('parent_children')
+            .select('child_id')
+            .eq('parent_id', user.id)
+            .limit(1);
 
-        targetLearnerId = learner.id;
+          if (children && children.length > 0) {
+            targetLearnerId = children[0].child_id;
+          }
+        }
       }
 
       let quranProgress = 0;
@@ -140,6 +185,8 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
       setCourses(coursesData);
     } catch (error) {
       console.error('Error loading progress:', error);
+      // Still show default courses on error
+      setCourses(defaultCourses);
     } finally {
       setLoading(false);
     }

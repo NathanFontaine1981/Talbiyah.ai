@@ -588,6 +588,7 @@ export default function Home() {
                           <p className="text-sm text-slate-400 mt-1">Perfect for younger learners</p>
                         </div>
                         <div className="text-right">
+                          <p className="text-xs text-slate-400 mb-1">from</p>
                           <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£7.50</div>
                         </div>
                       </div>
@@ -604,7 +605,9 @@ export default function Home() {
                           <p className="text-sm text-cyan-300 mt-1 font-semibold">Most popular</p>
                         </div>
                         <div className="text-right">
+                          <p className="text-xs text-cyan-300 mb-1">from</p>
                           <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">£15.00</div>
+                          <p className="text-xs text-slate-400 mt-1">per hour</p>
                         </div>
                       </div>
                     </div>
@@ -787,13 +790,11 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition"></div>
                 <div className="relative aspect-[3/4] bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-600/10"></div>
-                  {/* Placeholder for founder photo */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-slate-400">
-                      <Users className="w-16 h-16 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Founder Photo</p>
-                    </div>
-                  </div>
+                  <img
+                    src="/nathan-ellington.jpg"
+                    alt="Nathan Ellington - Founder of Talbiyah.ai, former Premier League footballer"
+                    className="absolute inset-0 w-full h-auto object-cover object-top scale-150 translate-y-[15%]"
+                  />
                 </div>
               </div>
 

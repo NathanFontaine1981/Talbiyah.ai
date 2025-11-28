@@ -21,6 +21,7 @@ import GroupSessions from './pages/admin/GroupSessions';
 import CoursesManagement from './pages/admin/CoursesManagement';
 import Recordings from './pages/admin/Recordings';
 import Analytics from './pages/admin/Analytics';
+import InsightsGenerator from './pages/admin/InsightsGenerator';
 import ApplyToTeach from './pages/ApplyToTeach';
 import AccountSettings from './pages/AccountSettings';
 import Dashboard from './pages/Dashboard';
@@ -45,6 +46,9 @@ import TeacherHub from './pages/teacher/TeacherHub';
 import MyStudents from './pages/teacher/MyStudents';
 import IslamicSourceReferenceAbout from './pages/IslamicSourceReferenceAbout';
 import IslamicSourceReference from './pages/IslamicSourceReference';
+import KhutbaCreator from './pages/KhutbaCreator';
+import KhutbaReflections from './pages/KhutbaReflections';
+import InsightsLibrary from './pages/InsightsLibrary';
 import ProtectedRoute from './components/ProtectedRoute';
 import MyChildren from './pages/MyChildren';
 import ChildDashboardView from './pages/ChildDashboardView';
@@ -70,6 +74,7 @@ import TeacherPayouts from './pages/admin/TeacherPayouts';
 import TeacherPaymentSettings from './pages/TeacherPaymentSettings';
 import MissedLessons from './pages/MissedLessons';
 import TierDiagnostic from './pages/TierDiagnostic';
+import Onboarding from './pages/Onboarding';
 
 function App() {
   return (
@@ -79,6 +84,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
         <Route
           path="/subjects"
@@ -180,6 +186,7 @@ function App() {
           <Route path="courses" element={<CoursesManagement />} />
           <Route path="recordings" element={<Recordings />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="insights-generator" element={<InsightsGenerator />} />
           <Route path="settings" element={<div className="text-white">Settings Coming Soon</div>} />
         </Route>
         <Route
@@ -474,6 +481,30 @@ function App() {
           }
         />
         <Route path="/about/islamic-source-reference" element={<IslamicSourceReferenceAbout />} />
+        <Route
+          path="/khutba-creator"
+          element={
+            <ProtectedRoute>
+              <KhutbaCreator />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/khutba-reflections"
+          element={
+            <ProtectedRoute>
+              <KhutbaReflections />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/insights-library"
+          element={
+            <ProtectedRoute>
+              <InsightsLibrary />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

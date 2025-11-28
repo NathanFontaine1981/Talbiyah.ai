@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   BookOpen,
   Bell,
@@ -24,7 +24,16 @@ import {
   Edit,
   CreditCard,
   Briefcase,
-  Scroll
+  Scroll,
+  Mic,
+  Home,
+  Library,
+  Headphones,
+  FileText,
+  UserCog,
+  Baby,
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -73,6 +82,7 @@ interface ChildLink {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [learner, setLearner] = useState<LearnerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,11 +93,65 @@ export default function Dashboard() {
   const [hasChildren, setHasChildren] = useState(true);
   const [isParent, setIsParent] = useState(false);
   const [children, setChildren] = useState<ChildLink[]>([]);
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+  const [bookingPaymentMethod, setBookingPaymentMethod] = useState<string | null>(null);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   useEffect(() => {
     loadUserAndProfile();
+    loadUnreadMessageCount();
+
+    // Subscribe to new messages for real-time badge updates
+    const channel = supabase
+      .channel('sidebar_unread_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lesson_messages',
+        },
+        () => {
+          loadUnreadMessageCount();
+        }
+      )
+      .subscribe();
+
+    // Check for booking success
+    const bookingSuccess = searchParams.get('booking_success');
+    const paymentMethod = searchParams.get('payment');
+    if (bookingSuccess === 'true') {
+      setShowBookingSuccess(true);
+      setBookingPaymentMethod(paymentMethod);
+      // Clear the query params
+      setSearchParams({});
+      // Auto-hide after 5 seconds
+      setTimeout(() => setShowBookingSuccess(false), 5000);
+    }
+
+    return () => {
+      channel.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadUnreadMessageCount() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get all unread messages where user is not the sender
+      const { count } = await supabase
+        .from('lesson_messages')
+        .select('id', { count: 'exact', head: true })
+        .neq('sender_id', user.id)
+        .is('read_at', null);
+
+      setUnreadMessageCount(count || 0);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  }
 
   async function loadUserAndProfile() {
     try {
@@ -181,34 +245,88 @@ export default function Dashboard() {
     setTimeout(() => setReferralCopied(false), 2000);
   }
 
-  const baseMenuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin'] },
-    { icon: Briefcase, label: 'Teacher Account', path: '/teacher/hub', active: false, roles: ['Teacher'] },
-    { icon: Calendar, label: 'My Classes', path: '/my-classes', active: false, roles: ['Student', 'Teacher', 'Parent'] },
-    { icon: MessageCircle, label: 'Messages', path: '/messages', active: false, roles: ['Student', 'Teacher'] },
-    { icon: CreditCard, label: 'My Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
-    { icon: Scroll, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
-    { icon: Users, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
-    { icon: Calendar, label: 'My Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
-    { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
-    { icon: Search, label: 'Book a Class', path: '/subjects', active: false, roles: ['Student'] },
-    { icon: Users, label: 'Group Sessions', path: '/group-sessions', active: false, roles: ['Student'] },
-    { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student', 'Teacher'] },
-    { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student'] },
-    { icon: Gift, label: 'My Referrals', path: '/my-referrals', active: false, roles: ['Student', 'Admin'] },
-    { icon: Award, label: 'Achievements', path: '/achievements', active: false, roles: ['Student'] },
-    { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
+  // Organized menu sections
+  const menuSections = [
+    {
+      title: null, // No header for home section
+      items: [
+        { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
+      ]
+    },
+    {
+      title: 'Learn',
+      items: [
+        { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student', 'Parent'] },
+        { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
+        { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
+        { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
+        { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student'] },
+      ]
+    },
+    {
+      title: 'Teach',
+      items: [
+        { icon: Briefcase, label: 'Teacher Hub', path: '/teacher/hub', active: false, roles: ['Teacher'] },
+        { icon: Users, label: 'My Students', path: '/teacher/my-students', active: false, roles: ['Teacher'] },
+        { icon: Calendar, label: 'My Schedule', path: '/my-classes', active: false, roles: ['Teacher'] },
+        { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
+        { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
+        { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
+      ]
+    },
+    {
+      title: 'Messages',
+      items: [
+        { icon: MessageCircle, label: 'Conversations', path: '/messages', active: false, roles: ['Student', 'Teacher'], unreadCount: unreadMessageCount },
+      ]
+    },
+    {
+      title: 'Credits',
+      items: [
+        { icon: CreditCard, label: 'Buy Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
+        { icon: Gift, label: 'Referrals', path: '/my-referrals', active: false, roles: ['Student'] },
+      ]
+    },
+    {
+      title: 'Resources',
+      items: [
+        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
+        { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
+        { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
+        { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
+        { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
+        { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
+      ]
+    },
+    {
+      title: 'Admin',
+      items: [
+        { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin', active: false, roles: ['Admin'] },
+        { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics', active: false, roles: ['Admin'] },
+        { icon: Users, label: 'Manage Users', path: '/admin/users', active: false, roles: ['Admin'] },
+        { icon: GraduationCap, label: 'Manage Teachers', path: '/admin/teachers', active: false, roles: ['Admin'] },
+        { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator', active: false, roles: ['Admin'] },
+      ]
+    },
+    {
+      title: 'Profile',
+      items: [
+        { icon: UserIcon, label: 'My Account', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
+        { icon: Baby, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
+        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
+      ]
+    },
   ];
 
-  const menuItems = baseMenuItems.filter(item => {
-    // Show menu item if it matches the current role
-    if (item.roles.includes(userRole)) return true;
-
-    // Show "My Children" if user has parent role (even if they're also a student)
-    if (item.label === 'My Children' && profile?.roles?.includes('parent')) return true;
-
-    return false;
-  });
+  // Filter sections based on user role
+  const filteredSections = menuSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      if (item.roles.includes(userRole)) return true;
+      if (item.label === 'My Children' && profile?.roles?.includes('parent')) return true;
+      return false;
+    })
+  })).filter(section => section.items.length > 0);
 
   if (loading) {
     return (
@@ -223,6 +341,31 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-white flex">
+      {/* Booking Success Toast */}
+      {showBookingSuccess && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center space-x-3 max-w-md">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold">Lesson Booked Successfully!</h4>
+              <p className="text-sm text-emerald-100">
+                {bookingPaymentMethod === 'credits'
+                  ? 'Your credits have been used. Check your upcoming sessions below.'
+                  : 'Your lesson has been confirmed. Check your upcoming sessions below.'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowBookingSuccess(false)}
+              className="text-white/80 hover:text-white ml-2"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <aside
         className={`${
           sidebarCollapsed ? 'w-20' : 'w-64'
@@ -247,21 +390,58 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition ${
-                item.active
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-              title={sidebarCollapsed ? item.label : undefined}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
-            </button>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {filteredSections.map((section, sectionIdx) => (
+            <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
+              {section.title && !sidebarCollapsed && (
+                <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {section.title}
+                </p>
+              )}
+              {section.title && sidebarCollapsed && (
+                <div className="border-t border-slate-800 my-2"></div>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item: any) => (
+                  <button
+                    key={`${section.title}-${item.path}-${item.label}`}
+                    onClick={() => !item.comingSoon && navigate(item.path)}
+                    disabled={item.comingSoon}
+                    className={`w-full px-4 py-2.5 rounded-xl flex items-center space-x-3 transition ${
+                      item.active
+                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                        : item.comingSoon
+                        ? 'text-slate-600 cursor-not-allowed'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <div className="relative">
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {sidebarCollapsed && item.unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                          {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {!sidebarCollapsed && (
+                      <span className="font-medium whitespace-nowrap flex-1 text-left text-sm">{item.label}</span>
+                    )}
+                    {!sidebarCollapsed && item.unreadCount > 0 && (
+                      <span className="min-w-[20px] h-[20px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                      </span>
+                    )}
+                    {!sidebarCollapsed && item.isNew && (
+                      <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded">NEW</span>
+                    )}
+                    {!sidebarCollapsed && item.comingSoon && (
+                      <span className="px-1.5 py-0.5 bg-slate-700 text-slate-500 text-[10px] font-medium rounded">SOON</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -369,58 +549,28 @@ export default function Dashboard() {
               </div>
             )}
 
-            {learner?.referral_code && (
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 mb-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-                        <Gift className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-white">🎮 Gamified Referrals</h3>
-                    </div>
-                    <p className="text-slate-300 mb-2 text-lg">
-                      Share Talbiyah.ai and earn £15 discount for every 10 hours your referrals learn! Your balance automatically applies at checkout.
-                    </p>
-                    <p className="text-slate-400 text-sm">
-                      Climb tiers to unlock transfer ability and compete on the leaderboard
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm flex-wrap gap-2">
-                      <div className="flex items-center space-x-2">
-                        <Trophy className="w-5 h-5 text-amber-400" />
-                        <span className="font-semibold text-white">{learner.learning_credits?.toFixed(1) || '0.0'}h Free Lessons</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-300">5 Tiers • 10 Achievements</span>
-                      </div>
-                    </div>
+            {/* Courses Card - Prominent at Top */}
+            {(userRole === 'Student' || isParent) && (
+              <div className="mb-6 bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-6 border border-cyan-500/30 shadow-xl">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <GraduationCap className="w-8 h-8 text-white" />
                   </div>
-
-                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 min-w-[320px]">
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Your Referral Code</label>
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg font-mono text-xl font-bold text-cyan-400 text-center">
-                        {learner.referral_code}
-                      </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">📚 Start Your Learning Journey</h3>
+                    <p className="text-cyan-50 mb-4">
+                      Explore our structured courses in Quranic Studies, Arabic Language, Islamic History, and more. Learn at your own pace with expert guidance.
+                    </p>
+                    <div className="flex items-center space-x-3">
                       <button
-                        onClick={copyReferralLink}
-                        className="px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+                        onClick={() => navigate('/courses-overview')}
+                        className="px-6 py-3 bg-white hover:bg-cyan-50 text-cyan-700 rounded-lg font-bold transition shadow-lg flex items-center space-x-2"
                       >
-                        {referralCopied ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <Copy className="w-5 h-5" />
-                        )}
+                        <GraduationCap className="w-5 h-5" />
+                        <span>Browse Courses</span>
+                        <ArrowRight className="w-5 h-5" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => navigate('/refer')}
-                      className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
-                    >
-                      <span>View Referral Dashboard</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -552,6 +702,104 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Khutbah Tools Card - For All Users */}
+            <div className="mb-6 grid md:grid-cols-2 gap-4">
+              {/* Khutbah Creator */}
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-cyan-500/30 backdrop-blur-sm shadow-xl">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <span className="text-xl">🕌</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white mb-2">Khutbah Creator</h3>
+                    <p className="text-slate-400 text-sm mb-4">
+                      Generate complete, authentic Friday khutbahs for school Jummah, youth groups, or community masajid.
+                    </p>
+                    <button
+                      onClick={() => navigate('/khutba-creator')}
+                      className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2 text-sm"
+                    >
+                      <Mic className="w-4 h-4" />
+                      <span>Create Khutbah</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Khutbah Reflections */}
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-amber-500/30 backdrop-blur-sm shadow-xl">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                    <span className="text-xl">👨‍👩‍👧‍👦</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white mb-2">Khutbah Reflections</h3>
+                    <p className="text-slate-400 text-sm mb-4">
+                      Turn today's Jummah khutbah into a family-friendly reflection guide for your weekend "Family Hour".
+                    </p>
+                    <button
+                      onClick={() => navigate('/khutba-reflections')}
+                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2 text-sm"
+                    >
+                      <Mic className="w-4 h-4" />
+                      <span>Family Hour</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Gamified Referrals - Moved down */}
+            {learner?.referral_code && (
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 mb-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                        <Gift className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">Gamified Referrals</h3>
+                    </div>
+                    <p className="text-slate-300 mb-2">
+                      Share Talbiyah.ai and earn £15 discount for every 10 hours your referrals learn!
+                    </p>
+                    <div className="flex items-center space-x-4 text-sm flex-wrap gap-2">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="w-5 h-5 text-amber-400" />
+                        <span className="font-semibold text-white">{learner.learning_credits?.toFixed(1) || '0.0'}h Free Lessons</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 min-w-[280px]">
+                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Your Referral Code</label>
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="flex-1 px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg font-mono text-lg font-bold text-cyan-400 text-center">
+                        {learner.referral_code}
+                      </div>
+                      <button
+                        onClick={copyReferralLink}
+                        className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+                      >
+                        {referralCopied ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <Copy className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => navigate('/refer')}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2 text-sm"
+                    >
+                      <span>View Referral Dashboard</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {userRole === 'Teacher' ? (
               <>
