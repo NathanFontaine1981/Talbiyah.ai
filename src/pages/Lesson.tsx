@@ -12,7 +12,8 @@ import {
   Copy,
   CheckCircle,
   MessageCircle,
-  X
+  X,
+  PhoneOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
@@ -23,6 +24,7 @@ interface LessonData {
   id: string;
   teacher_id: string;
   teacher_name: string;
+  learner_name: string;
   subject_name: string;
   scheduled_time: string;
   duration_minutes: number;
@@ -49,6 +51,8 @@ export default function Lesson() {
     lessonCount: number;
   } | null>(null);
   const [showMessaging, setShowMessaging] = useState(true);
+  const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
 
   useEffect(() => {
     loadLesson();
@@ -78,11 +82,15 @@ export default function Lesson() {
           teacher_room_code,
           student_room_code,
           teacher_id,
+          learner_id,
           teacher_profiles!inner(
             user_id,
             profiles!inner(
               full_name
             )
+          ),
+          learners(
+            name
           ),
           subjects!inner(
             name
@@ -132,6 +140,7 @@ export default function Lesson() {
         id: lessonData.id,
         teacher_id: lessonData.teacher_id,
         teacher_name: lessonData.teacher_profiles.profiles.full_name || 'Teacher',
+        learner_name: lessonData.learners?.name || 'Student',
         subject_name: lessonData.subjects.name,
         scheduled_time: lessonData.scheduled_time,
         duration_minutes: lessonData.duration_minutes,
@@ -139,10 +148,8 @@ export default function Lesson() {
         room_code: roomCode
       });
 
-      // Wait a moment before showing the video interface
-      setTimeout(() => {
-        setIsVideoReady(true);
-      }, 1500);
+      // Don't auto-open the room - let user choose how to join
+      // isVideoReady will be set to true when user clicks "Join Now"
 
     } catch (error: any) {
       console.error('Error loading lesson:', error);
@@ -218,6 +225,34 @@ export default function Lesson() {
     navigate('/dashboard');
   }
 
+  async function handleEndSession() {
+    if (!lesson || userRole !== 'teacher') return;
+
+    setEndingSession(true);
+    try {
+      // Mark lesson as completed in database
+      await supabase
+        .from('lessons')
+        .update({
+          status: 'completed',
+          actual_end_time: new Date().toISOString()
+        })
+        .eq('id', lesson.id);
+
+      console.log('✅ Session ended by teacher');
+
+      // Navigate back to dashboard
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error ending session:', error);
+      // Still navigate even if update fails
+      navigate('/dashboard');
+    } finally {
+      setEndingSession(false);
+      setShowEndSessionConfirm(false);
+    }
+  }
+
   function copyRoomCode() {
     if (lesson?.room_code) {
       navigator.clipboard.writeText(lesson.room_code);
@@ -291,7 +326,7 @@ export default function Lesson() {
               <h1 className="text-3xl font-bold">Talbiyah.ai</h1>
             </div>
             <h2 className="text-2xl font-semibold mb-2">Join {lesson.subject_name}</h2>
-            <p className="text-emerald-200">with {lesson.teacher_name} • {lesson.duration_minutes} minutes</p>
+            <p className="text-emerald-200">with {userRole === 'teacher' ? lesson.learner_name : lesson.teacher_name} • {lesson.duration_minutes} minutes</p>
             <div className="flex items-center justify-center space-x-2 mt-3">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-green-300 text-sm font-medium">LIVE SESSION</span>
@@ -540,12 +575,24 @@ export default function Lesson() {
           <div className="flex items-center space-x-4">
             <div className="text-right">
               <p className="text-white text-sm font-medium">
-                with {lesson.teacher_name}
+                with {userRole === 'teacher' ? lesson.learner_name : lesson.teacher_name}
               </p>
               <p className="text-emerald-300 text-xs">
                 {lesson.duration_minutes} minutes
               </p>
             </div>
+
+            {/* End Session Button for Teachers */}
+            {userRole === 'teacher' && (
+              <button
+                onClick={() => setShowEndSessionConfirm(true)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
+                title="End session for all participants"
+              >
+                <PhoneOff className="w-4 h-4" />
+                <span>End Session</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -557,7 +604,7 @@ export default function Lesson() {
           <HMSPrebuilt
             roomCode={lesson.room_code}
             options={{
-              userName: user?.email || 'Student',
+              userName: userRole === 'teacher' ? lesson.teacher_name : lesson.learner_name,
               userId: user?.id || `user_${Date.now()}`,
             }}
             onJoinRoom={(data) => {
@@ -620,6 +667,50 @@ export default function Lesson() {
           lessonCount={milestoneData.lessonCount}
           onComplete={handleDetailedRatingComplete}
         />
+      )}
+
+      {/* End Session Confirmation Modal */}
+      {showEndSessionConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-6">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <PhoneOff className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">End Session?</h3>
+              <p className="text-gray-600 mb-6">
+                This will end the lesson for both you and the student. The session will be marked as completed.
+              </p>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowEndSessionConfirm(false)}
+                  disabled={endingSession}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEndSession}
+                  disabled={endingSession}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  {endingSession ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Ending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PhoneOff className="w-4 h-4" />
+                      <span>End Session</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
