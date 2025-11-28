@@ -78,6 +78,7 @@ export default function Lesson() {
           id,
           scheduled_time,
           duration_minutes,
+          status,
           "100ms_room_id",
           teacher_room_code,
           student_room_code,
@@ -103,6 +104,13 @@ export default function Lesson() {
 
       if (!lessonData) {
         setError('Lesson not found');
+        setLoading(false);
+        return;
+      }
+
+      // Check if lesson has been completed (ended by teacher)
+      if (lessonData.status === 'completed') {
+        setError('This lesson has ended. The teacher has concluded the session.');
         setLoading(false);
         return;
       }
@@ -160,21 +168,38 @@ export default function Lesson() {
   }
 
   async function handleLessonEnd() {
-    // Only show feedback for students
-    if (userRole !== 'student' || !lesson || !user) {
+    // When someone leaves the room (via onLeaveRoom callback)
+    // For teachers: just navigate to dashboard (don't auto-mark as completed)
+    // For students: show feedback if lesson is already completed
+
+    if (userRole === 'teacher') {
+      // Teacher just left - don't mark as completed automatically
+      // They should use "End Session" button to properly end
+      navigate('/dashboard');
+      return;
+    }
+
+    // For students
+    if (!lesson || !user) {
       navigate('/dashboard');
       return;
     }
 
     try {
-      // Mark lesson as completed
-      await supabase
+      // Check if lesson is already completed (teacher ended it)
+      const { data: lessonData } = await supabase
         .from('lessons')
-        .update({ status: 'completed' })
-        .eq('id', lesson.id);
+        .select('status')
+        .eq('id', lesson.id)
+        .single();
 
-      // Show quick feedback first
-      setShowQuickFeedback(true);
+      if (lessonData?.status === 'completed') {
+        // Show quick feedback
+        setShowQuickFeedback(true);
+      } else {
+        // Lesson not completed yet, just leave
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Error handling lesson end:', error);
       navigate('/dashboard');
@@ -230,12 +255,40 @@ export default function Lesson() {
 
     setEndingSession(true);
     try {
+      // First, try to end the 100ms room via edge function
+      if (lesson['100ms_room_id']) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/end-hms-room`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                roomId: lesson['100ms_room_id'],
+                lessonId: lesson.id
+              })
+            }
+          );
+
+          if (response.ok) {
+            console.log('✅ 100ms room ended successfully');
+          } else {
+            console.warn('⚠️ Could not end 100ms room, but continuing...');
+          }
+        } catch (hmsError) {
+          console.warn('⚠️ Error ending 100ms room:', hmsError);
+          // Continue anyway - we still want to mark lesson as completed
+        }
+      }
+
       // Mark lesson as completed in database
       await supabase
         .from('lessons')
         .update({
-          status: 'completed',
-          actual_end_time: new Date().toISOString()
+          status: 'completed'
         })
         .eq('id', lesson.id);
 
