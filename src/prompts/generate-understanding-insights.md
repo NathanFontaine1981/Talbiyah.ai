@@ -45,20 +45,47 @@ Summarize classical Tafsir explanations mentioned or relevant:
 - Historical context (if any)
 - Asbab al-Nuzul (reason for revelation, if relevant)
 
-## 4️⃣ Key Arabic Vocabulary
+## 4️⃣ Vocabulary
 
-List 10-15 KEY words essential for understanding:
+List 10-15 KEY words essential for understanding in a table:
 
-**[Arabic word]** (*transliteration*) - [English meaning]
-Root: √[root letters] | Used in: Ayah [X]
+| Arabic | Transliteration | English |
+|--------|-----------------|---------|
+| رَحْمَة | raḥmah | mercy, compassion |
+| [word] | [transliteration] | [meaning] |
+| [word] | [transliteration] | [meaning] |
 
-Example:
-**رَحْمَة** (*rahmah*) - mercy, compassion
-Root: √ر-ح-م (r-h-m) | Used in: Ayah 156
+## 5️⃣ Key Sentences
 
-## 5️⃣ Key Lessons & Tadabbur Points
+Select 6-10 of the most important ayat/phrases from the lesson with row numbers:
 
-List 3-5 major themes and lessons:
+| # | Ayah | Arabic | Transliteration | English |
+|---|------|--------|-----------------|---------|
+| 1 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+| 2 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+| 3 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+| 4 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+| 5 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+| 6 | [X:Y] | [Arabic text] | [transliteration] | [English translation] |
+
+Note: Include the surah:ayah number (e.g., 79:1, 79:15) in the Ayah column.
+
+## 6️⃣ Teacher Notes
+
+Summarize the key teachings and explanations from the lesson:
+
+### Understanding the Message
+
+**[Section Title, e.g., "The Angels (Ayahs 1-5)"]:**
+[2-3 sentences explaining this section based on teacher's explanation]
+
+**[Section Title, e.g., "The Day of Terror (Ayahs 6-14)"]:**
+[2-3 sentences explaining this section]
+
+**[Section Title, e.g., "Lessons for Us (Ayahs 15-26)"]:**
+[2-3 sentences explaining this section]
+
+### Key Lessons & Tadabbur Points
 
 1. **[Theme Title]**
    [Explanation in 2-3 sentences]
@@ -68,7 +95,7 @@ List 3-5 major themes and lessons:
    [Explanation]
    *Application:* [Practical action]
 
-## 6️⃣ Reflection Questions
+## 7️⃣ Reflection Questions
 
 5 deep questions to ponder:
 
@@ -78,7 +105,7 @@ List 3-5 major themes and lessons:
 4. [Question about application and action]
 5. [Question about gratitude or change]
 
-## 7️⃣ Mini Quiz (Comprehension Check)
+## 8️⃣ Mini Quiz
 
 5 multiple-choice questions testing understanding:
 
@@ -112,16 +139,45 @@ B) [Correct option] ✅
 C) [Option]
 D) [Option]
 
-## 8️⃣ Homework & Practice Tasks
+## 9️⃣ Homework
 
-**This Week's Focus:**
+📝 [Task 1 - e.g., Memorise vocabulary: Learn all focus words with meanings]
+📖 [Task 2 - e.g., Ayah recognition: Practice the quiz until you score X/X]
+📖 [Task 3 - e.g., First word drill: Cover ayahs, use first word to recall the rest]
+📝 [Task 4 - e.g., Tadabbur reflection: Write 3-5 sentences on specific question]
+📖 [Task 5 - e.g., Prepare next session: Read ayahs X-Y with translation]
 
-- 📝 **Memorize Translations:** Write out the English translation of each ayah 3 times
-- 🤲 **Apply One Lesson:** Choose one teaching and journal about how you applied it
-- 📖 **Read Tafsir:** Read [specific Tafsir passage] for deeper understanding
-- 💭 **Reflect Daily:** Spend 5 minutes reflecting on [specific question]
-- 🎧 **Listen & Learn:** Listen to Tafsir lecture on these ayat (recommended: [scholar/resource])
-- 📿 **Make Dua:** Ask Allah to help you understand and apply these lessons
+---
+
+## Key Takeaways
+
+• [Key point 1 - Main lesson from the passage]
+
+• [Key point 2 - Important theme or message]
+
+• [Key point 3 - Practical application]
+
+• [Key point 4 - Spiritual insight]
+
+• [Key point 5 - Call to action or reminder]
+
+---
+
+## Final Reflection
+
+### Tadabbur Prompts
+
+**Ayah [X-Y]:** [Reflection question about these verses]
+
+**Ayah [X-Y]:** [Another reflection question]
+
+**Ayah [X-Y]:** [Another reflection question]
+
+### Verse to Carry With You
+
+> [Arabic text of memorable verse]
+> "[English translation]"
+> — Surah [Name], [X:Y-Z]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
