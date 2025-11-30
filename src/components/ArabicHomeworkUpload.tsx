@@ -14,7 +14,8 @@ import {
   CheckCircle,
   AlertCircle,
   Brain,
-  TrendingUp
+  TrendingUp,
+  Camera
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -75,6 +76,7 @@ export default function ArabicHomeworkUpload({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -423,9 +425,10 @@ export default function ArabicHomeworkUpload({
           </div>
         )}
 
-        {/* Upload Button */}
+        {/* Upload Buttons */}
         {!isReviewed && (
-          <div>
+          <div className="space-y-3">
+            {/* Hidden file inputs */}
             <input
               ref={fileInputRef}
               type="file"
@@ -434,13 +437,39 @@ export default function ArabicHomeworkUpload({
               onChange={handleFileSelect}
               className="hidden"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full py-3 border-2 border-dashed border-slate-600 hover:border-orange-500/50 rounded-xl text-slate-400 hover:text-orange-400 transition flex items-center justify-center gap-2"
-            >
-              <Upload className="w-5 h-5" />
-              <span>Add Files (Images, PDF, Word)</span>
-            </button>
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {/* Upload options */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Take Photo Button */}
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="py-3 border-2 border-dashed border-slate-600 hover:border-cyan-500/50 rounded-xl text-slate-400 hover:text-cyan-400 transition flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                <span className="text-sm">Take Photo</span>
+              </button>
+
+              {/* Browse Files Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="py-3 border-2 border-dashed border-slate-600 hover:border-orange-500/50 rounded-xl text-slate-400 hover:text-orange-400 transition flex items-center justify-center gap-2"
+              >
+                <Upload className="w-5 h-5" />
+                <span className="text-sm">Browse Files</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 text-center">
+              Supported: Images, PDF, Word docs (max 10MB each)
+            </p>
           </div>
         )}
 
