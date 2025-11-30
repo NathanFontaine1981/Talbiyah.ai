@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Users, Heart, CheckCircle2, Star, Shield, LogIn, LogOut, Play, ArrowRight, Sparkles, Target, Zap, Mail, Lock, Loader2 } from 'lucide-react';
+import { BookOpen, Users, Heart, CheckCircle2, Star, Shield, LogIn, LogOut, Play, ArrowRight, Sparkles, Target, Zap, Mail, Lock, Loader2, Menu, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { getDashboardRoute } from '../lib/authHelpers';
 
@@ -13,6 +13,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,21 +78,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-xl z-50 border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="hover:opacity-90 transition group">
-            <div className="flex items-center space-x-2 mb-1">
+            <div className="flex items-center space-x-2 mb-0.5 sm:mb-1">
               <div className="relative">
                 <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full group-hover:bg-cyan-500/30 transition"></div>
-                <BookOpen className="w-7 h-7 text-cyan-400 relative" />
+                <BookOpen className="w-6 sm:w-7 h-6 sm:h-7 text-cyan-400 relative" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Talbiyah.ai</span>
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Talbiyah.ai</span>
             </div>
-            <div className="text-left ml-9">
+            <div className="text-left ml-8 sm:ml-9 hidden sm:block">
               <p className="text-xs text-slate-400 font-light italic">At Your Service</p>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">AI-POWERED ISLAMIC LEARNING</p>
             </div>
           </button>
 
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-300 hover:text-white transition"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <button onClick={() => navigate('/teachers')} className="text-slate-300 hover:text-white transition font-medium">Find a Teacher</button>
             <button onClick={() => navigate('/islamic-source-reference')} className="text-slate-300 hover:text-white transition font-medium">Islamic Sources</button>
@@ -153,9 +163,77 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50">
+            <div className="px-4 py-4 space-y-3">
+              <button
+                onClick={() => { navigate('/teachers'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition font-medium"
+              >
+                Find a Teacher
+              </button>
+              <button
+                onClick={() => { navigate('/islamic-source-reference'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition font-medium"
+              >
+                Islamic Sources
+              </button>
+
+              <div className="border-t border-slate-700/50 pt-3">
+                {user ? (
+                  <>
+                    <button
+                      onClick={async () => {
+                        const dashboardRoute = await getDashboardRoute();
+                        navigate(dashboardRoute);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="block w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25 text-center mb-3"
+                    >
+                      Go to Dashboard
+                    </button>
+                    {!isTeacher && (
+                      <button
+                        onClick={() => { navigate('/apply-to-teach'); setMobileMenuOpen(false); }}
+                        className="block w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition border border-slate-700 text-center mb-3"
+                      >
+                        Apply to Teach
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                      className="block w-full px-4 py-3 border border-slate-700 rounded-lg hover:bg-slate-800 transition text-slate-300 hover:text-white font-medium text-center"
+                    >
+                      <LogOut className="w-4 h-4 inline mr-2" />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { setShowSignInModal(true); setMobileMenuOpen(false); }}
+                      className="block w-full px-4 py-3 border border-cyan-500/50 rounded-lg hover:bg-slate-800 transition text-cyan-400 hover:text-cyan-300 font-semibold text-center mb-3"
+                    >
+                      <LogIn className="w-4 h-4 inline mr-2" />
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
+                      className="block w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25 text-center"
+                    >
+                      Sign Up Free
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"></div>
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
@@ -169,17 +247,17 @@ export default function Home() {
               <span className="text-cyan-300 font-semibold text-sm">The Future of Islamic Learning</span>
             </div>
 
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
               <span className="bg-gradient-to-r from-white via-cyan-100 to-white bg-clip-text text-transparent">The Future of</span>
               <br />
               <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">Islamic Learning.</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-slate-300 mb-10 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl text-slate-300 mb-8 sm:mb-10 leading-relaxed max-w-3xl mx-auto px-2">
               Talbiyah.ai is the <span className="text-white font-semibold">first Islamic learning hub</span> that uses AI to automatically create personalised study notes and quizzes from your live 1-to-1 lessons.
             </p>
 
-            <div className="flex flex-col items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col items-center justify-center gap-4 mb-8 sm:mb-12 px-2">
               <button
                 onClick={async () => {
                   if (user) {
@@ -189,10 +267,10 @@ export default function Home() {
                     navigate('/signup');
                   }
                 }}
-                className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xl font-bold transition shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/75 flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-base sm:text-xl font-bold transition shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/75 flex items-center justify-center space-x-2"
               >
-                <span>{user ? 'Go to Dashboard' : 'Start Your Free 30-Minute Taster Session'}</span>
-                <ArrowRight className="w-6 h-6" />
+                <span>{user ? 'Go to Dashboard' : 'Start Free 30-Min Taster'}</span>
+                <ArrowRight className="w-5 sm:w-6 h-5 sm:h-6" />
               </button>
               <p className="text-sm text-slate-400">No credit card required</p>
             </div>
@@ -200,10 +278,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-24 px-6 bg-slate-900/50">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-900/50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold mb-6">
+          <div className="text-center mb-12 sm:mb-20">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Your Three Steps to</span>
               <br />
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Better Learning</span>

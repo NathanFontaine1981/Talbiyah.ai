@@ -13,8 +13,12 @@ import {
   CheckCircle,
   MessageCircle,
   X,
-  PhoneOff
+  PhoneOff,
+  QrCode,
+  ExternalLink,
+  Book
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabaseClient';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
@@ -53,6 +57,8 @@ export default function Lesson() {
   const [showMessaging, setShowMessaging] = useState(true);
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  const [showQuranWBW, setShowQuranWBW] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran'>('messages');
 
   useEffect(() => {
     loadLesson();
@@ -306,11 +312,23 @@ export default function Lesson() {
     }
   }
 
+  // Generate the 100ms joining link
+  const joinLink = lesson?.room_code ? `https://talbiyah.app.100ms.live/meeting/${lesson.room_code}` : '';
+
   function copyRoomCode() {
     if (lesson?.room_code) {
       navigator.clipboard.writeText(lesson.room_code);
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2000);
+    }
+  }
+
+  const [copiedLink, setCopiedLink] = useState(false);
+  function copyJoinLink() {
+    if (joinLink) {
+      navigator.clipboard.writeText(joinLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
   }
 
@@ -480,37 +498,81 @@ export default function Lesson() {
                     </div>
                   </div>
 
-                  {/* Step 2 */}
-                  <div className="bg-white/5 rounded-xl p-6 border border-cyan-400/20">
+                  {/* Step 2 - QR Code (Easiest) */}
+                  <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-6 border border-emerald-400/40">
                     <div className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         2
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white mb-2">Open the App and Enter Room Code</h4>
-                        <p className="text-cyan-200 text-sm mb-3">
-                          Launch the 100ms app and select "Join with Code"
+                        <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                          <QrCode className="w-5 h-5 text-emerald-400" />
+                          Scan QR Code (Easiest!)
+                        </h4>
+                        <p className="text-emerald-200 text-sm mb-4">
+                          Open your phone's camera and scan this QR code to join instantly:
+                        </p>
+                        <div className="flex justify-center">
+                          <div className="bg-white p-4 rounded-xl shadow-lg">
+                            <QRCodeSVG
+                              value={joinLink}
+                              size={180}
+                              level="H"
+                              includeMargin={true}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-emerald-300 text-xs mt-3 text-center">
+                          📱 This will open the lesson directly in your browser or 100ms app
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Step 3 - Room Code */}
+                  {/* Step 3 - Join Link (Alternative) */}
                   <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl p-6 border border-cyan-400/40">
                     <div className="flex items-start space-x-4">
                       <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         3
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white mb-3">Your Room Code</h4>
-                        <div className="bg-white/10 rounded-lg p-4 border border-cyan-400/30">
+                        <h4 className="font-semibold text-white mb-3">Or Copy Joining Link</h4>
+                        <div className="bg-white/10 rounded-lg p-4 border border-cyan-400/30 mb-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-cyan-300 font-medium uppercase tracking-wider">
-                              Room Code for {userRole === 'teacher' ? 'Teacher' : 'Student'}
+                              Joining Link for {userRole === 'teacher' ? 'Teacher' : 'Student'}
+                            </span>
+                            <button
+                              onClick={copyJoinLink}
+                              className="flex items-center space-x-1 px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-lg text-cyan-300 text-xs font-medium transition-colors"
+                            >
+                              {copiedLink ? (
+                                <>
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy Link</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <code className="text-sm font-mono text-white break-all">
+                            {joinLink}
+                          </code>
+                        </div>
+
+                        {/* Room code as fallback */}
+                        <div className="bg-white/5 rounded-lg p-3 border border-cyan-400/20">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-cyan-400 font-medium">
+                              Room Code (if asked)
                             </span>
                             <button
                               onClick={copyRoomCode}
-                              className="flex items-center space-x-1 px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-lg text-cyan-300 text-xs font-medium transition-colors"
+                              className="flex items-center space-x-1 px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-500/30 rounded text-cyan-300 text-xs transition-colors"
                             >
                               {copiedCode ? (
                                 <>
@@ -525,13 +587,10 @@ export default function Lesson() {
                               )}
                             </button>
                           </div>
-                          <code className="text-2xl font-mono font-bold text-white tracking-wider block break-all">
+                          <code className="text-lg font-mono font-bold text-white tracking-wider">
                             {lesson.room_code}
                           </code>
                         </div>
-                        <p className="text-cyan-200 text-xs mt-3">
-                          💡 Tip: Copy this code and paste it in the 100ms app
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -563,19 +622,8 @@ export default function Lesson() {
                     onClick={() => setShowMobileInstructions(false)}
                     className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg"
                   >
-                    Got it! Close Instructions
+                    Got it! Back to Join Options
                   </button>
-
-                  {/* Alternative Option */}
-                  <div className="text-center">
-                    <p className="text-cyan-300 text-sm mb-2">Prefer to join via web instead?</p>
-                    <button
-                      onClick={handleJoinWeb}
-                      className="text-cyan-400 hover:text-cyan-300 text-sm font-medium underline"
-                    >
-                      Join via Web Browser
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -626,7 +674,7 @@ export default function Lesson() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="text-right">
+            <div className="text-right hidden sm:block">
               <p className="text-white text-sm font-medium">
                 with {userRole === 'teacher' ? lesson.learner_name : lesson.teacher_name}
               </p>
@@ -635,15 +683,38 @@ export default function Lesson() {
               </p>
             </div>
 
+            {/* QuranWBW Toggle Button - Show for Quran-related subjects */}
+            {lesson.subject_name.toLowerCase().includes('quran') && (
+              <button
+                onClick={() => {
+                  if (sidebarMode === 'quran') {
+                    setSidebarMode('messages');
+                  } else {
+                    setSidebarMode('quran');
+                    setShowMessaging(true);
+                  }
+                }}
+                className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+                  sidebarMode === 'quran'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
+                }`}
+                title="Open QuranWBW reference tool"
+              >
+                <Book className="w-4 h-4" />
+                <span className="hidden sm:inline">Quran WBW</span>
+              </button>
+            )}
+
             {/* End Session Button for Teachers */}
             {userRole === 'teacher' && (
               <button
                 onClick={() => setShowEndSessionConfirm(true)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
+                className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
                 title="End session for all participants"
               >
                 <PhoneOff className="w-4 h-4" />
-                <span>End Session</span>
+                <span className="hidden sm:inline">End Session</span>
               </button>
             )}
           </div>
@@ -675,28 +746,121 @@ export default function Lesson() {
           />
         </div>
 
-        {/* Messaging Sidebar */}
+        {/* Sidebar - Messages or QuranWBW */}
         {showMessaging && (
           <div className="w-1/3 h-full bg-gray-50 border-l border-gray-200 overflow-hidden flex flex-col">
-            <LessonMessaging
-              lessonId={lessonId!}
-              currentUserId={user?.id}
-              userRole={userRole}
-              onClose={() => setShowMessaging(false)}
-            />
+            {/* Sidebar Tab Switcher - only show if Quran subject */}
+            {lesson.subject_name.toLowerCase().includes('quran') && (
+              <div className="flex border-b border-gray-200 bg-white">
+                <button
+                  onClick={() => setSidebarMode('messages')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                    sidebarMode === 'messages'
+                      ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Messages
+                </button>
+                <button
+                  onClick={() => setSidebarMode('quran')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                    sidebarMode === 'quran'
+                      ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Book className="w-4 h-4" />
+                  Quran WBW
+                </button>
+              </div>
+            )}
+
+            {/* Content based on mode */}
+            {sidebarMode === 'messages' ? (
+              <LessonMessaging
+                lessonId={lessonId!}
+                currentUserId={user?.id}
+                userRole={userRole}
+                onClose={() => setShowMessaging(false)}
+              />
+            ) : (
+              <div className="flex-1 flex flex-col">
+                {/* QuranWBW Header */}
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                    <Book className="w-5 h-5" />
+                    <span className="font-semibold">QuranWBW Reference</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="https://quranwbw.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 hover:bg-white/20 rounded transition-colors text-white"
+                      title="Open in new tab"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                    <button
+                      onClick={() => setShowMessaging(false)}
+                      className="p-1.5 hover:bg-white/20 rounded transition-colors text-white"
+                      title="Close sidebar"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* QuranWBW Iframe */}
+                <div className="flex-1 bg-white">
+                  <iframe
+                    src="https://quranwbw.com"
+                    className="w-full h-full border-0"
+                    title="QuranWBW - Word by Word Quran"
+                    allow="clipboard-write"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                  />
+                </div>
+
+                {/* Quick Navigation Tips */}
+                <div className="bg-amber-50 px-4 py-2 text-xs text-amber-800 border-t border-amber-100">
+                  <p><strong>Tip:</strong> Use the search to find any Surah/Ayah. Share your screen to show students!</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Toggle Messaging Button (when hidden) */}
+        {/* Toggle Sidebar Button (when hidden) */}
         {!showMessaging && (
-          <button
-            onClick={() => setShowMessaging(true)}
-            className="fixed bottom-6 right-6 bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2 z-50"
-            title="Open messages"
-          >
-            <MessageCircle className="w-6 h-6" />
-            <span className="font-medium">Messages</span>
-          </button>
+          <div className="fixed bottom-6 right-6 flex gap-2 z-50">
+            <button
+              onClick={() => {
+                setShowMessaging(true);
+                setSidebarMode('messages');
+              }}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
+              title="Open messages"
+            >
+              <MessageCircle className="w-6 h-6" />
+              <span className="font-medium hidden sm:inline">Messages</span>
+            </button>
+            {lesson.subject_name.toLowerCase().includes('quran') && (
+              <button
+                onClick={() => {
+                  setShowMessaging(true);
+                  setSidebarMode('quran');
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
+                title="Open Quran WBW"
+              >
+                <Book className="w-6 h-6" />
+                <span className="font-medium hidden sm:inline">Quran</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
