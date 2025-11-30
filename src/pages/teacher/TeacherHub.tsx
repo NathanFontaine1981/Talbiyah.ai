@@ -15,8 +15,10 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
+  ClipboardCheck,
 } from 'lucide-react';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
+import WeeklyCalendar from '../../components/teacher/WeeklyCalendar';
 
 interface TeacherStats {
   tier: string;
@@ -158,6 +160,13 @@ export default function TeacherHub() {
 
   const navItems = [
     {
+      icon: Calendar,
+      label: 'My Schedule',
+      path: '/teacher/schedule',
+      iconBg: 'bg-cyan-500/20',
+      iconColor: 'text-cyan-400'
+    },
+    {
       icon: Users,
       label: 'My Students',
       path: '/teacher/my-students',
@@ -165,46 +174,18 @@ export default function TeacherHub() {
       iconColor: 'text-purple-400'
     },
     {
-      icon: DollarSign,
-      label: 'My Earnings',
-      path: '/teacher/earnings',
+      icon: ClipboardCheck,
+      label: 'Homework Review',
+      path: '/teacher/homework-review',
       iconBg: 'bg-emerald-500/20',
       iconColor: 'text-emerald-400'
-    },
-    {
-      icon: Award,
-      label: 'Tier Progress',
-      path: '/teacher/tiers',
-      iconBg: 'bg-cyan-500/20',
-      iconColor: 'text-cyan-400'
-    },
-    {
-      icon: BookOpen,
-      label: 'Tier Structure',
-      path: '/teacher/tier-info',
-      iconBg: 'bg-blue-500/20',
-      iconColor: 'text-blue-400'
-    },
-    {
-      icon: Calendar,
-      label: 'My Classes',
-      path: '/my-classes',
-      iconBg: 'bg-violet-500/20',
-      iconColor: 'text-violet-400'
     },
     {
       icon: Clock,
       label: 'Availability',
       path: '/teacher/availability',
-      iconBg: 'bg-purple-500/20',
-      iconColor: 'text-purple-400'
-    },
-    {
-      icon: Users,
-      label: 'My Students',
-      path: '/teacher/students',
-      iconBg: 'bg-pink-500/20',
-      iconColor: 'text-pink-400'
+      iconBg: 'bg-violet-500/20',
+      iconColor: 'text-violet-400'
     },
     {
       icon: CreditCard,
@@ -219,13 +200,6 @@ export default function TeacherHub() {
       path: '/teacher/edit-profile',
       iconBg: 'bg-slate-500/20',
       iconColor: 'text-slate-400'
-    },
-    {
-      icon: BarChart3,
-      label: 'Analytics',
-      path: '/teacher/analytics',
-      iconBg: 'bg-indigo-500/20',
-      iconColor: 'text-indigo-400'
     },
   ];
 
@@ -374,55 +348,93 @@ export default function TeacherHub() {
           </div>
         </div>
 
-        {/* Upcoming Lessons */}
-        {upcomingLessons.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Upcoming Lessons</h2>
+        {/* Upcoming Lessons Details */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-cyan-400" />
+              </div>
+              Upcoming Lessons
+            </h2>
+            <button
+              onClick={() => navigate('/teacher/schedule')}
+              className="text-cyan-400 hover:text-cyan-300 font-semibold text-sm flex items-center gap-2"
+            >
+              View Full Calendar
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {upcomingLessons.length === 0 ? (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-8 border border-slate-700/50 text-center">
+              <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-400 mb-4">No upcoming lessons scheduled</p>
               <button
-                onClick={() => navigate('/my-classes')}
-                className="text-cyan-400 hover:text-cyan-300 font-medium flex items-center space-x-1 text-sm"
+                onClick={() => navigate('/teacher/availability')}
+                className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold transition"
               >
-                <span>View All</span>
-                <ArrowRight className="w-4 h-4" />
+                Set Your Availability
               </button>
             </div>
-            <div className="space-y-3">
-              {upcomingLessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 hover:border-cyan-500/50 transition cursor-pointer"
-                  onClick={() => navigate(`/lesson/${lesson.id}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-cyan-400" />
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {upcomingLessons.map((lesson) => {
+                const lessonDate = new Date(lesson.scheduled_time);
+                const isToday = new Date().toDateString() === lessonDate.toDateString();
+                const isTomorrow = new Date(Date.now() + 86400000).toDateString() === lessonDate.toDateString();
+
+                return (
+                  <div
+                    key={lesson.id}
+                    onClick={() => navigate(`/lesson/${lesson.id}`)}
+                    className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/50 cursor-pointer transition group"
+                  >
+                    {/* Date Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        isToday
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : isTomorrow
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-slate-700/50 text-slate-300 border border-slate-600/30'
+                      }`}>
+                        {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : lessonDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </span>
+                      <span className="text-lg font-bold text-white">
+                        {lessonDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    {/* Student Info */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {lesson.student_name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-semibold text-white">{lesson.student_name}</p>
+                        <p className="font-semibold text-white group-hover:text-cyan-400 transition">
+                          {lesson.student_name}
+                        </p>
                         <p className="text-sm text-slate-400">{lesson.subject}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-white">
-                        {new Date(lesson.scheduled_time).toLocaleDateString('en-GB', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {new Date(lesson.scheduled_time).toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })} • {lesson.duration_minutes}min
-                      </p>
+
+                    {/* Duration */}
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <span>{lesson.duration_minutes} minutes</span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          )}
+        </div>
+
+        {/* Weekly Calendar */}
+        {teacherProfileId && (
+          <div className="mb-8">
+            <WeeklyCalendar teacherId={teacherProfileId} />
           </div>
         )}
 

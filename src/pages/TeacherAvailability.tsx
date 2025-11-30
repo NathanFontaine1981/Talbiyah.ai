@@ -951,9 +951,10 @@ export default function TeacherAvailability() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="p-2 text-slate-400 hover:text-white transition"
+                className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back to Dashboard</span>
               </button>
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center">

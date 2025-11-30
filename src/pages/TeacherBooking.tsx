@@ -88,7 +88,8 @@ export default function TeacherBooking() {
 
   async function loadSubjects() {
     try {
-      const { data, error } = await supabase
+      // First try to get subjects from teacher_subjects table
+      const { data: teacherSubjectsData, error: tsError } = await supabase
         .from('teacher_subjects')
         .select(`
           subject_id,
@@ -96,9 +97,40 @@ export default function TeacherBooking() {
         `)
         .eq('teacher_id', id);
 
-      if (error) throw error;
+      let subjectsData: Subject[] = [];
 
-      const subjectsData = data.map(ts => ts.subjects);
+      if (!tsError && teacherSubjectsData && teacherSubjectsData.length > 0) {
+        subjectsData = teacherSubjectsData.map(ts => ts.subjects);
+      } else {
+        // Fallback: Get subjects from teacher_availability table
+        const { data: availabilityData, error: avError } = await supabase
+          .from('teacher_availability')
+          .select('subjects')
+          .eq('teacher_id', id)
+          .eq('is_available', true);
+
+        if (avError) throw avError;
+
+        // Extract unique subject IDs from availability records
+        const subjectIds = new Set<string>();
+        availabilityData?.forEach(av => {
+          if (av.subjects && Array.isArray(av.subjects)) {
+            av.subjects.forEach((subId: string) => subjectIds.add(subId));
+          }
+        });
+
+        if (subjectIds.size > 0) {
+          // Fetch subject details
+          const { data: subjectDetails, error: subError } = await supabase
+            .from('subjects')
+            .select('id, name')
+            .in('id', Array.from(subjectIds));
+
+          if (subError) throw subError;
+          subjectsData = subjectDetails || [];
+        }
+      }
+
       setSubjects(subjectsData);
 
       // If a subject was pre-selected from URL, use that
@@ -143,6 +175,80 @@ export default function TeacherBooking() {
     // Set time increment based on session duration
     const minuteIncrement = duration; // 30 or 60 minutes
 
+    // Fetch the teacher's recurring availability
+    const { data: recurringAvailability, error: recurringError } = await supabase
+      .from('teacher_availability')
+      .select('day_of_week, start_time, end_time, is_available')
+      .eq('teacher_id', id)
+      .eq('is_available', true);
+
+    if (recurringError) {
+      console.error('Error fetching recurring availability:', recurringError);
+    }
+
+    // Fetch one-off availability for the selected week
+    const { data: oneOffAvailability, error: oneOffError } = await supabase
+      .from('teacher_availability_one_off')
+      .select('date, start_time, end_time, is_available')
+      .eq('teacher_id', id)
+      .eq('is_available', true)
+      .gte('date', format(weekStart, 'yyyy-MM-dd'))
+      .lte('date', format(weekEnd, 'yyyy-MM-dd'));
+
+    if (oneOffError) {
+      console.error('Error fetching one-off availability:', oneOffError);
+    }
+
+    // Create a map of available time slots based on teacher's set availability
+    const availableTimeSlots = new Map<string, boolean>();
+
+    // Process recurring availability (day_of_week based)
+    if (recurringAvailability) {
+      for (let day = 0; day < 7; day++) {
+        const currentDay = addDays(weekStart, day);
+        const dayOfWeek = currentDay.getDay(); // 0 = Sunday
+        const dateStr = format(currentDay, 'yyyy-MM-dd');
+
+        // Find recurring slots for this day of week
+        const daySlots = recurringAvailability.filter(slot => slot.day_of_week === dayOfWeek);
+
+        daySlots.forEach(slot => {
+          const [startHour, startMin] = slot.start_time.split(':').map(Number);
+          const [endHour, endMin] = slot.end_time.split(':').map(Number);
+
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+
+          // Mark all time slots within this availability window
+          for (let mins = startMinutes; mins < endMinutes; mins += minuteIncrement) {
+            const hour = Math.floor(mins / 60);
+            const minute = mins % 60;
+            const timeKey = `${dateStr}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            availableTimeSlots.set(timeKey, true);
+          }
+        });
+      }
+    }
+
+    // Process one-off availability (overrides recurring for specific dates)
+    if (oneOffAvailability) {
+      oneOffAvailability.forEach(slot => {
+        const [startHour, startMin] = slot.start_time.split(':').map(Number);
+        const [endHour, endMin] = slot.end_time.split(':').map(Number);
+
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        // Mark all time slots within this availability window
+        for (let mins = startMinutes; mins < endMinutes; mins += minuteIncrement) {
+          const hour = Math.floor(mins / 60);
+          const minute = mins % 60;
+          const timeKey = `${slot.date}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          availableTimeSlots.set(timeKey, true);
+        }
+      });
+    }
+
     // Fetch all existing bookings for this teacher in the selected week
     const { data: existingLessons, error } = await supabase
       .from('lessons')
@@ -164,7 +270,6 @@ export default function TeacherBooking() {
         const lessonEnd = new Date(lessonStart.getTime() + lesson.duration_minutes * 60 * 1000);
 
         // Mark all time slots that overlap with this lesson as booked
-        // We need to check every potential slot within this lesson's duration
         let currentSlot = new Date(lessonStart);
         while (currentSlot < lessonEnd) {
           bookedSlots.add(currentSlot.toISOString());
@@ -177,10 +282,15 @@ export default function TeacherBooking() {
 
     for (let day = 0; day < 7; day++) {
       const currentDay = addDays(weekStart, day);
+      const dateStr = format(currentDay, 'yyyy-MM-dd');
 
-      for (let hour = 8; hour < 20; hour++) {
+      for (let hour = 0; hour < 24; hour++) {
         for (let minute = 0; minute < 60; minute += minuteIncrement) {
           const slotTime = setMinutes(setHours(currentDay, hour), minute);
+          const timeKey = `${dateStr}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+          // Only show slots that the teacher has marked as available
+          if (!availableTimeSlots.has(timeKey)) continue;
 
           if (slotTime > new Date()) {
             // Check if this slot conflicts with any existing booking

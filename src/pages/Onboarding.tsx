@@ -100,10 +100,25 @@ export default function Onboarding() {
           return;
         }
 
-        // Only parents should be on this page
-        if (profile?.role !== 'parent') {
+        // Only parents should be on this page - teachers and students should NOT see onboarding
+        // Teachers go to /welcome then /apply-to-teach
+        // Students go to /welcome which creates a learner for them
+        if (profile?.role === 'teacher' || profile?.roles?.includes('teacher')) {
+          console.log('Teacher on onboarding page, redirecting to apply-to-teach');
+          navigate('/apply-to-teach');
+          return;
+        }
+
+        if (profile?.role !== 'parent' && profile?.role !== undefined) {
           console.log('Non-parent user on onboarding page, redirecting to dashboard');
           navigate('/dashboard');
+          return;
+        }
+
+        // If role is undefined/null and not a parent, redirect to welcome
+        if (!profile?.role && !profile?.roles?.includes('parent')) {
+          console.log('User without role on onboarding page, redirecting to welcome');
+          navigate('/welcome');
           return;
         }
 

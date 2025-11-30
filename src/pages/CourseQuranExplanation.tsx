@@ -119,13 +119,15 @@ export default function CourseQuranExplanation() {
             <div>
               <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-1 mb-8 shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-20 blur-2xl"></div>
-                <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[22px] h-80 flex items-center justify-center">
-                  <div className="text-center flex flex-col items-center justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full"></div>
-                      <BookOpen className="relative w-32 h-32 text-emerald-400 mb-6 drop-shadow-2xl" />
-                    </div>
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-6 py-3">
+                <div className="relative rounded-[22px] h-80 overflow-hidden">
+                  <img
+                    src="/qurancourse.jpg"
+                    alt="Qur'an with Understanding"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 rounded-lg px-6 py-3">
                       <p className="text-emerald-300 font-bold text-xl">Qur'an with Understanding</p>
                       <p className="text-emerald-400/80 text-sm mt-1">Recitation, Tajweed & Tafsir</p>
                     </div>
@@ -170,6 +172,15 @@ export default function CourseQuranExplanation() {
                   <span>{user ? 'Browse Teachers' : 'Start Free 30-Min Session'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
+                {user && (
+                  <button
+                    onClick={() => navigate('/courses/quran-progress')}
+                    className="px-8 py-4 bg-slate-800 hover:bg-emerald-900/50 border-2 border-emerald-500/50 text-emerald-300 rounded-xl text-lg font-bold transition shadow-sm flex items-center justify-center space-x-2"
+                  >
+                    <TrendingUp className="w-5 h-5" />
+                    <span>My Progress</span>
+                  </button>
+                )}
                 {!user && (
                   <button
                     onClick={() => navigate('/teachers')}

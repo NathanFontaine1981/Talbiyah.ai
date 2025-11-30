@@ -6,6 +6,8 @@ import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
 
 interface UpcomingLesson {
   id: string;
+  learner_id: string;
+  learner_name: string;
   teacher_id: string;
   teacher_name: string;
   teacher_avatar: string | null;
@@ -71,10 +73,10 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       if (showLoading) {
         setLoading(true);
       }
-      let targetLearnerId = learnerId;
+      let targetLearnerIds: string[] = learnerId ? [learnerId] : [];
 
-      // If no learnerId provided, get current user's learner
-      if (!targetLearnerId) {
+      // If no learnerId provided, get ALL learners for this parent
+      if (!learnerId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.log('❌ No authenticated user found');
@@ -82,36 +84,37 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           return;
         }
 
-        // Get learner(s) for this parent - use limit(1) to avoid duplicate errors
+        // Get ALL learners for this parent
         const { data: learners, error: learnerError } = await supabase
           .from('learners')
           .select('id, name, parent_id')
-          .eq('parent_id', user.id)
-          .limit(1);
+          .eq('parent_id', user.id);
 
         if (learnerError) {
-          console.error('Error fetching learner:', learnerError);
+          console.error('Error fetching learners:', learnerError);
           setLoading(false);
           return;
         }
 
-        const learner = learners?.[0];
-
-        if (!learner) {
-          // No learner found - this could be a lightweight child view
+        if (!learners || learners.length === 0) {
+          // No learners found - this could be a lightweight child view
           // In this case, learnerId should be passed as a prop
           setLoading(false);
           return;
-        } else {
-          targetLearnerId = learner.id;
         }
+
+        targetLearnerIds = learners.map(l => l.id);
       }
 
-      // Get all booked lessons and filter client-side to show until lesson ends
+      console.log('🔍 UpcomingSessionsCard: targetLearnerIds =', targetLearnerIds);
+
+      // Get all booked lessons for ALL the parent's learners
+      // Using regular joins instead of !inner to avoid 406 errors when relations don't match
       const { data: lessonsData, error} = await supabase
         .from('lessons')
         .select(`
           id,
+          learner_id,
           scheduled_time,
           duration_minutes,
           status,
@@ -120,75 +123,119 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           "100ms_room_id",
           confirmation_status,
           teacher_acknowledgment_message,
-          teacher_profiles!inner(
+          learners(
+            name
+          ),
+          teacher_profiles(
             user_id,
-            profiles!inner(
+            profiles(
               full_name,
               avatar_url
             )
           ),
-          subjects!inner(
+          subjects(
             name
           )
         `)
-        .eq('learner_id', targetLearnerId)
+        .in('learner_id', targetLearnerIds)
         .eq('status', 'booked')
         .order('scheduled_time', { ascending: true });
 
       if (error) {
-        console.error('Error fetching lessons:', error);
+        console.error('❌ Error fetching lessons:', error);
         throw error;
       }
+
+      console.log('✅ Fetched lessons:', lessonsData?.length || 0, 'lessons');
+      console.log('📋 Raw lessons data:', JSON.stringify(lessonsData, null, 2));
 
       if (lessonsData) {
         // Check which lessons have insights
         const lessonIds = lessonsData.map((l: any) => l.id);
 
-        // Only query if we have lessons
-        let lessonsWithInsights = new Set();
+        // Only query if we have lessons - chunk to avoid URL length limits
+        let lessonsWithInsights = new Set<string>();
         if (lessonIds.length > 0) {
-          const { data: insightsData } = await supabase
-            .from('lesson_insights')
-            .select('lesson_id')
-            .in('lesson_id', lessonIds);
-          lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+          const CHUNK_SIZE = 10;
+          const chunks = [];
+          for (let i = 0; i < lessonIds.length; i += CHUNK_SIZE) {
+            chunks.push(lessonIds.slice(i, i + CHUNK_SIZE));
+          }
+
+          const results = await Promise.all(
+            chunks.map(chunk =>
+              supabase
+                .from('lesson_insights')
+                .select('lesson_id')
+                .in('lesson_id', chunk)
+            )
+          );
+
+          results.forEach(({ data: insightsData }) => {
+            insightsData?.forEach((i: any) => lessonsWithInsights.add(i.lesson_id));
+          });
         }
 
         // Get current user ID to check for unread messages
         const { data: { user } } = await supabase.auth.getUser();
         const currentUserId = user?.id;
 
-        // Get unread message counts for each lesson
+        // Get unread message counts for each lesson using message_reads table
+        // The new schema uses message_reads table to track which messages have been read
         const unreadMessageCounts = new Map<string, number>();
         if (currentUserId && lessonIds.length > 0) {
           try {
+            // Query messages for these lessons that the user hasn't read yet
+            // Using the new schema with message_reads join table
             const { data: messagesData } = await supabase
               .from('lesson_messages')
-              .select('lesson_id', { count: 'exact' })
+              .select(`
+                id,
+                lesson_id,
+                sender_id,
+                message_reads!left(user_id)
+              `)
               .in('lesson_id', lessonIds)
-              .eq('receiver_id', currentUserId)
-              .eq('is_read', false);
+              .neq('sender_id', currentUserId); // Don't count messages sent by the user
 
-            // Count messages per lesson
+            // Count messages that don't have a read record for this user
             messagesData?.forEach((msg: any) => {
-              const count = unreadMessageCounts.get(msg.lesson_id) || 0;
-              unreadMessageCounts.set(msg.lesson_id, count + 1);
+              const hasRead = msg.message_reads?.some((r: any) => r.user_id === currentUserId);
+              if (!hasRead) {
+                const count = unreadMessageCounts.get(msg.lesson_id) || 0;
+                unreadMessageCounts.set(msg.lesson_id, count + 1);
+              }
             });
           } catch (msgError) {
-            console.log('Note: Could not load message counts (table may not exist yet)');
+            // Silently ignore - messages feature may not be fully set up
           }
         }
 
         const now = new Date();
 
-        const formattedLessons: UpcomingLesson[] = lessonsData
+        const lessonsWithRelations = lessonsData.filter((lesson: any) => {
+          const hasRelations = lesson.learners && lesson.teacher_profiles && lesson.subjects;
+          if (!hasRelations) {
+            console.log('⚠️ Lesson missing relations:', lesson.id, {
+              hasLearners: !!lesson.learners,
+              hasTeacherProfiles: !!lesson.teacher_profiles,
+              hasSubjects: !!lesson.subjects
+            });
+          }
+          return hasRelations;
+        });
+        console.log('📊 Lessons with valid relations:', lessonsWithRelations.length);
+
+        const formattedLessons: UpcomingLesson[] = lessonsWithRelations
           .map((lesson: any) => ({
             id: lesson.id,
+            learner_id: lesson.learner_id,
+            learner_name: lesson.learners?.name || 'Student',
             teacher_id: lesson.teacher_id,
-            teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
-            teacher_avatar: lesson.teacher_profiles.profiles.avatar_url,
+            teacher_name: lesson.teacher_profiles?.profiles?.full_name || 'Teacher',
+            teacher_avatar: lesson.teacher_profiles?.profiles?.avatar_url || null,
             subject_id: lesson.subject_id,
-            subject_name: lesson.subjects.name,
+            subject_name: lesson.subjects?.name || 'Subject',
             scheduled_time: lesson.scheduled_time,
             duration_minutes: lesson.duration_minutes,
             '100ms_room_id': lesson['100ms_room_id'],
@@ -404,7 +451,9 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-400">with {lesson.teacher_name}</p>
+                    <p className="text-sm text-slate-400">
+                      {!learnerId && <span className="font-semibold text-cyan-400">{lesson.learner_name}'s class</span>}{!learnerId && ' - '}with {lesson.teacher_name}
+                    </p>
                     {lesson.teacher_acknowledgment_message && (
                       <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
                         <p className="text-xs text-green-300 italic">

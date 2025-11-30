@@ -1,0 +1,2 @@
+# Disable JWT verification for webhook endpoint
+verify_jwt = false

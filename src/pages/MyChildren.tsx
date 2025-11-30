@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Eye, X, Mail, Lock, User, Calendar, Edit2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { calculateAge, calculateSchoolYear, validateDOB, getDateConstraints } from '../utils/ageCalculations';
 
 interface Child {
   id: string;
@@ -240,25 +241,8 @@ function AddChildModal({ onClose, onSuccess }: AddChildModalProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Calculate date restrictions (0-15 years old)
-  const currentYear = new Date().getFullYear();
-  const minYear = currentYear - 15; // 15 years ago (oldest allowed)
-  const maxYear = currentYear; // Current year (newborn)
-
-  // Format: YYYY-MM-DD
-  const minDate = `${minYear}-01-01`; // Earliest birth year allowed: 2010
-  const maxDate = new Date().toISOString().split('T')[0]; // Today's date
-
-  function calculateAge(dob: string): number {
-    const today = new Date();
-    const birthDate = new Date(dob);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }
+  // Use centralized date constraints
+  const dateConstraints = getDateConstraints();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -338,13 +322,25 @@ function AddChildModal({ onClose, onSuccess }: AddChildModalProps) {
               type="date"
               value={childDob}
               onChange={(e) => setChildDob(e.target.value)}
-              min={minDate}
-              max={maxDate}
+              min={dateConstraints.min}
+              max={dateConstraints.max}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               required
             />
+            {childDob && !validateDOB(childDob) && (
+              <div className="mt-2 p-2 bg-purple-50 rounded-lg text-sm">
+                <span className="text-gray-600">Age: </span>
+                <span className="font-semibold text-purple-700">{calculateAge(childDob)} years old</span>
+                <span className="text-gray-400 mx-2">|</span>
+                <span className="text-gray-600">School Year: </span>
+                <span className="font-semibold text-purple-700">{calculateSchoolYear(childDob)}</span>
+              </div>
+            )}
+            {childDob && validateDOB(childDob) && (
+              <p className="mt-2 text-sm text-red-500">{validateDOB(childDob)}</p>
+            )}
             <p className="mt-2 text-xs text-gray-500">
-              Children must be 15 years or younger. Ages 16+ should create their own account.
+              Children must be 3 years or older. Ages 18+ should create their own account.
             </p>
           </div>
 

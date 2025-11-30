@@ -7,15 +7,23 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
   excludeTeachers?: boolean;
   requireTeacherOrAdmin?: boolean;
+  skipOnboardingCheck?: boolean;
 }
 
-export default function ProtectedRoute({ children, requireAdmin = false, excludeTeachers = false, requireTeacherOrAdmin = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({
+  children,
+  requireAdmin = false,
+  excludeTeachers = false,
+  requireTeacherOrAdmin = false,
+  skipOnboardingCheck = false
+}: ProtectedRouteProps) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
   const [isApprovedTeacher, setIsApprovedTeacher] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,62 +34,67 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
 
         if (!isMounted) return;
 
-      if (error) {
-        console.error('Session error:', error);
-        setIsAuthenticated(false);
-        setLoading(false);
-        return;
-      }
-
-      if (!session) {
-        setIsAuthenticated(false);
-        setLoading(false);
-        return;
-      }
-
-      setIsAuthenticated(true);
-
-      // Check if email is verified
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsEmailVerified(!!user?.email_confirmed_at);
-
-      // Check user role
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('roles')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-      } else if (profile) {
-        // Check if admin (for requireAdmin prop)
-        if (profile.roles && profile.roles.includes('admin')) {
-          setIsAdmin(true);
+        if (error) {
+          console.error('Session error:', error);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
         }
 
-        // Check if teacher (for excludeTeachers prop)
-        if (profile.roles && profile.roles.includes('teacher')) {
-          setIsTeacher(true);
+        if (!session) {
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
         }
-      }
 
-      // Check if user is an approved teacher (for requireTeacherOrAdmin prop)
-      const { data: teacherProfile } = await supabase
-        .from('teacher_profiles')
-        .select('status')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+        setIsAuthenticated(true);
 
-      if (teacherProfile?.status === 'approved') {
-        setIsApprovedTeacher(true);
-      }
+        // Check if email is verified
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsEmailVerified(!!user?.email_confirmed_at);
 
-      // All checks passed, set loading to false
-      if (isMounted) {
-        setLoading(false);
-      }
-    } catch (error: any) {
+        // Check user role and onboarding status
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('roles, role, onboarding_completed')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        } else if (profile) {
+          // Check if admin (for requireAdmin prop)
+          if (profile.roles && profile.roles.includes('admin')) {
+            setIsAdmin(true);
+          }
+
+          // Check if teacher (for excludeTeachers prop)
+          if (profile.roles && profile.roles.includes('teacher')) {
+            setIsTeacher(true);
+          }
+
+          // Check if parent needs onboarding (only for parent role)
+          if (profile.role === 'parent' && !profile.onboarding_completed && !skipOnboardingCheck) {
+            setNeedsOnboarding(true);
+          }
+        }
+
+        // Check if user is an approved teacher (for requireTeacherOrAdmin prop)
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('status')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (teacherProfile?.status === 'approved') {
+          setIsApprovedTeacher(true);
+        }
+
+        // All checks passed, set loading to false
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error: any) {
         console.error('Error checking auth:', error);
         if (isMounted) {
           setIsAuthenticated(false);
@@ -96,7 +109,7 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [skipOnboardingCheck]);
 
   if (loading) {
     return (
@@ -113,9 +126,14 @@ export default function ProtectedRoute({ children, requireAdmin = false, exclude
     return <Navigate to="/" replace />;
   }
 
-  // Check if email is verified (skip for admin users)
-  if (!isEmailVerified && !requireAdmin) {
+  // Check if email is verified (skip for admin users and onboarding page)
+  if (!isEmailVerified && !requireAdmin && !skipOnboardingCheck) {
     return <Navigate to="/verify-email" replace />;
+  }
+
+  // Check if parent needs to complete onboarding
+  if (needsOnboarding) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (requireAdmin && !isAdmin) {

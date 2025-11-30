@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateHMSManagementToken } from '../_shared/generate-hms-token.ts'
+import { getHMSManagementToken } from '../_shared/hms.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -162,15 +162,13 @@ serve(async (req) => {
           break
         }
 
-        // Generate fresh 100ms token automatically (no more 7-day renewal!)
+        // Generate fresh 100ms token automatically (no more manual renewal!)
         let HMS_MANAGEMENT_TOKEN: string | null = null
         try {
-          HMS_MANAGEMENT_TOKEN = await generateHMSManagementToken()
+          HMS_MANAGEMENT_TOKEN = await getHMSManagementToken()
           console.log('✅ Generated fresh 100ms token automatically')
         } catch (error) {
           console.error('❌ Failed to generate HMS token:', error.message)
-          console.log('⚠️  Falling back to stored token')
-          HMS_MANAGEMENT_TOKEN = Deno.env.get('HMS_MANAGEMENT_TOKEN')
         }
         const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID') || '6905fb03033903926e627d60'
 

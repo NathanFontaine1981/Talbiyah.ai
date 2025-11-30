@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award, TrendingUp, MessageSquare, User } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
 import TalbiyahBot from '../components/TalbiyahBot';
@@ -29,6 +29,8 @@ export default function QuranProgress() {
   const [loading, setLoading] = useState(true);
   const [learnerId, setLearnerId] = useState<string | null>(null);
   const [savingAyah, setSavingAyah] = useState<string | null>(null);
+  const [teacherNotes, setTeacherNotes] = useState<string | null>(null);
+  const [teacherName, setTeacherName] = useState<string | null>(null);
 
   useEffect(() => {
     loadProgress();
@@ -211,6 +213,28 @@ export default function QuranProgress() {
       console.log('Ayah Progress Records:', ayahProgressData?.length || 0);
       console.log('Completed Surahs (all 3 criteria):', completedSurahs);
       console.log('===================================');
+
+      // Load teacher notes if learner exists
+      if (learner) {
+        const { data: relationshipData } = await supabase
+          .from('student_teacher_relationships')
+          .select(`
+            teacher_general_notes,
+            teacher:teacher_profiles!student_teacher_relationships_teacher_id_fkey (
+              user:profiles!teacher_profiles_user_id_fkey (
+                full_name
+              )
+            )
+          `)
+          .eq('student_id', learner.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (relationshipData?.teacher_general_notes) {
+          setTeacherNotes(relationshipData.teacher_general_notes);
+          setTeacherName((relationshipData.teacher as any)?.user?.full_name || 'Your Teacher');
+        }
+      }
     } catch (error) {
       console.error('Error loading progress:', error);
     } finally {
@@ -395,6 +419,24 @@ export default function QuranProgress() {
             </div>
           </div>
         </div>
+
+        {/* Teacher Notes Section */}
+        {teacherNotes && (
+          <div className="bg-gradient-to-br from-purple-800/40 to-pink-800/40 rounded-2xl p-8 border border-purple-500/50 backdrop-blur-sm shadow-xl mb-8">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-white">Notes from {teacherName}</h3>
+                  <User className="w-4 h-4 text-purple-400" />
+                </div>
+                <p className="text-purple-100 whitespace-pre-wrap leading-relaxed">{teacherNotes}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
           <h2 className="text-2xl font-bold text-white mb-6">Surah Syllabus - Ayah Level Tracking</h2>

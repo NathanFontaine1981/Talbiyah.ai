@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, User, CalendarClock, Sparkles, MessageCircle, X, ArrowLeft, Filter } from 'lucide-react';
+import { Calendar, Clock, Video, User, CalendarClock, Sparkles, MessageCircle, X, ArrowLeft, Filter, Play, Download, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
+import { format, parseISO, differenceInMinutes, isPast, differenceInDays } from 'date-fns';
 
 interface Lesson {
   id: string;
+  learner_id?: string;
+  learner_name?: string;
   teacher_id: string;
   teacher_name: string;
   teacher_avatar: string | null;
@@ -17,6 +19,10 @@ interface Lesson {
   '100ms_room_id': string | null;
   has_insights: boolean;
   unread_messages: number;
+  confirmation_status?: string;
+  has_recording?: boolean;
+  recording_url?: string;
+  recording_expires_at?: string;
 }
 
 export default function MyClasses() {
@@ -45,58 +51,71 @@ export default function MyClasses() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (teacherProfile?.status === 'approved') {
-        setIsTeacher(true);
-      }
+      const userIsTeacher = teacherProfile?.status === 'approved';
+      setIsTeacher(userIsTeacher);
 
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+      let query;
 
-      let learnerId = learner?.id;
-
-      if (!learnerId) {
-        // Check if user IS a learner (not just a parent)
-        const { data: directLearner } = await supabase
+      if (userIsTeacher) {
+        // Load lessons as teacher
+        query = supabase
+          .from('lessons')
+          .select(`
+            id,
+            learner_id,
+            scheduled_time,
+            duration_minutes,
+            status,
+            teacher_id,
+            subject_id,
+            "100ms_room_id",
+            confirmation_status,
+            learners!inner(
+              name
+            ),
+            subjects!inner(
+              name
+            )
+          `)
+          .eq('teacher_id', teacherProfile.id);
+      } else {
+        // Load lessons as student
+        const { data: learner } = await supabase
           .from('learners')
           .select('id')
           .eq('parent_id', user.id)
           .maybeSingle();
 
-        if (directLearner) {
-          learnerId = directLearner.id;
+        let learnerId = learner?.id;
+
+        if (!learnerId) {
+          setLoading(false);
+          return;
         }
-      }
 
-      if (!learnerId) {
-        setLoading(false);
-        return;
-      }
-
-      let query = supabase
-        .from('lessons')
-        .select(`
-          id,
-          scheduled_time,
-          duration_minutes,
-          status,
-          teacher_id,
-          subject_id,
-          "100ms_room_id",
-          teacher_profiles!inner(
-            user_id,
-            profiles!inner(
-              full_name,
-              avatar_url
+        query = supabase
+          .from('lessons')
+          .select(`
+            id,
+            scheduled_time,
+            duration_minutes,
+            status,
+            teacher_id,
+            subject_id,
+            "100ms_room_id",
+            teacher_profiles!inner(
+              user_id,
+              profiles!inner(
+                full_name,
+                avatar_url
+              )
+            ),
+            subjects!inner(
+              name
             )
-          ),
-          subjects!inner(
-            name
-          )
-        `)
-        .eq('learner_id', learnerId);
+          `)
+          .eq('learner_id', learnerId);
+      }
 
       // Apply filter
       if (filter === 'upcoming') {
@@ -132,6 +151,22 @@ export default function MyClasses() {
           lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
         }
 
+        // Get recording data
+        const recordingsMap = new Map<string, { url: string; expires_at: string }>();
+        if (lessonIds.length > 0) {
+          const { data: recordingsData } = await supabase
+            .from('lesson_recordings')
+            .select('lesson_id, recording_url, expires_at')
+            .in('lesson_id', lessonIds);
+
+          recordingsData?.forEach((rec: any) => {
+            recordingsMap.set(rec.lesson_id, {
+              url: rec.recording_url,
+              expires_at: rec.expires_at
+            });
+          });
+        }
+
         // Get unread message counts
         const unreadMessageCounts = new Map<string, number>();
         if (lessonIds.length > 0) {
@@ -148,20 +183,29 @@ export default function MyClasses() {
           });
         }
 
-        const formattedLessons: Lesson[] = lessonsData.map((lesson: any) => ({
-          id: lesson.id,
-          teacher_id: lesson.teacher_id,
-          teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
-          teacher_avatar: lesson.teacher_profiles.profiles.avatar_url,
-          subject_id: lesson.subject_id,
-          subject_name: lesson.subjects.name,
-          scheduled_time: lesson.scheduled_time,
-          duration_minutes: lesson.duration_minutes,
-          status: lesson.status,
-          '100ms_room_id': lesson['100ms_room_id'],
-          has_insights: lessonsWithInsights.has(lesson.id),
-          unread_messages: unreadMessageCounts.get(lesson.id) || 0
-        }));
+        const formattedLessons: Lesson[] = lessonsData.map((lesson: any) => {
+          const recording = recordingsMap.get(lesson.id);
+          return {
+            id: lesson.id,
+            learner_id: lesson.learner_id,
+            learner_name: lesson.learners?.name,
+            teacher_id: lesson.teacher_id,
+            teacher_name: lesson.teacher_profiles?.profiles?.full_name || 'Teacher',
+            teacher_avatar: lesson.teacher_profiles?.profiles?.avatar_url || null,
+            subject_id: lesson.subject_id,
+            subject_name: lesson.subjects.name,
+            scheduled_time: lesson.scheduled_time,
+            duration_minutes: lesson.duration_minutes,
+            status: lesson.status,
+            '100ms_room_id': lesson['100ms_room_id'],
+            has_insights: lessonsWithInsights.has(lesson.id),
+            unread_messages: unreadMessageCounts.get(lesson.id) || 0,
+            confirmation_status: lesson.confirmation_status,
+            has_recording: !!recording,
+            recording_url: recording?.url,
+            recording_expires_at: recording?.expires_at
+          };
+        });
         setLessons(formattedLessons);
       }
     } catch (error) {
@@ -382,7 +426,13 @@ export default function MyClasses() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-400">with {lesson.teacher_name}</p>
+                        <p className="text-sm text-slate-400">
+                          {isTeacher ? (
+                            <>for <span className="font-semibold text-cyan-400">{lesson.learner_name}</span></>
+                          ) : (
+                            <>with {lesson.teacher_name}</>
+                          )}
+                        </p>
                       </div>
                     </div>
 
@@ -413,14 +463,19 @@ export default function MyClasses() {
                       </div>
 
                       <div className="flex items-center space-x-3">
-                        {lesson.unread_messages > 0 && (
+                        {/* Message button - show for teachers always, for students only if unread */}
+                        {(isTeacher || lesson.unread_messages > 0) && !lessonIsPast && (
                           <button
-                            onClick={() => viewMessage(lesson.id)}
-                            className="relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition flex items-center space-x-2 animate-pulse"
+                            onClick={() => navigate(`/lesson/${lesson.id}`)}
+                            className={`relative px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
+                              lesson.unread_messages > 0
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white animate-pulse'
+                                : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                            }`}
                           >
                             <MessageCircle className="w-4 h-4" />
                             <span>Message</span>
-                            {lesson.unread_messages > 1 && (
+                            {lesson.unread_messages > 0 && (
                               <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center">
                                 {lesson.unread_messages}
                               </span>
@@ -428,14 +483,49 @@ export default function MyClasses() {
                           </button>
                         )}
 
-                        {lessonIsPast && lesson.has_insights && (
+                        {lessonIsPast && (
                           <button
                             onClick={handleViewInsights}
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-medium transition flex items-center space-x-2"
+                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-medium transition flex items-center space-x-2"
                           >
-                            <Sparkles className="w-4 h-4" />
-                            <span>View Insights</span>
+                            <BookOpen className="w-4 h-4" />
+                            <span>Insights</span>
                           </button>
+                        )}
+
+                        {/* Recording buttons for past lessons */}
+                        {lessonIsPast && lesson.has_recording && lesson.recording_url && (
+                          (() => {
+                            const daysLeft = lesson.recording_expires_at
+                              ? differenceInDays(parseISO(lesson.recording_expires_at), new Date())
+                              : 0;
+                            const isExpired = daysLeft <= 0;
+
+                            return isExpired ? (
+                              <span className="text-xs text-slate-500 px-2">Recording expired</span>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <a
+                                  href={lesson.recording_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 transition text-sm flex items-center space-x-1"
+                                >
+                                  <Play className="w-4 h-4" />
+                                  <span>Watch</span>
+                                </a>
+                                <a
+                                  href={lesson.recording_url}
+                                  download
+                                  className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg transition"
+                                  title={`Download - ${daysLeft} days left`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </a>
+                                <span className="text-xs text-amber-400">{daysLeft}d left</span>
+                              </div>
+                            );
+                          })()
                         )}
 
                         {!lessonIsPast && canReschedule && (

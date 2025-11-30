@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { getHMSManagementToken } from "../_shared/hms.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,10 +38,14 @@ serve(async (req) => {
 
   try {
     const { roomName, description, bookingId } = requestData
-    
-    const managementToken = Deno.env.get('HMS_MANAGEMENT_TOKEN')
-    if (!managementToken) {
-      throw new Error('HMS Management Token not found. Please set HMS_MANAGEMENT_TOKEN in your environment variables.')
+
+    // Generate 100ms management token dynamically (auto-refreshes, never expires)
+    let managementToken: string
+    try {
+      managementToken = await getHMSManagementToken()
+    } catch (tokenError) {
+      console.error('Failed to generate 100ms token:', tokenError)
+      throw new Error(`Failed to generate HMS management token: ${tokenError.message}`)
     }
 
     if (!roomName) {
@@ -59,7 +64,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         description: description || `Live Islamic Learning Session: ${roomName}`,
-        template_id: '684b54d6033903926e6127a1', // Your Talbiyah.ai template
+        template_id: '6905fb03033903926e627d60', // Talbiyah.ai template
         region: 'in', // India region
       })
     })
@@ -389,7 +394,7 @@ serve(async (req) => {
             ? 'Try again in a few minutes - this may be a temporary HMS issue'
             : 'Check HMS configuration and try again',
           troubleshooting: {
-            checkToken: 'Verify HMS_MANAGEMENT_TOKEN is valid',
+            checkToken: 'Verify HMS_APP_ACCESS_KEY and HMS_APP_SECRET are set in Supabase secrets',
             checkTemplate: 'Ensure template 684b54d6033903926e6127a1 exists',
             checkRoles: 'Verify template has host and guest roles configured',
             retryLater: 'Room codes may need more time to propagate in HMS system'

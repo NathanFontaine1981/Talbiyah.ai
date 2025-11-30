@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, X, Calendar, User as UserIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { calculateAge, calculateSchoolYear, getDateConstraints } from '../../utils/ageCalculations';
 
 interface Child {
   id: string;
@@ -23,11 +24,8 @@ export default function ParentOnboarding() {
   const [childDob, setChildDob] = useState('');
   const [childGender, setChildGender] = useState('');
 
-  // Calculate date restrictions (0-15 years old)
-  const currentYear = new Date().getFullYear();
-  const minYear = currentYear - 15; // 15 years ago (oldest allowed)
-  const minDate = `${minYear}-01-01`; // Earliest birth year allowed: 2010
-  const maxDate = new Date().toISOString().split('T')[0]; // Today's date
+  // Use centralized date constraints
+  const dateConstraints = getDateConstraints();
 
   useState(() => {
     loadParentInfo();
@@ -46,17 +44,6 @@ export default function ParentOnboarding() {
         setParentName(profile.full_name || '');
       }
     }
-  }
-
-  function calculateAge(dob: string): number {
-    const today = new Date();
-    const birthDate = new Date(dob);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
   }
 
   function handleAddChild() {
@@ -208,12 +195,21 @@ export default function ParentOnboarding() {
                   type="date"
                   value={childDob}
                   onChange={(e) => setChildDob(e.target.value)}
-                  min={minDate}
-                  max={maxDate}
+                  min={dateConstraints.min}
+                  max={dateConstraints.max}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
+                {childDob && (
+                  <div className="mt-2 p-2 bg-purple-50 rounded-lg text-sm">
+                    <span className="text-gray-600">Age: </span>
+                    <span className="font-semibold text-purple-700">{calculateAge(childDob)} years old</span>
+                    <span className="text-gray-400 mx-2">|</span>
+                    <span className="text-gray-600">School Year: </span>
+                    <span className="font-semibold text-purple-700">{calculateSchoolYear(childDob)}</span>
+                  </div>
+                )}
                 <p className="mt-2 text-xs text-gray-500">
-                  Children must be 15 years or younger. Ages 16+ should create their own account.
+                  Children must be 3 years or older. Ages 18+ should create their own account.
                 </p>
               </div>
 
@@ -285,7 +281,8 @@ export default function ParentOnboarding() {
                       <div>
                         <p className="font-semibold text-gray-900">{child.name}</p>
                         <p className="text-sm text-gray-600">
-                          Age {child.age}
+                          Age {child.dob ? calculateAge(child.dob) : child.age}
+                          {child.dob && ` • ${calculateSchoolYear(child.dob)}`}
                           {child.gender && ` • ${child.gender}`}
                         </p>
                       </div>

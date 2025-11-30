@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get lesson details
+    // Get lesson details - use left joins to avoid missing data issues
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
       .select(`
@@ -42,14 +42,6 @@ Deno.serve(async (req: Request) => {
         learner_id,
         teacher_id,
         subject_id,
-        learners!inner(
-          id,
-          parent_id,
-          profiles!inner(full_name, email)
-        ),
-        teacher_profiles!inner(
-          profiles!inner(full_name)
-        ),
         subjects(name)
       `)
       .eq("id", lesson_id)
@@ -58,12 +50,37 @@ Deno.serve(async (req: Request) => {
     if (lessonError || !lesson) {
       console.error("Error fetching lesson:", lessonError);
       return new Response(
-        JSON.stringify({ error: "Lesson not found" }),
+        JSON.stringify({ error: "Lesson not found", details: lessonError?.message }),
         {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Get learner info separately to handle missing data gracefully
+    let studentEmail = "";
+    let studentName = "Student";
+
+    const { data: learnerData } = await supabase
+      .from("learners")
+      .select("id, name, parent_id")
+      .eq("id", lesson.learner_id)
+      .maybeSingle();
+
+    if (learnerData?.parent_id) {
+      const { data: parentProfile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", learnerData.parent_id)
+        .maybeSingle();
+
+      if (parentProfile) {
+        studentName = parentProfile.full_name || learnerData.name || "Student";
+        studentEmail = parentProfile.email || "";
+      }
+    } else if (learnerData) {
+      studentName = learnerData.name || "Student";
     }
 
     // Update lesson to acknowledged
@@ -82,7 +99,7 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(`✅ Lesson ${lesson_id} acknowledged by teacher ${lesson.teacher_id}`);
-    console.log(`📧 Send acknowledgment email to: ${lesson.learners.profiles.email}`);
+    console.log(`📧 Send acknowledgment email to: ${studentEmail} (${studentName})`);
 
     // TODO: Send email notification to student
     // Include teacher message if provided

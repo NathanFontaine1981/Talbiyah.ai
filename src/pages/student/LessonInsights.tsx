@@ -13,12 +13,28 @@ import {
   Book,
   Target,
   Lightbulb,
-  TrendingUp,
   BookMarked,
-  XCircle
+  XCircle,
+  Clock,
+  Play,
+  GraduationCap,
+  PenTool,
+  Volume2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Trophy,
+  MessageCircle,
+  RotateCcw,
+  Scissors,
+  Send,
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
-import ReactMarkdown from 'react-markdown';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface LessonInsight {
   id: string;
@@ -38,107 +54,387 @@ interface LessonInsight {
       lesson_date: string;
       duration_minutes?: number;
     };
-  };
+  } | null;
+  key_topics?: string[];
+  areas_of_strength?: string[];
+  areas_for_improvement?: string[];
+  recommendations?: string[];
   viewed_by_student: boolean;
   student_rating: number | null;
   created_at: string;
 }
 
-interface Lesson {
-  scheduled_time: string;
-  duration_minutes: number;
-  subjects: { name: string };
-  teacher_profiles: {
-    profiles: { full_name: string };
+interface RecordingData {
+  primary?: {
+    presigned_url: string;
+    duration: number;
   };
+  screen_share?: {
+    presigned_url: string;
+    duration: number;
+  };
+  transcript_url?: string;
+  days_until_expiry?: number;
+  expires_warning?: boolean;
+}
+
+// Word interface for vocabulary
+interface VocabWord {
+  arabic: string;
+  transliteration: string;
+  english: string;
+  wordType?: string;
+  example?: string;
 }
 
 // Quiz interfaces
 interface QuizQuestion {
   question: string;
-  options: string[];
-  correctAnswer: number; // index of correct answer
+  options: { text: string; arabic?: string; transliteration?: string }[];
+  correctAnswer: number;
 }
 
-interface QuizSection {
+// Dialogue line interface
+interface DialogueLine {
+  speaker: string;
+  arabic: string;
+  transliteration: string;
+  english: string;
+}
+
+// Key sentence interface
+interface KeySentence {
+  arabic: string;
+  transliteration: string;
+  english: string;
+}
+
+// Grammar point interface
+interface GrammarPoint {
   title: string;
-  questions: QuizQuestion[];
+  arabicTitle?: string;
+  transliteration?: string;
+  explanation: string;
+  examples: { arabic: string; english: string }[];
 }
 
-// Helper function to parse quiz questions from markdown
-function parseQuizQuestions(content: string): QuizQuestion[] {
-  const questions: QuizQuestion[] = [];
+// Teacher note interface
+interface TeacherNote {
+  arabic?: string;
+  transliteration?: string;
+  note: string;
+  meanings?: string[];
+}
+
+// Clean markdown text - remove # headers and other markdown artifacts
+function cleanMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s*/gm, '') // Remove # headers
+    .replace(/\*\*/g, '')        // Remove bold markers
+    .replace(/^\s*[-•]\s*/gm, '') // Remove bullet points at start
+    .replace(/\|/g, ' ')         // Remove table pipes
+    .replace(/---+/g, '')        // Remove horizontal rules
+    .replace(/^\s*\d+\.\s*/gm, '') // Remove numbered lists
+    .replace(/\s*[-–]\s*template\s*/gi, '') // Remove "- Template" or "– Template"
+    .replace(/\s+template\s*$/gi, '') // Remove trailing "Template"
+    .replace(/^template\s+/gi, '') // Remove leading "Template"
+    .trim();
+}
+
+// Parse vocabulary from content
+function parseVocabulary(content: string): VocabWord[] {
+  const words: VocabWord[] = [];
   const lines = content.split('\n');
-  let currentQuestion: { question: string; options: string[]; correctAnswer: number } | null = null;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Check for question (starts with **Q)
-    if (line.match(/^\*\*Q\d+\.\*\*/)) {
-      // Save previous question
-      if (currentQuestion && currentQuestion.options.length > 0) {
-        questions.push(currentQuestion);
-      }
-
-      // Extract question text - everything before the first option (A), B), C), or D))
-      let questionMatch = line.match(/^\*\*Q\d+\.\*\*\s*(.+?)(?=\s*[A-D]\))/);
-      let questionText = questionMatch ? questionMatch[1].trim() : line.replace(/^\*\*Q\d+\.\*\*\s*/, '');
-
-      currentQuestion = {
-        question: questionText,
-        options: [],
-        correctAnswer: -1
-      };
-
-      // Check if options are on the same line (inline format)
-      const inlineOptionsMatch = line.match(/[A-D]\)[^A-D]+/g);
-      if (inlineOptionsMatch && inlineOptionsMatch.length > 0) {
-        inlineOptionsMatch.forEach((optMatch) => {
-          const optionText = optMatch.replace(/^[A-D]\)\s*/, '');
-          const hasCheckmark = optionText.includes('✅');
-          const cleanText = optionText.replace(/\s*✅\s*$/, '').trim();
-
-          if (hasCheckmark) {
-            currentQuestion!.correctAnswer = currentQuestion!.options.length;
-          }
-
-          currentQuestion!.options.push(cleanText);
-        });
+  for (const line of lines) {
+    // Look for table rows with Arabic | Transliteration | English
+    const tableMatch = line.match(/\|\s*([أ-يً-ْ\s]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)/);
+    if (tableMatch) {
+      const arabic = tableMatch[1].trim();
+      const translit = tableMatch[2].trim();
+      const english = tableMatch[3].trim();
+      if (arabic && !arabic.includes('Arabic') && !arabic.includes('---')) {
+        words.push({ arabic, transliteration: translit, english });
       }
     }
-    // Check for option on separate line (starts with -)
-    else if (line.match(/^-\s+[A-D]\)/) && currentQuestion) {
-      const optionText = line.replace(/^-\s+[A-D]\)\s*/, '');
-      const hasCheckmark = optionText.includes('✅');
-      const cleanText = optionText.replace(/\s*✅\s*$/, '').trim();
 
-      if (hasCheckmark) {
-        currentQuestion.correctAnswer = currentQuestion.options.length;
-      }
-
-      currentQuestion.options.push(cleanText);
+    // Look for bullet point format: - Arabic (transliteration) - English
+    const bulletMatch = line.match(/[-•]\s*([أ-يً-ْ\s]+)\s*\(([^)]+)\)\s*[-–:]\s*(.+)/);
+    if (bulletMatch) {
+      words.push({
+        arabic: bulletMatch[1].trim(),
+        transliteration: bulletMatch[2].trim(),
+        english: bulletMatch[3].trim()
+      });
     }
-    // Check for inline options on next line (without dashes)
-    else if (line.match(/^[A-D]\)/) && currentQuestion && currentQuestion.options.length === 0) {
-      const inlineOptionsMatch = line.match(/[A-D]\)[^A-D]+/g);
-      if (inlineOptionsMatch) {
-        inlineOptionsMatch.forEach((optMatch) => {
-          const optionText = optMatch.replace(/^[A-D]\)\s*/, '');
-          const hasCheckmark = optionText.includes('✅');
-          const cleanText = optionText.replace(/\s*✅\s*$/, '').trim();
+  }
 
-          if (hasCheckmark) {
-            currentQuestion!.correctAnswer = currentQuestion!.options.length;
-          }
+  return words.slice(0, 15); // Limit to 15 words
+}
 
-          currentQuestion!.options.push(cleanText);
+// Parse key sentences
+function parseKeySentences(content: string): KeySentence[] {
+  const sentences: KeySentence[] = [];
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    // Table format
+    const tableMatch = line.match(/\|\s*([أ-يً-ْ\s,.؟!]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)/);
+    if (tableMatch) {
+      const arabic = tableMatch[1].trim();
+      if (arabic && !arabic.includes('Arabic') && !arabic.includes('---') && arabic.length > 3) {
+        sentences.push({
+          arabic,
+          transliteration: tableMatch[2].trim(),
+          english: tableMatch[3].trim()
         });
       }
     }
   }
 
-  // Add last question
+  return sentences.slice(0, 10);
+}
+
+// Parse grammar points
+function parseGrammarPoints(content: string): GrammarPoint[] {
+  const points: GrammarPoint[] = [];
+  const sections = content.split(/\d️⃣|\n(?=\d+\.\s)/);
+
+  for (const section of sections) {
+    if (!section.trim()) continue;
+
+    const lines = section.trim().split('\n');
+    const titleLine = lines[0]?.trim();
+    if (!titleLine) continue;
+
+    // Extract Arabic from title if present
+    const arabicMatch = titleLine.match(/\(([أ-يً-ْ\s+]+)\)/);
+    const title = titleLine.replace(/\([أ-يً-ْ\s+]+\)/, '').replace(/^[\d.]+\s*/, '').trim();
+
+    const explanation = lines.slice(1).find(l => !l.includes('*') && l.trim())?.trim() || '';
+
+    // Find example sentences
+    const examples: { arabic: string; english: string }[] = [];
+    for (const line of lines) {
+      const exMatch = line.match(/[*•-]\s*([أ-يً-ْ\s,.؟!]+)\s*[-–]\s*(.+)/);
+      if (exMatch) {
+        examples.push({ arabic: exMatch[1].trim(), english: exMatch[2].trim() });
+      }
+    }
+
+    if (title) {
+      points.push({
+        title: cleanMarkdown(title),
+        arabicTitle: arabicMatch?.[1],
+        explanation: cleanMarkdown(explanation),
+        examples
+      });
+    }
+  }
+
+  return points;
+}
+
+// Parse dialogues
+function parseDialogues(content: string): DialogueLine[] {
+  const dialogues: DialogueLine[] = [];
+  const lines = content.split('\n');
+
+  let currentSpeaker = '';
+  let currentArabic = '';
+  let currentTranslit = '';
+  let currentEnglish = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Detect speaker change (T:, S:, Teacher:, Student:)
+    const speakerMatch = trimmed.match(/^(T|S|Teacher|Student)[:\s]+(.+)?/i);
+    if (speakerMatch) {
+      // Save previous dialogue if exists
+      if (currentSpeaker && currentArabic) {
+        dialogues.push({
+          speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
+          arabic: currentArabic,
+          transliteration: currentTranslit,
+          english: currentEnglish
+        });
+      }
+
+      currentSpeaker = speakerMatch[1];
+      const rest = speakerMatch[2]?.trim() || '';
+
+      // Check if Arabic is on the same line
+      if (/[أ-ي]/.test(rest)) {
+        currentArabic = rest.replace(/\([^)]+\)$/, '').trim();
+        const parenMatch = rest.match(/\(([^)]+)\)$/);
+        if (parenMatch) currentEnglish = parenMatch[1];
+      }
+      currentTranslit = '';
+      continue;
+    }
+
+    // Check for Arabic content
+    if (/[أ-ي]/.test(trimmed) && currentSpeaker) {
+      currentArabic = trimmed.replace(/\([^)]+\)$/, '').trim();
+    }
+
+    // Check for English translation in parentheses
+    const parenMatch = trimmed.match(/^\(([^)]+)\)$/);
+    if (parenMatch && currentSpeaker) {
+      currentEnglish = parenMatch[1];
+      // Push completed dialogue
+      dialogues.push({
+        speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
+        arabic: currentArabic,
+        transliteration: currentTranslit,
+        english: currentEnglish
+      });
+      currentSpeaker = '';
+      currentArabic = '';
+      currentTranslit = '';
+      currentEnglish = '';
+    }
+  }
+
+  // Don't forget last dialogue
+  if (currentSpeaker && currentArabic) {
+    dialogues.push({
+      speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
+      arabic: currentArabic,
+      transliteration: currentTranslit,
+      english: currentEnglish
+    });
+  }
+
+  return dialogues;
+}
+
+// Parse teacher notes
+function parseTeacherNotes(content: string): TeacherNote[] {
+  const notes: TeacherNote[] = [];
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.includes('---')) continue;
+
+    // Look for lines starting with checkmark or bullet
+    if (trimmed.startsWith('✅') || trimmed.startsWith('-') || trimmed.startsWith('•')) {
+      const noteText = trimmed.replace(/^[✅•-]\s*/, '');
+
+      // Try to extract Arabic word if present
+      const arabicMatch = noteText.match(/([أ-يً-ْ]+)/);
+      const arabic = arabicMatch?.[1];
+
+      // Check for multiple meanings
+      const meaningsMatch = noteText.match(/(\d+)\s*meanings?/i);
+      const meanings: string[] = [];
+      if (meaningsMatch) {
+        const parts = noteText.split(/,|;/).slice(1);
+        parts.forEach(p => meanings.push(p.trim()));
+      }
+
+      notes.push({
+        arabic,
+        note: cleanMarkdown(noteText),
+        meanings: meanings.length > 0 ? meanings : undefined
+      });
+    }
+  }
+
+  return notes;
+}
+
+// Parse quiz questions
+function parseQuizQuestions(content: string): QuizQuestion[] {
+  const questions: QuizQuestion[] = [];
+  const lines = content.split('\n');
+  let currentQuestion: QuizQuestion | null = null;
+  let pendingOptionsLine: string | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Detect question - starts with number, possibly with ** or Q prefix
+    const qMatch = line.match(/^(?:\*\*)?(?:Q)?(\d+)[.)]\s*(?:\*\*)?\s*(.+)/);
+    if (qMatch) {
+      if (currentQuestion && currentQuestion.options.length > 0) {
+        questions.push(currentQuestion);
+      }
+
+      // Get the full question text
+      const questionText = qMatch[2];
+
+      currentQuestion = {
+        question: cleanMarkdown(questionText),
+        options: [],
+        correctAnswer: -1
+      };
+      pendingOptionsLine = null;
+      continue;
+    }
+
+    // Detect options line (starts with A) and contains b) c) etc)
+    // Format: "A) option1 b) option2 c) option3"
+    const optionsLineMatch = line.match(/^[Aa]\)\s*.+[Bb]\)\s*.+/);
+    if (optionsLineMatch && currentQuestion) {
+      // Split by a), b), c), d) pattern - case insensitive
+      const parts = line.split(/\s*([Aa]|[Bb]|[Cc]|[Dd])\)\s*/);
+
+      // parts will be like: ["", "A", "option1", "b", "option2", "c", "option3"]
+      for (let j = 1; j < parts.length; j += 2) {
+        const optionLetter = parts[j];
+        const optionText = parts[j + 1]?.trim();
+
+        if (optionText) {
+          const isCorrect = optionText.includes('✅');
+          const cleanText = optionText.replace(/✅/g, '').trim();
+
+          if (cleanText) {
+            if (isCorrect) currentQuestion.correctAnswer = currentQuestion.options.length;
+            const arabicMatch = cleanText.match(/([أ-يً-ْ\s]+)/);
+            currentQuestion.options.push({
+              text: cleanMarkdown(cleanText),
+              arabic: arabicMatch?.[1]?.trim()
+            });
+          }
+        }
+      }
+      continue;
+    }
+
+    // Detect individual option on its own line
+    const singleOptMatch = line.match(/^[-•]?\s*([Aa]|[Bb]|[Cc]|[Dd])\)\s*(.+)/);
+    if (singleOptMatch && currentQuestion) {
+      const optText = singleOptMatch[2].trim();
+      const isCorrect = optText.includes('✅');
+      const cleanText = optText.replace(/✅/g, '').trim();
+
+      if (isCorrect) currentQuestion.correctAnswer = currentQuestion.options.length;
+
+      const arabicMatch = cleanText.match(/([أ-يً-ْ\s]+)/);
+      currentQuestion.options.push({
+        text: cleanMarkdown(cleanText),
+        arabic: arabicMatch?.[1]?.trim()
+      });
+      continue;
+    }
+
+    // True/False detection
+    if (line.toLowerCase().includes('true') || line.toLowerCase().includes('false')) {
+      if (currentQuestion && currentQuestion.options.length === 0) {
+        currentQuestion.options = [
+          { text: 'True' },
+          { text: 'False' }
+        ];
+        if (line.includes('✅')) {
+          currentQuestion.correctAnswer = line.toLowerCase().includes('true') ? 0 : 1;
+        }
+      }
+    }
+  }
+
   if (currentQuestion && currentQuestion.options.length > 0) {
     questions.push(currentQuestion);
   }
@@ -146,40 +442,211 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
   return questions;
 }
 
+// Parse homework tasks
+function parseHomework(content: string): { task: string; type: 'write' | 'speak' | 'read' | 'listen' | 'other'; details?: string }[] {
+  const tasks: { task: string; type: 'write' | 'speak' | 'read' | 'listen' | 'other'; details?: string }[] = [];
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.includes('---')) continue;
+
+    // Look for task markers
+    if (trimmed.match(/^[📝🗣️📖🎧•-]/)) {
+      let type: 'write' | 'speak' | 'read' | 'listen' | 'other' = 'other';
+      if (trimmed.includes('📝') || trimmed.toLowerCase().includes('write')) type = 'write';
+      else if (trimmed.includes('🗣️') || trimmed.toLowerCase().includes('speak') || trimmed.toLowerCase().includes('practice')) type = 'speak';
+      else if (trimmed.includes('📖') || trimmed.toLowerCase().includes('read') || trimmed.toLowerCase().includes('revise')) type = 'read';
+      else if (trimmed.includes('🎧') || trimmed.toLowerCase().includes('listen')) type = 'listen';
+
+      tasks.push({
+        task: cleanMarkdown(trimmed.replace(/^[📝🗣️📖🎧•-]\s*/, '')),
+        type
+      });
+    }
+  }
+
+  return tasks;
+}
+
+// Section parsing
+interface InsightSection {
+  title: string;
+  content: string;
+  type: 'summary' | 'vocabulary' | 'sentences' | 'grammar' | 'notes' | 'dialogue' | 'pronunciation' | 'takeaways' | 'quiz' | 'homework' | 'reflection' | 'other';
+}
+
+function parseInsightSections(content: string): InsightSection[] {
+  const sections: InsightSection[] = [];
+  const sectionRegex = /(?:^|\n)(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Grammar Focus|Teacher Notes|Conversation Practice|Pronunciation|Key Takeaways|Mini Quiz|Homework|Talbiyah Insights Summary|Final Reflection)[^\n]*/gi;
+
+  let lastIndex = 0;
+  let match;
+  const matches: { title: string; start: number }[] = [];
+
+  // Find all section headers
+  const tempContent = content.replace(/\r\n/g, '\n');
+  const lines = tempContent.split('\n');
+  let currentPos = 0;
+
+  for (const line of lines) {
+    const headerMatch = line.match(/^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Grammar Focus|Teacher Notes|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Mini Quiz|Homework|Practice Tasks|Talbiyah Insights Summary|Final Reflection)/i);
+    if (headerMatch) {
+      matches.push({ title: headerMatch[1].trim(), start: currentPos });
+    }
+    currentPos += line.length + 1;
+  }
+
+  // Extract content for each section
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].start;
+    const end = i < matches.length - 1 ? matches[i + 1].start : tempContent.length;
+    const sectionContent = tempContent.slice(start, end).trim();
+
+    // Remove the header line from content
+    const contentLines = sectionContent.split('\n').slice(1).join('\n').trim();
+
+    let type: InsightSection['type'] = 'other';
+    const titleLower = matches[i].title.toLowerCase();
+    if (titleLower.includes('summary') && !titleLower.includes('talbiyah')) type = 'summary';
+    else if (titleLower.includes('vocabulary')) type = 'vocabulary';
+    else if (titleLower.includes('sentence')) type = 'sentences';
+    else if (titleLower.includes('grammar')) type = 'grammar';
+    else if (titleLower.includes('notes') || titleLower.includes('correction')) type = 'notes';
+    else if (titleLower.includes('conversation') || titleLower.includes('role')) type = 'dialogue';
+    else if (titleLower.includes('pronunciation')) type = 'pronunciation';
+    else if (titleLower.includes('takeaway')) type = 'takeaways';
+    else if (titleLower.includes('quiz')) type = 'quiz';
+    else if (titleLower.includes('homework') || titleLower.includes('practice task')) type = 'homework';
+    else if (titleLower.includes('reflection') || titleLower.includes('talbiyah insights')) type = 'reflection';
+
+    sections.push({
+      title: cleanMarkdown(matches[i].title),
+      content: contentLines,
+      type
+    });
+  }
+
+  return sections;
+}
+
+// Flip Card Component for Focus Words
+function FlipCard({ word, index }: { word: VocabWord; index: number }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <div
+      onClick={() => setIsFlipped(!isFlipped)}
+      className="cursor-pointer h-32 perspective-1000"
+      style={{ perspective: '1000px' }}
+    >
+      <div
+        className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+          isFlipped ? 'rotate-y-180' : ''
+        }`}
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+        }}
+      >
+        {/* Front - Arabic */}
+        <div
+          className="absolute w-full h-full bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-400 transition flex flex-col items-center justify-center shadow-sm"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <p className="text-4xl font-arabic text-emerald-700 mb-1 text-center" dir="rtl">{word.arabic}</p>
+          {word.transliteration && (
+            <p className="text-sm text-gray-500 italic">{word.transliteration}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-2">Tap to flip</p>
+        </div>
+
+        {/* Back - English */}
+        <div
+          className="absolute w-full h-full bg-emerald-50 rounded-xl p-4 border-2 border-emerald-300 flex flex-col items-center justify-center"
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+        >
+          <p className="text-lg font-medium text-emerald-800 text-center">{word.english}</p>
+          {word.transliteration && (
+            <p className="text-sm text-gray-600 italic mt-1">{word.transliteration}</p>
+          )}
+          {word.wordType && (
+            <span className="text-xs bg-emerald-200 text-emerald-700 px-2 py-0.5 rounded mt-2">{word.wordType}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Interactive Quiz Component
-function InteractiveQuiz({ questions }: { questions: QuizQuestion[] }) {
+function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestion[]; onAnswerUpdate?: (answers: { questionIndex: number; selectedAnswer: number; correct: boolean }[]) => void }) {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [showResults, setShowResults] = useState<{ [key: number]: boolean }>({});
 
   const handleAnswerClick = (questionIndex: number, optionIndex: number) => {
-    setSelectedAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }));
-    setShowResults(prev => ({ ...prev, [questionIndex]: true }));
+    const newSelectedAnswers = { ...selectedAnswers, [questionIndex]: optionIndex };
+    const newShowResults = { ...showResults, [questionIndex]: true };
+
+    setSelectedAnswers(newSelectedAnswers);
+    setShowResults(newShowResults);
+
+    // Update parent with all answers
+    if (onAnswerUpdate) {
+      const answers = Object.keys(newShowResults).map(k => {
+        const idx = parseInt(k);
+        return {
+          questionIndex: idx,
+          selectedAnswer: newSelectedAnswers[idx],
+          correct: newSelectedAnswers[idx] === questions[idx]?.correctAnswer
+        };
+      });
+      onAnswerUpdate(answers);
+    }
   };
 
   const resetQuestion = (questionIndex: number) => {
-    setSelectedAnswers(prev => {
-      const newAnswers = { ...prev };
-      delete newAnswers[questionIndex];
-      return newAnswers;
-    });
-    setShowResults(prev => {
-      const newResults = { ...prev };
-      delete newResults[questionIndex];
-      return newResults;
-    });
+    setSelectedAnswers(prev => { const n = { ...prev }; delete n[questionIndex]; return n; });
+    setShowResults(prev => { const n = { ...prev }; delete n[questionIndex]; return n; });
   };
+
+  const correctCount = Object.keys(showResults).filter(
+    (k) => selectedAnswers[parseInt(k)] === questions[parseInt(k)]?.correctAnswer
+  ).length;
+  const answeredCount = Object.keys(showResults).length;
 
   return (
     <div className="space-y-6">
+      {answeredCount > 0 && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-indigo-600" />
+              <span className="text-indigo-800 font-medium">Score: {correctCount}/{answeredCount}</span>
+            </div>
+            <span className="text-indigo-600 font-bold text-lg">{Math.round((correctCount / answeredCount) * 100)}%</span>
+          </div>
+          <div className="mt-2 h-2 bg-indigo-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+              style={{ width: `${(correctCount / answeredCount) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {questions.map((q, qIndex) => {
         const selectedAnswer = selectedAnswers[qIndex];
         const isAnswered = showResults[qIndex];
         const isCorrect = selectedAnswer === q.correctAnswer;
 
         return (
-          <div key={qIndex} className="space-y-3">
-            <p className="font-semibold text-gray-900">
-              <strong>Q{qIndex + 1}.</strong> {q.question}
+          <div key={qIndex} className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="font-semibold text-gray-900 mb-4">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm mr-2">
+                {qIndex + 1}
+              </span>
+              {q.question}
             </p>
 
             <div className="space-y-2">
@@ -187,24 +654,14 @@ function InteractiveQuiz({ questions }: { questions: QuizQuestion[] }) {
                 const isSelected = selectedAnswer === oIndex;
                 const isCorrectOption = oIndex === q.correctAnswer;
 
-                let buttonClasses = "w-full text-left px-4 py-3 rounded-lg border-2 transition-all ";
-
+                let buttonClasses = "w-full text-left px-4 py-3 rounded-xl border-2 transition-all ";
                 if (!isAnswered) {
-                  // Before answering
-                  buttonClasses += "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer";
+                  buttonClasses += "border-gray-200 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer";
                 } else {
-                  // After answering
-                  if (isSelected) {
-                    if (isCorrect) {
-                      buttonClasses += "border-emerald-500 bg-emerald-50 text-emerald-900";
-                    } else {
-                      buttonClasses += "border-red-500 bg-red-50 text-red-900";
-                    }
-                  } else if (isCorrectOption) {
-                    buttonClasses += "border-emerald-500 bg-emerald-50 text-emerald-900";
-                  } else {
-                    buttonClasses += "border-gray-200 bg-gray-50 text-gray-500";
-                  }
+                  if (isSelected && isCorrect) buttonClasses += "border-emerald-400 bg-emerald-50";
+                  else if (isSelected && !isCorrect) buttonClasses += "border-red-400 bg-red-50";
+                  else if (isCorrectOption) buttonClasses += "border-emerald-400 bg-emerald-50";
+                  else buttonClasses += "border-gray-200 bg-gray-50 opacity-50";
                 }
 
                 return (
@@ -215,18 +672,16 @@ function InteractiveQuiz({ questions }: { questions: QuizQuestion[] }) {
                     className={buttonClasses}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">
-                        {String.fromCharCode(65 + oIndex)}) {option}
-                      </span>
-                      {isAnswered && isSelected && isCorrect && (
-                        <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      )}
-                      {isAnswered && isSelected && !isCorrect && (
-                        <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                      )}
-                      {isAnswered && !isSelected && isCorrectOption && (
-                        <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      )}
+                      <div className="flex-1">
+                        <span className="font-medium mr-2 text-gray-500">{String.fromCharCode(65 + oIndex)})</span>
+                        <span className="text-gray-700">{option.text}</span>
+                        {option.transliteration && (
+                          <span className="text-gray-500 italic ml-2">({option.transliteration})</span>
+                        )}
+                      </div>
+                      {isAnswered && isSelected && isCorrect && <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />}
+                      {isAnswered && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />}
+                      {isAnswered && !isSelected && isCorrectOption && <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />}
                     </div>
                   </button>
                 );
@@ -234,14 +689,12 @@ function InteractiveQuiz({ questions }: { questions: QuizQuestion[] }) {
             </div>
 
             {isAnswered && (
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
                 <p className={`text-sm font-medium ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {isCorrect ? '✓ Correct!' : '✗ Incorrect - see the correct answer above'}
+                  {isCorrect ? '✓ Correct! Well done!' : '✗ Not quite - see the correct answer above'}
                 </p>
-                <button
-                  onClick={() => resetQuestion(qIndex)}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
+                <button onClick={() => resetQuestion(qIndex)} className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
+                  <RotateCcw className="w-3 h-3" />
                   Try again
                 </button>
               </div>
@@ -253,146 +706,467 @@ function InteractiveQuiz({ questions }: { questions: QuizQuestion[] }) {
   );
 }
 
-// Helper function to get subject-specific theme
-function getSubjectTheme(insightType: string) {
-  if (insightType === 'quran_tadabbur') {
-    return {
-      icon: BookOpen,
-      iconLabel: '🕌',
-      gradient: 'from-emerald-600 to-teal-600',
-      bgGradient: 'from-emerald-50 via-teal-50 to-cyan-50',
-      buttonColor: 'emerald',
-      borderColor: 'emerald',
-      title: 'Talbiyah Insights - Qur\'an with Tadabbur'
-    };
-  }
-  // Arabic language
-  return {
-    icon: Book,
-    iconLabel: '📚',
-    gradient: 'from-blue-600 to-indigo-600',
-    bgGradient: 'from-blue-50 via-indigo-50 to-purple-50',
-    buttonColor: 'blue',
-    borderColor: 'blue',
-    title: 'Talbiyah Insights - Arabic Language'
-  };
+// Dialogue Card Component
+function DialogueCard({ line }: { line: DialogueLine }) {
+  const isTeacher = line.speaker.toLowerCase().includes('teacher') || line.speaker === 'T';
+
+  return (
+    <div className={`p-4 rounded-xl border-l-4 ${
+      isTeacher ? 'bg-blue-50 border-blue-500' : 'bg-emerald-50 border-emerald-500'
+    }`}>
+      <p className={`text-sm font-medium mb-2 ${isTeacher ? 'text-blue-700' : 'text-emerald-700'}`}>
+        {isTeacher ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}:
+      </p>
+
+      {/* Arabic - right aligned */}
+      <p className="font-arabic text-3xl text-right mb-2 text-gray-900" dir="rtl">
+        {line.arabic}
+      </p>
+
+      {/* Transliteration */}
+      {line.transliteration && (
+        <p className="text-gray-600 italic mb-1">
+          {line.transliteration}
+        </p>
+      )}
+
+      {/* English */}
+      <p className="text-gray-700">
+        {line.english}
+      </p>
+    </div>
+  );
 }
 
-// Helper function to parse markdown content into sections
-interface InsightSection {
+// Key Sentence Card Component
+function KeySentenceCard({ sentence }: { sentence: KeySentence }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+      {/* Arabic - right aligned */}
+      <p className="font-arabic text-3xl text-right mb-2 text-gray-900" dir="rtl">
+        {sentence.arabic}
+      </p>
+
+      {/* Transliteration */}
+      <p className="text-cyan-700 mb-1 italic">
+        {sentence.transliteration}
+      </p>
+
+      {/* English */}
+      <p className="text-gray-700 font-medium">
+        {sentence.english}
+      </p>
+    </div>
+  );
+}
+
+// Grammar Point Card
+function GrammarCard({ point }: { point: GrammarPoint }) {
+  return (
+    <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+      <div className="flex items-start gap-2 mb-3">
+        <span className="text-2xl">📚</span>
+        <div>
+          <h4 className="font-bold text-gray-900">{point.title}</h4>
+          {point.arabicTitle && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-arabic text-2xl text-orange-700">{point.arabicTitle}</span>
+              {point.transliteration && (
+                <span className="text-gray-500 italic">({point.transliteration})</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {point.explanation && (
+        <p className="text-gray-700 mb-3">{point.explanation}</p>
+      )}
+
+      {point.examples.length > 0 && (
+        <div className="space-y-2 bg-white rounded-lg p-3 border border-orange-100">
+          <p className="text-sm font-medium text-orange-700 mb-2">Examples:</p>
+          {point.examples.map((ex, i) => (
+            <div key={i} className="flex flex-col">
+              <p className="font-arabic text-2xl text-right text-gray-900" dir="rtl">{ex.arabic}</p>
+              <p className="text-gray-600 text-sm">{ex.english}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Teacher Note Card
+function TeacherNoteCard({ note }: { note: TeacherNote }) {
+  return (
+    <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl">💡</span>
+        <div className="flex-1">
+          {note.arabic && (
+            <p className="font-arabic text-2xl text-purple-800 mb-1">{note.arabic}</p>
+          )}
+          {note.transliteration && (
+            <p className="text-gray-500 italic text-sm mb-2">{note.transliteration}</p>
+          )}
+          <p className="text-gray-700">{note.note}</p>
+          {note.meanings && note.meanings.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {note.meanings.map((meaning, i) => (
+                <p key={i} className="text-sm text-purple-700">
+                  <strong>Meaning {i + 1}:</strong> {meaning}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Homework Task Card with checkboxes
+function HomeworkCard({
+  tasks,
+  completedTasks,
+  onToggleTask
+}: {
+  tasks: { task: string; type: string }[];
+  completedTasks: boolean[];
+  onToggleTask: (index: number, taskCount: number) => void;
+}) {
+  const icons: Record<string, string> = {
+    write: '📝',
+    speak: '🗣️',
+    read: '📖',
+    listen: '🎧',
+    other: '✅'
+  };
+
+  const completedCount = completedTasks.filter(Boolean).length;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-gray-600">Check off tasks as you complete them</p>
+        <span className="text-sm font-medium text-amber-700">
+          {completedCount}/{tasks.length} completed
+        </span>
+      </div>
+      {tasks.map((task, i) => (
+        <div
+          key={i}
+          onClick={() => onToggleTask(i, tasks.length)}
+          className={`rounded-xl p-4 border-2 cursor-pointer transition-all ${
+            completedTasks[i]
+              ? 'bg-emerald-50 border-emerald-300'
+              : 'bg-amber-50 border-amber-200 hover:border-amber-300'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+              completedTasks[i]
+                ? 'bg-emerald-500 border-emerald-500'
+                : 'border-gray-300 bg-white'
+            }`}>
+              {completedTasks[i] && <CheckCircle className="w-4 h-4 text-white" />}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{icons[task.type] || '✅'}</span>
+                <p className={`${completedTasks[i] ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+                  {task.task}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Collapsible Section Component
+function CollapsibleSection({
+  title,
+  icon: Icon,
+  children,
+  defaultOpen = false,
+  color = 'indigo',
+  badge
+}: {
   title: string;
-  content: string;
   icon: any;
-  textColor: string;
-  bgColor: string;
-  borderColor: string;
-}
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  color?: string;
+  badge?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
-function parseInsightSections(content: string, insightType: string): InsightSection[] {
-  const sections: InsightSection[] = [];
-  const lines = content.split('\n');
-  let currentSection: { title: string; content: string[] } | null = null;
-
-  // Define section configurations matching old platform style
-  const sectionConfigs: Record<string, { icon: any; textColor: string; bgColor: string; borderColor: string }> = {
-    'flow of meaning': { icon: BookMarked, textColor: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-200' },
-    'tafseer': { icon: BookMarked, textColor: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-200' },
-    'tafsīr': { icon: BookMarked, textColor: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-200' },
-    'vocabulary': { icon: BookMarked, textColor: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    'key terms': { icon: BookMarked, textColor: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    'arabic words': { icon: BookMarked, textColor: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    'grammar': { icon: Lightbulb, textColor: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
-    'grammatical': { icon: Lightbulb, textColor: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
-    'key lessons': { icon: Lightbulb, textColor: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-    'reflections': { icon: Lightbulb, textColor: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-    'tadabbur': { icon: Lightbulb, textColor: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-    'reflection questions': { icon: Target, textColor: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
-    'questions': { icon: Target, textColor: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
-    'mini quiz': { icon: Target, textColor: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200' },
-    'quiz': { icon: Target, textColor: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200' },
-    'comprehension': { icon: Target, textColor: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200' },
-    'learning outcomes': { icon: TrendingUp, textColor: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200' },
-    'progress': { icon: TrendingUp, textColor: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200' },
-    'flashcard': { icon: Book, textColor: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-    'homework': { icon: BookOpen, textColor: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
-    'practice': { icon: BookOpen, textColor: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
-    'next steps': { icon: BookOpen, textColor: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
+  const colorClasses: Record<string, { bg: string; border: string; headerBg: string }> = {
+    blue: { bg: 'bg-blue-50', border: 'border-blue-200', headerBg: 'bg-gradient-to-r from-blue-500 to-blue-600' },
+    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', headerBg: 'bg-gradient-to-r from-emerald-500 to-emerald-600' },
+    orange: { bg: 'bg-orange-50', border: 'border-orange-200', headerBg: 'bg-gradient-to-r from-orange-500 to-orange-600' },
+    purple: { bg: 'bg-purple-50', border: 'border-purple-200', headerBg: 'bg-gradient-to-r from-purple-500 to-purple-600' },
+    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', headerBg: 'bg-gradient-to-r from-indigo-500 to-indigo-600' },
+    teal: { bg: 'bg-teal-50', border: 'border-teal-200', headerBg: 'bg-gradient-to-r from-teal-500 to-teal-600' },
+    amber: { bg: 'bg-amber-50', border: 'border-amber-200', headerBg: 'bg-gradient-to-r from-amber-500 to-amber-600' },
+    rose: { bg: 'bg-rose-50', border: 'border-rose-200', headerBg: 'bg-gradient-to-r from-rose-500 to-rose-600' },
+    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', headerBg: 'bg-gradient-to-r from-cyan-500 to-cyan-600' },
   };
 
-  for (const line of lines) {
-    // Check if this is a section header (## or ###)
-    const headerMatch = line.match(/^#{2,3}\s+(.+)$/);
+  const colors = colorClasses[color] || colorClasses.indigo;
 
-    if (headerMatch) {
-      // Save previous section
-      if (currentSection && currentSection.content.length > 0) {
-        const titleLower = currentSection.title.toLowerCase();
-        let config = sectionConfigs['key lessons']; // default to amber
+  return (
+    <div className={`bg-white rounded-2xl shadow-sm border ${colors.border} overflow-hidden`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full ${colors.headerBg} px-6 py-4 flex items-center justify-between`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-lg font-bold text-white">{title}</h3>
+          {badge && (
+            <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">{badge}</span>
+          )}
+        </div>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-white" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-white" />
+        )}
+      </button>
 
-        // Find matching config
-        for (const [key, value] of Object.entries(sectionConfigs)) {
-          if (titleLower.includes(key)) {
-            config = value;
-            break;
-          }
-        }
+      {isOpen && (
+        <div className={`p-6 ${colors.bg}`}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
-        sections.push({
-          title: currentSection.title,
-          content: currentSection.content.join('\n').trim(),
-          icon: config.icon,
-          textColor: config.textColor,
-          bgColor: config.bgColor,
-          borderColor: config.borderColor
-        });
-      }
+// Video Player Component
+function VideoPlayer({
+  url,
+  title,
+  daysUntilExpiry,
+  expiresWarning
+}: {
+  url: string;
+  title: string;
+  daysUntilExpiry?: number;
+  expiresWarning?: boolean;
+}) {
+  const [hasError, setHasError] = useState(false);
 
-      // Start new section
-      currentSection = {
-        title: headerMatch[1],
-        content: []
-      };
-    } else if (currentSection) {
-      currentSection.content.push(line);
-    }
+  if (hasError) {
+    return (
+      <div className="rounded-2xl bg-gray-100 p-8 text-center">
+        <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+        <p className="text-gray-600 mb-4">Video unavailable. The recording may have expired.</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium"
+        >
+          <Play className="w-4 h-4" />
+          Try Opening Directly
+        </a>
+      </div>
+    );
   }
 
-  // Add last section
-  if (currentSection && currentSection.content.length > 0) {
-    const titleLower = currentSection.title.toLowerCase();
-    let config = sectionConfigs['key lessons']; // default to amber
-
-    for (const [key, value] of Object.entries(sectionConfigs)) {
-      if (titleLower.includes(key)) {
-        config = value;
-        break;
-      }
-    }
-
-    sections.push({
-      title: currentSection.title,
-      content: currentSection.content.join('\n').trim(),
-      icon: config.icon,
-      textColor: config.textColor,
-      bgColor: config.bgColor,
-      borderColor: config.borderColor
-    });
-  }
-
-  return sections;
+  return (
+    <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+      {expiresWarning && daysUntilExpiry !== undefined && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-600" />
+          <span className="text-amber-800 text-sm font-medium">
+            Recording expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''} - download to keep
+          </span>
+        </div>
+      )}
+      <div className="aspect-video bg-black relative">
+        <video
+          src={url}
+          controls
+          className="w-full h-full"
+          onError={() => setHasError(true)}
+          playsInline
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      <div className="bg-white p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Video className="w-5 h-5 text-gray-500" />
+          <span className="text-gray-700 font-medium">{title}</span>
+        </div>
+        <a
+          href={url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          Download
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function LessonInsights() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [insight, setInsight] = useState<LessonInsight | null>(null);
-  const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [recording, setRecording] = useState<RecordingData | null>(null);
+  const [loadingRecording, setLoadingRecording] = useState(false);
+  const [activeTab, setActiveTab] = useState<'lesson' | 'screen'>('lesson');
+  const [lessonTime, setLessonTime] = useState<string | null>(null);
+
+  // Homework tracking state
+  const [completedTasks, setCompletedTasks] = useState<boolean[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<{ questionIndex: number; selectedAnswer: number; correct: boolean }[]>([]);
+  const [studentNotes, setStudentNotes] = useState('');
+  const [questionsForTeacher, setQuestionsForTeacher] = useState('');
+  const [difficultyRating, setDifficultyRating] = useState<number>(0);
+  const [submittingHomework, setSubmittingHomework] = useState(false);
+  const [homeworkSubmitted, setHomeworkSubmitted] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  // Download as PDF function
+  async function downloadAsPDF() {
+    setDownloadingPDF(true);
+    try {
+      const element = document.getElementById('insights-content');
+      if (!element) {
+        alert('Could not find content to download');
+        return;
+      }
+
+      // Load Arabic fonts via Google Fonts CSS (more reliable than direct woff2 URLs)
+      const fontLinkId = 'arabic-fonts-for-pdf';
+      let fontLink = document.getElementById(fontLinkId) as HTMLLinkElement;
+      if (!fontLink) {
+        fontLink = document.createElement('link');
+        fontLink.id = fontLinkId;
+        fontLink.rel = 'stylesheet';
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;500;600;700&display=swap';
+        document.head.appendChild(fontLink);
+        // Wait for stylesheet to load
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Wait for all fonts to be fully loaded
+      await document.fonts.ready;
+
+      // Additional wait for fonts to render properly
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Hide elements that shouldn't be in PDF
+      const hiddenElements = document.querySelectorAll('.print\\:hidden');
+      hiddenElements.forEach(el => (el as HTMLElement).style.display = 'none');
+
+      // Create a clone of the element for PDF generation
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = element.offsetWidth + 'px';
+      clone.style.backgroundColor = '#ffffff';
+      document.body.appendChild(clone);
+
+      // Fix Arabic text elements - DO NOT use bidi-override as it reverses text
+      const arabicElements = clone.querySelectorAll('[dir="rtl"], .font-arabic');
+      arabicElements.forEach(el => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.style.fontFamily = "'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif";
+        htmlEl.style.direction = 'rtl';
+        htmlEl.style.textAlign = 'right';
+        // Use 'embed' not 'bidi-override' - bidi-override causes text to render backwards!
+        htmlEl.style.unicodeBidi = 'embed';
+      });
+
+      // Wait for clone to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure Arabic fonts are applied in cloned document
+          const arabicEls = clonedDoc.querySelectorAll('[dir="rtl"], .font-arabic');
+          arabicEls.forEach(el => {
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.fontFamily = "'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif";
+            htmlEl.style.direction = 'rtl';
+            htmlEl.style.textAlign = 'right';
+            htmlEl.style.unicodeBidi = 'embed';
+          });
+        }
+      });
+
+      // Clean up clone
+      document.body.removeChild(clone);
+
+      // Restore hidden elements
+      hiddenElements.forEach(el => (el as HTMLElement).style.display = '');
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = insight?.title
+        ? `${insight.title.replace(/[^a-z0-9]/gi, '_')}_insights.pdf`
+        : 'lesson_insights.pdf';
+
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  }
 
   useEffect(() => {
     loadInsights();
@@ -401,76 +1175,50 @@ export default function LessonInsights() {
   async function loadInsights() {
     try {
       setLoading(true);
-
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Please sign in to view insights');
-        setLoading(false);
-        return;
+      if (!user) { setError('Please sign in to view insights'); setLoading(false); return; }
+
+      const { data: teacherProfile } = await supabase.from('teacher_profiles').select('id').eq('user_id', user.id).maybeSingle();
+      const isTeacher = !!teacherProfile;
+      let learnerId: string | null = null;
+
+      if (!isTeacher) {
+        const { data: learner } = await supabase.from('learners').select('id').eq('parent_id', user.id).maybeSingle();
+        if (!learner) { setError('Learner profile not found'); setLoading(false); return; }
+        learnerId = learner.id;
       }
 
-      // Get learner ID
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .single();
-
-      if (!learner) {
-        setError('Learner profile not found');
-        setLoading(false);
-        return;
-      }
-
-      // Get lesson info
-      const { data: lessonData, error: lessonError } = await supabase
+      const { data: lessonData } = await supabase
         .from('lessons')
-        .select(`
-          scheduled_time,
-          duration_minutes,
-          subjects(name),
-          teacher_profiles!inner(
-            profiles!inner(full_name)
-          )
-        `)
+        .select('"100ms_room_id", scheduled_time')
         .eq('id', lessonId)
         .single();
 
-      if (lessonError) throw lessonError;
-      setLesson(lessonData);
+      if (lessonData?.scheduled_time) {
+        setLessonTime(lessonData.scheduled_time);
+      }
 
-      // Get insights
-      const { data: insightData, error: insightError } = await supabase
-        .from('lesson_insights')
-        .select('*')
-        .eq('lesson_id', lessonId)
-        .eq('learner_id', learner.id)
-        .single();
+      if (lessonData?.['100ms_room_id']) {
+        fetchRecording(lessonData['100ms_room_id']);
+      }
 
-      if (insightError) {
-        if (insightError.code === 'PGRST116') {
-          setError('Insights not yet generated for this lesson');
-        } else {
-          throw insightError;
-        }
+      let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
+      if (learnerId) insightQuery = insightQuery.eq('learner_id', learnerId);
+
+      const { data: insightData, error: insightError } = await insightQuery.maybeSingle();
+      if (insightError?.code === 'PGRST116' || !insightData) {
+        setError('Insights not yet generated for this lesson');
         setLoading(false);
         return;
       }
+      if (insightError) throw insightError;
 
       setInsight(insightData);
       setRating(insightData.student_rating || 0);
 
-      // Mark as viewed
       if (!insightData.viewed_by_student) {
-        await supabase
-          .from('lesson_insights')
-          .update({
-            viewed_by_student: true,
-            student_viewed_at: new Date().toISOString()
-          })
-          .eq('id', insightData.id);
+        await supabase.from('lesson_insights').update({ viewed_by_student: true, student_viewed_at: new Date().toISOString() }).eq('id', insightData.id);
       }
-
     } catch (err: any) {
       console.error('Error loading insights:', err);
       setError(err.message || 'Failed to load insights');
@@ -479,45 +1227,134 @@ export default function LessonInsights() {
     }
   }
 
+  async function fetchRecording(roomId: string) {
+    try {
+      setLoadingRecording(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-recording-url`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ room_id: roomId })
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.recordings) {
+          setRecording({
+            primary: data.recordings.primary,
+            screen_share: data.recordings.screen_share,
+            transcript_url: data.transcript_url,
+            days_until_expiry: data.days_until_expiry,
+            expires_warning: data.expires_warning
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching recording:', err);
+    } finally {
+      setLoadingRecording(false);
+    }
+  }
+
   async function submitRating(newRating: number) {
     if (!insight) return;
-
     try {
       setSubmittingRating(true);
-
-      const { error } = await supabase
-        .from('lesson_insights')
-        .update({ student_rating: newRating })
-        .eq('id', insight.id);
-
+      const { error } = await supabase.from('lesson_insights').update({ student_rating: newRating }).eq('id', insight.id);
       if (error) throw error;
-
       setRating(newRating);
       setRatingSubmitted(true);
       setTimeout(() => setRatingSubmitted(false), 3000);
     } catch (err: any) {
       console.error('Error submitting rating:', err);
-      alert('Failed to submit rating. Please try again.');
     } finally {
       setSubmittingRating(false);
     }
   }
 
-  function handlePrint() {
-    window.print();
+  // Toggle homework task completion - note: homeworkTasks will be available in scope when this is called
+  function toggleTask(index: number, taskCount: number) {
+    setCompletedTasks(prev => {
+      // Initialize if needed
+      const current = prev.length === taskCount ? prev : new Array(taskCount).fill(false);
+      const updated = [...current];
+      updated[index] = !updated[index];
+      return updated;
+    });
   }
 
-  function handleDownloadPDF() {
-    // For now, use print dialog - can enhance with PDF generation library later
-    window.print();
+  // Submit homework
+  async function submitHomework() {
+    if (!insight || !lessonId) return;
+
+    try {
+      setSubmittingHomework(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get learner ID
+      const { data: learner } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', user.id)
+        .maybeSingle();
+
+      // Get teacher ID from lesson
+      const { data: lesson } = await supabase
+        .from('lessons')
+        .select('teacher_id')
+        .eq('id', lessonId)
+        .single();
+
+      const submissionData = {
+        lesson_id: lessonId,
+        insight_id: insight.id,
+        learner_id: learner?.id,
+        teacher_id: lesson?.teacher_id,
+        parent_id: user.id,
+        quiz_answers: quizAnswers,
+        quiz_score: quizAnswers.filter(a => a.correct).length,
+        quiz_total: quizAnswers.length,
+        quiz_completed_at: quizAnswers.length > 0 ? new Date().toISOString() : null,
+        completed_tasks: completedTasks.map((completed, i) => ({
+          task: homeworkTasks[i]?.task || '',
+          completed,
+          completedAt: completed ? new Date().toISOString() : null
+        })),
+        tasks_completed_count: completedTasks.filter(Boolean).length,
+        tasks_total_count: homeworkTasks.length,
+        student_notes: studentNotes || null,
+        questions_for_teacher: questionsForTeacher || null,
+        difficulty_rating: difficultyRating || null,
+        status: 'submitted',
+        submitted_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('homework_submissions')
+        .upsert(submissionData, { onConflict: 'lesson_id,learner_id' });
+
+      if (error) throw error;
+
+      setHomeworkSubmitted(true);
+    } catch (err: any) {
+      console.error('Error submitting homework:', err);
+      alert('Failed to submit homework. Please try again.');
+    } finally {
+      setSubmittingHomework(false);
+    }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading insights...</p>
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
+          </div>
+          <p className="text-slate-600 font-medium">Loading your lesson insights...</p>
         </div>
       </div>
     );
@@ -525,220 +1362,477 @@ export default function LessonInsights() {
 
   if (error || !insight) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-gray-100">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-semibold text-center text-gray-900 mb-2">
-            {error || 'Insights not available'}
-          </h2>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="w-full mt-6 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
-          >
-            Back to Dashboard
+          <h2 className="text-xl font-bold text-center text-gray-900 mb-2">{error || 'Insights not available'}</h2>
+          <p className="text-gray-500 text-center text-sm mb-6">The insights for this lesson may still be processing.</p>
+          <button onClick={() => navigate(-1)} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition">
+            Go Back
           </button>
         </div>
       </div>
     );
   }
 
-  const metadata = insight.detailed_insights.metadata;
-  const theme = getSubjectTheme(insight.insight_type);
-  const IconComponent = theme.icon;
+  const metadata = insight.detailed_insights?.metadata;
+  const isQuran = insight.insight_type === 'quran_tadabbur' || insight.detailed_insights?.subject?.toLowerCase().includes('quran');
+  const hasDetailedInsights = !!insight.detailed_insights?.content;
+
+  // Parse all sections
+  const sections = hasDetailedInsights ? parseInsightSections(insight.detailed_insights!.content) : [];
+
+  // Parse specific content types
+  const vocabSection = sections.find(s => s.type === 'vocabulary');
+  const vocabulary = vocabSection ? parseVocabulary(vocabSection.content) : [];
+
+  const sentenceSection = sections.find(s => s.type === 'sentences');
+  const sentences = sentenceSection ? parseKeySentences(sentenceSection.content) : [];
+
+  const grammarSection = sections.find(s => s.type === 'grammar');
+  const grammarPoints = grammarSection ? parseGrammarPoints(grammarSection.content) : [];
+
+  const notesSection = sections.find(s => s.type === 'notes');
+  const teacherNotes = notesSection ? parseTeacherNotes(notesSection.content) : [];
+
+  const dialogueSection = sections.find(s => s.type === 'dialogue');
+  const dialogues = dialogueSection ? parseDialogues(dialogueSection.content) : [];
+
+  const quizSection = sections.find(s => s.type === 'quiz');
+  const quizQuestions = quizSection ? parseQuizQuestions(quizSection.content) : [];
+
+  const homeworkSection = sections.find(s => s.type === 'homework');
+  const homeworkTasks = homeworkSection ? parseHomework(homeworkSection.content) : [];
+
+  const summarySection = sections.find(s => s.type === 'summary');
+  const takeawaysSection = sections.find(s => s.type === 'takeaways');
+
+  const effectiveCompletedTasks = completedTasks.length === homeworkTasks.length
+    ? completedTasks
+    : new Array(homeworkTasks.length).fill(false);
 
   return (
     <>
-      {/* Print Styles */}
       <style>{`
-        @media print {
-          body {
-            background: white !important;
-          }
-
-          .print\\:hidden {
-            display: none !important;
-          }
-
-          .print\\:break-inside-avoid {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-
-          /* Ensure colored headers print with background */
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* Add spacing between cards for print */
-          .space-y-6 > * {
-            margin-bottom: 1.5rem !important;
-          }
-
-          /* Optimize prose for print */
-          .prose {
-            max-width: 100% !important;
-          }
+        @media print { body { background: white !important; } .print\\:hidden { display: none !important; } }
+        .font-arabic, [dir="rtl"] {
+          font-family: 'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif !important;
+          font-feature-settings: normal;
+          text-rendering: optimizeLegibility;
+          -webkit-font-smoothing: antialiased;
+        }
+        /* Ensure Arabic text displays correctly - use 'embed' NOT 'bidi-override' */
+        [dir="rtl"] {
+          unicode-bidi: embed;
+          direction: rtl;
+          text-align: right;
+        }
+        /* Prevent html2canvas from reversing Arabic text */
+        .font-arabic {
+          unicode-bidi: embed;
         }
       `}</style>
 
-      <div className={`min-h-screen bg-gradient-to-br ${theme.bgGradient}`}>
-      {/* Header */}
-      <header className={`bg-white border-b border-${theme.borderColor}-100 shadow-sm print:hidden`}>
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className={`flex items-center space-x-2 text-slate-600 hover:text-${theme.buttonColor}-600 transition`}
-            >
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 print:hidden">
+          <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition font-medium">
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Dashboard</span>
+              <span>Back</span>
             </button>
-
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handlePrint}
-                className={`p-2 text-slate-600 hover:text-${theme.buttonColor}-600 transition`}
-                title="Print"
-              >
+            <div className="flex items-center gap-2">
+              <button onClick={() => window.print()} className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Print">
                 <Printer className="w-5 h-5" />
               </button>
               <button
-                onClick={handleDownloadPDF}
-                className={`p-2 text-slate-600 hover:text-${theme.buttonColor}-600 transition`}
+                onClick={downloadAsPDF}
+                disabled={downloadingPDF}
+                className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition disabled:opacity-50"
                 title="Download PDF"
               >
-                <Download className="w-5 h-5" />
+                {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
               </button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Title Card */}
-        <div className={`bg-gradient-to-r ${theme.gradient} rounded-2xl p-8 mb-8 text-white shadow-xl`}>
-          <div className="flex items-center space-x-3 mb-4">
-            <IconComponent className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">{theme.title}</h1>
-          </div>
-          {insight.insight_type === 'quran_tadabbur' ? (
-            <>
-              <h2 className="text-2xl font-semibold mb-2">{metadata.surah_name} ({metadata.surah_number})</h2>
-              <p className={`text-${theme.buttonColor}-100 text-lg`}>{metadata.ayah_range}</p>
-            </>
-          ) : (
-            <h2 className="text-2xl font-semibold mb-2">Arabic Language Lesson</h2>
-          )}
-          <div className={`mt-4 flex flex-wrap gap-4 text-sm text-${theme.buttonColor}-100`}>
-            <span>👨‍🏫 Teacher: {metadata.teacher_name}</span>
-            <span>📅 {new Date(metadata.lesson_date).toLocaleDateString()}</span>
-            {metadata.duration_minutes && <span>⏱️ {metadata.duration_minutes} minutes</span>}
-          </div>
-        </div>
-
-        {/* Insights Content - Old Platform Style */}
-        <div className="space-y-4 mb-8">
-          {(() => {
-            const sections = parseInsightSections(insight.detailed_insights.content, insight.insight_type);
-
-            // If no sections were parsed, show all content in a single card
-            if (sections.length === 0) {
-              return (
-                <div className="space-y-2 print:break-inside-avoid">
-                  <div className={`flex items-center space-x-2 px-4 py-3 ${theme.bgGradient.replace('from-', 'bg-').split(' ')[0].replace('via-', '').replace('to-', '')} rounded-lg border ${theme.borderColor}`}>
-                    <IconComponent className={`w-5 h-5 ${theme.buttonColor === 'emerald' ? 'text-emerald-600' : 'text-blue-600'}`} />
-                    <h3 className={`text-sm font-semibold ${theme.buttonColor === 'emerald' ? 'text-emerald-900' : 'text-blue-900'}`}>Lesson Insights</h3>
-                  </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 ml-2">
-                    <div className="prose prose-sm max-w-none text-gray-700">
-                      <ReactMarkdown>{insight.detailed_insights.content}</ReactMarkdown>
-                    </div>
-                  </div>
+        <main id="insights-content" className="max-w-4xl mx-auto px-6 py-8">
+          {/* Hero Card */}
+          <div className={`rounded-3xl p-6 md:p-8 mb-8 text-white shadow-xl ${
+            isQuran ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700' : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
+          }`}>
+            <div className="flex flex-col gap-4">
+              {/* Title row */}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  {isQuran ? <BookMarked className="w-6 h-6" /> : <Book className="w-6 h-6" />}
                 </div>
-              );
-            }
-
-            // Otherwise, show parsed sections in old platform style
-            return sections.map((section, index) => {
-              const SectionIcon = section.icon;
-
-              // Check if this is a quiz section
-              const isQuizSection = section.title.toLowerCase().includes('quiz') ||
-                                   section.title.toLowerCase().includes('comprehension');
-              const quizQuestions = isQuizSection ? parseQuizQuestions(section.content) : [];
-
-              return (
-                <div key={index} className="space-y-2 print:break-inside-avoid">
-                  {/* Section Header - Old Platform Style */}
-                  <div className={`flex items-center space-x-2 px-4 py-3 ${section.bgColor} rounded-lg border ${section.borderColor}`}>
-                    <SectionIcon className={`w-5 h-5 ${section.textColor}`} />
-                    <h3 className={`text-sm font-semibold ${section.textColor.replace('-600', '-900')}`}>
-                      {section.title}
-                    </h3>
-                  </div>
-
-                  {/* Section Content - Old Platform Style */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 ml-2">
-                    {isQuizSection && quizQuestions.length > 0 ? (
-                      <InteractiveQuiz questions={quizQuestions} />
-                    ) : (
-                      <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
-                        <ReactMarkdown>{section.content}</ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            });
-          })()}
-        </div>
-
-        {/* Rating Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 print:hidden">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Was this helpful?</h3>
-            <p className="text-sm text-gray-600 mb-4">Rate your learning experience</p>
-
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              {[1, 2, 3, 4, 5].map((starValue) => (
-                <button
-                  key={starValue}
-                  onClick={() => submitRating(starValue)}
-                  onMouseEnter={() => setHoveredRating(starValue)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  disabled={submittingRating}
-                  className="transition-transform hover:scale-110 disabled:opacity-50"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      starValue <= (hoveredRating || rating)
-                        ? 'fill-amber-400 text-amber-400'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {ratingSubmitted && (
-              <div className={`flex items-center justify-center space-x-2 text-${theme.buttonColor}-600`}>
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">Thank you for your feedback!</span>
+                <h1 className="text-xl md:text-2xl font-bold">{cleanMarkdown(insight.title)}</h1>
               </div>
+
+              {/* Details row */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/90 text-sm bg-white/10 rounded-xl px-4 py-3">
+                {(lessonTime || metadata?.lesson_date) && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                )}
+                {(lessonTime || metadata?.lesson_date) && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                )}
+                {metadata?.teacher_name && (
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>{metadata.teacher_name}</span>
+                  </div>
+                )}
+                {/* For Quran - show Surah info */}
+                {isQuran && metadata?.surah_name && (
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Surah {metadata.surah_name}{metadata.ayah_range ? ` (${metadata.ayah_range})` : ''}</span>
+                  </div>
+                )}
+                {/* For Arabic - extract book/unit from title if present */}
+                {!isQuran && insight.title && (insight.title.toLowerCase().includes('book') || insight.title.toLowerCase().includes('unit')) && (
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>
+                      {insight.title.match(/book\s*\d+[ab]?/i)?.[0] || ''}
+                      {insight.title.match(/unit\s*\d+/i)?.[0] ? ` ${insight.title.match(/unit\s*\d+/i)?.[0]}` : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Card */}
+          {summarySection && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-lg font-bold text-gray-900">At a Glance</h2>
+              </div>
+              <div className="prose prose-sm max-w-none text-gray-700">
+                {cleanMarkdown(summarySection.content).split('\n').filter(l => l.trim()).map((line, i) => (
+                  <p key={i} className="flex items-start gap-2 mb-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <span>{cleanMarkdown(line)}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Focus Words with Flip Cards */}
+          {vocabulary.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Book className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Focus Words</h2>
+                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{vocabulary.length} words</span>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+                <Scissors className="w-4 h-4" />
+                Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {vocabulary.map((word, idx) => (
+                  <FlipCard key={idx} word={word} index={idx} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Video Recording */}
+          {(recording?.primary?.presigned_url || loadingRecording) && (
+            <div className="mb-6 print:hidden">
+              {loadingRecording ? (
+                <div className="bg-gray-100 rounded-2xl p-8 flex items-center justify-center">
+                  <Loader className="w-6 h-6 text-gray-400 animate-spin mr-3" />
+                  <span className="text-gray-500">Loading recording...</span>
+                </div>
+              ) : recording?.primary?.presigned_url ? (
+                <div className="space-y-3">
+                  {recording.screen_share?.presigned_url && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setActiveTab('lesson')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
+                          activeTab === 'lesson' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        <Play className="w-4 h-4" />
+                        Lesson Video
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('screen')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
+                          activeTab === 'screen' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Screen Share
+                      </button>
+                    </div>
+                  )}
+                  {activeTab === 'lesson' && recording.primary?.presigned_url && (
+                    <VideoPlayer url={recording.primary.presigned_url} title="Lesson Recording" daysUntilExpiry={recording.days_until_expiry} expiresWarning={recording.expires_warning} />
+                  )}
+                  {activeTab === 'screen' && recording.screen_share?.presigned_url && (
+                    <VideoPlayer url={recording.screen_share.presigned_url} title="Screen Share" daysUntilExpiry={recording.days_until_expiry} expiresWarning={recording.expires_warning} />
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Detailed Sections */}
+          <div className="space-y-4">
+
+            {/* Key Sentences */}
+            {sentences.length > 0 && (
+              <CollapsibleSection title="Key Sentences" icon={MessageCircle} color="cyan" defaultOpen={true}>
+                <div className="space-y-3">
+                  {sentences.map((sentence, i) => (
+                    <KeySentenceCard key={i} sentence={sentence} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Grammar Focus */}
+            {grammarPoints.length > 0 && (
+              <CollapsibleSection title="Grammar Focus" icon={PenTool} color="orange">
+                <div className="space-y-4">
+                  {grammarPoints.map((point, i) => (
+                    <GrammarCard key={i} point={point} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Teacher Notes */}
+            {teacherNotes.length > 0 && (
+              <CollapsibleSection title="Teacher Notes & Corrections" icon={Lightbulb} color="purple">
+                <div className="space-y-3">
+                  {teacherNotes.map((note, i) => (
+                    <TeacherNoteCard key={i} note={note} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Conversation Practice */}
+            {dialogues.length > 0 && (
+              <CollapsibleSection title="Conversation Practice" icon={MessageCircle} color="blue">
+                <p className="text-sm text-gray-600 mb-4">Practice these dialogues aloud. Say the Arabic, then check your pronunciation.</p>
+                <div className="space-y-3">
+                  {dialogues.map((line, i) => (
+                    <DialogueCard key={i} line={line} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Mini Quiz */}
+            {quizQuestions.length > 0 && (
+              <CollapsibleSection title="Mini Quiz" icon={Target} color="indigo" badge={`${quizQuestions.length} questions`} defaultOpen={true}>
+                <InteractiveQuiz questions={quizQuestions} onAnswerUpdate={setQuizAnswers} />
+              </CollapsibleSection>
+            )}
+
+            {/* Homework */}
+            {homeworkTasks.length > 0 && (
+              <CollapsibleSection title="Homework & Practice Tasks" icon={BookOpen} color="amber" badge={`${effectiveCompletedTasks.filter(Boolean).length}/${homeworkTasks.length}`}>
+                <HomeworkCard tasks={homeworkTasks} completedTasks={effectiveCompletedTasks} onToggleTask={toggleTask} />
+              </CollapsibleSection>
+            )}
+
+            {/* Key Takeaways */}
+            {takeawaysSection && (
+              <CollapsibleSection title="Key Takeaways" icon={Trophy} color="teal">
+                <div className="space-y-2">
+                  {cleanMarkdown(takeawaysSection.content).split('\n').filter(l => l.trim()).map((line, i) => (
+                    <div key={i} className="flex items-start gap-2 bg-white rounded-lg p-3 border border-teal-100">
+                      <CheckCircle className="w-5 h-5 text-teal-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">{cleanMarkdown(line)}</span>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleSection>
             )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="text-center text-sm text-slate-500">
-          <p>Generated by Talbiyah.ai • Islamic Learning Platform</p>
-        </div>
-      </main>
-    </div>
+          {/* Homework Submission Section */}
+          {(homeworkTasks.length > 0 || quizQuestions.length > 0) && (
+            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl shadow-sm border border-cyan-200 p-6 mt-8 print:hidden">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center">
+                  <Send className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Submit Your Homework</h3>
+                  <p className="text-sm text-gray-600">Complete the tasks above and submit for teacher review</p>
+                </div>
+              </div>
+
+              {homeworkSubmitted ? (
+                <div className="bg-emerald-100 border border-emerald-300 rounded-xl p-6 text-center">
+                  <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
+                  <h4 className="text-lg font-bold text-emerald-800 mb-1">Homework Submitted!</h4>
+                  <p className="text-emerald-700">Your teacher will review your work soon.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Progress Summary */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    {quizQuestions.length > 0 && (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                          <Target className="w-4 h-4" />
+                          <span className="text-sm font-medium">Quiz</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-900">
+                          {quizAnswers.filter(a => a.correct).length}/{quizQuestions.length} correct
+                        </p>
+                      </div>
+                    )}
+                    {homeworkTasks.length > 0 && (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200">
+                        <div className="flex items-center gap-2 text-amber-600 mb-1">
+                          <BookOpen className="w-4 h-4" />
+                          <span className="text-sm font-medium">Tasks</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-900">
+                          {completedTasks.filter(Boolean).length}/{homeworkTasks.length} done
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-white rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-center gap-2 text-purple-600 mb-1">
+                        <Star className="w-4 h-4" />
+                        <span className="text-sm font-medium">Difficulty</span>
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(level => (
+                          <button
+                            key={level}
+                            onClick={() => setDifficultyRating(level)}
+                            className={`w-6 h-6 rounded-full text-xs font-bold transition ${
+                              difficultyRating >= level
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-gray-200 text-gray-500 hover:bg-purple-100'
+                            }`}
+                          >
+                            {level}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes Section */}
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        <FileText className="w-4 h-4" />
+                        Your Notes (optional)
+                      </label>
+                      <textarea
+                        value={studentNotes}
+                        onChange={(e) => setStudentNotes(e.target.value)}
+                        placeholder="Write any notes about what you learned, what you found interesting, or what you want to remember..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        <HelpCircle className="w-4 h-4" />
+                        Questions for Teacher (optional)
+                      </label>
+                      <textarea
+                        value={questionsForTeacher}
+                        onChange={(e) => setQuestionsForTeacher(e.target.value)}
+                        placeholder="Any questions you'd like to ask your teacher about this lesson?"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={submitHomework}
+                    disabled={submittingHomework}
+                    className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {submittingHomework ? (
+                      <>
+                        <Loader className="w-5 h-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Submit Homework
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Rating Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-8 print:hidden">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">How was this lesson?</h3>
+              <p className="text-gray-500 text-sm mb-4">Your feedback helps us improve</p>
+
+              <div className="flex items-center justify-center gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((starValue) => (
+                  <button
+                    key={starValue}
+                    onClick={() => submitRating(starValue)}
+                    onMouseEnter={() => setHoveredRating(starValue)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    disabled={submittingRating}
+                    className="transition-all hover:scale-110 disabled:opacity-50 p-1"
+                  >
+                    <Star className={`w-8 h-8 transition-colors ${starValue <= (hoveredRating || rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                  </button>
+                ))}
+              </div>
+
+              {ratingSubmitted && (
+                <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-2 px-4 rounded-xl">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="font-medium text-sm">Thanks for your feedback!</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="text-center text-sm text-gray-400 mt-8 pb-8">
+            <p>Talbiyah.ai - Your Islamic Learning Companion</p>
+          </div>
+        </main>
+      </div>
     </>
   );
 }

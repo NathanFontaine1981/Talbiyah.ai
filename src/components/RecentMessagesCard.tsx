@@ -58,7 +58,7 @@ export default function RecentMessagesCard() {
         .from('teacher_profiles')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const isTeacher = !!teacherProfile;
 
@@ -99,15 +99,56 @@ export default function RecentMessagesCard() {
       // Get recent messages for each relationship
       const recentMessagesData = await Promise.all(
         relationships.map(async (rel: any) => {
-          const otherUserId = isTeacher
-            ? rel.student.parent.id
-            : rel.teacher.user.id;
-          const otherUserName = isTeacher
-            ? rel.student.parent.full_name
-            : rel.teacher.user.full_name;
-          const otherUserAvatar = isTeacher
-            ? rel.student.parent.avatar_url
-            : rel.teacher.user.avatar_url;
+          // Handle null cases for student/parent/teacher data
+          let otherUserId: string;
+          let otherUserName: string;
+          let otherUserAvatar: string | null;
+
+          if (isTeacher) {
+            // Teacher viewing - use Edge Function to get student info (bypasses RLS)
+            try {
+              const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                  },
+                  body: JSON.stringify({ student_ids: [rel.student_id] })
+                }
+              );
+
+              if (response.ok) {
+                const { students } = await response.json();
+                const studentInfo = students[rel.student_id];
+
+                if (studentInfo) {
+                  otherUserId = rel.student_id;
+                  otherUserName = studentInfo.name;
+                  otherUserAvatar = studentInfo.avatar_url;
+                } else {
+                  otherUserId = rel.student_id;
+                  otherUserName = 'Student';
+                  otherUserAvatar = null;
+                }
+              } else {
+                otherUserId = rel.student_id;
+                otherUserName = 'Student';
+                otherUserAvatar = null;
+              }
+            } catch (error) {
+              console.error('Error fetching student info:', error);
+              otherUserId = rel.student_id;
+              otherUserName = 'Student';
+              otherUserAvatar = null;
+            }
+          } else {
+            // Student viewing - get teacher info
+            otherUserId = rel.teacher?.user?.id || rel.teacher_id;
+            otherUserName = rel.teacher?.user?.full_name || 'Teacher';
+            otherUserAvatar = rel.teacher?.user?.avatar_url || null;
+          }
 
           // Get lessons for this relationship
           const { data: relationshipLessons } = await supabase

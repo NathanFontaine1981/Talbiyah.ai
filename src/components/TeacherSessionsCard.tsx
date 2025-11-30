@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { format, parseISO, differenceInMinutes, differenceInDays } from 'date-fns';
 
 interface TeacherSession {
   id: string;
@@ -15,6 +15,10 @@ interface TeacherSession {
   '100ms_room_id': string | null;
   teacher_room_code: string | null;
   status?: string;
+  has_insights?: boolean;
+  has_recording?: boolean;
+  recording_url?: string;
+  recording_expires_at?: string;
 }
 
 export default function TeacherSessionsCard() {
@@ -152,20 +156,52 @@ export default function TeacherSessionsCard() {
       }
 
       if (lessonsData && lessonsData.length > 0) {
+        // Fetch insights and recordings separately
+        const lessonIds = lessonsData.map((l: any) => l.id);
+
+        // Get insights
+        const insightsSet = new Set<string>();
+        if (lessonIds.length > 0) {
+          const { data: insightsData } = await supabase
+            .from('lesson_insights')
+            .select('lesson_id')
+            .in('lesson_id', lessonIds);
+          insightsData?.forEach((i: any) => insightsSet.add(i.lesson_id));
+        }
+
+        // Get recordings
+        const recordingsMap = new Map<string, { url: string; expires_at: string }>();
+        if (lessonIds.length > 0) {
+          const { data: recordingsData } = await supabase
+            .from('lesson_recordings')
+            .select('lesson_id, recording_url, expires_at')
+            .in('lesson_id', lessonIds);
+          recordingsData?.forEach((r: any) => {
+            recordingsMap.set(r.lesson_id, { url: r.recording_url, expires_at: r.expires_at });
+          });
+        }
+
         const formattedSessions: TeacherSession[] = lessonsData
           .filter((lesson: any) => lesson.learners && lesson.subjects)
-          .map((lesson: any) => ({
-            id: lesson.id,
-            student_name: lesson.learners?.name || 'Student',
-            student_avatar: lesson.learners?.profiles?.avatar_url || null,
-            subject_name: lesson.subjects?.name || 'Unknown Subject',
-            scheduled_time: lesson.scheduled_time,
-            duration_minutes: lesson.duration_minutes,
-            teacher_confirmed: lesson.teacher_confirmed || false,
-            '100ms_room_id': lesson['100ms_room_id'],
-            teacher_room_code: lesson.teacher_room_code,
-            status: lesson.status
-          }));
+          .map((lesson: any) => {
+            const recording = recordingsMap.get(lesson.id);
+            return {
+              id: lesson.id,
+              student_name: lesson.learners?.name || 'Student',
+              student_avatar: lesson.learners?.profiles?.avatar_url || null,
+              subject_name: lesson.subjects?.name || 'Unknown Subject',
+              scheduled_time: lesson.scheduled_time,
+              duration_minutes: lesson.duration_minutes,
+              teacher_confirmed: lesson.teacher_confirmed || false,
+              '100ms_room_id': lesson['100ms_room_id'],
+              teacher_room_code: lesson.teacher_room_code,
+              status: lesson.status,
+              has_insights: insightsSet.has(lesson.id),
+              has_recording: !!recording,
+              recording_url: recording?.url,
+              recording_expires_at: recording?.expires_at
+            };
+          });
         setPastSessions(formattedSessions);
       } else {
         setPastSessions([]);
@@ -443,9 +479,55 @@ export default function TeacherSessionsCard() {
                         )}
                       </>
                     ) : (
-                      <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/30">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="text-sm font-semibold">Completed</span>
+                      <div className="flex items-center space-x-3">
+                        {/* View Insights Button */}
+                        <button
+                          onClick={() => navigate(`/lesson/${session.id}/insights`)}
+                          className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 hover:text-purple-300 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition font-semibold text-sm flex items-center space-x-2"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>Insights</span>
+                        </button>
+
+                        {/* Recording Buttons - only show if recording exists and not expired */}
+                        {session.has_recording && session.recording_url && (
+                          (() => {
+                            const daysLeft = session.recording_expires_at
+                              ? differenceInDays(parseISO(session.recording_expires_at), new Date())
+                              : 0;
+                            const isExpired = daysLeft <= 0;
+
+                            return isExpired ? (
+                              <span className="text-xs text-slate-500 px-2">Recording expired</span>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <a
+                                  href={session.recording_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 transition text-sm flex items-center space-x-1"
+                                >
+                                  <Play className="w-4 h-4" />
+                                  <span>Watch</span>
+                                </a>
+                                <a
+                                  href={session.recording_url}
+                                  download
+                                  className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg transition"
+                                  title={`Download - ${daysLeft} days left`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </a>
+                                <span className="text-xs text-amber-400">{daysLeft}d left</span>
+                              </div>
+                            );
+                          })()
+                        )}
+
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/30">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-xs font-semibold">Done</span>
+                        </div>
                       </div>
                     )}
                   </div>

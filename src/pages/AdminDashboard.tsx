@@ -14,7 +14,10 @@ import {
   Calendar,
   ChevronLeft,
   Award,
-  DollarSign
+  DollarSign,
+  Sparkles,
+  Mic,
+  Home
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -32,7 +35,8 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const adminMenuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', exact: true },
+    { icon: Home, label: 'Home Dashboard', path: '/dashboard', exact: true },
+    { icon: LayoutDashboard, label: 'Admin Overview', path: '/admin', exact: true },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: GraduationCap, label: 'Teachers', path: '/admin/teachers' },
     { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
@@ -42,6 +46,8 @@ export default function AdminDashboard() {
     { icon: BookOpen, label: 'Courses', path: '/admin/courses' },
     { icon: Video, label: 'Recordings', path: '/admin/recordings' },
     { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
+    { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator' },
+    { icon: Mic, label: 'Khutbah Reflections', path: '/khutba-reflections' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
 

@@ -90,13 +90,15 @@ export default function CourseArabic() {
             <div>
               <div className="relative bg-gradient-to-br from-blue-500 to-cyan-600 rounded-3xl p-1 mb-8 shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-20 blur-2xl"></div>
-                <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[22px] h-80 flex items-center justify-center">
-                  <div className="text-center flex flex-col items-center justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full"></div>
-                      <Languages className="relative w-32 h-32 text-blue-400 mb-6 drop-shadow-2xl" />
-                    </div>
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-6 py-3">
+                <div className="relative rounded-[22px] h-80 overflow-hidden">
+                  <img
+                    src="/arabiccourse.jpg"
+                    alt="Arabic Language"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-500/30 rounded-lg px-6 py-3">
                       <p className="text-blue-300 font-bold text-xl">Arabic Language</p>
                       <p className="text-blue-400/80 text-sm mt-1">Classical & Modern Standard Arabic</p>
                     </div>
@@ -137,6 +139,15 @@ export default function CourseArabic() {
                   <span>{user ? 'Browse Teachers' : 'Start Free 30-Min Session'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
+                {user && (
+                  <button
+                    onClick={() => navigate('/courses/arabic-progress')}
+                    className="px-8 py-4 bg-white hover:bg-blue-50 border-2 border-blue-300 text-blue-700 rounded-xl text-lg font-bold transition shadow-sm flex items-center justify-center space-x-2"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    <span>My Progress</span>
+                  </button>
+                )}
                 {!user && (
                   <button
                     onClick={() => navigate('/teachers')}

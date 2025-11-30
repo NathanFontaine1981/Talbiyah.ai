@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getHMSManagementToken } from '../_shared/hms.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,16 +62,17 @@ serve(async (req) => {
     }
 
     // Create 100ms room for each booking
-    const HMS_APP_ACCESS_KEY = Deno.env.get('HMS_APP_ACCESS_KEY')
-    const HMS_APP_SECRET = Deno.env.get('HMS_APP_SECRET')
-
-    if (!HMS_APP_ACCESS_KEY || !HMS_APP_SECRET) {
-      console.error('100ms credentials not configured')
-    }
-
     const createdLessons = []
-    const HMS_MANAGEMENT_TOKEN = Deno.env.get('HMS_MANAGEMENT_TOKEN')
     const HMS_TEMPLATE_ID = '6905fb03033903926e627d60' // Your template ID
+
+    // Generate 100ms management token dynamically
+    let HMS_MANAGEMENT_TOKEN: string | null = null
+    try {
+      HMS_MANAGEMENT_TOKEN = await getHMSManagementToken()
+      console.log('✅ Generated fresh 100ms token automatically')
+    } catch (tokenError) {
+      console.error('❌ Failed to generate HMS token:', tokenError)
+    }
 
     for (const item of cart_items) {
       // Create 100ms room

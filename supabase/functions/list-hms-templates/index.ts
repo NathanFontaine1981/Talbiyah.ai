@@ -1,7 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { getHMSManagementToken } from "../_shared/hms.ts"
 
 serve(async (req) => {
-  const HMS_MANAGEMENT_TOKEN = Deno.env.get('HMS_MANAGEMENT_TOKEN')
+  let HMS_MANAGEMENT_TOKEN: string
+  try {
+    HMS_MANAGEMENT_TOKEN = await getHMSManagementToken()
+    console.log('🔑 Generated fresh HMS token automatically')
+  } catch (error) {
+    console.error('❌ Failed to generate HMS token:', error.message)
+    return new Response(JSON.stringify({
+      error: 'Failed to generate HMS token',
+      details: error.message
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    })
+  }
 
   try {
     const response = await fetch('https://api.100ms.live/v2/templates', {

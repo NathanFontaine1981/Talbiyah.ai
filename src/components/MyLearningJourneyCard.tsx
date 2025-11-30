@@ -44,7 +44,7 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
         icon: Languages,
         color: 'text-cyan-400',
         bgColor: 'from-cyan-500/20 to-blue-500/20',
-        route: '/courses/arabic',
+        route: '/courses/arabic-progress',
         action: 'Start Learning'
       },
       {
@@ -168,7 +168,7 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
           icon: Languages,
           color: 'text-cyan-400',
           bgColor: 'from-cyan-500/20 to-blue-500/20',
-          route: '/courses/arabic',
+          route: '/courses/arabic-progress',
           action: arabicProgress > 0 ? 'Continue' : 'Start Learning'
         },
         {

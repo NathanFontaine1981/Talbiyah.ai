@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft, UserPlus, Send } from 'lucide-react';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 
 interface Conversation {
@@ -20,6 +20,7 @@ interface Conversation {
   unread_count: number;
   last_message_text: string | null;
   last_message_time: string | null;
+  is_pre_lesson: boolean; // True if this is a relationship with no lessons yet
 }
 
 interface Lesson {
@@ -31,6 +32,7 @@ interface Lesson {
 
 export default function Messages() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -40,9 +42,25 @@ export default function Messages() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
 
+  // Pre-lesson messaging state
+  const [preLessonMessage, setPreLessonMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+
   useEffect(() => {
     loadConversations();
   }, []);
+
+  // Handle ?teacher=xxx URL parameter to auto-select conversation
+  useEffect(() => {
+    const teacherIdParam = searchParams.get('teacher');
+    if (teacherIdParam && conversations.length > 0 && !selectedConversation) {
+      const conversation = conversations.find(c => c.teacher_id === teacherIdParam);
+      if (conversation) {
+        handleConversationClick(conversation);
+      }
+    }
+  }, [searchParams, conversations]);
 
   const loadConversations = async () => {
     try {
@@ -59,12 +77,14 @@ export default function Messages() {
         .from('teacher_profiles')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const isTeacher = !!teacherProfile;
       setUserRole(isTeacher ? 'teacher' : 'student');
 
       // Get all student-teacher relationships
+      // Note: We query relationships with teacher join, then fetch student info separately
+      // because RLS on learners may block teachers from reading learner data
       let query = supabase
         .from('student_teacher_relationships')
         .select(`
@@ -75,15 +95,6 @@ export default function Messages() {
           total_lessons,
           last_lesson_date,
           subjects (name),
-          student:learners!student_teacher_relationships_student_id_fkey (
-            id,
-            name,
-            parent:profiles!learners_parent_id_fkey (
-              id,
-              full_name,
-              avatar_url
-            )
-          ),
           teacher:teacher_profiles!student_teacher_relationships_teacher_id_fkey (
             id,
             user:profiles!teacher_profiles_user_id_fkey (
@@ -149,15 +160,59 @@ export default function Messages() {
       // Get unread message counts and last messages for each teacher
       const conversationsData = await Promise.all(
         Array.from(groupedByTeacher.values()).map(async (group: any) => {
-          const otherUserId = isTeacher
-            ? group.student.parent.id
-            : group.teacher.user.id;
-          const otherUserName = isTeacher
-            ? group.student.parent.full_name
-            : group.teacher.user.full_name;
-          const otherUserAvatar = isTeacher
-            ? group.student.parent.avatar_url
-            : group.teacher.user.avatar_url;
+          // Handle null cases for student/parent/teacher data
+          let otherUserId: string;
+          let otherUserName: string;
+          let otherUserAvatar: string | null;
+
+          if (isTeacher) {
+            // Teacher viewing - use Edge Function to get student info (bypasses RLS)
+            try {
+              const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                  },
+                  body: JSON.stringify({ student_ids: [group.student_id] })
+                }
+              );
+
+              if (response.ok) {
+                const { students } = await response.json();
+                const studentInfo = students[group.student_id];
+
+                if (studentInfo) {
+                  otherUserId = group.student_id;
+                  otherUserName = studentInfo.name;
+                  otherUserAvatar = studentInfo.avatar_url;
+                } else {
+                  otherUserId = group.student_id;
+                  otherUserName = 'Student';
+                  otherUserAvatar = null;
+                }
+              } else {
+                // Fallback if Edge Function fails
+                otherUserId = group.student_id;
+                otherUserName = 'Student';
+                otherUserAvatar = null;
+              }
+            } catch (error) {
+              console.error('Error fetching student info:', error);
+              otherUserId = group.student_id;
+              otherUserName = 'Student';
+              otherUserAvatar = null;
+            }
+
+            console.log('Teacher viewing student:', { finalName: otherUserName, studentId: group.student_id });
+          } else {
+            // Student viewing - get teacher info
+            otherUserId = group.teacher?.user?.id || group.teacher_id;
+            otherUserName = group.teacher?.user?.full_name || 'Teacher';
+            otherUserAvatar = group.teacher?.user?.avatar_url || null;
+          }
 
           // Get ALL lessons for this teacher-student pair (across all subjects)
           const { data: relationshipLessons } = await supabase
@@ -214,6 +269,7 @@ export default function Messages() {
             unread_count: unreadCount,
             last_message_text: lastMessage?.message_text || null,
             last_message_time: lastMessage?.created_at || null,
+            is_pre_lesson: group.total_lessons === 0,
           };
         })
       );
@@ -235,10 +291,20 @@ export default function Messages() {
 
   const handleConversationClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    setLessons([]);
+    setSelectedLessonId(null);
+
+    // Skip lesson loading for pre-lesson relationships
+    if (conversation.is_pre_lesson) {
+      setLoadingLessons(false);
+      return;
+    }
+
+    setLoadingLessons(true);
 
     // Load ALL lessons for this teacher-student pair (all subjects)
     try {
-      const { data: lessonsList } = await supabase
+      const { data: lessonsList, error } = await supabase
         .from('lessons')
         .select(`
           id,
@@ -250,6 +316,13 @@ export default function Messages() {
         .eq('teacher_id', conversation.teacher_id)
         .order('scheduled_time', { ascending: false });
 
+      if (error) {
+        console.error('Error loading lessons:', error);
+        setLoadingLessons(false);
+        return;
+      }
+
+      console.log('Loaded lessons:', lessonsList?.length, 'for teacher:', conversation.teacher_id, 'student:', conversation.student_id);
       setLessons(lessonsList || []);
 
       // Auto-select the most recent lesson if available
@@ -258,6 +331,8 @@ export default function Messages() {
       }
     } catch (error) {
       console.error('Error loading lessons:', error);
+    } finally {
+      setLoadingLessons(false);
     }
   };
 
@@ -313,11 +388,11 @@ export default function Messages() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/dashboard')}
             className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            Back to Dashboard
           </button>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Messages</h1>
           <p className="text-gray-600">
@@ -361,29 +436,45 @@ export default function Messages() {
                       className={`w-full p-4 text-left hover:bg-gray-50 transition ${
                         selectedConversation?.relationship_id === conv.relationship_id
                           ? 'bg-cyan-50 border-l-4 border-cyan-500'
+                          : conv.is_pre_lesson
+                          ? 'bg-blue-50/50'
                           : ''
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                          {conv.other_user_avatar ? (
-                            <img
-                              src={conv.other_user_avatar}
-                              alt={conv.other_user_name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            conv.other_user_name.charAt(0).toUpperCase()
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                            {conv.other_user_avatar ? (
+                              <img
+                                src={conv.other_user_avatar}
+                                alt={conv.other_user_name}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              conv.other_user_name.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          {conv.is_pre_lesson && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <UserPlus className="w-3 h-3 text-white" />
+                            </div>
                           )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {conv.other_user_name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {conv.other_user_name}
+                              </h3>
+                              {conv.is_pre_lesson && (
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                                  New
+                                </span>
+                              )}
+                            </div>
                             {conv.unread_count > 0 && (
                               <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-lg animate-pulse">
                                 {conv.unread_count}
@@ -398,11 +489,15 @@ export default function Messages() {
                             </p>
                           )}
 
-                          {conv.last_message_text && (
+                          {conv.last_message_text ? (
                             <p className="text-sm text-gray-600 truncate mb-1">
                               {conv.last_message_text}
                             </p>
-                          )}
+                          ) : conv.is_pre_lesson ? (
+                            <p className="text-sm text-blue-600 mb-1 italic">
+                              Send your first message!
+                            </p>
+                          ) : null}
 
                           <div className="flex items-center gap-2 text-xs text-gray-400">
                             <span>{conv.total_lessons} {conv.total_lessons === 1 ? 'lesson' : 'lessons'}</span>
@@ -464,44 +559,133 @@ export default function Messages() {
                   </div>
                 </div>
 
-                {/* Lesson Selector */}
-                {lessons.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select a lesson to view messages
-                    </label>
-                    <select
-                      value={selectedLessonId || ''}
-                      onChange={(e) => setSelectedLessonId(e.target.value)}
-                      className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    >
-                      <option value="">Choose a lesson...</option>
-                      {lessons.map((lesson) => (
-                        <option key={lesson.id} value={lesson.id}>
-                          {formatLessonTime(lesson.scheduled_time)} - {Array.isArray(lesson.subject) ? lesson.subject[0]?.name : lesson.subject.name} ({lesson.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Messages */}
-                {selectedLessonId ? (
-                  <LessonMessaging
-                    lessonId={selectedLessonId}
-                    currentUserId={currentUserId}
-                    userRole={userRole}
-                  />
-                ) : (
+                {/* Loading state while fetching lessons */}
+                {loadingLessons ? (
                   <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                    <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Select a lesson
-                    </h3>
-                    <p className="text-gray-600">
-                      Choose a lesson from the dropdown to view and send messages
-                    </p>
+                    <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading messages...</p>
                   </div>
+                ) : (selectedConversation.is_pre_lesson || lessons.length === 0) ? (
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    {/* Welcome Header */}
+                    <div className="p-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                          <UserPlus className="w-7 h-7" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold">Welcome!</h3>
+                          <p className="text-cyan-100 text-sm mt-1">
+                            You're now connected with {selectedConversation.other_user_name}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Getting Started Steps */}
+                    <div className="p-6 border-b">
+                      <h4 className="font-semibold text-gray-900 mb-4">Getting Started</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            1
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">Book your first lesson</p>
+                            <p className="text-sm text-gray-500">Choose a time that works for you</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            2
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-400">Wait for confirmation</p>
+                            <p className="text-sm text-gray-400">Your teacher will confirm the lesson</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            3
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-400">Start learning!</p>
+                            <p className="text-sm text-gray-400">Join your video lesson and begin your journey</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Info */}
+                    <div className="p-6 bg-gray-50">
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-white p-4 rounded-lg border">
+                          <BookOpen className="w-5 h-5 text-cyan-500 mb-2" />
+                          <p className="text-sm font-medium text-gray-900">{selectedConversation.subject_name || 'Multiple Subjects'}</p>
+                          <p className="text-xs text-gray-500">Subject</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border">
+                          <Calendar className="w-5 h-5 text-emerald-500 mb-2" />
+                          <p className="text-sm font-medium text-gray-900">Ready to book</p>
+                          <p className="text-xs text-gray-500">Status</p>
+                        </div>
+                      </div>
+
+                      {/* Book Lesson CTA */}
+                      <button
+                        onClick={() => navigate(`/teacher/${selectedConversation.teacher_id}/book`)}
+                        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
+                      >
+                        <Calendar className="w-5 h-5" />
+                        Book Your First Lesson
+                      </button>
+                      <p className="text-center text-xs text-gray-500 mt-3">
+                        Messages will be available once you have a booked lesson
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Lesson Selector */}
+                    {lessons.length > 0 && (
+                      <div className="bg-white rounded-xl shadow-sm p-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select a lesson to view messages
+                        </label>
+                        <select
+                          value={selectedLessonId || ''}
+                          onChange={(e) => setSelectedLessonId(e.target.value)}
+                          className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                        >
+                          <option value="">Choose a lesson...</option>
+                          {lessons.map((lesson) => (
+                            <option key={lesson.id} value={lesson.id}>
+                              {formatLessonTime(lesson.scheduled_time)} - {Array.isArray(lesson.subject) ? lesson.subject[0]?.name : lesson.subject.name} ({lesson.status})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Messages */}
+                    {selectedLessonId ? (
+                      <LessonMessaging
+                        lessonId={selectedLessonId}
+                        currentUserId={currentUserId}
+                        userRole={userRole}
+                      />
+                    ) : (
+                      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                        <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          Select a lesson
+                        </h3>
+                        <p className="text-gray-600">
+                          Choose a lesson from the dropdown to view and send messages
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

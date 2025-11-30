@@ -36,6 +36,7 @@ import BuyCredits from './pages/BuyCredits';
 import CreditPurchaseSuccess from './pages/CreditPurchaseSuccess';
 import BookingOptions from './pages/BookingOptions';
 import QuranProgress from './pages/QuranProgress';
+import ArabicProgress from './pages/ArabicProgress';
 import CoursesOverview from './pages/CoursesOverview';
 import RecordingsHistory from './pages/RecordingsHistory';
 import TeacherProfileSetup from './pages/TeacherProfileSetup';
@@ -44,6 +45,8 @@ import TeacherAvailability from './pages/TeacherAvailability';
 import TeacherEditProfile from './pages/teacher/EditProfile';
 import TeacherHub from './pages/teacher/TeacherHub';
 import MyStudents from './pages/teacher/MyStudents';
+import HomeworkReview from './pages/teacher/HomeworkReview';
+import MySchedule from './pages/teacher/MySchedule';
 import IslamicSourceReferenceAbout from './pages/IslamicSourceReferenceAbout';
 import IslamicSourceReference from './pages/IslamicSourceReference';
 import KhutbaCreator from './pages/KhutbaCreator';
@@ -117,6 +120,14 @@ function App() {
           element={
             <ProtectedRoute>
               <QuranProgress />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses/arabic-progress"
+          element={
+            <ProtectedRoute>
+              <ArabicProgress />
             </ProtectedRoute>
           }
         />
@@ -226,6 +237,22 @@ function App() {
           element={
             <ProtectedRoute>
               <MyStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/homework-review"
+          element={
+            <ProtectedRoute>
+              <HomeworkReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/schedule"
+          element={
+            <ProtectedRoute>
+              <MySchedule />
             </ProtectedRoute>
           }
         />

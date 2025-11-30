@@ -10,11 +10,13 @@ interface CourseProgress {
   progressPercentage: number;
   icon: any;
   description: string;
-  route: string;
+  progressRoute: string;
+  infoRoute: string;
   color: string;
   bgGradient: string;
   shadowColor: string;
   imageUrl?: string;
+  comingSoon?: boolean;
 }
 
 interface ChildData {
@@ -212,7 +214,8 @@ export default function CoursesOverview() {
           progressPercentage: quranProgress,
           icon: BookOpen,
           description: 'Master Tajweed, understand meanings, and memorize with confidence',
-          route: '/course/quran-understanding',
+          progressRoute: '/courses/quran-progress',
+          infoRoute: '/course/quran-understanding',
           color: 'text-emerald-600',
           bgGradient: 'from-emerald-500 to-teal-600',
           shadowColor: 'emerald-500',
@@ -224,7 +227,8 @@ export default function CoursesOverview() {
           progressPercentage: arabicProgress,
           icon: Languages,
           description: 'Learn Classical Arabic to understand the Quran in its original language',
-          route: '/course/arabic-language',
+          progressRoute: '/courses/arabic-progress',
+          infoRoute: '/course/arabic-language',
           color: 'text-blue-600',
           bgGradient: 'from-blue-500 to-cyan-600',
           shadowColor: 'blue-500',
@@ -236,11 +240,13 @@ export default function CoursesOverview() {
           progressPercentage: islamicProgress,
           icon: Star,
           description: 'Deepen your knowledge of Islamic theology, history, and jurisprudence',
-          route: '/courses/islamic-studies',
+          progressRoute: '/courses/islamic-studies',
+          infoRoute: '/courses/islamic-studies',
           color: 'text-purple-600',
           bgGradient: 'from-purple-500 to-pink-600',
           shadowColor: 'purple-500',
-          imageUrl: '/islamicstudies.jpg'
+          imageUrl: '/islamicstudies.jpg',
+          comingSoon: true
         }
       ];
 
@@ -346,22 +352,34 @@ export default function CoursesOverview() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {courses.map((course) => (
-            <button
+            <div
               key={course.courseId}
-              onClick={() => navigate(course.route)}
-              className="group relative bg-slate-900/80 backdrop-blur-sm rounded-3xl border border-slate-800 hover:border-slate-700 shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 text-left"
+              className={`group relative bg-slate-900/80 backdrop-blur-sm rounded-3xl border border-slate-800 shadow-lg overflow-hidden transition-all duration-300 text-left ${
+                course.comingSoon
+                  ? 'opacity-75'
+                  : 'hover:border-slate-700 hover:shadow-2xl'
+              }`}
             >
+              {/* Coming Soon Badge */}
+              {course.comingSoon && (
+                <div className="absolute top-4 right-4 z-20">
+                  <div className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shadow-lg">
+                    <span className="text-white font-bold text-sm">Coming Soon</span>
+                  </div>
+                </div>
+              )}
+
               <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 rounded-3xl blur-xl transition-all duration-500" style={{
                 backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))`,
               }}></div>
 
               <div className="relative p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${course.bgGradient} rounded-2xl flex items-center justify-center shadow-lg shadow-${course.shadowColor}/50 group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`w-16 h-16 bg-gradient-to-br ${course.bgGradient} rounded-2xl flex items-center justify-center shadow-lg shadow-${course.shadowColor}/50 ${!course.comingSoon && 'group-hover:scale-110'} transition-transform duration-300`}>
                     <course.icon className="w-8 h-8 text-white" />
                   </div>
 
-                  {course.progressPercentage > 0 && (
+                  {course.progressPercentage > 0 && !course.comingSoon && (
                     <div className="flex items-center space-x-2">
                       <TrendingUp className="w-5 h-5 text-emerald-400" />
                       <span className="text-2xl font-bold text-emerald-400">
@@ -371,13 +389,17 @@ export default function CoursesOverview() {
                   )}
                 </div>
 
-                <div className={`bg-gradient-to-br ${course.bgGradient} rounded-xl p-1 mb-6 shadow-lg`}>
+                {/* Clickable image - goes to info page */}
+                <div
+                  onClick={() => !course.comingSoon && navigate(course.infoRoute)}
+                  className={`bg-gradient-to-br ${course.bgGradient} rounded-xl p-1 mb-6 shadow-lg relative ${!course.comingSoon ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                >
                   <div className="bg-slate-800 rounded-lg h-48 overflow-hidden">
                     {course.imageUrl ? (
                       <img
                         src={course.imageUrl}
                         alt={course.courseName}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${course.comingSoon ? 'grayscale' : 'hover:scale-105'} transition-transform duration-300`}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -390,7 +412,11 @@ export default function CoursesOverview() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-cyan-400 transition">
+                {/* Clickable title - goes to info page */}
+                <h3
+                  onClick={() => !course.comingSoon && navigate(course.infoRoute)}
+                  className={`text-2xl font-bold text-white mb-3 ${!course.comingSoon && 'hover:text-cyan-400 cursor-pointer'} transition`}
+                >
                   {course.courseName}
                 </h3>
 
@@ -398,31 +424,44 @@ export default function CoursesOverview() {
                   {course.description}
                 </p>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400 font-medium">Overall Progress</span>
-                    <span className="font-semibold text-emerald-400">
-                      {course.progressPercentage}%
-                    </span>
+                {course.comingSoon ? (
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+                    <p className="text-slate-400 font-medium">This course is under development</p>
+                    <p className="text-slate-500 text-sm mt-1">Check back soon for updates!</p>
                   </div>
+                ) : (
+                  /* Clickable progress section - goes to progress tracker */
+                  <div
+                    onClick={() => navigate(course.progressRoute)}
+                    className="cursor-pointer hover:bg-slate-800/50 rounded-xl p-3 -mx-3 transition"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-400 font-medium">Overall Progress</span>
+                        <span className="font-semibold text-emerald-400">
+                          {course.progressPercentage}%
+                        </span>
+                      </div>
 
-                  <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
-                    <div
-                      className={`h-full bg-gradient-to-r ${course.bgGradient} transition-all duration-500`}
-                      style={{ width: `${course.progressPercentage}%` }}
-                    ></div>
+                      <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+                        <div
+                          className={`h-full bg-gradient-to-r ${course.bgGradient} transition-all duration-500`}
+                          style={{ width: `${course.progressPercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-sm text-slate-400 font-medium">
+                        {course.progressPercentage === 0 ? 'Not started' :
+                         course.progressPercentage === 100 ? 'Completed!' : 'In progress'}
+                      </span>
+                      <span className="text-cyan-400 hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                    </div>
                   </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <span className="text-sm text-slate-400 font-medium">
-                    {course.progressPercentage === 0 ? 'Not started' :
-                     course.progressPercentage === 100 ? 'Completed!' : 'In progress'}
-                  </span>
-                  <span className="text-cyan-400 group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                </div>
+                )}
               </div>
-            </button>
+            </div>
           ))}
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, Star, Clock, Award, ThumbsUp } from 'lucide-react';
+import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, Star, Clock, Award, ThumbsUp, UserPlus, X, Check } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import CartDrawer from '../components/CartDrawer';
@@ -45,6 +45,14 @@ export default function Teachers() {
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Add to My Teachers state
+  const [addTeacherModalOpen, setAddTeacherModalOpen] = useState(false);
+  const [selectedTeacherForAdd, setSelectedTeacherForAdd] = useState<Teacher | null>(null);
+  const [selectedSubjectForAdd, setSelectedSubjectForAdd] = useState<string>('');
+  const [addingTeacher, setAddingTeacher] = useState(false);
+  const [myTeacherIds, setMyTeacherIds] = useState<Set<string>>(new Set());
+  const [studentProfileId, setStudentProfileId] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -61,6 +69,61 @@ export default function Teachers() {
     fetchTeachers();
     fetchSubjects();
   }, []);
+
+  // Fetch student's existing teacher relationships
+  useEffect(() => {
+    async function fetchMyTeachers() {
+      if (!user) {
+        setMyTeacherIds(new Set());
+        setStudentProfileId(null);
+        return;
+      }
+
+      try {
+        // First get the profile to check roles
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, roles')
+          .eq('id', user.id)
+          .single();
+
+        // Allow students and parents to add teachers
+        // (anyone who is not a teacher-only user)
+        const isTeacherOnly = profileData?.roles?.length === 1 && profileData.roles.includes('teacher');
+        if (!profileData || isTeacherOnly) {
+          return;
+        }
+
+        // Get the learner ID (student_teacher_relationships uses learner_id as student_id)
+        const { data: learnerData } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (learnerData) {
+          setStudentProfileId(learnerData.id);
+
+          // Get existing teacher relationships
+          const { data: relationships } = await supabase
+            .from('student_teacher_relationships')
+            .select('teacher_id')
+            .eq('student_id', learnerData.id);
+
+          if (relationships) {
+            setMyTeacherIds(new Set(relationships.map(r => r.teacher_id)));
+          }
+        } else {
+          // No learner record yet - still allow adding teachers (will create learner on first add)
+          setStudentProfileId(user.id);
+        }
+      } catch (error) {
+        console.error('Error fetching my teachers:', error);
+      }
+    }
+
+    fetchMyTeachers();
+  }, [user]);
 
   useEffect(() => {
     applyFilters();
@@ -311,12 +374,57 @@ export default function Teachers() {
     navigate('/');
   }
 
+  function openAddTeacherModal(teacher: Teacher) {
+    setSelectedTeacherForAdd(teacher);
+    setSelectedSubjectForAdd('');
+    setAddTeacherModalOpen(true);
+  }
+
+  async function handleAddToMyTeachers() {
+    if (!studentProfileId || !selectedTeacherForAdd || !selectedSubjectForAdd) {
+      return;
+    }
+
+    setAddingTeacher(true);
+    try {
+      const { data, error } = await supabase.rpc('manually_add_teacher_relationship', {
+        p_student_id: studentProfileId,
+        p_teacher_id: selectedTeacherForAdd.id,
+        p_subject_id: selectedSubjectForAdd
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      setMyTeacherIds(prev => new Set([...prev, selectedTeacherForAdd.id]));
+      setAddTeacherModalOpen(false);
+      setSelectedTeacherForAdd(null);
+      setSelectedSubjectForAdd('');
+
+      // Show success - could navigate to messages
+      alert(`${selectedTeacherForAdd.full_name} has been added to your teachers! You can now message them.`);
+    } catch (error: any) {
+      console.error('Error adding teacher:', error);
+      alert(error.message || 'Failed to add teacher. Please try again.');
+    } finally {
+      setAddingTeacher(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="fixed top-0 w-full bg-white backdrop-blur-md z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {searchParams.get('subject') && (
+            {user ? (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span>Back to Dashboard</span>
+              </button>
+            ) : searchParams.get('subject') ? (
               <button
                 onClick={() => navigate('/subjects')}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
@@ -324,7 +432,7 @@ export default function Teachers() {
                 <ChevronLeft className="w-5 h-5" />
                 <span>Back to Subjects</span>
               </button>
-            )}
+            ) : null}
             <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
               <BookOpen className="w-7 h-7 text-emerald-500" />
               <span className="text-2xl font-semibold text-gray-900">Talbiyah.ai</span>
@@ -574,22 +682,40 @@ export default function Teachers() {
                                 £{teacher.student_hourly_price.toFixed(2)}/hour
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                onClick={() => navigate(`/teacher/${teacher.id}`)}
-                                className="px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-semibold transition"
-                              >
-                                Profile
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const subjectParam = searchParams.get('subject');
-                                  navigate(`/teacher/${teacher.id}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
-                                }}
-                                className={`px-4 py-2.5 bg-gradient-to-r ${getTierColor(teacher.tier)} text-white rounded-lg font-semibold transition hover:opacity-90 shadow-md`}
-                              >
-                                Book Now
-                              </button>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  onClick={() => navigate(`/teacher/${teacher.id}`)}
+                                  className="px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-semibold transition"
+                                >
+                                  Profile
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const subjectParam = searchParams.get('subject');
+                                    navigate(`/teacher/${teacher.id}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
+                                  }}
+                                  className={`px-4 py-2.5 bg-gradient-to-r ${getTierColor(teacher.tier)} text-white rounded-lg font-semibold transition hover:opacity-90 shadow-md`}
+                                >
+                                  Book Now
+                                </button>
+                              </div>
+                              {/* Add to My Teachers button - only for logged-in students who don't have this teacher yet */}
+                              {user && studentProfileId && !myTeacherIds.has(teacher.id) && (
+                                <button
+                                  onClick={() => openAddTeacherModal(teacher)}
+                                  className="w-full px-4 py-2.5 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                                >
+                                  <UserPlus className="w-4 h-4" />
+                                  <span>Add to My Teachers</span>
+                                </button>
+                              )}
+                              {user && studentProfileId && myTeacherIds.has(teacher.id) && (
+                                <div className="w-full px-4 py-2.5 bg-green-50 border-2 border-green-300 text-green-700 rounded-lg font-semibold flex items-center justify-center space-x-2">
+                                  <Check className="w-4 h-4" />
+                                  <span>In My Teachers</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -602,6 +728,99 @@ export default function Teachers() {
           </div>
         </div>
       </div>
+
+      {/* Add to My Teachers Modal */}
+      {addTeacherModalOpen && selectedTeacherForAdd && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Add to My Teachers</h2>
+                <button
+                  onClick={() => {
+                    setAddTeacherModalOpen(false);
+                    setSelectedTeacherForAdd(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100 to-cyan-100 flex-shrink-0 border-2 border-emerald-200">
+                  {selectedTeacherForAdd.avatar_url ? (
+                    <img
+                      src={selectedTeacherForAdd.avatar_url}
+                      alt={selectedTeacherForAdd.full_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-7 h-7 text-emerald-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">{selectedTeacherForAdd.full_name}</h3>
+                  <p className="text-sm text-gray-600">{selectedTeacherForAdd.tier_icon} {selectedTeacherForAdd.tier_name}</p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Which subject do you want to learn from this teacher?
+                </label>
+                <select
+                  value={selectedSubjectForAdd}
+                  onChange={(e) => setSelectedSubjectForAdd(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                >
+                  <option value="">Select a subject...</option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  <strong>What happens next?</strong><br />
+                  After adding this teacher, you'll be able to message them directly to discuss your learning goals before booking any lessons.
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setAddTeacherModalOpen(false);
+                    setSelectedTeacherForAdd(null);
+                  }}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddToMyTeachers}
+                  disabled={!selectedSubjectForAdd || addingTeacher}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {addingTeacher ? (
+                    <span>Adding...</span>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      <span>Add Teacher</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CartDrawer
         isOpen={isCartOpen}

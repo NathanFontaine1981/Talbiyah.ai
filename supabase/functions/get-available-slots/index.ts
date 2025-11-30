@@ -11,9 +11,9 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { 
+    return new Response('ok', {
       status: 200,
-      headers: corsHeaders 
+      headers: corsHeaders
     })
   }
 
@@ -43,305 +43,270 @@ serve(async (req) => {
     const url = new URL(req.url)
     const fromDate = url.searchParams.get('from') || new Date().toISOString().split('T')[0]
     const toDate = url.searchParams.get('to') || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const subject = url.searchParams.get('subject')
-    const teacherId = url.searchParams.get('teacher_id')
+    const subjectFilter = url.searchParams.get('subject')
+    const teacherIdFilter = url.searchParams.get('teacher_id')
 
-    // Build query for teacher availability using new table
-    let availabilityQuery = supabaseClient
-      .from('teacher_availability_slots')
-      .select(`
-        *,
-        teacher:profiles!teacher_id(
-          id,
-          full_name,
-          avatar_url,
-          teacher_profile:teachers!inner(
-            id,
-            rating,
-            hourly_rate
-          )
-        )
-      `)
-      .eq('is_active', true)
+    console.log('📅 Fetching availability from', fromDate, 'to', toDate)
+    console.log('🎯 Teacher filter:', teacherIdFilter, 'Subject filter:', subjectFilter)
 
-    // Filter by subject if provided
-    if (subject) {
-      availabilityQuery = availabilityQuery.eq('subject', subject)
-    }
+    // The teacherIdFilter might be a user_id (from profiles table) or teacher_profiles.id
+    // We need to resolve it to teacher_profiles.id for querying availability
+    let resolvedTeacherId = teacherIdFilter
 
-    // Filter by teacher if provided
-    if (teacherId) {
-      availabilityQuery = availabilityQuery.eq('teacher_id', teacherId)
-    }
+    if (teacherIdFilter) {
+      // First check if this is a user_id by looking up teacher_profiles
+      const { data: teacherProfile } = await supabaseClient
+        .from('teacher_profiles')
+        .select('id')
+        .eq('user_id', teacherIdFilter)
+        .maybeSingle()
 
-    const { data: rawSlots, error } = await availabilityQuery
-      .order('day_of_week', { ascending: true })
-      .order('start_time', { ascending: true })
-
-    if (error) {
-      throw error
-    }
-
-    // Get all teacher IDs that have availability
-    const teacherIds = [...new Set(rawSlots.map(slot => slot.teacher_id))]
-
-    const subjectSlugs = [...new Set(rawSlots.map(slot => slot.subject).filter(Boolean))]
-
-    let subjectsData: any[] = []
-
-    if (subjectSlugs.length > 0) {
-      const { data: fetchedSubjects, error: subjectsError } = await supabaseClient
-        .from('subjects')
-        .select('*')
-        .in('slug', subjectSlugs)
-
-      if (subjectsError) {
-        throw subjectsError
+      if (teacherProfile) {
+        console.log('🔄 Resolved user_id to teacher_profiles.id:', teacherProfile.id)
+        resolvedTeacherId = teacherProfile.id
+      } else {
+        console.log('ℹ️ teacherIdFilter is already a teacher_profiles.id or not found')
       }
-
-      subjectsData = fetchedSubjects ?? []
     }
 
-    const subjectMap = new Map<string, any>()
-    const subjectIdMap = new Map<string, any>()
+    // Fetch recurring availability from teacher_availability table
+    let recurringQuery = supabaseClient
+      .from('teacher_availability')
+      .select('*')
+      .eq('is_available', true)
 
-    subjectsData.forEach(subject => {
-      if (subject?.slug) {
-        subjectMap.set(subject.slug, subject)
-      }
-      if (subject?.id) {
-        subjectIdMap.set(subject.id, subject)
-      }
-    })
-
-    let rateMap = new Map<string, any>()
-
-    if (teacherIds.length > 0 && subjectIdMap.size > 0) {
-      const subjectIds = Array.from(subjectIdMap.keys())
-
-      const { data: teacherSettings, error: settingsError } = await supabaseClient
-        .from('teacher_subject_settings')
-        .select('id, teacher_id, subject_id, hourly_rate, is_enabled')
-        .in('teacher_id', teacherIds)
-        .in('subject_id', subjectIds)
-
-      if (settingsError) {
-        throw settingsError
-      }
-
-      rateMap = new Map()
-
-      ;(teacherSettings ?? []).forEach(setting => {
-        const subject = subjectIdMap.get(setting.subject_id)
-        const slugKey = subject?.slug ? `${setting.teacher_id}:${subject.slug}` : null
-        const idKey = `${setting.teacher_id}:${setting.subject_id}`
-
-        if (slugKey) {
-          rateMap.set(slugKey, setting)
-        }
-
-        rateMap.set(idKey, setting)
-      })
+    if (resolvedTeacherId) {
+      recurringQuery = recurringQuery.eq('teacher_id', resolvedTeacherId)
     }
 
-    if (teacherIds.length === 0) {
+    const { data: recurringSlots, error: recurringError } = await recurringQuery
+
+    if (recurringError) {
+      console.error('Error fetching recurring availability:', recurringError)
+      throw recurringError
+    }
+
+    console.log('📊 Found', recurringSlots?.length || 0, 'recurring availability records')
+
+    // Fetch one-off availability from teacher_availability_one_off table
+    let oneOffQuery = supabaseClient
+      .from('teacher_availability_one_off')
+      .select('*')
+      .eq('is_available', true)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+
+    if (resolvedTeacherId) {
+      oneOffQuery = oneOffQuery.eq('teacher_id', resolvedTeacherId)
+    }
+
+    const { data: oneOffSlots, error: oneOffError } = await oneOffQuery
+
+    if (oneOffError) {
+      console.error('Error fetching one-off availability:', oneOffError)
+      throw oneOffError
+    }
+
+    console.log('📊 Found', oneOffSlots?.length || 0, 'one-off availability records')
+
+    // Combine all availability records
+    const allAvailability = [...(recurringSlots || []), ...(oneOffSlots || [])]
+
+    if (allAvailability.length === 0) {
+      console.log('⚠️ No availability records found')
       return new Response(
         JSON.stringify({ success: true, slots: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Fetch all relevant bookings in a single query to check for conflicts
-    const { data: allBookings, error: bookingsError } = await supabaseClient
-      .from('bookings')
-      .select('teacher_id, scheduled_date, scheduled_time, status')
-      .in('teacher_id', teacherIds)
-      .gte('scheduled_date', fromDate)
-      .lte('scheduled_date', toDate)
-      .in('status', ['confirmed', 'pending'])
+    // Get unique teacher IDs
+    const teacherIds = [...new Set(allAvailability.map(slot => slot.teacher_id))]
+    console.log('👥 Teachers with availability:', teacherIds)
 
-    if (bookingsError) {
-      throw bookingsError
+    // Fetch teacher profiles
+    const { data: teacherProfiles, error: profilesError } = await supabaseClient
+      .from('teacher_profiles')
+      .select(`
+        id,
+        hourly_rate,
+        profiles!teacher_profiles_user_id_fkey(
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
+      .in('id', teacherIds)
+      .eq('status', 'approved')
+
+    if (profilesError) {
+      console.error('Error fetching teacher profiles:', profilesError)
     }
 
-    // Fetch all public sessions that would block teacher availability
-    const { data: publicSessions, error: publicSessionsError } = await supabaseClient
-      .from('public_sessions')
-      .select('teacher_id, scheduled_at, duration_minutes, status')
-      .in('teacher_id', teacherIds)
-      .gte('scheduled_at', `${fromDate}T00:00:00Z`)
-      .lte('scheduled_at', `${toDate}T23:59:59Z`)
-      .in('status', ['scheduled', 'live'])
+    const teacherMap = new Map()
+    teacherProfiles?.forEach(tp => {
+      teacherMap.set(tp.id, {
+        id: tp.id,
+        full_name: tp.profiles?.full_name || 'Teacher',
+        avatar_url: tp.profiles?.avatar_url || '',
+        hourly_rate: tp.hourly_rate || 15
+      })
+    })
 
-    if (publicSessionsError) {
-      throw publicSessionsError
-    }
-
-    // Create a lookup set for booked slots for efficient checking
-    const bookedSlots = new Set(
-      allBookings.map(booking => 
-        `${booking.teacher_id}-${booking.scheduled_date}-${booking.scheduled_time}`
-      )
-    )
-
-    // Create a lookup set for public session blocked time slots
-    const blockedByPublicSessions = new Set()
-    publicSessions.forEach(session => {
-      const sessionStart = new Date(session.scheduled_at)
-      const sessionEnd = new Date(sessionStart.getTime() + session.duration_minutes * 60 * 1000)
-      
-      // Generate all 30-minute and 60-minute time slots that overlap with this public session
-      const sessionDate = sessionStart.toISOString().split('T')[0]
-      
-      // Block all time slots that would overlap with this public session
-      for (let time = new Date(sessionStart); time < sessionEnd; time.setMinutes(time.getMinutes() + 30)) {
-        const timeStr = time.toTimeString().substring(0, 5)
-        const slotKey = `${session.teacher_id}-${sessionDate}-${timeStr}`
-        blockedByPublicSessions.add(slotKey)
-        
-        // Also block 60-minute slots that would start within the session duration
-        if (time >= sessionStart && time < sessionEnd) {
-          const endTime = new Date(time.getTime() + 60 * 60 * 1000)
-          if (endTime > sessionEnd) {
-            // This 60-minute slot would extend beyond the public session, so block it
-            blockedByPublicSessions.add(slotKey)
-          }
-        }
+    // Get subject IDs from availability records
+    const subjectIds = new Set<string>()
+    allAvailability.forEach(slot => {
+      if (slot.subjects && Array.isArray(slot.subjects)) {
+        slot.subjects.forEach((s: string) => subjectIds.add(s))
       }
     })
 
-    // Convert availability slots to actual date/time slots for the date range
+    // Fetch subject details
+    let subjectsData: any[] = []
+    if (subjectIds.size > 0) {
+      const { data: fetchedSubjects, error: subjectsError } = await supabaseClient
+        .from('subjects')
+        .select('*')
+        .in('id', Array.from(subjectIds))
+
+      if (subjectsError) {
+        console.error('Error fetching subjects:', subjectsError)
+      }
+      subjectsData = fetchedSubjects ?? []
+    }
+
+    const subjectMap = new Map<string, any>()
+    subjectsData.forEach(subject => {
+      if (subject?.id) {
+        subjectMap.set(subject.id, subject)
+      }
+    })
+
+    console.log('📚 Subjects loaded:', subjectsData.map(s => s.name))
+
+    // Fetch existing bookings to check for conflicts
+    const { data: existingBookings, error: bookingsError } = await supabaseClient
+      .from('lessons')
+      .select('teacher_id, scheduled_time, duration_minutes, status')
+      .in('teacher_id', teacherIds)
+      .gte('scheduled_time', `${fromDate}T00:00:00Z`)
+      .lte('scheduled_time', `${toDate}T23:59:59Z`)
+      .in('status', ['scheduled', 'confirmed', 'pending'])
+
+    if (bookingsError) {
+      console.error('Error fetching bookings:', bookingsError)
+    }
+
+    // Create a set of booked slots
+    const bookedSlots = new Set<string>()
+    existingBookings?.forEach(booking => {
+      const bookingTime = new Date(booking.scheduled_time)
+      const dateStr = bookingTime.toISOString().split('T')[0]
+      const timeStr = bookingTime.toTimeString().substring(0, 5)
+      bookedSlots.add(`${booking.teacher_id}-${dateStr}-${timeStr}`)
+    })
+
+    // Generate available slots for the date range
     const availableSlots: any[] = []
     const today = new Date()
-    today.setHours(0, 0, 0, 0) // Start from beginning of today
+    today.setHours(0, 0, 0, 0)
 
     for (let date = new Date(fromDate); date <= new Date(toDate); date.setDate(date.getDate() + 1)) {
       // Skip past dates
       if (date < today) continue
 
       const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, etc.
-      const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek]
       const dateStr = date.toISOString().split('T')[0]
-      
-      // Find availability for this day - both recurring and specific date
-      const daySlots = rawSlots.filter(slot => {
-        if (slot.is_recurring) {
-          return slot.day_of_week === dayName
-        } else {
-          return slot.specific_date === dateStr
-        }
-      })
-      
-      for (const slot of daySlots) {
-        // Skip if teacher data is missing
-        if (!slot.teacher || !slot.teacher.teacher_profile) continue
 
-        // Create time slots (1-hour sessions)
-        const startTime = new Date(`${date.toISOString().split('T')[0]}T${slot.start_time}`)
-        const endTime = new Date(`${date.toISOString().split('T')[0]}T${slot.end_time}`)
-        
-        // Generate slots (both 30-minute and 60-minute)
-        const durations = [30, 60] // Support both 30 and 60 minute sessions
-        
+      // Find one-off availability for this specific date (takes precedence)
+      const oneOffForDate = (oneOffSlots || []).filter(slot => slot.date === dateStr)
+
+      // Find recurring availability for this day of week
+      const recurringForDay = (recurringSlots || []).filter(slot => slot.day_of_week === dayOfWeek)
+
+      // Combine: one-off takes precedence, but include both
+      const slotsForDate = oneOffForDate.length > 0 ? oneOffForDate : recurringForDay
+
+      for (const slot of slotsForDate) {
+        const teacher = teacherMap.get(slot.teacher_id)
+        if (!teacher) {
+          console.log('⚠️ Teacher not found for slot:', slot.teacher_id)
+          continue
+        }
+
+        // Get subjects for this slot
+        const slotSubjects = slot.subjects || []
+
+        // Filter by subject if provided
+        if (subjectFilter && !slotSubjects.includes(subjectFilter)) {
+          continue
+        }
+
+        // Parse start and end times
+        const startTime = slot.start_time.substring(0, 5) // HH:MM
+        const endTime = slot.end_time.substring(0, 5)
+
+        const [startHour, startMin] = startTime.split(':').map(Number)
+        const [endHour, endMin] = endTime.split(':').map(Number)
+
+        const startMinutes = startHour * 60 + startMin
+        const endMinutes = endHour * 60 + endMin
+
+        // Generate slots for both 30 and 60 minute durations
+        const durations = [30, 60]
+
         for (const duration of durations) {
-          const incrementMinutes = duration
-          
-          for (let slotTime = new Date(startTime); slotTime < endTime; slotTime.setMinutes(slotTime.getMinutes() + incrementMinutes)) {
-            const slotEnd = new Date(slotTime.getTime() + duration * 60 * 1000)
-            
-            if (slotEnd > endTime) break // Don't create slots that extend beyond availability
-            
-            const slotDate = slotTime.toISOString().split('T')[0]
-            const slotTimeStr = slotTime.toTimeString().substring(0, 5)
-            
-            // Skip slots in the past (including today if the time has passed)
+          for (let mins = startMinutes; mins + duration <= endMinutes; mins += duration) {
+            const slotHour = Math.floor(mins / 60)
+            const slotMin = mins % 60
+            const slotTimeStr = `${slotHour.toString().padStart(2, '0')}:${slotMin.toString().padStart(2, '0')}`
+
+            // Skip slots in the past
             const now = new Date()
-            const slotDateTime = new Date(`${slotDate}T${slotTimeStr}`)
+            const slotDateTime = new Date(`${dateStr}T${slotTimeStr}:00`)
             if (slotDateTime <= now) continue
 
             // Skip slots that are less than 2 hours from now
             const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000)
             if (slotDateTime < twoHoursFromNow) continue
-            
-            // Check if this slot is already booked or blocked by a public session
-            const slotKey = `${slot.teacher_id}-${slotDate}-${slotTimeStr}`
-            const isBooked = bookedSlots.has(slotKey)
-            const isBlockedByPublicSession = blockedByPublicSessions.has(slotKey)
-            
-            // Only include if not booked, not blocked by public session, and in the future
-            if (!isBooked && !isBlockedByPublicSession) {
-              const subjectRecord = subjectMap.get(slot.subject)
-              if (!subjectRecord) {
-                continue
-              }
 
-              const rateKey = `${slot.teacher_id}:${slot.subject}`
-              const rateSetting: any = rateMap.get(rateKey) ?? rateMap.get(`${slot.teacher_id}:${subjectRecord.id}`)
+            // Check if slot is already booked
+            const slotKey = `${slot.teacher_id}-${dateStr}-${slotTimeStr}`
+            if (bookedSlots.has(slotKey)) continue
 
-              if (rateSetting && rateSetting.is_enabled === false) {
-                continue
-              }
+            // Get subject details for each subject in the slot
+            for (const subjectId of slotSubjects) {
+              // Skip if filtering by subject and this isn't the one
+              if (subjectFilter && subjectId !== subjectFilter) continue
 
-              const fallbackHourly = slot.teacher?.teacher_profile?.hourly_rate ?? subjectRecord?.minimum_rate ?? 1500
-              let hourlyRate = rateSetting?.hourly_rate ?? fallbackHourly
+              const subjectRecord = subjectMap.get(subjectId)
+              if (!subjectRecord) continue
 
-              if (!hourlyRate || hourlyRate <= 0) {
-                hourlyRate = subjectRecord?.minimum_rate ?? 1500
-              }
-
-              if (subjectRecord?.minimum_rate && hourlyRate < subjectRecord.minimum_rate) {
-                hourlyRate = subjectRecord.minimum_rate
-              }
-
-              const sessionPrice = Math.max(1, Math.round(hourlyRate * (duration / 60)))
-
-              let platformFee = 0
-              if (subjectRecord) {
-                if (subjectRecord.platform_fee_type === 'percentage') {
-                  const percentage = Number(subjectRecord.platform_fee_percentage ?? 0)
-                  platformFee = Math.round(sessionPrice * (percentage / 100))
-                } else {
-                  const baseFee = Number(subjectRecord.platform_fee_amount ?? 0)
-                  platformFee = Math.round(baseFee * (duration / 60))
-                }
-              }
-
-              if (platformFee > sessionPrice) {
-                platformFee = sessionPrice
-              }
-
-              const teacherPayout = Math.max(sessionPrice - platformFee, 0)
+              const hourlyRate = teacher.hourly_rate || 15
+              const sessionPrice = Math.round(hourlyRate * (duration / 60) * 100) / 100
 
               availableSlots.push({
-                id: `${slot.id}-${slotDate}-${slotTimeStr}-${duration}`,
+                id: `${slot.id}-${dateStr}-${slotTimeStr}-${duration}-${subjectId}`,
                 teacher_id: slot.teacher_id,
-                teacher_name: slot.teacher?.full_name ?? 'Teacher',
-                teacher_avatar: slot.teacher?.avatar_url || '',
-                teacher_rating: slot.teacher?.teacher_profile?.rating ?? 5,
-                date: slotDate,
+                teacher_name: teacher.full_name,
+                teacher_avatar: teacher.avatar_url,
+                teacher_rating: 5,
+                date: dateStr,
                 time: slotTimeStr,
                 duration: duration,
-                subject: slot.subject,
+                subject: subjectId,
                 price: sessionPrice,
-                teacher_subject_setting_id: rateSetting?.id ?? null,
                 pricing: {
                   hourly_rate: hourlyRate,
-                  platform_fee: platformFee,
-                  teacher_payout: teacherPayout,
-                  subject_minimum: subjectRecord?.minimum_rate ?? null,
-                  platform_fee_type: subjectRecord?.platform_fee_type ?? null,
-                  platform_fee_amount: subjectRecord?.platform_fee_amount ?? null,
-                  platform_fee_percentage: subjectRecord?.platform_fee_percentage ?? null,
+                  platform_fee: 0,
+                  teacher_payout: sessionPrice,
                 },
-                subject_details: subjectRecord
-                  ? {
-                      id: subjectRecord.id,
-                      slug: subjectRecord.slug,
-                      name: subjectRecord.name,
-                      minimum_rate: subjectRecord.minimum_rate,
-                      icon: subjectRecord.icon,
-                    }
-                  : null,
+                subject_details: {
+                  id: subjectRecord.id,
+                  slug: subjectRecord.slug,
+                  name: subjectRecord.name,
+                  icon: subjectRecord.icon,
+                },
                 availability_id: slot.id
               })
             }
@@ -356,6 +321,8 @@ serve(async (req) => {
       if (dateCompare !== 0) return dateCompare
       return a.time.localeCompare(b.time)
     })
+
+    console.log('✅ Returning', availableSlots.length, 'available slots')
 
     return new Response(
       JSON.stringify({ success: true, slots: availableSlots }),

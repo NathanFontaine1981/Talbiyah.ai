@@ -4,29 +4,36 @@ import { ArrowLeft, Users, Search, Filter, TrendingUp, BookOpen } from 'lucide-r
 import { supabase } from '../../lib/supabaseClient';
 import StudentCard from '../../components/teacher/StudentCard';
 
-interface StudentRelationship {
+interface SubjectData {
+  subject_id: string | null;
+  subject_name: string | null;
+  total_lessons: number;
+  total_hours: number;
   relationship_id: string;
+  status: string;
+}
+
+interface StudentData {
   student_id: string;
   student_name: string;
   student_email: string;
   student_avatar: string | null;
-  subject_name: string | null;
+  subjects: SubjectData[];
   total_lessons: number;
   total_hours: number;
   first_lesson_date: string;
   last_lesson_date: string | null;
-  status: string;
   next_lesson_time: string | null;
 }
 
 export default function MyStudents() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState<StudentRelationship[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentRelationship[]>([]);
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'lessons' | 'hours' | 'name'>('recent');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'paused'>('active');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'paused'>('all');
 
   useEffect(() => {
     fetchMyStudents();
@@ -36,9 +43,11 @@ export default function MyStudents() {
     // Apply filters and sorting
     let filtered = [...students];
 
-    // Filter by status
+    // Filter by status - check if any subject has that status
     if (filterStatus !== 'all') {
-      filtered = filtered.filter((s) => s.status === filterStatus);
+      filtered = filtered.filter((s) =>
+        s.subjects.some(sub => sub.status === filterStatus)
+      );
     }
 
     // Filter by search query
@@ -48,7 +57,7 @@ export default function MyStudents() {
         (s) =>
           s.student_name.toLowerCase().includes(query) ||
           s.student_email.toLowerCase().includes(query) ||
-          s.subject_name?.toLowerCase().includes(query)
+          s.subjects.some(sub => sub.subject_name?.toLowerCase().includes(query))
       );
     }
 
@@ -93,17 +102,123 @@ export default function MyStudents() {
 
       if (profileError || !teacherProfile) throw new Error('Teacher profile not found');
 
-      // Fetch students using RPC function
-      const { data, error } = await supabase.rpc('get_teacher_students', {
-        p_teacher_id: teacherProfile.id,
+      // Fetch relationships for this teacher
+      const { data: relationships, error: relError } = await supabase
+        .from('student_teacher_relationships')
+        .select(`
+          id,
+          student_id,
+          subject_id,
+          total_lessons,
+          total_hours,
+          status,
+          created_at,
+          last_lesson_date,
+          subjects (id, name)
+        `)
+        .eq('teacher_id', teacherProfile.id);
+
+      if (relError) throw relError;
+
+      if (!relationships || relationships.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      // Fetch student info using Edge Function (bypasses RLS)
+      const uniqueStudentIds = [...new Set(relationships.map(r => r.student_id))];
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ student_ids: uniqueStudentIds })
+        }
+      );
+
+      let studentInfoMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      if (response.ok) {
+        const { students: fetchedStudents } = await response.json();
+        studentInfoMap = fetchedStudents || {};
+      }
+
+      // Fetch next lesson for each student
+      const { data: upcomingLessons } = await supabase
+        .from('lessons')
+        .select('id, learner_id, scheduled_time')
+        .eq('teacher_id', teacherProfile.id)
+        .in('learner_id', uniqueStudentIds)
+        .gte('scheduled_time', new Date().toISOString())
+        .in('status', ['confirmed', 'pending'])
+        .order('scheduled_time', { ascending: true });
+
+      // Group relationships by student
+      const studentMap = new Map<string, {
+        relationships: any[];
+        firstDate: string;
+        lastDate: string | null;
+      }>();
+
+      relationships.forEach((rel: any) => {
+        const existing = studentMap.get(rel.student_id);
+        if (existing) {
+          existing.relationships.push(rel);
+          // Track earliest first date
+          if (new Date(rel.created_at) < new Date(existing.firstDate)) {
+            existing.firstDate = rel.created_at;
+          }
+          // Track most recent last lesson date
+          if (rel.last_lesson_date && (!existing.lastDate || new Date(rel.last_lesson_date) > new Date(existing.lastDate))) {
+            existing.lastDate = rel.last_lesson_date;
+          }
+        } else {
+          studentMap.set(rel.student_id, {
+            relationships: [rel],
+            firstDate: rel.created_at,
+            lastDate: rel.last_lesson_date
+          });
+        }
       });
 
-      if (error) throw error;
+      // Build student data with grouped subjects
+      const studentData: StudentData[] = Array.from(studentMap.entries()).map(([studentId, data]) => {
+        const studentInfo = studentInfoMap[studentId] || { name: 'Student', avatar_url: null };
+        const nextLesson = upcomingLessons?.find(l => l.learner_id === studentId);
 
-      setStudents(data || []);
+        // Build subjects array from relationships
+        const subjects: SubjectData[] = data.relationships.map((rel: any) => ({
+          subject_id: rel.subjects?.id || rel.subject_id,
+          subject_name: rel.subjects?.name || null,
+          total_lessons: rel.total_lessons || 0,
+          total_hours: rel.total_hours || 0,
+          relationship_id: rel.id,
+          status: rel.status
+        }));
+
+        // Calculate totals across all subjects
+        const totalLessons = subjects.reduce((sum, s) => sum + s.total_lessons, 0);
+        const totalHours = subjects.reduce((sum, s) => sum + s.total_hours, 0);
+
+        return {
+          student_id: studentId,
+          student_name: studentInfo.name,
+          student_email: '',
+          student_avatar: studentInfo.avatar_url,
+          subjects,
+          total_lessons: totalLessons,
+          total_hours: totalHours,
+          first_lesson_date: data.firstDate,
+          last_lesson_date: data.lastDate,
+          next_lesson_time: nextLesson?.scheduled_time || null
+        };
+      });
+
+      setStudents(studentData);
     } catch (error: any) {
       console.error('Error fetching students:', error);
-      alert(error.message || 'Failed to load students');
     } finally {
       setLoading(false);
     }
@@ -240,19 +355,17 @@ export default function MyStudents() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredStudents.map((student) => (
                 <StudentCard
-                  key={student.relationship_id}
-                  relationshipId={student.relationship_id}
+                  key={student.student_id}
                   studentId={student.student_id}
                   studentName={student.student_name}
                   studentEmail={student.student_email}
                   studentAvatar={student.student_avatar}
-                  subjectName={student.subject_name}
+                  subjects={student.subjects}
                   totalLessons={student.total_lessons}
                   totalHours={student.total_hours}
                   firstLessonDate={student.first_lesson_date}
                   lastLessonDate={student.last_lesson_date}
                   nextLessonTime={student.next_lesson_time}
-                  status={student.status}
                 />
               ))}
             </div>

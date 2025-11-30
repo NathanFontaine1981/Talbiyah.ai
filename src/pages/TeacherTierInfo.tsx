@@ -38,7 +38,7 @@ const tiers: TierLevel[] = [
     name: 'Newcomer',
     icon: '🌱',
     color: 'emerald',
-    teacherRate: 5.00,
+    teacherRate: 4.00,
     studentPrice: 15.00,
     hoursRequired: 0,
     ratingRequired: 0,
@@ -61,7 +61,7 @@ const tiers: TierLevel[] = [
     name: 'Apprentice',
     icon: '📚',
     color: 'blue',
-    teacherRate: 6.00,
+    teacherRate: 5.00,
     studentPrice: 15.00,
     hoursRequired: 50,
     ratingRequired: 4.0,
@@ -79,12 +79,12 @@ const tiers: TierLevel[] = [
     ]
   },
   {
-    tier: 'professional',
+    tier: 'skilled',
     level: 3,
-    name: 'Professional',
+    name: 'Skilled',
     icon: '🎯',
     color: 'purple',
-    teacherRate: 7.00,
+    teacherRate: 6.00,
     studentPrice: 15.00,
     hoursRequired: 150,
     ratingRequired: 4.5,
@@ -109,8 +109,8 @@ const tiers: TierLevel[] = [
     name: 'Expert',
     icon: '🏆',
     color: 'amber',
-    teacherRate: 8.50,
-    studentPrice: 16.50,
+    teacherRate: 7.00,
+    studentPrice: 16.00,
     hoursRequired: 250,
     ratingRequired: 4.5,
     requiresApproval: true,
@@ -122,7 +122,7 @@ const tiers: TierLevel[] = [
       'Admin interview passed'
     ],
     benefits: [
-      'All Professional benefits',
+      'All Skilled benefits',
       'Dedicated student coordinator',
       'Premium student priority',
       'Custom availability rules',
@@ -135,8 +135,8 @@ const tiers: TierLevel[] = [
     name: 'Master',
     icon: '💎',
     color: 'pink',
-    teacherRate: 10.00,
-    studentPrice: 18.00,
+    teacherRate: 8.00,
+    studentPrice: 16.00,
     hoursRequired: 500,
     ratingRequired: 4.7,
     requiresApproval: true,
@@ -152,7 +152,8 @@ const tiers: TierLevel[] = [
       'Elite teacher badge',
       'Platform promotion & marketing',
       'VIP support line',
-      '£500 tier unlock bonus'
+      '£500 tier unlock bonus',
+      'Ability to set custom premium pricing'
     ]
   }
 ];

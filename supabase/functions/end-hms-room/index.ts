@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { getHMSManagementToken } from "../_shared/hms.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,9 +39,13 @@ serve(async (req) => {
   try {
     const { roomId, lessonId } = requestData
 
-    const managementToken = Deno.env.get('HMS_MANAGEMENT_TOKEN')
-    if (!managementToken) {
-      throw new Error('HMS Management Token not found')
+    // Generate 100ms management token dynamically (auto-refreshes, never expires)
+    let managementToken: string
+    try {
+      managementToken = await getHMSManagementToken()
+    } catch (tokenError) {
+      console.error('Failed to generate 100ms token:', tokenError)
+      throw new Error(`Failed to generate HMS management token: ${tokenError.message}`)
     }
 
     if (!roomId) {

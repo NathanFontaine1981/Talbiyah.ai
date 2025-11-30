@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getHMSManagementToken } from "../_shared/hms.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,51 +121,65 @@ serve(async (req) => {
       })
     );
 
-    // Determine learner_id for the bookings
-    console.log('👶 Determining learner_id for user:', user.id);
-    let learnerId: string;
+    // Use learner_id from the booking request if provided
+    // Each booking may have its own learner_id (for different children)
+    console.log('👶 Processing learner_id for bookings...');
 
-    const { data: existingLearner } = await supabaseClient
-      .from('learners')
-      .select('id')
-      .eq('parent_id', user.id)
-      .maybeSingle();
+    // Check if bookings already have learner_id from frontend
+    const firstBookingLearnerId = bookingsWithPriceLocks[0]?.learner_id;
+    console.log('   📋 First booking learner_id from frontend:', firstBookingLearnerId);
 
-    if (existingLearner) {
-      learnerId = existingLearner.id;
-      console.log('   ✅ Found existing learner:', learnerId);
-    } else {
-      // Create new learner for this user
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle();
+    // Process each booking - use provided learner_id or fallback to finding/creating one
+    const bookingsWithLearner = await Promise.all(
+      bookingsWithPriceLocks.map(async (booking: any) => {
+        // If booking already has learner_id, use it
+        if (booking.learner_id) {
+          console.log(`   ✅ Using provided learner_id: ${booking.learner_id}`);
+          return booking;
+        }
 
-      const { data: newLearner, error: learnerError } = await supabaseClient
-        .from('learners')
-        .insert({
-          parent_id: user.id,
-          name: profile?.full_name || 'Student',
-          gamification_points: 0
-        })
-        .select('id')
-        .single();
+        // Fallback: Find or create a learner for this user
+        console.log('   ⚠️ No learner_id provided, finding/creating one...');
 
-      if (learnerError || !newLearner) {
-        console.error('❌ Failed to create learner:', learnerError);
-        throw new Error('Failed to create learner profile');
-      }
+        const { data: existingLearner } = await supabaseClient
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .limit(1);
 
-      learnerId = newLearner.id;
-      console.log('   ✅ Created new learner:', learnerId);
-    }
+        if (existingLearner && existingLearner.length > 0) {
+          console.log('   ✅ Found existing learner:', existingLearner[0].id);
+          return { ...booking, learner_id: existingLearner[0].id };
+        }
 
-    // Add learner_id to all bookings
-    const bookingsWithLearner = bookingsWithPriceLocks.map((booking: any) => ({
-      ...booking,
-      learner_id: learnerId
-    }));
+        // Create new learner for this user
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const { data: newLearner, error: learnerError } = await supabaseClient
+          .from('learners')
+          .insert({
+            parent_id: user.id,
+            name: profile?.full_name || 'Student',
+            gamification_points: 0
+          })
+          .select('id')
+          .single();
+
+        if (learnerError || !newLearner) {
+          console.error('❌ Failed to create learner:', learnerError);
+          throw new Error('Failed to create learner profile');
+        }
+
+        console.log('   ✅ Created new learner:', newLearner.id);
+        return { ...booking, learner_id: newLearner.id };
+      })
+    );
+
+    console.log('   📋 Final learner_ids:', bookingsWithLearner.map((b: any) => b.learner_id));
 
     // Calculate total amount from the booking prices (with price locks applied)
     const totalAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
@@ -317,6 +332,117 @@ serve(async (req) => {
           // Don't throw - lessons are created, just payment fields missing
         } else {
           console.log('✅ Payment fields updated successfully');
+        }
+
+        // Create 100ms rooms for each lesson
+        console.log('🎥 Creating 100ms rooms for lessons...');
+
+        let managementToken: string | null = null
+        try {
+          managementToken = await getHMSManagementToken()
+          console.log('✅ Generated fresh 100ms token automatically')
+        } catch (tokenError) {
+          console.error('❌ Failed to generate HMS token:', tokenError)
+        }
+
+        if (managementToken) {
+          for (let i = 0; i < createdLessons.length; i++) {
+            const lessonId = createdLessons[i].id;
+            const booking = bookingsWithLearner[i];
+
+            try {
+              console.log(`   Creating room for lesson ${lessonId}...`);
+
+              // Create the room
+              const roomResponse = await fetch('https://api.100ms.live/v2/rooms', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${managementToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  name: `lesson-${lessonId}`,
+                  description: `Talbiyah.ai Lesson - ${booking.subject || 'Islamic Studies'}`,
+                  template_id: '6905fb03033903926e627d60',
+                  region: 'in',
+                })
+              });
+
+              if (roomResponse.ok) {
+                const roomData = await roomResponse.json();
+                console.log(`   ✅ Room created: ${roomData.id}`);
+
+                // Update lesson with room ID
+                const { error: roomUpdateError } = await supabaseClient
+                  .from('lessons')
+                  .update({ '100ms_room_id': roomData.id })
+                  .eq('id', lessonId);
+
+                if (roomUpdateError) {
+                  console.error(`   ⚠️ Failed to update lesson with room ID:`, roomUpdateError);
+                } else {
+                  console.log(`   ✅ Lesson ${lessonId} updated with room ID: ${roomData.id}`);
+                }
+
+                // Create room codes
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for room init
+                const codesResponse = await fetch(`https://api.100ms.live/v2/room-codes/room/${roomData.id}`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${managementToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ enabled: true })
+                });
+
+                if (codesResponse.ok) {
+                  const codesData = await codesResponse.json();
+                  console.log(`   ✅ Room codes created for lesson ${lessonId}`);
+
+                  // Extract teacher and student codes
+                  let teacherCode = null;
+                  let studentCode = null;
+
+                  if (codesData.data && Array.isArray(codesData.data)) {
+                    codesData.data.forEach((codeObj: any) => {
+                      if (codeObj.role === 'host' || codeObj.role === 'teacher' || codeObj.role === 'moderator') {
+                        teacherCode = codeObj.code;
+                      } else if (codeObj.role === 'guest' || codeObj.role === 'student' || codeObj.role === 'participant' || codeObj.role === 'viewer') {
+                        studentCode = codeObj.code;
+                      }
+                    });
+                  }
+
+                  // Update lesson with room codes
+                  if (teacherCode || studentCode) {
+                    const { error: codesUpdateError } = await supabaseClient
+                      .from('lessons')
+                      .update({
+                        teacher_room_code: teacherCode,
+                        student_room_code: studentCode
+                      })
+                      .eq('id', lessonId);
+
+                    if (codesUpdateError) {
+                      console.error(`   ⚠️ Failed to update room codes:`, codesUpdateError);
+                    } else {
+                      console.log(`   ✅ Room codes saved for lesson ${lessonId}`);
+                    }
+                  }
+                } else {
+                  console.error(`   ⚠️ Failed to create room codes for lesson ${lessonId}`);
+                }
+              } else {
+                const roomError = await roomResponse.text();
+                console.error(`   ❌ Failed to create room for lesson ${lessonId}:`, roomError);
+              }
+            } catch (roomError: any) {
+              console.error(`   ❌ Error creating room for lesson ${lessonId}:`, roomError.message);
+              // Continue with other lessons - don't fail the whole booking
+            }
+          }
+        } else {
+          console.warn('⚠️ Failed to get HMS management token - skipping 100ms room creation');
         }
 
         console.log('✅ Credit booking complete:', {

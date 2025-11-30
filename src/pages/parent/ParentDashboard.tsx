@@ -19,11 +19,13 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import StudentDashboardContent from '../../components/StudentDashboardContent';
 import TalbiyahBot from '../../components/TalbiyahBot';
+import { calculateAge } from '../../utils/ageCalculations';
 
 interface Learner {
   id: string;
   name: string;
   age?: number;
+  date_of_birth?: string;
   gender?: string;
   gamification_points: number;
 }
@@ -261,7 +263,7 @@ export default function ParentDashboard() {
                       >
                         {learners.map((learner) => (
                           <option key={learner.id} value={learner.id}>
-                            {learner.name} {learner.age && `(Age ${learner.age})`}
+                            {learner.name} {(learner.date_of_birth || learner.age) && `(Age ${learner.date_of_birth ? calculateAge(learner.date_of_birth) : learner.age})`}
                           </option>
                         ))}
                       </select>
@@ -345,10 +347,16 @@ interface AddChildModalProps {
 
 function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
   const [childName, setChildName] = useState('');
-  const [childAge, setChildAge] = useState('');
+  const [childDob, setChildDob] = useState('');
   const [childGender, setChildGender] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Date constraints for DOB picker
+  const today = new Date().toISOString().split('T')[0];
+  const minDate = new Date();
+  minDate.setFullYear(minDate.getFullYear() - 25);
+  const minDateStr = minDate.toISOString().split('T')[0];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -356,6 +364,17 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
 
     if (!childName.trim()) {
       setError('Please enter a name');
+      return;
+    }
+
+    if (!childDob) {
+      setError('Please enter date of birth');
+      return;
+    }
+
+    const age = calculateAge(childDob);
+    if (age < 3) {
+      setError('Child must be at least 3 years old');
       return;
     }
 
@@ -372,7 +391,8 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
         .insert({
           parent_id: user.id,
           name: childName.trim(),
-          age: childAge ? parseInt(childAge) : null,
+          date_of_birth: childDob,
+          age: age, // Keep for backwards compatibility
           gender: childGender || null,
           gamification_points: 0
         })
@@ -415,17 +435,23 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Age (optional)
+                Date of Birth <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                value={childAge}
-                onChange={(e) => setChildAge(e.target.value)}
+                type="date"
+                value={childDob}
+                onChange={(e) => setChildDob(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="e.g., 8"
-                min="1"
-                max="100"
+                max={today}
+                min={minDateStr}
+                required
               />
+              {childDob && (
+                <div className="mt-2 p-2 bg-purple-50 rounded-lg text-sm">
+                  <span className="text-slate-600">Age: </span>
+                  <span className="font-semibold text-purple-700">{calculateAge(childDob)} years old</span>
+                </div>
+              )}
             </div>
 
             <div>

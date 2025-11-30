@@ -1,0 +1,2 @@
+# Allow unauthenticated access (we handle user ID manually)
+verify_jwt = false

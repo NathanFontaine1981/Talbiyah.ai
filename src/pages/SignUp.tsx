@@ -125,8 +125,10 @@ export default function SignUp() {
           .upsert({
             id: data.user.id,
             full_name: authForm.fullName.trim(),
+            role: selectedRole,  // Set the singular role field
             roles: roles,
-            referral_code: newReferralCode
+            referral_code: newReferralCode,
+            onboarding_completed: selectedRole !== 'parent'  // Only parents need onboarding
           }, {
             onConflict: 'id'
           });
@@ -192,7 +194,7 @@ export default function SignUp() {
         // Parents go through onboarding wizard to add children
         // Other users go through normal welcome flow
         if (selectedRole === 'parent') {
-          navigate('/parent/onboarding');
+          navigate('/onboarding');
         } else {
           navigate('/welcome');
         }

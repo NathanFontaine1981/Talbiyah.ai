@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, Lock, CheckCircle, Loader2, ShoppingCart, User, Gift } from 'lucide-react';
+import { ArrowLeft, CreditCard, Lock, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Child {
@@ -32,7 +32,6 @@ export default function Checkout() {
   const [referralBalance, setReferralBalance] = useState(0);
   const [referralDiscount, setReferralDiscount] = useState(0);
   const [creditBalance, setCreditBalance] = useState(0);
-  const [creditsNeeded, setCreditsNeeded] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'credits'>('stripe');
 
   useEffect(() => {
@@ -50,22 +49,6 @@ export default function Checkout() {
       setReferralDiscount(0);
     }
   }, [referralBalance, finalPrice, promoDiscount]);
-
-  useEffect(() => {
-    // Calculate credits needed for cart
-    // 1 credit = 60 minute lesson, 0.5 credits = 30 minute lesson
-    const needed = cartItems.reduce((total, item) => {
-      return total + (item.duration_minutes === 30 ? 0.5 : 1);
-    }, 0);
-    setCreditsNeeded(needed);
-
-    // Auto-select payment method based on credit balance
-    if (creditBalance >= needed && needed > 0) {
-      setPaymentMethod('credits');
-    } else {
-      setPaymentMethod('stripe');
-    }
-  }, [cartItems, creditBalance]);
 
   async function loadUserAndChildren() {
     try {
@@ -89,53 +72,42 @@ export default function Checkout() {
           .select('*')
           .eq('parent_id', user.id);
 
-        // If parent has no children, treat them as booking for themselves
-        if (!childrenData || childrenData.length === 0) {
-          console.log('Parent has no children - treating as self-booking');
-          setIsParent(false); // Treat as regular student
-          setSelectedChildId('self');
-        } else {
-          const childrenWithLearners = await Promise.all(
-            (childrenData || []).map(async (child) => {
-              // Check if learner already exists for this child
-              const { data: existingLearner } = await supabase
+        const childrenWithLearners = await Promise.all(
+          (childrenData || []).map(async (child) => {
+            let learnerId = child.learner_id;
+
+            if (!learnerId) {
+              const { data: newLearner } = await supabase
                 .from('learners')
-                .select('id')
-                .eq('parent_id', user.id)
-                .eq('name', child.child_name)
-                .maybeSingle();
+                .insert({
+                  parent_id: user.id,
+                  name: child.child_name,
+                  age: child.child_age
+                })
+                .select()
+                .single();
 
-              let learnerId = existingLearner?.id;
+              if (newLearner) {
+                learnerId = newLearner.id;
 
-              if (!learnerId) {
-                // Create new learner for this child
-                const { data: newLearner } = await supabase
-                  .from('learners')
-                  .insert({
-                    parent_id: user.id,
-                    name: child.child_name,
-                    age: child.child_age
-                  })
-                  .select()
-                  .single();
-
-                if (newLearner) {
-                  learnerId = newLearner.id;
-                }
+                await supabase
+                  .from('parent_children')
+                  .update({ learner_id: learnerId })
+                  .eq('id', child.id);
               }
+            }
 
-              return {
-                ...child,
-                learner_id: learnerId
-              };
-            })
-          );
+            return {
+              ...child,
+              learner_id: learnerId
+            };
+          })
+        );
 
-          setChildren(childrenWithLearners);
+        setChildren(childrenWithLearners);
 
-          if (childrenWithLearners.length === 1) {
-            setSelectedChildId(childrenWithLearners[0].id);
-          }
+        if (childrenWithLearners.length === 1) {
+          setSelectedChildId(childrenWithLearners[0].id);
         }
       } else {
         // Student booking for themselves
@@ -182,18 +154,34 @@ export default function Checkout() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
+      const { data: credits, error } = await supabase
         .from('user_credits')
         .select('credits_remaining')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      setCreditBalance(data?.credits_remaining || 0);
+      if (error) {
+        console.error('Error loading credit balance:', error);
+        return;
+      }
+
+      if (credits) {
+        setCreditBalance(credits.credits_remaining || 0);
+        // Auto-select credits if user has enough
+        const totalDurationHours = cartItems.reduce((acc, item) => acc + item.duration_minutes / 60, 0);
+        if (credits.credits_remaining >= totalDurationHours) {
+          setPaymentMethod('credits');
+        }
+      }
     } catch (error) {
       console.error('Error loading credit balance:', error);
       setCreditBalance(0);
     }
   }
+
+  // Calculate credits needed for cart (1 credit = 1 lesson)
+  const creditsNeeded = cartItems.length;
+  const hasEnoughCredits = creditBalance >= creditsNeeded;
 
   async function applyPromoCode() {
     if (!promoCode.trim()) {
@@ -235,110 +223,6 @@ export default function Checkout() {
       setPromoApplied(false);
     } finally {
       setApplyingPromo(false);
-    }
-  }
-
-  async function handleCreditPayment(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setProcessing(true);
-
-    try {
-      if (isParent && !selectedChildId) {
-        throw new Error('Please select which child these sessions are for');
-      }
-
-      if (creditBalance < creditsNeeded) {
-        throw new Error(`Insufficient credits. You need ${creditsNeeded} credits but have ${creditBalance}.`);
-      }
-
-      console.log('💳 Processing credit-based booking via initiate-booking-checkout...');
-      console.log('   Credits needed:', creditsNeeded);
-      console.log('   Credits available:', creditBalance);
-
-      // Prepare bookings array for initiate-booking-checkout
-      const bookings = cartItems.map(item => {
-        // Extract date and time from scheduled_time (ISO format)
-        const date = item.scheduled_time.split('T')[0]; // "2025-11-20"
-        const time = item.scheduled_time.split('T')[1].substring(0, 5); // "11:00"
-
-        return {
-          teacher_id: item.teacher_id,
-          date: date,
-          time: time,
-          subject: item.subject_id,
-          duration: item.duration_minutes,
-          price: item.price,
-          use_free_session: false
-        };
-      });
-
-      console.log('📤 Sending bookings to API:', bookings.map(b => ({
-        date: b.date,
-        time: b.time,
-        teacher: cartItems.find(item => item.teacher_id === b.teacher_id)?.teacher_name
-      })));
-
-      // Call initiate-booking-checkout which handles credit payment
-      const response = await initiateBookingCheckout(bookings, {
-        payment_with_credits: true // Flag to indicate intentional credit use
-      });
-
-      console.log('✅ Checkout response:', response);
-
-      // Check if payment was made with credits
-      if ((response as any).paid_with_credits) {
-        console.log('✅ Booking paid with credits successfully!', {
-          lessons_created: (response as any).lessons?.length || 0,
-          credits_used: (response as any).credits_used,
-          new_balance: (response as any).new_credit_balance
-        });
-
-        // Clear cart
-        await clearCart();
-
-        // Redirect to success page with booking details
-        navigate('/booking-success', {
-          state: {
-            payment_method: 'credits',
-            lessons_created: (response as any).lessons?.length || 1,
-            credits_used: (response as any).credits_used || creditsNeeded,
-            new_balance: (response as any).new_credit_balance || (creditBalance - creditsNeeded),
-            bookings: cartItems.map(item => ({
-              teacher_name: item.teacher_name,
-              subject: item.subject_name,
-              date: item.scheduled_time.split('T')[0],
-              time: item.scheduled_time.split('T')[1].substring(0, 5),
-              duration: item.duration_minutes
-            }))
-          }
-        });
-        return;
-      }
-
-      // Check for successful response with lessons created
-      if ((response as any).success && (response as any).lessons && (response as any).lessons.length > 0) {
-        console.log('✅ Lessons created successfully!', {
-          lesson_count: (response as any).lessons.length,
-          lesson_ids: (response as any).lessons.map((l: any) => l.id)
-        });
-
-        // Clear cart
-        await clearCart();
-
-        // Redirect to dashboard with success message
-        navigate('/dashboard?booking_success=true&payment_method=credits');
-        return;
-      }
-
-      // If we get here, something went wrong
-      console.error('❌ Unexpected response format:', response);
-      throw new Error('Unexpected response from checkout. Please check your dashboard to see if the booking was successful.');
-    } catch (err: any) {
-      console.error('Credit payment error:', err);
-      setError(err.message || 'Failed to process credit payment');
-    } finally {
-      setProcessing(false);
     }
   }
 
@@ -500,37 +384,114 @@ export default function Checkout() {
         return;
       }
 
-      const response = await initiateBookingCheckout(bookings, {
-        referral_discount: referralDiscount
-      });
+      // Handle credit payment
+      if (paymentMethod === 'credits' && hasEnoughCredits) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
 
-      // Check if payment was made with credits (no Stripe needed)
-      if ((response as any).paid_with_credits) {
-        console.log('✅ Booking paid with credits:', response);
+        // Determine learner_id
+        let learnerId: string;
+        if (isParent && selectedChildId) {
+          const selectedChild = children.find(c => c.id === selectedChildId);
+          if (!selectedChild?.learner_id) {
+            throw new Error('Selected child has no learner profile');
+          }
+          learnerId = selectedChild.learner_id;
+        } else {
+          // Student booking for themselves - get or create learner
+          const { data: existingLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', session.user.id)
+            .maybeSingle();
+
+          if (existingLearner) {
+            learnerId = existingLearner.id;
+          } else {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .single();
+
+            const { data: newLearner } = await supabase
+              .from('learners')
+              .insert({
+                parent_id: session.user.id,
+                name: profile?.full_name || 'Student',
+                gamification_points: 0
+              })
+              .select('id')
+              .single();
+
+            if (!newLearner) throw new Error('Failed to create learner profile');
+            learnerId = newLearner.id;
+          }
+        }
+
+        // Call edge function to create bookings with 100ms rooms
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              cart_items: cartItems,
+              learner_id: learnerId,
+              payment_method: 'credits'
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create booking');
+        }
+
+        const result = await response.json();
+        console.log('Booking created with credits:', result);
+
+        // Deduct credits from user balance
+        const newBalance = creditBalance - creditsNeeded;
+        const { error: creditError } = await supabase
+          .from('user_credits')
+          .update({ credits_remaining: newBalance })
+          .eq('user_id', session.user.id);
+
+        if (creditError) {
+          console.error('Error updating credit balance:', creditError);
+        }
+
+        // Record credit transaction (optional - table may not exist)
+        try {
+          await supabase
+            .from('credit_transactions')
+            .insert({
+              user_id: session.user.id,
+              type: 'debit',
+              amount: -creditsNeeded,
+              description: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`,
+              balance_after: newBalance
+            });
+        } catch (transactionError) {
+          console.log('Credit transaction logging skipped:', transactionError);
+        }
 
         // Clear cart
         await clearCart();
 
-        // Redirect to success page with booking details
-        navigate('/booking-success', {
-          state: {
-            payment_method: 'credits',
-            lessons_created: (response as any).lessons?.length || bookings.length,
-            credits_used: (response as any).credits_used || creditsNeeded,
-            new_balance: (response as any).new_credit_balance || (creditBalance - creditsNeeded),
-            bookings: bookings.map(b => ({
-              teacher_name: b.teacher_name,
-              subject: b.subject_name,
-              date: b.date,
-              time: b.time,
-              duration: b.duration_minutes
-            }))
-          }
-        });
+        // Redirect to dashboard
+        navigate('/dashboard?booking_success=true&payment=credits');
         return;
       }
 
-      // Otherwise, redirect to Stripe checkout
+      const response = await initiateBookingCheckout(bookings, {
+        referral_discount: referralDiscount
+      });
+
       if (response.checkout_url) {
         window.location.href = response.checkout_url;
       } else {
@@ -621,74 +582,6 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Credit Pack Savings Banner - Show to users who don't have enough credits */}
-            {creditBalance < creditsNeeded && !(promoApplied && promoDiscount >= finalPrice) && (
-              <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border-2 border-emerald-500/30 rounded-2xl p-6">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-2">💰 Save Money with Credit Packs!</h3>
-                    <p className="text-slate-300 mb-4">
-                      You need {creditsNeeded} credits for this booking. Instead of paying per lesson, buy a credit pack and save up to £40!
-                    </p>
-
-                    <div className="grid md:grid-cols-3 gap-3 mb-4">
-                      {/* Light Pack */}
-                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                        <h4 className="font-bold text-cyan-400 mb-1">Light Pack</h4>
-                        <p className="text-2xl font-bold text-white mb-1">£70</p>
-                        <p className="text-sm text-slate-400 mb-2">5 credits</p>
-                        <div className="text-xs text-emerald-400 font-semibold">Save £5 (7% off)</div>
-                      </div>
-
-                      {/* Standard Pack - BEST VALUE */}
-                      <div className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border-2 border-emerald-500 rounded-lg p-4 relative">
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                          <span className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                            BEST VALUE
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-emerald-400 mb-1 mt-2">Standard Pack</h4>
-                        <p className="text-2xl font-bold text-white mb-1">£135</p>
-                        <p className="text-sm text-slate-400 mb-2">10 credits</p>
-                        <div className="text-xs text-emerald-400 font-semibold">Save £15 (10% off)</div>
-                      </div>
-
-                      {/* Intensive Pack */}
-                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                        <h4 className="font-bold text-cyan-400 mb-1">Intensive Pack</h4>
-                        <p className="text-2xl font-bold text-white mb-1">£260</p>
-                        <p className="text-sm text-slate-400 mb-2">20 credits</p>
-                        <div className="text-xs text-emerald-400 font-semibold">Save £40 (13% off)</div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        window.open('/buy-credits', '_blank');
-                      }}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-lg font-bold transition shadow-lg flex items-center justify-center space-x-2"
-                    >
-                      <CreditCard className="w-5 h-5" />
-                      <span>Buy Credit Pack & Save</span>
-                    </button>
-
-                    <p className="text-xs text-slate-400 mt-3 text-center">
-                      Credits never expire • Use for 30 or 60-min lessons • 7-day refund policy
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/30 rounded-lg p-4 border border-slate-700/50">
-                  <p className="text-sm text-slate-300">
-                    <strong className="text-white">💡 Tip:</strong> Buy a pack now, then come back to complete this booking using your credits. No payment needed at checkout!
-                  </p>
-                </div>
-              </div>
-            )}
-
             {!(promoApplied && promoDiscount >= finalPrice) && (
               <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
@@ -696,122 +589,83 @@ export default function Checkout() {
                   <span>Payment Method</span>
                 </h2>
 
-                {creditBalance >= creditsNeeded && creditsNeeded > 0 ? (
-                  <div className="space-y-4">
-                    <p className="text-slate-400 mb-4">
-                      You have enough credits! Choose your payment method:
-                    </p>
-
-                    {/* Credit Balance Display */}
-                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/30 rounded-xl p-6 mb-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-sm text-slate-400 mb-1">Your Credit Balance</p>
-                          <p className="text-3xl font-bold text-white">{creditBalance} credits</p>
-                        </div>
-                        <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                          <CreditCard className="w-8 h-8 text-white" />
-                        </div>
+                {/* Credit Balance Info */}
+                {creditBalance > 0 && (
+                  <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Coins className="w-5 h-5 text-emerald-400" />
+                        <span className="text-sm font-bold text-emerald-300">Your Credit Balance</span>
                       </div>
-
-                      {paymentMethod === 'credits' && (
-                        <div className="border-t border-cyan-500/20 pt-4">
-                          <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-slate-300">Credits to be used:</span>
-                            <span className="font-semibold text-amber-400">-{creditsNeeded}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-300">Balance after purchase:</span>
-                            <span className="font-bold text-emerald-400 text-lg">{creditBalance - creditsNeeded} credits</span>
-                          </div>
-                        </div>
-                      )}
+                      <span className="text-lg font-bold text-emerald-400">{creditBalance} {creditBalance === 1 ? 'credit' : 'credits'}</span>
                     </div>
+                    <p className="text-xs text-slate-300 mt-1">
+                      This booking requires {creditsNeeded} {creditsNeeded === 1 ? 'credit' : 'credits'}
+                    </p>
+                  </div>
+                )}
 
-                    {/* Credit Payment Option */}
+                <div className="space-y-3">
+                  {/* Credits Option */}
+                  {creditBalance > 0 && (
                     <button
                       onClick={() => setPaymentMethod('credits')}
-                      className={`w-full p-4 rounded-lg border-2 transition ${
+                      disabled={!hasEnoughCredits}
+                      className={`w-full p-4 rounded-xl text-left transition border-2 ${
                         paymentMethod === 'credits'
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                          ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                          : hasEnoughCredits
+                            ? 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                            : 'bg-slate-800/30 border-slate-700/50 text-slate-500 cursor-not-allowed opacity-60'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          paymentMethod === 'credits'
-                            ? 'bg-gradient-to-br from-cyan-500 to-blue-600'
-                            : 'bg-slate-700'
+                          paymentMethod === 'credits' ? 'bg-emerald-500' : 'bg-slate-700'
                         }`}>
-                          <CreditCard className="w-6 h-6 text-white" />
+                          <Coins className="w-6 h-6 text-white" />
                         </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-semibold text-white">Pay with Credits</p>
-                          <p className="text-sm text-slate-400">
-                            Use {creditsNeeded} of your {creditBalance} credits
+                        <div className="flex-1">
+                          <p className="font-semibold">Use Credits</p>
+                          <p className="text-sm opacity-75">
+                            {hasEnoughCredits
+                              ? `Use ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} from your balance`
+                              : `Need ${creditsNeeded - creditBalance} more ${(creditsNeeded - creditBalance) === 1 ? 'credit' : 'credits'}`
+                            }
                           </p>
                         </div>
                         {paymentMethod === 'credits' && (
-                          <CheckCircle className="w-6 h-6 text-cyan-400" />
+                          <CheckCircle className="w-6 h-6 text-emerald-400" />
                         )}
                       </div>
                     </button>
+                  )}
 
-                    {/* Stripe Payment Option */}
-                    <button
-                      onClick={() => setPaymentMethod('stripe')}
-                      className={`w-full p-4 rounded-lg border-2 transition ${
-                        paymentMethod === 'stripe'
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          paymentMethod === 'stripe'
-                            ? 'bg-gradient-to-br from-cyan-500 to-blue-600'
-                            : 'bg-slate-700'
-                        }`}>
-                          <CreditCard className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-semibold text-white">Pay with Card</p>
-                          <p className="text-sm text-slate-400">
-                            Secure payment via Stripe (£{Math.max(0, finalPrice - promoDiscount - referralDiscount).toFixed(2)})
-                          </p>
-                        </div>
-                        {paymentMethod === 'stripe' && (
-                          <CheckCircle className="w-6 h-6 text-cyan-400" />
-                        )}
+                  {/* Stripe Option */}
+                  <button
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`w-full p-4 rounded-xl text-left transition border-2 ${
+                      paymentMethod === 'stripe'
+                        ? 'bg-cyan-500/20 border-cyan-500 text-white'
+                        : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                        paymentMethod === 'stripe' ? 'bg-gradient-to-br from-cyan-500 to-blue-600' : 'bg-slate-700'
+                      }`}>
+                        <CreditCard className="w-6 h-6 text-white" />
                       </div>
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-slate-400 mb-4">
-                      You'll be redirected to Stripe for secure payment.
-                    </p>
-                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-white">Stripe Checkout</p>
-                          <p className="text-sm text-slate-400">Secure payment processing</p>
-                        </div>
+                      <div className="flex-1">
+                        <p className="font-semibold">Pay with Card</p>
+                        <p className="text-sm opacity-75">Secure payment via Stripe</p>
                       </div>
+                      {paymentMethod === 'stripe' && (
+                        <CheckCircle className="w-6 h-6 text-cyan-400" />
+                      )}
                     </div>
-                    {creditBalance > 0 && creditsNeeded > 0 && (
-                      <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                        <p className="text-sm text-amber-300">
-                          You have {creditBalance} credits, but need {creditsNeeded} credits for this booking.
-                          <a href="/buy-credits" className="underline ml-1 hover:text-amber-200">Buy more credits</a>
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -838,24 +692,6 @@ export default function Checkout() {
           </div>
 
           <div className="lg:col-span-1 space-y-6">
-            {/* Show notification when parent is booking for themselves */}
-            {selectedChildId === 'self' && (
-              <div className="bg-blue-500/10 rounded-2xl p-6 border border-blue-500/30">
-                <div className="flex items-start space-x-3">
-                  <User className="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="text-lg font-bold text-blue-400 mb-2">Booking for Yourself</h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      This booking is for you. As a parent, you can book lessons for yourself to learn alongside your children or for your own personal development.
-                    </p>
-                    <p className="text-xs text-slate-400 mt-2">
-                      💡 Want to add children to your account? Visit your dashboard settings to register your children and book lessons for them.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {isParent && children.length > 0 && (
               <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
@@ -974,9 +810,13 @@ export default function Checkout() {
               )}
 
               <button
-                onClick={paymentMethod === 'credits' ? handleCreditPayment : handleCheckout}
-                disabled={processing || checkoutLoading || (isParent && !selectedChildId)}
-                className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-lg font-bold transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                onClick={handleCheckout}
+                disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits)}
+                className={`w-full px-6 py-4 text-white rounded-xl text-lg font-bold transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                  paymentMethod === 'credits'
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-emerald-500/25'
+                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/25'
+                }`}
               >
                 {processing || checkoutLoading ? (
                   <>
@@ -990,8 +830,8 @@ export default function Checkout() {
                   </>
                 ) : paymentMethod === 'credits' ? (
                   <>
-                    <CreditCard className="w-5 h-5" />
-                    <span>Confirm Booking (Use {creditsNeeded} Credits)</span>
+                    <Coins className="w-5 h-5" />
+                    <span>Book with Credits</span>
                   </>
                 ) : (
                   <>
@@ -1007,8 +847,8 @@ export default function Checkout() {
                 </p>
               )}
               {!(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'credits' && (
-                <p className="text-xs text-center text-cyan-400 mt-4">
-                  {creditsNeeded} credits will be deducted from your balance
+                <p className="text-xs text-center text-emerald-400 mt-4">
+                  {creditsNeeded} {creditsNeeded === 1 ? 'credit' : 'credits'} will be deducted from your balance
                 </p>
               )}
               {promoApplied && promoDiscount >= finalPrice && (

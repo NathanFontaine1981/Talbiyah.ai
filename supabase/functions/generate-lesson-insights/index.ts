@@ -315,11 +315,11 @@ Deno.serve(async (req: Request) => {
 
     if (subjectLower.includes('quran') || subjectLower.includes('qur')) {
       systemPrompt = QURAN_PROMPT;
-      insightType = 'quran_tadabbur';
+      insightType = 'subject_specific';
       title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
     } else if (subjectLower.includes('arabic')) {
       systemPrompt = ARABIC_PROMPT;
-      insightType = 'arabic_language';
+      insightType = 'subject_specific';
       title = `Arabic Language Insights: ${metadata.lesson_date}`;
     } else {
       return new Response(
@@ -371,7 +371,7 @@ Generate the insights following the exact format specified in the system prompt.
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 8192, // Increased for detailed Arabic notes
           temperature: 0.3,
           system: systemPrompt,
@@ -418,33 +418,68 @@ Generate the insights following the exact format specified in the system prompt.
 
     const processingTime = Date.now() - startTime;
 
-    // Save to lesson_insights table
-    const { data: savedInsight, error: upsertError } = await supabase
+    // Check if insight already exists for this lesson
+    const { data: existingInsight } = await supabase
       .from('lesson_insights')
-      .upsert({
-        lesson_id,
-        insight_type: insightType,
-        title: title,
-        summary: generatedText.substring(0, 500), // First 500 chars as summary
-        detailed_insights: {
-          content: generatedText,
-          subject: subject,
-          metadata: metadata,
-          generated_at: new Date().toISOString(),
-        },
-        ai_model: 'claude-3-5-sonnet-20241022',
-        confidence_score: 0.90,
-        processing_time_ms: processingTime,
-      }, {
-        onConflict: 'lesson_id'
-      })
-      .select()
+      .select('id')
+      .eq('lesson_id', lesson_id)
       .single();
 
-    if (upsertError) {
-      console.error("Error saving insights:", upsertError);
+    let savedInsight;
+    let saveError;
+
+    if (existingInsight) {
+      // Update existing
+      const { data, error } = await supabase
+        .from('lesson_insights')
+        .update({
+          insight_type: insightType,
+          title: title,
+          summary: generatedText.substring(0, 500),
+          detailed_insights: {
+            content: generatedText,
+            subject: subject,
+            metadata: metadata,
+            generated_at: new Date().toISOString(),
+          },
+          ai_model: 'claude-sonnet-4-20250514',
+          confidence_score: 0.90,
+          processing_time_ms: processingTime,
+        })
+        .eq('id', existingInsight.id)
+        .select()
+        .single();
+      savedInsight = data;
+      saveError = error;
+    } else {
+      // Insert new
+      const { data, error } = await supabase
+        .from('lesson_insights')
+        .insert({
+          lesson_id,
+          insight_type: insightType,
+          title: title,
+          summary: generatedText.substring(0, 500),
+          detailed_insights: {
+            content: generatedText,
+            subject: subject,
+            metadata: metadata,
+            generated_at: new Date().toISOString(),
+          },
+          ai_model: 'claude-sonnet-4-20250514',
+          confidence_score: 0.90,
+          processing_time_ms: processingTime,
+        })
+        .select()
+        .single();
+      savedInsight = data;
+      saveError = error;
+    }
+
+    if (saveError) {
+      console.error("Error saving insights:", saveError);
       return new Response(
-        JSON.stringify({ error: "Failed to save insights to database", details: upsertError.message }),
+        JSON.stringify({ error: "Failed to save insights to database", details: saveError.message }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

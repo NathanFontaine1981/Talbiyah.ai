@@ -268,7 +268,8 @@ export default function Dashboard() {
       items: [
         { icon: Briefcase, label: 'Teacher Hub', path: '/teacher/hub', active: false, roles: ['Teacher'] },
         { icon: Users, label: 'My Students', path: '/teacher/my-students', active: false, roles: ['Teacher'] },
-        { icon: Calendar, label: 'My Schedule', path: '/my-classes', active: false, roles: ['Teacher'] },
+        { icon: Calendar, label: 'My Calendar', path: '/teacher/schedule', active: false, roles: ['Teacher'] },
+        { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Teacher'] },
         { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
