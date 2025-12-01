@@ -260,6 +260,7 @@ export default function Dashboard() {
         { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
         { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
         { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
+        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'], isNew: true },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student'] },
       ]
     },

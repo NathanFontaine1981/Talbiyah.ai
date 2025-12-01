@@ -12,6 +12,7 @@ import PrayerTimesWidget from './PrayerTimesWidget';
 import PointsRedemption from './PointsRedemption';
 import DashboardHeader from './DashboardHeader';
 import MyTeachersWidget from './MyTeachersWidget';
+import DailyRewardModal from './DailyRewardModal';
 
 interface StudentDashboardContentProps {
   learnerId: string;
@@ -39,11 +40,40 @@ export default function StudentDashboardContent({
   const [learner, setLearner] = useState<LearnerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [showDailyReward, setShowDailyReward] = useState(false);
+  const [dailyRewardChecked, setDailyRewardChecked] = useState(false);
 
   useEffect(() => {
     loadLearnerData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
+
+  // Check for daily reward eligibility
+  useEffect(() => {
+    if (learner && !dailyRewardChecked && !isParentView) {
+      checkDailyReward();
+    }
+  }, [learner, dailyRewardChecked, isParentView]);
+
+  async function checkDailyReward() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('learners')
+        .select('last_login_date')
+        .eq('id', learnerId)
+        .single();
+
+      // Show daily reward modal if not claimed today
+      if (!data?.last_login_date || data.last_login_date !== today) {
+        setShowDailyReward(true);
+      }
+      setDailyRewardChecked(true);
+    } catch (err) {
+      console.error('Error checking daily reward:', err);
+      setDailyRewardChecked(true);
+    }
+  }
 
   async function loadLearnerData() {
     try {
@@ -128,21 +158,40 @@ export default function StudentDashboardContent({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <DashboardHeader
-            userName={learner.name.split(' ')[0]}
-            userRole="Student"
-            userLevel={learner.current_level || 1}
-            userPoints={learner.total_xp || 0}
-          />
-        </div>
+    <>
+      {/* Daily Reward Modal */}
+      {showDailyReward && learner && (
+        <DailyRewardModal
+          learnerId={learner.id}
+          learnerName={learner.name}
+          onClose={() => setShowDailyReward(false)}
+          onRewardClaimed={(xp, streak) => {
+            // Update local state with new XP and streak
+            setLearner(prev => prev ? {
+              ...prev,
+              total_xp: (prev.total_xp || 0) + xp,
+              current_streak: streak,
+              current_level: Math.floor(((prev.total_xp || 0) + xp) / 500) + 1
+            } : prev);
+          }}
+        />
+      )}
 
-        <div className="lg:col-span-1">
-          <PrayerTimesWidget userRole="Student" />
+      <div className="max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <DashboardHeader
+              userName={learner.name.split(' ')[0]}
+              userRole="Student"
+              userLevel={learner.current_level || 1}
+              userPoints={learner.total_xp || 0}
+            />
+          </div>
+
+          <div className="lg:col-span-1">
+            <PrayerTimesWidget userRole="Student" />
+          </div>
         </div>
-      </div>
 
       {learner.referral_code && (
         <div className="bg-white rounded-2xl p-8 mb-6 border border-slate-200 shadow-lg">
@@ -216,6 +265,7 @@ export default function StudentDashboardContent({
           <AnnouncementsCard />
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

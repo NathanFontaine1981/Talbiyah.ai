@@ -78,27 +78,27 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-xl z-50 border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="hover:opacity-90 transition group">
-            <div className="flex items-center space-x-2 mb-0.5 sm:mb-1">
-              <div className="relative">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <button onClick={() => navigate('/')} className="hover:opacity-90 transition group min-w-0 flex-1 md:flex-none">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 mb-0.5 sm:mb-1">
+              <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full group-hover:bg-cyan-500/30 transition"></div>
-                <BookOpen className="w-6 sm:w-7 h-6 sm:h-7 text-cyan-400 relative" />
+                <BookOpen className="w-5 sm:w-7 h-5 sm:h-7 text-cyan-400 relative" />
               </div>
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Talbiyah.ai</span>
+              <span className="text-base sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent truncate">Talbiyah.ai</span>
             </div>
-            <div className="text-left ml-8 sm:ml-9 hidden sm:block">
+            <div className="text-left ml-6 sm:ml-9 hidden sm:block">
               <p className="text-xs text-slate-400 font-light italic">At Your Service</p>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">AI-POWERED ISLAMIC LEARNING</p>
             </div>
           </button>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - always visible on mobile */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition shadow-lg"
+            className="md:hidden p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition shadow-lg flex-shrink-0"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           {/* Desktop navigation */}

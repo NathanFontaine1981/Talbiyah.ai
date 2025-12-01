@@ -60,6 +60,7 @@ import ParentOnboarding from './pages/parent/ParentOnboarding';
 import TeacherBooking from './pages/TeacherBooking';
 import ManageTeachers from './pages/student/ManageTeachers';
 import MyTeachers from './pages/student/MyTeachers';
+import GroupClasses from './pages/student/GroupClasses';
 import Lesson from './pages/Lesson';
 import VerifyEmail from './pages/VerifyEmail';
 import MyReferrals from './pages/MyReferrals';
@@ -169,6 +170,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MyClasses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/group-classes"
+          element={
+            <ProtectedRoute>
+              <GroupClasses />
             </ProtectedRoute>
           }
         />

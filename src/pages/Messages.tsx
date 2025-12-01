@@ -289,10 +289,53 @@ export default function Messages() {
     }
   };
 
+  // Mark all unread messages as read for a conversation
+  const markMessagesAsRead = async (conversation: Conversation) => {
+    try {
+      // Get all lesson IDs for this teacher-student pair
+      const { data: lessonData } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('learner_id', conversation.student_id)
+        .eq('teacher_id', conversation.teacher_id);
+
+      if (!lessonData || lessonData.length === 0) return;
+
+      const lessonIds = lessonData.map(l => l.id);
+
+      // Update all unread messages where current user is NOT the sender
+      const { error } = await supabase
+        .from('lesson_messages')
+        .update({ read_at: new Date().toISOString() })
+        .in('lesson_id', lessonIds)
+        .neq('sender_id', currentUserId)
+        .is('read_at', null);
+
+      if (error) {
+        console.error('Error marking messages as read:', error);
+        return;
+      }
+
+      // Update local state to clear unread count for this conversation
+      setConversations(prev => prev.map(conv =>
+        conv.relationship_id === conversation.relationship_id
+          ? { ...conv, unread_count: 0 }
+          : conv
+      ));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const handleConversationClick = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setLessons([]);
     setSelectedLessonId(null);
+
+    // Mark messages as read for this conversation
+    if (conversation.unread_count > 0) {
+      markMessagesAsRead(conversation);
+    }
 
     // Skip lesson loading for pre-lesson relationships
     if (conversation.is_pre_lesson) {
