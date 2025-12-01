@@ -76,7 +76,7 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
             .from('lessons')
             .select('id')
             .eq('learner_id', learner.id)
-            .in('status', ['scheduled', 'confirmed'])
+            .in('status', ['booked', 'scheduled', 'confirmed', 'pending'])
             .gte('scheduled_start', now);
 
           const totalMinutes = completedLessons?.reduce((sum, l) => sum + (l.duration_minutes || 0), 0) || 0;

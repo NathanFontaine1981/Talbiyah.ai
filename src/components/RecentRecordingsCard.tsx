@@ -181,15 +181,20 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
           const daysUntilExpiry = differenceInDays(recordingExpiryDate, new Date());
           const isRecordingExpired = daysUntilExpiry < 0;
           const isRecordingExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 2;
+          const isQuran = recording.subject_name?.toLowerCase().includes('quran');
 
           return (
             <div
               key={recording.id}
-              className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/30 transition group"
+              className={`bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 transition group ${
+                isQuran ? 'hover:border-emerald-500/30' : 'hover:border-blue-500/30'
+              }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-cyan-400 transition">
+                  <h4 className={`text-lg font-semibold text-white mb-1 transition ${
+                    isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                  }`}>
                     {recording.subject_name}
                   </h4>
                   <p className="text-sm text-slate-400 mb-2">with {recording.teacher_name}</p>
@@ -216,22 +221,30 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* Insights button - always available when insights exist */}
+                {/* Insights button - color based on subject */}
                 {recording.has_insights && (
                   <button
                     onClick={() => navigate(`/lesson/${recording.id}/insights`)}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-emerald-500/30"
+                    className={`flex-1 px-4 py-2.5 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
+                      isQuran
+                        ? 'from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border-emerald-500/30'
+                        : 'from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 border-blue-500/30'
+                    }`}
                   >
                     <FileText className="w-4 h-4" />
                     <span>View Insights</span>
                   </button>
                 )}
 
-                {/* Watch video button - available for 7 days */}
+                {/* Watch video button - color based on subject */}
                 {recording.recording_url && !isRecordingExpired ? (
                   <button
                     onClick={() => window.open(recording.recording_url!, '_blank')}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border border-cyan-500/30"
+                    className={`flex-1 px-4 py-2.5 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
+                      isQuran
+                        ? 'from-teal-500/20 to-cyan-500/20 hover:from-teal-500/30 hover:to-cyan-500/30 border-teal-500/30'
+                        : 'from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border-indigo-500/30'
+                    }`}
                   >
                     <PlayCircle className="w-4 h-4" />
                     <span>Watch Video</span>

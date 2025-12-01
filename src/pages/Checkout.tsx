@@ -179,8 +179,10 @@ export default function Checkout() {
     }
   }
 
-  // Calculate credits needed for cart (1 credit = 1 lesson)
-  const creditsNeeded = cartItems.length;
+  // Calculate credits needed for cart (1 credit = 60 min, 0.5 credit = 30 min)
+  const creditsNeeded = cartItems.reduce((total, item) => {
+    return total + (item.duration_minutes === 30 ? 0.5 : 1);
+  }, 0);
   const hasEnoughCredits = creditBalance >= creditsNeeded;
 
   async function applyPromoCode() {
@@ -247,17 +249,24 @@ export default function Checkout() {
 
       const subjectMap = new Map(subjects?.map(s => [s.id, s.slug]) || []);
 
-      // Calculate total discount and price per item
-      const totalDiscount = promoDiscount + referralDiscount;
-      const discountRatio = totalDiscount / finalPrice;
+      // Calculate discounts properly:
+      // 1. Block discount (from CartContext) is already applied to finalPrice
+      // 2. Promo and referral discounts are additional on top of that
+      const additionalDiscounts = promoDiscount + referralDiscount;
+      const actualPayable = Math.max(0, finalPrice - additionalDiscounts);
+
+      // Calculate per-item price - first apply block discount ratio, then additional discounts
+      const blockDiscountRatio = totalPrice > 0 ? discount / totalPrice : 0;
+      const additionalDiscountRatio = finalPrice > 0 ? additionalDiscounts / finalPrice : 0;
 
       const bookings = cartItems.map(item => {
-        let itemPrice = item.price;
+        // Apply block discount first
+        let itemPrice = item.price * (1 - blockDiscountRatio);
 
-        // Apply proportional discount if not 100% promo
-        if (totalDiscount > 0 && totalDiscount < finalPrice) {
-          itemPrice = Math.max(0, item.price * (1 - discountRatio));
-        } else if (totalDiscount >= finalPrice) {
+        // Then apply promo/referral discounts
+        if (additionalDiscounts > 0 && additionalDiscounts < finalPrice) {
+          itemPrice = Math.max(0, itemPrice * (1 - additionalDiscountRatio));
+        } else if (additionalDiscounts >= finalPrice) {
           itemPrice = 0;
         }
 
@@ -274,8 +283,8 @@ export default function Checkout() {
         };
       });
 
-      // If 100% discount applied, create bookings directly without Stripe
-      if (totalDiscount >= finalPrice) {
+      // If 100% discount applied (actualPayable is 0), create bookings directly without Stripe
+      if (actualPayable <= 0) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('Not authenticated');
 
@@ -454,30 +463,20 @@ export default function Checkout() {
         const result = await response.json();
         console.log('Booking created with credits:', result);
 
-        // Deduct credits from user balance
-        const newBalance = creditBalance - creditsNeeded;
-        const { error: creditError } = await supabase
-          .from('user_credits')
-          .update({ credits_remaining: newBalance })
-          .eq('user_id', session.user.id);
+        // Deduct credits using the proper RPC function (handles transaction logging)
+        const { data: newBalance, error: creditError } = await supabase
+          .rpc('deduct_user_credits', {
+            p_user_id: session.user.id,
+            p_credits: creditsNeeded,
+            p_lesson_id: result.lessons?.[0]?.id || null,
+            p_notes: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`
+          });
 
         if (creditError) {
-          console.error('Error updating credit balance:', creditError);
-        }
-
-        // Record credit transaction (optional - table may not exist)
-        try {
-          await supabase
-            .from('credit_transactions')
-            .insert({
-              user_id: session.user.id,
-              type: 'debit',
-              amount: -creditsNeeded,
-              description: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`,
-              balance_after: newBalance
-            });
-        } catch (transactionError) {
-          console.log('Credit transaction logging skipped:', transactionError);
+          console.error('Error deducting credits:', creditError);
+          // Credits were already deducted in create-booking-with-room, so just log the error
+        } else {
+          console.log('Credits deducted successfully. New balance:', newBalance);
         }
 
         // Clear cart

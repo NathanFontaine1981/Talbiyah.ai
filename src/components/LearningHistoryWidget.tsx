@@ -118,43 +118,58 @@ export default function LearningHistoryWidget() {
         </div>
       ) : (
         <div className="space-y-3">
-          {lessons.map((lesson) => (
-            <div
-              key={lesson.id}
-              className="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800/70 transition border border-slate-700/50 group cursor-pointer"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="font-semibold text-white mb-1 group-hover:text-cyan-400 transition">
-                    {lesson.subject_name}
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">with {lesson.teacher_name}</p>
-                  <div className="flex items-center space-x-3 text-xs text-slate-500">
-                    <span>{format(parseISO(lesson.scheduled_time), 'MMM d, yyyy')}</span>
-                    {lesson.has_insights && (
-                      <span className="flex items-center space-x-1 text-cyan-400">
-                        <FileText className="w-3 h-3" />
-                        <span>Insights Available</span>
-                      </span>
-                    )}
+          {lessons.map((lesson) => {
+            const isQuran = lesson.subject_name?.toLowerCase().includes('quran');
+            const accentColor = isQuran ? 'emerald' : 'blue';
+
+            return (
+              <div
+                key={lesson.id}
+                className="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800/70 transition border border-slate-700/50 group cursor-pointer"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className={`font-semibold text-white mb-1 transition ${
+                      isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                    }`}>
+                      {lesson.subject_name}
+                    </h4>
+                    <p className="text-sm text-slate-400 mb-2">with {lesson.teacher_name}</p>
+                    <div className="flex items-center space-x-3 text-xs text-slate-500">
+                      <span>{format(parseISO(lesson.scheduled_time), 'MMM d, yyyy')}</span>
+                      {lesson.has_insights && (
+                        <span className={`flex items-center space-x-1 ${
+                          isQuran ? 'text-emerald-400' : 'text-blue-400'
+                        }`}>
+                          <FileText className="w-3 h-3" />
+                          <span>Insights Available</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <button className="p-2 text-slate-400 group-hover:text-cyan-400 transition">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-
-              {lesson.has_insights && (
-                <div className="mt-3 pt-3 border-t border-slate-700/50">
-                  <button className="text-sm text-cyan-400 hover:text-cyan-300 font-medium flex items-center space-x-2 transition">
-                    <FileText className="w-4 h-4" />
-                    <span>View Talbiyah Insights</span>
+                  <button className={`p-2 text-slate-400 transition ${
+                    isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                  }`}>
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {lesson.has_insights && (
+                  <div className="mt-3 pt-3 border-t border-slate-700/50">
+                    <button className={`text-sm font-medium flex items-center space-x-2 transition ${
+                      isQuran
+                        ? 'text-emerald-400 hover:text-emerald-300'
+                        : 'text-blue-400 hover:text-blue-300'
+                    }`}>
+                      <FileText className="w-4 h-4" />
+                      <span>View Talbiyah Insights</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

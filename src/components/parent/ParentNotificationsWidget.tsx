@@ -67,7 +67,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
           learners!inner(name)
         `)
         .in('learner_id', childIds)
-        .in('status', ['scheduled', 'confirmed'])
+        .in('status', ['booked', 'scheduled', 'confirmed', 'pending'])
         .gte('scheduled_start', now.toISOString())
         .lte('scheduled_start', tomorrow.toISOString())
         .order('scheduled_start');

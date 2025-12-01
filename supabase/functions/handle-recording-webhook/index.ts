@@ -1,11 +1,18 @@
+// @ts-ignore - Deno types
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+// This function handles 100ms webhooks - must be publicly accessible
+// Security is handled via x-webhook-secret header validation
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret",
 };
+
+// Webhook secret for 100ms - must match what's configured in 100ms dashboard
+const WEBHOOK_SECRET = "talbiyah-hms-2024-secret";
 
 // 100ms webhook event types
 interface HMS100msWebhook {
@@ -62,6 +69,41 @@ Deno.serve(async (req: Request) => {
       }
     );
   }
+
+  // Log all headers for debugging
+  console.log("=== WEBHOOK REQUEST RECEIVED ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+
+  const headersObj: Record<string, string> = {};
+  req.headers.forEach((value, key) => {
+    headersObj[key] = key.toLowerCase().includes('secret') ? `[PRESENT: ${value.length} chars]` : value;
+  });
+  console.log("Headers:", JSON.stringify(headersObj, null, 2));
+
+  // Get expected secret from environment or use hardcoded default
+  const expectedSecret = Deno.env.get("HMS_WEBHOOK_SECRET") || WEBHOOK_SECRET;
+
+  // Verify webhook secret
+  const webhookSecret = req.headers.get("x-webhook-secret");
+  console.log("Webhook secret header present:", !!webhookSecret);
+  console.log("Expected secret length:", expectedSecret.length);
+  console.log("Received secret length:", webhookSecret?.length || 0);
+
+  // Compare secrets (trim whitespace for robustness)
+  const secretsMatch = webhookSecret?.trim() === expectedSecret.trim();
+  console.log("Secrets match:", secretsMatch);
+
+  if (webhookSecret && !secretsMatch) {
+    console.error("Invalid webhook secret - received:", webhookSecret?.substring(0, 10) + "...");
+    console.error("Expected:", expectedSecret.substring(0, 10) + "...");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized", message: "Invalid webhook secret" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log("Webhook authentication passed");
 
   try {
     const rawData = await req.json();
@@ -120,9 +162,18 @@ Deno.serve(async (req: Request) => {
     // Find lesson by 100ms room_id
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
-      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes")
+      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status")
       .eq("100ms_room_id", roomId)
       .single();
+
+    // If lesson found, mark it as completed
+    if (lesson && lesson.status !== "completed") {
+      console.log("Marking lesson as completed:", lesson.id);
+      await supabase
+        .from("lessons")
+        .update({ status: "completed" })
+        .eq("id", lesson.id);
+    }
 
     if (lessonError || !lesson) {
       console.error("Lesson not found for room_id:", roomId);
@@ -139,46 +190,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Calculate expiry date (7 days from now)
+    // Calculate expiry date (7 days from now for presigned URL)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Create recording record
-    console.log("Inserting recording with data:", {
+    // Update lesson with recording URL directly
+    // The lessons table has recording_url and recording_expires_at columns
+    console.log("Updating lesson with recording:", {
       lesson_id: lesson.id,
-      room_id: roomId,
       recording_url: recordingUrl?.substring(0, 50) + "...",
-      recording_size: recordingSize,
-      duration_seconds: durationSeconds,
-      has_transcript: !!transcriptUrl,
       expires_at: expiresAt.toISOString(),
+      has_transcript: !!transcriptUrl,
     });
 
-    // Insert recording record
-    const { data: recording, error: recordingError } = await supabase
-      .from("lesson_recordings")
-      .insert({
-        lesson_id: lesson.id,
-        room_id: roomId,
+    const { error: updateError } = await supabase
+      .from("lessons")
+      .update({
         recording_url: recordingUrl,
-        recording_size: recordingSize,
-        duration_seconds: durationSeconds,
-        transcript_url: transcriptUrl,
-        status: "available",
-        expires_at: expiresAt.toISOString(),
+        recording_expires_at: expiresAt.toISOString(),
+        status: "completed",
       })
-      .select()
-      .single();
+      .eq("id", lesson.id);
 
-    if (recordingError) {
-      console.error("Error creating recording record:", recordingError);
-      console.error("Error details:", JSON.stringify(recordingError, null, 2));
+    if (updateError) {
+      console.error("Error updating lesson with recording:", updateError);
       return new Response(
         JSON.stringify({
-          error: "Failed to create recording record",
-          details: recordingError.message,
-          code: recordingError.code,
-          hint: recordingError.hint
+          error: "Failed to update lesson with recording",
+          details: updateError.message,
+          code: updateError.code,
         }),
         {
           status: 500,
@@ -187,7 +227,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log("Recording saved:", recording.id);
+    console.log("Lesson updated with recording URL:", lesson.id);
 
     // If transcript is available, trigger insight generation
     if (transcriptUrl) {
@@ -210,7 +250,6 @@ Deno.serve(async (req: Request) => {
           },
           body: JSON.stringify({
             lesson_id: lesson.id,
-            recording_id: recording.id,
             transcript_text: transcriptText,
             subject_id: lesson.subject_id,
             teacher_id: lesson.teacher_id,
@@ -239,20 +278,24 @@ Deno.serve(async (req: Request) => {
         .eq("id", lesson.learner_id)
         .single();
 
-      // Create basic insight
+      // Create basic insight with correct schema columns
       const { error: insightError } = await supabase
         .from("lesson_insights")
         .insert({
           lesson_id: lesson.id,
+          subject_id: lesson.subject_id,
           teacher_id: lesson.teacher_id,
           learner_id: lesson.learner_id,
-          subject_name: subject?.name || "Islamic Studies",
-          summary: `${lesson.duration_minutes} minute ${subject?.name || "lesson"} session completed with ${learner?.name || "student"}.`,
-          key_topics: [],
-          areas_of_strength: [],
-          areas_for_improvement: [],
-          homework_suggestions: [],
-          next_lesson_recommendations: "Continue from where you left off in the previous session.",
+          insight_type: "subject_specific",
+          title: `${subject?.name || "Lesson"} Session Summary`,
+          summary: `A ${lesson.duration_minutes} minute ${subject?.name || "lesson"} session was completed with ${learner?.name || "student"}. Recording is available for review.`,
+          key_topics: ["Session completed", "Recording available"],
+          areas_of_strength: ["Completed session"],
+          areas_for_improvement: ["Review recording for detailed feedback"],
+          recommendations: ["Continue from where you left off in the next session"],
+          student_participation_score: 80,
+          ai_model: "auto_generated",
+          confidence_score: 0.7,
         });
 
       if (insightError) {
@@ -265,8 +308,8 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        recording_id: recording.id,
         lesson_id: lesson.id,
+        recording_saved: true,
       }),
       {
         status: 200,

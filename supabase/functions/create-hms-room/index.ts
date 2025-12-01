@@ -65,7 +65,7 @@ serve(async (req) => {
         name: roomName,
         description: description || `Live Islamic Learning Session: ${roomName}`,
         template_id: '6905fb03033903926e627d60', // Talbiyah.ai template
-        region: 'in', // India region
+        region: 'eu', // EU region for UK users - lowest latency
       })
     })
 

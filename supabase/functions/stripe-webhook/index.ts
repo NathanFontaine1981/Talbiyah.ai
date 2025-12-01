@@ -130,6 +130,65 @@ serve(async (req) => {
           break
         }
 
+        // Handle group session enrollment payments
+        const groupSessionId = session.metadata?.group_session_id
+        const paymentType = session.metadata?.type
+
+        if (paymentType === 'group_session_enrollment' && groupSessionId) {
+          console.log('👥 GROUP SESSION ENROLLMENT PAYMENT DETECTED');
+          console.log('   Group Session ID:', groupSessionId);
+          console.log('   Student ID:', session.metadata.student_id);
+
+          const studentId = session.metadata.student_id
+          const paymentRecordId = session.metadata.payment_record_id
+
+          // Update payment record
+          if (paymentRecordId) {
+            const { error: updatePaymentError } = await supabaseClient
+              .from('group_session_payments')
+              .update({
+                status: 'completed',
+                stripe_payment_intent_id: session.payment_intent,
+                paid_at: new Date().toISOString()
+              })
+              .eq('id', paymentRecordId)
+
+            if (updatePaymentError) {
+              console.error('❌ Failed to update payment record:', updatePaymentError);
+            } else {
+              console.log('✅ Payment record updated');
+            }
+          }
+
+          // Enroll student in the group session
+          const { data: existingEnrollment } = await supabaseClient
+            .from('group_session_participants')
+            .select('id')
+            .eq('group_session_id', groupSessionId)
+            .eq('student_id', studentId)
+            .single()
+
+          if (!existingEnrollment) {
+            const { error: enrollError } = await supabaseClient
+              .from('group_session_participants')
+              .insert({
+                group_session_id: groupSessionId,
+                student_id: studentId
+              })
+
+            if (enrollError) {
+              console.error('❌ Failed to enroll student:', enrollError);
+            } else {
+              console.log('✅ Student enrolled in group session');
+            }
+          } else {
+            console.log('ℹ️ Student already enrolled');
+          }
+
+          console.log('🎉 GROUP SESSION ENROLLMENT COMPLETE!');
+          break
+        }
+
         if (!pendingBookingId) {
           console.error('❌ No pending_booking_id in metadata!', {
             metadata: session.metadata,

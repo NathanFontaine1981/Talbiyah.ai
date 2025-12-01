@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users,
   Calendar,
@@ -11,7 +11,10 @@ import {
   Filter,
   Search,
   User,
-  AlertCircle
+  AlertCircle,
+  Video,
+  ExternalLink,
+  CreditCard
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
@@ -35,6 +38,9 @@ interface GroupSession {
   price_per_session?: number;
   description?: string;
   status: 'open' | 'full' | 'closed' | 'cancelled';
+  '100ms_room_id'?: string;
+  teacher_room_code?: string;
+  student_room_code?: string;
 }
 
 interface Learner {
@@ -48,12 +54,15 @@ type SubjectFilter = 'all' | string;
 
 export default function GroupClasses() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [sessions, setSessions] = useState<GroupSession[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<GroupSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [learners, setLearners] = useState<Learner[]>([]);
   const [enrolledSessions, setEnrolledSessions] = useState<Set<string>>(new Set());
+  const [sessionsWithAccess, setSessionsWithAccess] = useState<Set<string>>(new Set()); // Paid sessions with access
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Filters
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
@@ -69,6 +78,13 @@ export default function GroupClasses() {
 
   useEffect(() => {
     fetchData();
+
+    // Check if returning from successful enrollment
+    const enrolledId = searchParams.get('enrolled');
+    if (enrolledId) {
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
   }, []);
 
   useEffect(() => {
@@ -96,7 +112,10 @@ export default function GroupClasses() {
         .select(`
           *,
           subject:subjects(name),
-          teacher:profiles!teacher_id(full_name, avatar_url)
+          teacher:profiles!teacher_id(full_name, avatar_url),
+          "100ms_room_id",
+          teacher_room_code,
+          student_room_code
         `)
         .in('status', ['open', 'full'])
         .order('start_date', { ascending: true });
@@ -125,6 +144,35 @@ export default function GroupClasses() {
         const enrolled = new Set<string>();
         enrollmentsData?.forEach(e => enrolled.add(e.group_session_id));
         setEnrolledSessions(enrolled);
+
+        // For enrolled sessions, check payment status for paid sessions
+        // Free sessions automatically have access, paid sessions need completed payment
+        const accessSet = new Set<string>();
+
+        // Check all enrolled sessions
+        for (const enrollment of enrollmentsData || []) {
+          const session = sessionsData?.find(s => s.id === enrollment.group_session_id);
+          if (session) {
+            if (session.is_free) {
+              // Free sessions - immediate access
+              accessSet.add(session.id);
+            } else {
+              // Check for completed payment
+              const { data: payment } = await supabase
+                .from('group_session_payments')
+                .select('status')
+                .eq('group_session_id', session.id)
+                .eq('student_id', user.id)
+                .eq('status', 'completed')
+                .single();
+
+              if (payment) {
+                accessSet.add(session.id);
+              }
+            }
+          }
+        }
+        setSessionsWithAccess(accessSet);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -174,7 +222,48 @@ export default function GroupClasses() {
 
     setEnrolling(true);
     try {
-      // Enroll the user (parent account) - for learner-based enrollment we'd use learner ID
+      // For paid sessions, redirect to Stripe checkout
+      if (!selectedSession.is_free) {
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/group-session-checkout`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authSession?.access_token}`,
+            },
+            body: JSON.stringify({
+              group_session_id: selectedSession.id,
+              success_url: `${window.location.origin}/group-classes?enrolled=${selectedSession.id}`,
+              cancel_url: `${window.location.origin}/group-classes?cancelled=true`,
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create checkout session');
+        }
+
+        // If it's a free enrollment (shouldn't happen but just in case)
+        if (result.type === 'free_enrollment') {
+          setEnrolledSessions(prev => new Set([...prev, selectedSession.id]));
+          setSessionsWithAccess(prev => new Set([...prev, selectedSession.id]));
+          setShowEnrollModal(false);
+          setSelectedSession(null);
+          fetchData();
+          return;
+        }
+
+        // Redirect to Stripe checkout
+        window.location.href = result.checkout_url;
+        return;
+      }
+
+      // For free sessions, enroll directly
       const { error } = await supabase
         .from('group_session_participants')
         .insert({
@@ -191,11 +280,12 @@ export default function GroupClasses() {
       } else {
         // Update local state
         setEnrolledSessions(prev => new Set([...prev, selectedSession.id]));
+        setSessionsWithAccess(prev => new Set([...prev, selectedSession.id]));
 
         // Refresh sessions to get updated participant count
         const { data: updatedSession } = await supabase
           .from('group_sessions')
-          .select('*, subject:subjects(name), teacher:profiles!teacher_id(full_name, avatar_url)')
+          .select('*, subject:subjects(name), teacher:profiles!teacher_id(full_name, avatar_url), "100ms_room_id", teacher_room_code, student_room_code')
           .eq('id', selectedSession.id)
           .single();
 
@@ -208,9 +298,9 @@ export default function GroupClasses() {
         setShowEnrollModal(false);
         setSelectedSession(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error enrolling:', error);
-      alert('Failed to enroll. Please try again.');
+      alert('Failed to enroll: ' + (error.message || 'Please try again.'));
     } finally {
       setEnrolling(false);
     }
@@ -247,6 +337,17 @@ export default function GroupClasses() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center space-x-3">
+            <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+            <div>
+              <p className="text-emerald-400 font-medium">Successfully enrolled!</p>
+              <p className="text-slate-400 text-sm">You can now join the class when the session starts.</p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Group Classes</h1>
@@ -331,6 +432,7 @@ export default function GroupClasses() {
                 key={session.id}
                 session={session}
                 isEnrolled={enrolledSessions.has(session.id)}
+                hasAccess={sessionsWithAccess.has(session.id)}
                 onEnroll={() => handleEnrollClick(session)}
                 getSubjectIcon={getSubjectIcon}
                 getLevelBadge={getLevelBadge}
@@ -411,18 +513,21 @@ export default function GroupClasses() {
 function GroupClassCard({
   session,
   isEnrolled,
+  hasAccess,
   onEnroll,
   getSubjectIcon,
   getLevelBadge
 }: {
   session: GroupSession;
   isEnrolled: boolean;
+  hasAccess: boolean;
   onEnroll: () => void;
   getSubjectIcon: (name?: string) => string;
   getLevelBadge: (level: string) => string;
 }) {
   const spotsLeft = session.max_participants - session.current_participants;
   const isFull = spotsLeft <= 0;
+  const hasRoom = session['100ms_room_id'] && session.student_room_code;
 
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden hover:border-emerald-500/50 transition group">
@@ -505,7 +610,28 @@ function GroupClassCard({
         </div>
 
         {/* Action Button */}
-        {isEnrolled ? (
+        {isEnrolled && hasAccess && hasRoom ? (
+          <a
+            href={`https://talbiyah.app.100ms.live/meeting/${session.student_room_code}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+          >
+            <Video className="w-5 h-5" />
+            <span>Join Class</span>
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        ) : isEnrolled && hasAccess ? (
+          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">Enrolled - Room not ready yet</span>
+          </div>
+        ) : isEnrolled && !hasAccess && !session.is_free ? (
+          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-xl">
+            <CreditCard className="w-5 h-5" />
+            <span className="font-medium">Payment Pending</span>
+          </div>
+        ) : isEnrolled ? (
           <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">Enrolled</span>
@@ -523,7 +649,7 @@ function GroupClassCard({
             onClick={onEnroll}
             className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
           >
-            <span>Enroll Now</span>
+            <span>{session.is_free ? 'Enroll Now' : 'Pay & Enroll'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}

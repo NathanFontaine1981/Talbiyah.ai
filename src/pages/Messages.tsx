@@ -66,7 +66,7 @@ export default function Messages() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/login');
+        navigate('/', { state: { showSignIn: true } });
         return;
       }
 

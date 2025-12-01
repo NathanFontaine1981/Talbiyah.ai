@@ -1192,7 +1192,7 @@ export default function LessonInsights() {
 
       const { data: lessonData } = await supabase
         .from('lessons')
-        .select('"100ms_room_id", scheduled_time')
+        .select('"100ms_room_id", scheduled_time, recording_url, recording_expires_at')
         .eq('id', lessonId)
         .single();
 
@@ -1200,14 +1200,30 @@ export default function LessonInsights() {
         setLessonTime(lessonData.scheduled_time);
       }
 
-      if (lessonData?.['100ms_room_id']) {
+      // First try to use recording_url from lesson table (most reliable)
+      if (lessonData?.recording_url) {
+        const expiresAt = lessonData.recording_expires_at ? new Date(lessonData.recording_expires_at) : null;
+        const daysUntilExpiry = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
+        setRecording({
+          primary: {
+            presigned_url: lessonData.recording_url,
+            duration: 0
+          },
+          days_until_expiry: daysUntilExpiry ?? undefined,
+          expires_warning: daysUntilExpiry !== null && daysUntilExpiry <= 2
+        });
+      } else if (lessonData?.['100ms_room_id']) {
+        // Fallback to 100ms API
         fetchRecording(lessonData['100ms_room_id']);
       }
 
       let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
       if (learnerId) insightQuery = insightQuery.eq('learner_id', learnerId);
+      // Order by detailed_insights to prefer insights with content, then by most recent
+      insightQuery = insightQuery.order('created_at', { ascending: false }).limit(1);
 
-      const { data: insightData, error: insightError } = await insightQuery.maybeSingle();
+      const { data: insightResults, error: insightError } = await insightQuery;
+      const insightData = insightResults?.[0] || null;
       if (insightError?.code === 'PGRST116' || !insightData) {
         setError('Insights not yet generated for this lesson');
         setLoading(false);
@@ -1475,7 +1491,7 @@ export default function LessonInsights() {
         <main id="insights-content" className="max-w-4xl mx-auto px-6 py-8">
           {/* Hero Card */}
           <div className={`rounded-3xl p-6 md:p-8 mb-8 text-white shadow-xl ${
-            isQuran ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700' : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
+            isQuran ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700' : 'bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700'
           }`}>
             <div className="flex flex-col gap-4">
               {/* Title row */}

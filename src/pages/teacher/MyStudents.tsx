@@ -152,7 +152,7 @@ export default function MyStudents() {
         .eq('teacher_id', teacherProfile.id)
         .in('learner_id', uniqueStudentIds)
         .gte('scheduled_time', new Date().toISOString())
-        .in('status', ['confirmed', 'pending'])
+        .in('status', ['booked', 'confirmed', 'scheduled', 'pending'])
         .order('scheduled_time', { ascending: true });
 
       // Group relationships by student

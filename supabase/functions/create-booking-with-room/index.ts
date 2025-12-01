@@ -37,7 +37,7 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const { cart_items, learner_id, promo_code } = await req.json()
+    const { cart_items, learner_id, promo_code, payment_method } = await req.json()
 
     if (!cart_items || cart_items.length === 0) {
       throw new Error('No cart items provided')
@@ -47,8 +47,12 @@ serve(async (req) => {
       throw new Error('Learner ID is required')
     }
 
+    // Check if paying with credits
+    const isCreditsPayment = payment_method === 'credits'
+
     // Check if promo code provides 100% discount
     let isFree = false
+    let promoCodeUsed = null
     if (promo_code && (promo_code.toUpperCase() === '100HONOR' || promo_code.toUpperCase() === '100OWNER')) {
       const { count } = await supabaseClient
         .from('lessons')
@@ -58,6 +62,8 @@ serve(async (req) => {
 
       if (count === 0) {
         isFree = true
+        promoCodeUsed = promo_code.toUpperCase()
+        console.log(`✅ Promo code ${promoCodeUsed} applied - FREE lesson`)
       }
     }
 
@@ -93,7 +99,7 @@ serve(async (req) => {
               name: `Lesson-${item.teacher_id}-${item.subject_id}-${Date.now()}`,
               description: `${item.teacher_name} teaching ${item.subject_name}`,
               template_id: HMS_TEMPLATE_ID,
-              region: 'in',
+              region: 'eu',  // EU region for UK users - lowest latency
             }),
           })
 
@@ -145,9 +151,21 @@ serve(async (req) => {
       }
 
       // Calculate price (0 if free promo code)
-      const price = isFree ? 0 : item.price
+      const price = isFree ? 0 : (isCreditsPayment ? 0 : item.price)
+      const originalPrice = item.price
 
-      // Create lesson
+      // Determine payment status
+      let paymentStatus = 'pending'
+      let paymentMethod = 'stripe'
+      if (isFree) {
+        paymentStatus = 'completed_promo'
+        paymentMethod = 'promo_code'
+      } else if (isCreditsPayment) {
+        paymentStatus = 'completed_credits'
+        paymentMethod = 'credits'
+      }
+
+      // Create lesson with detailed payment tracking
       const { data: lesson, error: lessonError } = await supabaseClient
         .from('lessons')
         .insert({
@@ -158,10 +176,11 @@ serve(async (req) => {
           duration_minutes: item.duration_minutes,
           status: 'booked',
           is_free_trial: isFree,
-          teacher_rate_at_booking: price,
+          teacher_rate_at_booking: originalPrice,
           platform_fee: 0,
           total_cost_paid: price,
-          payment_id: isFree ? null : `payment_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+          payment_id: isFree ? `promo_${promoCodeUsed}_${Date.now()}` : (isCreditsPayment ? `credits_${Date.now()}_${Math.random().toString(36).substring(7)}` : null),
+          payment_status: paymentStatus,
           '100ms_room_id': roomId,
           teacher_room_code: teacherRoomCode,
           student_room_code: studentRoomCode,
@@ -170,6 +189,15 @@ serve(async (req) => {
         .single()
 
       if (lessonError) throw lessonError
+
+      // Log the booking for audit trail
+      console.log(`📝 Lesson created: ${lesson.id}`, {
+        payment_method: paymentMethod,
+        original_price: originalPrice,
+        paid: price,
+        promo_code: promoCodeUsed,
+        is_credits: isCreditsPayment
+      })
 
       createdLessons.push(lesson)
     }

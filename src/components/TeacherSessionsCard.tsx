@@ -73,9 +73,8 @@ export default function TeacherSessionsCard() {
         `)
         .eq('teacher_id', teacherProfile.id)
         .eq('status', 'booked')
-        .gte('scheduled_time', new Date().toISOString())
         .order('scheduled_time', { ascending: true })
-        .limit(5);
+        .limit(10); // Fetch more to filter client-side
 
       if (error) {
         console.error('Error fetching lessons:', error);
@@ -85,8 +84,16 @@ export default function TeacherSessionsCard() {
       }
 
       if (lessonsData && lessonsData.length > 0) {
+        const now = new Date();
+
         const formattedSessions: TeacherSession[] = lessonsData
           .filter((lesson: any) => lesson.learners && lesson.subjects) // Filter out lessons with missing relations
+          .filter((lesson: any) => {
+            // Show lesson until its END time (scheduled_time + duration)
+            const lessonStart = new Date(lesson.scheduled_time);
+            const lessonEnd = new Date(lessonStart.getTime() + lesson.duration_minutes * 60000);
+            return lessonEnd > now;
+          })
           .map((lesson: any) => ({
             id: lesson.id,
             student_name: lesson.learners?.name || 'Student',
@@ -97,7 +104,8 @@ export default function TeacherSessionsCard() {
             teacher_confirmed: lesson.teacher_confirmed || false,
             '100ms_room_id': lesson['100ms_room_id'],
             teacher_room_code: lesson.teacher_room_code
-          }));
+          }))
+          .slice(0, 5); // Limit to 5 after filtering
         setSessions(formattedSessions);
       } else {
         setSessions([]);

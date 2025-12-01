@@ -509,7 +509,11 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     {lessonIsPast && lesson.has_insights && (
                       <button
                         onClick={handleViewInsights}
-                        className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-medium transition flex items-center space-x-2"
+                        className={`px-4 py-2 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center space-x-2 ${
+                          lesson.subject_name?.toLowerCase().includes('quran')
+                            ? 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                            : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+                        }`}
                       >
                         <Sparkles className="w-4 h-4" />
                         <span>View Insights</span>

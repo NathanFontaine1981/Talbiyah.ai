@@ -71,7 +71,7 @@ export default function TeacherPaymentSettings() {
       // Get teacher profile
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/login');
+        navigate('/', { state: { showSignIn: true } });
         return;
       }
 

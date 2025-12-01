@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Users, Calendar, Clock, DollarSign, X, Edit, UserPlus, Mail, AlertCircle, Check } from 'lucide-react';
+import { Plus, Search, Users, Calendar, Clock, DollarSign, X, Edit, UserPlus, Mail, AlertCircle, Check, Video, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 
@@ -24,6 +24,9 @@ interface GroupSession {
   status: 'open' | 'full' | 'closed' | 'cancelled';
   created_by: string;
   created_at: string;
+  '100ms_room_id'?: string;
+  teacher_room_code?: string;
+  student_room_code?: string;
 }
 
 interface Participant {
@@ -92,7 +95,10 @@ export default function GroupSessions() {
         .select(`
           *,
           subject:subjects(name),
-          teacher:profiles!teacher_id(full_name)
+          teacher:profiles!teacher_id(full_name),
+          "100ms_room_id",
+          teacher_room_code,
+          student_room_code
         `)
         .order('created_at', { ascending: false });
 
@@ -279,6 +285,7 @@ export default function GroupSessions() {
               status={getSessionStatus(session)}
               onManageParticipants={() => handleManageParticipants(session)}
               onEdit={() => handleEditSession(session)}
+              onRefresh={fetchGroupSessions}
             />
           ))
         )}
@@ -327,7 +334,51 @@ export default function GroupSessions() {
 }
 
 // Group Session Card Component
-function GroupSessionCard({ session, status, onManageParticipants, onEdit }: any) {
+function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRefresh }: any) {
+  const [creatingRoom, setCreatingRoom] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const hasRoom = session['100ms_room_id'] && session.teacher_room_code && session.student_room_code;
+
+  const handleCreateRoom = async () => {
+    setCreatingRoom(true);
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-group-session-room`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authSession?.access_token}`,
+          },
+          body: JSON.stringify({ group_session_id: session.id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create room');
+      }
+
+      alert('Room created successfully!');
+      onRefresh();
+    } catch (error: any) {
+      console.error('Error creating room:', error);
+      alert('Failed to create room: ' + error.message);
+    } finally {
+      setCreatingRoom(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCode(type);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const getSubjectIcon = (name: string) => {
     if (name?.toLowerCase().includes('quran')) return '📗';
     if (name?.toLowerCase().includes('arabic')) return '✏️';
@@ -407,10 +458,64 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit }: any
         <p className="text-slate-300 text-sm mb-4 line-clamp-2">{session.description}</p>
       )}
 
-      <div className="flex items-center space-x-2 pt-4 border-t border-slate-700">
-        <button className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg transition text-sm">
-          View Details
-        </button>
+      {/* Room Info Section */}
+      {hasRoom && (
+        <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <Video className="w-4 h-4 text-green-400" />
+              <span className="text-green-400 font-medium text-sm">Video Room Created</span>
+            </div>
+            <a
+              href={`https://talbiyah.app.100ms.live/meeting/${session.teacher_room_code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-green-400 hover:text-green-300 flex items-center space-x-1"
+            >
+              <span>Open Room</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Teacher Room Code</p>
+              <div className="flex items-center space-x-2">
+                <code className="text-xs bg-slate-800 px-2 py-1 rounded text-white">{session.teacher_room_code}</code>
+                <button
+                  onClick={() => copyToClipboard(session.teacher_room_code, 'teacher')}
+                  className="text-slate-400 hover:text-white"
+                >
+                  {copiedCode === 'teacher' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Student Room Code</p>
+              <div className="flex items-center space-x-2">
+                <code className="text-xs bg-slate-800 px-2 py-1 rounded text-white">{session.student_room_code}</code>
+                <button
+                  onClick={() => copyToClipboard(session.student_room_code, 'student')}
+                  className="text-slate-400 hover:text-white"
+                >
+                  {copiedCode === 'student' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center flex-wrap gap-2 pt-4 border-t border-slate-700">
+        {!hasRoom && (
+          <button
+            onClick={handleCreateRoom}
+            disabled={creatingRoom}
+            className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-lg transition text-sm flex items-center space-x-1 disabled:opacity-50"
+          >
+            <Video className="w-4 h-4" />
+            <span>{creatingRoom ? 'Creating...' : 'Create Room'}</span>
+          </button>
+        )}
         <button
           onClick={onEdit}
           className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-lg transition text-sm flex items-center space-x-1"
