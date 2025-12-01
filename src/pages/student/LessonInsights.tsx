@@ -250,35 +250,57 @@ function parseDialogues(content: string): DialogueLine[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Detect speaker change (T:, S:, Teacher:, Student:)
-    const speakerMatch = trimmed.match(/^(T|S|Teacher|Student)[:\s]+(.+)?/i);
+    // Detect speaker change - multiple formats supported:
+    // - T: or S: or Teacher: or Student:
+    // - **Teacher (T):** or **Student (S):** (markdown bold format)
+    // - **T:** or **S:** (short markdown format)
+    const speakerMatch = trimmed.match(/^(?:\*\*)?(?:(Teacher|Student)\s*\(?(T|S)?\)?|(T|S))[:\*]*\s*(.+)?/i);
     if (speakerMatch) {
       // Save previous dialogue if exists
       if (currentSpeaker && currentArabic) {
         dialogues.push({
-          speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
+          speaker: currentSpeaker,
           arabic: currentArabic,
           transliteration: currentTranslit,
           english: currentEnglish
         });
       }
 
-      currentSpeaker = speakerMatch[1];
-      const rest = speakerMatch[2]?.trim() || '';
+      // Determine speaker name
+      const fullName = speakerMatch[1]; // Teacher or Student
+      const shortCode = speakerMatch[2] || speakerMatch[3]; // T or S
+      if (fullName) {
+        currentSpeaker = fullName.charAt(0).toUpperCase() + fullName.slice(1).toLowerCase();
+      } else if (shortCode) {
+        currentSpeaker = shortCode.toUpperCase() === 'T' ? 'Teacher' : 'Student';
+      }
 
-      // Check if Arabic is on the same line
+      const rest = speakerMatch[4]?.trim() || '';
+
+      // Check if Arabic is on the same line (after the speaker label)
       if (/[أ-ي]/.test(rest)) {
-        currentArabic = rest.replace(/\([^)]+\)$/, '').trim();
+        currentArabic = rest.replace(/\*\*/g, '').replace(/\([^)]+\)$/, '').trim();
         const parenMatch = rest.match(/\(([^)]+)\)$/);
         if (parenMatch) currentEnglish = parenMatch[1];
+      } else {
+        currentArabic = '';
       }
       currentTranslit = '';
+      currentEnglish = '';
       continue;
     }
 
-    // Check for Arabic content
-    if (/[أ-ي]/.test(trimmed) && currentSpeaker) {
-      currentArabic = trimmed.replace(/\([^)]+\)$/, '').trim();
+    // Check for transliteration line (italic text with asterisks)
+    const translitMatch = trimmed.match(/^\*([^*]+)\*$/);
+    if (translitMatch && currentSpeaker) {
+      currentTranslit = translitMatch[1].trim();
+      continue;
+    }
+
+    // Check for Arabic content on its own line
+    if (/[أ-ي]/.test(trimmed) && currentSpeaker && !currentArabic) {
+      currentArabic = trimmed.replace(/\*\*/g, '').replace(/\([^)]+\)$/, '').trim();
+      continue;
     }
 
     // Check for English translation in parentheses
@@ -286,12 +308,14 @@ function parseDialogues(content: string): DialogueLine[] {
     if (parenMatch && currentSpeaker) {
       currentEnglish = parenMatch[1];
       // Push completed dialogue
-      dialogues.push({
-        speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
-        arabic: currentArabic,
-        transliteration: currentTranslit,
-        english: currentEnglish
-      });
+      if (currentArabic) {
+        dialogues.push({
+          speaker: currentSpeaker,
+          arabic: currentArabic,
+          transliteration: currentTranslit,
+          english: currentEnglish
+        });
+      }
       currentSpeaker = '';
       currentArabic = '';
       currentTranslit = '';
@@ -302,7 +326,7 @@ function parseDialogues(content: string): DialogueLine[] {
   // Don't forget last dialogue
   if (currentSpeaker && currentArabic) {
     dialogues.push({
-      speaker: currentSpeaker === 'T' ? 'Teacher' : currentSpeaker === 'S' ? 'Student' : currentSpeaker,
+      speaker: currentSpeaker,
       arabic: currentArabic,
       transliteration: currentTranslit,
       english: currentEnglish
