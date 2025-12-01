@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award,
-  TrendingUp, MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart
+  TrendingUp, MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Home
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
 import TalbiyahBot from '../components/TalbiyahBot';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 // Juz (Para) mapping - which surahs are in each Juz
 const JUZ_RANGES = [
@@ -371,22 +372,32 @@ export default function QuranProgress() {
     <div className="min-h-screen bg-slate-950">
       <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
-            </button>
+          <div className="flex flex-col gap-3">
+            <Breadcrumbs
+              items={[
+                { label: 'Dashboard', path: '/dashboard' },
+                { label: 'Quran Progress' }
+              ]}
+              homePath="/dashboard"
+              darkMode
+            />
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                <Book className="w-5 sm:w-6 h-5 sm:h-6 text-cyan-400" />
+                <span className="hidden sm:inline">Qur'an Progress Tracker</span>
+                <span className="sm:hidden">Quran Progress</span>
+              </h1>
 
-            <h1 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
-              <Book className="w-5 sm:w-6 h-5 sm:h-6 text-cyan-400" />
-              <span className="hidden sm:inline">Qur'an Progress Tracker</span>
-              <span className="sm:hidden">Quran Progress</span>
-            </h1>
-
-            <div className="w-20 sm:w-40"></div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition flex items-center space-x-1"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>

@@ -30,11 +30,13 @@ import {
   Scissors,
   Send,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Home
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import Breadcrumbs from '../../components/Breadcrumbs';
 
 interface LessonInsight {
   id: string;
@@ -1438,23 +1440,34 @@ export default function LessonInsights() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 print:hidden">
-          <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition font-medium">
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <button onClick={() => window.print()} className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Print">
-                <Printer className="w-5 h-5" />
-              </button>
-              <button
-                onClick={downloadAsPDF}
-                disabled={downloadingPDF}
-                className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition disabled:opacity-50"
-                title="Download PDF"
-              >
-                {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-              </button>
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex flex-col gap-3">
+              <Breadcrumbs
+                items={[
+                  { label: 'Dashboard', path: '/dashboard' },
+                  { label: 'Lesson Insights' }
+                ]}
+                homePath="/dashboard"
+              />
+              <div className="flex items-center justify-between">
+                <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition font-medium">
+                  <Home className="w-5 h-5" />
+                  <span>Dashboard</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => window.print()} className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Print">
+                    <Printer className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={downloadAsPDF}
+                    disabled={downloadingPDF}
+                    className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition disabled:opacity-50"
+                    title="Download PDF"
+                  >
+                    {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </header>
