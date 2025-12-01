@@ -34,8 +34,6 @@ import {
   Home
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 interface LessonInsight {
@@ -1075,7 +1073,7 @@ export default function LessonInsights() {
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
-  // Download as PDF function
+  // Download as PDF function - uses browser print for proper Arabic RTL support
   async function downloadAsPDF() {
     setDownloadingPDF(true);
     try {
@@ -1085,7 +1083,7 @@ export default function LessonInsights() {
         return;
       }
 
-      // Load Arabic fonts via Google Fonts CSS (more reliable than direct woff2 URLs)
+      // Load Arabic fonts via Google Fonts CSS
       const fontLinkId = 'arabic-fonts-for-pdf';
       let fontLink = document.getElementById(fontLinkId) as HTMLLinkElement;
       if (!fontLink) {
@@ -1094,98 +1092,125 @@ export default function LessonInsights() {
         fontLink.rel = 'stylesheet';
         fontLink.href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;500;600;700&display=swap';
         document.head.appendChild(fontLink);
-        // Wait for stylesheet to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Wait for all fonts to be fully loaded
       await document.fonts.ready;
 
-      // Additional wait for fonts to render properly
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Hide elements that shouldn't be in PDF
-      const hiddenElements = document.querySelectorAll('.print\\:hidden');
-      hiddenElements.forEach(el => (el as HTMLElement).style.display = 'none');
-
-      // Create a clone of the element for PDF generation
-      const clone = element.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.width = element.offsetWidth + 'px';
-      clone.style.backgroundColor = '#ffffff';
-      document.body.appendChild(clone);
-
-      // Fix Arabic text elements - DO NOT use bidi-override as it reverses text
-      const arabicElements = clone.querySelectorAll('[dir="rtl"], .font-arabic');
-      arabicElements.forEach(el => {
-        const htmlEl = el as HTMLElement;
-        htmlEl.style.fontFamily = "'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif";
-        htmlEl.style.direction = 'rtl';
-        htmlEl.style.textAlign = 'right';
-        // Use 'embed' not 'bidi-override' - bidi-override causes text to render backwards!
-        htmlEl.style.unicodeBidi = 'embed';
-      });
-
-      // Wait for clone to render
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        allowTaint: true,
-        windowWidth: clone.scrollWidth,
-        windowHeight: clone.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Ensure Arabic fonts are applied in cloned document
-          const arabicEls = clonedDoc.querySelectorAll('[dir="rtl"], .font-arabic');
-          arabicEls.forEach(el => {
-            const htmlEl = el as HTMLElement;
-            htmlEl.style.fontFamily = "'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif";
-            htmlEl.style.direction = 'rtl';
-            htmlEl.style.textAlign = 'right';
-            htmlEl.style.unicodeBidi = 'embed';
-          });
-        }
-      });
-
-      // Clean up clone
-      document.body.removeChild(clone);
-
-      // Restore hidden elements
-      hiddenElements.forEach(el => (el as HTMLElement).style.display = '');
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        alert('Please allow popups to download PDF');
+        return;
       }
 
-      const fileName = insight?.title
-        ? `${insight.title.replace(/[^a-z0-9]/gi, '_')}_insights.pdf`
-        : 'lesson_insights.pdf';
+      // Get computed styles
+      const styles = Array.from(document.styleSheets)
+        .map(styleSheet => {
+          try {
+            return Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .join('\n');
 
-      pdf.save(fileName);
+      // Create print document with proper RTL support
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en" dir="ltr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${insight?.title || 'Lesson Insights'}</title>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap">
+          <style>
+            ${styles}
+
+            /* Print-specific styles */
+            @media print {
+              body {
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .print\\:hidden { display: none !important; }
+            }
+
+            /* Reset for print */
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              background: white;
+              color: #1e293b;
+              padding: 20px;
+              max-width: 210mm;
+              margin: 0 auto;
+            }
+
+            /* Arabic text styles - critical for proper rendering */
+            .font-arabic,
+            [dir="rtl"],
+            [lang="ar"] {
+              font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Arabic Typesetting', serif !important;
+              direction: rtl !important;
+              text-align: right !important;
+              unicode-bidi: isolate !important;
+            }
+
+            /* Ensure Arabic in tables renders correctly */
+            td[dir="rtl"],
+            th[dir="rtl"],
+            .arabic-cell {
+              font-family: 'Noto Naskh Arabic', 'Amiri', serif !important;
+              direction: rtl !important;
+              unicode-bidi: isolate !important;
+            }
+
+            /* Fix dark backgrounds for print */
+            .bg-slate-800, .bg-slate-900, .bg-gray-800, .bg-gray-900 {
+              background: #f1f5f9 !important;
+            }
+            .text-white, .text-slate-100, .text-gray-100 {
+              color: #1e293b !important;
+            }
+
+            /* Card styles for print */
+            .rounded-xl, .rounded-2xl {
+              border: 1px solid #e2e8f0 !important;
+              background: white !important;
+            }
+
+            /* Colored accents should print */
+            .bg-emerald-500\\/20, .bg-teal-500\\/20 { background: #d1fae5 !important; }
+            .bg-blue-500\\/20, .bg-indigo-500\\/20 { background: #dbeafe !important; }
+            .text-emerald-400, .text-emerald-500 { color: #059669 !important; }
+            .text-blue-400, .text-blue-500 { color: #2563eb !important; }
+            .text-cyan-400, .text-cyan-500 { color: #0891b2 !important; }
+            .border-emerald-500\\/30 { border-color: #059669 !important; }
+            .border-blue-500\\/30 { border-color: #2563eb !important; }
+          </style>
+        </head>
+        <body>
+          ${element.innerHTML}
+          <script>
+            // Wait for fonts to load then print
+            document.fonts.ready.then(() => {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 500);
+              }, 500);
+            });
+          </script>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Failed to generate PDF. Please try again.');
