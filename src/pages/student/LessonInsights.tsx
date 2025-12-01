@@ -502,19 +502,18 @@ interface InsightSection {
 
 function parseInsightSections(content: string): InsightSection[] {
   const sections: InsightSection[] = [];
-  const sectionRegex = /(?:^|\n)(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Grammar Focus|Teacher Notes|Conversation Practice|Pronunciation|Key Takeaways|Mini Quiz|Homework|Talbiyah Insights Summary|Final Reflection)[^\n]*/gi;
-
-  let lastIndex = 0;
-  let match;
-  const matches: { title: string; start: number }[] = [];
 
   // Find all section headers
   const tempContent = content.replace(/\r\n/g, '\n');
   const lines = tempContent.split('\n');
   let currentPos = 0;
+  const matches: { title: string; start: number }[] = [];
+
+  // Extended regex to match Arabic, Quran, and general section headers
+  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Focus Words|Verses Covered|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Mini Quiz|Homework|Practice Tasks|Talbiyah Insights Summary|Final Reflection)/i;
 
   for (const line of lines) {
-    const headerMatch = line.match(/^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Grammar Focus|Teacher Notes|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Mini Quiz|Homework|Practice Tasks|Talbiyah Insights Summary|Final Reflection)/i);
+    const headerMatch = line.match(sectionPattern);
     if (headerMatch) {
       matches.push({ title: headerMatch[1].trim(), start: currentPos });
     }
@@ -533,16 +532,17 @@ function parseInsightSections(content: string): InsightSection[] {
     let type: InsightSection['type'] = 'other';
     const titleLower = matches[i].title.toLowerCase();
     if (titleLower.includes('summary') && !titleLower.includes('talbiyah')) type = 'summary';
-    else if (titleLower.includes('vocabulary')) type = 'vocabulary';
-    else if (titleLower.includes('sentence')) type = 'sentences';
-    else if (titleLower.includes('grammar')) type = 'grammar';
-    else if (titleLower.includes('notes') || titleLower.includes('correction')) type = 'notes';
+    else if (titleLower.includes('vocabulary') || titleLower.includes('focus words')) type = 'vocabulary';
+    else if (titleLower.includes('sentence') || titleLower.includes('verses covered')) type = 'sentences';
+    else if (titleLower.includes('grammar') || titleLower.includes('tajweed')) type = 'grammar';
+    else if (titleLower.includes('notes') || titleLower.includes('correction') || titleLower.includes('tafsir')) type = 'notes';
     else if (titleLower.includes('conversation') || titleLower.includes('role')) type = 'dialogue';
     else if (titleLower.includes('pronunciation')) type = 'pronunciation';
     else if (titleLower.includes('takeaway')) type = 'takeaways';
     else if (titleLower.includes('quiz')) type = 'quiz';
     else if (titleLower.includes('homework') || titleLower.includes('practice task')) type = 'homework';
     else if (titleLower.includes('reflection') || titleLower.includes('talbiyah insights')) type = 'reflection';
+    else if (titleLower.includes('memoris') || titleLower.includes('memoriz')) type = 'other'; // Memorisation Progress
 
     sections.push({
       title: cleanMarkdown(matches[i].title),

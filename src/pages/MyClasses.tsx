@@ -282,7 +282,7 @@ export default function MyClasses() {
 
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">My Classes</h1>
+              <h1 className="text-4xl font-bold text-white mb-2">My Lessons</h1>
               <p className="text-slate-400 text-lg">View and manage all your lessons</p>
             </div>
 

@@ -322,7 +322,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   if (lessons.length === 0) {
     return (
       <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-        <h3 className="text-2xl font-bold text-white mb-6">My Classes</h3>
+        <h3 className="text-2xl font-bold text-white mb-6">My Lessons</h3>
 
         <div className="text-center py-12">
           <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -356,7 +356,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   return (
     <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white">My Classes</h3>
+        <h3 className="text-2xl font-bold text-white">My Lessons</h3>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => navigate('/my-classes')}

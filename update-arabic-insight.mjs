@@ -1,4 +1,4 @@
-// Update Arabic Language insight with comprehensive template
+// Update Arabic Language insight with comprehensive template including Conversation Practice
 
 const insightData = {
   title: "Arabic Language: Text Reading & Vocabulary Expansion — Unit 6",
@@ -48,6 +48,48 @@ This session focused on reading Arabic text and expanding vocabulary through roo
 | 4 | أَنَا أُسَاعِدُ | anā usāʿidu | I am helping |
 | 5 | سَوْفَ أُسَاعِدُ أَبِي فِي المَزْرَعَة | sawfa usāʿidu abī fil-mazraʿah | I will help my father on the farm |
 | 6 | هَذَا الشَّخْصُ | hādhā ash-shakhṣu | This person |
+
+---
+
+## Conversation Practice
+
+Practice this dialogue about school ending and holiday plans:
+
+**Teacher (T):** أَهْلاً يَا طَالِب! كَيْفَ حَالُكَ؟
+*ahlan yā ṭālib! kayfa ḥāluka?*
+(Hello student! How are you?)
+
+**Student (S):** أَهْلاً أُسْتَاذ! أَنَا بِخَيْر، الحَمْدُ لِلّٰه
+*ahlan ustādh! anā bikhayr, al-ḥamdu lillāh*
+(Hello teacher! I am well, praise be to Allah)
+
+**T:** هَلْ اِنْتَهَتِ السَّنَةُ الدِّرَاسِيَّةُ؟
+*hal intahat as-sanatu ad-dirāsiyyah?*
+(Has the school year ended?)
+
+**S:** نَعَمْ، اِنْتَهَتِ السَّنَةُ وَقَرُبَتِ العُطْلَةُ
+*naʿam, intahat as-sanah wa-qarubat al-ʿuṭlah*
+(Yes, the year ended and the holiday approached)
+
+**T:** مَاذَا سَتَفْعَلُ فِي العُطْلَة؟
+*mādhā sataʿfalu fil-ʿuṭlah?*
+(What will you do in the holiday?)
+
+**S:** سَوْفَ أُسَاعِدُ أَبِي فِي المَزْرَعَة
+*sawfa usāʿidu abī fil-mazraʿah*
+(I will help my father on the farm)
+
+**T:** مَاشَاءَ اللّٰه! هٰذَا جَمِيل جِدًّا
+*māshā'Allāh! hādhā jamīl jiddan*
+(Masha'Allah! That is very beautiful)
+
+**S:** شُكْرًا أُسْتَاذ! وَأَنْتَ، مَاذَا سَتَفْعَل؟
+*shukran ustādh! wa-anta, mādhā sataʿfal?*
+(Thank you teacher! And you, what will you do?)
+
+**T:** سَأَزُورُ أَقَارِبِي، هُمْ قَرِيبُون مِنْ هُنَا
+*sa'azūru aqāribī, hum qarībūn min hunā*
+(I will visit my relatives, they are close to here)
 
 ---
 
@@ -132,6 +174,7 @@ C) Student
 📖 **Conjugation drill:** Write أُسَاعِدُ in all pronoun forms
 📝 **Sentence writing:** Write 5 sentences using اِنْتَهَى in past tense
 📖 **Reading:** Re-read Unit 6 text and identify all vocabulary learned
+🗣️ **Conversation practice:** Practice the dialogue with a family member or record yourself
 
 ---
 
@@ -165,7 +208,7 @@ C) Student
 > "The school year ended and the vacation approached."
 > — Unit 6 Opening`,
     metadata: {
-      model: "arabic_insight_template_v2",
+      model: "arabic_insight_template_v3",
       source: "lesson_transcript",
       student: "Nathan Fontaine",
       subject: "Arabic Language",
@@ -193,16 +236,16 @@ C) Student
     "Practice verb conjugation with أُسَاعِدُ",
     "Find more words from root ق-ر-ب",
     "Write sentences using past tense اِنْتَهَى",
-    "Re-read Unit 6 for comprehension"
+    "Practice the conversation dialogue aloud"
   ],
   key_topics: [
     "Past tense verb forms",
     "Root word derivation (ق-ر-ب)",
     "Present tense pattern أُفَاعِلُ",
     "School & holiday vocabulary",
-    "Practical everyday Arabic"
+    "Practical conversation skills"
   ],
-  ai_model: "arabic_insight_template_v2",
+  ai_model: "arabic_insight_template_v3",
   confidence_score: 0.92
 };
 

@@ -271,7 +271,7 @@ export default function MissedLessons() {
               onClick={() => navigate('/my-classes')}
               className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
             >
-              View My Classes
+              View My Lessons
             </button>
           </div>
         ) : (
