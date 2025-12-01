@@ -14,12 +14,17 @@ import {
   Plus,
   MessageCircle,
   ChevronDown,
-  ArrowRight
+  ArrowRight,
+  CreditCard,
+  Home
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import StudentDashboardContent from '../../components/StudentDashboardContent';
 import TalbiyahBot from '../../components/TalbiyahBot';
 import { calculateAge } from '../../utils/ageCalculations';
+import ChildrenOverviewWidget from '../../components/parent/ChildrenOverviewWidget';
+import PaymentHistoryWidget from '../../components/parent/PaymentHistoryWidget';
+import ParentNotificationsWidget from '../../components/parent/ParentNotificationsWidget';
 
 interface Learner {
   id: string;
@@ -43,6 +48,8 @@ export default function ParentDashboard() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'child' | 'payments'>('overview');
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -56,6 +63,7 @@ export default function ParentDashboard() {
         return;
       }
 
+      setUserId(user.id);
       console.log('Loading dashboard for user:', user.id);
 
       // Load profile
@@ -103,10 +111,11 @@ export default function ParentDashboard() {
   }
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/parent/dashboard', active: true },
-    { icon: MessageCircle, label: 'Islamic Sources', path: '/about/islamic-source-reference', active: false },
-    { icon: Users, label: 'My Children', path: '/parent/dashboard', active: false },
+    { icon: Home, label: 'Overview', onClick: () => setActiveTab('overview'), active: activeTab === 'overview' },
+    { icon: Users, label: 'My Children', onClick: () => setActiveTab('child'), active: activeTab === 'child' },
+    { icon: CreditCard, label: 'Payments', onClick: () => setActiveTab('payments'), active: activeTab === 'payments' },
     { icon: Video, label: 'Recordings', path: '/recordings/history', active: false },
+    { icon: MessageCircle, label: 'Islamic Sources', path: '/islamic-source-reference', active: false },
     { icon: Settings, label: 'Settings', path: '/account/settings', active: false },
   ];
 
@@ -151,10 +160,10 @@ export default function ParentDashboard() {
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => (
+          {menuItems.map((item, index) => (
             <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
+              key={item.label}
+              onClick={() => item.onClick ? item.onClick() : item.path && navigate(item.path)}
               className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition ${
                 item.active
                   ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
@@ -247,77 +256,137 @@ export default function ParentDashboard() {
             </div>
           ) : (
             <>
-              {/* Child Selector */}
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-2xl p-6 mb-8">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-purple-900 mb-2 flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Viewing Dashboard For:
-                    </h3>
-                    <div className="relative">
-                      <select
-                        value={selectedLearnerId || ''}
-                        onChange={(e) => setSelectedLearnerId(e.target.value)}
-                        className="w-full md:w-auto appearance-none bg-white border-2 border-purple-300 text-purple-900 px-6 py-3 pr-12 rounded-xl font-bold text-lg cursor-pointer hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition shadow-sm"
+              {/* Overview Tab */}
+              {activeTab === 'overview' && userId && (
+                <>
+                  {/* Family Overview Widget */}
+                  <ChildrenOverviewWidget
+                    parentId={userId}
+                    onSelectChild={(childId) => {
+                      setSelectedLearnerId(childId);
+                      setActiveTab('child');
+                    }}
+                  />
+
+                  {/* Two Column Layout for Overview */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Notifications */}
+                    <ParentNotificationsWidget
+                      parentId={userId}
+                      children={learners.map(l => ({ id: l.id, name: l.name }))}
+                    />
+
+                    {/* Payment Summary */}
+                    <PaymentHistoryWidget parentId={userId} />
+                  </div>
+
+                  {/* Islamic Source Reference Card - For Parents */}
+                  <div className="mt-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-white mb-2">Need Islamic Guidance?</h3>
+                        <p className="text-slate-300 mb-4">
+                          Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
+                        </p>
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => navigate('/islamic-source-reference')}
+                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+                          >
+                            <MessageCircle className="w-5 h-5" />
+                            <span>Find Sources Now</span>
+                          </button>
+                          <button
+                            onClick={() => navigate('/about/islamic-source-reference')}
+                            className="px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition"
+                          >
+                            Learn More
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Child Dashboard Tab */}
+              {activeTab === 'child' && (
+                <>
+                  {/* Child Selector */}
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-2xl p-6 mb-8">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                          <Users className="w-5 h-5" />
+                          Viewing Dashboard For:
+                        </h3>
+                        <div className="relative">
+                          <select
+                            value={selectedLearnerId || ''}
+                            onChange={(e) => setSelectedLearnerId(e.target.value)}
+                            className="w-full md:w-auto appearance-none bg-white border-2 border-purple-300 text-purple-900 px-6 py-3 pr-12 rounded-xl font-bold text-lg cursor-pointer hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition shadow-sm"
+                          >
+                            {learners.map((learner) => (
+                              <option key={learner.id} value={learner.id}>
+                                {learner.name} {(learner.date_of_birth || learner.age) && `(Age ${learner.date_of_birth ? calculateAge(learner.date_of_birth) : learner.age})`}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-6 h-6 text-purple-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setShowAddChildModal(true)}
+                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-semibold transition shadow-lg shadow-purple-500/20 flex items-center gap-2"
                       >
-                        {learners.map((learner) => (
-                          <option key={learner.id} value={learner.id}>
-                            {learner.name} {(learner.date_of_birth || learner.age) && `(Age ${learner.date_of_birth ? calculateAge(learner.date_of_birth) : learner.age})`}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-6 h-6 text-purple-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Plus className="w-5 h-5" />
+                        Add Another Child
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setShowAddChildModal(true)}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-semibold transition shadow-lg shadow-purple-500/20 flex items-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add Another Child
-                  </button>
-                </div>
-              </div>
+                  {/* Student Dashboard Content */}
+                  {selectedLearnerId && (
+                    <StudentDashboardContent
+                      learnerId={selectedLearnerId}
+                      isParentView={true}
+                      onRefresh={loadDashboardData}
+                    />
+                  )}
+                </>
+              )}
 
-              {/* Islamic Source Reference Card - For Parents */}
-              <div className="mb-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-white" />
+              {/* Payments Tab */}
+              {activeTab === 'payments' && userId && (
+                <div className="max-w-4xl mx-auto">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900">Payment History</h2>
+                    <p className="text-slate-600">View all your credit purchases and transactions</p>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white mb-2">📖 Need Islamic Guidance?</h3>
-                    <p className="text-slate-300 mb-4">
-                      Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
-                    </p>
-                    <div className="flex items-center space-x-3">
+
+                  <PaymentHistoryWidget parentId={userId} />
+
+                  {/* Buy Credits CTA */}
+                  <div className="mt-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Need More Credits?</h3>
+                        <p className="text-slate-600">Purchase learning credits to book more lessons for your children.</p>
+                      </div>
                       <button
-                        onClick={() => navigate('/islamic-source-reference')}
-                        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+                        onClick={() => navigate('/buy-credits')}
+                        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-semibold transition shadow-lg flex items-center gap-2"
                       >
-                        <MessageCircle className="w-5 h-5" />
-                        <span>Find Sources Now</span>
-                      </button>
-                      <button
-                        onClick={() => navigate('/about/islamic-source-reference')}
-                        className="px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition"
-                      >
-                        Learn More
+                        <CreditCard className="w-5 h-5" />
+                        Buy Credits
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Student Dashboard Content */}
-              {selectedLearnerId && (
-                <StudentDashboardContent
-                  learnerId={selectedLearnerId}
-                  isParentView={true}
-                  onRefresh={loadDashboardData}
-                />
               )}
             </>
           )}
