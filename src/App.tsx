@@ -22,6 +22,7 @@ import CoursesManagement from './pages/admin/CoursesManagement';
 import Recordings from './pages/admin/Recordings';
 import Analytics from './pages/admin/Analytics';
 import InsightsGenerator from './pages/admin/InsightsGenerator';
+import AdminSettings from './pages/admin/AdminSettings';
 import ApplyToTeach from './pages/ApplyToTeach';
 import AccountSettings from './pages/AccountSettings';
 import Dashboard from './pages/Dashboard';
@@ -198,7 +199,7 @@ function App() {
           <Route path="recordings" element={<Recordings />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="insights-generator" element={<InsightsGenerator />} />
-          <Route path="settings" element={<div className="text-white">Settings Coming Soon</div>} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
         <Route
           path="/apply-to-teach"
