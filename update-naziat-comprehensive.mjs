@@ -22,10 +22,12 @@ This powerful Makkan surah establishes the certainty of the Day of Resurrection 
 
 ---
 
-## Verses Covered
+## Key Verses
 
 **Surah:** An-Nāziʿāt (79)
 **Ayaat:** 1-33
+
+### Theme 1: The Five Oaths (Ayahs 1-14)
 
 | # | Arabic | Transliteration | Translation |
 |---|--------|-----------------|-------------|
@@ -38,12 +40,76 @@ This powerful Makkan surah establishes the certainty of the Day of Resurrection 
 | 7 | تَتْبَعُهَا الرَّادِفَةُ | tatbaʿuhar-rādifah | Followed by the subsequent [blast] |
 | 8 | قُلُوبٌ يَوْمَئِذٍ وَاجِفَةٌ | qulūbun yawma'idhin wājifah | Hearts, that Day, will tremble |
 | 9 | أَبْصَارُهَا خَاشِعَةٌ | abṣāruhā khāshiʿah | Their eyes humbled |
+
+### Theme 2: Story of Musa & Fir'awn (Ayahs 15-26)
+
+| # | Arabic | Transliteration | Translation |
+|---|--------|-----------------|-------------|
 | 15 | هَلْ أَتَاكَ حَدِيثُ مُوسَىٰ | hal atāka ḥadīthu mūsā | Has the story of Musa reached you? |
 | 17 | اذْهَبْ إِلَىٰ فِرْعَوْنَ إِنَّهُ طَغَىٰ | idh'hab ilā firʿawna innahu ṭaghā | Go to Fir'awn. Indeed, he has transgressed |
 | 24 | فَقَالَ أَنَا رَبُّكُمُ الْأَعْلَىٰ | faqāla ana rabbukumul-aʿlā | He said, "I am your lord, most high" |
-| 27 | أَأَنتُمْ أَشَدُّ خَلْقًا أَمِ السَّمَاءُ | a'antum ashaddu khalqan amis-samā' | Are you harder to create, or the heaven? |
+
+### Theme 3: Allah's Creation as Proof (Ayahs 27-33)
+
+| # | Arabic | Transliteration | Translation |
+|---|--------|-----------------|-------------|
+| 27 | أَأَنتُمْ أَشَدُّ خَلْقًا أَمِ السَّمَاءُ ۚ بَنَاهَا | a'antum ashaddu khalqan amis-samā'? banāhā | Are you harder to create, or the heaven? He constructed it |
 | 30 | وَالْأَرْضَ بَعْدَ ذَٰلِكَ دَحَاهَا | wal-arḍa baʿda dhālika daḥāhā | And the earth, after that, He spread |
 | 33 | مَتَاعًا لَّكُمْ وَلِأَنْعَامِكُمْ | matāʿan lakum wa li'anʿāmikum | As provision for you and your livestock |
+
+---
+
+## First Word Prompter
+
+Test your memorisation! Look at the first word and try to complete the verse before checking.
+
+### Theme 1: The Five Oaths (Ayahs 1-14)
+
+| # | First Word | Complete the verse... |
+|---|------------|----------------------|
+| 1 | وَالنَّازِعَاتِ | __________ |
+| 2 | وَالنَّاشِطَاتِ | __________ |
+| 3 | وَالسَّابِحَاتِ | __________ |
+| 4 | فَالسَّابِقَاتِ | __________ |
+| 5 | فَالْمُدَبِّرَاتِ | __________ |
+| 6 | يَوْمَ | __________ |
+| 7 | تَتْبَعُهَا | __________ |
+| 8 | قُلُوبٌ | __________ |
+| 9 | أَبْصَارُهَا | __________ |
+| 10 | يَقُولُونَ | __________ |
+| 11 | أَإِذَا | __________ |
+| 12 | تِلْكَ | __________ |
+| 13 | فَإِنَّمَا | __________ |
+| 14 | فَإِذَا | __________ |
+
+### Theme 2: Story of Musa & Fir'awn (Ayahs 15-26)
+
+| # | First Word | Complete the verse... |
+|---|------------|----------------------|
+| 15 | هَلْ | __________ |
+| 16 | إِذْ | __________ |
+| 17 | اذْهَبْ | __________ |
+| 18 | فَقُلْ | __________ |
+| 19 | وَأَهْدِيَكَ | __________ |
+| 20 | فَأَرَاهُ | __________ |
+| 21 | فَكَذَّبَ | __________ |
+| 22 | ثُمَّ | __________ |
+| 23 | فَحَشَرَ | __________ |
+| 24 | فَقَالَ | __________ |
+| 25 | فَأَخَذَهُ | __________ |
+| 26 | إِنَّ | __________ |
+
+### Theme 3: Allah's Creation (Ayahs 27-33)
+
+| # | First Word | Complete the verse... |
+|---|------------|----------------------|
+| 27 | أَأَنتُمْ | __________ |
+| 28 | رَفَعَ | __________ |
+| 29 | وَأَغْطَشَ | __________ |
+| 30 | وَالْأَرْضَ | __________ |
+| 31 | أَخْرَجَ | __________ |
+| 32 | وَالْجِبَالَ | __________ |
+| 33 | مَتَاعًا | __________ |
 
 ---
 
@@ -109,9 +175,18 @@ The qalqalah letters (ق ط ب ج د) appear throughout these verses and must be
 
 ## Memorisation Progress
 
-**Verses Reviewed:** Ayahs 1-5 (fluent)
-**New Verses:** Ayahs 6-33 (developing)
-**Notes:** Strong recitation of opening oaths. Continue building fluency in the story of Musa and creation passages.
+### Memorisation Blocks (by theme)
+
+**Block 1 — The Five Oaths (Ayahs 1-14):** ✅ Fluent
+- Start: وَالنَّازِعَاتِ → End: يَقُولُونَ
+
+**Block 2 — Story of Musa & Fir'awn (Ayahs 15-26):** 🔄 Developing
+- Start: هَلْ أَتَاكَ → End: فَأَخَذَهُ
+
+**Block 3 — Allah's Creation (Ayahs 27-33):** 📖 New
+- Start: أَأَنتُمْ → End: مَتَاعًا
+
+**Notes:** Strong recitation of Theme 1 (oaths). Focus next on Theme 2 (Musa's story) — memorise first words of each ayah to help recall.
 
 ---
 
@@ -122,10 +197,10 @@ A) Those who swim
 B) Those who extract souls ✅
 C) Those who manage affairs
 
-2. Which ayah contains Fir'awn's arrogant claim?
-A) Ayah 17
-B) Ayah 24 ✅
-C) Ayah 30
+2. What was Fir'awn's arrogant claim?
+A) "I am the wisest of all"
+B) "I am your lord, most high" (أَنَا رَبُّكُمُ الْأَعْلَىٰ) ✅
+C) "I control the sun and moon"
 
 3. What is الرَّاجِفَة?
 A) The earth spreading
@@ -157,7 +232,7 @@ C) 4 counts
 ## Homework
 
 📖 **Revision:** Recite ayahs 1-10 five times daily with focus on tajweed
-🎧 **Listening:** Listen to Sheikh Al-Husary reciting Surah An-Nazi'at
+🎧 **Listening:** Listen to Mishary Al-Afasy reciting Surah An-Nazi'at
 📝 **Memorisation:** Commit ayahs 6-14 to memory with meanings
 🗣️ **Practice:** Record yourself reciting ayahs 1-5 and compare with teacher
 📖 **Tafsir reading:** Read Ibn Kathir's tafsir on ayahs 15-26 (Musa's story)
@@ -219,7 +294,7 @@ const updateData = {
   recommendations: [
     "Daily recitation of ayahs 1-10 with tajweed focus",
     "Learn all 12 vocabulary words with Arabic roots",
-    "Listen to Sheikh Al-Husary's recitation",
+    "Listen to Mishary Al-Afasy's recitation",
     "Write reflection on Fir'awn's arrogance",
     "Complete the mini quiz for self-assessment"
   ],

@@ -107,6 +107,7 @@ interface KeySentence {
   arabic: string;
   transliteration: string;
   english: string;
+  ayahNumber?: number; // For Quran verses
 }
 
 // Grammar point interface
@@ -147,13 +148,23 @@ function parseVocabulary(content: string): VocabWord[] {
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Look for table rows with Arabic | Transliteration | English
-    const tableMatch = line.match(/\|\s*([أ-يً-ْ\s]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)/);
-    if (tableMatch) {
-      const arabic = tableMatch[1].trim();
-      const translit = tableMatch[2].trim();
-      const english = tableMatch[3].trim();
-      if (arabic && !arabic.includes('Arabic') && !arabic.includes('---')) {
+    // Skip header rows and separator rows
+    if (line.includes('---') || line.includes('Arabic') || line.includes('Transliteration')) {
+      continue;
+    }
+
+    // Look for table rows - handle both 3-column and 4-column tables
+    // Format 1: | Arabic | Transliteration | English |
+    // Format 2: | Arabic | Transliteration | Meaning | Root |
+    const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
+
+    if (cells.length >= 3) {
+      const arabic = cells[0];
+      const translit = cells[1];
+      const english = cells[2]; // This is "English" or "Meaning" depending on format
+
+      // Check if first cell contains Arabic characters
+      if (arabic && /[أ-يً-ْ]/.test(arabic)) {
         words.push({ arabic, transliteration: translit, english });
       }
     }
@@ -172,27 +183,104 @@ function parseVocabulary(content: string): VocabWord[] {
   return words.slice(0, 15); // Limit to 15 words
 }
 
-// Parse key sentences
+// Parse key sentences (also handles Verses Covered tables)
 function parseKeySentences(content: string): KeySentence[] {
   const sentences: KeySentence[] = [];
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Table format
-    const tableMatch = line.match(/\|\s*([أ-يً-ْ\s,.؟!]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)/);
-    if (tableMatch) {
-      const arabic = tableMatch[1].trim();
-      if (arabic && !arabic.includes('Arabic') && !arabic.includes('---') && arabic.length > 3) {
+    // Skip header and separator rows
+    if (line.includes('---') || line.includes('Arabic') || line.includes('Transliteration') || line.includes('Translation')) {
+      continue;
+    }
+
+    // Parse table rows - handle both 3 and 4+ column formats
+    // Format 1: | Arabic | Transliteration | English |
+    // Format 2: | # | Arabic | Transliteration | Translation |
+    const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
+
+    if (cells.length >= 3) {
+      // Check if first cell is just a number (ayah/row index)
+      const firstIsNumber = /^\d+$/.test(cells[0]);
+      const ayahNumber = firstIsNumber ? parseInt(cells[0], 10) : undefined;
+      const arabicIdx = firstIsNumber ? 1 : 0;
+      const translitIdx = firstIsNumber ? 2 : 1;
+      const englishIdx = firstIsNumber ? 3 : 2;
+
+      const arabic = cells[arabicIdx];
+      const translit = cells[translitIdx];
+      const english = cells[englishIdx];
+
+      // Check if Arabic column contains Arabic characters
+      if (arabic && /[أ-يً-ْ]/.test(arabic) && arabic.length > 3) {
         sentences.push({
           arabic,
-          transliteration: tableMatch[2].trim(),
-          english: tableMatch[3].trim()
+          transliteration: translit || '',
+          english: english || '',
+          ayahNumber
         });
       }
     }
   }
 
-  return sentences.slice(0, 10);
+  return sentences.slice(0, 20); // Allow more sentences for Quran verses
+}
+
+// First Word Prompter interface
+interface FirstWordPrompt {
+  ayahNumber: number;
+  firstWord: string;
+  theme?: string;
+}
+
+// Parse First Word Prompter content
+function parseFirstWordPrompter(content: string): { theme: string; prompts: FirstWordPrompt[] }[] {
+  const themes: { theme: string; prompts: FirstWordPrompt[] }[] = [];
+  const lines = content.split('\n');
+  let currentTheme = '';
+  let currentPrompts: FirstWordPrompt[] = [];
+
+  for (const line of lines) {
+    // Detect theme headers like "### Theme 1: The Five Oaths (Ayahs 1-14)"
+    const themeMatch = line.match(/^###?\s*Theme\s*\d+[:\s]+(.+)/i);
+    if (themeMatch) {
+      // Save previous theme if exists
+      if (currentTheme && currentPrompts.length > 0) {
+        themes.push({ theme: currentTheme, prompts: currentPrompts });
+      }
+      currentTheme = themeMatch[1].trim();
+      currentPrompts = [];
+      continue;
+    }
+
+    // Skip header and separator rows
+    if (line.includes('---') || line.includes('First Word') || line.includes('Complete the')) {
+      continue;
+    }
+
+    // Parse table rows: | # | First Word | Complete the verse... |
+    const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
+    if (cells.length >= 2) {
+      const ayahNum = parseInt(cells[0], 10);
+      const firstWord = cells[1];
+
+      // Check if first cell is a number and second has Arabic
+      if (!isNaN(ayahNum) && /[أ-يً-ْ]/.test(firstWord)) {
+        currentPrompts.push({
+          ayahNumber: ayahNum,
+          firstWord: firstWord,
+          theme: currentTheme
+        });
+      }
+    }
+  }
+
+  // Don't forget last theme
+  if (currentTheme && currentPrompts.length > 0) {
+    themes.push({ theme: currentTheme, prompts: currentPrompts });
+  }
+
+  return themes;
 }
 
 // Parse grammar points
@@ -332,6 +420,125 @@ function parseDialogues(content: string): DialogueLine[] {
   }
 
   return dialogues;
+}
+
+// Parse tafsir points from markdown content
+function parseTafsirPoints(content: string): TafsirPoint[] {
+  const points: TafsirPoint[] = [];
+
+  // Split by ### Ayah headers
+  const sections = content.split(/(?=###\s*Ayah[s]?\s*\d)/i);
+
+  for (const section of sections) {
+    if (!section.trim()) continue;
+
+    // Match ayah header like "### Ayah 34: فَإِذَا" or "### Ayahs 37-39: The Path"
+    const headerMatch = section.match(/###\s*Ayahs?\s*([\d\-]+)[:\s]*(.*)/i);
+    if (!headerMatch) continue;
+
+    const ayahRef = headerMatch[1].includes('-') ? `Ayahs ${headerMatch[1]}` : `Ayah ${headerMatch[1]}`;
+    const headerRest = headerMatch[2] || '';
+    const lines = section.split('\n');
+
+    // Check if Arabic is in the header (format: ### Ayah 34: فَإِذَا جَاءَتِ)
+    let arabic = '';
+    const headerArabicMatch = headerRest.match(/([أ-يً-ْ\s،؟!]+)/);
+    if (headerArabicMatch) {
+      arabic = headerArabicMatch[1].trim();
+    }
+
+    let translation = '';
+    let tafsir = '';
+    let reflection = '';
+    const scholarQuotes: { scholar: string; quote: string }[] = [];
+
+    let inReflection = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Skip header and separators
+      if (trimmed.startsWith('###') || trimmed === '---') {
+        inReflection = false;
+        continue;
+      }
+
+      // Multi-line Arabic text in bold (for ayah groups like 37-39)
+      if (!arabic) {
+        const boldArabicMatch = trimmed.match(/\*\*([أ-يً-ْ\s،؟!•]+)\*\*/);
+        if (boldArabicMatch) {
+          arabic = boldArabicMatch[1].trim();
+          continue;
+        }
+      }
+
+      // Translation - in bold with quotes like **"So when..."**
+      const translationMatch = trimmed.match(/\*\*"([^"]+)"\*\*/);
+      if (translationMatch && !translation) {
+        translation = translationMatch[1];
+        continue;
+      }
+
+      // Scholar quotes - various formats
+      // Format 1: Ibn Kathir (رحمه الله) explains that...
+      // Format 2: Imam al-Qurtubi explains that...
+      // Format 3: Hasan al-Basri said: "..."
+      const scholarPatterns = [
+        /^(Ibn\s+[\w\-]+|Imam\s+[\w\-]+|Hasan\s+al-\w+|As-Sa['']di|Qurtubi)\s*(?:\([^)]+\))?\s*(?:explains?|said|notes?|wrote|adds?|comments?|beautifully notes?)\s*(?:that\s+)?[:"]?(.+)/i,
+      ];
+
+      for (const pattern of scholarPatterns) {
+        const match = trimmed.match(pattern);
+        if (match && match[2]) {
+          const quote = match[2].replace(/^[":]|"$/g, '').trim();
+          if (quote.length > 30) {
+            scholarQuotes.push({
+              scholar: match[1].replace(/\s+/g, ' '),
+              quote: quote.substring(0, 200) + (quote.length > 200 ? '...' : '')
+            });
+          }
+          break;
+        }
+      }
+
+      // Reflection prompt
+      if (trimmed.startsWith('**Reflection:**') || trimmed.startsWith('**Reflection:')) {
+        inReflection = true;
+        reflection = trimmed.replace(/\*\*Reflection:\*\*\s*/i, '').replace(/\*\*/g, '');
+        continue;
+      }
+
+      if (inReflection && trimmed) {
+        reflection += ' ' + trimmed;
+        continue;
+      }
+
+      // Collect tafsir text - longer paragraphs
+      if (trimmed && !trimmed.startsWith('|') && !trimmed.startsWith('#') &&
+          !trimmed.startsWith('**Step') && !trimmed.startsWith('**Quality') &&
+          !trimmed.startsWith('-') && !trimmed.startsWith('*') &&
+          trimmed.length > 60) {
+        // Skip lines that are likely scholar quotes (already captured)
+        if (!trimmed.match(/^(Ibn|Imam|Hasan|As-Sa|Qurtubi)/i)) {
+          tafsir += (tafsir ? ' ' : '') + trimmed;
+        }
+      }
+    }
+
+    // Only add if we have meaningful content
+    if (arabic || translation || tafsir || scholarQuotes.length > 0) {
+      points.push({
+        ayahRef,
+        arabic,
+        translation,
+        tafsir: tafsir.substring(0, 600), // Limit tafsir length for display
+        reflection: reflection.trim() || undefined,
+        scholarQuotes: scholarQuotes.length > 0 ? scholarQuotes : undefined
+      });
+    }
+  }
+
+  return points;
 }
 
 // Parse teacher notes
@@ -497,7 +704,17 @@ function parseHomework(content: string): { task: string; type: 'write' | 'speak'
 interface InsightSection {
   title: string;
   content: string;
-  type: 'summary' | 'vocabulary' | 'sentences' | 'grammar' | 'notes' | 'dialogue' | 'pronunciation' | 'takeaways' | 'quiz' | 'homework' | 'reflection' | 'other';
+  type: 'summary' | 'vocabulary' | 'sentences' | 'prompter' | 'grammar' | 'notes' | 'tafsir' | 'dialogue' | 'pronunciation' | 'takeaways' | 'quiz' | 'homework' | 'reflection' | 'other';
+}
+
+// Tafsir point interface
+interface TafsirPoint {
+  ayahRef: string;
+  arabic: string;
+  translation: string;
+  tafsir: string;
+  reflection?: string;
+  scholarQuotes?: { scholar: string; quote: string }[];
 }
 
 function parseInsightSections(content: string): InsightSection[] {
@@ -510,7 +727,7 @@ function parseInsightSections(content: string): InsightSection[] {
   const matches: { title: string; start: number }[] = [];
 
   // Extended regex to match Arabic, Quran, and general section headers
-  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*(Lesson Summary|Key Sentences|Vocabulary|Focus Words|Verses Covered|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Mini Quiz|Homework|Practice Tasks|Talbiyah Insights Summary|Final Reflection)/i;
+  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*\**\s*(Lesson Summary|Lesson Information|Key Sentences|Key Verses|Vocabulary|Focus Words|Key Arabic Vocabulary|Arabic Vocabulary|Verses Covered|First Word Prompter|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Tafsir|Flow of Meaning|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Key Lessons|Lessons & Tadabbur|Tadabbur Points|Mini Quiz|Comprehension Check|Homework|Practice Tasks|Weekly Reflection|Reflection Questions|Flashcard Challenge|Summary Takeaway|Talbiyah Insights Summary|Final Reflection|Summary & Key Takeaway)\**\s*/i;
 
   for (const line of lines) {
     const headerMatch = line.match(sectionPattern);
@@ -531,17 +748,22 @@ function parseInsightSections(content: string): InsightSection[] {
 
     let type: InsightSection['type'] = 'other';
     const titleLower = matches[i].title.toLowerCase();
-    if (titleLower.includes('summary') && !titleLower.includes('talbiyah')) type = 'summary';
+    if (titleLower.includes('lesson information')) type = 'summary';
+    else if (titleLower.includes('summary') && !titleLower.includes('talbiyah')) type = 'summary';
     else if (titleLower.includes('vocabulary') || titleLower.includes('focus words')) type = 'vocabulary';
-    else if (titleLower.includes('sentence') || titleLower.includes('verses covered')) type = 'sentences';
+    else if (titleLower.includes('sentence') || titleLower.includes('verses covered') || titleLower.includes('key verses')) type = 'sentences';
+    else if (titleLower.includes('first word prompter')) type = 'prompter';
     else if (titleLower.includes('grammar') || titleLower.includes('tajweed')) type = 'grammar';
-    else if (titleLower.includes('notes') || titleLower.includes('correction') || titleLower.includes('tafsir')) type = 'notes';
+    else if (titleLower.includes('tafsir') || titleLower.includes('flow of meaning')) type = 'tafsir';
+    else if (titleLower.includes('notes') || titleLower.includes('correction')) type = 'notes';
+    else if (titleLower.includes('key lessons') || titleLower.includes('tadabbur') || titleLower.includes('lessons &')) type = 'takeaways';
     else if (titleLower.includes('conversation') || titleLower.includes('role')) type = 'dialogue';
     else if (titleLower.includes('pronunciation')) type = 'pronunciation';
     else if (titleLower.includes('takeaway')) type = 'takeaways';
-    else if (titleLower.includes('quiz')) type = 'quiz';
-    else if (titleLower.includes('homework') || titleLower.includes('practice task')) type = 'homework';
+    else if (titleLower.includes('quiz') || titleLower.includes('comprehension check')) type = 'quiz';
+    else if (titleLower.includes('homework') || titleLower.includes('practice task') || titleLower.includes('weekly reflection')) type = 'homework';
     else if (titleLower.includes('reflection') || titleLower.includes('talbiyah insights')) type = 'reflection';
+    else if (titleLower.includes('flashcard')) type = 'vocabulary';
     else if (titleLower.includes('memoris') || titleLower.includes('memoriz')) type = 'other'; // Memorisation Progress
 
     sections.push({
@@ -763,9 +985,19 @@ function DialogueCard({ line }: { line: DialogueLine }) {
 }
 
 // Key Sentence Card Component
-function KeySentenceCard({ sentence }: { sentence: KeySentence }) {
+function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence; isQuran?: boolean }) {
   return (
     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+      {/* Ayah number badge for Quran verses */}
+      {isQuran && sentence.ayahNumber && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full font-bold text-sm border border-emerald-200">
+            {sentence.ayahNumber}
+          </span>
+          <span className="text-sm text-gray-500">Ayah {sentence.ayahNumber}</span>
+        </div>
+      )}
+
       {/* Arabic - right aligned */}
       <p className="font-arabic text-3xl text-right mb-2 text-gray-900" dir="rtl">
         {sentence.arabic}
@@ -780,6 +1012,74 @@ function KeySentenceCard({ sentence }: { sentence: KeySentence }) {
       <p className="text-gray-700 font-medium">
         {sentence.english}
       </p>
+    </div>
+  );
+}
+
+// First Word Prompter Card - interactive memorisation practice
+function FirstWordPrompterCard({ themes }: { themes: { theme: string; prompts: FirstWordPrompt[] }[] }) {
+  const [revealedAyahs, setRevealedAyahs] = useState<Set<number>>(new Set());
+
+  const toggleReveal = (ayahNum: number) => {
+    setRevealedAyahs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ayahNum)) {
+        newSet.delete(ayahNum);
+      } else {
+        newSet.add(ayahNum);
+      }
+      return newSet;
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-gray-600 bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+        Test yourself! See the first word and try to recite the complete verse. Tap a card to check if you got it right.
+      </p>
+
+      {themes.map((themeGroup, tIdx) => (
+        <div key={tIdx} className="space-y-3">
+          <h4 className="font-bold text-emerald-700 text-sm bg-emerald-100 px-3 py-2 rounded-lg">
+            {themeGroup.theme}
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" dir="rtl">
+            {themeGroup.prompts.map((prompt, pIdx) => {
+              const isRevealed = revealedAyahs.has(prompt.ayahNumber);
+              return (
+                <button
+                  key={pIdx}
+                  onClick={() => toggleReveal(prompt.ayahNumber)}
+                  className={`relative p-4 rounded-xl border-2 transition-all text-center ${
+                    isRevealed
+                      ? 'bg-emerald-50 border-emerald-400'
+                      : 'bg-white border-gray-200 hover:border-emerald-300 hover:shadow-md'
+                  }`}
+                >
+                  {/* Ayah number badge */}
+                  <span className="absolute top-2 left-2 w-6 h-6 bg-emerald-600 text-white rounded-full text-xs font-bold flex items-center justify-center">
+                    {prompt.ayahNumber}
+                  </span>
+
+                  {/* First word */}
+                  <p className="font-arabic text-2xl text-gray-900 mt-2" dir="rtl">
+                    {prompt.firstWord}
+                  </p>
+
+                  {/* Prompt or checkmark */}
+                  {isRevealed ? (
+                    <span className="text-emerald-600 text-xs font-medium mt-2 flex items-center justify-center gap-1">
+                      <CheckCircle className="w-4 h-4" /> Done
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs mt-2 block">...complete</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -847,6 +1147,84 @@ function TeacherNoteCard({ note }: { note: TeacherNote }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Tafsir Card - Expandable card for detailed verse commentary
+function TafsirCard({ point, index }: { point: TafsirPoint; index: number }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl border border-teal-200 overflow-hidden">
+      {/* Header - Always visible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full p-4 text-left flex items-start gap-3 hover:bg-teal-100/50 transition-colors"
+      >
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-sm">
+          {point.ayahRef.replace('Ayah ', '').split('-')[0]}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-semibold text-teal-800">{point.ayahRef}</h4>
+            <ChevronDown className={`w-5 h-5 text-teal-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </div>
+          {point.arabic && (
+            <p className="font-arabic text-xl text-teal-900 mt-1 text-right" dir="rtl">
+              {point.arabic}
+            </p>
+          )}
+          {point.translation && (
+            <p className="text-gray-700 italic mt-1">"{point.translation}"</p>
+          )}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-4 pb-4 border-t border-teal-200 bg-white/50">
+          {/* Tafsir explanation */}
+          {point.tafsir && (
+            <div className="mt-4">
+              <h5 className="text-sm font-semibold text-teal-700 mb-2 flex items-center gap-2">
+                <Book className="w-4 h-4" />
+                Tafsir
+              </h5>
+              <p className="text-gray-700 leading-relaxed">{point.tafsir}</p>
+            </div>
+          )}
+
+          {/* Scholar quotes */}
+          {point.scholarQuotes && point.scholarQuotes.length > 0 && (
+            <div className="mt-4">
+              <h5 className="text-sm font-semibold text-teal-700 mb-2 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Scholar's Commentary
+              </h5>
+              <div className="space-y-3">
+                {point.scholarQuotes.map((sq, i) => (
+                  <div key={i} className="bg-teal-50 rounded-lg p-3 border-l-4 border-teal-500">
+                    <p className="text-gray-700 italic">"{sq.quote}"</p>
+                    <p className="text-teal-700 text-sm font-medium mt-1">— {sq.scholar}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reflection prompt */}
+          {point.reflection && (
+            <div className="mt-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
+              <h5 className="text-sm font-semibold text-amber-700 mb-1 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                Reflection
+              </h5>
+              <p className="text-gray-700">{point.reflection}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1445,7 +1823,7 @@ export default function LessonInsights() {
   }
 
   const metadata = insight.detailed_insights?.metadata;
-  const isQuran = insight.insight_type === 'quran_tadabbur' || insight.detailed_insights?.subject?.toLowerCase().includes('quran');
+  const isQuran = insight.insight_type === 'quran_tadabbur' || insight.detailed_insights?.subject?.toLowerCase().includes('quran') || metadata?.subject?.toLowerCase().includes('quran');
   const hasDetailedInsights = !!insight.detailed_insights?.content;
 
   // Parse all sections
@@ -1464,6 +1842,9 @@ export default function LessonInsights() {
   const notesSection = sections.find(s => s.type === 'notes');
   const teacherNotes = notesSection ? parseTeacherNotes(notesSection.content) : [];
 
+  const tafsirSection = sections.find(s => s.type === 'tafsir');
+  const tafsirPoints = tafsirSection ? parseTafsirPoints(tafsirSection.content) : [];
+
   const dialogueSection = sections.find(s => s.type === 'dialogue');
   const dialogues = dialogueSection ? parseDialogues(dialogueSection.content) : [];
 
@@ -1472,6 +1853,9 @@ export default function LessonInsights() {
 
   const homeworkSection = sections.find(s => s.type === 'homework');
   const homeworkTasks = homeworkSection ? parseHomework(homeworkSection.content) : [];
+
+  const prompterSection = sections.find(s => s.type === 'prompter');
+  const firstWordPrompts = prompterSection ? parseFirstWordPrompter(prompterSection.content) : [];
 
   const summarySection = sections.find(s => s.type === 'summary');
   const takeawaysSection = sections.find(s => s.type === 'takeaways');
@@ -1680,23 +2064,55 @@ export default function LessonInsights() {
           {/* Detailed Sections */}
           <div className="space-y-4">
 
-            {/* Key Sentences */}
+            {/* Key Sentences / Verses Covered */}
             {sentences.length > 0 && (
-              <CollapsibleSection title="Key Sentences" icon={MessageCircle} color="cyan" defaultOpen={true}>
+              <CollapsibleSection
+                title={isQuran ? "Key Verses" : "Key Sentences"}
+                icon={MessageCircle}
+                color="cyan"
+                defaultOpen={true}
+              >
                 <div className="space-y-3">
                   {sentences.map((sentence, i) => (
-                    <KeySentenceCard key={i} sentence={sentence} />
+                    <KeySentenceCard key={i} sentence={sentence} isQuran={isQuran} />
                   ))}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Grammar Focus */}
-            {grammarPoints.length > 0 && (
+            {/* First Word Prompter - only for Quran */}
+            {firstWordPrompts.length > 0 && isQuran && (
+              <CollapsibleSection
+                title="First Word Prompter"
+                icon={BookMarked}
+                color="emerald"
+                defaultOpen={true}
+                badge={`${firstWordPrompts.reduce((acc, t) => acc + t.prompts.length, 0)} ayahs`}
+              >
+                <FirstWordPrompterCard themes={firstWordPrompts} />
+              </CollapsibleSection>
+            )}
+
+            {/* Grammar Focus - hide for Quran (use Tajweed instead) */}
+            {grammarPoints.length > 0 && !isQuran && (
               <CollapsibleSection title="Grammar Focus" icon={PenTool} color="orange">
                 <div className="space-y-4">
                   {grammarPoints.map((point, i) => (
                     <GrammarCard key={i} point={point} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Tafsir Points - Detailed verse commentary */}
+            {tafsirPoints.length > 0 && (
+              <CollapsibleSection title="Tafsir & Commentary" icon={BookMarked} color="teal" defaultOpen={true}>
+                <p className="text-sm text-gray-600 mb-4">
+                  Tap each verse to expand and read the detailed tafsir, scholar commentary, and reflection prompts.
+                </p>
+                <div className="space-y-3">
+                  {tafsirPoints.map((point, i) => (
+                    <TafsirCard key={i} point={point} index={i} />
                   ))}
                 </div>
               </CollapsibleSection>

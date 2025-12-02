@@ -148,44 +148,42 @@ export default function Analytics() {
 
       // Total Sessions - Current Period
       const { count: sessionsCurrent } = await supabase
-        .from('bookings')
+        .from('lessons')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
       // Total Sessions - Previous Period
       const { count: sessionsPrev } = await supabase
-        .from('bookings')
+        .from('lessons')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', prevStart.toISOString())
         .lte('created_at', prevEnd.toISOString());
 
       const sessionsChange = sessionsPrev ? ((sessionsCurrent || 0) - sessionsPrev) / sessionsPrev * 100 : 0;
 
-      // Revenue - Current Period
-      const { data: revenueCurrent } = await supabase
-        .from('bookings')
-        .select('price')
-        .eq('payment_status', 'paid')
+      // Revenue - Current Period (from credit_purchases and lessons)
+      const { data: creditPurchasesCurrent } = await supabase
+        .from('credit_purchases')
+        .select('amount')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      const revenueCurrentTotal = (revenueCurrent || []).reduce((sum, b) => sum + (b.price / 100), 0);
+      const revenueCurrentTotal = (creditPurchasesCurrent || []).reduce((sum, p) => sum + (p.amount / 100), 0);
 
       // Revenue - Previous Period
-      const { data: revenuePrev } = await supabase
-        .from('bookings')
-        .select('price')
-        .eq('payment_status', 'paid')
+      const { data: creditPurchasesPrev } = await supabase
+        .from('credit_purchases')
+        .select('amount')
         .gte('created_at', prevStart.toISOString())
         .lte('created_at', prevEnd.toISOString());
 
-      const revenuePrevTotal = (revenuePrev || []).reduce((sum, b) => sum + (b.price / 100), 0);
+      const revenuePrevTotal = (creditPurchasesPrev || []).reduce((sum, p) => sum + (p.amount / 100), 0);
       const revenueChange = revenuePrevTotal ? (revenueCurrentTotal - revenuePrevTotal) / revenuePrevTotal * 100 : 0;
 
       // Average Duration
       const { data: durations } = await supabase
-        .from('bookings')
+        .from('lessons')
         .select('duration_minutes')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
@@ -208,7 +206,7 @@ export default function Analytics() {
   async function fetchSubjectStats(start: Date, end: Date) {
     try {
       const { data } = await supabase
-        .from('bookings')
+        .from('lessons')
         .select('subject_id, subjects!inner(name)')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
@@ -217,8 +215,8 @@ export default function Analytics() {
 
       // Count by subject
       const subjectCounts: { [key: string]: number } = {};
-      data.forEach((booking: any) => {
-        const subjectName = booking.subjects?.name || 'Unknown';
+      data.forEach((lesson: any) => {
+        const subjectName = lesson.subjects?.name || 'Unknown';
         subjectCounts[subjectName] = (subjectCounts[subjectName] || 0) + 1;
       });
 
@@ -245,46 +243,60 @@ export default function Analytics() {
         .eq('status', 'approved');
 
       // Teachers active in period
-      const { data: activeSessions } = await supabase
-        .from('bookings')
+      const { data: activeLessons } = await supabase
+        .from('lessons')
         .select('teacher_id')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      const uniqueTeachers = new Set(activeSessions?.map(s => s.teacher_id) || []);
+      const uniqueTeachers = new Set(activeLessons?.map(s => s.teacher_id) || []);
 
-      // Top performers
-      const { data: sessions } = await supabase
-        .from('bookings')
+      // Get teacher profiles and their lessons
+      const { data: teacherData } = await supabase
+        .from('teacher_profiles')
         .select(`
-          teacher_id,
-          teacher:profiles!teacher_id(full_name)
+          id,
+          user_id,
+          profiles!inner(full_name),
+          teacher_ratings(rating)
         `)
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
+        .eq('status', 'approved');
 
-      // Count sessions per teacher
-      const teacherStats: { [key: string]: { name: string; count: number } } = {};
-      sessions?.forEach((session: any) => {
-        const teacherId = session.teacher_id;
-        const teacherName = session.teacher?.full_name || 'Unknown';
-        if (!teacherStats[teacherId]) {
-          teacherStats[teacherId] = { name: teacherName, count: 0 };
-        }
-        teacherStats[teacherId].count++;
+      // Get lesson counts per teacher
+      const { data: lessonCounts } = await supabase
+        .from('lessons')
+        .select('teacher_id')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .eq('status', 'completed');
+
+      // Count lessons per teacher
+      const teacherLessonCounts: { [key: string]: number } = {};
+      lessonCounts?.forEach((lesson: any) => {
+        teacherLessonCounts[lesson.teacher_id] = (teacherLessonCounts[lesson.teacher_id] || 0) + 1;
       });
 
-      // Convert to array and sort
-      const topPerformers: TeacherPerformance[] = Object.entries(teacherStats)
-        .map(([id, stats]) => ({
-          id,
-          name: stats.name,
-          rating: 4.5 + Math.random() * 0.5, // Simulated rating (you can add real ratings from a reviews table)
-          sessionCount: stats.count,
-        }))
+      // Build top performers list
+      const topPerformers: TeacherPerformance[] = (teacherData || [])
+        .map((teacher: any) => {
+          // Calculate average rating
+          const ratings = teacher.teacher_ratings || [];
+          const avgRating = ratings.length > 0
+            ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length
+            : 4.5; // Default rating
+
+          return {
+            id: teacher.id,
+            name: teacher.profiles?.full_name || 'Unknown',
+            rating: avgRating,
+            sessionCount: teacherLessonCounts[teacher.id] || 0,
+          };
+        })
+        .filter(t => t.sessionCount > 0) // Only teachers with sessions in period
         .sort((a, b) => {
-          if (Math.abs(b.rating - a.rating) > 0.1) return b.rating - a.rating;
-          return b.sessionCount - a.sessionCount;
+          // Sort by session count primarily, then by rating
+          if (b.sessionCount !== a.sessionCount) return b.sessionCount - a.sessionCount;
+          return b.rating - a.rating;
         })
         .slice(0, 10);
 
@@ -305,26 +317,26 @@ export default function Analytics() {
 
   async function fetchDailyActivity(start: Date, end: Date) {
     try {
-      const { data: sessions } = await supabase
-        .from('bookings')
-        .select('created_at, student_id, teacher_id')
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('created_at, learner_id, teacher_id')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
         .order('created_at');
 
-      if (!sessions) return;
+      if (!lessons) return;
 
       // Group by date
       const dailyData: { [key: string]: { sessions: number; users: Set<string> } } = {};
 
-      sessions.forEach((session: any) => {
-        const date = format(new Date(session.created_at), 'yyyy-MM-dd');
+      lessons.forEach((lesson: any) => {
+        const date = format(new Date(lesson.created_at), 'yyyy-MM-dd');
         if (!dailyData[date]) {
           dailyData[date] = { sessions: 0, users: new Set() };
         }
         dailyData[date].sessions++;
-        dailyData[date].users.add(session.student_id);
-        dailyData[date].users.add(session.teacher_id);
+        if (lesson.learner_id) dailyData[date].users.add(lesson.learner_id);
+        if (lesson.teacher_id) dailyData[date].users.add(lesson.teacher_id);
       });
 
       // Fill in missing dates

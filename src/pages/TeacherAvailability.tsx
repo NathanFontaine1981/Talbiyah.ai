@@ -235,19 +235,8 @@ export default function TeacherAvailability() {
         console.error('Error fetching one-off availability:', oneOffError);
       }
 
-      console.log(`📅 Loaded ${recurringAvailability?.length || 0} recurring records and ${oneOffAvailability?.length || 0} one-off records`);
-
-      if (oneOffAvailability && oneOffAvailability.length > 0) {
-        console.log('📌 One-off records:', oneOffAvailability);
-        console.log('📌 First record details:');
-        console.log('   date:', oneOffAvailability[0].date, typeof oneOffAvailability[0].date);
-        console.log('   start_time:', oneOffAvailability[0].start_time, typeof oneOffAvailability[0].start_time);
-        console.log('   is_available:', oneOffAvailability[0].is_available);
-      }
-
       const availMap = new Map<string, DateAvailability>();
       const timeSlots = generateTimeSlots();
-      console.log('🕐 Time slots being checked:', timeSlots.slice(0, 5), '...');
 
       monthDates.forEach(date => {
         const dateKey = format(date, 'yyyy-MM-dd');
@@ -268,7 +257,6 @@ export default function TeacherAvailability() {
           );
 
           if (oneOff) {
-            console.log(`✅ Matched one-off slot: ${dateKey} at ${time}`);
             return {
               time,
               available: true,
@@ -290,12 +278,6 @@ export default function TeacherAvailability() {
 
         availMap.set(dateKey, { date, slots });
       });
-
-      const greenSlotsCount = Array.from(availMap.values()).reduce((count, dateAvail) => {
-        return count + dateAvail.slots.filter(s => s.available).length;
-      }, 0);
-
-      console.log(`🟢 Displaying ${greenSlotsCount} green (available) slots on calendar`);
 
       setAvailability(availMap);
     } catch (error) {
@@ -438,13 +420,6 @@ export default function TeacherAvailability() {
     setSaving(true);
 
     try {
-      console.log('🎯 Applying subjects to selected slots...');
-      console.log(`   Selected slots: ${selectedSlots.size}`);
-      console.log(`   Selected slot keys:`, Array.from(selectedSlots));
-      console.log(`   Selected subjects:`, Array.from(applySubjects));
-      console.log(`   Current availability map size: ${availability.size}`);
-      console.log(`   Available dates in map:`, Array.from(availability.keys()));
-
       // Create a deep copy of the availability map
       const newAvail = new Map();
       availability.forEach((dateAvail, dateKey) => {
@@ -458,8 +433,6 @@ export default function TeacherAvailability() {
         });
       });
 
-      console.log(`   New availability map size after copy: ${newAvail.size}`);
-
       // Update the selected slots to be available
       const subjectsArray = Array.from(applySubjects);
       const selectedCount = selectedSlots.size;
@@ -472,27 +445,17 @@ export default function TeacherAvailability() {
         const slotIndexStr = slotKey.substring(lastHyphenIndex + 1);
         const slotIndex = parseInt(slotIndexStr);
 
-        console.log(`   🔍 Looking for slot: ${slotKey}`);
-        console.log(`      Parsed dateKey: "${dateKey}", slotIndex: ${slotIndex}`);
-        console.log(`      newAvail has this date: ${newAvail.has(dateKey)}`);
-
         const dateAvail = newAvail.get(dateKey);
 
         if (dateAvail && dateAvail.slots[slotIndex]) {
-          console.log(`   ✓ Marking slot ${dateKey} ${dateAvail.slots[slotIndex].time} as available with subjects:`, subjectsArray);
           dateAvail.slots[slotIndex] = {
             time: dateAvail.slots[slotIndex].time,
             available: true,
             subjects: subjectsArray
           };
           updatedCount++;
-        } else {
-          console.warn(`   ⚠️ Could not find slot ${slotKey} in newAvail map`);
-          console.warn(`      dateAvail exists: ${!!dateAvail}, slots length: ${dateAvail?.slots.length}`);
         }
       });
-
-      console.log(`   📝 Updated ${updatedCount} slots in the map`);
 
       // Update local state first
       setAvailability(newAvail);
@@ -507,7 +470,6 @@ export default function TeacherAvailability() {
       // Show count of added slots
       setSuccessMessage(`✅ ${selectedCount} time slot${selectedCount !== 1 ? 's' : ''} added to your availability`);
       setTimeout(() => setSuccessMessage(null), 5000);
-      console.log(`✅ ${selectedCount} time slots added to your availability`);
 
       // Clear selection and close modal
       setSelectedSlots(new Set());
@@ -566,7 +528,6 @@ export default function TeacherAvailability() {
       setTimeout(() => setSaveSuccess(false), 3000);
       setSuccessMessage('✅ All availability cleared');
       setTimeout(() => setSuccessMessage(null), 5000);
-      console.log('✅ All availability cleared from database');
     } catch (error) {
       console.error('Error clearing availability:', error);
       setError('Failed to clear availability. Please try again.');
@@ -738,8 +699,6 @@ export default function TeacherAvailability() {
 
     setSaving(true);
     try {
-      console.log('🔍 Starting save process...');
-
       // Analyze slots to separate recurring patterns from one-off dates
       // Group by (day_of_week, time, subjects) to detect patterns
       const slotPatterns = new Map<string, { dates: string[], dayOfWeek: number, time: string, subjects: string[] }>();
@@ -771,8 +730,6 @@ export default function TeacherAvailability() {
         });
       });
 
-      console.log(`📊 Found ${totalAvailableSlots} available slots, ${slotPatterns.size} unique patterns`);
-
       // Separate recurring (appears on multiple weeks) from one-off (single date)
       const recurringSlots: Array<{ day_of_week: number; start_time: string; end_time: string; subjects: string[] }> = [];
       const oneOffSlots: Array<{ date: string; start_time: string; end_time: string; subjects: string[] }> = [];
@@ -795,11 +752,8 @@ export default function TeacherAvailability() {
           return format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
         }));
 
-        console.log(`🔍 Pattern ${pattern.time} on day ${pattern.dayOfWeek}: ${pattern.dates.length} dates, ${uniqueWeeks.size} weeks`);
-
         if (uniqueWeeks.size > 1) {
           // Recurring pattern - appears across multiple weeks
-          console.log(`  ♻️ Treating as RECURRING`);
           recurringSlots.push({
             day_of_week: pattern.dayOfWeek,
             start_time: pattern.time,
@@ -808,7 +762,6 @@ export default function TeacherAvailability() {
           });
         } else {
           // One-off - only appears on specific date(s)
-          console.log(`  📅 Treating as ONE-OFF (${pattern.dates.length} dates)`);
           pattern.dates.forEach(dateStr => {
             oneOffSlots.push({
               date: dateStr,
@@ -870,8 +823,6 @@ export default function TeacherAvailability() {
           is_available: true
         }));
 
-        console.log(`💾 Saving ${recurringRecords.length} recurring availability records...`);
-
         const { error: recurringError } = await supabase
           .from('teacher_availability')
           .upsert(recurringRecords, {
@@ -879,11 +830,8 @@ export default function TeacherAvailability() {
           });
 
         if (recurringError) {
-          console.error('Recurring save error:', recurringError);
           throw recurringError;
         }
-
-        console.log(`✅ Successfully saved ${recurringRecords.length} recurring records`);
       }
 
       // Save one-off availability
@@ -894,26 +842,14 @@ export default function TeacherAvailability() {
           is_available: true
         }));
 
-        console.log(`💾 Saving ${oneOffRecords.length} one-off availability records...`);
-
         const { error: oneOffError } = await supabase
           .from('teacher_availability_one_off')
           .insert(oneOffRecords);
 
         if (oneOffError) {
-          console.error('One-off save error:', oneOffError);
           throw oneOffError;
         }
-
-        console.log(`✅ Successfully saved ${oneOffRecords.length} one-off records`);
       }
-
-      if (recurringSlots.length === 0 && oneOffSlots.length === 0) {
-        console.log('⚠️ No availability records to save (all slots removed)');
-      }
-
-      console.log('✅ Save completed successfully!');
-      console.log(`   📊 Summary: ${recurringSlots.length} recurring + ${oneOffSlots.length} one-off slots saved`);
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -921,7 +857,7 @@ export default function TeacherAvailability() {
       // Reload to show updated availability
       await loadAvailability();
     } catch (error) {
-      console.error('❌ Error saving availability:', error);
+      console.error('Error saving availability:', error);
       alert('Failed to save availability. Please try again.');
     } finally {
       setSaving(false);

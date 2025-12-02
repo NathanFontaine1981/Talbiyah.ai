@@ -27,6 +27,28 @@ interface Subject {
   name: string;
 }
 
+// Raw data from Supabase teacher query
+interface RawTeacherData {
+  teacher_profiles: {
+    id: string;
+    user_id: string;
+    hourly_rate: string | number;
+    rating: number | null;
+    profiles: {
+      full_name: string | null;
+      avatar_url: string | null;
+      bio: string | null;
+    };
+  };
+}
+
+// Slot data from API response
+interface SlotData {
+  date: string;
+  time: string;
+  duration: number;
+}
+
 export default function BookSession() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -111,13 +133,13 @@ export default function BookSession() {
 
       if (error) throw error;
 
-      const formattedTeachers: Teacher[] = (data || []).map((item: any) => ({
+      const formattedTeachers: Teacher[] = ((data || []) as RawTeacherData[]).map((item) => ({
         id: item.teacher_profiles.id,
         user_id: item.teacher_profiles.user_id,
         full_name: item.teacher_profiles.profiles.full_name || 'Unknown Teacher',
         avatar_url: item.teacher_profiles.profiles.avatar_url,
         bio: item.teacher_profiles.profiles.bio,
-        hourly_rate: parseFloat(item.teacher_profiles.hourly_rate),
+        hourly_rate: parseFloat(String(item.teacher_profiles.hourly_rate)),
         rating: item.teacher_profiles.rating || 5
       }));
 
@@ -171,9 +193,9 @@ export default function BookSession() {
       }
 
       // Filter slots by selected duration and convert to TimeSlot format
-      const filteredSlots = data.slots
-        .filter((slot: any) => slot.duration === duration)
-        .map((slot: any) => {
+      const filteredSlots = (data.slots as SlotData[])
+        .filter((slot) => slot.duration === duration)
+        .map((slot) => {
           const slotDate = new Date(`${slot.date}T${slot.time}`);
           return {
             time: slotDate,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 
 interface ProtectedRouteProps {
@@ -28,18 +29,9 @@ export default function ProtectedRoute({
   useEffect(() => {
     let isMounted = true;
 
-    async function checkAuth() {
+    async function checkAuth(session: Session | null) {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
         if (!isMounted) return;
-
-        if (error) {
-          console.error('Session error:', error);
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
-        }
 
         if (!session) {
           setIsAuthenticated(false);
@@ -94,7 +86,7 @@ export default function ProtectedRoute({
         if (isMounted) {
           setLoading(false);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error checking auth:', error);
         if (isMounted) {
           setIsAuthenticated(false);
@@ -103,10 +95,34 @@ export default function ProtectedRoute({
       }
     }
 
-    checkAuth();
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error);
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+      checkAuth(session);
+    });
+
+    // Listen for auth state changes (including session refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+          setIsTeacher(false);
+          setIsApprovedTeacher(false);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          checkAuth(session);
+        }
+      }
+    );
 
     return () => {
       isMounted = false;
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipOnboardingCheck]);

@@ -141,6 +141,8 @@ export default function TeacherSessionsCard() {
           teacher_confirmed,
           "100ms_room_id",
           teacher_room_code,
+          recording_url,
+          recording_expires_at,
           learners(
             name,
             parent_id,
@@ -177,17 +179,13 @@ export default function TeacherSessionsCard() {
           insightsData?.forEach((i: any) => insightsSet.add(i.lesson_id));
         }
 
-        // Get recordings
+        // Build recording map from lessons data (recording_url is now on lessons table)
         const recordingsMap = new Map<string, { url: string; expires_at: string }>();
-        if (lessonIds.length > 0) {
-          const { data: recordingsData } = await supabase
-            .from('lesson_recordings')
-            .select('lesson_id, recording_url, expires_at')
-            .in('lesson_id', lessonIds);
-          recordingsData?.forEach((r: any) => {
-            recordingsMap.set(r.lesson_id, { url: r.recording_url, expires_at: r.expires_at });
-          });
-        }
+        lessonsData.forEach((lesson: any) => {
+          if (lesson.recording_url) {
+            recordingsMap.set(lesson.id, { url: lesson.recording_url, expires_at: lesson.recording_expires_at });
+          }
+        });
 
         const formattedSessions: TeacherSession[] = lessonsData
           .filter((lesson: any) => lesson.learners && lesson.subjects)
@@ -279,12 +277,13 @@ export default function TeacherSessionsCard() {
       if (isFirstLesson) {
         const welcomeMessage = `Assalamu Alaikum! I have confirmed ${studentName}'s booking and I'm really looking forward to teaching them! If you have any questions or special requests before our first lesson, please feel free to reach out. See you soon, Insha'Allah! 😊`;
 
+        // Use the new lesson_messages schema (sender_id, sender_role, message_text)
         const { error: messageError } = await supabase
           .from('lesson_messages')
           .insert({
             lesson_id: sessionId,
             sender_id: user.id,
-            receiver_id: parentId,
+            sender_role: 'teacher',
             message_text: welcomeMessage
           });
 

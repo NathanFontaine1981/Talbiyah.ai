@@ -85,7 +85,7 @@ const dynamicRoutePatterns: Array<{
     getLabel: () => 'Teacher Profile'
   },
   {
-    pattern: /^\/lesson-insights\/(.+)$/,
+    pattern: /^\/lesson\/([^/]+)\/insights$/,
     getLabel: () => 'Lesson Insights'
   },
   {

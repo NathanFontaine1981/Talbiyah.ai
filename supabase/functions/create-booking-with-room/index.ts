@@ -37,7 +37,7 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const { cart_items, learner_id, promo_code, payment_method } = await req.json()
+    const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method } = await req.json()
 
     if (!cart_items || cart_items.length === 0) {
       throw new Error('No cart items provided')
@@ -53,17 +53,42 @@ serve(async (req) => {
     // Check if promo code provides 100% discount
     let isFree = false
     let promoCodeUsed = null
-    if (promo_code && (promo_code.toUpperCase() === '100HONOR' || promo_code.toUpperCase() === '100OWNER')) {
-      const { count } = await supabaseClient
-        .from('lessons')
-        .select('id', { count: 'exact', head: true })
-        .eq('parent_id', user.id)
-        .eq('status', 'completed')
+    let promoCodeIdToUse = promo_code_id || null
+    let promoDiscountAmount = promo_discount || 0
 
-      if (count === 0) {
-        isFree = true
+    if (promo_code) {
+      // Check legacy codes first for backward compatibility
+      if (promo_code.toUpperCase() === '100HONOR' || promo_code.toUpperCase() === '100OWNER') {
+        // First get learner IDs for this parent/user
+        const { data: learners } = await supabaseClient
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+
+        const learnerIds = learners?.map(l => l.id) || []
+
+        // Check if any learner has completed lessons
+        let hasCompletedLessons = false
+        if (learnerIds.length > 0) {
+          const { count } = await supabaseClient
+            .from('lessons')
+            .select('id', { count: 'exact', head: true })
+            .in('learner_id', learnerIds)
+            .eq('status', 'completed')
+
+          hasCompletedLessons = (count || 0) > 0
+        }
+
+        if (!hasCompletedLessons) {
+          isFree = true
+          promoCodeUsed = promo_code.toUpperCase()
+          console.log(`✅ Promo code ${promoCodeUsed} applied - FREE lesson`)
+        }
+      } else if (promoDiscountAmount > 0) {
+        // Use the discount already calculated on the frontend
+        isFree = promoDiscountAmount >= cart_items.reduce((sum: number, item: any) => sum + item.price, 0)
         promoCodeUsed = promo_code.toUpperCase()
-        console.log(`✅ Promo code ${promoCodeUsed} applied - FREE lesson`)
+        console.log(`✅ Promo code ${promoCodeUsed} applied - £${promoDiscountAmount} discount`)
       }
     }
 
@@ -154,14 +179,15 @@ serve(async (req) => {
       const price = isFree ? 0 : (isCreditsPayment ? 0 : item.price)
       const originalPrice = item.price
 
-      // Determine payment status
+      // Determine payment status - use standard values that pass database check constraint
+      // Valid values: 'pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled'
       let paymentStatus = 'pending'
       let paymentMethod = 'stripe'
       if (isFree) {
-        paymentStatus = 'completed_promo'
+        paymentStatus = 'completed'  // Free lessons are considered completed
         paymentMethod = 'promo_code'
       } else if (isCreditsPayment) {
-        paymentStatus = 'completed_credits'
+        paymentStatus = 'completed'  // Credit payments are considered completed
         paymentMethod = 'credits'
       }
 
@@ -199,7 +225,123 @@ serve(async (req) => {
         is_credits: isCreditsPayment
       })
 
+      // Record promo code usage if applicable
+      if (promoCodeIdToUse && promoDiscountAmount > 0) {
+        try {
+          await supabaseClient.rpc('use_promo_code', {
+            p_promo_code_id: promoCodeIdToUse,
+            p_user_id: user.id,
+            p_lesson_id: lesson.id,
+            p_discount_applied: promoDiscountAmount / cart_items.length // Split discount across items
+          })
+          console.log(`✅ Promo code usage recorded for lesson ${lesson.id}`)
+        } catch (promoError) {
+          // Don't fail the booking if promo tracking fails
+          console.error('❌ Failed to record promo code usage:', promoError)
+        }
+      }
+
       createdLessons.push(lesson)
+
+      // Send confirmation email to student/parent
+      try {
+        // Get learner and parent info for email
+        const { data: learnerData } = await supabaseClient
+          .from('learners')
+          .select('name, parent_id')
+          .eq('id', learner_id)
+          .single()
+
+        // Get parent email
+        const { data: parentProfile } = await supabaseClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', learnerData?.parent_id || user.id)
+          .single()
+
+        if (parentProfile?.email) {
+          const emailPayload = {
+            lesson_id: lesson.id,
+            student_email: parentProfile.email,
+            student_name: learnerData?.name || parentProfile.full_name || 'Student',
+            teacher_name: item.teacher_name,
+            subject: item.subject_name,
+            scheduled_time: item.scheduled_time,
+            duration_minutes: item.duration_minutes,
+            lesson_url: `https://talbiyah.netlify.app/my-classes`
+          }
+
+          // Call the send-lesson-booked-email function
+          const emailResponse = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-lesson-booked-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              },
+              body: JSON.stringify(emailPayload),
+            }
+          )
+
+          if (emailResponse.ok) {
+            console.log('✅ Confirmation email sent to', parentProfile.email)
+          } else {
+            console.error('❌ Failed to send confirmation email:', await emailResponse.text())
+          }
+        }
+
+        // Also notify the teacher about the new booking
+        const { data: teacherProfile } = await supabaseClient
+          .from('teacher_profiles')
+          .select('user_id')
+          .eq('id', item.teacher_id)
+          .single()
+
+        if (teacherProfile?.user_id) {
+          const { data: teacherUser } = await supabaseClient
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', teacherProfile.user_id)
+            .single()
+
+          if (teacherUser?.email) {
+            // Send teacher notification email
+            const teacherEmailPayload = {
+              type: 'teacher_new_booking',
+              recipient_email: teacherUser.email,
+              recipient_name: teacherUser.full_name || 'Teacher',
+              data: {
+                student_name: learnerData?.name || 'Student',
+                subject: item.subject_name,
+                scheduled_time: item.scheduled_time,
+                duration_minutes: item.duration_minutes,
+              }
+            }
+
+            const teacherEmailResponse = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify(teacherEmailPayload),
+              }
+            )
+
+            if (teacherEmailResponse.ok) {
+              console.log('✅ Teacher notification email sent to', teacherUser.email)
+            } else {
+              console.error('❌ Failed to send teacher notification:', await teacherEmailResponse.text())
+            }
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the booking if email fails
+        console.error('❌ Email notification error (non-blocking):', emailError)
+      }
     }
 
     // Clear cart items for this user

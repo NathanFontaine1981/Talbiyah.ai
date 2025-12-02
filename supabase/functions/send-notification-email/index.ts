@@ -10,7 +10,15 @@ type NotificationType =
   | "lesson_reminder_1h"
   | "lesson_time_changed"
   | "lesson_cancelled"
-  | "teacher_message";
+  | "teacher_message"
+  | "tier_promotion"
+  | "tier_eligible_for_review"
+  | "lesson_acknowledged"
+  | "lesson_declined"
+  | "teacher_application_received"
+  | "referral_reward"
+  | "hours_transferred"
+  | "teacher_new_booking";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -47,6 +55,30 @@ Deno.serve(async (req: Request) => {
         break;
       case "teacher_message":
         emailContent = getTeacherMessageEmail(payload);
+        break;
+      case "tier_promotion":
+        emailContent = getTierPromotionEmail(payload);
+        break;
+      case "tier_eligible_for_review":
+        emailContent = getTierEligibleEmail(payload);
+        break;
+      case "lesson_acknowledged":
+        emailContent = getLessonAcknowledgedEmail(payload);
+        break;
+      case "lesson_declined":
+        emailContent = getLessonDeclinedEmail(payload);
+        break;
+      case "teacher_application_received":
+        emailContent = getTeacherApplicationEmail(payload);
+        break;
+      case "referral_reward":
+        emailContent = getReferralRewardEmail(payload);
+        break;
+      case "hours_transferred":
+        emailContent = getHoursTransferredEmail(payload);
+        break;
+      case "teacher_new_booking":
+        emailContent = getTeacherNewBookingEmail(payload);
         break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
@@ -324,6 +356,399 @@ function getTeacherMessageEmail(payload: NotificationPayload) {
           <div style="text-align: center; margin: 30px 0;">
             <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Read & Reply
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getTierPromotionEmail(payload: NotificationPayload) {
+  const { new_tier_name, new_tier_icon, hourly_rate } = payload.data;
+
+  return {
+    subject: `🎉 Congratulations! You've been promoted to ${new_tier_name}!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #10b981 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">${new_tier_icon}</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">You've Been Promoted!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Welcome to ${new_tier_name} tier</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              MashAllah! Your dedication and hard work have paid off. You have been promoted to <strong>${new_tier_name}</strong> tier on Talbiyah.ai!
+            </p>
+
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">🌟 Your New Benefits:</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #047857;">
+                <li style="margin-bottom: 8px;">Higher hourly rate: <strong>£${hourly_rate}/hour</strong></li>
+                <li style="margin-bottom: 8px;">Increased visibility to students</li>
+                <li style="margin-bottom: 8px;">Priority in search results</li>
+                <li>Access to premium teaching tools</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View Your Tier Dashboard
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getTierEligibleEmail(payload: NotificationPayload) {
+  const { eligible_tier_name, hours_taught, average_rating } = payload.data;
+
+  return {
+    subject: `📊 You're eligible for ${eligible_tier_name} tier!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">📊</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Tier Upgrade Pending Review</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">You've hit the metrics for ${eligible_tier_name}!</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #8b5cf6;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Great news! Based on your teaching performance, you are now eligible for the <strong>${eligible_tier_name}</strong> tier. Your promotion is pending admin review.
+            </p>
+
+            <div style="background: #f5f3ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #5b21b6; font-size: 16px;">📈 Your Stats:</h3>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Hours Taught: <strong>${hours_taught}</strong></p>
+              <p style="margin: 0; color: #6b21a8;">Average Rating: <strong>${average_rating}/5</strong></p>
+            </div>
+
+            <p style="margin: 20px 0 0 0; color: #64748b; font-size: 14px;">
+              Our team will review your application and notify you once approved.
+            </p>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getLessonAcknowledgedEmail(payload: NotificationPayload) {
+  const { teacher_name, scheduled_time, subject } = payload.data;
+  const lessonDate = new Date(scheduled_time);
+  const formattedTime = lessonDate.toLocaleString('en-GB', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  return {
+    subject: `✅ Lesson Confirmed - ${teacher_name}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">✅</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Lesson Confirmed!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Your teacher has accepted the booking</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Great news! <strong>${teacher_name}</strong> has confirmed your lesson booking.
+            </p>
+
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
+              <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Teacher: <strong>${teacher_name}</strong></p>
+              <p style="margin: 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View in Dashboard
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getLessonDeclinedEmail(payload: NotificationPayload) {
+  const { teacher_name, scheduled_time, reason } = payload.data;
+  const lessonDate = new Date(scheduled_time);
+  const formattedTime = lessonDate.toLocaleString('en-GB', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  return {
+    subject: `⚠️ Lesson Request Declined - ${teacher_name}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">⚠️</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Lesson Request Declined</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Your credits have been refunded</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #f59e0b;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Unfortunately, <strong>${teacher_name}</strong> was unable to accept your lesson request for ${formattedTime}.
+            </p>
+
+            ${reason ? `
+            <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">REASON:</p>
+              <p style="margin: 0; color: #78350f; font-size: 14px;">${reason}</p>
+            </div>
+            ` : ''}
+
+            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #1e40af; font-size: 16px;">💳 Refund Information</h3>
+              <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
+                Your lesson credit has been automatically refunded.
+              </p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Find Another Teacher
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getTeacherApplicationEmail(payload: NotificationPayload) {
+  const { applicant_name, applicant_email, subjects, education_level } = payload.data;
+
+  return {
+    subject: `📝 New Teacher Application - ${applicant_name}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">📝</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">New Teacher Application</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Action required: Review application</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #8b5cf6;">
+            <div style="background: #f5f3ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #5b21b6; font-size: 16px;">👤 Applicant Details:</h3>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Name: <strong>${applicant_name}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Email: <strong>${applicant_email}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Education: <strong>${education_level || 'Not specified'}</strong></p>
+              <p style="margin: 0; color: #6b21a8;">Subjects: <strong>${subjects?.join(', ') || 'Not specified'}</strong></p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/admin/teachers" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Review Application
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai Admin</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getReferralRewardEmail(payload: NotificationPayload) {
+  const { credits_earned, referred_name, total_credits } = payload.data;
+
+  return {
+    subject: `🎁 You earned ${credits_earned} credits from a referral!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">🎁</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Referral Reward Earned!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">+${credits_earned} credits added</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #f59e0b;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              <strong>${referred_name}</strong> signed up using your referral link and you've earned <strong>${credits_earned} credits</strong>!
+            </p>
+
+            <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: 600;">YOUR TOTAL CREDITS:</p>
+              <p style="margin: 0; color: #78350f; font-size: 32px; font-weight: 700;">${total_credits}</p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/refer" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Share & Earn More
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getHoursTransferredEmail(payload: NotificationPayload) {
+  const { hours_transferred, from_teacher, to_teacher, is_sender } = payload.data;
+
+  return {
+    subject: `🔄 ${hours_transferred} teaching hours transferred`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">🔄</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Hours Transfer ${is_sender ? 'Sent' : 'Received'}</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">${hours_transferred} hours transferred</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #8b5cf6;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              ${is_sender
+                ? `You have transferred <strong>${hours_transferred} teaching hours</strong> to <strong>${to_teacher}</strong>.`
+                : `You have received <strong>${hours_transferred} teaching hours</strong> from <strong>${from_teacher}</strong>.`
+              }
+            </p>
+
+            <div style="background: #f0fdfa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #0d9488; font-size: 16px;">📊 Transfer Details:</h3>
+              <p style="margin: 0 0 8px 0; color: #0f766e;">From: <strong>${from_teacher}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #0f766e;">To: <strong>${to_teacher}</strong></p>
+              <p style="margin: 0; color: #0f766e;">Hours: <strong>${hours_transferred}</strong></p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View Your Stats
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getTeacherNewBookingEmail(payload: NotificationPayload) {
+  const { student_name, subject, scheduled_time, duration_minutes } = payload.data;
+  const lessonDate = new Date(scheduled_time);
+  const formattedDate = lessonDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const formattedTime = lessonDate.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  return {
+    subject: `📚 New Lesson Booking - ${subject}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">📚</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">New Lesson Booked!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">A student has booked a lesson with you</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Great news! <strong>${student_name}</strong> has booked a lesson with you.
+            </p>
+
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
+              <p style="margin: 0 0 8px 0; color: #047857;">Student: <strong>${student_name}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Date: <strong>${formattedDate}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+              <p style="margin: 0; color: #047857;">Duration: <strong>${duration_minutes} minutes</strong></p>
+            </div>
+
+            <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                ⏰ <strong>Action Required:</strong> Please acknowledge this booking within 24 hours to confirm the lesson.
+              </p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teacher" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View in Dashboard
             </a>
           </div>
 

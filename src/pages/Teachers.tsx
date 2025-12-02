@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, Star, Clock, Award, ThumbsUp, UserPlus, X, Check } from 'lucide-react';
+import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, ChevronRight, Star, Clock, Award, ThumbsUp, UserPlus, X, Check } from 'lucide-react';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import CartDrawer from '../components/CartDrawer';
@@ -36,7 +37,7 @@ export default function Teachers() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { cartCount } = useCart();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -53,10 +54,32 @@ export default function Teachers() {
   const [myTeacherIds, setMyTeacherIds] = useState<Set<string>>(new Set());
   const [studentProfileId, setStudentProfileId] = useState<string | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const TEACHERS_PER_PAGE = 9;
+
+  // Calculate paginated teachers
+  const paginatedTeachers = useMemo(() => {
+    const startIndex = (currentPage - 1) * TEACHERS_PER_PAGE;
+    return filteredTeachers.slice(startIndex, startIndex + TEACHERS_PER_PAGE);
+  }, [filteredTeachers, currentPage]);
+
+  const totalPages = Math.ceil(filteredTeachers.length / TEACHERS_PER_PAGE);
+
+  // Reset to page 1 when filters change
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    setCurrentPage(1);
+  }, [selectedSubjects, selectedGenders]);
+
+  useEffect(() => {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+      })
+      .catch((error) => {
+        console.error('Error getting session:', error);
+        setUser(null);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -136,7 +159,6 @@ export default function Teachers() {
       // First check if it's a UUID (direct subject ID)
       const subjectById = subjects.find(s => s.id === subjectParam);
       if (subjectById) {
-        console.log(`🔍 Auto-selecting subject by ID: ${subjectById.name}`);
         setSelectedSubjects([subjectById.id]);
         return;
       }
@@ -152,7 +174,6 @@ export default function Teachers() {
       if (subjectName) {
         const subject = subjects.find(s => s.name.toLowerCase().includes(subjectName.toLowerCase()));
         if (subject) {
-          console.log(`🔍 Auto-selecting subject filter: ${subject.name} (from URL parameter: ${subjectParam})`);
           setSelectedSubjects([subject.id]);
         }
       }
@@ -214,8 +235,6 @@ export default function Teachers() {
 
       const teachersWithAvailability = new Set(availabilityData?.map(a => a.teacher_id) || []);
 
-      console.log('Teachers with availability:', Array.from(teachersWithAvailability));
-
       // Merge the data
       const teachersMap = new Map(data?.map(t => [t.teacher_id, t]) || []);
       const ratingsMap = new Map(ratingData?.map(r => [r.teacher_id, r]) || []);
@@ -223,7 +242,6 @@ export default function Teachers() {
       const teachersData = profilesData
         ?.filter((teacher: any) => {
           const hasAvailability = teachersWithAvailability.has(teacher.id);
-          console.log(`Teacher ${teacher.profiles?.full_name} (ID: ${teacher.id}): has availability = ${hasAvailability}`);
           return hasAvailability && teachersMap.has(teacher.id);
         })
         .map((teacher: any) => {
@@ -251,7 +269,6 @@ export default function Teachers() {
           };
         }) || [];
 
-      console.log('Fetched teachers:', teachersData);
       setTeachers(teachersData);
       // Initialize filtered teachers with all teachers if no filters applied
       if (selectedSubjects.length === 0 && selectedGenders.length === 0) {
@@ -280,11 +297,6 @@ export default function Teachers() {
   }
 
   async function applyFilters() {
-    console.log('=== TEACHERS FILTER DEBUG ===');
-    console.log('Total teachers loaded:', teachers.length);
-    console.log('Selected subjects:', selectedSubjects);
-    console.log('Selected genders:', selectedGenders);
-
     let filtered = [...teachers];
 
     if (selectedSubjects.length > 0) {
@@ -294,19 +306,14 @@ export default function Teachers() {
         .select('id, name');
 
       const subjectIdToName = new Map(allSubjectsData?.map(s => [s.id, s.name]) || []);
-      const subjectNameToId = new Map(allSubjectsData?.map(s => [s.name.toLowerCase(), s.id]) || []);
 
       const selectedSubjectNames = selectedSubjects.map(id => subjectIdToName.get(id)).filter(Boolean) as string[];
-      console.log('Selected subject IDs:', selectedSubjects);
-      console.log('Selected subject names:', selectedSubjectNames);
 
       // Get teachers who have availability with these subjects
       const { data: availabilityWithSubjects, error } = await supabase
         .from('teacher_availability')
         .select('teacher_id, subjects')
         .eq('is_available', true);
-
-      console.log('Availability with subjects query result:', availabilityWithSubjects);
 
       if (!error && availabilityWithSubjects) {
         const teacherIdsWithSubjects = new Set<string>();
@@ -333,23 +340,16 @@ export default function Teachers() {
           }
         });
 
-        console.log('Teacher IDs with selected subjects:', Array.from(teacherIdsWithSubjects));
         filtered = filtered.filter(teacher => teacherIdsWithSubjects.has(teacher.id));
-        console.log('Filtered teachers after subject filter:', filtered.length);
       }
     }
 
     if (selectedGenders.length > 0) {
-      console.log('Teachers before gender filter:', filtered.map(t => ({ name: t.full_name, gender: t.gender })));
       filtered = filtered.filter(teacher =>
         teacher.gender && selectedGenders.includes(teacher.gender)
       );
-      console.log('Filtered teachers after gender filter:', filtered.length);
-      console.log('Teachers after gender filter:', filtered.map(t => ({ name: t.full_name, gender: t.gender })));
     }
 
-    console.log('Final filtered teachers:', filtered);
-    console.log('===========================');
     setFilteredTeachers(filtered);
   }
 
@@ -569,8 +569,9 @@ export default function Teachers() {
                   </p>
                 </div>
               ) : (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredTeachers.map((teacher) => {
+                  {paginatedTeachers.map((teacher) => {
                     // Helper function to get tier color
                     const getTierColor = (tier: string) => {
                       switch (tier) {
@@ -723,6 +724,65 @@ export default function Teachers() {
                     );
                   })}
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first, last, current, and pages around current
+                        const shouldShow =
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1;
+
+                        const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                        const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+
+                        if (showEllipsisBefore || showEllipsisAfter) {
+                          return <span key={page} className="px-2 text-gray-400">...</span>;
+                        }
+
+                        if (!shouldShow) return null;
+
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-10 h-10 rounded-lg font-medium transition ${
+                              currentPage === page
+                                ? 'bg-emerald-500 text-white'
+                                : 'border border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+
+                    <span className="ml-4 text-sm text-gray-600">
+                      Showing {((currentPage - 1) * TEACHERS_PER_PAGE) + 1}-{Math.min(currentPage * TEACHERS_PER_PAGE, filteredTeachers.length)} of {filteredTeachers.length} teachers
+                    </span>
+                  </div>
+                )}
+                </>
               )}
             </div>
           </div>

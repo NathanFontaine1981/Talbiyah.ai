@@ -52,11 +52,11 @@ export default function CoursesOverview() {
       // Check if user is a parent
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_role')
+        .select('role')
         .eq('id', user.id)
         .maybeSingle();
 
-      const userIsParent = profile?.user_role === 'Parent';
+      const userIsParent = profile?.role === 'parent';
       setIsParent(userIsParent);
 
       // If parent, load their children

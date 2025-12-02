@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, ArrowLeft, Play, Calendar } from 'lucide-react';
+import { BookOpen, ArrowLeft, Play, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import BookingModal from '../components/BookingModal';
 import TeacherRatingDisplay from '../components/TeacherRatingDisplay';
+
+interface AvailabilitySlot {
+  date: string;
+  time: string;
+  duration: number;
+}
 
 interface ProfileData {
   full_name: string;
@@ -34,6 +40,9 @@ export default function TeacherProfile() {
   const [error, setError] = useState<string | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   useEffect(() => {
     async function fetchTeacher() {
@@ -73,15 +82,6 @@ export default function TeacherProfile() {
           ...data,
           profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles
         };
-
-        console.log('=== TEACHER PROFILE DATA ===');
-        console.log('Teacher ID:', teacherData.id);
-        console.log('Bio:', teacherData.bio ? 'Present' : 'Missing');
-        console.log('Education Level:', teacherData.education_level);
-        console.log('Learning Interests:', teacherData.islamic_learning_interests);
-        console.log('Hourly Rate:', teacherData.hourly_rate);
-        console.log('Video URL:', teacherData.video_intro_url);
-        console.log('==========================');
 
         setTeacher(teacherData);
 
@@ -128,15 +128,6 @@ export default function TeacherProfile() {
 
         const hasAvailableSlots = (availabilityData?.length || 0) > 0;
         setHasAvailability(hasAvailableSlots);
-
-        console.log('=== TEACHER BOOKING BUTTON DEBUG ===');
-        console.log('Teacher ID:', id);
-        console.log('Teacher Name:', teacherData.profiles);
-        console.log('Status: approved (filtered in query)');
-        console.log('Has Availability Slots:', hasAvailableSlots);
-        console.log('Number of Subjects:', subjectsData?.length || 0);
-        console.log('Button should be enabled:', hasAvailableSlots && (subjectsData?.length || 0) > 0);
-        console.log('===================================');
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load teacher profile';
         setError(errorMessage);
@@ -147,6 +138,56 @@ export default function TeacherProfile() {
 
     fetchTeacher();
   }, [id]);
+
+  // Fetch availability slots for the week view
+  useEffect(() => {
+    async function fetchAvailability() {
+      if (!id || !hasAvailability) return;
+
+      setLoadingAvailability(true);
+      try {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() + (weekOffset * 7));
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 6);
+
+        const fromDate = startDate.toISOString().split('T')[0];
+        const toDate = endDate.toISOString().split('T')[0];
+
+        const { data: session } = await supabase.auth.getSession();
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-available-slots?teacher_id=${id}&from=${fromDate}&to=${toDate}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${session?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success && result.slots) {
+          // Group unique date/time combinations (ignore duration variations)
+          const uniqueSlots = new Map<string, AvailabilitySlot>();
+          result.slots.forEach((slot: { date: string; time: string; duration: number }) => {
+            const key = `${slot.date}-${slot.time}`;
+            if (!uniqueSlots.has(key)) {
+              uniqueSlots.set(key, { date: slot.date, time: slot.time, duration: slot.duration });
+            }
+          });
+          setAvailabilitySlots(Array.from(uniqueSlots.values()));
+        }
+      } catch (err) {
+        console.error('Error fetching availability:', err);
+      } finally {
+        setLoadingAvailability(false);
+      }
+    }
+
+    fetchAvailability();
+  }, [id, hasAvailability, weekOffset]);
 
   const getVideoEmbedUrl = (url: string | null): string | null => {
     if (!url) return null;
@@ -169,6 +210,44 @@ export default function TeacherProfile() {
 
   const calculateTotalPrice = (hourlyRate: number): number => {
     return hourlyRate + 10;
+  };
+
+  // Get the week's dates for display
+  const getWeekDates = () => {
+    const dates = [];
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + (weekOffset * 7));
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      dates.push(date);
+    }
+    return dates;
+  };
+
+  const formatDateShort = (date: Date) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return {
+      day: days[date.getDay()],
+      date: date.getDate(),
+      month: date.toLocaleString('default', { month: 'short' }),
+      dateStr: date.toISOString().split('T')[0]
+    };
+  };
+
+  const getSlotsForDate = (dateStr: string) => {
+    return availabilitySlots
+      .filter(slot => slot.date === dateStr)
+      .sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   if (loading) {
@@ -325,6 +404,92 @@ export default function TeacherProfile() {
               )}
             </div>
           </div>
+
+          {/* Availability Calendar Section */}
+          {hasAvailability && (
+            <div className="mb-12 bg-gray-50 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-6 h-6 text-emerald-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">Availability</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
+                    disabled={weekOffset === 0}
+                    className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
+                    {weekOffset === 0 ? 'This Week' : `Week ${weekOffset + 1}`}
+                  </span>
+                  <button
+                    onClick={() => setWeekOffset(weekOffset + 1)}
+                    disabled={weekOffset >= 3}
+                    className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              {loadingAvailability ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-7 gap-2">
+                  {getWeekDates().map((date) => {
+                    const { day, date: dateNum, month, dateStr } = formatDateShort(date);
+                    const slots = getSlotsForDate(dateStr);
+                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+                    return (
+                      <div
+                        key={dateStr}
+                        className={`bg-white rounded-xl p-3 border ${isToday ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-gray-200'}`}
+                      >
+                        <div className="text-center mb-2">
+                          <p className={`text-xs font-medium ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>
+                            {day}
+                          </p>
+                          <p className={`text-lg font-bold ${isToday ? 'text-emerald-600' : 'text-gray-900'}`}>
+                            {dateNum}
+                          </p>
+                          <p className="text-xs text-gray-400">{month}</p>
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {slots.length > 0 ? (
+                            slots.slice(0, 4).map((slot, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-xs font-medium"
+                              >
+                                <Clock className="w-3 h-3" />
+                                {formatTime(slot.time)}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-gray-400 text-center py-2">No slots</p>
+                          )}
+                          {slots.length > 4 && (
+                            <p className="text-xs text-emerald-600 text-center font-medium">
+                              +{slots.length - 4} more
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                Click "Book Your FREE 30-Min Trial" below to see all available time slots and book a lesson
+              </p>
+            </div>
+          )}
 
           {/* Teacher Ratings Section */}
           <div className="mb-12">

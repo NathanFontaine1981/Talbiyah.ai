@@ -64,7 +64,6 @@ export default function ParentDashboard() {
       }
 
       setUserId(user.id);
-      console.log('Loading dashboard for user:', user.id);
 
       // Load profile
       const { data: profile } = await supabase
@@ -81,19 +80,15 @@ export default function ParentDashboard() {
         .select('*')
         .eq('parent_id', user.id);
 
-      console.log('Learners query result:', { learnersData, learnersError });
-
       if (learnersError) {
         console.error('Error fetching learners:', learnersError);
         throw learnersError;
       }
 
       if (learnersData && learnersData.length > 0) {
-        console.log('Setting learners:', learnersData);
         setLearners(learnersData);
         setSelectedLearnerId(learnersData[0].id);
       } else {
-        console.log('No children found, showing add modal');
         setLearners([]);
         setShowAddChildModal(true);
       }
@@ -453,8 +448,6 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      console.log('Adding child for parent:', user.id);
-
       const { data, error: insertError } = await supabase
         .from('learners')
         .insert({
@@ -467,11 +460,8 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
         })
         .select();
 
-      console.log('Insert result:', { data, insertError });
-
       if (insertError) throw insertError;
 
-      console.log('Child added successfully, calling onChildAdded');
       onChildAdded();
     } catch (err: any) {
       console.error('Error adding child:', err);

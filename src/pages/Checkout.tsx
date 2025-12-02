@@ -28,6 +28,7 @@ export default function Checkout() {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoCodeId, setPromoCodeId] = useState<string | null>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [referralBalance, setReferralBalance] = useState(0);
   const [referralDiscount, setReferralDiscount] = useState(0);
@@ -113,9 +114,9 @@ export default function Checkout() {
         // Student booking for themselves
         setSelectedChildId('self');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading user/children:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to load account information');
     } finally {
       setLoading(false);
     }
@@ -195,34 +196,69 @@ export default function Checkout() {
     setError('');
 
     try {
-      // Handle special promo codes
-      if (promoCode.toUpperCase() === '100HONOR' || promoCode.toUpperCase() === '100OWNER') {
-        // Check if user has any completed lessons (must be first lesson)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-        const { count } = await supabase
-          .from('lessons')
-          .select('id', { count: 'exact', head: true })
-          .eq('student_id', user.id)
-          .eq('status', 'completed');
+      // Call the database function to validate promo code
+      const { data, error: rpcError } = await supabase.rpc('validate_promo_code', {
+        p_code: promoCode.trim(),
+        p_user_id: user.id,
+        p_cart_value: finalPrice
+      });
 
-        if (count && count > 0) {
-          throw new Error('This promo code is only valid for your first lesson');
+      if (rpcError) {
+        // Fallback to legacy codes if the function doesn't exist yet
+        if (rpcError.code === '42883') { // function not found
+          // Handle legacy promo codes
+          if (promoCode.toUpperCase() === '100HONOR' || promoCode.toUpperCase() === '100OWNER') {
+            // Check if user has any completed lessons
+            const { data: learners } = await supabase
+              .from('learners')
+              .select('id')
+              .eq('parent_id', user.id);
+
+            const learnerIds = learners?.map(l => l.id) || [];
+
+            let hasCompletedLessons = false;
+            if (learnerIds.length > 0) {
+              const { count } = await supabase
+                .from('lessons')
+                .select('id', { count: 'exact', head: true })
+                .in('learner_id', learnerIds)
+                .eq('status', 'completed');
+              hasCompletedLessons = (count || 0) > 0;
+            }
+
+            if (hasCompletedLessons) {
+              throw new Error('This promo code is only valid for your first lesson');
+            }
+
+            setPromoDiscount(finalPrice);
+            setPromoApplied(true);
+            setPromoCodeId(null);
+            setError('');
+            return;
+          }
+          throw new Error('Invalid promo code');
         }
-
-        // Apply 100% discount
-        setPromoDiscount(finalPrice);
-        setPromoApplied(true);
-        setError('');
-      } else {
-        throw new Error('Invalid promo code');
+        throw rpcError;
       }
-    } catch (err: any) {
+
+      if (!data?.valid) {
+        throw new Error(data?.error || 'Invalid promo code');
+      }
+
+      // Apply the discount
+      setPromoDiscount(data.discount_amount);
+      setPromoApplied(true);
+      setPromoCodeId(data.promo_code_id);
+      setError('');
+    } catch (err) {
       console.error('Promo code error:', err);
-      setError(err.message || 'Invalid promo code');
+      setError(err instanceof Error ? err.message : 'Invalid promo code');
       setPromoDiscount(0);
       setPromoApplied(false);
+      setPromoCodeId(null);
     } finally {
       setApplyingPromo(false);
     }
@@ -340,7 +376,9 @@ export default function Checkout() {
             body: JSON.stringify({
               cart_items: cartItems,
               learner_id: learnerId,
-              promo_code: promoCode
+              promo_code: promoCode,
+              promo_code_id: promoCodeId,
+              promo_discount: promoDiscount
             })
           }
         );
@@ -351,7 +389,6 @@ export default function Checkout() {
         }
 
         const result = await response.json();
-        console.log('Booking created:', result);
 
         // Deduct referral balance if used
         if (referralDiscount > 0) {
@@ -461,7 +498,6 @@ export default function Checkout() {
         }
 
         const result = await response.json();
-        console.log('Booking created with credits:', result);
 
         // Deduct credits using the proper RPC function (handles transaction logging)
         const { data: newBalance, error: creditError } = await supabase
@@ -474,9 +510,6 @@ export default function Checkout() {
 
         if (creditError) {
           console.error('Error deducting credits:', creditError);
-          // Credits were already deducted in create-booking-with-room, so just log the error
-        } else {
-          console.log('Credits deducted successfully. New balance:', newBalance);
         }
 
         // Clear cart
@@ -496,9 +529,9 @@ export default function Checkout() {
       } else {
         throw new Error('No checkout URL received');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Checkout error:', err);
-      setError(err.message || 'Failed to initiate checkout');
+      setError(err instanceof Error ? err.message : 'Failed to initiate checkout');
     } finally {
       setProcessing(false);
     }

@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import DOMPurify from 'dompurify';
 
 interface KhutbaContent {
   title: string;
@@ -277,7 +278,8 @@ function createPrintableHTML(khutba: KhutbaContent): string {
 export async function downloadKhutbaPDF(khutba: KhutbaContent, filename?: string): Promise<void> {
   // Create a temporary container for the HTML
   const container = document.createElement('div');
-  container.innerHTML = createPrintableHTML(khutba);
+  // Sanitize HTML to prevent XSS attacks
+  container.innerHTML = DOMPurify.sanitize(createPrintableHTML(khutba));
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '0';
@@ -336,7 +338,8 @@ export async function downloadKhutbaPDF(khutba: KhutbaContent, filename?: string
 // Keep this for backwards compatibility but mark as async
 export async function generateKhutbaPDF(khutba: KhutbaContent): Promise<jsPDF> {
   const container = document.createElement('div');
-  container.innerHTML = createPrintableHTML(khutba);
+  // Sanitize HTML to prevent XSS attacks
+  container.innerHTML = DOMPurify.sanitize(createPrintableHTML(khutba));
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '0';

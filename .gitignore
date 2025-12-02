@@ -52,6 +52,12 @@ add-*.mjs
 enable-*.mjs
 find-*.mjs
 recover-*.mjs
+cleanup-*.mjs
+debug-*.mjs
+fetch-*.mjs
+import-*.mjs
+manually-*.mjs
+*.mjs
 
 # Duplicate files
 * 2.*

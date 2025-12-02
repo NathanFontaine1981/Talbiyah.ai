@@ -150,7 +150,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
           lessonId: insight.lesson_id || undefined,
           createdAt: insight.created_at,
           read: false,
-          actionUrl: `/lesson-insights/${insight.lesson_id}`
+          actionUrl: `/lesson/${insight.lesson_id}/insights`
         });
       });
 

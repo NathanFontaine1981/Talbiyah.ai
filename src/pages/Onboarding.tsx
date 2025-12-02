@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import ParentDetailsStep from '../components/onboarding/ParentDetailsStep';
 import ChildDetailsStep from '../components/onboarding/ChildDetailsStep';
@@ -29,7 +30,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [parentData, setParentData] = useState<ParentData>({
     fullName: '',
@@ -104,20 +105,20 @@ export default function Onboarding() {
         // Teachers go to /welcome then /apply-to-teach
         // Students go to /welcome which creates a learner for them
         if (profile?.role === 'teacher' || profile?.roles?.includes('teacher')) {
-          console.log('Teacher on onboarding page, redirecting to apply-to-teach');
+          // Teacher detected, redirecting to apply-to-teach
           navigate('/apply-to-teach');
           return;
         }
 
         if (profile?.role !== 'parent' && profile?.role !== undefined) {
-          console.log('Non-parent user on onboarding page, redirecting to dashboard');
+          // Non-parent user detected, redirecting to dashboard
           navigate('/dashboard');
           return;
         }
 
         // If role is undefined/null and not a parent, redirect to welcome
         if (!profile?.role && !profile?.roles?.includes('parent')) {
-          console.log('User without role on onboarding page, redirecting to welcome');
+          // User without role detected, redirecting to welcome
           navigate('/welcome');
           return;
         }
@@ -163,7 +164,7 @@ export default function Onboarding() {
         const age = calculateAge(child.dateOfBirth);
         const schoolYear = calculateSchoolYear(child.dateOfBirth);
 
-        console.log('Creating learner for child:', child.firstName, 'parent_id:', user.id);
+        // Creating learner for child
 
         // Create learner record
         const { data: learnerData, error: learnerError } = await supabase
@@ -186,11 +187,9 @@ export default function Onboarding() {
           throw learnerError;
         }
 
-        console.log('Learner created with ID:', learnerData?.id);
-
+        
         // Also create parent_children record for dashboard display
         if (learnerData) {
-          console.log('Creating parent_children record...');
           const { error: parentChildError } = await supabase
             .from('parent_children')
             .insert({
@@ -206,8 +205,6 @@ export default function Onboarding() {
           if (parentChildError) {
             console.error('Error creating parent_children record:', parentChildError);
             // Don't throw - learner was created successfully
-          } else {
-            console.log('Parent_children record created successfully');
           }
         }
       }
@@ -217,9 +214,10 @@ export default function Onboarding() {
 
       // Navigate to dashboard
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error completing onboarding:', error);
-      alert('Failed to save your information. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to save your information: ${errorMessage}. Please try again.`);
     } finally {
       setSaving(false);
     }

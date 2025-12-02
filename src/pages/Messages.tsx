@@ -30,6 +30,35 @@ interface Lesson {
   status: string;
 }
 
+// Raw relationship data from Supabase
+interface RawRelationship {
+  id: string;
+  student_id: string;
+  teacher_id: string;
+  subject_id: string;
+  total_lessons: number;
+  last_lesson_date: string | null;
+  subjects: { name: string } | null;
+  teacher: {
+    id: string;
+    user: {
+      id: string;
+      full_name: string | null;
+      avatar_url: string | null;
+    } | null;
+  } | null;
+}
+
+interface GroupedTeacher {
+  teacher_id: string;
+  student_id: string;
+  relationships: RawRelationship[];
+  teacher: RawRelationship['teacher'];
+  student: unknown;
+  total_lessons: number;
+  subjects: string[];
+}
+
 export default function Messages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -134,7 +163,7 @@ export default function Messages() {
       // Group relationships by teacher (consolidate multiple subjects into one conversation)
       const groupedByTeacher = new Map();
 
-      (relationships || []).forEach((rel: any) => {
+      ((relationships || []) as RawRelationship[]).forEach((rel) => {
         const teacherId = rel.teacher_id;
 
         if (!groupedByTeacher.has(teacherId)) {
@@ -143,10 +172,10 @@ export default function Messages() {
             student_id: rel.student_id,
             relationships: [rel],
             teacher: rel.teacher,
-            student: rel.student,
+            student: null,
             total_lessons: rel.total_lessons,
             subjects: [rel.subjects?.name].filter(Boolean),
-          });
+          } as GroupedTeacher);
         } else {
           const existing = groupedByTeacher.get(teacherId);
           existing.relationships.push(rel);
@@ -159,7 +188,7 @@ export default function Messages() {
 
       // Get unread message counts and last messages for each teacher
       const conversationsData = await Promise.all(
-        Array.from(groupedByTeacher.values()).map(async (group: any) => {
+        Array.from(groupedByTeacher.values()).map(async (group: GroupedTeacher) => {
           // Handle null cases for student/parent/teacher data
           let otherUserId: string;
           let otherUserName: string;
@@ -206,7 +235,6 @@ export default function Messages() {
               otherUserAvatar = null;
             }
 
-            console.log('Teacher viewing student:', { finalName: otherUserName, studentId: group.student_id });
           } else {
             // Student viewing - get teacher info
             otherUserId = group.teacher?.user?.id || group.teacher_id;
@@ -365,7 +393,6 @@ export default function Messages() {
         return;
       }
 
-      console.log('Loaded lessons:', lessonsList?.length, 'for teacher:', conversation.teacher_id, 'student:', conversation.student_id);
       setLessons(lessonsList || []);
 
       // Auto-select the most recent lesson if available

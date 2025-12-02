@@ -80,6 +80,17 @@ interface ChildLink {
   account_id: string | null;
 }
 
+interface MenuItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  active: boolean;
+  roles: string[];
+  unreadCount?: number;
+  isNew?: boolean;
+  comingSoon?: boolean;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -98,6 +109,9 @@ export default function Dashboard() {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
+    let successTimeout: NodeJS.Timeout;
+
     loadUserAndProfile();
     loadUnreadMessageCount();
 
@@ -112,7 +126,9 @@ export default function Dashboard() {
           table: 'lesson_messages',
         },
         () => {
-          loadUnreadMessageCount();
+          if (isMounted) {
+            loadUnreadMessageCount();
+          }
         }
       )
       .subscribe();
@@ -126,11 +142,17 @@ export default function Dashboard() {
       // Clear the query params
       setSearchParams({});
       // Auto-hide after 5 seconds
-      setTimeout(() => setShowBookingSuccess(false), 5000);
+      successTimeout = setTimeout(() => {
+        if (isMounted) {
+          setShowBookingSuccess(false);
+        }
+      }, 5000);
     }
 
     return () => {
+      isMounted = false;
       channel.unsubscribe();
+      if (successTimeout) clearTimeout(successTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -404,7 +426,7 @@ export default function Dashboard() {
                 <div className="border-t border-slate-800 my-2"></div>
               )}
               <div className="space-y-1">
-                {section.items.map((item: any) => (
+                {section.items.map((item: MenuItem) => (
                   <button
                     key={`${section.title}-${item.path}-${item.label}`}
                     onClick={() => !item.comingSoon && navigate(item.path)}
@@ -658,10 +680,7 @@ export default function Dashboard() {
                         </button>
                         {!child.has_account && (
                           <button
-                            onClick={() => {
-                              // TODO: Open upgrade modal
-                              alert('Create Login feature coming soon!');
-                            }}
+                            onClick={() => navigate('/my-children')}
                             className="w-full px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-1"
                           >
                             <span>🔓</span>

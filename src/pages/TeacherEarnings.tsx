@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { DollarSign, Clock, CheckCircle, TrendingUp, AlertCircle, Settings, ArrowLeft } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, TrendingUp, AlertCircle, Settings, ArrowLeft, Send, Loader2 } from 'lucide-react';
 
 interface EarningsSummary {
   pending_amount: number;
@@ -30,10 +30,7 @@ interface TeacherEarning {
     scheduled_time: string;
     duration_minutes: number;
     learner?: {
-      child_name: string;
-    };
-    profiles?: {
-      full_name: string;
+      name: string;
     };
   };
 }
@@ -57,6 +54,10 @@ export default function TeacherEarnings() {
   const [payouts, setPayouts] = useState<TeacherPayout[]>([]);
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'lessons' | 'payouts'>('lessons');
+  const [requestingPayout, setRequestingPayout] = useState(false);
+  const [payoutMessage, setPayoutMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [isTeacher, setIsTeacher] = useState(true);
 
   useEffect(() => {
     loadEarningsData();
@@ -65,70 +66,122 @@ export default function TeacherEarnings() {
   const loadEarningsData = async () => {
     try {
       setLoading(true);
+      console.log('[TeacherEarnings] Starting to load data...');
 
       // Get teacher profile
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('[TeacherEarnings] User:', user?.id);
       if (!user) {
         navigate('/', { state: { showSignIn: true } });
         return;
       }
 
-      const { data: teacherProfile } = await supabase
+      const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      if (!teacherProfile) {
-        console.error('No teacher profile found');
+      console.log('[TeacherEarnings] Teacher profile:', teacherProfile, 'Error:', profileError);
+
+      if (profileError || !teacherProfile) {
+        console.error('[TeacherEarnings] No teacher profile found:', profileError);
+        setIsTeacher(false);
+        setLoading(false);
         return;
       }
 
       setTeacherId(teacherProfile.id);
+      console.log('[TeacherEarnings] Teacher ID set:', teacherProfile.id);
 
-      // Get earnings summary using RPC
-      const { data: summaryData, error: summaryError } = await supabase
-        .rpc('get_teacher_earnings_summary', { p_teacher_id: teacherProfile.id });
+      // Get earnings summary using RPC (may not exist)
+      try {
+        const { data: summaryData, error: summaryError } = await supabase
+          .rpc('get_teacher_earnings_summary', { p_teacher_id: teacherProfile.id });
 
-      if (summaryError) throw summaryError;
-
-      if (summaryData && summaryData.length > 0) {
-        setSummary(summaryData[0]);
+        if (!summaryError && summaryData && summaryData.length > 0) {
+          setSummary(summaryData[0]);
+        } else {
+          // Set default summary if RPC doesn't exist
+          setSummary({
+            pending_amount: 0,
+            held_amount: 0,
+            cleared_amount: 0,
+            paid_amount: 0,
+            total_lifetime_earnings: 0,
+            lessons_pending: 0,
+            lessons_held: 0,
+            lessons_cleared: 0,
+            lessons_paid: 0,
+          });
+        }
+      } catch (rpcError) {
+        console.warn('RPC not available, using defaults:', rpcError);
+        setSummary({
+          pending_amount: 0,
+          held_amount: 0,
+          cleared_amount: 0,
+          paid_amount: 0,
+          total_lifetime_earnings: 0,
+          lessons_pending: 0,
+          lessons_held: 0,
+          lessons_cleared: 0,
+          lessons_paid: 0,
+        });
       }
 
       // Get recent earnings with lesson details
-      const { data: earningsData, error: earningsError } = await supabase
-        .from('teacher_earnings')
-        .select(`
-          *,
-          lesson:lessons!inner(
-            scheduled_time,
-            duration_minutes,
-            learner:learners(child_name),
-            profiles!lessons_student_id_fkey(full_name)
-          )
-        `)
-        .eq('teacher_id', teacherProfile.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      try {
+        const { data: earningsData, error: earningsError } = await supabase
+          .from('teacher_earnings')
+          .select(`
+            *,
+            lesson:lessons(
+              scheduled_time,
+              duration_minutes,
+              learner:learners(name)
+            )
+          `)
+          .eq('teacher_id', teacherProfile.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-      if (earningsError) throw earningsError;
-      setEarnings(earningsData || []);
+        if (!earningsError) {
+          setEarnings(earningsData || []);
+        } else {
+          console.warn('Error fetching earnings:', earningsError);
+          setEarnings([]);
+        }
+      } catch {
+        setEarnings([]);
+      }
 
       // Get payout history
-      const { data: payoutsData, error: payoutsError } = await supabase
-        .from('teacher_payouts')
-        .select('*')
-        .eq('teacher_id', teacherProfile.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      try {
+        const { data: payoutsData, error: payoutsError } = await supabase
+          .from('teacher_payouts')
+          .select('*')
+          .eq('teacher_id', teacherProfile.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
-      if (payoutsError) throw payoutsError;
-      setPayouts(payoutsData || []);
+        if (!payoutsError) {
+          setPayouts(payoutsData || []);
+          // Check if there's a pending payout request
+          const pendingPayout = payoutsData?.find(p => p.status === 'requested' || p.status === 'processing');
+          setHasPendingRequest(!!pendingPayout);
+        } else {
+          console.warn('Error fetching payouts:', payoutsError);
+          setPayouts([]);
+        }
+      } catch {
+        setPayouts([]);
+      }
 
     } catch (error) {
-      console.error('Error loading earnings:', error);
+      console.error('[TeacherEarnings] Error loading earnings:', error);
     } finally {
+      console.log('[TeacherEarnings] Setting loading to false');
       setLoading(false);
     }
   };
@@ -157,6 +210,81 @@ export default function TeacherEarnings() {
     });
   };
 
+  const requestPayout = async () => {
+    if (!teacherId || !summary || summary.cleared_amount <= 0) return;
+
+    setRequestingPayout(true);
+    setPayoutMessage(null);
+
+    try {
+      // Get cleared earnings that haven't been assigned to a payout yet
+      const { data: clearedEarnings, error: fetchError } = await supabase
+        .from('teacher_earnings')
+        .select('id, amount_earned')
+        .eq('teacher_id', teacherId)
+        .eq('status', 'cleared');
+
+      if (fetchError) throw fetchError;
+
+      if (!clearedEarnings || clearedEarnings.length === 0) {
+        throw new Error('No cleared earnings available for payout');
+      }
+
+      const totalAmount = clearedEarnings.reduce((sum, e) => sum + e.amount_earned, 0);
+      const earningIds = clearedEarnings.map(e => e.id);
+
+      // Create the payout request
+      const { data: payout, error: payoutError } = await supabase
+        .from('teacher_payouts')
+        .insert({
+          teacher_id: teacherId,
+          total_amount: totalAmount,
+          currency: 'GBP',
+          earnings_count: clearedEarnings.length,
+          payout_method: 'bank_transfer',
+          status: 'requested',
+          notes: `Teacher requested payout of ${clearedEarnings.length} lessons totaling £${totalAmount.toFixed(2)}`
+        })
+        .select()
+        .single();
+
+      if (payoutError) throw payoutError;
+
+      // Update earnings to reference this payout and mark as processing
+      const { error: updateError } = await supabase
+        .from('teacher_earnings')
+        .update({
+          payout_id: payout.id,
+          status: 'processing'
+        })
+        .in('id', earningIds);
+
+      if (updateError) {
+        console.error('Error updating earnings:', updateError);
+        // Don't throw - the payout request was created
+      }
+
+      setPayoutMessage({
+        type: 'success',
+        text: `Payout request submitted for ${formatCurrency(totalAmount)}! Our team will process it within 2-3 business days.`
+      });
+
+      setHasPendingRequest(true);
+
+      // Reload data to show updated status
+      await loadEarningsData();
+
+    } catch (error: any) {
+      console.error('Error requesting payout:', error);
+      setPayoutMessage({
+        type: 'error',
+        text: error.message || 'Failed to submit payout request. Please try again.'
+      });
+    } finally {
+      setRequestingPayout(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-slate-700 text-slate-300',
@@ -165,6 +293,7 @@ export default function TeacherEarnings() {
       paid: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50',
       refunded: 'bg-red-500/20 text-red-400 border border-red-500/50',
       processing: 'bg-blue-500/20 text-blue-400 border border-blue-500/50',
+      requested: 'bg-purple-500/20 text-purple-400 border border-purple-500/50',
       completed: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50',
       failed: 'bg-red-500/20 text-red-400 border border-red-500/50',
     };
@@ -179,6 +308,7 @@ export default function TeacherEarnings() {
       paid: 'Paid',
       refunded: 'Refunded',
       processing: 'Processing',
+      requested: 'Requested',
       completed: 'Completed',
       failed: 'Failed',
     };
@@ -191,6 +321,26 @@ export default function TeacherEarnings() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
           <p className="mt-4 text-slate-400">Loading earnings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isTeacher) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Teacher Access Required</h2>
+          <p className="text-slate-400 mb-6">
+            You need to be registered as a teacher to view earnings. If you believe this is an error, please contact support.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </div>
     );
@@ -222,6 +372,32 @@ export default function TeacherEarnings() {
             Payment Settings
           </button>
         </div>
+
+        {/* Payout Message Banner */}
+        {payoutMessage && (
+          <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
+            payoutMessage.type === 'success'
+              ? 'bg-emerald-500/20 border border-emerald-500/50'
+              : 'bg-red-500/20 border border-red-500/50'
+          }`}>
+            {payoutMessage.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <p className={payoutMessage.type === 'success' ? 'text-emerald-300' : 'text-red-300'}>
+                {payoutMessage.text}
+              </p>
+            </div>
+            <button
+              onClick={() => setPayoutMessage(null)}
+              className="text-slate-400 hover:text-white"
+            >
+              &times;
+            </button>
+          </div>
+        )}
 
         {/* Earnings Summary Cards */}
         {summary && (
@@ -274,7 +450,29 @@ export default function TeacherEarnings() {
               <p className="text-2xl font-bold text-cyan-300">
                 {formatCurrency(summary.cleared_amount)}
               </p>
-              <p className="text-xs text-slate-400 mt-2">Available now</p>
+              {summary.cleared_amount > 0 && !hasPendingRequest ? (
+                <button
+                  onClick={requestPayout}
+                  disabled={requestingPayout}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-cyan-500/50 text-white font-medium rounded-lg transition-colors"
+                >
+                  {requestingPayout ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Requesting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Request Payout
+                    </>
+                  )}
+                </button>
+              ) : hasPendingRequest ? (
+                <p className="text-xs text-purple-400 mt-2">Payout request pending</p>
+              ) : (
+                <p className="text-xs text-slate-400 mt-2">Available now</p>
+              )}
             </div>
 
             {/* Lifetime Earnings */}
@@ -367,9 +565,7 @@ export default function TeacherEarnings() {
                           {formatDateTime(earning.lesson.scheduled_time)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                          {earning.lesson.learner?.child_name ||
-                           earning.lesson.profiles?.full_name ||
-                           'Unknown'}
+                          {earning.lesson.learner?.name || 'Unknown'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {earning.lesson.duration_minutes} mins

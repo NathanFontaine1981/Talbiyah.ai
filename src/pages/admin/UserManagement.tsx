@@ -236,6 +236,138 @@ export default function UserManagement() {
     }
   }
 
+  async function handleSendEmail(user: User) {
+    const subject = prompt('Enter email subject:');
+    if (!subject) return;
+
+    const body = prompt('Enter email message:');
+    if (!body) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          type: 'admin_notification',
+          recipient_email: user.email,
+          recipient_name: user.full_name || 'User',
+          data: {
+            subject,
+            message: body,
+          }
+        }
+      });
+
+      if (error) throw error;
+      alert(`Email sent to ${user.email}`);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Failed to send email. Please try again.');
+    }
+  }
+
+  async function handleSuspendUser(user: User) {
+    const isSuspended = user.roles?.includes('suspended');
+    const action = isSuspended ? 'unsuspend' : 'suspend';
+
+    if (!confirm(`Are you sure you want to ${action} ${user.full_name}?`)) return;
+
+    try {
+      let newRoles: string[];
+      if (isSuspended) {
+        newRoles = (user.roles || []).filter(r => r !== 'suspended');
+      } else {
+        newRoles = [...(user.roles || []), 'suspended'];
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ roles: newRoles })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await fetchUsers();
+      alert(`User ${user.full_name} has been ${action}ed`);
+    } catch (error) {
+      console.error(`Error ${action}ing user:`, error);
+      alert(`Failed to ${action} user. Please try again.`);
+    }
+  }
+
+  function handleExportUsers() {
+    const usersToExport = selectedUserIds.length > 0
+      ? users.filter(u => selectedUserIds.includes(u.id))
+      : filteredUsers;
+
+    const csvContent = [
+      ['ID', 'Name', 'Email', 'Phone', 'Roles', 'Joined', 'Last Sign In'].join(','),
+      ...usersToExport.map(u => [
+        u.id,
+        `"${u.full_name || ''}"`,
+        u.email,
+        u.phone || '',
+        `"${(u.roles || []).join(', ')}"`,
+        format(new Date(u.created_at), 'yyyy-MM-dd'),
+        u.last_sign_in_at ? format(new Date(u.last_sign_in_at), 'yyyy-MM-dd') : '',
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert(`Exported ${usersToExport.length} users`);
+  }
+
+  async function handleBulkSendEmail() {
+    if (selectedUserIds.length === 0) {
+      alert('Please select at least one user');
+      return;
+    }
+
+    const subject = prompt('Enter email subject:');
+    if (!subject) return;
+
+    const body = prompt('Enter email message:');
+    if (!body) return;
+
+    const selectedUsers = users.filter(u => selectedUserIds.includes(u.id));
+
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const user of selectedUsers) {
+        try {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'admin_notification',
+              recipient_email: user.email,
+              recipient_name: user.full_name || 'User',
+              data: {
+                subject,
+                message: body,
+              }
+            }
+          });
+          successCount++;
+        } catch {
+          failCount++;
+        }
+      }
+
+      alert(`Emails sent: ${successCount} successful, ${failCount} failed`);
+    } catch (error) {
+      console.error('Error sending bulk emails:', error);
+      alert('Failed to send emails. Please try again.');
+    }
+  }
+
   async function handleClearAllExceptAdmin() {
     const confirmText = 'DELETE ALL USERS';
     const userConfirm = prompt(
@@ -490,10 +622,16 @@ export default function UserManagement() {
             {selectedUserIds.length} user{selectedUserIds.length !== 1 ? 's' : ''} selected
           </p>
           <div className="flex space-x-2">
-            <button className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition">
+            <button
+              onClick={handleExportUsers}
+              className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition"
+            >
               Export
             </button>
-            <button className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition">
+            <button
+              onClick={handleBulkSendEmail}
+              className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition"
+            >
               Send Email
             </button>
             <button
@@ -552,6 +690,8 @@ export default function UserManagement() {
                     onEdit={() => handleEditUser(user)}
                     onResetPassword={() => handleResetPassword(user)}
                     onDelete={() => handleDeleteUser(user)}
+                    onSendEmail={() => handleSendEmail(user)}
+                    onSuspend={() => handleSuspendUser(user)}
                   />
                 ))
               )}
@@ -612,7 +752,7 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 }
 
 // User Row Component
-function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onDelete }: any) {
+function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onDelete, onSendEmail, onSuspend }: any) {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(user.roles || []);
@@ -772,18 +912,37 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                   <Key className="w-4 h-4" />
                   <span>Reset Password</span>
                 </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    onSendEmail();
+                    setShowActionsDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2"
+                >
                   <Mail className="w-4 h-4" />
                   <span>Send Email</span>
                 </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2">
-                  <Activity className="w-4 h-4" />
-                  <span>View Activity Log</span>
-                </button>
                 <div className="border-t border-slate-700 my-1"></div>
-                <button className="w-full px-4 py-2 text-left text-sm text-amber-400 hover:bg-slate-700 flex items-center space-x-2">
-                  <Ban className="w-4 h-4" />
-                  <span>Suspend Account</span>
+                <button
+                  onClick={() => {
+                    onSuspend();
+                    setShowActionsDropdown(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-700 flex items-center space-x-2 ${
+                    user.roles?.includes('suspended') ? 'text-emerald-400' : 'text-amber-400'
+                  }`}
+                >
+                  {user.roles?.includes('suspended') ? (
+                    <>
+                      <UserCheck className="w-4 h-4" />
+                      <span>Unsuspend Account</span>
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="w-4 h-4" />
+                      <span>Suspend Account</span>
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => {

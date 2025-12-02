@@ -47,7 +47,6 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           table: 'lessons'
         },
         (payload) => {
-          console.log('📡 Lesson updated in real-time:', payload);
           // Refresh lessons when any lesson is updated (without showing loading spinner)
           loadUpcomingSessions(false);
         }
@@ -56,7 +55,6 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
     // Polling fallback: refresh every 30 seconds to catch any missed updates
     const pollInterval = setInterval(() => {
-      console.log('🔄 Polling for lesson updates...');
       loadUpcomingSessions(false);
     }, 30000); // 30 seconds
 
@@ -79,7 +77,6 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       if (!learnerId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          console.log('❌ No authenticated user found');
           setLoading(false);
           return;
         }
@@ -105,8 +102,6 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
         targetLearnerIds = learners.map(l => l.id);
       }
-
-      console.log('🔍 UpcomingSessionsCard: targetLearnerIds =', targetLearnerIds);
 
       // Get all booked lessons for ALL the parent's learners
       // Using regular joins instead of !inner to avoid 406 errors when relations don't match
@@ -142,12 +137,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         .order('scheduled_time', { ascending: true });
 
       if (error) {
-        console.error('❌ Error fetching lessons:', error);
         throw error;
       }
-
-      console.log('✅ Fetched lessons:', lessonsData?.length || 0, 'lessons');
-      console.log('📋 Raw lessons data:', JSON.stringify(lessonsData, null, 2));
 
       if (lessonsData) {
         // Check which lessons have insights
@@ -176,55 +167,15 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           });
         }
 
-        // Get current user ID to check for unread messages
-        const { data: { user } } = await supabase.auth.getUser();
-        const currentUserId = user?.id;
-
-        // Get unread message counts for each lesson using message_reads table
-        // The new schema uses message_reads table to track which messages have been read
+        // Unread message counts - disabled for now due to RLS policy constraints
+        // The lesson_messages table requires user to be sender or receiver
         const unreadMessageCounts = new Map<string, number>();
-        if (currentUserId && lessonIds.length > 0) {
-          try {
-            // Query messages for these lessons that the user hasn't read yet
-            // Using the new schema with message_reads join table
-            const { data: messagesData } = await supabase
-              .from('lesson_messages')
-              .select(`
-                id,
-                lesson_id,
-                sender_id,
-                message_reads!left(user_id)
-              `)
-              .in('lesson_id', lessonIds)
-              .neq('sender_id', currentUserId); // Don't count messages sent by the user
-
-            // Count messages that don't have a read record for this user
-            messagesData?.forEach((msg: any) => {
-              const hasRead = msg.message_reads?.some((r: any) => r.user_id === currentUserId);
-              if (!hasRead) {
-                const count = unreadMessageCounts.get(msg.lesson_id) || 0;
-                unreadMessageCounts.set(msg.lesson_id, count + 1);
-              }
-            });
-          } catch (msgError) {
-            // Silently ignore - messages feature may not be fully set up
-          }
-        }
 
         const now = new Date();
 
         const lessonsWithRelations = lessonsData.filter((lesson: any) => {
-          const hasRelations = lesson.learners && lesson.teacher_profiles && lesson.subjects;
-          if (!hasRelations) {
-            console.log('⚠️ Lesson missing relations:', lesson.id, {
-              hasLearners: !!lesson.learners,
-              hasTeacherProfiles: !!lesson.teacher_profiles,
-              hasSubjects: !!lesson.subjects
-            });
-          }
-          return hasRelations;
+          return lesson.learners && lesson.teacher_profiles && lesson.subjects;
         });
-        console.log('📊 Lessons with valid relations:', lessonsWithRelations.length);
 
         const formattedLessons: UpcomingLesson[] = lessonsWithRelations
           .map((lesson: any) => ({
@@ -268,13 +219,14 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get the most recent unread message for this lesson
+      // New schema: messages don't have receiver_id or is_read
+      // Instead, read_at is null for unread, and we check sender_id != user.id
       const { data: messages, error } = await supabase
         .from('lesson_messages')
         .select('id, message_text, sender_id, created_at')
         .eq('lesson_id', lessonId)
-        .eq('receiver_id', user.id)
-        .eq('is_read', false)
+        .neq('sender_id', user.id)
+        .is('read_at', null)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -284,10 +236,10 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         setMessageContent(messages[0].message_text);
         setViewingMessage(lessonId);
 
-        // Mark message as read
+        // Mark message as read by setting read_at
         await supabase
           .from('lesson_messages')
-          .update({ is_read: true })
+          .update({ read_at: new Date().toISOString() })
           .eq('id', messages[0].id);
 
         // Update local state to reflect message as read

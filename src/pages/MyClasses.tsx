@@ -25,6 +25,38 @@ interface Lesson {
   recording_expires_at?: string;
 }
 
+// Raw lesson data from Supabase query
+interface RawLessonData {
+  id: string;
+  learner_id?: string;
+  scheduled_time: string;
+  duration_minutes: number;
+  status: string;
+  teacher_id: string;
+  subject_id: string;
+  '100ms_room_id': string | null;
+  confirmation_status?: string;
+  learners?: { name: string };
+  teacher_profiles?: {
+    user_id: string;
+    profiles: {
+      full_name: string | null;
+      avatar_url: string | null;
+    };
+  };
+  subjects: { name: string };
+}
+
+interface RecordingData {
+  lesson_id: string;
+  recording_url: string;
+  expires_at: string;
+}
+
+interface MessageData {
+  lesson_id: string;
+}
+
 export default function MyClasses() {
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -103,6 +135,8 @@ export default function MyClasses() {
             teacher_id,
             subject_id,
             "100ms_room_id",
+            recording_url,
+            recording_expires_at,
             teacher_profiles!inner(
               user_id,
               profiles!inner(
@@ -140,7 +174,7 @@ export default function MyClasses() {
 
       if (lessonsData) {
         // Check which lessons have insights
-        const lessonIds = lessonsData.map((l: any) => l.id);
+        const lessonIds = (lessonsData as RawLessonData[]).map((l) => l.id);
 
         let lessonsWithInsights = new Set();
         if (lessonIds.length > 0) {
@@ -151,39 +185,23 @@ export default function MyClasses() {
           lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
         }
 
-        // Get recording data
+        // Build recording map from lessons data (recording_url is now on lessons table)
         const recordingsMap = new Map<string, { url: string; expires_at: string }>();
-        if (lessonIds.length > 0) {
-          const { data: recordingsData } = await supabase
-            .from('lesson_recordings')
-            .select('lesson_id, recording_url, expires_at')
-            .in('lesson_id', lessonIds);
-
-          recordingsData?.forEach((rec: any) => {
-            recordingsMap.set(rec.lesson_id, {
-              url: rec.recording_url,
-              expires_at: rec.expires_at
+        (lessonsData as RawLessonData[]).forEach((lesson: any) => {
+          if (lesson.recording_url) {
+            recordingsMap.set(lesson.id, {
+              url: lesson.recording_url,
+              expires_at: lesson.recording_expires_at
             });
-          });
-        }
+          }
+        });
 
-        // Get unread message counts
+        // Get unread message counts (disabled - messaging system uses new schema)
         const unreadMessageCounts = new Map<string, number>();
-        if (lessonIds.length > 0) {
-          const { data: messagesData } = await supabase
-            .from('lesson_messages')
-            .select('lesson_id', { count: 'exact' })
-            .in('lesson_id', lessonIds)
-            .eq('receiver_id', user.id)
-            .eq('is_read', false);
+        // New schema uses read_at instead of is_read and doesn't have receiver_id
+        // Messages are grouped by lesson_id, unread = sender_id != user.id AND read_at IS NULL
 
-          messagesData?.forEach((msg: any) => {
-            const count = unreadMessageCounts.get(msg.lesson_id) || 0;
-            unreadMessageCounts.set(msg.lesson_id, count + 1);
-          });
-        }
-
-        const formattedLessons: Lesson[] = lessonsData.map((lesson: any) => {
+        const formattedLessons: Lesson[] = (lessonsData as RawLessonData[]).map((lesson) => {
           const recording = recordingsMap.get(lesson.id);
           return {
             id: lesson.id,
@@ -220,12 +238,14 @@ export default function MyClasses() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // New schema: messages don't have receiver_id or is_read
+      // Instead, read_at is null for unread, and we check sender_id != user.id
       const { data: messages, error } = await supabase
         .from('lesson_messages')
         .select('id, message_text, sender_id, created_at')
         .eq('lesson_id', lessonId)
-        .eq('receiver_id', user.id)
-        .eq('is_read', false)
+        .neq('sender_id', user.id)
+        .is('read_at', null)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -235,9 +255,10 @@ export default function MyClasses() {
         setMessageContent(messages[0].message_text);
         setViewingMessage(lessonId);
 
+        // Mark message as read by setting read_at
         await supabase
           .from('lesson_messages')
-          .update({ is_read: true })
+          .update({ read_at: new Date().toISOString() })
           .eq('id', messages[0].id);
 
         setLessons(lessons.map(lesson =>

@@ -17,7 +17,13 @@ import {
   DollarSign,
   Sparkles,
   Mic,
-  Home
+  Home,
+  Plus,
+  Brain,
+  UsersRound,
+  FileVideo,
+  Wrench,
+  Tag
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -34,21 +40,55 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const adminMenuItems = [
-    { icon: Home, label: 'Home Dashboard', path: '/dashboard', exact: true },
-    { icon: LayoutDashboard, label: 'Admin Overview', path: '/admin', exact: true },
-    { icon: Users, label: 'Users', path: '/admin/users' },
-    { icon: GraduationCap, label: 'Teachers', path: '/admin/teachers' },
-    { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
-    { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
-    { icon: Calendar, label: 'Sessions', path: '/admin/sessions' },
-    { icon: Users, label: 'Group Sessions', path: '/admin/group-sessions' },
-    { icon: BookOpen, label: 'Courses', path: '/admin/courses' },
-    { icon: Video, label: 'Recordings', path: '/admin/recordings' },
-    { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
-    { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator' },
-    { icon: Mic, label: 'Khutbah Reflections', path: '/khutba-reflections' },
-    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+  // Menu sections for better organization
+  const menuSections = [
+    {
+      title: 'Navigation',
+      items: [
+        { icon: Home, label: 'Home Dashboard', path: '/dashboard', exact: true },
+        { icon: LayoutDashboard, label: 'Admin Overview', path: '/admin', exact: true },
+      ]
+    },
+    {
+      title: 'User Management',
+      items: [
+        { icon: Users, label: 'All Users', path: '/admin/users' },
+        { icon: GraduationCap, label: 'Teachers', path: '/admin/teachers' },
+        { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
+        { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
+      ]
+    },
+    {
+      title: 'Sessions & Classes',
+      items: [
+        { icon: Calendar, label: '1-on-1 Sessions', path: '/admin/sessions' },
+        { icon: UsersRound, label: 'Group Sessions', path: '/admin/group-sessions' },
+        { icon: Plus, label: 'Group Class Creator', path: '/admin/group-session-creator' },
+        { icon: BookOpen, label: 'Courses', path: '/admin/courses' },
+      ]
+    },
+    {
+      title: 'Content & Recordings',
+      items: [
+        { icon: FileVideo, label: 'Recordings', path: '/admin/recordings' },
+        { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator' },
+        { icon: Brain, label: 'AI Templates', path: '/admin/insight-templates' },
+      ]
+    },
+    {
+      title: 'Analytics & Tools',
+      items: [
+        { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
+        { icon: Mic, label: 'Khutbah Reflections', path: '/khutba-reflections' },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        { icon: Tag, label: 'Promo Codes', path: '/admin/promo-codes' },
+        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+      ]
+    },
   ];
 
   useEffect(() => {
@@ -123,23 +163,38 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
-            {adminMenuItems.map((item, index) => (
-              <li key={index}>
-                <Link
-                  to={item.path}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                    isActive(item.path, item.exact)
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                      : 'text-slate-300 hover:bg-slate-800/50'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
-                </Link>
-              </li>
+          <div className="space-y-6">
+            {menuSections.map((section, sectionIndex) => (
+              <div key={sectionIndex}>
+                {!sidebarCollapsed && (
+                  <h3 className="px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                )}
+                {sidebarCollapsed && sectionIndex > 0 && (
+                  <div className="border-t border-slate-800 my-2" />
+                )}
+                <ul className="space-y-1">
+                  {section.items.map((item, itemIndex) => (
+                    <li key={itemIndex}>
+                      <Link
+                        to={item.path}
+                        title={sidebarCollapsed ? item.label : undefined}
+                        className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition ${
+                          isActive(item.path, item.exact)
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                            : 'text-slate-300 hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <item.icon className="w-5 h-5 flex-shrink-0" />
+                        {!sidebarCollapsed && <span className="font-medium text-sm">{item.label}</span>}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-slate-800">

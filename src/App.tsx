@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { initSentry } from './sentryConfig';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 
@@ -14,6 +15,7 @@ import Cart from './pages/Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminHome from './pages/admin/AdminHome';
 import TeacherManagement from './pages/admin/TeacherManagement';
+import TeacherReview from './pages/admin/TeacherReview';
 import TeacherTiers from './pages/admin/TeacherTiers';
 import UserManagement from './pages/admin/UserManagement';
 import Sessions from './pages/admin/Sessions';
@@ -22,6 +24,9 @@ import CoursesManagement from './pages/admin/CoursesManagement';
 import Recordings from './pages/admin/Recordings';
 import Analytics from './pages/admin/Analytics';
 import InsightsGenerator from './pages/admin/InsightsGenerator';
+import GroupSessionCreator from './pages/admin/GroupSessionCreator';
+import InsightTemplateManager from './pages/admin/InsightTemplateManager';
+import PromoCodeManager from './pages/admin/PromoCodeManager';
 import AdminSettings from './pages/admin/AdminSettings';
 import ApplyToTeach from './pages/ApplyToTeach';
 import AccountSettings from './pages/AccountSettings';
@@ -83,8 +88,9 @@ import Onboarding from './pages/Onboarding';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -200,6 +206,7 @@ function App() {
           <Route index element={<AdminHome />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="teachers" element={<TeacherManagement />} />
+          <Route path="teachers/:teacherId/review" element={<TeacherReview />} />
           <Route path="teacher-tiers" element={<TeacherTiers />} />
           <Route path="teacher-payouts" element={<TeacherPayouts />} />
           <Route path="sessions" element={<Sessions />} />
@@ -208,6 +215,9 @@ function App() {
           <Route path="recordings" element={<Recordings />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="insights-generator" element={<InsightsGenerator />} />
+          <Route path="group-session-creator" element={<GroupSessionCreator />} />
+          <Route path="insight-templates" element={<InsightTemplateManager />} />
+          <Route path="promo-codes" element={<PromoCodeManager />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
         <Route
@@ -542,8 +552,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

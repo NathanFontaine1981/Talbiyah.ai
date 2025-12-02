@@ -174,11 +174,18 @@ export default function TeacherHub() {
       iconColor: 'text-purple-400'
     },
     {
+      icon: DollarSign,
+      label: 'My Earnings',
+      path: '/teacher/earnings',
+      iconBg: 'bg-emerald-500/20',
+      iconColor: 'text-emerald-400'
+    },
+    {
       icon: ClipboardCheck,
       label: 'Homework Review',
       path: '/teacher/homework-review',
-      iconBg: 'bg-emerald-500/20',
-      iconColor: 'text-emerald-400'
+      iconBg: 'bg-teal-500/20',
+      iconColor: 'text-teal-400'
     },
     {
       icon: Clock,

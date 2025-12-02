@@ -241,12 +241,96 @@ export default function TeacherPayouts() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
+      requested: 'bg-purple-500/20 text-purple-400 border border-purple-500/50',
       pending: 'bg-amber-500/20 text-amber-400 border border-amber-500/50',
       processing: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50',
       completed: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50',
       failed: 'bg-red-500/20 text-red-400 border border-red-500/50',
     };
     return colors[status] || 'bg-slate-700 text-slate-300';
+  };
+
+  const processPayoutRequest = async (payout: TeacherPayout, action: 'approve' | 'reject') => {
+    if (!confirm(`Are you sure you want to ${action} this payout request for ${formatCurrency(payout.total_amount)}?`)) {
+      return;
+    }
+
+    try {
+      if (action === 'approve') {
+        // Mark earnings as paid
+        const { data: earningsToUpdate, error: fetchError } = await supabase
+          .from('teacher_earnings')
+          .select('id')
+          .eq('payout_id', payout.id);
+
+        if (fetchError) throw fetchError;
+
+        if (earningsToUpdate && earningsToUpdate.length > 0) {
+          const { error: updateError } = await supabase
+            .from('teacher_earnings')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+            })
+            .in('id', earningsToUpdate.map(e => e.id));
+
+          if (updateError) throw updateError;
+        }
+
+        // Mark payout as completed
+        const { error: payoutError } = await supabase
+          .from('teacher_payouts')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            notes: `Approved by admin on ${new Date().toLocaleDateString()}`
+          })
+          .eq('id', payout.id);
+
+        if (payoutError) throw payoutError;
+
+        alert('Payout approved and marked as completed!');
+      } else {
+        // Reject - revert earnings back to cleared status
+        const { data: earningsToRevert, error: fetchError } = await supabase
+          .from('teacher_earnings')
+          .select('id')
+          .eq('payout_id', payout.id);
+
+        if (fetchError) throw fetchError;
+
+        if (earningsToRevert && earningsToRevert.length > 0) {
+          const { error: updateError } = await supabase
+            .from('teacher_earnings')
+            .update({
+              status: 'cleared',
+              payout_id: null,
+            })
+            .in('id', earningsToRevert.map(e => e.id));
+
+          if (updateError) throw updateError;
+        }
+
+        // Mark payout as failed
+        const { error: payoutError } = await supabase
+          .from('teacher_payouts')
+          .update({
+            status: 'failed',
+            failed_at: new Date().toISOString(),
+            failure_reason: 'Rejected by admin'
+          })
+          .eq('id', payout.id);
+
+        if (payoutError) throw payoutError;
+
+        alert('Payout request rejected. Earnings returned to cleared status.');
+      }
+
+      loadPayoutsData();
+    } catch (error) {
+      console.error('Error processing payout request:', error);
+      alert('Error processing payout request. Check console for details.');
+    }
   };
 
   const filteredTeachers = teachers.filter(teacher => {
@@ -528,6 +612,21 @@ export default function TeacherPayouts() {
           </div>
         </div>
 
+        {/* Pending Requests Alert */}
+        {recentPayouts.filter(p => p.status === 'requested').length > 0 && (
+          <div className="mb-6 p-4 bg-purple-500/20 border border-purple-500/50 rounded-lg flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-purple-400" />
+            <div>
+              <p className="font-medium text-white">
+                {recentPayouts.filter(p => p.status === 'requested').length} pending payout request(s)
+              </p>
+              <p className="text-sm text-purple-300">
+                Teachers have requested payouts - please review and process them below.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Recent Payouts */}
         <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-700">
@@ -555,12 +654,15 @@ export default function TeacherPayouts() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-slate-800 divide-y divide-slate-700">
                 {recentPayouts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <Send className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400">No payouts processed yet</p>
                     </td>
@@ -596,6 +698,28 @@ export default function TeacherPayouts() {
                           {payout.status === 'failed' && <XCircle className="w-3 h-3 inline mr-1" />}
                           {payout.status.charAt(0).toUpperCase() + payout.status.slice(1)}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {payout.status === 'requested' ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => processPayoutRequest(payout, 'approve')}
+                              className="px-3 py-1 text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => processPayoutRequest(payout, 'reject')}
+                              className="px-3 py-1 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-sm">-</span>
+                        )}
                       </td>
                     </tr>
                   ))

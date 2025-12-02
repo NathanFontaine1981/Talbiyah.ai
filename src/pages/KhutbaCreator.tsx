@@ -374,86 +374,99 @@ export default function KhutbaCreator() {
 
         {/* Input Form */}
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-8 mb-8">
-          {/* Topic Input */}
-          <div className="mb-6">
-            <label className="block text-white font-medium mb-2">Khutbah Topic</label>
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., The Importance of Prayer, Patience in Difficult Times..."
-              disabled={loading}
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50"
-            />
-          </div>
-
-          {/* Topic Suggestions */}
+          {/* Step 1: Duration & Audience - FIRST */}
           <div className="mb-8">
-            <p className="text-sm text-slate-400 mb-3">Suggested Topics:</p>
-            <div className="space-y-4">
-              {Object.entries(TOPIC_CATEGORIES).map(([key, category]) => (
-                <div key={key}>
-                  <p className="text-xs text-cyan-400 font-medium mb-2">{category.label}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {category.topics.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => {
-                          setTopic(suggestion);
-                          generateKhutba(suggestion);
-                        }}
-                        disabled={loading}
-                        className="px-3 py-1.5 bg-slate-700/50 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 rounded-full text-sm transition border border-slate-600/50 hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white text-sm font-bold">1</span>
+              <h3 className="text-lg font-semibold text-white">Choose Duration & Audience</h3>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Duration */}
+              <div>
+                <label className="block text-white font-medium mb-2 flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-cyan-400" />
+                  Duration
+                </label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value as 'short' | 'medium' | 'long')}
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50"
+                >
+                  {DURATION_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} - {opt.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Audience */}
+              <div>
+                <label className="block text-white font-medium mb-2 flex items-center">
+                  <Users className="w-4 h-4 mr-2 text-cyan-400" />
+                  Audience
+                </label>
+                <select
+                  value={audience}
+                  onChange={(e) => setAudience(e.target.value)}
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50"
+                >
+                  {AUDIENCE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} - {opt.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Options Row */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {/* Duration */}
-            <div>
-              <label className="block text-white font-medium mb-2 flex items-center">
-                <Clock className="w-4 h-4 mr-2 text-cyan-400" />
-                Duration
-              </label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(e.target.value as 'short' | 'medium' | 'long')}
-                disabled={loading}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50"
-              >
-                {DURATION_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label} - {opt.description}
-                  </option>
-                ))}
-              </select>
+          {/* Step 2: Topic Selection */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white text-sm font-bold">2</span>
+              <h3 className="text-lg font-semibold text-white">Select or Enter Topic</h3>
             </div>
 
-            {/* Audience */}
-            <div>
-              <label className="block text-white font-medium mb-2 flex items-center">
-                <Users className="w-4 h-4 mr-2 text-cyan-400" />
-                Audience
-              </label>
-              <select
-                value={audience}
-                onChange={(e) => setAudience(e.target.value)}
+            {/* Topic Input */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., The Importance of Prayer, Patience in Difficult Times..."
                 disabled={loading}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50"
-              >
-                {AUDIENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label} - {opt.description}
-                  </option>
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50"
+              />
+            </div>
+
+            {/* Topic Suggestions */}
+            <div className="mb-4">
+              <p className="text-sm text-slate-400 mb-3">Or choose from suggested topics (will generate immediately):</p>
+              <div className="space-y-4">
+                {Object.entries(TOPIC_CATEGORIES).map(([key, category]) => (
+                  <div key={key}>
+                    <p className="text-xs text-cyan-400 font-medium mb-2">{category.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {category.topics.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => {
+                            setTopic(suggestion);
+                            generateKhutba(suggestion);
+                          }}
+                          disabled={loading}
+                          className="px-3 py-1.5 bg-slate-700/50 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 rounded-full text-sm transition border border-slate-600/50 hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
 

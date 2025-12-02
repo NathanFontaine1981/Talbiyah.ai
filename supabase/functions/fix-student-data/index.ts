@@ -17,20 +17,38 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get parent_id and learner_name from request body
+    const { parent_id, learner_name } = await req.json().catch(() => ({}));
+
+    if (!parent_id) {
+      return new Response(
+        JSON.stringify({ error: "parent_id is required in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify parent exists
+    const { data: parentProfile, error: parentError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('id', parent_id)
+      .maybeSingle();
+
+    if (parentError || !parentProfile) {
+      return new Response(
+        JSON.stringify({ error: "Parent profile not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const name = learner_name || parentProfile.full_name;
+
     // Get all relationships with their student_ids
     const { data: relationships, error: relError } = await supabase
       .from('student_teacher_relationships')
       .select('id, student_id, teacher_id');
 
     if (relError) throw relError;
-
-    // Get student profiles
-    const { data: studentProfiles, error: profError } = await supabase
-      .from('profiles')
-      .select('id, full_name, roles')
-      .contains('roles', ['student']);
-
-    if (profError) throw profError;
 
     // For each relationship, create a learner if one doesn't exist
     const results = [];
@@ -44,28 +62,21 @@ serve(async (req) => {
         .maybeSingle();
 
       if (!existingLearner) {
-        // Find a student profile to use (Nathan Fontaine in this case)
-        const nathan = studentProfiles?.find(p => p.full_name === 'Nathan Fontaine');
+        // Create learner with the relationship's student_id
+        const { data: newLearner, error: createError } = await supabase
+          .from('learners')
+          .insert({
+            id: rel.student_id,
+            parent_id: parent_id,
+            name: name,
+          })
+          .select()
+          .single();
 
-        if (nathan) {
-          // Create learner with the relationship's student_id but with Nathan's parent_id and name
-          const { data: newLearner, error: createError } = await supabase
-            .from('learners')
-            .insert({
-              id: rel.student_id,  // Use the existing student_id from relationship
-              parent_id: nathan.id,
-              name: nathan.full_name,
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            results.push({ relationship_id: rel.id, error: createError.message });
-          } else {
-            results.push({ relationship_id: rel.id, learner_created: newLearner });
-          }
+        if (createError) {
+          results.push({ relationship_id: rel.id, error: createError.message });
         } else {
-          results.push({ relationship_id: rel.id, error: 'No student profile found' });
+          results.push({ relationship_id: rel.id, learner_created: newLearner });
         }
       } else {
         results.push({ relationship_id: rel.id, learner_exists: existingLearner });
@@ -75,8 +86,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        parent_used: parentProfile,
         relationships_count: relationships?.length,
-        student_profiles: studentProfiles,
         results
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

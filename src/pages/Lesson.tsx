@@ -130,15 +130,6 @@ export default function Lesson() {
         ? lessonData.teacher_room_code
         : lessonData.student_room_code;
 
-      console.log('🔍 Lesson Debug:', {
-        lessonId: lessonData.id,
-        isTeacher,
-        teacher_room_code: lessonData.teacher_room_code,
-        student_room_code: lessonData.student_room_code,
-        selectedRoomCode: roomCode,
-        '100ms_room_id': lessonData['100ms_room_id']
-      });
-
       if (!roomCode) {
         console.error('❌ Missing room code:', {
           isTeacher,
@@ -279,13 +270,8 @@ export default function Lesson() {
             }
           );
 
-          if (response.ok) {
-            console.log('✅ 100ms room ended successfully');
-          } else {
-            console.warn('⚠️ Could not end 100ms room, but continuing...');
-          }
+          // Room ended successfully
         } catch (hmsError) {
-          console.warn('⚠️ Error ending 100ms room:', hmsError);
           // Continue anyway - we still want to mark lesson as completed
         }
       }
@@ -297,8 +283,6 @@ export default function Lesson() {
           status: 'completed'
         })
         .eq('id', lesson.id);
-
-      console.log('✅ Session ended by teacher');
 
       // Navigate back to dashboard
       navigate('/dashboard');

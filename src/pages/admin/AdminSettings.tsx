@@ -127,7 +127,7 @@ export default function AdminSettings() {
         setOriginalSettings(data);
       }
     } catch (error) {
-      console.log('Using default settings');
+      // Platform settings table may not exist, using defaults
     } finally {
       setLoading(false);
     }

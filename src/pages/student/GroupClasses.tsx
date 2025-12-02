@@ -8,6 +8,7 @@ import {
   Star,
   CheckCircle,
   ArrowRight,
+  ArrowLeft,
   Filter,
   Search,
   User,
@@ -350,6 +351,13 @@ export default function GroupClasses() {
 
         {/* Header */}
         <div className="mb-8">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Dashboard</span>
+          </button>
           <h1 className="text-3xl font-bold text-white mb-2">Group Classes</h1>
           <p className="text-slate-400">
             Join group learning sessions with other students. Learn together, grow together.

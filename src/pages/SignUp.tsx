@@ -110,7 +110,6 @@ export default function SignUp() {
       if (error) throw error;
 
       if (data.user) {
-        console.log('User created successfully:', data.user.id);
 
         // Generate unique referral code for new user
         const name = authForm.fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 10) || 'user';
@@ -135,8 +134,6 @@ export default function SignUp() {
 
         if (profileError) {
           console.error('Profile creation failed:', profileError);
-        } else {
-          console.log('Profile created for user:', data.user.id);
         }
 
         // Handle referral tracking if user signed up with a referral code
@@ -160,8 +157,6 @@ export default function SignUp() {
                   status: 'pending'
                 });
 
-              console.log('Referral tracked successfully');
-
               // Send email notification to referrer
               try {
                 const { data: supabaseData } = await supabase.auth.getSession();
@@ -177,8 +172,7 @@ export default function SignUp() {
                     referral_code: referralCode.trim()
                   })
                 });
-                console.log('Referral notification sent');
-              } catch (emailError) {
+                } catch (emailError) {
                 console.error('Error sending referral notification:', emailError);
                 // Don't block signup if email fails
               }
