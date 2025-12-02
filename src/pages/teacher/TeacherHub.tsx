@@ -88,6 +88,24 @@ export default function TeacherHub() {
         .eq('teacher_id', teacherProfile.id)
         .single();
 
+      // Get tiers to calculate hours_to_next_tier if not provided by view
+      const { data: tiersData } = await supabase
+        .from('teacher_tiers')
+        .select('tier, tier_name, min_hours_taught, requires_manual_approval')
+        .order('tier_level');
+
+      // Calculate hours_to_next_tier if the view doesn't provide it
+      if (tierStats && tiersData) {
+        const hoursTaught = tierStats.hours_taught || 0;
+        const autoTiers = tiersData.filter(t => !t.requires_manual_approval);
+        const nextTier = autoTiers.find(t => t.min_hours_taught > hoursTaught);
+
+        if (nextTier) {
+          tierStats.next_auto_tier = nextTier.tier;
+          tierStats.hours_to_next_tier = Math.max(0, nextTier.min_hours_taught - hoursTaught);
+        }
+      }
+
       setStats(tierStats);
 
       // Get earnings summary (optional - table may not exist yet)

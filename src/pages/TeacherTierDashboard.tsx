@@ -139,6 +139,21 @@ export default function TeacherTierDashboard() {
         .eq('teacher_id', teacherProfile.id)
         .single();
 
+      // The view may return NULL for next_auto_tier and hours_to_next_tier
+      // Calculate them from the tiers data if needed
+      if (statsData && tiersData) {
+        const hoursTaught = statsData.hours_taught || 0;
+
+        // Find next auto-promotable tier
+        const autoTiers = tiersData.filter(t => !t.requires_manual_approval);
+        const nextTier = autoTiers.find(t => t.min_hours_taught > hoursTaught);
+
+        if (nextTier) {
+          statsData.next_auto_tier = nextTier.tier;
+          statsData.hours_to_next_tier = Math.max(0, nextTier.min_hours_taught - hoursTaught);
+        }
+      }
+
       setStats(statsData);
 
       // Get tier history
