@@ -1,95 +1,118 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { initSentry } from './sentryConfig';
 import ErrorBoundary from './components/ErrorBoundary';
-import Home from './pages/Home';
-import SignUp from './pages/SignUp';
 
 // Initialize Sentry error tracking
 initSentry();
-import ChooseCourse from './pages/ChooseCourse';
-import SubjectSelection from './pages/SubjectSelection';
-import CourseQuranExplanation from './pages/CourseQuranExplanation';
-import CourseArabic from './pages/CourseArabic';
-import Checkout from './pages/Checkout';
-import Cart from './pages/Cart';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminHome from './pages/admin/AdminHome';
-import TeacherManagement from './pages/admin/TeacherManagement';
-import TeacherReview from './pages/admin/TeacherReview';
-import TeacherTiers from './pages/admin/TeacherTiers';
-import UserManagement from './pages/admin/UserManagement';
-import Sessions from './pages/admin/Sessions';
-import GroupSessions from './pages/admin/GroupSessions';
-import CoursesManagement from './pages/admin/CoursesManagement';
-import Recordings from './pages/admin/Recordings';
-import Analytics from './pages/admin/Analytics';
-import InsightsGenerator from './pages/admin/InsightsGenerator';
-import GroupSessionCreator from './pages/admin/GroupSessionCreator';
-import InsightTemplateManager from './pages/admin/InsightTemplateManager';
-import PromoCodeManager from './pages/admin/PromoCodeManager';
-import AdminSettings from './pages/admin/AdminSettings';
-import ApplyToTeach from './pages/ApplyToTeach';
-import AccountSettings from './pages/AccountSettings';
-import Dashboard from './pages/Dashboard';
-import Teachers from './pages/Teachers';
-import TeacherProfile from './pages/TeacherProfile';
-import Matchmaking from './pages/Matchmaking';
-import Welcome from './pages/Welcome';
-import BookSession from './pages/BookSession';
-import PaymentSuccess from './pages/PaymentSuccess';
-import BookingSuccess from './pages/BookingSuccess';
-import BuyCredits from './pages/BuyCredits';
-import CreditPurchaseSuccess from './pages/CreditPurchaseSuccess';
-import BookingOptions from './pages/BookingOptions';
-import QuranProgress from './pages/QuranProgress';
-import ArabicProgress from './pages/ArabicProgress';
-import CoursesOverview from './pages/CoursesOverview';
-import RecordingsHistory from './pages/RecordingsHistory';
-import TeacherProfileSetup from './pages/TeacherProfileSetup';
-import TeacherPendingApproval from './pages/TeacherPendingApproval';
-import TeacherAvailability from './pages/TeacherAvailability';
-import TeacherEditProfile from './pages/teacher/EditProfile';
-import TeacherHub from './pages/teacher/TeacherHub';
-import MyStudents from './pages/teacher/MyStudents';
-import HomeworkReview from './pages/teacher/HomeworkReview';
-import MySchedule from './pages/teacher/MySchedule';
-import IslamicSourceReferenceAbout from './pages/IslamicSourceReferenceAbout';
-import IslamicSourceReference from './pages/IslamicSourceReference';
-import KhutbaCreator from './pages/KhutbaCreator';
-import KhutbaReflections from './pages/KhutbaReflections';
-import InsightsLibrary from './pages/InsightsLibrary';
-import ProtectedRoute from './components/ProtectedRoute';
-import MyChildren from './pages/MyChildren';
-import ChildDashboardView from './pages/ChildDashboardView';
-import ParentOnboarding from './pages/parent/ParentOnboarding';
-import TeacherBooking from './pages/TeacherBooking';
-import ManageTeachers from './pages/student/ManageTeachers';
-import MyTeachers from './pages/student/MyTeachers';
-import GroupClasses from './pages/student/GroupClasses';
-import Lesson from './pages/Lesson';
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+    <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
+
+// Core pages - loaded immediately
+import Home from './pages/Home';
+import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
-import MyReferrals from './pages/MyReferrals';
-import Messages from './pages/Messages';
 import AuthCallback from './pages/AuthCallback';
-import LessonInsights from './pages/student/LessonInsights';
-import RecordingWithInsights from './pages/student/RecordingWithInsights';
-import ReferralDashboard from './pages/ReferralDashboard';
-import ReferralLeaderboard from './pages/ReferralLeaderboard';
-import TeacherTierDashboard from './pages/TeacherTierDashboard';
-import TeacherTierInfo from './pages/TeacherTierInfo';
-import RescheduleLesson from './pages/RescheduleLesson';
-import MyClasses from './pages/MyClasses';
-import TeacherEarnings from './pages/TeacherEarnings';
-import TeacherPayouts from './pages/admin/TeacherPayouts';
-import TeacherPaymentSettings from './pages/TeacherPaymentSettings';
-import MissedLessons from './pages/MissedLessons';
-import TierDiagnostic from './pages/TierDiagnostic';
-import Onboarding from './pages/Onboarding';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy loaded pages - heavy components loaded on demand
+const ChooseCourse = lazy(() => import('./pages/ChooseCourse'));
+const SubjectSelection = lazy(() => import('./pages/SubjectSelection'));
+const CourseQuranExplanation = lazy(() => import('./pages/CourseQuranExplanation'));
+const CourseArabic = lazy(() => import('./pages/CourseArabic'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Teachers = lazy(() => import('./pages/Teachers'));
+const TeacherProfile = lazy(() => import('./pages/TeacherProfile'));
+const Matchmaking = lazy(() => import('./pages/Matchmaking'));
+const Welcome = lazy(() => import('./pages/Welcome'));
+const BookSession = lazy(() => import('./pages/BookSession'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
+const BuyCredits = lazy(() => import('./pages/BuyCredits'));
+const CreditPurchaseSuccess = lazy(() => import('./pages/CreditPurchaseSuccess'));
+const BookingOptions = lazy(() => import('./pages/BookingOptions'));
+const QuranProgress = lazy(() => import('./pages/QuranProgress'));
+const ArabicProgress = lazy(() => import('./pages/ArabicProgress'));
+const CoursesOverview = lazy(() => import('./pages/CoursesOverview'));
+const RecordingsHistory = lazy(() => import('./pages/RecordingsHistory'));
+const ApplyToTeach = lazy(() => import('./pages/ApplyToTeach'));
+const AccountSettings = lazy(() => import('./pages/AccountSettings'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const MyChildren = lazy(() => import('./pages/MyChildren'));
+const ChildDashboardView = lazy(() => import('./pages/ChildDashboardView'));
+const TeacherBooking = lazy(() => import('./pages/TeacherBooking'));
+const MyReferrals = lazy(() => import('./pages/MyReferrals'));
+const Messages = lazy(() => import('./pages/Messages'));
+const ReferralDashboard = lazy(() => import('./pages/ReferralDashboard'));
+const ReferralLeaderboard = lazy(() => import('./pages/ReferralLeaderboard'));
+const RescheduleLesson = lazy(() => import('./pages/RescheduleLesson'));
+const MyClasses = lazy(() => import('./pages/MyClasses'));
+const MissedLessons = lazy(() => import('./pages/MissedLessons'));
+const TierDiagnostic = lazy(() => import('./pages/TierDiagnostic'));
+const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceReferenceAbout'));
+const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference'));
+const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
+const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
+const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
+
+// Lesson page - contains heavy HMS SDK (4MB+)
+const Lesson = lazy(() => import('./pages/Lesson'));
+
+// Student pages
+const ManageTeachers = lazy(() => import('./pages/student/ManageTeachers'));
+const MyTeachers = lazy(() => import('./pages/student/MyTeachers'));
+const GroupClasses = lazy(() => import('./pages/student/GroupClasses'));
+const LessonInsights = lazy(() => import('./pages/student/LessonInsights'));
+const RecordingWithInsights = lazy(() => import('./pages/student/RecordingWithInsights'));
+
+// Parent pages
+const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
+
+// Teacher pages - only loaded for teachers
+const TeacherProfileSetup = lazy(() => import('./pages/TeacherProfileSetup'));
+const TeacherPendingApproval = lazy(() => import('./pages/TeacherPendingApproval'));
+const TeacherAvailability = lazy(() => import('./pages/TeacherAvailability'));
+const TeacherEditProfile = lazy(() => import('./pages/teacher/EditProfile'));
+const TeacherHub = lazy(() => import('./pages/teacher/TeacherHub'));
+const MyStudents = lazy(() => import('./pages/teacher/MyStudents'));
+const HomeworkReview = lazy(() => import('./pages/teacher/HomeworkReview'));
+const MySchedule = lazy(() => import('./pages/teacher/MySchedule'));
+const TeacherTierDashboard = lazy(() => import('./pages/TeacherTierDashboard'));
+const TeacherTierInfo = lazy(() => import('./pages/TeacherTierInfo'));
+const TeacherEarnings = lazy(() => import('./pages/TeacherEarnings'));
+const TeacherPaymentSettings = lazy(() => import('./pages/TeacherPaymentSettings'));
+
+// Admin pages - only loaded for admins
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
+const TeacherManagement = lazy(() => import('./pages/admin/TeacherManagement'));
+const TeacherReview = lazy(() => import('./pages/admin/TeacherReview'));
+const TeacherTiers = lazy(() => import('./pages/admin/TeacherTiers'));
+const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
+const Sessions = lazy(() => import('./pages/admin/Sessions'));
+const GroupSessions = lazy(() => import('./pages/admin/GroupSessions'));
+const CoursesManagement = lazy(() => import('./pages/admin/CoursesManagement'));
+const Recordings = lazy(() => import('./pages/admin/Recordings'));
+const Analytics = lazy(() => import('./pages/admin/Analytics'));
+const InsightsGenerator = lazy(() => import('./pages/admin/InsightsGenerator'));
+const GroupSessionCreator = lazy(() => import('./pages/admin/GroupSessionCreator'));
+const InsightTemplateManager = lazy(() => import('./pages/admin/InsightTemplateManager'));
+const PromoCodeManager = lazy(() => import('./pages/admin/PromoCodeManager'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const TeacherPayouts = lazy(() => import('./pages/admin/TeacherPayouts'));
 
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<SignUp />} />
@@ -553,6 +576,7 @@ function App() {
           }
         />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </ErrorBoundary>
   );

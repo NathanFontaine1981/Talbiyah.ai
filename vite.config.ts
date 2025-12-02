@@ -14,49 +14,27 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // HMS Video SDK - large dependency, split it out
+          // HMS Video SDK - large dependency, keep separate
           'hms-video': ['@100mslive/react-sdk', '@100mslive/hms-virtual-background'],
 
           // React core and routing
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
 
-          // Supabase
+          // Supabase client
           'supabase': ['@supabase/supabase-js'],
 
-          // Admin pages - only loaded when admin logs in
-          'admin-pages': [
-            './src/pages/AdminDashboard',
-            './src/pages/admin/AdminHome',
-            './src/pages/admin/TeacherManagement',
-            './src/pages/admin/UserManagement',
-            './src/pages/admin/TeacherPayouts',
-            './src/pages/admin/Sessions',
-            './src/pages/admin/GroupSessions',
-            './src/pages/admin/CoursesManagement',
-            './src/pages/admin/Recordings',
-            './src/pages/admin/Analytics',
-            './src/pages/admin/TeacherTiers',
-          ],
+          // UI libraries
+          'ui-libs': ['lucide-react'],
 
-          // Teacher pages - only loaded for teachers
-          'teacher-pages': [
-            './src/pages/teacher/TeacherHub',
-            './src/pages/teacher/MyStudents',
-            './src/pages/teacher/EditProfile',
-            './src/pages/TeacherAvailability',
-            './src/pages/TeacherEarnings',
-            './src/pages/TeacherPaymentSettings',
-            './src/pages/TeacherTierDashboard',
-          ],
+          // Date/time utilities
+          'date-utils': ['date-fns'],
 
-          // Lesson/video components - only loaded during lessons
-          'lesson-components': [
-            './src/pages/Lesson',
-          ],
+          // PDF generation
+          'pdf-libs': ['jspdf', 'html2canvas'],
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
   },
   server: {
     port: 5174,
