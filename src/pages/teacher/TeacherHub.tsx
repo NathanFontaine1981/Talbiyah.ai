@@ -29,6 +29,7 @@ interface TeacherStats {
   average_rating: number;
   total_students: number;
   next_auto_tier: string | null;
+  hours_to_next_tier: number | null;
 }
 
 interface EarningsSummary {
@@ -478,13 +479,36 @@ export default function TeacherHub() {
                 <span className="text-slate-300">Current Tier</span>
                 <span className="font-semibold text-cyan-400">{stats?.tier_name}</span>
               </div>
-              {stats?.next_auto_tier && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Next Tier</span>
-                  <span className="font-semibold text-blue-400">
-                    {stats.next_auto_tier}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Hours Taught</span>
+                <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
+              </div>
+              {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300">Next Tier</span>
+                    <span className="font-semibold text-blue-400 capitalize">
+                      {stats.next_auto_tier}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300">Hours to Promotion</span>
+                    <span className="font-semibold text-amber-400">
+                      {stats.hours_to_next_tier.toFixed(1)}h remaining
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, ((stats.hours_taught || 0) / ((stats.hours_taught || 0) + stats.hours_to_next_tier)) * 100)}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </div>
             <button
