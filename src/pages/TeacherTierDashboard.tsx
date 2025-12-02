@@ -29,6 +29,8 @@ interface TierInfo {
   margin_percentage: number;
   min_hours_taught: number;
   min_rating: number;
+  min_retention_rate: number;
+  min_students_for_retention: number;
   requires_manual_approval: boolean;
   qualifications_required: string[];
   benefits: any;
@@ -46,6 +48,9 @@ interface TeacherStats {
   platform_margin: number;
   hours_taught: number;
   average_rating: number;
+  retention_rate: number;
+  returning_students: number;
+  total_unique_students: number;
   total_lessons: number;
   completed_lessons: number;
   tier_assigned_at: string;
@@ -119,10 +124,10 @@ export default function TeacherTierDashboard() {
         return;
       }
 
-      // First, get the teacher profile to get the teacher_id
+      // First, get the teacher profile to get the teacher_id and retention data
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, retention_rate, returning_students, total_unique_students')
         .eq('user_id', user.id)
         .eq('status', 'approved')
         .single();
@@ -141,8 +146,14 @@ export default function TeacherTierDashboard() {
 
       // The view may return NULL for next_auto_tier and hours_to_next_tier
       // Calculate them from the tiers data if needed
+      // Also add retention data from teacher_profiles
       if (statsData && tiersData) {
         const hoursTaught = statsData.hours_taught || 0;
+
+        // Add retention data from teacher_profiles
+        statsData.retention_rate = teacherProfile.retention_rate || 0;
+        statsData.returning_students = teacherProfile.returning_students || 0;
+        statsData.total_unique_students = teacherProfile.total_unique_students || 0;
 
         // Find next auto-promotable tier
         const autoTiers = tiersData.filter(t => !t.requires_manual_approval);
@@ -240,14 +251,22 @@ export default function TeacherTierDashboard() {
     if (!nextTier) return null;
 
     const hoursProgress = Math.min(100, (stats.hours_taught / nextTier.min_hours_taught) * 100);
-    const ratingProgress = Math.min(100, (stats.average_rating / nextTier.min_rating) * 100);
+
+    // Calculate retention progress - only counts if teacher has enough students
+    const hasEnoughStudents = stats.total_unique_students >= (nextTier.min_students_for_retention || 5);
+    const currentRetention = hasEnoughStudents ? (stats.retention_rate || 0) : 0;
+    const retentionProgress = hasEnoughStudents
+      ? Math.min(100, (currentRetention / nextTier.min_retention_rate) * 100)
+      : 0;
 
     return {
       nextTier,
       hoursProgress,
-      ratingProgress,
+      retentionProgress,
       hoursNeeded: Math.max(0, nextTier.min_hours_taught - stats.hours_taught),
-      ratingNeeded: Math.max(0, nextTier.min_rating - stats.average_rating),
+      retentionNeeded: Math.max(0, nextTier.min_retention_rate - currentRetention),
+      hasEnoughStudents,
+      studentsNeeded: Math.max(0, (nextTier.min_students_for_retention || 5) - stats.total_unique_students),
     };
   }
 
@@ -360,18 +379,21 @@ export default function TeacherTierDashboard() {
           </Tooltip>
 
           <Tooltip
-            id="average-rating"
-            text="Your average rating from students. Higher ratings unlock advanced tiers."
+            id="retention-rate"
+            text="Percentage of students who return for 2+ lessons. Higher retention unlocks advanced tiers. Requires 5+ unique students to count."
           >
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-amber-500/50 transition">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-emerald-500/50 transition">
               <div className="flex items-center justify-between mb-2">
-                <Star className="w-6 h-6 text-amber-400" />
+                <TrendingUp className="w-6 h-6 text-emerald-400" />
                 <Info className="w-4 h-4 text-slate-600" />
               </div>
               <p className="text-3xl font-bold text-white mb-1">
-                {stats.average_rating.toFixed(1)} ★
+                {stats.total_unique_students >= 5 ? `${stats.retention_rate.toFixed(0)}%` : 'N/A'}
               </p>
-              <p className="text-sm text-slate-400">Average Rating</p>
+              <p className="text-sm text-slate-400">Student Retention</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {stats.returning_students} of {stats.total_unique_students} students return
+              </p>
             </div>
           </Tooltip>
 
@@ -425,29 +447,37 @@ export default function TeacherTierDashboard() {
                 )}
               </div>
 
-              {/* Rating Progress */}
+              {/* Retention Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-300">Average Rating</span>
+                  <span className="text-sm text-slate-300">Student Retention</span>
                   <span className="text-sm font-semibold text-white">
-                    {stats.average_rating.toFixed(1)} / {progress.nextTier.min_rating} ★
+                    {progress.hasEnoughStudents
+                      ? `${stats.retention_rate.toFixed(0)}% / ${progress.nextTier.min_retention_rate}%`
+                      : `Need ${progress.studentsNeeded} more students`}
                   </span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-3 mb-2">
                   <div
-                    className="bg-gradient-to-r from-amber-500 to-orange-600 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${progress.ratingProgress}%` }}
+                    className="bg-gradient-to-r from-emerald-500 to-green-600 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${progress.retentionProgress}%` }}
                   ></div>
                 </div>
-                {progress.ratingNeeded > 0 && (
-                  <p className="text-xs text-slate-400">
-                    {progress.ratingNeeded.toFixed(1)} more stars needed
+                {progress.hasEnoughStudents ? (
+                  progress.retentionNeeded > 0 && (
+                    <p className="text-xs text-slate-400">
+                      {progress.retentionNeeded.toFixed(0)}% more retention needed
+                    </p>
+                  )
+                ) : (
+                  <p className="text-xs text-amber-400">
+                    Teach {progress.studentsNeeded} more unique students to unlock retention tracking
                   </p>
                 )}
               </div>
             </div>
 
-            {progress.hoursNeeded <= 0 && progress.ratingNeeded <= 0 && (
+            {progress.hoursNeeded <= 0 && progress.hasEnoughStudents && progress.retentionNeeded <= 0 && (
               <div className="mt-4 flex items-center space-x-2 text-emerald-400">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-semibold">
@@ -520,10 +550,14 @@ export default function TeacherTierDashboard() {
                             <Clock className="w-3 h-3 text-cyan-400" />
                             <span className="text-slate-300">{tier.min_hours_taught}+ hours taught</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-xs">
-                            <Star className="w-3 h-3 text-amber-400" />
-                            <span className="text-slate-300">{tier.min_rating}+ rating</span>
-                          </div>
+                          {tier.min_retention_rate > 0 && (
+                            <div className="flex items-center space-x-2 text-xs">
+                              <TrendingUp className="w-3 h-3 text-emerald-400" />
+                              <span className="text-slate-300">
+                                {tier.min_retention_rate}% retention ({tier.min_students_for_retention}+ students)
+                              </span>
+                            </div>
+                          )}
                         </>
                       )}
                       {tier.qualifications_required.slice(0, 2).map((qual, idx) => (

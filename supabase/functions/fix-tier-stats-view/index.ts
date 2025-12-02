@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to get tiers: ${tiersError.message}`);
     }
 
-    // Get teacher profiles with hours
+    // Get teacher profiles with hours and retention
     const { data: teachers, error: teachersError } = await supabase
       .from('teacher_profiles')
       .select(`
@@ -40,6 +40,9 @@ Deno.serve(async (req: Request) => {
         current_tier,
         hours_taught,
         completed_lessons,
+        retention_rate,
+        returning_students,
+        total_unique_students,
         profiles!inner(full_name)
       `)
       .eq('status', 'approved');
@@ -48,12 +51,19 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to get teachers: ${teachersError.message}`);
     }
 
+    // Get tier retention requirements
+    const { data: tiersWithRetention } = await supabase
+      .from('teacher_tiers')
+      .select('tier, tier_name, min_hours_taught, min_retention_rate, min_students_for_retention, requires_manual_approval')
+      .order('tier_level');
+
     // Calculate next tier and hours needed for each teacher
     const teacherStats = teachers?.map(teacher => {
       const hoursTaught = teacher.hours_taught || 0;
 
       // Find next auto-promotable tier
-      const nextTier = tiers?.find(t => t.min_hours_taught > hoursTaught);
+      const autoTiers = tiersWithRetention?.filter(t => !t.requires_manual_approval) || [];
+      const nextTier = autoTiers.find(t => t.min_hours_taught > hoursTaught);
 
       return {
         teacher_id: teacher.id,
@@ -61,10 +71,15 @@ Deno.serve(async (req: Request) => {
         tier: teacher.current_tier || 'newcomer',
         hours_taught: hoursTaught,
         completed_lessons: teacher.completed_lessons || 0,
+        retention_rate: teacher.retention_rate || 0,
+        returning_students: teacher.returning_students || 0,
+        total_unique_students: teacher.total_unique_students || 0,
         next_auto_tier: nextTier?.tier || null,
         next_tier_name: nextTier?.tier_name || null,
         hours_to_next_tier: nextTier ? Math.max(0, nextTier.min_hours_taught - hoursTaught) : null,
-        min_hours_for_next: nextTier?.min_hours_taught || null
+        min_hours_for_next: nextTier?.min_hours_taught || null,
+        min_retention_for_next: nextTier?.min_retention_rate || null,
+        min_students_for_next: nextTier?.min_students_for_retention || null
       };
     }) || [];
 

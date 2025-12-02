@@ -27,9 +27,14 @@ interface TeacherStats {
   teacher_hourly_rate: number;
   hours_taught: number;
   average_rating: number;
+  retention_rate: number;
+  returning_students: number;
+  total_unique_students: number;
   total_students: number;
   next_auto_tier: string | null;
   hours_to_next_tier: number | null;
+  min_retention_for_next: number | null;
+  min_students_for_next: number | null;
 }
 
 interface EarningsSummary {
@@ -67,10 +72,10 @@ export default function TeacherHub() {
         return;
       }
 
-      // Get teacher profile
+      // Get teacher profile with retention data
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id, status')
+        .select('id, status, retention_rate, returning_students, total_unique_students')
         .eq('user_id', user.id)
         .single();
 
@@ -88,21 +93,28 @@ export default function TeacherHub() {
         .eq('teacher_id', teacherProfile.id)
         .single();
 
-      // Get tiers to calculate hours_to_next_tier if not provided by view
+      // Get tiers to calculate hours_to_next_tier and retention requirements
       const { data: tiersData } = await supabase
         .from('teacher_tiers')
-        .select('tier, tier_name, min_hours_taught, requires_manual_approval')
+        .select('tier, tier_name, min_hours_taught, min_retention_rate, min_students_for_retention, requires_manual_approval')
         .order('tier_level');
 
-      // Calculate hours_to_next_tier if the view doesn't provide it
+      // Calculate hours_to_next_tier and retention requirements
       if (tierStats && tiersData) {
         const hoursTaught = tierStats.hours_taught || 0;
         const autoTiers = tiersData.filter(t => !t.requires_manual_approval);
         const nextTier = autoTiers.find(t => t.min_hours_taught > hoursTaught);
 
+        // Add retention data from teacher_profiles
+        tierStats.retention_rate = teacherProfile.retention_rate || 0;
+        tierStats.returning_students = teacherProfile.returning_students || 0;
+        tierStats.total_unique_students = teacherProfile.total_unique_students || 0;
+
         if (nextTier) {
           tierStats.next_auto_tier = nextTier.tier;
           tierStats.hours_to_next_tier = Math.max(0, nextTier.min_hours_taught - hoursTaught);
+          tierStats.min_retention_for_next = nextTier.min_retention_rate || 0;
+          tierStats.min_students_for_next = nextTier.min_students_for_retention || 5;
         }
       }
 
@@ -501,6 +513,14 @@ export default function TeacherHub() {
                 <span className="text-slate-300">Hours Taught</span>
                 <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Student Retention</span>
+                <span className="font-semibold text-emerald-400">
+                  {(stats?.total_unique_students || 0) >= 5
+                    ? `${(stats?.retention_rate || 0).toFixed(0)}%`
+                    : 'Need 5+ students'}
+                </span>
+              </div>
               {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
                 <>
                   <div className="flex items-center justify-between">
@@ -515,6 +535,14 @@ export default function TeacherHub() {
                       {stats.hours_to_next_tier.toFixed(1)}h remaining
                     </span>
                   </div>
+                  {stats.min_retention_for_next && stats.min_retention_for_next > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-300">Retention Required</span>
+                      <span className="font-semibold text-emerald-400">
+                        {stats.min_retention_for_next}% ({stats.min_students_for_next}+ students)
+                      </span>
+                    </div>
+                  )}
                   {/* Progress bar */}
                   <div className="mt-3">
                     <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
