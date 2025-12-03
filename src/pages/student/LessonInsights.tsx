@@ -1889,7 +1889,7 @@ export default function LessonInsights() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 print:hidden">
-          <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex flex-col gap-3">
               <Breadcrumbs
                 items={[
@@ -1921,9 +1921,9 @@ export default function LessonInsights() {
           </div>
         </header>
 
-        <main id="insights-content" className="max-w-4xl mx-auto px-6 py-8">
+        <main id="insights-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Hero Card */}
-          <div className={`rounded-3xl p-6 md:p-8 mb-8 text-white shadow-xl ${
+          <div className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white shadow-xl ${
             isQuran ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700' : 'bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700'
           }`}>
             <div className="flex flex-col gap-4">
@@ -1978,7 +1978,7 @@ export default function LessonInsights() {
 
           {/* Summary Card */}
           {summarySection && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-gray-900">At a Glance</h2>
@@ -1996,7 +1996,7 @@ export default function LessonInsights() {
 
           {/* Focus Words with Flip Cards */}
           {vocabulary.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-6 mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Book className="w-5 h-5 text-emerald-600" />
@@ -2172,7 +2172,7 @@ export default function LessonInsights() {
 
           {/* Homework Submission Section */}
           {(homeworkTasks.length > 0 || quizQuestions.length > 0) && (
-            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl shadow-sm border border-cyan-200 p-6 mt-8 print:hidden">
+            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl shadow-sm border border-cyan-200 p-4 sm:p-6 mt-6 sm:mt-8 print:hidden">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center">
                   <Send className="w-5 h-5 text-white" />
@@ -2293,7 +2293,7 @@ export default function LessonInsights() {
           )}
 
           {/* Rating Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-8 print:hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-6 sm:mt-8 print:hidden">
             <div className="text-center">
               <h3 className="text-lg font-bold text-gray-900 mb-2">How was this lesson?</h3>
               <p className="text-gray-500 text-sm mb-4">Your feedback helps us improve</p>

@@ -15,6 +15,14 @@ export interface CartItem {
   expires_at: string;
 }
 
+interface ExpiryNotification {
+  id: string;
+  teacherName: string;
+  scheduledTime: string;
+  type: 'expiring_soon' | 'expired';
+  expiresAt: string;
+}
+
 interface CartContextType {
   cartItems: CartItem[];
   cartCount: number;
@@ -22,6 +30,8 @@ interface CartContextType {
   discount: number;
   finalPrice: number;
   loading: boolean;
+  expiryNotifications: ExpiryNotification[];
+  dismissExpiryNotification: (id: string) => void;
   addToCart: (item: Omit<CartItem, 'id' | 'user_id' | 'created_at' | 'expires_at'>) => Promise<void>;
   removeFromCart: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -33,6 +43,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expiryNotifications, setExpiryNotifications] = useState<ExpiryNotification[]>([]);
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
 
   const cartCount = cartItems.length;
 
@@ -41,6 +53,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const discount = Math.floor(cartCount / 10) * 15.00;
 
   const finalPrice = Math.max(0, totalPrice - discount);
+
+  // Check for expiring items and generate notifications
+  function checkExpiringItems(items: CartItem[]) {
+    const now = new Date();
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    const notifications: ExpiryNotification[] = [];
+
+    items.forEach(item => {
+      const expiresAt = new Date(item.expires_at);
+
+      // Check if item expires within 5 minutes
+      if (expiresAt <= fiveMinutesFromNow && expiresAt > now && !dismissedNotifications.has(item.id)) {
+        notifications.push({
+          id: item.id,
+          teacherName: item.teacher_name || 'Unknown Teacher',
+          scheduledTime: item.scheduled_time,
+          type: 'expiring_soon',
+          expiresAt: item.expires_at
+        });
+      }
+    });
+
+    setExpiryNotifications(notifications);
+  }
+
+  function dismissExpiryNotification(id: string) {
+    setDismissedNotifications(prev => new Set([...prev, id]));
+    setExpiryNotifications(prev => prev.filter(n => n.id !== id));
+  }
 
   async function fetchCart() {
     try {
@@ -82,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }));
 
       setCartItems(formattedItems);
+      checkExpiringItems(formattedItems);
     } catch (err) {
       console.error('Error fetching cart:', err);
     } finally {
@@ -179,6 +222,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         discount,
         finalPrice,
         loading,
+        expiryNotifications,
+        dismissExpiryNotification,
         addToCart,
         removeFromCart,
         clearCart,

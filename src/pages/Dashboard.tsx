@@ -33,7 +33,9 @@ import {
   UserCog,
   Baby,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Menu,
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -107,6 +109,7 @@ export default function Dashboard() {
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   const [bookingPaymentMethod, setBookingPaymentMethod] = useState<string | null>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -390,15 +393,27 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       <aside
         className={`${
-          sidebarCollapsed ? 'w-20' : 'w-64'
-        } bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 fixed h-full z-40`}
+          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+        } w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 fixed h-full z-50
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-3 group w-full"
+            onClick={() => {
+              navigate('/');
+              setMobileMenuOpen(false);
+            }}
+            className="flex items-center space-x-3 group flex-1"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
               <BookOpen className="w-6 h-6 text-white" />
@@ -411,6 +426,13 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-400 whitespace-nowrap">Islamic Learning</p>
               </div>
             )}
+          </button>
+          {/* Mobile close button */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -429,7 +451,12 @@ export default function Dashboard() {
                 {section.items.map((item: MenuItem) => (
                   <button
                     key={`${section.title}-${item.path}-${item.label}`}
-                    onClick={() => !item.comingSoon && navigate(item.path)}
+                    onClick={() => {
+                      if (!item.comingSoon) {
+                        navigate(item.path);
+                        setMobileMenuOpen(false);
+                      }
+                    }}
                     disabled={item.comingSoon}
                     className={`w-full px-4 py-2.5 rounded-xl flex items-center space-x-3 transition ${
                       item.active
@@ -471,7 +498,10 @@ export default function Dashboard() {
 
         <div className="p-4 border-t border-slate-800">
           <button
-            onClick={handleSignOut}
+            onClick={() => {
+              handleSignOut();
+              setMobileMenuOpen(false);
+            }}
             className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-slate-300 hover:bg-red-500/10 hover:text-red-400"
             title={sidebarCollapsed ? 'Sign Out' : undefined}
           >
@@ -480,9 +510,10 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* Desktop collapse button - hidden on mobile */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-24 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition shadow-lg"
+          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition shadow-lg"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -492,23 +523,30 @@ export default function Dashboard() {
         </button>
       </aside>
 
-      <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
+      <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ml-0 transition-all duration-300`}>
         <header className="bg-slate-900 border-b border-slate-800 flex-shrink-0">
-          <div className="px-6 lg:px-8 py-4 flex items-center justify-between">
-            <div></div>
+          <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            <div className="hidden lg:block"></div>
 
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 sm:space-x-6">
               <button className="relative p-2 text-slate-400 hover:text-white transition">
-                <Bell className="w-6 h-6" />
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-white">{profile?.full_name || 'Student'}</p>
                   <p className="text-xs text-slate-400">{isParent ? 'Parent' : userRole}</p>
                 </div>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                   isParent ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
                   userRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
                   userRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
@@ -518,14 +556,14 @@ export default function Dashboard() {
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   ) : (
-                    <UserIcon className="w-5 h-5 text-white" />
+                    <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   )}
                 </div>
               </div>
 
               <button
                 onClick={handleSignOut}
-                className="p-2 text-slate-400 hover:text-red-400 transition"
+                className="hidden sm:block p-2 text-slate-400 hover:text-red-400 transition"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -533,7 +571,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-2">

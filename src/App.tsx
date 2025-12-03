@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { initSentry } from './sentryConfig';
 import ErrorBoundary from './components/ErrorBoundary';
+import CartExpiryNotifications from './components/CartExpiryNotifications';
 
 // Initialize Sentry error tracking
 initSentry();
@@ -577,6 +578,7 @@ function App() {
         />
         </Routes>
         </Suspense>
+        <CartExpiryNotifications />
       </BrowserRouter>
     </ErrorBoundary>
   );

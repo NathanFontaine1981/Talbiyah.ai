@@ -15,7 +15,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           // HMS Video SDK - large dependency, keep separate
-          'hms-video': ['@100mslive/react-sdk', '@100mslive/hms-virtual-background'],
+          'hms-video': ['@100mslive/react-sdk', '@100mslive/hms-virtual-background', '@100mslive/roomkit-react'],
 
           // React core and routing
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],

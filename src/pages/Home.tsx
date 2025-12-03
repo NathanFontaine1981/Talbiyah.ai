@@ -940,7 +940,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-lg text-slate-300 leading-relaxed">
-                  Over 20 years as a Muslim, I've dedicated my life to learning and sharing Islamic knowledge. After retiring from football, I founded <span className="text-cyan-400 font-semibold">Nexum Learning</span>, and now Talbiyah.ai represents the next evolution of that mission.
+                  Over 20 years as a Muslim, I've dedicated my life to learning and sharing Islamic knowledge. After retiring from football, I founded <span className="text-cyan-400 font-semibold">Talbiyah.ai</span> to make authentic Islamic education accessible to everyone, anywhere in the world.
                 </p>
 
                 <p className="text-lg text-slate-300 leading-relaxed">
