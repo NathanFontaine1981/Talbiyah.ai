@@ -75,7 +75,8 @@ export default function Checkout() {
 
         const childrenWithLearners = await Promise.all(
           (childrenData || []).map(async (child) => {
-            let learnerId = child.learner_id;
+            // parent_children uses child_id to reference learners
+            let learnerId = child.child_id;
 
             if (!learnerId) {
               const { data: newLearner } = await supabase
@@ -91,9 +92,10 @@ export default function Checkout() {
               if (newLearner) {
                 learnerId = newLearner.id;
 
+                // Update parent_children with the child_id (learner reference)
                 await supabase
                   .from('parent_children')
-                  .update({ learner_id: learnerId })
+                  .update({ child_id: learnerId })
                   .eq('id', child.id);
               }
             }
