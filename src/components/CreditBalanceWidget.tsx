@@ -118,15 +118,13 @@ export default function CreditBalanceWidget() {
           <span>Buy Credits</span>
         </button>
 
-        {creditsRemaining > 0 && (
-          <button
-            onClick={() => navigate('/teachers')}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2.5 rounded-lg font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
-          >
-            <span>📚</span>
-            <span>Book Lesson</span>
-          </button>
-        )}
+        <button
+          onClick={() => navigate('/teachers')}
+          className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2.5 rounded-lg font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
+        >
+          <span>📚</span>
+          <span>Book Lesson</span>
+        </button>
       </div>
 
       {/* Low Balance Warning */}
