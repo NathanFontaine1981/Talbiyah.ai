@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { HMSPrebuilt } from '@100mslive/roomkit-react';
+import { HMSPrebuilt, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectIsLocalUserRecording } from '@100mslive/roomkit-react';
 import {
   AlertTriangle,
   RefreshCw,
@@ -62,16 +62,66 @@ export default function Lesson() {
   const [bothParticipantsJoined, setBothParticipantsJoined] = useState(false);
   const [waitingForOther, setWaitingForOther] = useState(true);
 
-  // Start timer when user joins the video room
-  useEffect(() => {
-    if (!isVideoReady || !lesson) return;
+  // Use 100ms SDK to track peer count and recording
+  const peerCount = useHMSStore(selectPeerCount);
+  const isConnectedToRoom = useHMSStore(selectIsConnectedToRoom);
+  const hmsActions = useHMSActions();
+  const [recordingStarted, setRecordingStarted] = useState(false);
 
-    // Start the timer immediately when user joins
-    // The timer tracks how long this user has been in the session
-    setBothParticipantsJoined(true);
-    setWaitingForOther(false);
-    setSessionStartTime(new Date());
-  }, [isVideoReady, lesson]);
+  // Detect when both participants have joined (peer count >= 2)
+  useEffect(() => {
+    if (!isConnectedToRoom || !lesson) return;
+
+    console.log('Peer count:', peerCount, 'Connected:', isConnectedToRoom);
+
+    if (peerCount >= 2 && !bothParticipantsJoined) {
+      // Both host and guest are in the room - start the timer!
+      console.log('Both participants joined! Starting lesson timer.');
+      setBothParticipantsJoined(true);
+      setWaitingForOther(false);
+      setSessionStartTime(new Date());
+
+      // Start recording when both participants join (only if teacher/host)
+      if (userRole === 'teacher' && !recordingStarted) {
+        console.log('Starting browser recording...');
+        startBrowserRecording();
+      }
+    } else if (peerCount < 2 && isConnectedToRoom) {
+      // Only one person in the room - show waiting state
+      setWaitingForOther(true);
+    }
+  }, [peerCount, isConnectedToRoom, lesson, bothParticipantsJoined, userRole, recordingStarted]);
+
+  // Start browser recording
+  const startBrowserRecording = async () => {
+    try {
+      await hmsActions.startRTMPOrRecording({
+        record: true,
+      });
+      setRecordingStarted(true);
+      console.log('Recording started successfully');
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      // Recording might already be started by auto-start, that's OK
+      setRecordingStarted(true);
+    }
+  };
+
+  // Update isVideoReady when connected to room
+  useEffect(() => {
+    if (isConnectedToRoom && !isVideoReady) {
+      setIsVideoReady(true);
+    }
+  }, [isConnectedToRoom, isVideoReady]);
+
+  // Allow manual start of timer (fallback if peer detection doesn't work)
+  const startLessonTimer = () => {
+    if (!bothParticipantsJoined) {
+      setBothParticipantsJoined(true);
+      setWaitingForOther(false);
+      setSessionStartTime(new Date());
+    }
+  };
 
   // Timer effect - starts when both participants have joined
   useEffect(() => {
@@ -725,6 +775,17 @@ export default function Lesson() {
                 <p className="text-slate-400 text-[10px] uppercase tracking-wide">Target</p>
               </div>
             </div>
+
+            {/* Start Lesson Button - shows when waiting for other participant */}
+            {!bothParticipantsJoined && isVideoReady && (
+              <button
+                onClick={startLessonTimer}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl transition shadow-lg shadow-emerald-500/30 flex items-center space-x-2 animate-pulse hover:animate-none"
+              >
+                <CheckCircle className="w-5 h-5" />
+                <span>Start Lesson</span>
+              </button>
+            )}
 
             <div className="text-right hidden sm:block">
               <p className="text-white text-sm font-medium">

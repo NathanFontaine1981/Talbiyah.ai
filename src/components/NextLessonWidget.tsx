@@ -100,16 +100,17 @@ export default function NextLessonWidget() {
           <Calendar className="w-5 h-5 text-cyan-400" />
           <span>Next Lesson</span>
         </h3>
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-slate-600" />
+        <div className="text-center py-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30">
+            <Calendar className="w-10 h-10 text-white" />
           </div>
-          <p className="text-slate-400 mb-4">No upcoming lessons scheduled</p>
+          <p className="text-slate-300 mb-2 text-lg font-medium">No upcoming lessons</p>
+          <p className="text-slate-500 mb-6 text-sm">Book your next session with a teacher</p>
           <a
             href="/teachers"
-            className="inline-block px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition shadow-lg shadow-cyan-500/20"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl transition shadow-xl shadow-emerald-500/30 text-lg animate-pulse hover:animate-none"
           >
-            Book a Lesson
+            📚 Book a Lesson Now
           </a>
         </div>
       </div>

@@ -63,57 +63,29 @@ async function updateTemplate() {
 
   const template = await getResponse.json();
   console.log('Current template:', template.name);
-  console.log('Current HLS destinations:', Object.keys(template.destinations?.hlsDestinations || {}));
+  console.log('Current browser recordings:', Object.keys(template.destinations?.browserRecordings || {}));
   console.log('Current transcriptions:', Object.keys(template.destinations?.transcriptions || {}));
   console.log('');
 
-  // The HLS destination is what's being used for recording
-  // We need to ensure proper video recording configuration
-  // The key is that HLS recording captures the composed view
-
-  const hlsDestinationId = Object.keys(template.destinations?.hlsDestinations || {})[0];
-
-  if (!hlsDestinationId) {
-    console.error('No HLS destination found in template');
-    return;
-  }
-
-  console.log('Found HLS destination:', hlsDestinationId);
-
-  // Get the current HLS config
-  const currentHls = template.destinations.hlsDestinations[hlsDestinationId];
-
-  // Update with proper recording configuration that captures all participants
-  // Keep existing layers to avoid validation errors
-  const updatedHls = {
-    ...currentHls,
-    // Ensure recording is enabled with proper settings
-    recording: {
-      ...currentHls.recording,
-      hlsVod: true,
-      presignDuration: 604800 // 7 days
-    }
-  };
-
+  // Update destinations - keep existing config and add/update transcription
   const updatedDestinations = {
     ...template.destinations,
-    hlsDestinations: {
-      [hlsDestinationId]: updatedHls
-    },
-    // Update transcription config
+    // Add transcription config for recorded mode (post-session transcription)
     transcriptions: {
       "lesson-transcription": {
         name: "lesson-transcription",
-        role: "__internal_recorder",
+        role: "host",
         modes: ["recorded"],
         outputModes: ["txt", "json", "srt"],
-        language: "en",
+        customVocabulary: ["Quran", "Surah", "Ayah", "Tajweed", "Tafseer", "Arabic", "Bismillah", "Alhamdulillah", "SubhanAllah", "MashaAllah", "InshaAllah"],
         summary: {
           enabled: true,
-          context: "Islamic education lesson covering Quran, Arabic language, or Islamic studies.",
+          context: "This is an Islamic education lesson covering Quran recitation, Arabic language learning, or Islamic studies. Focus on religious terminology, Arabic vocabulary, Quranic verses, and educational content.",
           sections: [
             { title: "Topics Covered", format: "bullets" },
-            { title: "Key Vocabulary", format: "bullets" },
+            { title: "Key Quranic Verses", format: "bullets" },
+            { title: "Arabic Vocabulary", format: "bullets" },
+            { title: "Main Takeaways", format: "bullets" },
             { title: "Summary", format: "paragraph" }
           ],
           temperature: 0.5
@@ -122,7 +94,7 @@ async function updateTemplate() {
     }
   };
 
-  console.log('Updating template with enhanced recording...');
+  console.log('Updating template with transcription enabled...');
 
   const updateResponse = await fetch(`https://api.100ms.live/v2/templates/${TEMPLATE_ID}`, {
     method: 'POST',
@@ -143,25 +115,37 @@ async function updateTemplate() {
   const updatedTemplate = await updateResponse.json();
   console.log('\n✅ Template updated successfully!\n');
 
-  // Now check and display the current configuration
+  // Display the current configuration
   console.log('📹 Recording Configuration:');
-  const hlsConfig = updatedTemplate.destinations?.hlsDestinations?.[Object.keys(updatedTemplate.destinations?.hlsDestinations || {})[0]];
-  if (hlsConfig) {
-    console.log('   - HLS VOD Recording:', hlsConfig.recording?.hlsVod ? 'Enabled' : 'Disabled');
-    console.log('   - Max Duration:', hlsConfig.maxDuration, 'seconds');
-    console.log('   - Recording Layers:', hlsConfig.recording?.layers?.length || 0);
+  const browserRecordings = updatedTemplate.destinations?.browserRecordings || {};
+  if (Object.keys(browserRecordings).length > 0) {
+    console.log('   - Browser Composite Recording: Enabled');
+    const firstRecording = Object.values(browserRecordings)[0];
+    console.log('   - Resolution:', firstRecording.width + 'x' + firstRecording.height);
+    console.log('   - Max Duration:', firstRecording.maxDuration, 'seconds');
+  } else {
+    console.log('   - Browser Composite Recording: Not configured');
   }
 
   console.log('\n📝 Transcription Configuration:');
-  console.log('   - Transcriptions:', Object.keys(updatedTemplate.destinations?.transcriptions || {}));
+  const transcriptions = updatedTemplate.destinations?.transcriptions || {};
+  if (Object.keys(transcriptions).length > 0) {
+    Object.entries(transcriptions).forEach(([key, config]) => {
+      console.log(`   - ${key}:`);
+      console.log(`     • Role: ${config.role}`);
+      console.log(`     • Modes: ${config.modes?.join(', ')}`);
+      console.log(`     • Output: ${config.outputModes?.join(', ')}`);
+      console.log(`     • Summary: ${config.summary?.enabled ? 'Enabled' : 'Disabled'}`);
+    });
+  } else {
+    console.log('   - No transcriptions configured');
+  }
 
-  console.log('\n⚠️  The black screen issue is likely caused by:');
-  console.log('   1. HLS streaming records the STREAM output, not webcams');
-  console.log('   2. If no one is sharing screen, the stream may be blank');
-  console.log('');
-  console.log('💡 To fix this, you need to enable "Beam" or "Browser Recording"');
-  console.log('   in the 100ms Dashboard under Template > Destinations.');
-  console.log('   This records the composite view of all participants.');
+  console.log('\n✅ Transcription is now enabled for future lessons!');
+  console.log('   After each lesson ends, 100ms will automatically:');
+  console.log('   1. Generate a transcript from the recording');
+  console.log('   2. Send a webhook with the transcript URL');
+  console.log('   3. Your system will then generate AI insights');
 }
 
 updateTemplate().catch(console.error);

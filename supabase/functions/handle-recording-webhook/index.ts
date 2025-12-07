@@ -116,25 +116,40 @@ Deno.serve(async (req: Request) => {
     let durationSeconds: number | undefined;
     let transcriptUrl: string | undefined;
 
+    // Track if this is a transcription event
+    let isTranscriptionEvent = false;
+    let summaryUrl: string | undefined;
+
     if (rawData.type && rawData.data) {
       // 100ms webhook format
       const hmsData = rawData as HMS100msWebhook;
       console.log("100ms webhook type:", hmsData.type);
 
-      // Only process recording.success events
-      if (hmsData.type !== "recording.success" && hmsData.type !== "beam.recording.success") {
-        console.log("Ignoring non-recording event:", hmsData.type);
+      // Process recording.success, beam.recording.success, AND transcription.success events
+      const validEvents = ["recording.success", "beam.recording.success", "transcription.success"];
+      if (!validEvents.includes(hmsData.type)) {
+        console.log("Ignoring event type:", hmsData.type);
         return new Response(
           JSON.stringify({ success: true, message: "Event ignored" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      isTranscriptionEvent = hmsData.type === "transcription.success";
       roomId = hmsData.data.room_id || "";
       recordingUrl = hmsData.data.recording_presigned_url;
       recordingSize = hmsData.data.size;
       durationSeconds = hmsData.data.duration;
       transcriptUrl = hmsData.data.transcript_presigned_url;
+      summaryUrl = hmsData.data.summary_presigned_url;
+
+      console.log("Event details:", {
+        type: hmsData.type,
+        room_id: roomId,
+        has_recording: !!recordingUrl,
+        has_transcript: !!transcriptUrl,
+        has_summary: !!summaryUrl,
+      });
     } else {
       // Legacy format
       const legacyData = rawData as RecordingWebhookPayload;
@@ -229,56 +244,146 @@ Deno.serve(async (req: Request) => {
 
     console.log("Lesson updated with recording URL:", lesson.id);
 
-    // If transcript is available, trigger insight generation
-    if (transcriptUrl) {
-      console.log("Transcript available, fetching and generating insights...");
+    // Get subject and learner info for insight generation
+    const { data: subject } = await supabase
+      .from("subjects")
+      .select("name")
+      .eq("id", lesson.subject_id)
+      .single();
+
+    const { data: learner } = await supabase
+      .from("learners")
+      .select("name")
+      .eq("id", lesson.learner_id)
+      .single();
+
+    const { data: teacher } = await supabase
+      .from("teacher_profiles")
+      .select("profiles(full_name)")
+      .eq("user_id", lesson.teacher_id)
+      .single();
+
+    const teacherName = (teacher?.profiles as any)?.full_name || "Teacher";
+    const subjectName = subject?.name || "Lesson";
+    const learnerName = learner?.name || "Student";
+
+    // If transcript is available (from transcription.success event), generate AI insights
+    if (transcriptUrl || isTranscriptionEvent) {
+      console.log("Transcript available, fetching and generating AI insights...");
 
       try {
-        // Fetch transcript
-        const transcriptResponse = await fetch(transcriptUrl);
-        const transcriptData = await transcriptResponse.json();
+        // Fetch transcript text
+        let transcriptText = "";
+        if (transcriptUrl) {
+          const transcriptResponse = await fetch(transcriptUrl);
+          if (transcriptResponse.ok) {
+            const transcriptData = await transcriptResponse.json();
+            // Extract text from 100ms transcript format
+            if (Array.isArray(transcriptData)) {
+              // Array of transcript segments
+              transcriptText = transcriptData.map((seg: any) => seg.text || seg.transcript || "").join(" ");
+            } else if (transcriptData.transcript) {
+              transcriptText = transcriptData.transcript;
+            } else if (transcriptData.text) {
+              transcriptText = transcriptData.text;
+            } else {
+              transcriptText = JSON.stringify(transcriptData);
+            }
+          }
+        }
 
-        // Extract text from transcript (100ms format may vary)
-        const transcriptText = JSON.stringify(transcriptData);
+        // Also fetch summary if available
+        let summaryText = "";
+        if (summaryUrl) {
+          try {
+            const summaryResponse = await fetch(summaryUrl);
+            if (summaryResponse.ok) {
+              const summaryData = await summaryResponse.json();
+              summaryText = summaryData.summary || summaryData.text || JSON.stringify(summaryData);
+            }
+          } catch (e) {
+            console.log("Could not fetch summary:", e);
+          }
+        }
 
-        // Trigger insight generation (async, don't wait)
-        fetch(`${supabaseUrl}/functions/v1/process-lesson-transcript`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            lesson_id: lesson.id,
-            transcript_text: transcriptText,
-            subject_id: lesson.subject_id,
-            teacher_id: lesson.teacher_id,
-            learner_id: lesson.learner_id,
-          }),
-        }).catch(err => console.error("Error triggering insight generation:", err));
+        // Combine transcript and summary for richer context
+        const fullTranscript = summaryText
+          ? `SUMMARY:\n${summaryText}\n\nFULL TRANSCRIPT:\n${transcriptText}`
+          : transcriptText;
+
+        if (fullTranscript.length > 100) {
+          console.log("Calling generate-lesson-insights function...");
+
+          // Determine metadata based on subject type
+          const metadata: any = {
+            teacher_name: teacherName,
+            student_names: [learnerName],
+            lesson_date: new Date(lesson.scheduled_time).toLocaleDateString('en-GB', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            duration_minutes: lesson.duration_minutes,
+          };
+
+          // For Quran lessons, try to extract surah info from transcript or use defaults
+          const subjectLower = subjectName.toLowerCase();
+          if (subjectLower.includes('quran') || subjectLower.includes('qur')) {
+            // Default values - could be enhanced with AI extraction later
+            metadata.surah_name = "Quran";
+            metadata.surah_number = 1;
+            metadata.ayah_range = "1-7";
+          }
+
+          // Call the generate-lesson-insights function
+          const insightResponse = await fetch(`${supabaseUrl}/functions/v1/generate-lesson-insights`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              lesson_id: lesson.id,
+              transcript: fullTranscript,
+              subject: subjectName,
+              metadata: metadata,
+            }),
+          });
+
+          if (insightResponse.ok) {
+            const insightResult = await insightResponse.json();
+            console.log("AI insights generated successfully:", insightResult.insight_id);
+
+            // Update the insight with learner_id for proper filtering
+            await supabase
+              .from("lesson_insights")
+              .update({ learner_id: lesson.learner_id })
+              .eq("lesson_id", lesson.id);
+          } else {
+            const errorText = await insightResponse.text();
+            console.error("Failed to generate AI insights:", errorText);
+            // Fall through to create basic insight
+          }
+        } else {
+          console.log("Transcript too short, creating basic insight");
+        }
       } catch (error) {
-        console.error("Error fetching transcript:", error);
-        // Continue anyway - insights can be generated later
+        console.error("Error processing transcript:", error);
+        // Continue to create basic insight
       }
-    } else {
-      // No transcript - generate basic insights from lesson metadata
-      console.log("No transcript available, generating basic insights...");
+    }
 
-      // Get subject name
-      const { data: subject } = await supabase
-        .from("subjects")
-        .select("name")
-        .eq("id", lesson.subject_id)
-        .single();
+    // Check if insight was created - if not, create a basic one
+    const { data: existingInsight } = await supabase
+      .from("lesson_insights")
+      .select("id")
+      .eq("lesson_id", lesson.id)
+      .single();
 
-      // Get learner name
-      const { data: learner } = await supabase
-        .from("learners")
-        .select("name")
-        .eq("id", lesson.learner_id)
-        .single();
+    if (!existingInsight) {
+      console.log("No AI insight created, generating basic insight...");
 
-      // Create basic insight with correct schema columns
       const { error: insightError } = await supabase
         .from("lesson_insights")
         .insert({
@@ -287,8 +392,8 @@ Deno.serve(async (req: Request) => {
           teacher_id: lesson.teacher_id,
           learner_id: lesson.learner_id,
           insight_type: "subject_specific",
-          title: `${subject?.name || "Lesson"} Session Summary`,
-          summary: `A ${lesson.duration_minutes} minute ${subject?.name || "lesson"} session was completed with ${learner?.name || "student"}. Recording is available for review.`,
+          title: `${subjectName} Session Summary`,
+          summary: `A ${lesson.duration_minutes} minute ${subjectName} session was completed with ${learnerName}. Recording is available for review.`,
           key_topics: ["Session completed", "Recording available"],
           areas_of_strength: ["Completed session"],
           areas_for_improvement: ["Review recording for detailed feedback"],

@@ -121,9 +121,10 @@ export default function CreditBalanceWidget() {
         {creditsRemaining > 0 && (
           <button
             onClick={() => navigate('/teachers')}
-            className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg font-medium transition"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2.5 rounded-lg font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
           >
-            Book Lesson
+            <span>📚</span>
+            <span>Book Lesson</span>
           </button>
         )}
       </div>

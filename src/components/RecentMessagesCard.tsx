@@ -50,8 +50,6 @@ export default function RecentMessagesCard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      setCurrentUserId(user.id);
-
       // Check if user is a teacher
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')

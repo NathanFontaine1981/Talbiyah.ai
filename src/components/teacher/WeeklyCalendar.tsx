@@ -286,6 +286,8 @@ export default function WeeklyCalendar({ teacherId }: WeeklyCalendarProps) {
                           const minuteOffset = lessonStart.getMinutes();
                           const heightPercent = (lesson.duration_minutes / 60) * 100;
                           const topOffset = (minuteOffset / 60) * 100;
+                          // Calculate actual height in pixels - each hour row is 60px min
+                          const heightPx = Math.max((lesson.duration_minutes / 60) * 60, 70);
 
                           return (
                             <div
@@ -298,19 +300,21 @@ export default function WeeklyCalendar({ teacherId }: WeeklyCalendarProps) {
                               }`}
                               style={{
                                 top: `${topOffset}%`,
-                                height: `${Math.max(heightPercent, 80)}%`,
-                                minHeight: '48px',
+                                height: `${heightPx}px`,
+                                minHeight: '70px',
                               }}
                             >
                               <div className={`h-full bg-gradient-to-br ${getSubjectColor(lesson.subject_name)} p-2`}>
-                                <div className="flex flex-col h-full">
-                                  <p className="text-xs font-semibold text-white truncate">
-                                    {lesson.student_name}
-                                  </p>
-                                  <p className="text-[10px] text-white/70 truncate">
-                                    {lesson.subject_name}
-                                  </p>
-                                  <p className="text-[10px] text-white/60 mt-auto">
+                                <div className="flex flex-col h-full justify-between">
+                                  <div>
+                                    <p className="text-sm font-semibold text-white truncate">
+                                      {lesson.student_name}
+                                    </p>
+                                    <p className="text-xs text-white/80 truncate">
+                                      {lesson.subject_name}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-white/70">
                                     {lessonStart.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                                   </p>
                                 </div>
