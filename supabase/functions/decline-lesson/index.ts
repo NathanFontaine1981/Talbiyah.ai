@@ -104,10 +104,44 @@ Deno.serve(async (req: Request) => {
     console.log(`💰 Credit returned to student ${lesson.learners.parent_id}`);
     console.log(`📧 Send decline notification to: ${lesson.learners.profiles.email}`);
 
-    // TODO: Send email notification to student
-    // Include decline reason
-    // Include suggested alternative times if provided
-    // Confirm credit has been returned
+    // Send email notification to student
+    const teacherName = lesson.teacher_profiles?.profiles?.full_name || "Your teacher";
+    const studentEmail = lesson.learners?.profiles?.email;
+    const studentName = lesson.learners?.profiles?.full_name || "Student";
+
+    if (studentEmail) {
+      try {
+        const notificationResponse = await fetch(
+          `${supabaseUrl}/functions/v1/send-notification-email`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              type: "lesson_declined",
+              recipient_email: studentEmail,
+              recipient_name: studentName,
+              data: {
+                teacher_name: teacherName,
+                scheduled_time: lesson.scheduled_time,
+                reason: decline_reason,
+              },
+            }),
+          }
+        );
+
+        if (notificationResponse.ok) {
+          console.log("✅ Decline notification email sent successfully");
+        } else {
+          const errorText = await notificationResponse.text();
+          console.error("Failed to send email:", errorText);
+        }
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+      }
+    }
 
     return new Response(
       JSON.stringify({

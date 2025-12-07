@@ -142,8 +142,6 @@ interface StudentProgressPanelProps {
 
 export default function StudentProgressPanel({
   studentId,
-  studentName,
-  subjectName,
   onNotesUpdate,
 }: StudentProgressPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);

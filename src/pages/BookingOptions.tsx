@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabaseClient';
 export default function BookingOptions() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [creditBalance, setCreditBalance] = useState(0);
+  const [, setCreditBalance] = useState(0);
 
   useEffect(() => {
     loadCreditBalance();

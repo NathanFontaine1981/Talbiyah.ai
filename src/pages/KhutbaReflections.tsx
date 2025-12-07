@@ -6,7 +6,6 @@ import {
   Sparkles,
   RefreshCw,
   Mic,
-  MicOff,
   Square,
   FileText,
   BookOpen,
@@ -18,7 +17,6 @@ import {
   Download,
   Lightbulb,
   Key,
-  ListChecks,
   Clock,
   AlertCircle,
   ScrollText,
@@ -36,9 +34,7 @@ import {
   Calendar,
   User,
   MapPin,
-  Save,
-  Library,
-  Lock
+  Save
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { generateTalbiyahInsightsPDF } from '../utils/generateInsightsPDF';

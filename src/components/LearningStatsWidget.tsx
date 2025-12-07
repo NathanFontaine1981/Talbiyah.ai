@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clock, CheckCircle, Flame, Trophy, TrendingUp, BookOpen } from 'lucide-react';
+import { Clock, CheckCircle, Flame, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface LearningStats {
@@ -7,8 +7,6 @@ interface LearningStats {
   quizzesPassed: number;
   currentStreak: number;
   totalLessons: number;
-  xpPoints: number;
-  level: number;
 }
 
 interface LearningStatsWidgetProps {
@@ -20,9 +18,7 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
     totalHours: 0,
     quizzesPassed: 0,
     currentStreak: 0,
-    totalLessons: 0,
-    xpPoints: 0,
-    level: 1
+    totalLessons: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -82,9 +78,7 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
         totalHours,
         quizzesPassed: 12,
         currentStreak: learnerData.current_streak || 0,
-        totalLessons: lessons?.length || 0,
-        xpPoints: learnerData.total_xp || 0,
-        level: learnerData.current_level || 1
+        totalLessons: lessons?.length || 0
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -138,22 +132,6 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/10',
       borderColor: 'border-orange-500/20'
-    },
-    {
-      icon: Trophy,
-      label: 'XP Points',
-      value: stats.xpPoints.toString(),
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10',
-      borderColor: 'border-amber-500/20'
-    },
-    {
-      icon: TrendingUp,
-      label: 'Current Level',
-      value: `Level ${stats.level}`,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/20'
     }
   ];
 

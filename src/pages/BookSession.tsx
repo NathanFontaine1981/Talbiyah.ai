@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
 import TalbiyahBot from '../components/TalbiyahBot';
-import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, setMinutes } from 'date-fns';
+import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 
 interface Teacher {
   id: string;

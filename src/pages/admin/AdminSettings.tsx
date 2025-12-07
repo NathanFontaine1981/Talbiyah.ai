@@ -1,24 +1,16 @@
 import { useState, useEffect } from 'react';
 import {
-  Settings,
   Bell,
   CreditCard,
   Shield,
-  Users,
   Video,
-  Mail,
   Globe,
-  Palette,
   Save,
   RefreshCw,
   Check,
   AlertTriangle,
   Info,
-  DollarSign,
-  Clock,
   BookOpen,
-  ToggleLeft,
-  ToggleRight,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -117,7 +109,7 @@ export default function AdminSettings() {
     try {
       // In a real app, you'd fetch this from a settings table
       // For now, we'll use default values
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('platform_settings')
         .select('*')
         .single();
@@ -126,7 +118,7 @@ export default function AdminSettings() {
         setSettings(data);
         setOriginalSettings(data);
       }
-    } catch (error) {
+    } catch {
       // Platform settings table may not exist, using defaults
     } finally {
       setLoading(false);

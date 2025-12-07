@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { BookOpen, CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, Award, Target, Zap, TrendingUp, Image as ImageIcon, Brain, Volume2, Heart } from 'lucide-react';
+import { BookOpen, CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, TrendingUp, Brain, Volume2, Heart } from 'lucide-react';
 import TalbiyahInsightsShowcase from '../components/TalbiyahInsightsShowcase';
 import { supabase } from '../lib/supabaseClient';
 

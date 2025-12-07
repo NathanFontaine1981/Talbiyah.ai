@@ -8,7 +8,6 @@ import {
   Package,
   DollarSign,
   Calendar,
-  ExternalLink,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';

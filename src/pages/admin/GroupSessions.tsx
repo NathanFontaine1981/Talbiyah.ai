@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Users, Calendar, Clock, DollarSign, X, Edit, UserPlus, Mail, AlertCircle, Check, Video, Copy, ExternalLink } from 'lucide-react';
+import { Plus, Users, Calendar, Clock, X, Edit, UserPlus, Mail, Check, Video, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 
@@ -816,7 +816,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
 }
 
 // Edit Group Session Modal (similar to Create)
-function EditGroupSessionModal({ session, onClose, onSuccess, subjects }: any) {
+function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: session.name,

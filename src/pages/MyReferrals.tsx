@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Gift, Users, Trophy, Copy, Check, ArrowRight, Send, Share2,
-  TrendingUp, Award, Crown, Star, Sparkles, Clock, DollarSign, Info, HelpCircle, ChevronDown, ChevronUp
+  Users, Trophy, Copy, Check, ArrowRight, Send, Share2,
+  TrendingUp, Clock, DollarSign, Info, HelpCircle, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -239,16 +239,6 @@ export default function MyReferrals() {
     } finally {
       setTransferring(false);
     }
-  }
-
-  function getTierColor(tier: string) {
-    const colors: Record<string, string> = {
-      bronze: '#CD7F32',
-      silver: '#C0C0C0',
-      gold: '#FFD700',
-      platinum: '#E5E4E2',
-    };
-    return colors[tier] || '#CD7F32';
   }
 
   function getTierGradient(tier: string) {

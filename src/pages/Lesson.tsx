@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
 import {
-  Loader,
   AlertTriangle,
   RefreshCw,
   ArrowLeft,
@@ -16,7 +15,8 @@ import {
   PhoneOff,
   QrCode,
   ExternalLink,
-  Book
+  Book,
+  Clock
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabaseClient';
@@ -44,7 +44,6 @@ export default function Lesson() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -57,8 +56,45 @@ export default function Lesson() {
   const [showMessaging, setShowMessaging] = useState(true);
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
-  const [showQuranWBW, setShowQuranWBW] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran'>('messages');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [bothParticipantsJoined, setBothParticipantsJoined] = useState(false);
+  const [waitingForOther, setWaitingForOther] = useState(true);
+
+  // Start timer when user joins the video room
+  useEffect(() => {
+    if (!isVideoReady || !lesson) return;
+
+    // Start the timer immediately when user joins
+    // The timer tracks how long this user has been in the session
+    setBothParticipantsJoined(true);
+    setWaitingForOther(false);
+    setSessionStartTime(new Date());
+  }, [isVideoReady, lesson]);
+
+  // Timer effect - starts when both participants have joined
+  useEffect(() => {
+    if (!bothParticipantsJoined || !sessionStartTime) return;
+
+    const timer = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [bothParticipantsJoined, sessionStartTime]);
+
+  // Format elapsed time as HH:MM:SS or MM:SS
+  const formatElapsedTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     loadLesson();
@@ -248,14 +284,14 @@ export default function Lesson() {
   }
 
   async function handleEndSession() {
-    if (!lesson || userRole !== 'teacher') return;
+    if (!lesson) return;
 
     setEndingSession(true);
     try {
       // First, try to end the 100ms room via edge function
       if (lesson['100ms_room_id']) {
         try {
-          const response = await fetch(
+          await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/end-hms-room`,
             {
               method: 'POST',
@@ -269,9 +305,8 @@ export default function Lesson() {
               })
             }
           );
-
           // Room ended successfully
-        } catch (hmsError) {
+        } catch {
           // Continue anyway - we still want to mark lesson as completed
         }
       }
@@ -658,6 +693,39 @@ export default function Lesson() {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Lesson Timer */}
+            <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl border ${
+              bothParticipantsJoined
+                ? 'bg-slate-800/60 border-slate-600/50'
+                : 'bg-amber-900/40 border-amber-500/50'
+            }`}>
+              <Clock className={`w-5 h-5 ${bothParticipantsJoined ? 'text-cyan-400' : 'text-amber-400 animate-pulse'}`} />
+              <div className="text-center">
+                {bothParticipantsJoined ? (
+                  <>
+                    <p className="text-white text-lg font-mono font-bold tracking-wider">
+                      {formatElapsedTime(elapsedSeconds)}
+                    </p>
+                    <p className="text-cyan-300 text-[10px] uppercase tracking-wide">Elapsed</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-amber-300 text-sm font-semibold">
+                      Waiting...
+                    </p>
+                    <p className="text-amber-400/70 text-[10px] uppercase tracking-wide">For {userRole === 'teacher' ? 'student' : 'teacher'}</p>
+                  </>
+                )}
+              </div>
+              <div className="h-8 w-px bg-slate-600/50 mx-1"></div>
+              <div className="text-center">
+                <p className="text-emerald-300 text-sm font-semibold">
+                  {lesson.duration_minutes}m
+                </p>
+                <p className="text-slate-400 text-[10px] uppercase tracking-wide">Target</p>
+              </div>
+            </div>
+
             <div className="text-right hidden sm:block">
               <p className="text-white text-sm font-medium">
                 with {userRole === 'teacher' ? lesson.learner_name : lesson.teacher_name}
@@ -690,17 +758,15 @@ export default function Lesson() {
               </button>
             )}
 
-            {/* End Session Button for Teachers */}
-            {userRole === 'teacher' && (
-              <button
-                onClick={() => setShowEndSessionConfirm(true)}
-                className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
-                title="End session for all participants"
-              >
-                <PhoneOff className="w-4 h-4" />
-                <span className="hidden sm:inline">End Session</span>
-              </button>
-            )}
+            {/* End Session Button - Available to both teachers and students */}
+            <button
+              onClick={() => setShowEndSessionConfirm(true)}
+              className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
+              title="End session for all participants"
+            >
+              <PhoneOff className="w-4 h-4" />
+              <span className="hidden sm:inline">End Session</span>
+            </button>
           </div>
         </div>
       </div>
@@ -880,7 +946,9 @@ export default function Lesson() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">End Session?</h3>
               <p className="text-gray-600 mb-6">
-                This will end the lesson for both you and the student. The session will be marked as completed.
+                {userRole === 'teacher'
+                  ? 'This will end the lesson for both you and the student. The session will be marked as completed.'
+                  : 'This will end the lesson for everyone. Only use this if the lesson is finished and the teacher cannot end the session (e.g., they are on the mobile app).'}
               </p>
 
               <div className="flex space-x-3">

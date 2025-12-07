@@ -46,7 +46,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           schema: 'public',
           table: 'lessons'
         },
-        (payload) => {
+        () => {
           // Refresh lessons when any lesson is updated (without showing loading spinner)
           loadUpcomingSessions(false);
         }
@@ -145,7 +145,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         const lessonIds = lessonsData.map((l: any) => l.id);
 
         // Only query if we have lessons - chunk to avoid URL length limits
-        let lessonsWithInsights = new Set<string>();
+        const lessonsWithInsights = new Set<string>();
         if (lessonIds.length > 0) {
           const CHUNK_SIZE = 10;
           const chunks = [];

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Languages, GraduationCap, ArrowLeft, ArrowRight, Sparkles, Clock } from 'lucide-react';
+import { BookOpen, Languages, ArrowLeft, ArrowRight, Sparkles, Clock } from 'lucide-react';
 
 export default function ChooseCourse() {
   const navigate = useNavigate();

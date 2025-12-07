@@ -199,7 +199,56 @@ Deno.serve(async (req: Request) => {
 
     // 4. Send notification emails
     console.log(`Transfer complete: ${hours_amount}h from ${senderProfile.email} to ${recipient.email}`);
-    // TODO: Implement email notifications
+
+    // Send email to sender
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          type: "hours_transferred",
+          recipient_email: senderProfile.email,
+          recipient_name: senderProfile.full_name || "Teacher",
+          data: {
+            hours_transferred: hours_amount,
+            from_teacher: senderProfile.full_name,
+            to_teacher: recipient.full_name,
+            is_sender: true,
+          },
+        }),
+      });
+      console.log("✅ Transfer confirmation sent to sender");
+    } catch (emailError) {
+      console.error("Failed to send transfer email to sender:", emailError);
+    }
+
+    // Send email to recipient
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          type: "hours_transferred",
+          recipient_email: recipient.email,
+          recipient_name: recipient.full_name || "Teacher",
+          data: {
+            hours_transferred: hours_amount,
+            from_teacher: senderProfile.full_name,
+            to_teacher: recipient.full_name,
+            is_sender: false,
+          },
+        }),
+      });
+      console.log("✅ Transfer notification sent to recipient");
+    } catch (emailError) {
+      console.error("Failed to send transfer email to recipient:", emailError);
+    }
 
     return new Response(
       JSON.stringify({

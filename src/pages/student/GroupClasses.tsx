@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   BookOpen,
-  Star,
   CheckCircle,
   ArrowRight,
   ArrowLeft,
@@ -74,7 +73,6 @@ export default function GroupClasses() {
   // Enrollment modal
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<GroupSession | null>(null);
-  const [selectedLearner, setSelectedLearner] = useState<string>('');
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {

@@ -2,13 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   X,
-  Maximize2,
   BookOpen,
   ChevronDown,
-  ChevronRight,
-  Calendar,
-  User,
-  Clock
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import ReactMarkdown from 'react-markdown';
@@ -59,7 +55,6 @@ export default function RecordingWithInsights() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0, 1])); // First two sections expanded by default
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     loadRecordingAndInsights();
@@ -190,7 +185,6 @@ export default function RecordingWithInsights() {
   }
 
   const sections = insight ? parseInsightsIntoSections(insight.detailed_insights.content) : [];
-  const metadata = insight?.detailed_insights.metadata;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus, Eye, X, Mail, Lock, User, Calendar, Edit2, ArrowLeft } from 'lucide-react';
+import { Users, Plus, Eye, X, Mail, Lock, User, Calendar, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { calculateAge, calculateSchoolYear, validateDOB, getDateConstraints } from '../utils/ageCalculations';
 

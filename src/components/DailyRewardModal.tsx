@@ -3,11 +3,9 @@ import {
   Gift,
   Flame,
   Star,
-  Sparkles,
   X,
   Trophy,
-  ChevronUp,
-  Coins
+  ChevronUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import confetti from 'canvas-confetti';

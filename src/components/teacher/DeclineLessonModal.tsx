@@ -26,7 +26,6 @@ const DECLINE_REASONS = [
 
 export default function DeclineLessonModal({
   lesson,
-  teacherId,
   onClose,
   onComplete,
 }: DeclineLessonModalProps) {

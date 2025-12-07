@@ -152,7 +152,7 @@ export default function LessonMessaging({
   const handleSendMessage = async (templateCode: string, data: any) => {
     setSending(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke(
+      const { error } = await supabase.functions.invoke(
         'send-lesson-message',
         {
           body: {

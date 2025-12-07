@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, RefreshCw, Play, Download, Trash2, X, FileText, CheckSquare, Square, HardDrive, Calendar, Filter } from 'lucide-react';
+import { Search, RefreshCw, Play, Download, Trash2, X, FileText, CheckSquare, Square, HardDrive, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 

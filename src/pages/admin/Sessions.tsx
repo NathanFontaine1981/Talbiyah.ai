@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Calendar, Clock, Users, BookOpen, Filter, Eye, Edit, RefreshCw, X as XIcon, ChevronDown, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
+import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 

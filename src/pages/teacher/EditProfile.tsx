@@ -8,15 +8,6 @@ interface Subject {
   name: string;
 }
 
-interface TeacherProfile {
-  id: string;
-  bio: string | null;
-  hourly_rate: number;
-  video_intro_url: string | null;
-  education_level: string | null;
-  islamic_learning_interests: string[] | null;
-}
-
 export default function EditProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -27,7 +18,7 @@ export default function EditProfile() {
   const [teacherProfileId, setTeacherProfileId] = useState<string | null>(null);
   const [bio, setBio] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('10');
+  const [, setHourlyRate] = useState('10');
   const [videoUrl, setVideoUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);

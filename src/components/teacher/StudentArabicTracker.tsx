@@ -244,8 +244,6 @@ export default function StudentArabicTracker({
   const handleSaveNotes = async (syllabusId: string) => {
     setSaving(true);
     try {
-      const existing = getUnitProgress(syllabusId);
-
       const updateData = {
         learner_id: studentId,
         syllabus_id: syllabusId,

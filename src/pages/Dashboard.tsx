@@ -10,7 +10,6 @@ import {
   Users,
   Video,
   GraduationCap,
-  Award,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -29,8 +28,6 @@ import {
   Home,
   Library,
   Headphones,
-  FileText,
-  UserCog,
   Baby,
   TrendingUp,
   Sparkles,
@@ -47,7 +44,6 @@ import TalbiyahBot from '../components/TalbiyahBot';
 import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
-import PointsRedemption from '../components/PointsRedemption';
 import DashboardHeader from '../components/DashboardHeader';
 import TeacherSessionsCard from '../components/TeacherSessionsCard';
 import TeacherStatsWidget from '../components/TeacherStatsWidget';
@@ -902,13 +898,6 @@ export default function Dashboard() {
                     <CreditBalanceWidget />
                     <LearningStatsWidget />
                     <ReferralWidget />
-                    {learner && (
-                      <PointsRedemption
-                        learnerId={learner.id}
-                        currentPoints={learner.total_xp || 0}
-                        onRedemption={loadUserAndProfile}
-                      />
-                    )}
                     <RecommendedActionsCard />
                     <AnnouncementsCard />
                   </div>

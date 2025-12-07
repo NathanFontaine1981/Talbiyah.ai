@@ -34,7 +34,6 @@ export default function TeacherStatsWidget() {
 
   useEffect(() => {
     loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadStats() {

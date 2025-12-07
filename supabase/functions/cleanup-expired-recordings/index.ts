@@ -102,12 +102,40 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Cleanup complete: ${deletedCount} deleted, ${errorCount} errors`);
 
+    // Also clean up expired recording URLs from lessons table
+    // Note: Insights remain - only the recording URL is cleared
+    const { data: expiredLessons, error: lessonsError } = await supabase
+      .from("lessons")
+      .select("id")
+      .lt("recording_expires_at", new Date().toISOString())
+      .not("recording_url", "is", null);
+
+    let lessonsCleared = 0;
+    if (!lessonsError && expiredLessons && expiredLessons.length > 0) {
+      console.log(`Found ${expiredLessons.length} lessons with expired recording URLs`);
+
+      const { error: updateLessonsError } = await supabase
+        .from("lessons")
+        .update({ recording_url: null })
+        .lt("recording_expires_at", new Date().toISOString())
+        .not("recording_url", "is", null);
+
+      if (!updateLessonsError) {
+        lessonsCleared = expiredLessons.length;
+        console.log(`Cleared ${lessonsCleared} expired recording URLs from lessons`);
+      } else {
+        console.error("Error clearing lesson recording URLs:", updateLessonsError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         deleted_count: deletedCount,
         error_count: errorCount,
         total_processed: expiredRecordings.length,
+        lessons_cleared: lessonsCleared,
+        note: "Insights are preserved - only recording URLs are cleared after 7 days",
       }),
       {
         status: 200,

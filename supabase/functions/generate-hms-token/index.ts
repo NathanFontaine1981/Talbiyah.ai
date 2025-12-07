@@ -1,6 +1,56 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders })
+  }
+
+  // Verify admin access
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+
+  const authHeader = req.headers.get("Authorization")
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Authorization required" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401
+    })
+  }
+
+  const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  })
+
+  const { data: { user }, error: authError } = await userClient.auth.getUser()
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Invalid token" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401
+    })
+  }
+
+  // Check if user is admin
+  const serviceClient = createClient(supabaseUrl, supabaseServiceKey)
+  const { data: profile } = await serviceClient
+    .from("profiles")
+    .select("roles")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile?.roles?.includes("admin")) {
+    return new Response(JSON.stringify({ error: "Admin access required" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 403
+    })
+  }
+
   const HMS_APP_ACCESS_KEY = Deno.env.get('HMS_APP_ACCESS_KEY')
   const HMS_APP_SECRET = Deno.env.get('HMS_APP_SECRET')
 
@@ -88,7 +138,7 @@ serve(async (req) => {
       expires_at: new Date((now + (365 * 24 * 60 * 60)) * 1000).toISOString(),
       message: 'Copy this token and update HMS_MANAGEMENT_TOKEN in Supabase secrets'
     }, null, 2), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
@@ -97,7 +147,7 @@ serve(async (req) => {
       error: error.message,
       stack: error.stack
     }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
     })
   }

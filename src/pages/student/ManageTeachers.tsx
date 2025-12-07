@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ArrowLeft, Plus, User, BookOpen, X, Check, UserPlus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, User, BookOpen, X, UserPlus, Trash2 } from 'lucide-react';
 
 interface Teacher {
   id: string;

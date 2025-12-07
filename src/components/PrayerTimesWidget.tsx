@@ -14,7 +14,7 @@ interface PrayerTimesWidgetProps {
 export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesWidgetProps) {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
   const [location, setLocation] = useState('Detecting location...');
-  const [locationPermission, setLocationPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+  const [, setLocationPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
 
   useEffect(() => {
     requestLocationAndFetchPrayers();

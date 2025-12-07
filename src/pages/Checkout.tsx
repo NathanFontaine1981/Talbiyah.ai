@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, Lock, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Child {
@@ -390,7 +390,7 @@ export default function Checkout() {
           throw new Error(errorData.error || 'Failed to create booking');
         }
 
-        const result = await response.json();
+        await response.json();
 
         // Deduct referral balance if used
         if (referralDiscount > 0) {
@@ -502,7 +502,7 @@ export default function Checkout() {
         const result = await response.json();
 
         // Deduct credits using the proper RPC function (handles transaction logging)
-        const { data: newBalance, error: creditError } = await supabase
+        const { error: creditError } = await supabase
           .rpc('deduct_user_credits', {
             p_user_id: session.user.id,
             p_credits: creditsNeeded,

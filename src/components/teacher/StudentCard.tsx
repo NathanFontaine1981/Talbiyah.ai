@@ -30,7 +30,6 @@ interface StudentCardProps {
 export default function StudentCard({
   studentId,
   studentName,
-  studentEmail,
   studentAvatar,
   subjects,
   totalLessons,

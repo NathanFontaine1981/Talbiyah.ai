@@ -7,12 +7,10 @@ import {
   Award,
   AlertCircle,
   CheckCircle,
-  Clock,
   BookOpen,
   Star,
   Video,
-  ChevronRight,
-  X
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 

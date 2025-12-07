@@ -185,7 +185,35 @@ serve(async (req) => {
       .eq("role", "admin");
 
     if (admins && admins.length > 0) {
-      // TODO: Send email notification to admins
+      // Send email notification to first admin
+      const adminEmail = admins[0].email;
+      if (adminEmail) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              type: "teacher_application_received",
+              recipient_email: adminEmail,
+              recipient_name: admins[0].full_name || "Admin",
+              data: {
+                applicant_name: user.full_name || "Unknown",
+                applicant_email: user.email,
+                subjects: selected_subjects || [],
+                education_level: qualifications?.education_level,
+              },
+            }),
+          });
+          console.log("✅ Admin notification sent for new teacher application");
+        } catch (emailError) {
+          console.error("Failed to send admin notification:", emailError);
+        }
+      }
       console.log(`New ${requested_tier} tier application from ${user.email}`, admins);
     }
 

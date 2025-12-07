@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft, UserPlus, Send } from 'lucide-react';
+import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft, UserPlus } from 'lucide-react';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 
 interface Conversation {
@@ -72,8 +72,6 @@ export default function Messages() {
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
 
   // Pre-lesson messaging state
-  const [preLessonMessage, setPreLessonMessage] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(false);
 
   useEffect(() => {

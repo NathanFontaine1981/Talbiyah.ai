@@ -43,9 +43,31 @@ Deno.serve(async (req: Request) => {
         console.log(`   Teacher: ${lesson.teacher_name}`);
         console.log(`   Scheduled: ${lesson.scheduled_time}`);
 
-        // TODO: Send email notifications
-        // To Student: "Your lesson has been confirmed (auto-acknowledged)"
-        // To Teacher: "Reminder: Lesson auto-acknowledged - room opens 6 hours before"
+        // Send email notification to student
+        if (lesson.student_email) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                type: "lesson_acknowledged",
+                recipient_email: lesson.student_email,
+                recipient_name: lesson.student_name || "Student",
+                data: {
+                  teacher_name: lesson.teacher_name,
+                  scheduled_time: lesson.scheduled_time,
+                  subject: lesson.subject_name || "Lesson",
+                },
+              }),
+            });
+            console.log(`✅ Auto-acknowledge notification sent to ${lesson.student_email}`);
+          } catch (emailError) {
+            console.error("Failed to send auto-acknowledge email:", emailError);
+          }
+        }
       }
     }
 

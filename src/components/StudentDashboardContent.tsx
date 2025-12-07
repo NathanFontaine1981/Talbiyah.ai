@@ -9,7 +9,6 @@ import RecommendedActionsCard from './RecommendedActionsCard';
 import AnnouncementsCard from './AnnouncementsCard';
 import MyLearningJourneyCard from './MyLearningJourneyCard';
 import PrayerTimesWidget from './PrayerTimesWidget';
-import PointsRedemption from './PointsRedemption';
 import DashboardHeader from './DashboardHeader';
 import MyTeachersWidget from './MyTeachersWidget';
 import DailyRewardModal from './DailyRewardModal';
@@ -183,8 +182,6 @@ export default function StudentDashboardContent({
             <DashboardHeader
               userName={learner.name.split(' ')[0]}
               userRole="Student"
-              userLevel={learner.current_level || 1}
-              userPoints={learner.total_xp || 0}
             />
           </div>
 
@@ -256,11 +253,6 @@ export default function StudentDashboardContent({
         <div className="lg:col-span-1 space-y-6">
           <LearningStatsWidget learnerId={learner.id} />
           <MyTeachersWidget learnerId={learner.id} />
-          <PointsRedemption
-            learnerId={learner.id}
-            currentPoints={learner.total_xp || 0}
-            onRedemption={handleRefresh}
-          />
           <RecommendedActionsCard />
           <AnnouncementsCard />
         </div>

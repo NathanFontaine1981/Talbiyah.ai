@@ -17,7 +17,7 @@ export default function TeacherAvailabilityCard() {
   const navigate = useNavigate();
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teacherId, setTeacherId] = useState<string | null>(null);
+  const [, setTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAvailability();

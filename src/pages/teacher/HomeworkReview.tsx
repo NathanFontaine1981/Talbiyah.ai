@@ -91,8 +91,8 @@ export default function HomeworkReview() {
   const [loading, setLoading] = useState(true);
   const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
   const [arabicSubmissions, setArabicSubmissions] = useState<ArabicHomeworkSubmission[]>([]);
-  const [selectedSubmission, setSelectedSubmission] = useState<HomeworkSubmission | null>(null);
-  const [selectedArabicSubmission, setSelectedArabicSubmission] = useState<ArabicHomeworkSubmission | null>(null);
+  const [, setSelectedSubmission] = useState<HomeworkSubmission | null>(null);
+  const [, setSelectedArabicSubmission] = useState<ArabicHomeworkSubmission | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedArabicId, setExpandedArabicId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'reviewed'>('submitted');
@@ -446,7 +446,6 @@ export default function HomeworkReview() {
 
   // Current view counts
   const currentSubmissions = viewMode === 'arabic' ? arabicSubmissions : submissions;
-  const currentPendingCount = viewMode === 'arabic' ? pendingArabicCount : pendingLessonCount;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">

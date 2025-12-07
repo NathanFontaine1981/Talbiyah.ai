@@ -31,6 +31,67 @@ interface KhutbaInsight {
   created_by: string;
 }
 
+// Quiz Question Component - hides answer until student selects
+function QuizQuestion({ question, index }: { question: any; index: number }) {
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [showResult, setShowResult] = useState(false);
+
+  const handleSelect = (option: string) => {
+    if (showResult) return; // Already answered
+    setSelectedAnswer(option.charAt(0));
+    setShowResult(true);
+  };
+
+  const isCorrect = selectedAnswer === question.correct_answer;
+
+  return (
+    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+      <p className="text-slate-200 font-medium mb-3">{index + 1}. {question.question}</p>
+      <div className="space-y-2 ml-4">
+        {question.options.map((opt: string, optIdx: number) => {
+          const optionLetter = opt.charAt(0);
+          const isThisCorrect = optionLetter === question.correct_answer;
+          const isSelected = selectedAnswer === optionLetter;
+
+          let bgColor = 'bg-slate-700/30 hover:bg-slate-700/50';
+          let textColor = 'text-slate-300';
+
+          if (showResult) {
+            if (isThisCorrect) {
+              bgColor = 'bg-emerald-500/20';
+              textColor = 'text-emerald-400';
+            } else if (isSelected && !isThisCorrect) {
+              bgColor = 'bg-red-500/20';
+              textColor = 'text-red-400';
+            }
+          }
+
+          return (
+            <button
+              key={optIdx}
+              onClick={() => handleSelect(opt)}
+              disabled={showResult}
+              className={`w-full text-left px-3 py-2 rounded-lg transition ${bgColor} ${textColor} ${!showResult ? 'cursor-pointer' : 'cursor-default'}`}
+            >
+              {opt}
+              {showResult && isThisCorrect && ' ✓'}
+              {showResult && isSelected && !isThisCorrect && ' ✗'}
+            </button>
+          );
+        })}
+      </div>
+      {showResult && (
+        <div className={`mt-3 p-2 rounded ${isCorrect ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+          {isCorrect ? '✓ Correct!' : `✗ Incorrect. The correct answer is ${question.correct_answer}.`}
+          {question.explanation && (
+            <p className="text-slate-400 text-sm mt-1">{question.explanation}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InsightsLibrary() {
   const navigate = useNavigate();
   const [insights, setInsights] = useState<KhutbaInsight[]>([]);
@@ -403,12 +464,12 @@ export default function InsightsLibrary() {
               </button>
             </div>
 
-            {/* Modal Content - Simplified view of insights */}
+            {/* Modal Content - FULL view of all insights */}
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Cleaned Transcript */}
+              {/* 1. Full Khutba Summary */}
               {selectedInsight.insights?.cleaned_transcript && (
                 <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Full Khutba</h3>
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Full Khutba Summary</h3>
                   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
                     <p className="text-slate-200 whitespace-pre-line">
                       {selectedInsight.insights.cleaned_transcript}
@@ -417,10 +478,10 @@ export default function InsightsLibrary() {
                 </div>
               )}
 
-              {/* Main Points */}
+              {/* 2. Main Points */}
               {selectedInsight.insights?.main_points?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-amber-400 mb-3">Main Points</h3>
+                  <h3 className="text-lg font-semibold text-amber-400 mb-3">Main Points to Reflect Upon</h3>
                   <div className="space-y-2">
                     {selectedInsight.insights.main_points.map((point: any, idx: number) => (
                       <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
@@ -432,7 +493,7 @@ export default function InsightsLibrary() {
                 </div>
               )}
 
-              {/* Key Themes */}
+              {/* 3. Key Themes */}
               {selectedInsight.insights?.key_themes?.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-400 mb-3">Key Themes</h3>
@@ -446,7 +507,90 @@ export default function InsightsLibrary() {
                 </div>
               )}
 
-              {/* Action Items */}
+              {/* 4. Quranic Words & Phrases */}
+              {selectedInsight.insights?.quranic_words_phrases?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Key Quranic Words & Phrases</h3>
+                  <div className="space-y-4">
+                    {selectedInsight.insights.quranic_words_phrases.map((word: any, idx: number) => (
+                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                        <p className="text-4xl text-center font-arabic text-slate-100 mb-3 leading-loose" dir="rtl">
+                          {word.arabic}
+                        </p>
+                        <p className="text-teal-400 font-semibold">{word.transliteration}</p>
+                        <p className="text-slate-200 mt-1"><span className="text-slate-400">Meaning:</span> {word.meaning}</p>
+                        <p className="text-slate-400 text-sm mt-2">{word.context}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Key Vocabulary */}
+              {selectedInsight.insights?.key_vocabulary?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">Arabic Vocabulary</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-purple-500/20 text-purple-300">
+                          <th className="px-4 py-2 text-left rounded-tl-lg">Term</th>
+                          <th className="px-4 py-2 text-right">Arabic</th>
+                          <th className="px-4 py-2 text-left rounded-tr-lg">Definition</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInsight.insights.key_vocabulary.map((vocab: any, idx: number) => (
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-800/30' : 'bg-slate-800/50'}>
+                            <td className="px-4 py-2 text-slate-200">{vocab.term}</td>
+                            <td className="px-4 py-2 text-2xl font-arabic text-slate-100" dir="rtl">{vocab.arabic || '-'}</td>
+                            <td className="px-4 py-2 text-slate-400">{vocab.definition}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Quran References */}
+              {selectedInsight.insights?.quran_references?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Quran References</h3>
+                  <div className="space-y-4">
+                    {selectedInsight.insights.quran_references.map((ref: any, idx: number) => (
+                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                        {ref.arabic && (
+                          <p className="text-3xl text-center font-arabic text-slate-100 mb-3 leading-loose" dir="rtl">
+                            {ref.arabic}
+                          </p>
+                        )}
+                        <p className="text-slate-200 italic border-l-2 border-emerald-500 pl-4">"{ref.translation}"</p>
+                        <p className="text-emerald-400 font-semibold mt-2">{ref.reference}</p>
+                        <p className="text-slate-400 text-sm mt-2 bg-emerald-500/10 p-2 rounded">Reflection: {ref.reflection}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 7. Hadith References */}
+              {selectedInsight.insights?.hadith_references?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-amber-400 mb-3">Hadith References</h3>
+                  <div className="space-y-4">
+                    {selectedInsight.insights.hadith_references.map((ref: any, idx: number) => (
+                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                        <p className="text-slate-200 italic">"{ref.translation}"</p>
+                        <p className="text-amber-400 font-semibold mt-2">{ref.reference}</p>
+                        <p className="text-slate-400 text-sm mt-2">Reflection: {ref.reflection}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8. Action Items */}
               {selectedInsight.insights?.action_items?.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-red-400 mb-3">Action Items</h3>
@@ -461,7 +605,58 @@ export default function InsightsLibrary() {
                 </div>
               )}
 
-              {/* Family Discussion */}
+              {/* 9. Quiz - Answers hidden until clicked */}
+              {selectedInsight.insights?.quiz?.multiple_choice?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-400 mb-3">Quiz</h3>
+                  <div className="space-y-4">
+                    {selectedInsight.insights.quiz.multiple_choice.map((q: any, idx: number) => (
+                      <QuizQuestion key={idx} question={q} index={idx} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 10. Homework */}
+              {selectedInsight.insights?.homework?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-orange-400 mb-3">Homework</h3>
+                  <div className="space-y-2">
+                    {selectedInsight.insights.homework.map((hw: any, idx: number) => (
+                      <div key={idx} className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-orange-400 font-medium">{idx + 1}. {hw.task}</p>
+                          <span className="text-slate-500 text-sm">({hw.duration})</span>
+                        </div>
+                        <p className="text-slate-400 text-sm mt-1">{hw.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 11. Age-Appropriate Summaries */}
+              {(selectedInsight.insights?.summary_for_children || selectedInsight.insights?.summary_for_teens) && (
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-3">Age-Appropriate Summaries</h3>
+                  <div className="space-y-4">
+                    {selectedInsight.insights.summary_for_children && (
+                      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                        <p className="text-cyan-400 font-semibold mb-2">For Children (5-10):</p>
+                        <p className="text-slate-200">{selectedInsight.insights.summary_for_children}</p>
+                      </div>
+                    )}
+                    {selectedInsight.insights.summary_for_teens && (
+                      <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                        <p className="text-purple-400 font-semibold mb-2">For Teens (11-17):</p>
+                        <p className="text-slate-200">{selectedInsight.insights.summary_for_teens}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 12. Family Discussion Guide */}
               {selectedInsight.insights?.family_discussion_guide?.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-teal-400 mb-3">Family Discussion Guide</h3>

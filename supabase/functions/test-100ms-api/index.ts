@@ -1,7 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getHMSManagementToken } from "../_shared/hms.ts"
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 200, headers: corsHeaders })
+  }
+
   const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID') || '6905fb03033903926e627d60'
 
   let HMS_MANAGEMENT_TOKEN: string
@@ -14,22 +24,146 @@ serve(async (req) => {
       error: 'Failed to generate HMS token',
       details: error.message
     }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
     })
   }
   console.log('📋 HMS_TEMPLATE_ID:', HMS_TEMPLATE_ID)
 
-  const requestBody = {
-    name: `Test-Room-${Date.now()}`,
-    description: `Test room for debugging`,
-    template_id: HMS_TEMPLATE_ID,
-    region: 'in',
+  // Check if this is an update_template action
+  let action = 'test'
+  try {
+    const body = await req.json()
+    action = body.action || 'test'
+  } catch {
+    // No body or invalid JSON, default to test action
   }
 
-  console.log('📤 Request body:', JSON.stringify(requestBody, null, 2))
-
   try {
+    // Handle update_template action
+    if (action === 'update_template') {
+      console.log('\n📍 Updating template with browser recording and transcription...')
+
+      // Get current template
+      const getResponse = await fetch(
+        `https://api.100ms.live/v2/templates/${HMS_TEMPLATE_ID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${HMS_MANAGEMENT_TOKEN}`,
+          },
+        }
+      )
+
+      if (!getResponse.ok) {
+        const error = await getResponse.text()
+        throw new Error(`Failed to get template: ${error}`)
+      }
+
+      const template = await getResponse.json()
+      console.log('Current template:', template.name)
+
+      // Update template with proper browser recording configuration
+      const updatedDestinations = {
+        ...template.destinations,
+        browserRecordings: {
+          "composite-recording": {
+            name: "composite-recording",
+            width: 1920,
+            height: 1080,
+            maxDuration: 7200,
+            presignDuration: 604800,
+            role: "__internal_recorder",
+            autoStopTimeout: 300,
+            recording: {
+              upload: {
+                type: "gs",
+                location: "talbiyah-lesson-recordings",
+                prefix: "recordings/",
+                credentials: {
+                  key: Deno.env.get("GCS_ACCESS_KEY") || "",
+                  secretKey: Deno.env.get("GCS_SECRET_KEY") || ""
+                },
+                options: {
+                  region: "europe-west2"
+                }
+              },
+              thumbnails: {
+                enabled: true,
+                width: 1280,
+                height: 720,
+                offsets: [2, 30, 60]
+              }
+            }
+          }
+        },
+        transcriptions: {
+          "lesson-transcription": {
+            name: "lesson-transcription",
+            role: "__internal_recorder",
+            modes: ["recorded"],
+            outputModes: ["txt", "json", "srt"],
+            language: "en",
+            summary: {
+              enabled: true,
+              context: "Islamic education lesson - Quran, Arabic, or Islamic studies",
+              sections: [
+                { title: "Topics Covered", format: "bullets" },
+                { title: "Key Vocabulary", format: "bullets" },
+                { title: "Summary", format: "paragraph" }
+              ],
+              temperature: 0.5
+            }
+          }
+        }
+      }
+
+      const updateResponse = await fetch(
+        `https://api.100ms.live/v2/templates/${HMS_TEMPLATE_ID}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${HMS_MANAGEMENT_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            destinations: updatedDestinations,
+          }),
+        }
+      )
+
+      if (!updateResponse.ok) {
+        const error = await updateResponse.text()
+        throw new Error(`Failed to update template: ${error}`)
+      }
+
+      const updatedTemplate = await updateResponse.json()
+      console.log("Template updated successfully")
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Template updated with browser recording and transcription",
+          template_id: HMS_TEMPLATE_ID,
+          browserRecordings: Object.keys(updatedTemplate.destinations?.browserRecordings || {}),
+          transcriptions: Object.keys(updatedTemplate.destinations?.transcriptions || {}),
+        }, null, 2),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      )
+    }
+
+    // Default test action - create a test room
+    const requestBody = {
+      name: `Test-Room-${Date.now()}`,
+      description: `Test room for debugging`,
+      template_id: HMS_TEMPLATE_ID,
+      region: 'in',
+    }
+
+    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2))
+
     // Step 1: Create a test room
     console.log('\n📍 Step 1: Creating test room...')
     const roomResponse = await fetch('https://api.100ms.live/v2/rooms', {

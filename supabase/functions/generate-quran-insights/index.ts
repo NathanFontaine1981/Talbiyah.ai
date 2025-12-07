@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const QURAN_API_BASE = 'https://api.quran.com/api/v4';
+
 interface QuranInsightRequest {
   lesson_id: string;
   transcript: string;
@@ -18,6 +20,130 @@ interface QuranInsightRequest {
     student_names: string[];
     lesson_date: string;
   };
+}
+
+interface VerifiedVerse {
+  ayahNumber: number;
+  verseKey: string;
+  firstWord: string;
+  transliteration: string;
+  translation: string;
+  fullVerseUthmani: string;
+  fullVerseTranslation: string;
+}
+
+/**
+ * Fetch verified Quran verses from Quran.com API
+ */
+async function fetchVerifiedQuranData(
+  surahNumber: number,
+  startAyah: number,
+  endAyah: number
+): Promise<VerifiedVerse[]> {
+  try {
+    const params = new URLSearchParams({
+      language: 'en',
+      words: 'true',
+      word_fields: 'text_uthmani,text_simple,translation,transliteration',
+      translations: '131', // Sahih International
+      per_page: '50',
+    });
+
+    const response = await fetch(
+      `${QURAN_API_BASE}/verses/by_chapter/${surahNumber}?${params}`
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch from Quran API:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    const verses: VerifiedVerse[] = [];
+
+    for (const verse of data.verses) {
+      if (verse.verse_number >= startAyah && verse.verse_number <= endAyah) {
+        // Find the first actual word (not end marker)
+        const firstWord = verse.words?.find(
+          (w: { char_type_name: string; position: number }) =>
+            w.char_type_name === 'word' && w.position === 1
+        );
+
+        verses.push({
+          ayahNumber: verse.verse_number,
+          verseKey: verse.verse_key,
+          firstWord: firstWord?.text_uthmani || verse.text_uthmani?.split(' ')[0] || '',
+          transliteration: firstWord?.transliteration?.text || '',
+          translation: firstWord?.translation?.text || '',
+          fullVerseUthmani: verse.text_uthmani,
+          fullVerseTranslation: verse.translations?.[0]?.text || '',
+        });
+      }
+    }
+
+    return verses.sort((a, b) => a.ayahNumber - b.ayahNumber);
+  } catch (error) {
+    console.error('Error fetching Quran data:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate First Word Prompter section with verified data
+ */
+function generateFirstWordPrompterSection(verses: VerifiedVerse[]): string {
+  if (verses.length === 0) return '';
+
+  let section = `
+---
+
+**10. First Word Prompter (Verified from Quran.com)**
+
+Use this for memorization practice - see the first word and try to recall the complete ayah!
+
+| Ayah | First Word | Transliteration | Translation Hint |
+|------|------------|-----------------|------------------|
+`;
+
+  for (const v of verses) {
+    section += `| ${v.ayahNumber} | ${v.firstWord} | ${v.transliteration || '-'} | ${v.translation || '-'} |\n`;
+  }
+
+  section += `
+**Practice Method:**
+1. Cover the verse and look only at the first word
+2. Try to recite the complete ayah from memory
+3. Check your answer
+4. Repeat until automatic
+
+`;
+
+  return section;
+}
+
+/**
+ * Generate verified verses section for context
+ */
+function generateVerifiedVersesSection(verses: VerifiedVerse[]): string {
+  if (verses.length === 0) return '';
+
+  let section = `
+---
+
+**Verified Verses (from Quran.com API)**
+
+`;
+
+  for (const v of verses) {
+    section += `**Ayah ${v.ayahNumber}:**
+> ${v.fullVerseUthmani}
+
+_"${v.fullVerseTranslation}"_
+
+`;
+  }
+
+  return section;
 }
 
 Deno.serve(async (req: Request) => {
@@ -53,6 +179,29 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
+
+    // Parse ayah range (e.g., "1-14" or "15-26")
+    const ayahRangeMatch = metadata.ayah_range.match(/(\d+)\s*[-–]\s*(\d+)/);
+    let startAyah = 1;
+    let endAyah = 10;
+    if (ayahRangeMatch) {
+      startAyah = parseInt(ayahRangeMatch[1], 10);
+      endAyah = parseInt(ayahRangeMatch[2], 10);
+    }
+
+    // Fetch verified Quran data from Quran.com API
+    console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
+    const verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
+    console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
+
+    // Generate verified sections
+    const firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
+    const verifiedVersesSection = generateVerifiedVersesSection(verifiedVerses);
+
+    // Create a summary of verified first words to include in the prompt
+    const verifiedFirstWordsContext = verifiedVerses.length > 0
+      ? `\n\nVERIFIED FIRST WORDS (from Quran.com API - USE THESE EXACT VALUES):\n${verifiedVerses.map(v => `Ayah ${v.ayahNumber}: ${v.firstWord} (${v.transliteration})`).join('\n')}\n`
+      : '';
 
     // Read the system prompt
     const systemPrompt = `You are Talbiyah Insights – Qur'an with Tadabbur.
@@ -152,9 +301,11 @@ METADATA:
 - Teacher: ${metadata.teacher_name}
 - Students: ${metadata.student_names.join(', ')}
 - Date: ${metadata.lesson_date}
-
+${verifiedFirstWordsContext}
 TRANSCRIPT:
 ${transcript}
+
+IMPORTANT: If you include a First Word Prompter section, you MUST use the VERIFIED FIRST WORDS provided above. Do NOT guess or generate first words - they have been verified from the Quran.com API.
 
 Generate the insights following the exact format specified in the system prompt. Use the actual lesson information provided above.`;
 
@@ -197,7 +348,7 @@ Generate the insights following the exact format specified in the system prompt.
     }
 
     const data = await response.json();
-    const generatedText = data.content?.[0]?.text;
+    let generatedText = data.content?.[0]?.text;
 
     if (!generatedText) {
       return new Response(
@@ -207,6 +358,12 @@ Generate the insights following the exact format specified in the system prompt.
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Append verified First Word Prompter section (guaranteed accurate from Quran.com API)
+    if (firstWordPrompterSection) {
+      generatedText = generatedText + firstWordPrompterSection;
+      console.log("Appended verified First Word Prompter section from Quran.com API");
     }
 
     console.log("Insights generated successfully, saving to database...");
@@ -229,6 +386,8 @@ Generate the insights following the exact format specified in the system prompt.
           content: generatedText,
           metadata: metadata,
           generated_at: new Date().toISOString(),
+          verified_verses: verifiedVerses, // Store verified Quran data
+          quran_api_source: 'quran.com/api/v4',
         },
         ai_model: 'claude-3-5-sonnet-20241022',
         confidence_score: 0.90,

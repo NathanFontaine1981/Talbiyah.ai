@@ -22,20 +22,13 @@ interface LessonDetails {
   } | null;
 }
 
-interface PendingBooking {
-  id: string;
-  booking_data: any[];
-  total_amount: number;
-  status: string;
-}
-
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const { clearCart } = useCart();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lessonDetails, setLessonDetails] = useState<LessonDetails | null>(null);
+  const [, setLessonDetails] = useState<LessonDetails | null>(null);
   const [lessons, setLessons] = useState<LessonDetails[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [verifying, setVerifying] = useState(true);

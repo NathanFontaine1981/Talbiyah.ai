@@ -102,7 +102,6 @@ export default function ApplyToTeach() {
   const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
   const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-  const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
   const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
   // File validation function

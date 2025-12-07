@@ -5,7 +5,6 @@ import {
   Download,
   Printer,
   Star,
-  ArrowLeft,
   Video,
   Loader,
   AlertTriangle,
@@ -19,7 +18,6 @@ import {
   Play,
   GraduationCap,
   PenTool,
-  Volume2,
   Calendar,
   ChevronDown,
   ChevronUp,
@@ -35,6 +33,63 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import Breadcrumbs from '../../components/Breadcrumbs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: typeof autoTable;
+    lastAutoTable: { finalY: number };
+  }
+}
+
+// Arabic font loading for PDF - using Amiri Quran for Uthmani script
+let arabicFontBase64: string | null = null;
+
+async function loadArabicFontForPDF(): Promise<string | null> {
+  if (arabicFontBase64) return arabicFontBase64;
+
+  try {
+    // Use Noto Naskh Arabic - more reliable for Unicode Arabic with tashkeel
+    const fontUrls = [
+      'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf',
+      'https://fonts.gstatic.com/s/amiri/v27/J7aRnpd8CGxBHqUpvrIw74NL.ttf'
+    ];
+
+    for (const url of fontUrls) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binary = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+          }
+          arabicFontBase64 = btoa(binary);
+          return arabicFontBase64;
+        }
+      } catch (e) {
+        console.warn('Failed to load font from:', url);
+      }
+    }
+    throw new Error('All font URLs failed');
+  } catch (error) {
+    console.error('Failed to load Arabic font:', error);
+    return null;
+  }
+}
+
+async function setupArabicFontForPDF(doc: jsPDF): Promise<boolean> {
+  const fontData = await loadArabicFontForPDF();
+  if (fontData) {
+    doc.addFileToVFS('NotoNaskhArabic-Regular.ttf', fontData);
+    doc.addFont('NotoNaskhArabic-Regular.ttf', 'NotoNaskhArabic', 'normal');
+    return true;
+  }
+  return false;
+}
 
 interface LessonInsight {
   id: string;
@@ -494,7 +549,7 @@ function parseTafsirPoints(content: string): TafsirPoint[] {
           if (quote.length > 30) {
             scholarQuotes.push({
               scholar: match[1].replace(/\s+/g, ' '),
-              quote: quote.substring(0, 200) + (quote.length > 200 ? '...' : '')
+              quote: quote // Full quote without truncation
             });
           }
           break;
@@ -531,7 +586,7 @@ function parseTafsirPoints(content: string): TafsirPoint[] {
         ayahRef,
         arabic,
         translation,
-        tafsir: tafsir.substring(0, 600), // Limit tafsir length for display
+        tafsir: tafsir, // Full tafsir without truncation
         reflection: reflection.trim() || undefined,
         scholarQuotes: scholarQuotes.length > 0 ? scholarQuotes : undefined
       });
@@ -582,7 +637,6 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
   const questions: QuizQuestion[] = [];
   const lines = content.split('\n');
   let currentQuestion: QuizQuestion | null = null;
-  let pendingOptionsLine: string | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -602,7 +656,6 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
         options: [],
         correctAnswer: -1
       };
-      pendingOptionsLine = null;
       continue;
     }
 
@@ -615,7 +668,6 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
 
       // parts will be like: ["", "A", "option1", "b", "option2", "c", "option3"]
       for (let j = 1; j < parts.length; j += 2) {
-        const optionLetter = parts[j];
         const optionText = parts[j + 1]?.trim();
 
         if (optionText) {
@@ -777,7 +829,7 @@ function parseInsightSections(content: string): InsightSection[] {
 }
 
 // Flip Card Component for Focus Words
-function FlipCard({ word, index }: { word: VocabWord; index: number }) {
+function FlipCard({ word }: { word: VocabWord }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
@@ -800,7 +852,7 @@ function FlipCard({ word, index }: { word: VocabWord; index: number }) {
           className="absolute w-full h-full bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-400 transition flex flex-col items-center justify-center shadow-sm"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-4xl font-arabic text-emerald-700 mb-1 text-center" dir="rtl">{word.arabic}</p>
+          <p className="text-5xl font-arabic text-emerald-700 mb-1 text-center leading-relaxed" dir="rtl">{word.arabic}</p>
           {word.transliteration && (
             <p className="text-sm text-gray-500 italic">{word.transliteration}</p>
           )}
@@ -964,8 +1016,8 @@ function DialogueCard({ line }: { line: DialogueLine }) {
         {isTeacher ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}:
       </p>
 
-      {/* Arabic - right aligned */}
-      <p className="font-arabic text-3xl text-right mb-2 text-gray-900" dir="rtl">
+      {/* Arabic - right aligned with large Uthmani font */}
+      <p className="font-arabic text-4xl text-right mb-3 text-gray-900 leading-loose" dir="rtl">
         {line.arabic}
       </p>
 
@@ -998,8 +1050,8 @@ function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence;
         </div>
       )}
 
-      {/* Arabic - right aligned */}
-      <p className="font-arabic text-3xl text-right mb-2 text-gray-900" dir="rtl">
+      {/* Arabic - right aligned with large Uthmani font */}
+      <p className="font-arabic text-4xl text-right mb-3 text-gray-900 leading-loose" dir="rtl">
         {sentence.arabic}
       </p>
 
@@ -1062,7 +1114,7 @@ function FirstWordPrompterCard({ themes }: { themes: { theme: string; prompts: F
                   </span>
 
                   {/* First word */}
-                  <p className="font-arabic text-2xl text-gray-900 mt-2" dir="rtl">
+                  <p className="font-arabic text-3xl text-gray-900 mt-2 leading-relaxed" dir="rtl">
                     {prompt.firstWord}
                   </p>
 
@@ -1094,7 +1146,7 @@ function GrammarCard({ point }: { point: GrammarPoint }) {
           <h4 className="font-bold text-gray-900">{point.title}</h4>
           {point.arabicTitle && (
             <div className="flex items-center gap-2 mt-1">
-              <span className="font-arabic text-2xl text-orange-700">{point.arabicTitle}</span>
+              <span className="font-arabic text-3xl text-orange-700 leading-relaxed">{point.arabicTitle}</span>
               {point.transliteration && (
                 <span className="text-gray-500 italic">({point.transliteration})</span>
               )}
@@ -1112,7 +1164,7 @@ function GrammarCard({ point }: { point: GrammarPoint }) {
           <p className="text-sm font-medium text-orange-700 mb-2">Examples:</p>
           {point.examples.map((ex, i) => (
             <div key={i} className="flex flex-col">
-              <p className="font-arabic text-2xl text-right text-gray-900" dir="rtl">{ex.arabic}</p>
+              <p className="font-arabic text-3xl text-right text-gray-900 leading-loose" dir="rtl">{ex.arabic}</p>
               <p className="text-gray-600 text-sm">{ex.english}</p>
             </div>
           ))}
@@ -1130,7 +1182,7 @@ function TeacherNoteCard({ note }: { note: TeacherNote }) {
         <span className="text-2xl">💡</span>
         <div className="flex-1">
           {note.arabic && (
-            <p className="font-arabic text-2xl text-purple-800 mb-1">{note.arabic}</p>
+            <p className="font-arabic text-3xl text-purple-800 mb-2 leading-relaxed" dir="rtl">{note.arabic}</p>
           )}
           {note.transliteration && (
             <p className="text-gray-500 italic text-sm mb-2">{note.transliteration}</p>
@@ -1152,7 +1204,7 @@ function TeacherNoteCard({ note }: { note: TeacherNote }) {
 }
 
 // Tafsir Card - Expandable card for detailed verse commentary
-function TafsirCard({ point, index }: { point: TafsirPoint; index: number }) {
+function TafsirCard({ point }: { point: TafsirPoint }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -1171,7 +1223,7 @@ function TafsirCard({ point, index }: { point: TafsirPoint; index: number }) {
             <ChevronDown className={`w-5 h-5 text-teal-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
           {point.arabic && (
-            <p className="font-arabic text-xl text-teal-900 mt-1 text-right" dir="rtl">
+            <p className="font-arabic text-3xl text-teal-900 mt-2 text-right leading-loose" dir="rtl">
               {point.arabic}
             </p>
           )}
@@ -1451,143 +1503,343 @@ export default function LessonInsights() {
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
-  // Download as PDF function - uses browser print for proper Arabic RTL support
+  // Download as PDF function - generates actual PDF with proper Uthmani Arabic
   async function downloadAsPDF() {
     setDownloadingPDF(true);
     try {
-      const element = document.getElementById('insights-content');
-      if (!element) {
-        alert('Could not find content to download');
-        return;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Load Arabic font for Uthmani script with tashkeel
+      const hasArabicFont = await setupArabicFontForPDF(doc);
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 18;
+      const contentWidth = pageWidth - margin * 2;
+      let yPos = margin;
+
+      // Colors
+      const EMERALD = [5, 150, 105] as [number, number, number];
+      const INDIGO = [99, 102, 241] as [number, number, number];
+      const SLATE_800 = [30, 41, 59] as [number, number, number];
+      const SLATE_600 = [71, 85, 105] as [number, number, number];
+      const WHITE = [255, 255, 255] as [number, number, number];
+      const CREAM = [254, 252, 232] as [number, number, number];
+      const GOLD = [180, 140, 50] as [number, number, number];
+
+      const accentColor = isQuran ? EMERALD : INDIGO;
+
+      const addFooter = () => {
+        doc.setFontSize(8);
+        doc.setTextColor(...SLATE_600);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Generated by Talbiyah.ai | www.talbiyah.ai', pageWidth / 2, pageHeight - 10, { align: 'center' });
+        doc.text(`Page ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+      };
+
+      const checkPageBreak = (neededHeight: number) => {
+        if (yPos + neededHeight > pageHeight - 25) {
+          doc.addPage();
+          yPos = margin + 5;
+          addFooter();
+          return true;
+        }
+        return false;
+      };
+
+      // Draw Arabic text with proper font and size
+      const drawArabicText = (text: string, x: number, y: number, fontSize: number = 24, align: 'left' | 'center' | 'right' = 'right') => {
+        doc.setFontSize(fontSize);
+        doc.setTextColor(...SLATE_800);
+        if (hasArabicFont) {
+          doc.setFont('NotoNaskhArabic', 'normal');
+        }
+        doc.text(text, x, y, { align });
+        doc.setFont('helvetica', 'normal');
+      };
+
+      // Draw Arabic box with Uthmani script
+      const drawArabicBox = (arabicText: string, fontSize: number = 26) => {
+        checkPageBreak(fontSize * 0.8 + 12);
+        // Cream background
+        doc.setFillColor(...CREAM);
+        doc.roundedRect(margin, yPos - 2, contentWidth, fontSize * 0.8 + 10, 3, 3, 'F');
+        // Gold border
+        doc.setDrawColor(...GOLD);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(margin, yPos - 2, contentWidth, fontSize * 0.8 + 10, 3, 3, 'S');
+
+        drawArabicText(arabicText, pageWidth - margin - 5, yPos + fontSize * 0.4, fontSize, 'right');
+        yPos += fontSize * 0.8 + 14;
+      };
+
+      const drawSectionHeader = (title: string, color = accentColor) => {
+        checkPageBreak(16);
+        yPos += 4;
+        doc.setFillColor(...color);
+        doc.roundedRect(margin, yPos, contentWidth, 10, 2, 2, 'F');
+        doc.setTextColor(...WHITE);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, margin + 5, yPos + 7);
+        yPos += 16;
+        doc.setTextColor(...SLATE_800);
+      };
+
+      const drawParagraph = (text: string, indent = 0) => {
+        doc.setTextColor(...SLATE_800);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(text, contentWidth - indent - 5);
+        checkPageBreak(lines.length * 5);
+        doc.text(lines, margin + indent, yPos);
+        yPos += lines.length * 5 + 3;
+      };
+
+      const drawBullet = (text: string) => {
+        doc.setTextColor(...accentColor);
+        doc.setFontSize(10);
+        doc.text('•', margin + 3, yPos);
+        doc.setTextColor(...SLATE_800);
+        const lines = doc.splitTextToSize(text, contentWidth - 12);
+        checkPageBreak(lines.length * 5);
+        doc.text(lines, margin + 10, yPos);
+        yPos += lines.length * 5 + 2;
+      };
+
+      // Header
+      doc.setFillColor(...accentColor);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Talbiyah.ai', margin, 15);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(isQuran ? 'Quran Lesson Insights' : 'Arabic Lesson Insights', margin, 22);
+
+      // Title
+      if (insight?.title) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        const titleLines = doc.splitTextToSize(cleanMarkdown(insight.title), 80);
+        doc.text(titleLines, pageWidth - margin, 12, { align: 'right' });
       }
 
-      // Load Arabic fonts via Google Fonts CSS
-      const fontLinkId = 'arabic-fonts-for-pdf';
-      let fontLink = document.getElementById(fontLinkId) as HTMLLinkElement;
-      if (!fontLink) {
-        fontLink = document.createElement('link');
-        fontLink.id = fontLinkId;
-        fontLink.rel = 'stylesheet';
-        fontLink.href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;500;600;700&display=swap';
-        document.head.appendChild(fontLink);
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Date
+      if (lessonTime || metadata?.lesson_date) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const dateStr = new Date(lessonTime || metadata!.lesson_date).toLocaleDateString('en-GB', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        doc.text(dateStr, pageWidth - margin, 20, { align: 'right' });
       }
 
-      await document.fonts.ready;
-
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        alert('Please allow popups to download PDF');
-        return;
+      // Teacher
+      if (metadata?.teacher_name) {
+        doc.text(`Teacher: ${metadata.teacher_name}`, pageWidth - margin, 28, { align: 'right' });
       }
 
-      // Get computed styles
-      const styles = Array.from(document.styleSheets)
-        .map(styleSheet => {
-          try {
-            return Array.from(styleSheet.cssRules)
-              .map(rule => rule.cssText)
-              .join('\n');
-          } catch {
-            return '';
+      yPos = 45;
+      addFooter();
+
+      // Summary section
+      if (sections.length > 0) {
+        const summarySection = sections.find(s => s.type === 'summary');
+        if (summarySection) {
+          drawSectionHeader('Lesson Summary');
+          drawParagraph(cleanMarkdown(summarySection.content));
+        }
+      }
+
+      // Vocabulary section with Arabic in large Uthmani font
+      if (vocabWords.length > 0) {
+        drawSectionHeader('Key Vocabulary');
+
+        vocabWords.slice(0, 15).forEach(word => {
+          checkPageBreak(35);
+
+          // Arabic word in beautiful Uthmani box
+          drawArabicBox(word.arabic, 28);
+
+          // Transliteration
+          doc.setFontSize(11);
+          doc.setTextColor(...accentColor);
+          doc.setFont('helvetica', 'bold');
+          doc.text(word.transliteration, margin + 5, yPos);
+          yPos += 6;
+
+          // English meaning
+          doc.setTextColor(...SLATE_600);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.text(word.english, margin + 5, yPos);
+          yPos += 8;
+        });
+      }
+
+      // Key Sentences with Arabic
+      if (keySentences.length > 0) {
+        drawSectionHeader('Key Sentences');
+
+        keySentences.slice(0, 10).forEach(sentence => {
+          checkPageBreak(40);
+
+          // Arabic sentence in Uthmani
+          drawArabicBox(sentence.arabic, 24);
+
+          // Transliteration
+          if (sentence.transliteration) {
+            doc.setFontSize(10);
+            doc.setTextColor(...accentColor);
+            doc.setFont('helvetica', 'italic');
+            const translitLines = doc.splitTextToSize(sentence.transliteration, contentWidth - 10);
+            doc.text(translitLines, margin + 5, yPos);
+            yPos += translitLines.length * 5 + 3;
           }
-        })
-        .join('\n');
 
-      // Create print document with proper RTL support
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en" dir="ltr">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${insight?.title || 'Lesson Insights'}</title>
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap">
-          <style>
-            ${styles}
+          // English
+          doc.setTextColor(...SLATE_800);
+          doc.setFont('helvetica', 'normal');
+          const engLines = doc.splitTextToSize(sentence.english, contentWidth - 10);
+          doc.text(engLines, margin + 5, yPos);
+          yPos += engLines.length * 5 + 6;
+        });
+      }
 
-            /* Print-specific styles */
-            @media print {
-              body {
-                background: white !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-              }
-              .print\\:hidden { display: none !important; }
-            }
+      // Tafsir Points (for Quran)
+      if (tafsirPoints.length > 0) {
+        drawSectionHeader('Tafsir Points', EMERALD);
 
-            /* Reset for print */
-            body {
-              font-family: system-ui, -apple-system, sans-serif;
-              background: white;
-              color: #1e293b;
-              padding: 20px;
-              max-width: 210mm;
-              margin: 0 auto;
-            }
+        tafsirPoints.forEach(point => {
+          checkPageBreak(60);
 
-            /* Arabic text styles - critical for proper rendering */
-            .font-arabic,
-            [dir="rtl"],
-            [lang="ar"] {
-              font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Arabic Typesetting', serif !important;
-              direction: rtl !important;
-              text-align: right !important;
-              unicode-bidi: isolate !important;
-            }
+          // Ayah reference
+          if (point.ayahRef) {
+            doc.setFontSize(10);
+            doc.setTextColor(...EMERALD);
+            doc.setFont('helvetica', 'bold');
+            doc.text(point.ayahRef, margin + 2, yPos);
+            yPos += 6;
+          }
 
-            /* Ensure Arabic in tables renders correctly */
-            td[dir="rtl"],
-            th[dir="rtl"],
-            .arabic-cell {
-              font-family: 'Noto Naskh Arabic', 'Amiri', serif !important;
-              direction: rtl !important;
-              unicode-bidi: isolate !important;
-            }
+          // Arabic verse
+          if (point.arabic) {
+            drawArabicBox(point.arabic, 22);
+          }
 
-            /* Fix dark backgrounds for print */
-            .bg-slate-800, .bg-slate-900, .bg-gray-800, .bg-gray-900 {
-              background: #f1f5f9 !important;
-            }
-            .text-white, .text-slate-100, .text-gray-100 {
-              color: #1e293b !important;
-            }
+          // Translation
+          if (point.translation) {
+            doc.setDrawColor(...EMERALD);
+            doc.setLineWidth(1);
+            doc.line(margin + 2, yPos - 2, margin + 2, yPos + 10);
+            doc.setTextColor(...SLATE_800);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'italic');
+            const transLines = doc.splitTextToSize(`"${point.translation}"`, contentWidth - 15);
+            doc.text(transLines, margin + 8, yPos);
+            yPos += transLines.length * 5 + 4;
+          }
 
-            /* Card styles for print */
-            .rounded-xl, .rounded-2xl {
-              border: 1px solid #e2e8f0 !important;
-              background: white !important;
-            }
+          // Tafsir explanation
+          if (point.tafsir) {
+            doc.setTextColor(...SLATE_600);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            const tafsirLines = doc.splitTextToSize(point.tafsir, contentWidth - 5);
+            checkPageBreak(tafsirLines.length * 4.5);
+            doc.text(tafsirLines, margin + 2, yPos);
+            yPos += tafsirLines.length * 4.5 + 4;
+          }
 
-            /* Colored accents should print */
-            .bg-emerald-500\\/20, .bg-teal-500\\/20 { background: #d1fae5 !important; }
-            .bg-blue-500\\/20, .bg-indigo-500\\/20 { background: #dbeafe !important; }
-            .text-emerald-400, .text-emerald-500 { color: #059669 !important; }
-            .text-blue-400, .text-blue-500 { color: #2563eb !important; }
-            .text-cyan-400, .text-cyan-500 { color: #0891b2 !important; }
-            .border-emerald-500\\/30 { border-color: #059669 !important; }
-            .border-blue-500\\/30 { border-color: #2563eb !important; }
-          </style>
-        </head>
-        <body>
-          ${element.innerHTML}
-          <script>
-            // Wait for fonts to load then print
-            document.fonts.ready.then(() => {
-              setTimeout(() => {
-                window.print();
-                setTimeout(() => window.close(), 500);
-              }, 500);
+          // Scholar quotes (Ibn Kathir, etc.)
+          if (point.scholarQuotes && point.scholarQuotes.length > 0) {
+            point.scholarQuotes.forEach(sq => {
+              checkPageBreak(20);
+              doc.setFillColor(240, 253, 244);
+              const quoteLines = doc.splitTextToSize(`${sq.scholar}: "${sq.quote}"`, contentWidth - 15);
+              doc.roundedRect(margin, yPos - 2, contentWidth, quoteLines.length * 4.5 + 6, 2, 2, 'F');
+              doc.setTextColor(...SLATE_600);
+              doc.setFont('helvetica', 'italic');
+              doc.setFontSize(9);
+              doc.text(quoteLines, margin + 5, yPos + 2);
+              yPos += quoteLines.length * 4.5 + 10;
             });
-          </script>
-        </body>
-        </html>
-      `;
+          }
 
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
+          yPos += 4;
+        });
+      }
+
+      // Grammar Points
+      if (grammarPoints.length > 0) {
+        drawSectionHeader('Grammar Points');
+
+        grammarPoints.forEach(point => {
+          checkPageBreak(25);
+
+          doc.setFontSize(10);
+          doc.setTextColor(...accentColor);
+          doc.setFont('helvetica', 'bold');
+          let title = point.title;
+          if (point.arabicTitle) title += ` (${point.arabicTitle})`;
+          doc.text(title, margin + 2, yPos);
+          yPos += 5;
+
+          doc.setTextColor(...SLATE_800);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          const explLines = doc.splitTextToSize(point.explanation, contentWidth - 10);
+          doc.text(explLines, margin + 5, yPos);
+          yPos += explLines.length * 4.5 + 3;
+
+          // Examples with Arabic
+          point.examples.forEach(ex => {
+            checkPageBreak(20);
+            if (hasArabicFont) {
+              doc.setFont('NotoNaskhArabic', 'normal');
+              doc.setFontSize(16);
+              doc.text(ex.arabic, pageWidth - margin - 5, yPos, { align: 'right' });
+              doc.setFont('helvetica', 'normal');
+            } else {
+              doc.text(ex.arabic, margin + 10, yPos);
+            }
+            yPos += 8;
+            doc.setFontSize(9);
+            doc.setTextColor(...SLATE_600);
+            doc.text(`→ ${ex.english}`, margin + 10, yPos);
+            yPos += 5;
+          });
+
+          yPos += 3;
+        });
+      }
+
+      // Homework section
+      if (homeworkTasks.length > 0) {
+        drawSectionHeader('Homework', [249, 115, 22] as [number, number, number]);
+
+        homeworkTasks.forEach((task, i) => {
+          checkPageBreak(10);
+          doc.setTextColor(249, 115, 22);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${i + 1}. ${task}`, margin + 2, yPos);
+          yPos += 6;
+        });
+      }
+
+      // Save the PDF
+      const filename = `${cleanMarkdown(insight?.title || 'Lesson-Insights').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-').substring(0, 50)}-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
 
     } catch (err) {
       console.error('Error generating PDF:', err);
@@ -1869,10 +2121,12 @@ export default function LessonInsights() {
       <style>{`
         @media print { body { background: white !important; } .print\\:hidden { display: none !important; } }
         .font-arabic, [dir="rtl"] {
-          font-family: 'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif !important;
+          font-family: 'Amiri Quran', 'KFGQPC Uthmanic Script HAFS', 'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif !important;
           font-feature-settings: normal;
           text-rendering: optimizeLegibility;
           -webkit-font-smoothing: antialiased;
+          /* Extra line height for tashkeel (vowel marks) */
+          line-height: 2 !important;
         }
         /* Ensure Arabic text displays correctly - use 'embed' NOT 'bidi-override' */
         [dir="rtl"] {
@@ -1883,6 +2137,10 @@ export default function LessonInsights() {
         /* Prevent html2canvas from reversing Arabic text */
         .font-arabic {
           unicode-bidi: embed;
+        }
+        /* Ensure tashkeel is visible with proper spacing */
+        .font-arabic.leading-loose, .font-arabic.leading-relaxed {
+          line-height: 2.2 !important;
         }
       `}</style>
 
@@ -2012,7 +2270,7 @@ export default function LessonInsights() {
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {vocabulary.map((word, idx) => (
-                  <FlipCard key={idx} word={word} index={idx} />
+                  <FlipCard key={idx} word={word} />
                 ))}
               </div>
             </div>
@@ -2112,7 +2370,7 @@ export default function LessonInsights() {
                 </p>
                 <div className="space-y-3">
                   {tafsirPoints.map((point, i) => (
-                    <TafsirCard key={i} point={point} index={i} />
+                    <TafsirCard key={i} point={point} />
                   ))}
                 </div>
               </CollapsibleSection>

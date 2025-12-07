@@ -5,7 +5,6 @@ import {
   Bell,
   User as UserIcon,
   LogOut,
-  LayoutDashboard,
   Users,
   Video,
   Settings,
@@ -14,7 +13,6 @@ import {
   Plus,
   MessageCircle,
   ChevronDown,
-  ArrowRight,
   CreditCard,
   Home
 } from 'lucide-react';
@@ -114,8 +112,6 @@ export default function ParentDashboard() {
     { icon: Settings, label: 'Settings', path: '/account/settings', active: false },
   ];
 
-  const selectedLearner = learners.find(l => l.id === selectedLearnerId);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -155,7 +151,7 @@ export default function ParentDashboard() {
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item, index) => (
+          {menuItems.map((item) => (
             <button
               key={item.label}
               onClick={() => item.onClick ? item.onClick() : item.path && navigate(item.path)}
@@ -448,7 +444,7 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('learners')
         .insert({
           parent_id: user.id,

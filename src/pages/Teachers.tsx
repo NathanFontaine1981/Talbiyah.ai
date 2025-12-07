@@ -387,7 +387,7 @@ export default function Teachers() {
 
     setAddingTeacher(true);
     try {
-      const { data, error } = await supabase.rpc('manually_add_teacher_relationship', {
+      const { error } = await supabase.rpc('manually_add_teacher_relationship', {
         p_student_id: studentProfileId,
         p_teacher_id: selectedTeacherForAdd.id,
         p_subject_id: selectedSubjectForAdd

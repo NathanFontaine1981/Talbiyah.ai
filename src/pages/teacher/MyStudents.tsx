@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Search, Filter, TrendingUp, BookOpen } from 'lucide-react';
+import { ArrowLeft, Users, Search, Filter, TrendingUp } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import StudentCard from '../../components/teacher/StudentCard';
 

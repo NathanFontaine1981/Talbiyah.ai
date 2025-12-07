@@ -127,7 +127,40 @@ serve(async (req) => {
 
         console.log(`Teacher eligible for manual promotion to ${nextTier.tier}`)
 
-        // TODO: Send notification to admin and teacher
+        // Get teacher's profile info for notification
+        const { data: teacherUser } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', teacher.user_id)
+          .maybeSingle()
+
+        // Send notification to teacher about eligibility
+        if (teacherUser?.email) {
+          try {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+            const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                type: 'tier_eligible_for_review',
+                recipient_email: teacherUser.email,
+                recipient_name: teacherUser.full_name || 'Teacher',
+                data: {
+                  eligible_tier_name: nextTier.tier_name || nextTier.tier,
+                  hours_taught: updatedHours.toFixed(1),
+                  average_rating: (teacher.average_rating || 0).toFixed(1),
+                },
+              }),
+            })
+            console.log('✅ Tier eligibility notification sent to teacher')
+          } catch (emailError) {
+            console.error('Failed to send tier eligibility email:', emailError)
+          }
+        }
 
         return new Response(
           JSON.stringify({
@@ -255,7 +288,39 @@ serve(async (req) => {
         }
       }
 
-      // TODO: Send congratulations email/notification to teacher
+      // Send congratulations email/notification to teacher
+      const { data: promotedTeacherUser } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', teacher.user_id)
+        .maybeSingle()
+
+      if (promotedTeacherUser?.email) {
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+          const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              type: 'tier_promotion',
+              recipient_email: promotedTeacherUser.email,
+              recipient_name: promotedTeacherUser.full_name || 'Teacher',
+              data: {
+                new_tier_name: nextTier.tier_name || nextTier.tier,
+                new_tier_icon: nextTier.tier_icon || '🎉',
+                hourly_rate: nextTier.hourly_rate,
+              },
+            }),
+          })
+          console.log('✅ Tier promotion congratulations email sent')
+        } catch (emailError) {
+          console.error('Failed to send promotion email:', emailError)
+        }
+      }
 
       return new Response(
         JSON.stringify({

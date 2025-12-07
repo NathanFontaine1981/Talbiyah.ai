@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Check, X, Calendar, ChevronLeft, ChevronRight, Clock, Repeat, Ban, Info, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Check, X, Calendar, ChevronLeft, ChevronRight, Repeat, Ban, Info, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, startOfWeek, addWeeks, addDays, getDay, isBefore, startOfDay, endOfWeek, eachDayOfInterval } from 'date-fns';
-import TeacherAvailabilityCard from '../components/TeacherAvailabilityCard';
+import { format, startOfWeek, addDays, getDay, isBefore, startOfDay } from 'date-fns';
 
 interface DateAvailability {
   date: Date;
@@ -25,7 +24,7 @@ export default function TeacherAvailability() {
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [availability, setAvailability] = useState<Map<string, DateAvailability>>(new Map());
-  const [slotDuration, setSlotDuration] = useState<30 | 60>(60);
+  const [slotDuration] = useState<30 | 60>(60);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showRecurringModal, setShowRecurringModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -111,7 +110,7 @@ export default function TeacherAvailability() {
           break;
 
         case ' ':
-        case 'Enter':
+        case 'Enter': {
           // Toggle selection of focused slot
           const date = monthDates[dateIndex];
           const dateKey = format(date, 'yyyy-MM-dd');
@@ -123,6 +122,7 @@ export default function TeacherAvailability() {
           }
           e.preventDefault();
           break;
+        }
       }
     }
 
@@ -287,43 +287,6 @@ export default function TeacherAvailability() {
     }
   }
 
-  function toggleSlot(dateKey: string, slotIndex: number) {
-    setAvailability(prev => {
-      const newAvail = new Map(prev);
-      const dateAvail = newAvail.get(dateKey);
-      if (dateAvail) {
-        const newSlots = [...dateAvail.slots];
-        newSlots[slotIndex] = {
-          ...newSlots[slotIndex],
-          available: !newSlots[slotIndex].available
-        };
-        newAvail.set(dateKey, { ...dateAvail, slots: newSlots });
-      }
-      return newAvail;
-    });
-  }
-
-  function toggleSlotSubject(dateKey: string, slotIndex: number, subjectId: string) {
-    setAvailability(prev => {
-      const newAvail = new Map(prev);
-      const dateAvail = newAvail.get(dateKey);
-      if (dateAvail) {
-        const newSlots = [...dateAvail.slots];
-        const currentSubjects = newSlots[slotIndex].subjects || [];
-        const newSubjects = currentSubjects.includes(subjectId)
-          ? currentSubjects.filter(id => id !== subjectId)
-          : [...currentSubjects, subjectId];
-
-        newSlots[slotIndex] = {
-          ...newSlots[slotIndex],
-          subjects: newSubjects
-        };
-        newAvail.set(dateKey, { ...dateAvail, slots: newSlots });
-      }
-      return newAvail;
-    });
-  }
-
   function isPastDate(date: Date): boolean {
     return isBefore(startOfDay(date), startOfDay(new Date()));
   }
@@ -436,7 +399,6 @@ export default function TeacherAvailability() {
       // Update the selected slots to be available
       const subjectsArray = Array.from(applySubjects);
       const selectedCount = selectedSlots.size;
-      let updatedCount = 0;
 
       selectedSlots.forEach(slotKey => {
         // Split on the LAST hyphen only (date contains hyphens: 2025-11-13-0)
@@ -453,7 +415,6 @@ export default function TeacherAvailability() {
             available: true,
             subjects: subjectsArray
           };
-          updatedCount++;
         }
       });
 
@@ -703,14 +664,11 @@ export default function TeacherAvailability() {
       // Group by (day_of_week, time, subjects) to detect patterns
       const slotPatterns = new Map<string, { dates: string[], dayOfWeek: number, time: string, subjects: string[] }>();
 
-      let totalAvailableSlots = 0;
       availabilityData.forEach((dateAvail, dateKey) => {
         const dayOfWeek = getDay(dateAvail.date);
 
         dateAvail.slots.forEach((slot) => {
           if (slot.available) {
-            totalAvailableSlots++;
-
             // Create a key based on day_of_week, time, and subjects
             // Empty subjects array is allowed
             const subjectsKey = JSON.stringify((slot.subjects || []).sort());

@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Zap, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string;
-  userLevel?: number;
-  userPoints?: number;
-  userRole?: string;
+  userRole?: 'Student' | 'Parent' | 'Teacher' | 'Admin';
 }
 
-export default function DashboardHeader({ userName, userLevel = 1, userPoints = 75, userRole = 'Student' }: DashboardHeaderProps) {
+export default function DashboardHeader({ userName, userRole = 'Student' }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselType, setCarouselType] = useState<'names' | 'hadiths' | 'ayahs'>('names');
@@ -81,60 +79,35 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
           mainBg: 'bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800',
           cardBg: 'bg-emerald-900/30',
           cardBorder: 'border-emerald-600/30',
-          levelBg: 'bg-emerald-900/50',
-          levelBorder: 'border-emerald-600/30',
-          levelIcon: 'text-amber-400',
-          textPrimary: 'text-white',
           textSecondary: 'text-white/80',
-          iconPrimary: 'text-pink-300',
         };
       case 'Parent':
         return {
           mainBg: 'bg-gradient-to-br from-purple-700 via-purple-600 to-purple-800',
           cardBg: 'bg-purple-900/30',
           cardBorder: 'border-purple-600/30',
-          levelBg: 'bg-purple-900/50',
-          levelBorder: 'border-purple-600/30',
-          levelIcon: 'text-amber-400',
-          textPrimary: 'text-white',
           textSecondary: 'text-white/80',
-          iconPrimary: 'text-purple-300',
         };
       case 'Teacher':
         return {
           mainBg: 'bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800',
           cardBg: 'bg-blue-900/30',
           cardBorder: 'border-blue-600/30',
-          levelBg: 'bg-blue-900/50',
-          levelBorder: 'border-blue-600/30',
-          levelIcon: 'text-amber-400',
-          textPrimary: 'text-white',
           textSecondary: 'text-white/80',
-          iconPrimary: 'text-cyan-300',
         };
       case 'Admin':
         return {
           mainBg: 'bg-gradient-to-br from-amber-600 via-amber-500 to-amber-700',
           cardBg: 'bg-amber-900/30',
           cardBorder: 'border-amber-600/30',
-          levelBg: 'bg-amber-900/50',
-          levelBorder: 'border-amber-600/30',
-          levelIcon: 'text-amber-300',
-          textPrimary: 'text-white',
           textSecondary: 'text-white/80',
-          iconPrimary: 'text-amber-200',
         };
       default:
         return {
           mainBg: 'bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800',
           cardBg: 'bg-emerald-900/30',
           cardBorder: 'border-emerald-600/30',
-          levelBg: 'bg-emerald-900/50',
-          levelBorder: 'border-emerald-600/30',
-          levelIcon: 'text-amber-400',
-          textPrimary: 'text-white',
           textSecondary: 'text-white/80',
-          iconPrimary: 'text-pink-300',
         };
     }
   };
@@ -160,16 +133,6 @@ export default function DashboardHeader({ userName, userLevel = 1, userPoints = 
           </div>
         </div>
 
-        <div className={`${colors.levelBg} backdrop-blur-sm rounded-xl px-4 py-2 border ${colors.levelBorder}`}>
-          <div className="flex items-center gap-2">
-            <Zap className={`w-4 h-4 ${colors.levelIcon}`} />
-            <div className="text-white/90 text-sm">
-              <span className="text-xs">Level {userLevel}</span>
-              <span className="mx-1.5">•</span>
-              <span className="font-bold">{userPoints} pts</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-3">

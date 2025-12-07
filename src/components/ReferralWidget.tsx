@@ -25,7 +25,6 @@ export default function ReferralWidget() {
 
   useEffect(() => {
     loadReferralStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadReferralStats() {
@@ -47,7 +46,7 @@ export default function ReferralWidget() {
       }
 
       // Get or create referral credits
-      let { data: credits, error: creditsError } = await supabase
+      const { data: credits, error: creditsError } = await supabase
         .from('referral_credits')
         .select('*')
         .eq('user_id', user.id)

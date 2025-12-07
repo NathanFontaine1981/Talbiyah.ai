@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Users,
   GraduationCap,
-  Video,
   Settings,
   TrendingUp,
   Calendar,
@@ -22,7 +21,6 @@ import {
   Brain,
   UsersRound,
   FileVideo,
-  Wrench,
   Tag
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';

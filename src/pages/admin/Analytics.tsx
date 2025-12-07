@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, Calendar, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays } from 'date-fns';
 
@@ -79,11 +79,12 @@ export default function Analytics() {
         start = startOfMonth(now);
         end = endOfMonth(now);
         break;
-      case 'lastMonth':
+      case 'lastMonth': {
         const lastMonth = subDays(startOfMonth(now), 1);
         start = startOfMonth(lastMonth);
         end = endOfMonth(lastMonth);
         break;
+      }
       case 'thisYear':
         start = startOfYear(now);
         break;
@@ -420,19 +421,6 @@ export default function Analytics() {
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
-  }
-
-  function getTimePeriodLabel() {
-    const labels = {
-      '7days': 'Last 7 days',
-      '30days': 'Last 30 days',
-      '90days': 'Last 90 days',
-      'thisMonth': 'This Month',
-      'lastMonth': 'Last Month',
-      'thisYear': 'This Year',
-      'custom': 'Custom Range',
-    };
-    return labels[timePeriod];
   }
 
   if (loading) {

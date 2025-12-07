@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award,
-  TrendingUp, MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Home
+  MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Home
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';

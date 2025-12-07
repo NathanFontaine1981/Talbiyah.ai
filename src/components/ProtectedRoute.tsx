@@ -124,7 +124,6 @@ export default function ProtectedRoute({
       isMounted = false;
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipOnboardingCheck]);
 
   if (loading) {

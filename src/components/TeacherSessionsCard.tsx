@@ -245,7 +245,6 @@ export default function TeacherSessionsCard() {
       if (lessonError) throw lessonError;
 
       const learnerId = lessonData.learner_id;
-      const parentId = lessonData.learners.parent_id;
       const studentName = lessonData.learners.name;
       const teacherId = lessonData.teacher_id;
 

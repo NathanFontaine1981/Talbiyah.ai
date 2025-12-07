@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const QURAN_API_BASE = 'https://api.quran.com/api/v4';
+
 interface LessonInsightRequest {
   lesson_id: string;
   transcript: string;
@@ -22,6 +24,104 @@ interface LessonInsightRequest {
     lesson_date: string;
     duration_minutes?: number;
   };
+}
+
+interface VerifiedVerse {
+  ayahNumber: number;
+  verseKey: string;
+  firstWord: string;
+  transliteration: string;
+  translation: string;
+  fullVerseUthmani: string;
+  fullVerseTranslation: string;
+}
+
+/**
+ * Fetch verified Quran verses from Quran.com API
+ */
+async function fetchVerifiedQuranData(
+  surahNumber: number,
+  startAyah: number,
+  endAyah: number
+): Promise<VerifiedVerse[]> {
+  try {
+    const params = new URLSearchParams({
+      language: 'en',
+      words: 'true',
+      word_fields: 'text_uthmani,text_simple,translation,transliteration',
+      translations: '131',
+      per_page: '50',
+    });
+
+    const response = await fetch(
+      `${QURAN_API_BASE}/verses/by_chapter/${surahNumber}?${params}`
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch from Quran API:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    const verses: VerifiedVerse[] = [];
+
+    for (const verse of data.verses) {
+      if (verse.verse_number >= startAyah && verse.verse_number <= endAyah) {
+        const firstWord = verse.words?.find(
+          (w: { char_type_name: string; position: number }) =>
+            w.char_type_name === 'word' && w.position === 1
+        );
+
+        verses.push({
+          ayahNumber: verse.verse_number,
+          verseKey: verse.verse_key,
+          firstWord: firstWord?.text_uthmani || verse.text_uthmani?.split(' ')[0] || '',
+          transliteration: firstWord?.transliteration?.text || '',
+          translation: firstWord?.translation?.text || '',
+          fullVerseUthmani: verse.text_uthmani,
+          fullVerseTranslation: verse.translations?.[0]?.text || '',
+        });
+      }
+    }
+
+    return verses.sort((a, b) => a.ayahNumber - b.ayahNumber);
+  } catch (error) {
+    console.error('Error fetching Quran data:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate First Word Prompter section with verified data
+ */
+function generateFirstWordPrompterSection(verses: VerifiedVerse[]): string {
+  if (verses.length === 0) return '';
+
+  let section = `
+---
+
+## 🎯 First Word Prompter (Verified from Quran.com)
+
+Use this for memorization practice - see the first word and try to recall the complete ayah!
+
+| Ayah | First Word | Transliteration | Translation Hint |
+|------|------------|-----------------|------------------|
+`;
+
+  for (const v of verses) {
+    section += `| ${v.ayahNumber} | ${v.firstWord} | ${v.transliteration || '-'} | ${v.translation || '-'} |\n`;
+  }
+
+  section += `
+**Practice Method:**
+1. Cover the verse and look only at the first word
+2. Try to recite the complete ayah from memory
+3. Check your answer
+4. Repeat until automatic
+
+`;
+
+  return section;
 }
 
 // System prompts
@@ -310,13 +410,38 @@ Deno.serve(async (req: Request) => {
     let systemPrompt: string;
     let insightType: string;
     let title: string;
+    let verifiedVerses: VerifiedVerse[] = [];
+    let firstWordPrompterSection = '';
+    let verifiedFirstWordsContext = '';
 
     const subjectLower = subject.toLowerCase();
+    const isQuranLesson = subjectLower.includes('quran') || subjectLower.includes('qur');
 
-    if (subjectLower.includes('quran') || subjectLower.includes('qur')) {
+    if (isQuranLesson) {
       systemPrompt = QURAN_PROMPT;
       insightType = 'subject_specific';
       title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+
+      // Fetch verified Quran data from Quran.com API
+      if (metadata.surah_number && metadata.ayah_range) {
+        const ayahRangeMatch = metadata.ayah_range.match(/(\d+)\s*[-–]\s*(\d+)/);
+        if (ayahRangeMatch) {
+          const startAyah = parseInt(ayahRangeMatch[1], 10);
+          const endAyah = parseInt(ayahRangeMatch[2], 10);
+
+          console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
+          verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
+          console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
+
+          // Generate verified First Word Prompter section
+          firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
+
+          // Create context for AI prompt
+          if (verifiedVerses.length > 0) {
+            verifiedFirstWordsContext = `\n\nVERIFIED FIRST WORDS (from Quran.com API - USE THESE EXACT VALUES):\n${verifiedVerses.map(v => `Ayah ${v.ayahNumber}: ${v.firstWord} (${v.transliteration})`).join('\n')}\n`;
+          }
+        }
+      }
     } else if (subjectLower.includes('arabic')) {
       systemPrompt = ARABIC_PROMPT;
       insightType = 'subject_specific';
@@ -353,11 +478,11 @@ METADATA:`;
     }
 
     userPrompt += `
-
+${verifiedFirstWordsContext}
 TRANSCRIPT:
 ${transcript}
 
-Generate the insights following the exact format specified in the system prompt.`;
+${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a First Word Prompter section, you MUST use the VERIFIED FIRST WORDS provided above. Do NOT guess or generate first words - they have been verified from the Quran.com API.\n\n' : ''}Generate the insights following the exact format specified in the system prompt.`;
 
     console.log(`Calling Claude API to generate ${subject} insights...`);
 
@@ -398,7 +523,7 @@ Generate the insights following the exact format specified in the system prompt.
     }
 
     const data = await response.json();
-    const generatedText = data.content?.[0]?.text;
+    let generatedText = data.content?.[0]?.text;
 
     if (!generatedText) {
       return new Response(
@@ -408,6 +533,12 @@ Generate the insights following the exact format specified in the system prompt.
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Append verified First Word Prompter section for Quran lessons
+    if (isQuranLesson && firstWordPrompterSection) {
+      generatedText = generatedText + firstWordPrompterSection;
+      console.log("Appended verified First Word Prompter section from Quran.com API");
     }
 
     console.log("Insights generated successfully, saving to database...");
@@ -428,6 +559,18 @@ Generate the insights following the exact format specified in the system prompt.
     let savedInsight;
     let saveError;
 
+    // Build detailed insights object with verified Quran data if available
+    const detailedInsightsData = {
+      content: generatedText,
+      subject: subject,
+      metadata: metadata,
+      generated_at: new Date().toISOString(),
+      ...(isQuranLesson && verifiedVerses.length > 0 && {
+        verified_verses: verifiedVerses,
+        quran_api_source: 'quran.com/api/v4',
+      }),
+    };
+
     if (existingInsight) {
       // Update existing
       const { data, error } = await supabase
@@ -436,12 +579,7 @@ Generate the insights following the exact format specified in the system prompt.
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
-          detailed_insights: {
-            content: generatedText,
-            subject: subject,
-            metadata: metadata,
-            generated_at: new Date().toISOString(),
-          },
+          detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,
           processing_time_ms: processingTime,
@@ -460,12 +598,7 @@ Generate the insights following the exact format specified in the system prompt.
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
-          detailed_insights: {
-            content: generatedText,
-            subject: subject,
-            metadata: metadata,
-            generated_at: new Date().toISOString(),
-          },
+          detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,
           processing_time_ms: processingTime,

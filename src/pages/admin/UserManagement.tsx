@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, Activity, UserCheck, X, Check, AlertCircle, Users, GraduationCap, Heart, Shield } from 'lucide-react';
+import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 
@@ -1329,7 +1329,6 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
 
 // User Details Modal
 function UserDetailsModal({ user, onClose }: any) {
-  const [activities, setActivities] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

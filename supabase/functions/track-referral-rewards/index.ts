@@ -226,10 +226,42 @@ Deno.serve(async (req: Request) => {
     // ═══════════════════════════════════════
     // SEND NOTIFICATION (if rewards earned)
     // ═══════════════════════════════════════
-    if (rewardsEarned.length > 0) {
+    if (rewardsEarned.length > 0 && referral.referrer?.email) {
       // Send email notification
       console.log(`Rewards earned for ${referral.referrer.email}:`, rewardsEarned);
-      // TODO: Implement email notification via send-email function
+
+      // Calculate total credits earned in this batch
+      const totalCreditsEarned = rewardsEarned.reduce((sum, r) => sum + (r.credits || 0), 0);
+
+      // Get current user credit balance
+      const { data: userCredits } = await supabase
+        .from("user_credits")
+        .select("balance")
+        .eq("user_id", referral.referrer_id)
+        .maybeSingle();
+
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            type: "referral_reward",
+            recipient_email: referral.referrer.email,
+            recipient_name: referral.referrer.full_name || "User",
+            data: {
+              credits_earned: totalCreditsEarned,
+              referred_name: referral.referred?.full_name || "Your referral",
+              total_credits: userCredits?.balance || totalCreditsEarned,
+            },
+          }),
+        });
+        console.log("✅ Referral reward notification sent");
+      } catch (emailError) {
+        console.error("Failed to send referral reward email:", emailError);
+      }
     }
 
     return new Response(

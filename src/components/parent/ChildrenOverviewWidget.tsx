@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Trophy,
   Flame,
   BookOpen,
   Clock,
-  TrendingUp,
   Calendar,
-  ChevronRight,
-  Star
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { calculateAge } from '../../utils/ageCalculations';
@@ -35,7 +32,6 @@ interface ChildrenOverviewWidgetProps {
 }
 
 export default function ChildrenOverviewWidget({ parentId, onSelectChild }: ChildrenOverviewWidgetProps) {
-  const navigate = useNavigate();
   const [children, setChildren] = useState<ChildProgress[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -101,9 +101,51 @@ Deno.serve(async (req: Request) => {
     console.log(`✅ Lesson ${lesson_id} acknowledged by teacher ${lesson.teacher_id}`);
     console.log(`📧 Send acknowledgment email to: ${studentEmail} (${studentName})`);
 
-    // TODO: Send email notification to student
-    // Include teacher message if provided
-    // Remind that room opens 6 hours before lesson
+    // Get teacher name for the email
+    const { data: teacherProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", lesson.teacher_id)
+      .maybeSingle();
+
+    const teacherName = teacherProfile?.full_name || "Your teacher";
+    const subjectName = lesson.subjects?.name || "Lesson";
+
+    // Send email notification to student
+    if (studentEmail) {
+      try {
+        const notificationResponse = await fetch(
+          `${supabaseUrl}/functions/v1/send-notification-email`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              type: "lesson_acknowledged",
+              recipient_email: studentEmail,
+              recipient_name: studentName,
+              data: {
+                teacher_name: teacherName,
+                scheduled_time: lesson.scheduled_time,
+                subject: subjectName,
+              },
+            }),
+          }
+        );
+
+        if (notificationResponse.ok) {
+          console.log("✅ Acknowledgment email sent successfully");
+        } else {
+          const errorText = await notificationResponse.text();
+          console.error("Failed to send email:", errorText);
+        }
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Don't fail the whole request if email fails
+      }
+    }
 
     return new Response(
       JSON.stringify({

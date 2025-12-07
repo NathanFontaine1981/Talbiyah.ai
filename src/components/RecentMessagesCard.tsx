@@ -19,7 +19,6 @@ export default function RecentMessagesCard() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<RecentMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [totalUnread, setTotalUnread] = useState(0);
 
   useEffect(() => {
@@ -100,7 +99,6 @@ export default function RecentMessagesCard() {
       const recentMessagesData = await Promise.all(
         relationships.map(async (rel: any) => {
           // Handle null cases for student/parent/teacher data
-          let otherUserId: string;
           let otherUserName: string;
           let otherUserAvatar: string | null;
 
@@ -124,28 +122,23 @@ export default function RecentMessagesCard() {
                 const studentInfo = students[rel.student_id];
 
                 if (studentInfo) {
-                  otherUserId = rel.student_id;
                   otherUserName = studentInfo.name;
                   otherUserAvatar = studentInfo.avatar_url;
                 } else {
-                  otherUserId = rel.student_id;
                   otherUserName = 'Student';
                   otherUserAvatar = null;
                 }
               } else {
-                otherUserId = rel.student_id;
                 otherUserName = 'Student';
                 otherUserAvatar = null;
               }
             } catch (error) {
               console.error('Error fetching student info:', error);
-              otherUserId = rel.student_id;
               otherUserName = 'Student';
               otherUserAvatar = null;
             }
           } else {
             // Student viewing - get teacher info
-            otherUserId = rel.teacher?.user?.id || rel.teacher_id;
             otherUserName = rel.teacher?.user?.full_name || 'Teacher';
             otherUserAvatar = rel.teacher?.user?.avatar_url || null;
           }

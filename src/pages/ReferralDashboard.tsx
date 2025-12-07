@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Gift, Users, Trophy, TrendingUp, Share2, Copy, Check,
-  Award, Target, Zap, Star, Crown, ArrowRight, ExternalLink,
-  Facebook, Twitter, MessageCircle as WhatsApp, Mail, Link2
+  Award, Crown, ArrowRight, ExternalLink,
+  Facebook, Twitter, MessageCircle as WhatsApp, Mail
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 

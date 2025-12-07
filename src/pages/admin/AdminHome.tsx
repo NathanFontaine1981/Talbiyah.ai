@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, UserCheck, Clock, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight } from 'lucide-react';
+import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 interface DashboardStats {

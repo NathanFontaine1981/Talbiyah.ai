@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, User, CalendarClock, Sparkles, MessageCircle, X, ArrowLeft, Filter, Play, Download, BookOpen } from 'lucide-react';
+import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast, differenceInDays } from 'date-fns';
 
@@ -45,16 +45,6 @@ interface RawLessonData {
     };
   };
   subjects: { name: string };
-}
-
-interface RecordingData {
-  lesson_id: string;
-  recording_url: string;
-  expires_at: string;
-}
-
-interface MessageData {
-  lesson_id: string;
 }
 
 export default function MyClasses() {
@@ -118,7 +108,7 @@ export default function MyClasses() {
           .eq('parent_id', user.id)
           .maybeSingle();
 
-        let learnerId = learner?.id;
+        const learnerId = learner?.id;
 
         if (!learnerId) {
           setLoading(false);
@@ -230,45 +220,6 @@ export default function MyClasses() {
       console.error('Error loading lessons:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function viewMessage(lessonId: string) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // New schema: messages don't have receiver_id or is_read
-      // Instead, read_at is null for unread, and we check sender_id != user.id
-      const { data: messages, error } = await supabase
-        .from('lesson_messages')
-        .select('id, message_text, sender_id, created_at')
-        .eq('lesson_id', lessonId)
-        .neq('sender_id', user.id)
-        .is('read_at', null)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
-
-      if (messages && messages.length > 0) {
-        setMessageContent(messages[0].message_text);
-        setViewingMessage(lessonId);
-
-        // Mark message as read by setting read_at
-        await supabase
-          .from('lesson_messages')
-          .update({ read_at: new Date().toISOString() })
-          .eq('id', messages[0].id);
-
-        setLessons(lessons.map(lesson =>
-          lesson.id === lessonId
-            ? { ...lesson, unread_messages: Math.max(0, lesson.unread_messages - 1) }
-            : lesson
-        ));
-      }
-    } catch (error) {
-      console.error('Error viewing message:', error);
     }
   }
 

@@ -119,9 +119,6 @@ export default function LearningHistoryWidget() {
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson) => {
-            const isQuran = lesson.subject_name?.toLowerCase().includes('quran');
-            const accentColor = isQuran ? 'emerald' : 'blue';
-
             return (
               <div
                 key={lesson.id}
