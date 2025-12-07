@@ -549,6 +549,26 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
 
     const processingTime = Date.now() - startTime;
 
+    // Fetch lesson to get teacher_id and learner_id for RLS
+    const { data: lessonData, error: lessonError } = await supabase
+      .from('lessons')
+      .select('teacher_id, learner_id, subject_id')
+      .eq('id', lesson_id)
+      .single();
+
+    if (lessonError || !lessonData) {
+      console.error("Error fetching lesson data:", lessonError);
+      return new Response(
+        JSON.stringify({ error: "Lesson not found", details: lessonError?.message }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Lesson data fetched:", { teacher_id: lessonData.teacher_id, learner_id: lessonData.learner_id });
+
     // Check if insight already exists for this lesson
     const { data: existingInsight } = await supabase
       .from('lesson_insights')
@@ -572,10 +592,13 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
     };
 
     if (existingInsight) {
-      // Update existing
+      // Update existing - ensure teacher_id, learner_id, subject_id are set for RLS
       const { data, error } = await supabase
         .from('lesson_insights')
         .update({
+          teacher_id: lessonData.teacher_id,
+          learner_id: lessonData.learner_id,
+          subject_id: lessonData.subject_id,
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
@@ -590,11 +613,14 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       savedInsight = data;
       saveError = error;
     } else {
-      // Insert new
+      // Insert new - include teacher_id, learner_id, subject_id for RLS
       const { data, error } = await supabase
         .from('lesson_insights')
         .insert({
           lesson_id,
+          teacher_id: lessonData.teacher_id,
+          learner_id: lessonData.learner_id,
+          subject_id: lessonData.subject_id,
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
