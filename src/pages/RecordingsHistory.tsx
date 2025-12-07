@@ -227,7 +227,11 @@ export default function RecordingsHistory() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{recording.duration_minutes} minutes</span>
+                        <span>{format(parseISO(recording.scheduled_time), 'h:mm a')}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span>{recording.duration_minutes} min duration</span>
                       </div>
                     </div>
 
