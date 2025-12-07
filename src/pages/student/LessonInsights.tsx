@@ -5,7 +5,6 @@ import {
   Download,
   Printer,
   Star,
-  Video,
   Loader,
   AlertTriangle,
   CheckCircle,
@@ -15,7 +14,6 @@ import {
   BookMarked,
   XCircle,
   Clock,
-  Play,
   GraduationCap,
   PenTool,
   Calendar,
@@ -117,20 +115,6 @@ interface LessonInsight {
   viewed_by_student: boolean;
   student_rating: number | null;
   created_at: string;
-}
-
-interface RecordingData {
-  primary?: {
-    presigned_url: string;
-    duration: number;
-  };
-  screen_share?: {
-    presigned_url: string;
-    duration: number;
-  };
-  transcript_url?: string;
-  days_until_expiry?: number;
-  expires_warning?: boolean;
 }
 
 // Word interface for vocabulary
@@ -1405,79 +1389,6 @@ function CollapsibleSection({
   );
 }
 
-// Video Player Component
-function VideoPlayer({
-  url,
-  title,
-  daysUntilExpiry,
-  expiresWarning
-}: {
-  url: string;
-  title: string;
-  daysUntilExpiry?: number;
-  expiresWarning?: boolean;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (hasError) {
-    return (
-      <div className="rounded-2xl bg-gray-100 p-8 text-center">
-        <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-600 mb-4">Video unavailable. The recording may have expired.</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium"
-        >
-          <Play className="w-4 h-4" />
-          Try Opening Directly
-        </a>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200">
-      {expiresWarning && daysUntilExpiry !== undefined && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-600" />
-          <span className="text-amber-800 text-sm font-medium">
-            Recording expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''} - download to keep
-          </span>
-        </div>
-      )}
-      <div className="aspect-video bg-black relative">
-        <video
-          src={url}
-          controls
-          className="w-full h-full"
-          onError={() => setHasError(true)}
-          playsInline
-        >
-          Your browser does not support the video tag.
-        </video>
-      </div>
-      <div className="bg-white p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Video className="w-5 h-5 text-gray-500" />
-          <span className="text-gray-700 font-medium">{title}</span>
-        </div>
-        <a
-          href={url}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium"
-        >
-          <Download className="w-4 h-4" />
-          Download
-        </a>
-      </div>
-    </div>
-  );
-}
-
 export default function LessonInsights() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
@@ -1488,9 +1399,6 @@ export default function LessonInsights() {
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
-  const [recording, setRecording] = useState<RecordingData | null>(null);
-  const [loadingRecording, setLoadingRecording] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lesson' | 'screen'>('lesson');
   const [lessonTime, setLessonTime] = useState<string | null>(null);
 
   // Homework tracking state
@@ -1879,23 +1787,6 @@ export default function LessonInsights() {
         setLessonTime(lessonData.scheduled_time);
       }
 
-      // First try to use recording_url from lesson table (most reliable)
-      if (lessonData?.recording_url) {
-        const expiresAt = lessonData.recording_expires_at ? new Date(lessonData.recording_expires_at) : null;
-        const daysUntilExpiry = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
-        setRecording({
-          primary: {
-            presigned_url: lessonData.recording_url,
-            duration: 0
-          },
-          days_until_expiry: daysUntilExpiry ?? undefined,
-          expires_warning: daysUntilExpiry !== null && daysUntilExpiry <= 2
-        });
-      } else if (lessonData?.['100ms_room_id']) {
-        // Fallback to 100ms API
-        fetchRecording(lessonData['100ms_room_id']);
-      }
-
       let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
       if (learnerId) insightQuery = insightQuery.eq('learner_id', learnerId);
       // Order by detailed_insights to prefer insights with content, then by most recent
@@ -1921,36 +1812,6 @@ export default function LessonInsights() {
       setError(err.message || 'Failed to load insights');
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function fetchRecording(roomId: string) {
-    try {
-      setLoadingRecording(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-recording-url`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({ room_id: roomId })
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.recordings) {
-          setRecording({
-            primary: data.recordings.primary,
-            screen_share: data.recordings.screen_share,
-            transcript_url: data.transcript_url,
-            days_until_expiry: data.days_until_expiry,
-            expires_warning: data.expires_warning
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching recording:', err);
-    } finally {
-      setLoadingRecording(false);
     }
   }
 
@@ -2276,48 +2137,7 @@ export default function LessonInsights() {
             </div>
           )}
 
-          {/* Video Recording */}
-          {(recording?.primary?.presigned_url || loadingRecording) && (
-            <div className="mb-6 print:hidden">
-              {loadingRecording ? (
-                <div className="bg-gray-100 rounded-2xl p-8 flex items-center justify-center">
-                  <Loader className="w-6 h-6 text-gray-400 animate-spin mr-3" />
-                  <span className="text-gray-500">Loading recording...</span>
-                </div>
-              ) : recording?.primary?.presigned_url ? (
-                <div className="space-y-3">
-                  {recording.screen_share?.presigned_url && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setActiveTab('lesson')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
-                          activeTab === 'lesson' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        <Play className="w-4 h-4" />
-                        Lesson Video
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('screen')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
-                          activeTab === 'screen' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        Screen Share
-                      </button>
-                    </div>
-                  )}
-                  {activeTab === 'lesson' && recording.primary?.presigned_url && (
-                    <VideoPlayer url={recording.primary.presigned_url} title="Lesson Recording" daysUntilExpiry={recording.days_until_expiry} expiresWarning={recording.expires_warning} />
-                  )}
-                  {activeTab === 'screen' && recording.screen_share?.presigned_url && (
-                    <VideoPlayer url={recording.screen_share.presigned_url} title="Screen Share" daysUntilExpiry={recording.days_until_expiry} expiresWarning={recording.expires_warning} />
-                  )}
-                </div>
-              ) : null}
-            </div>
-          )}
+          {/* Video Recording removed - accessible via Watch button on My Lessons page */}
 
           {/* Detailed Sections */}
           <div className="space-y-4">
