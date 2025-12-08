@@ -763,7 +763,8 @@ function parseInsightSections(content: string): InsightSection[] {
   const matches: { title: string; start: number }[] = [];
 
   // Extended regex to match Arabic, Quran, and general section headers
-  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?)?\s*\**\s*(Lesson Summary|Lesson Information|Key Sentences|Key Verses|Vocabulary|Focus Words|Key Arabic Vocabulary|Arabic Vocabulary|Verses Covered|First Word Prompter|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Tafsir|Flow of Meaning|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Key Lessons|Lessons & Tadabbur|Tadabbur Points|Mini Quiz|Comprehension Check|Homework|Practice Tasks|Weekly Reflection|Reflection Questions|Flashcard Challenge|Summary Takeaway|Talbiyah Insights Summary|Final Reflection|Summary & Key Takeaway)\**\s*/i;
+  // Handles formats like: "## Section Name", "**1. Section Name**", "1. **Section Name**", "**Section Name**"
+  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?\s*)?\**(?:\d+[.)]\s*)?\s*(Lesson Summary|Lesson Information|Key Sentences|Key Verses|Vocabulary|Focus Words|Key Arabic Vocabulary|Arabic Vocabulary|Verses Covered|First Word Prompter|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Tafsir|Flow of Meaning|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Key Lessons|Lessons & Tadabbur|Tadabbur Points|Mini Quiz|Comprehension Check|Homework|Practice Tasks|Weekly Reflection|Reflection Questions|Flashcard Challenge|Summary Takeaway|Talbiyah Insights Summary|Final Reflection|Summary & Key Takeaway)(?:\s*\([^)]*\))?\**\s*/i;
 
   for (const line of lines) {
     const headerMatch = line.match(sectionPattern);

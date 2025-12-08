@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { HMSPrebuilt, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectIsLocalUserRecording } from '@100mslive/roomkit-react';
+import { HMSPrebuilt } from '@100mslive/roomkit-react';
+import { useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectIsLocalUserRecording } from '@100mslive/react-sdk';
 import {
   AlertTriangle,
   RefreshCw,
