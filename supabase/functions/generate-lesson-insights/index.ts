@@ -143,65 +143,108 @@ The goal is to help students understand, internalise, and live by the Qur'an's m
 
 ---
 
-**2. Flow of Meaning (Tafsīr Summary)**
-Write a clear English summary explaining the verses in order, combining translation, tafsīr, and discussion from class.
-Show what Allah is saying, the context of each section, and the key moral messages.
-Avoid repetition or filler text.
+**2. Verses Covered (Arabic & Translation)**
+Display each verse that was studied in this lesson as a table. For each ayah include:
+- Ayah number
+- Full Arabic text (Uthmānī script with tashkīl/vowel marks)
+- English translation
+
+Use this table format:
+| Ayah | Arabic | Translation |
+|------|--------|-------------|
+| 1 | بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ | In the name of Allah, the Most Gracious, the Most Merciful |
+
+Include ALL verses covered in the lesson (typically 5-15 ayat).
 
 ---
 
-**3. Key Arabic Vocabulary**
-List 6–10 important Arabic words mentioned or explained. For each:
-- Arabic word (Uthmānī script)
-- Transliteration
-- Root (if known)
+**3. Flow of Meaning (Tafsīr Summary)**
+Write a detailed English explanation of the verses in order, combining:
+- Word-by-word or phrase-by-phrase breakdown where relevant
+- Translation of key Arabic terms
+- Tafsīr points from the teacher's explanation
+- Context (when revealed, why, to whom)
+- Key moral and spiritual messages
+
+Break this into paragraphs, one for each group of related ayat. Use subheadings like "Ayat 1-3: [Theme]" to organize.
+
+---
+
+**4. Key Arabic Vocabulary**
+List **15 important Arabic words** from the verses covered. For each word:
+- Arabic word (Uthmānī script with tashkīl)
+- Transliteration (with proper vowel marks)
+- Root letters (3-letter root)
 - English meaning
-- Short example or note (if teacher gave one)
+- Context/note (how it's used in the ayah)
+
+Use this table format:
+| Arabic | Transliteration | Root | Meaning | Note |
+|--------|-----------------|------|---------|------|
+| تَبَـٰرَكَ | tabāraka | ب-ر-ك | Blessed is He | Expresses abundance of blessing and greatness |
 
 ---
 
-**4. Lessons & Tadabbur Points**
-List 5–7 short, impactful lessons or reflections.
-Focus on what the verses teach about Allah, human character, behaviour, and spiritual growth.
+**5. Lessons & Tadabbur Points**
+List 7–10 short, impactful lessons or reflections.
+Focus on what the verses teach about:
+- Allah's names and attributes
+- Human character and behaviour
+- Spiritual growth and taqwa
+- Practical application in daily life
+- Connection to other verses/surahs
 
 ---
 
-**5. Reflection Questions**
-Provide 3–4 open-ended questions that help students apply the teachings to daily life.
-Encourage thinking and self-assessment, not rote recall.
+**6. Reflection Questions**
+Provide 4–5 open-ended questions that help students apply the teachings to daily life.
+Encourage deep thinking and self-assessment, not rote recall.
+Make them personal and actionable.
 
 ---
 
-**6. Mini Quiz (Comprehension Check)**
-Create 3–5 simple multiple-choice or matching questions drawn only from what was actually covered in class.
-Mix meaning, tafṣīr context, and vocabulary.
+**7. Mini Quiz (Comprehension Check)**
+Create 5 multiple-choice questions drawn from what was covered in class.
+Mix meaning, tafsīr context, vocabulary, and verse identification.
 
-Format example:
-**Q1.** Where did Allah call Mūsā (ʿalayhi as-salām)?
-A) Mount Uhud B) Madīnah ✅ C) Sacred Valley of Ṭuwā D) Mount Sinai
-
----
-
-**7. Homework & Weekly Reflection Task**
-List 2–4 practical follow-up tasks based on the lesson:
-reading, listening, writing reflection, vocabulary revision, or a moral action challenge.
-Keep them short and achievable.
+Format:
+**Q1.** [Question about the lesson content]
+A) [Option] B) [Option] ✅ C) [Option] D) [Option]
 
 ---
 
-**8. Flashcard Challenge (Optional)**
-If vocabulary was discussed, suggest students create flashcards:
-> Write Arabic on one side and English meaning on the other; review each card three times before next lesson.
+**8. First Word Prompter (Memorization Aid)**
+Create a table to help with memorization. For each ayah covered:
+- Ayah number
+- First word (Arabic with tashkīl)
+- Transliteration
+- Brief hint about the verse content
+
+| Ayah | First Word | Transliteration | Hint |
+|------|------------|-----------------|------|
+| 1 | تَبَـٰرَكَ | tabāraka | Blessed is He who has dominion |
 
 ---
 
-**9. Summary Takeaway**
-End with a 2–3 sentence summary that captures the spiritual message and emotional impact of the verses studied.
+**9. Homework & Weekly Reflection Task**
+List 3–4 practical follow-up tasks:
+- 📖 Reading/recitation practice with specific verses
+- 🎧 Listening recommendation (specific reciter)
+- ✍️ Written reflection prompt
+- 🤲 Practical action/du'a to implement
+
+---
+
+**10. Summary Takeaway**
+End with a 3–4 sentence summary that captures:
+- The main theme of the verses
+- The spiritual message and emotional impact
+- One key action point for the student
 
 ---
 
 ### 🧹 CLEAN-UP AND FILTER RULES
-- **Include only content directly related to the Qur'an lesson** (tafṣīr, translation, examples, reflections, Arabic analysis).
+- **Include only content directly related to the Qur'an lesson** (tafsīr, translation, examples, reflections, Arabic analysis).
 - **Exclude** all irrelevant conversation: greetings ("How are you?"), small talk, technical issues, setup chat, and off-topic discussion.
 - If teacher mentions what's next lesson, you may include it; otherwise **do not invent a next-session preview.**
 
@@ -210,9 +253,10 @@ End with a 2–3 sentence summary that captures the spiritual message and emotio
 ### FORMATTING RULES
 1. Follow this exact order and headings for consistency.
 2. Write in warm, educational, and reflective tone.
-3. Keep Arabic in standard Uthmānī script.
+3. Keep Arabic in standard Uthmānī script with full tashkīl (vowel marks).
 4. Use clear spacing, bullets, and tables for readability.
-5. Stay faithful to what was actually said in the lesson — never add outside tafṣīr unless teacher quoted it.`;
+5. Stay faithful to what was actually said in the lesson — supplement with authentic tafsīr only where needed for clarity.
+6. Always include ALL verses that were covered in the lesson.`;
 
 const ARABIC_PROMPT = `## 📚 TALBIYAH INSIGHTS – ARABIC LANGUAGE TEMPLATE
 
