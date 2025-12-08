@@ -46,11 +46,14 @@ export default function ReferralWidget() {
       }
 
       // Get or create referral credits
-      const { data: credits, error: creditsError } = await supabase
+      let credits;
+      const { data: existingCredits, error: creditsError } = await supabase
         .from('referral_credits')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      credits = existingCredits;
 
       if (!credits && !creditsError) {
         const { data: newCredits, error: insertError } = await supabase

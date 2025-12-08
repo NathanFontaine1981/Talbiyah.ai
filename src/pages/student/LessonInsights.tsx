@@ -192,19 +192,61 @@ function parseVocabulary(content: string): VocabWord[] {
       continue;
     }
 
-    // Look for table rows - handle both 3-column and 4-column tables
-    // Format 1: | Arabic | Transliteration | English |
-    // Format 2: | Arabic | Transliteration | Meaning | Root |
+    // Look for table rows - handle multiple formats:
+    // Format 1 (3 cols): | Arabic | Transliteration | English |
+    // Format 2 (4 cols): | Arabic | Transliteration | Meaning | Root |
+    // Format 3 (5 cols): | Arabic | Transliteration | Root | Meaning | Note |
+    // Format 4 (5 cols): | Arabic | Transliteration | English Meaning | Word Type | Example |
     const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
 
     if (cells.length >= 3) {
       const arabic = cells[0];
       const translit = cells[1];
-      const english = cells[2]; // This is "English" or "Meaning" depending on format
+
+      // Determine which column has the English meaning
+      let english = '';
+      let wordType = '';
+
+      if (cells.length >= 5) {
+        // 5-column format: check if column 3 looks like a root (e.g., "ب-ر-ك" pattern with hyphens)
+        const thirdCol = cells[2];
+        // Root detection: Arabic letters separated by hyphens (e.g., ب-ر-ك)
+        const isRoot = /^[\u0600-\u06FF]-[\u0600-\u06FF]-[\u0600-\u06FF]$/.test(thirdCol);
+
+        if (isRoot) {
+          // Format: | Arabic | Transliteration | Root | Meaning | Note |
+          english = cells[3] || '';
+        } else {
+          // Format: | Arabic | Transliteration | English Meaning | Word Type | Example |
+          english = thirdCol;
+          wordType = cells[3] || '';
+        }
+      } else if (cells.length === 4) {
+        // 4-column format: | Arabic | Transliteration | Meaning | Root |
+        // or: | Arabic | Transliteration | Root | Meaning |
+        const thirdCol = cells[2];
+        const fourthCol = cells[3];
+        // Root detection: Arabic letters separated by hyphens
+        const thirdIsRoot = /^[\u0600-\u06FF]-[\u0600-\u06FF]-[\u0600-\u06FF]$/.test(thirdCol);
+
+        if (thirdIsRoot) {
+          english = fourthCol;
+        } else {
+          english = thirdCol;
+        }
+      } else {
+        // 3-column format: | Arabic | Transliteration | English |
+        english = cells[2];
+      }
 
       // Check if first cell contains Arabic characters
       if (arabic && /[أ-يً-ْ]/.test(arabic)) {
-        words.push({ arabic, transliteration: translit, english });
+        words.push({
+          arabic,
+          transliteration: translit,
+          english: english || 'Meaning not provided',
+          wordType: wordType || undefined
+        });
       }
     }
 
@@ -1940,8 +1982,16 @@ export default function LessonInsights() {
   const isQuran = insight.insight_type === 'quran_tadabbur' || insight.detailed_insights?.subject?.toLowerCase().includes('quran') || metadata?.subject?.toLowerCase().includes('quran');
   const hasDetailedInsights = !!insight.detailed_insights?.content;
 
-  // Parse all sections
-  const sections = hasDetailedInsights ? parseInsightSections(insight.detailed_insights!.content) : [];
+  // Parse all sections - safely handle any parsing errors
+  let sections: InsightSection[] = [];
+  try {
+    sections = hasDetailedInsights && insight.detailed_insights?.content
+      ? parseInsightSections(insight.detailed_insights.content)
+      : [];
+  } catch (e) {
+    console.error('Error parsing insight sections:', e);
+    sections = [];
+  }
 
   // Parse specific content types
   const vocabSection = sections.find(s => s.type === 'vocabulary');

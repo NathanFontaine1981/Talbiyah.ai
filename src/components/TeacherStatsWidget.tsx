@@ -159,7 +159,7 @@ export default function TeacherStatsWidget() {
     {
       icon: DollarSign,
       label: 'Total Earnings',
-      value: `$${stats.totalEarnings.toFixed(0)}`,
+      value: `£${stats.totalEarnings.toFixed(0)}`,
       color: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'border-emerald-500/20'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, User, ArrowRight } from 'lucide-react';
+import { Video, User, ArrowRight, Calendar, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO } from 'date-fns';
 

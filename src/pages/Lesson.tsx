@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
-import { useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectIsLocalUserRecording } from '@100mslive/react-sdk';
+import { useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom } from '@100mslive/react-sdk';
 import {
   AlertTriangle,
   RefreshCw,
@@ -73,18 +73,14 @@ export default function Lesson() {
   useEffect(() => {
     if (!isConnectedToRoom || !lesson) return;
 
-    console.log('Peer count:', peerCount, 'Connected:', isConnectedToRoom);
-
     if (peerCount >= 2 && !bothParticipantsJoined) {
       // Both host and guest are in the room - start the timer!
-      console.log('Both participants joined! Starting lesson timer.');
       setBothParticipantsJoined(true);
       setWaitingForOther(false);
       setSessionStartTime(new Date());
 
       // Start recording when both participants join (only if teacher/host)
       if (userRole === 'teacher' && !recordingStarted) {
-        console.log('Starting browser recording...');
         startBrowserRecording();
       }
     } else if (peerCount < 2 && isConnectedToRoom) {
@@ -100,9 +96,7 @@ export default function Lesson() {
         record: true,
       });
       setRecordingStarted(true);
-      console.log('Recording started successfully');
-    } catch (error) {
-      console.error('Failed to start recording:', error);
+    } catch {
       // Recording might already be started by auto-start, that's OK
       setRecordingStarted(true);
     }
@@ -209,7 +203,8 @@ export default function Lesson() {
       }
 
       // Check if user is teacher or student
-      const isTeacher = lessonData.teacher_profiles.user_id === currentUser.id;
+      const teacherUserId = lessonData.teacher_profiles?.user_id;
+      const isTeacher = teacherUserId === currentUser.id;
       setUserRole(isTeacher ? 'teacher' : 'student');
 
       // Get the appropriate room code based on user role
@@ -218,12 +213,7 @@ export default function Lesson() {
         : lessonData.student_room_code;
 
       if (!roomCode) {
-        console.error('❌ Missing room code:', {
-          isTeacher,
-          teacher_code: lessonData.teacher_room_code,
-          student_code: lessonData.student_room_code
-        });
-        setError('Video room is not ready yet. Please try again in a few moments or contact support.');
+        setError(`Video room is not ready yet. Role: ${isTeacher ? 'teacher' : 'student'}, Teacher code: ${lessonData.teacher_room_code ? 'exists' : 'missing'}, Student code: ${lessonData.student_room_code ? 'exists' : 'missing'}`);
         setLoading(false);
         return;
       }
@@ -843,15 +833,13 @@ export default function Lesson() {
               userName: userRole === 'teacher' ? lesson.teacher_name : lesson.learner_name,
               userId: user?.id || `user_${Date.now()}`,
             }}
-            onJoinRoom={(data) => {
-              console.log('✅ Successfully joined lesson:', data);
+            onJoinRoom={() => {
+              // Successfully joined
             }}
-            onLeaveRoom={(data) => {
-              console.log('👋 Left lesson:', data);
+            onLeaveRoom={() => {
               handleLessonEnd();
             }}
             onError={(error) => {
-              console.error('❌ 100ms error:', error);
               setError(error.message || 'Failed to join the video session');
               setIsVideoReady(false);
             }}
