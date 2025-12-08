@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
-import { useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom } from '@100mslive/react-sdk';
+import { HMSRoomProvider, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom } from '@100mslive/react-sdk';
 import {
   AlertTriangle,
   RefreshCw,
@@ -37,7 +37,16 @@ interface LessonData {
   room_code: string;
 }
 
+// Wrapper component that provides HMS context
 export default function Lesson() {
+  return (
+    <HMSRoomProvider>
+      <LessonContent />
+    </HMSRoomProvider>
+  );
+}
+
+function LessonContent() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
