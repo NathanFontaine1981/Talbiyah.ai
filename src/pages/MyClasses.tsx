@@ -263,7 +263,8 @@ export default function MyClasses() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to cancel lesson');
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+        throw new Error(errorMsg || 'Failed to cancel lesson');
       }
 
       // Show success message and reload

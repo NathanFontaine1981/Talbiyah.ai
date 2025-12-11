@@ -119,13 +119,14 @@ serve(async (req) => {
       .from('lessons')
       .update({
         status: 'cancelled_by_student',
-        cancellation_reason: reason || 'Cancelled by student',
-        cancelled_at: new Date().toISOString()
+        cancelled_at: new Date().toISOString(),
+        is_late_cancellation: false // Not late since we validated 2+ hours
       })
       .eq('id', lesson_id)
 
     if (updateError) {
-      throw updateError
+      console.error('Error updating lesson status:', updateError)
+      throw new Error(`Database error: ${updateError.message}`)
     }
 
     console.log(`✅ Lesson ${lesson_id} cancelled by student ${user.id}`)
@@ -248,8 +249,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error cancelling lesson:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
-      JSON.stringify({ error: 'Failed to cancel lesson' }),
+      JSON.stringify({ error: 'Failed to cancel lesson', details: errorMessage }),
       { status: 500, headers: responseHeaders }
     )
   }
