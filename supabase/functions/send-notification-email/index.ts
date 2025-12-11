@@ -54,20 +54,31 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 200, headers: responseHeaders });
   }
 
-  // Rate limiting: 5 emails per hour per IP
-  const clientIP = getClientIP(req);
-  const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.EMAIL);
-  if (!rateLimitResult.allowed) {
-    return rateLimitResponse(rateLimitResult, responseHeaders);
+  // Check if this is an internal call (service role key)
+  const authHeader = req.headers.get('Authorization') || '';
+  const isServiceRole = authHeader.includes('service_role') ||
+    authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'NEVER_MATCH');
+
+  // Rate limiting: 5 emails per hour per IP (skip for internal service calls)
+  if (!isServiceRole) {
+    const clientIP = getClientIP(req);
+    const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.EMAIL);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResponse(rateLimitResult, responseHeaders);
+    }
   }
 
   try {
+    console.log(`📧 send-notification-email called (internal: ${isServiceRole})`);
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
+      console.error("❌ RESEND_API_KEY not configured");
       throw new Error("RESEND_API_KEY not configured");
     }
 
     const payload: NotificationPayload = await req.json();
+    console.log(`📧 Email type: ${payload.type}, recipient: ${payload.recipient_email}`);
 
     // Validate required fields
     if (!payload.type || !payload.recipient_email || !payload.recipient_name) {
