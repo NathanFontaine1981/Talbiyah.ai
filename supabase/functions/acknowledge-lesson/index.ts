@@ -69,16 +69,19 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (learnerData?.parent_id) {
+      // Get student name from profiles
       const { data: parentProfile } = await supabase
         .from("profiles")
-        .select("full_name, email")
+        .select("full_name")
         .eq("id", learnerData.parent_id)
         .maybeSingle();
 
-      if (parentProfile) {
-        studentName = parentProfile.full_name || learnerData.name || "Student";
-        studentEmail = parentProfile.email || "";
-      }
+      studentName = parentProfile?.full_name || learnerData.name || "Student";
+
+      // Get email from auth.users table (profiles.email is often empty)
+      const { data: authUser } = await supabase.auth.admin.getUserById(learnerData.parent_id);
+      studentEmail = authUser?.user?.email || "";
+      console.log(`📧 Found email from auth.users: ${studentEmail}`);
     } else if (learnerData) {
       studentName = learnerData.name || "Student";
     }

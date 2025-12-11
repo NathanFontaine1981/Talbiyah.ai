@@ -1,14 +1,15 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getHMSManagementToken } from '../_shared/hms.ts'
-import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
-
-const responseHeaders = {
-  ...responseHeaders,
-  ...securityHeaders,
-}
+import { getCorsHeaders, securityHeaders } from "../_shared/cors.ts"
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+  const responseHeaders = {
+    ...corsHeaders,
+    ...securityHeaders,
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: responseHeaders })
   }
@@ -246,50 +247,59 @@ serve(async (req) => {
 
       // Send confirmation email to student/parent
       try {
-        // Get learner and parent info for email
+        // Get learner info for name
         const { data: learnerData } = await supabaseClient
           .from('learners')
           .select('name, parent_id')
           .eq('id', learner_id)
           .single()
 
-        // Get parent email
+        // Use the authenticated user's email (from auth session, not profiles table)
+        // profiles.email is often empty, but user.email is always available
+        const studentEmail = user.email
+
+        // Get student name from profiles
         const { data: parentProfile } = await supabaseClient
           .from('profiles')
-          .select('email, full_name')
+          .select('full_name')
           .eq('id', learnerData?.parent_id || user.id)
           .single()
 
-        if (parentProfile?.email) {
-          const emailPayload = {
-            lesson_id: lesson.id,
-            student_email: parentProfile.email,
-            student_name: learnerData?.name || parentProfile.full_name || 'Student',
-            teacher_name: item.teacher_name,
-            subject: item.subject_name,
-            scheduled_time: item.scheduled_time,
-            duration_minutes: item.duration_minutes,
-            lesson_url: `https://talbiyah.netlify.app/my-classes`
-          }
+        const studentName = learnerData?.name || parentProfile?.full_name || 'Student'
 
-          // Call the send-lesson-booked-email function
+        console.log(`📧 Sending booking confirmation to: ${studentEmail} (${studentName})`)
+
+        if (studentEmail) {
+          // Send using send-notification-email (more reliable)
           const emailResponse = await fetch(
-            `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-lesson-booked-email`,
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`,
             {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
               },
-              body: JSON.stringify(emailPayload),
+              body: JSON.stringify({
+                type: 'student_booking_confirmation',
+                recipient_email: studentEmail,
+                recipient_name: studentName,
+                data: {
+                  teacher_name: item.teacher_name,
+                  subject: item.subject_name,
+                  scheduled_time: item.scheduled_time,
+                  duration_minutes: item.duration_minutes
+                }
+              }),
             }
           )
 
           if (emailResponse.ok) {
-            console.log('✅ Confirmation email sent to', parentProfile.email)
+            console.log('✅ Confirmation email sent to', studentEmail)
           } else {
             console.error('❌ Failed to send confirmation email:', await emailResponse.text())
           }
+        } else {
+          console.error('❌ No email found for user:', user.id)
         }
 
         // Also notify the teacher about the new booking
