@@ -1,16 +1,18 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
+import { getCorsHeaders, securityHeaders } from "../_shared/cors.ts"
 import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts"
 import { requireCSRF } from "../_shared/csrf.ts"
 import { logSecurityEventFromRequest } from "../_shared/securityLog.ts"
 
-const responseHeaders = {
-  ...corsHeaders,
-  ...securityHeaders,
-}
-
 serve(async (req) => {
+  // Get dynamic CORS headers based on request origin
+  const corsHeaders = getCorsHeaders(req)
+  const responseHeaders = {
+    ...corsHeaders,
+    ...securityHeaders,
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: responseHeaders })
   }
@@ -105,6 +107,7 @@ serve(async (req) => {
     const session = await stripeClient.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
+      allow_promotion_codes: true,
       success_url: `${origin}/credit-purchase-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/buy-credits?cancelled=true`,
       line_items: [

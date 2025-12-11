@@ -4,12 +4,15 @@
 // Allowed origins for CSRF validation
 const ALLOWED_ORIGINS = [
   'https://talbiyah.netlify.app',
+  'https://talbiyah2025.netlify.app',
   'https://talbiyah.ai',
   'https://www.talbiyah.ai',
   // Development origins
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ];
 
 // Paths that don't require CSRF validation (webhooks, etc.)

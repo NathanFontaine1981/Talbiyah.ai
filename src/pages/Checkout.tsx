@@ -210,7 +210,7 @@ export default function Checkout() {
 
       if (rpcError) {
         // Fallback to legacy codes if the function doesn't exist yet
-        if (rpcError.code === '42883') { // function not found
+        if (rpcError.code === '42883' || rpcError.code === 'PGRST202') { // function not found
           // Handle legacy promo codes
           if (promoCode.toUpperCase() === '100HONOR' || promoCode.toUpperCase() === '100OWNER') {
             // Check if user has any completed lessons
