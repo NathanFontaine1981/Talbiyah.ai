@@ -134,6 +134,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   async function addToCart(item: Omit<CartItem, 'id' | 'user_id' | 'created_at' | 'expires_at'>) {
     try {
+      // Validate scheduled time is in the future
+      const scheduledTime = new Date(item.scheduled_time);
+      if (scheduledTime <= new Date()) {
+        throw new Error('Cannot book a time slot in the past. Please select a future time.');
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 

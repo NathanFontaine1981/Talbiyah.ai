@@ -34,22 +34,36 @@ export default function Checkout() {
   const [referralDiscount, setReferralDiscount] = useState(0);
   const [creditBalance, setCreditBalance] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'credits'>('stripe');
+  const [freeFirstLesson, setFreeFirstLesson] = useState(false);
+  const [freeFirstLessonDiscount, setFreeFirstLessonDiscount] = useState(0);
 
   useEffect(() => {
     loadUserAndChildren();
     loadReferralBalance();
     loadCreditBalance();
+    checkFreeFirstLesson();
   }, []);
 
   useEffect(() => {
     // Auto-calculate referral discount based on available balance
     if (referralBalance > 0 && finalPrice > 0) {
-      const appliedAmount = Math.min(referralBalance, finalPrice - promoDiscount);
+      const appliedAmount = Math.min(referralBalance, finalPrice - promoDiscount - freeFirstLessonDiscount);
       setReferralDiscount(appliedAmount);
     } else {
       setReferralDiscount(0);
     }
-  }, [referralBalance, finalPrice, promoDiscount]);
+  }, [referralBalance, finalPrice, promoDiscount, freeFirstLessonDiscount]);
+
+  useEffect(() => {
+    // Auto-apply free first lesson discount (one lesson only)
+    if (freeFirstLesson && cartItems.length > 0 && paymentMethod === 'stripe') {
+      // Apply free lesson to the cheapest item (or first item)
+      const cheapestItem = [...cartItems].sort((a, b) => a.price - b.price)[0];
+      setFreeFirstLessonDiscount(cheapestItem.price);
+    } else {
+      setFreeFirstLessonDiscount(0);
+    }
+  }, [freeFirstLesson, cartItems, paymentMethod]);
 
   async function loadUserAndChildren() {
     try {
@@ -182,6 +196,38 @@ export default function Checkout() {
     }
   }
 
+  async function checkFreeFirstLesson() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if user has any completed or scheduled lessons
+      const { data: learners } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', user.id);
+
+      const learnerIds = learners?.map(l => l.id) || [];
+
+      let hasAnyLessons = false;
+      if (learnerIds.length > 0) {
+        const { count } = await supabase
+          .from('lessons')
+          .select('id', { count: 'exact', head: true })
+          .in('learner_id', learnerIds)
+          .not('status', 'in', '(cancelled_by_teacher,cancelled_by_student)');
+        hasAnyLessons = (count || 0) > 0;
+      }
+
+      // If no lessons yet, they're eligible for free first lesson
+      if (!hasAnyLessons) {
+        setFreeFirstLesson(true);
+      }
+    } catch (error) {
+      console.error('Error checking free first lesson:', error);
+    }
+  }
+
   // Calculate credits needed for cart (1 credit = 60 min, 0.5 credit = 30 min)
   const creditsNeeded = cartItems.reduce((total, item) => {
     return total + (item.duration_minutes === 30 ? 0.5 : 1);
@@ -285,6 +331,13 @@ export default function Checkout() {
     setProcessing(true);
 
     try {
+      // Validate no cart items are in the past
+      const now = new Date();
+      const pastItems = cartItems.filter(item => new Date(item.scheduled_time) <= now);
+      if (pastItems.length > 0) {
+        throw new Error('One or more sessions in your cart are scheduled in the past. Please remove them and select a future time slot.');
+      }
+
       if (isParent && !selectedChildId) {
         throw new Error('Please select which child these sessions are for');
       }
@@ -302,8 +355,8 @@ export default function Checkout() {
 
       // Calculate discounts properly:
       // 1. Block discount (from CartContext) is already applied to finalPrice
-      // 2. Promo and referral discounts are additional on top of that
-      const additionalDiscounts = promoDiscount + referralDiscount;
+      // 2. Free first lesson, promo and referral discounts are additional on top of that
+      const additionalDiscounts = freeFirstLessonDiscount + promoDiscount + referralDiscount;
       const actualPayable = Math.max(0, finalPrice - additionalDiscounts);
 
       // Calculate per-item price - first apply block discount ratio, then additional discounts
@@ -772,6 +825,17 @@ export default function Checkout() {
             )}
 
             <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 sticky top-6">
+              {freeFirstLesson && paymentMethod === 'stripe' && (
+                <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Gift className="w-5 h-5 text-emerald-400" />
+                    <span className="text-sm font-bold text-emerald-300">🎉 Free First Lesson!</span>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    Welcome to Talbiyah! Your first lesson is on us. {freeFirstLessonDiscount > 0 && `£${freeFirstLessonDiscount.toFixed(2)} discount applied!`}
+                  </p>
+                </div>
+              )}
               {referralBalance > 0 && (
                 <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
                   <div className="flex items-center space-x-2 mb-2">
@@ -795,6 +859,12 @@ export default function Checkout() {
                     <span>-£{discount.toFixed(2)}</span>
                   </div>
                 )}
+                {freeFirstLessonDiscount > 0 && paymentMethod === 'stripe' && (
+                  <div className="flex items-center justify-between text-emerald-400">
+                    <span>Free First Lesson 🎉</span>
+                    <span>-£{freeFirstLessonDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 {promoApplied && promoDiscount > 0 && (
                   <div className="flex items-center justify-between text-emerald-400">
                     <span>Promo Code ({promoCode.toUpperCase()})</span>
@@ -809,7 +879,7 @@ export default function Checkout() {
                 )}
                 <div className="pt-3 border-t border-slate-700 flex items-center justify-between text-xl font-bold text-white">
                   <span>Total</span>
-                  <span>£{Math.max(0, finalPrice - promoDiscount - referralDiscount).toFixed(2)}</span>
+                  <span>£{Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}</span>
                 </div>
               </div>
 
