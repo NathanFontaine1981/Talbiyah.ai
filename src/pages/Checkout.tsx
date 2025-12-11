@@ -212,7 +212,19 @@ export default function Checkout() {
         // Fallback to legacy codes if the function doesn't exist yet
         if (rpcError.code === '42883' || rpcError.code === 'PGRST202') { // function not found
           // Handle legacy promo codes
-          if (promoCode.toUpperCase() === '100HONOR' || promoCode.toUpperCase() === '100OWNER') {
+          const upperCode = promoCode.toUpperCase();
+
+          // 100OWNER - unlimited use owner code (100% off)
+          if (upperCode === '100OWNER') {
+            setPromoDiscount(finalPrice);
+            setPromoApplied(true);
+            setPromoCodeId(null);
+            setError('');
+            return;
+          }
+
+          // 100HONOR - first lesson only code (100% off)
+          if (upperCode === '100HONOR') {
             // Check if user has any completed lessons
             const { data: learners } = await supabase
               .from('learners')
@@ -241,6 +253,7 @@ export default function Checkout() {
             setError('');
             return;
           }
+
           throw new Error('Invalid promo code');
         }
         throw rpcError;
