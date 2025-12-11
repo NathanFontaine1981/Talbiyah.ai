@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, differenceInMinutes, isPast, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInMinutes, isPast, differenceInDays, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
 interface Lesson {
   id: string;
@@ -279,6 +279,53 @@ export default function MyClasses() {
     }
   }
 
+  // Group lessons by week
+  function groupLessonsByWeek(lessonsToGroup: Lesson[]): { weekLabel: string; weekStart: Date; lessons: Lesson[] }[] {
+    if (lessonsToGroup.length === 0) return [];
+
+    const groups: Map<string, { weekLabel: string; weekStart: Date; lessons: Lesson[] }> = new Map();
+    const now = new Date();
+
+    lessonsToGroup.forEach(lesson => {
+      const lessonDate = parseISO(lesson.scheduled_time);
+      const weekStart = startOfWeek(lessonDate, { weekStartsOn: 1 }); // Monday start
+      const weekEnd = endOfWeek(lessonDate, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+
+      // Create a readable week label
+      let weekLabel: string;
+      if (isSameWeek(lessonDate, now, { weekStartsOn: 1 })) {
+        weekLabel = 'This Week';
+      } else if (isSameWeek(lessonDate, addWeeks(now, 1), { weekStartsOn: 1 })) {
+        weekLabel = 'Next Week';
+      } else if (isSameWeek(lessonDate, subWeeks(now, 1), { weekStartsOn: 1 })) {
+        weekLabel = 'Last Week';
+      } else {
+        weekLabel = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+      }
+
+      if (!groups.has(weekKey)) {
+        groups.set(weekKey, { weekLabel, weekStart, lessons: [] });
+      }
+      groups.get(weekKey)!.lessons.push(lesson);
+    });
+
+    // Sort groups by week start date
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+      // For upcoming, sort ascending (soonest first)
+      // For past, sort descending (most recent first)
+      if (filter === 'upcoming') {
+        return a.weekStart.getTime() - b.weekStart.getTime();
+      } else {
+        return b.weekStart.getTime() - a.weekStart.getTime();
+      }
+    });
+
+    return sortedGroups;
+  }
+
+  const groupedLessons = groupLessonsByWeek(lessons);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -381,35 +428,58 @@ export default function MyClasses() {
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {lessons.map((lesson) => {
-              const lessonDate = parseISO(lesson.scheduled_time);
-              const isToday = format(lessonDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-              const minutesUntilStart = differenceInMinutes(lessonDate, new Date());
-              const canJoin = minutesUntilStart <= 360 && minutesUntilStart >= -lesson.duration_minutes;
-              const canReschedule = minutesUntilStart > 30 && lesson.status === 'booked';
-              const lessonIsPast = isPast(new Date(lessonDate.getTime() + lesson.duration_minutes * 60000));
+          <div className="space-y-8">
+            {groupedLessons.map((group) => (
+              <div key={group.weekLabel} className="space-y-4">
+                {/* Week Header */}
+                <div className="flex items-center space-x-4">
+                  <div className={`px-4 py-2 rounded-xl font-bold text-sm ${
+                    group.weekLabel === 'This Week'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                      : group.weekLabel === 'Next Week'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : group.weekLabel === 'Last Week'
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : 'bg-slate-700/50 text-slate-300 border border-slate-600'
+                  }`}>
+                    {group.weekLabel}
+                  </div>
+                  <div className="flex-1 h-px bg-slate-700/50"></div>
+                  <span className="text-sm text-slate-500">
+                    {group.lessons.length} lesson{group.lessons.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
 
-              const handleJoin = () => {
-                if (!lesson['100ms_room_id']) {
-                  alert('Session room is not ready yet. Please contact support if this issue persists.');
-                  return;
-                }
-                navigate(`/lesson/${lesson.id}`);
-              };
+                {/* Lessons in this week */}
+                <div className="space-y-3">
+                  {group.lessons.map((lesson) => {
+                    const lessonDate = parseISO(lesson.scheduled_time);
+                    const isToday = format(lessonDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                    const minutesUntilStart = differenceInMinutes(lessonDate, new Date());
+                    const canJoin = minutesUntilStart <= 360 && minutesUntilStart >= -lesson.duration_minutes;
+                    const canReschedule = minutesUntilStart > 30 && lesson.status === 'booked';
+                    const lessonIsPast = isPast(new Date(lessonDate.getTime() + lesson.duration_minutes * 60000));
 
-              const handleReschedule = () => {
-                navigate(`/reschedule-lesson?lessonId=${lesson.id}`);
-              };
+                    const handleJoin = () => {
+                      if (!lesson['100ms_room_id']) {
+                        alert('Session room is not ready yet. Please contact support if this issue persists.');
+                        return;
+                      }
+                      navigate(`/lesson/${lesson.id}`);
+                    };
 
-              const handleViewInsights = () => {
-                navigate(`/lesson/${lesson.id}/insights`);
-              };
+                    const handleReschedule = () => {
+                      navigate(`/reschedule-lesson?lessonId=${lesson.id}`);
+                    };
 
-              return (
-                <div
-                  key={lesson.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition"
+                    const handleViewInsights = () => {
+                      navigate(`/lesson/${lesson.id}/insights`);
+                    };
+
+                    return (
+                      <div
+                        key={lesson.id}
+                        className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
@@ -597,8 +667,11 @@ export default function MyClasses() {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
