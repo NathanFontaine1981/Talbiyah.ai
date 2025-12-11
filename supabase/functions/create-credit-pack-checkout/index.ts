@@ -1,30 +1,71 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
+import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts"
+import { requireCSRF } from "../_shared/csrf.ts"
+import { logSecurityEventFromRequest } from "../_shared/securityLog.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const responseHeaders = {
+  ...corsHeaders,
+  ...securityHeaders,
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: responseHeaders })
+  }
+
+  // CSRF protection
+  const csrfError = requireCSRF(req, responseHeaders)
+  if (csrfError) return csrfError
+
+  // Rate limiting: 5 payment attempts per hour per IP
+  const clientIP = getClientIP(req)
+  const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.BOOKING)
+  if (!rateLimitResult.allowed) {
+    return rateLimitResponse(rateLimitResult, responseHeaders)
   }
 
   try {
-    const { pack_type } = await req.json() // 'light', 'standard', or 'intensive'
+    const body = await req.json()
+    const { pack_type } = body
 
-    const authHeader = req.headers.get('Authorization')!
+    // Validate pack_type
+    if (!pack_type || typeof pack_type !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request' }),
+        { status: 400, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     )
 
+    // Create service client for logging
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
     // Get user
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Pack configurations
     const packs = {
@@ -92,20 +133,38 @@ serve(async (req) => {
 
     console.log('Created checkout session:', session.id)
 
+    // Log payment initiated
+    await logSecurityEventFromRequest(supabaseService, req, {
+      eventType: 'payment_initiated',
+      userId: user.id,
+      resourceType: 'credit_pack',
+      resourceId: session.id,
+      action: 'create',
+      details: {
+        pack_type,
+        credits: pack.credits,
+        amount: pack.price / 100
+      },
+      severity: 'info'
+    })
+
     return new Response(
       JSON.stringify({ url: session.url }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...responseHeaders, 'Content-Type': 'application/json' },
       }
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    // Log error server-side only
+    console.error('Credit pack checkout error:', error instanceof Error ? error.message : 'Unknown error')
+
+    // Return generic error to client
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Failed to create checkout session' }),
       {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...responseHeaders, 'Content-Type': 'application/json' },
       }
     )
   }

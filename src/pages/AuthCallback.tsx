@@ -31,9 +31,30 @@ export default function AuthCallback() {
         setStatus('success');
         setMessage('Email verified successfully! Redirecting...');
 
+        // Check user role to determine redirect
+        const { data: { user } } = await supabase.auth.getUser();
+        const userRole = user?.user_metadata?.role;
+
         // Wait 2 seconds before redirecting
         setTimeout(() => {
-          navigate('/dashboard');
+          if (userRole === 'parent') {
+            // Check if parent has completed onboarding (has children)
+            supabase
+              .from('parent_children')
+              .select('id')
+              .eq('parent_id', user?.id)
+              .limit(1)
+              .then(({ data }) => {
+                if (data && data.length > 0) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/onboarding');
+                }
+              })
+              .catch(() => navigate('/onboarding'));
+          } else {
+            navigate('/dashboard');
+          }
         }, 2000);
       } else if (type === 'recovery') {
         // Password reset

@@ -33,16 +33,26 @@ export default function PaymentSuccess() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [verifying, setVerifying] = useState(true);
 
+  // Store interval ID for cleanup
+  const pollIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     verifyPaymentAndLoadDetails();
     clearCart();
+
+    // Cleanup function to clear polling interval on unmount
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function verifyPaymentAndLoadDetails() {
     try {
       const sessionId = searchParams.get('session_id');
-      console.log('🔍 Payment Success - Session ID:', sessionId);
 
       if (!sessionId) {
         setError('No session ID found');
@@ -68,8 +78,6 @@ export default function PaymentSuccess() {
         `)
         .eq('stripe_checkout_session_id', sessionId);
 
-      console.log('🔍 Lessons query result:', { lessonsData, lessonError, count: lessonsData?.length });
-
       if (lessonError) {
         console.error('❌ Error loading lessons:', lessonError);
         setError('Could not load lesson details');
@@ -80,15 +88,12 @@ export default function PaymentSuccess() {
 
       if (!lessonsData || lessonsData.length === 0) {
         // Lessons not found yet - webhook might still be processing
-        console.log('⏳ Lessons not found yet, will poll for updates...');
-
         // Poll for lesson creation (webhook might be delayed)
         let attempts = 0;
         const maxAttempts = 15; // 30 seconds (15 attempts * 2 seconds)
 
-        const pollInterval = setInterval(async () => {
+        pollIntervalRef.current = setInterval(async () => {
           attempts++;
-          console.log(`🔄 Polling attempt ${attempts}/${maxAttempts}`);
 
           const { data: polledLessons } = await supabase
             .from('lessons')
@@ -107,7 +112,6 @@ export default function PaymentSuccess() {
             .eq('stripe_checkout_session_id', sessionId);
 
           if (polledLessons && polledLessons.length > 0) {
-            console.log('✅ Lessons found on polling:', polledLessons.length);
 
             // Fetch teacher and subject details for all lessons
             const enrichedLessons = await Promise.all(polledLessons.map(async (lesson) => {
@@ -139,12 +143,18 @@ export default function PaymentSuccess() {
             setLessonDetails(enrichedLessons[0] as any); // Keep first for backward compat
             setTotalAmount(enrichedLessons.reduce((sum, l) => sum + l.total_cost_paid, 0));
             setVerifying(false);
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           } else if (attempts >= maxAttempts) {
             console.error('❌ Lessons not found after polling');
             setError('Lessons not found. Please check your dashboard.');
             setVerifying(false);
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           }
         }, 2000);
 
@@ -152,7 +162,6 @@ export default function PaymentSuccess() {
       }
 
       // Lessons found! Fetch teacher and subject details for all
-      console.log('✅ Found lessons:', lessonsData.length);
 
       const enrichedLessons = await Promise.all(lessonsData.map(async (lesson) => {
         const { data: subject } = await supabase

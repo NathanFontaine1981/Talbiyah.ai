@@ -329,6 +329,15 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Functions configuration
+[functions.handle-recording-webhook]
+# Disable JWT verification for 100ms webhook
+verify_jwt = false
+
+[functions.stripe-webhook]
+# Disable JWT verification for Stripe webhook (called by Stripe servers)
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <defs>
+    <linearGradient id="grad5" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#065F46"/>
+      <stop offset="50%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#34D399"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: Minaret with Book Base -->
+  <g transform="translate(20, 5)">
+    <!-- Book base -->
+    <path d="M5 75 L25 68 L25 60 L5 65 Z" fill="#10B981" opacity="0.8"/>
+    <path d="M45 75 L25 68 L25 60 L45 65 Z" fill="#10B981" opacity="0.6"/>
+
+    <!-- Minaret tower -->
+    <rect x="20" y="25" width="10" height="35" fill="url(#grad5)"/>
+
+    <!-- Minaret top/dome -->
+    <ellipse cx="25" cy="25" rx="8" ry="4" fill="#10B981"/>
+
+    <!-- Spire -->
+    <path d="M25 8 L22 20 L28 20 Z" fill="url(#grad5)"/>
+
+    <!-- Crescent on top -->
+    <path d="M25 3 Q29 6 25 9 Q22 6 25 3" fill="#34D399"/>
+
+    <!-- Balcony details -->
+    <rect x="17" y="35" width="16" height="3" fill="#065F46"/>
+    <rect x="18" y="50" width="14" height="2" fill="#065F46" opacity="0.7"/>
+  </g>
+
+  <!-- Text -->
+  <text x="80" y="62" font-family="Georgia, serif" font-size="38" font-weight="600" fill="#10B981">Talbiyah</text>
+  <text x="238" y="62" font-family="Arial, sans-serif" font-size="20" fill="#6B7280">.ai</text>
+</svg>

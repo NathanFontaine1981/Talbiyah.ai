@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle } from 'lucide-react';
+import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { validateEmail } from '../utils/emailValidation';
+import { validatePassword, getStrengthColor, getStrengthTextColor } from '../utils/passwordValidation';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -18,6 +20,8 @@ export default function SignUp() {
   const [referralCode, setReferralCode] = useState(referralCodeFromUrl || '');
   const [referrerName, setReferrerName] = useState<string | null>(null);
   const [referralValidation, setReferralValidation] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<ReturnType<typeof validatePassword> | null>(null);
 
   useEffect(() => {
     if (referralCodeFromUrl) {
@@ -73,6 +77,34 @@ export default function SignUp() {
     }
   }
 
+  function handleEmailChange(value: string) {
+    setAuthForm({ ...authForm, email: value });
+    // Clear email error when user types
+    if (emailError) {
+      setEmailError(null);
+    }
+  }
+
+  function handleEmailBlur() {
+    if (authForm.email.trim()) {
+      const validation = validateEmail(authForm.email);
+      if (!validation.valid) {
+        setEmailError(validation.error || 'Invalid email');
+      } else {
+        setEmailError(null);
+      }
+    }
+  }
+
+  function handlePasswordChange(value: string) {
+    setAuthForm({ ...authForm, password: value });
+    if (value) {
+      setPasswordStrength(validatePassword(value));
+    } else {
+      setPasswordStrength(null);
+    }
+  }
+
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setAuthError('');
@@ -82,13 +114,23 @@ export default function SignUp() {
       return;
     }
 
+    // Validate email before signup
+    const emailValidation = validateEmail(authForm.email);
+    if (!emailValidation.valid) {
+      setAuthError(emailValidation.error || 'Invalid email address');
+      setEmailError(emailValidation.error || 'Invalid email address');
+      return;
+    }
+
     if (authForm.password !== authForm.confirmPassword) {
       setAuthError('Passwords do not match');
       return;
     }
 
-    if (authForm.password.length < 6) {
-      setAuthError('Password must be at least 6 characters');
+    // Validate password strength
+    const pwdValidation = validatePassword(authForm.password);
+    if (!pwdValidation.valid) {
+      setAuthError(pwdValidation.errors[0]);
       return;
     }
 
@@ -185,11 +227,30 @@ export default function SignUp() {
       }
 
       if (data.user) {
-        // Parents go through onboarding wizard to add children
-        // Other users go through normal welcome flow
-        if (selectedRole === 'parent') {
+        // Send welcome email to new user
+        try {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'welcome',
+              recipient_email: authForm.email,
+              recipient_name: authForm.fullName.trim(),
+              data: {}
+            }
+          });
+        } catch (welcomeEmailError) {
+          console.error('Error sending welcome email:', welcomeEmailError);
+          // Don't block signup if welcome email fails
+        }
+
+        // Check if email confirmation is required (user not confirmed yet)
+        if (!data.user.email_confirmed_at) {
+          // Redirect to email verification page
+          navigate('/verify-email');
+        } else if (selectedRole === 'parent') {
+          // Parents go through onboarding wizard to add children
           navigate('/onboarding');
         } else {
+          // Other users go through normal welcome flow
           navigate('/welcome');
         }
       }
@@ -360,14 +421,30 @@ export default function SignUp() {
                   <span>Email Address</span>
                 </div>
               </label>
-              <input
-                type="email"
-                required
-                value={authForm.email}
-                onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                placeholder="your.email@example.com"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={authForm.email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={handleEmailBlur}
+                  className={`w-full px-4 py-3 pr-12 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition ${
+                    emailError ? 'border-red-500/50' : 'border-slate-700'
+                  }`}
+                  placeholder="your.email@example.com"
+                />
+                {emailError && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                  </div>
+                )}
+              </div>
+              {emailError && (
+                <p className="text-red-400 text-sm mt-2 flex items-start space-x-1">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{emailError}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -381,10 +458,29 @@ export default function SignUp() {
                 type="password"
                 required
                 value={authForm.password}
-                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                onChange={(e) => handlePasswordChange(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                placeholder="At least 6 characters"
+                placeholder="Min 8 chars, uppercase, lowercase, number"
               />
+              {/* Password strength indicator */}
+              {passwordStrength && authForm.password && (
+                <div className="mt-2">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getStrengthColor(passwordStrength.strength)} transition-all duration-300`}
+                        style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${getStrengthTextColor(passwordStrength.strength)}`}>
+                      {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
+                    </span>
+                  </div>
+                  {passwordStrength.errors.length > 0 && (
+                    <p className="text-red-400 text-xs">{passwordStrength.errors[0]}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

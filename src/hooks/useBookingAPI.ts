@@ -77,7 +77,7 @@ export function useBookingAPI() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const apiCall = async (endpoint: string, options: any = {}) => {
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     if (!isSupabaseConfigured) {
       throw new Error('Supabase is not configured. Please set up your database connection.');
     }
@@ -91,12 +91,6 @@ export function useBookingAPI() {
       throw new Error('User not authenticated. Please log in to continue.');
     }
 
-    console.log(`🔗 API Call: ${endpoint}`, {
-      method: options.method || 'GET',
-      hasAuth: !!session.access_token,
-      timestamp: new Date().toISOString()
-    });
-
     const response = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
@@ -104,12 +98,6 @@ export function useBookingAPI() {
         ...options.headers,
       },
       ...options,
-    });
-
-    console.log(`📡 API Response: ${endpoint}`, {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
     });
 
     if (!response.ok) {
@@ -138,12 +126,6 @@ export function useBookingAPI() {
     }
 
     const responseData = await response.json();
-    
-    console.log(`✅ API Success: ${endpoint}`, {
-      hasData: !!responseData,
-      dataKeys: Object.keys(responseData)
-    });
-
     return responseData;
   };
 
@@ -155,8 +137,9 @@ export function useBookingAPI() {
     try {
       const data = await apiCall('manage-teacher-availability');
       return data.availability || [];
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -173,8 +156,9 @@ export function useBookingAPI() {
         body: JSON.stringify(slot),
       });
       return data.data;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -191,8 +175,9 @@ export function useBookingAPI() {
         body: JSON.stringify(slot),
       });
       return data.data;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -207,8 +192,9 @@ export function useBookingAPI() {
       await apiCall(`manage-teacher-availability?id=${id}`, {
         method: 'DELETE',
       });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -237,8 +223,9 @@ export function useBookingAPI() {
       });
       
       return availableSlots;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -252,7 +239,7 @@ export function useBookingAPI() {
     subject: string;
     duration?: number;
     price: number;
-  }): Promise<{ booking: Booking; room: any }> => {
+  }): Promise<{ booking: Booking; room: { id: string; code?: string } }> => {
     setLoading(true);
     setError(null);
     
@@ -262,8 +249,9 @@ export function useBookingAPI() {
         body: JSON.stringify(bookingData),
       });
       return data;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -271,22 +259,9 @@ export function useBookingAPI() {
   };
 
   // New Stripe checkout function
-  const initiateBookingCheckout = async (bookings: BulkBookingRequest[], metadata?: any): Promise<CheckoutResponse> => {
+  const initiateBookingCheckout = async (bookings: BulkBookingRequest[], metadata?: Record<string, string>): Promise<CheckoutResponse> => {
     setLoading(true);
     setError(null);
-
-    console.log('💳 Initiating booking checkout:', {
-      bookingsCount: bookings.length,
-      totalAmount: bookings.reduce((sum, b) => sum + b.price, 0),
-      metadata,
-      bookings: bookings.map(b => ({
-        teacher: b.teacher_id,
-        date: b.date,
-        time: b.time,
-        subject: b.subject,
-        price: b.price
-      }))
-    });
 
     try {
       const data = await apiCall('initiate-booking-checkout', {
@@ -297,14 +272,6 @@ export function useBookingAPI() {
       if (!data.success) {
         throw new Error(data.error || 'Failed to initiate checkout');
       }
-      
-      console.log('✅ Checkout initiated successfully:', {
-        sessionId: data.session_id,
-        checkoutUrl: data.checkout_url,
-        totalAmount: data.total_amount,
-        paidWithCredits: data.paid_with_credits,
-        lessonsCreated: data.lessons?.length || 0
-      });
 
       // Return all response data to support both Stripe and credit payments
       return {
@@ -321,9 +288,10 @@ export function useBookingAPI() {
         new_credit_balance: data.new_credit_balance,
         message: data.message
       };
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Checkout initiation failed:', err);
-      setError(err.message);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -334,12 +302,7 @@ export function useBookingAPI() {
   const getUserBookings = async (filters: { role?: 'student' | 'teacher'; status?: string; upcoming?: boolean } = {}): Promise<Booking[]> => {
     setLoading(true);
     setError(null);
-    
-    console.log('📅 Fetching user bookings:', {
-      filters,
-      timestamp: new Date().toISOString()
-    });
-    
+
     try {
       const params = new URLSearchParams();
       if (filters.role) params.append('role', filters.role);
@@ -347,25 +310,11 @@ export function useBookingAPI() {
       if (filters.upcoming) params.append('upcoming', 'true');
 
       const data = await apiCall(`get-user-bookings?${params.toString()}`);
-      
-      console.log('📊 User bookings response:', {
-        success: data.success,
-        bookingsCount: data.bookings?.length || 0,
-        bookings: data.bookings?.map((b: Booking) => ({
-          id: b.id,
-          date: b.scheduled_date,
-          time: b.scheduled_time,
-          subject: b.subject,
-          status: b.status,
-          teacher: b.teacher_name,
-          canJoin: b.can_join
-        }))
-      });
-      
       return data.bookings || [];
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Failed to fetch user bookings:', err);
-      setError(err.message);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -382,8 +331,9 @@ export function useBookingAPI() {
         body: JSON.stringify({ booking_id: bookingId, reason }),
       });
       return data.booking;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       throw err;
     } finally {
       setLoading(false);

@@ -1,12 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 import Stripe from "https://esm.sh/stripe@14.14.0?target=deno"
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with',
-  'Access-Control-Max-Age': '86400',
+const responseHeaders = {
+  ...responseHeaders,
+  ...securityHeaders,
 }
 
 serve(async (req) => {
@@ -14,7 +13,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
-      headers: corsHeaders
+      headers: responseHeaders
     })
   }
 
@@ -116,7 +115,7 @@ serve(async (req) => {
           type: 'free_enrollment',
           message: 'Successfully enrolled in the free session'
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -219,7 +218,7 @@ serve(async (req) => {
         checkout_url: checkoutSession.url,
         session_id: checkoutSession.id
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -231,7 +230,7 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...responseHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

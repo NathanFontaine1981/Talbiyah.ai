@@ -1,12 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getHMSManagementToken } from "../_shared/hms.ts"
+import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts"
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
+import { requireCSRF } from "../_shared/csrf.ts"
+import { logSecurityEventFromRequest, logCSRFBlocked } from "../_shared/securityLog.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with',
-  'Access-Control-Max-Age': '86400',
+const responseHeaders = {
+  ...corsHeaders,
+  ...securityHeaders,
 }
 
 interface BookingRequest {
@@ -24,15 +26,20 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
-      headers: corsHeaders
+      headers: responseHeaders
     })
   }
 
-  console.log('💳 INITIATE BOOKING CHECKOUT START:', {
-    method: req.method,
-    url: req.url,
-    timestamp: new Date().toISOString()
-  });
+  // CSRF protection
+  const csrfError = requireCSRF(req, responseHeaders)
+  if (csrfError) return csrfError
+
+  // Rate limiting: 10 bookings per hour per IP
+  const clientIP = getClientIP(req)
+  const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.BOOKING)
+  if (!rateLimitResult.allowed) {
+    return rateLimitResponse(rateLimitResult, responseHeaders)
+  }
 
   try {
     // Create client with service role key for database operations
@@ -61,7 +68,7 @@ serve(async (req) => {
       console.error('❌ Unauthorized checkout attempt');
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -82,7 +89,7 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...responseHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -452,6 +459,141 @@ serve(async (req) => {
           newBalance
         });
 
+        // Send email notifications for each lesson booked
+        console.log('📧 Sending booking notification emails...');
+        for (let i = 0; i < createdLessons.length; i++) {
+          const lessonId = createdLessons[i].id;
+          const booking = bookingsWithLearner[i];
+
+          try {
+            // Get full lesson data with teacher and student info
+            const { data: lessonData } = await supabaseClient
+              .from('lessons')
+              .select('id, scheduled_time, duration_minutes, subject_id, teacher_id, learner_id')
+              .eq('id', lessonId)
+              .single();
+
+            if (!lessonData) continue;
+
+            // Get teacher profile (include email field if it exists)
+            const { data: teacherProfile } = await supabaseClient
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', lessonData.teacher_id)
+              .single();
+
+            // Try to get teacher email from teacher_profiles if not in profiles
+            let teacherEmail = teacherProfile?.email;
+            if (!teacherEmail) {
+              const { data: teacherProfileData } = await supabaseClient
+                .from('teacher_profiles')
+                .select('email')
+                .eq('id', lessonData.teacher_id)
+                .single();
+              teacherEmail = teacherProfileData?.email;
+            }
+
+            console.log(`   📧 Teacher email lookup: ${teacherEmail || 'NOT FOUND'}`);
+
+            // Get learner info
+            const { data: learnerData } = await supabaseClient
+              .from('learners')
+              .select('name, parent_id')
+              .eq('id', lessonData.learner_id)
+              .single();
+
+            // Get parent profile (the one who booked)
+            const { data: parentProfile } = await supabaseClient
+              .from('profiles')
+              .select('full_name')
+              .eq('id', user.id)
+              .single();
+
+            // Use email from auth session (profiles.email is often empty)
+            const parentEmail = user.email;
+            console.log(`   📧 Parent/Student email from auth: ${parentEmail || 'NOT FOUND'}`);
+
+            // Get subject name
+            const { data: subjectData } = await supabaseClient
+              .from('subjects')
+              .select('name')
+              .eq('id', lessonData.subject_id)
+              .single();
+
+            const studentName = learnerData?.name || parentProfile?.full_name || 'Student';
+            const subjectName = subjectData?.name || booking.subject || 'Lesson';
+
+            // Send email to teacher about new booking
+            if (teacherEmail) {
+              console.log(`   📧 Sending teacher notification to ${teacherEmail}`);
+              const teacherEmailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                },
+                body: JSON.stringify({
+                  type: 'teacher_new_booking',
+                  recipient_email: teacherEmail,
+                  recipient_name: teacherProfile?.full_name || 'Teacher',
+                  data: {
+                    student_name: studentName,
+                    subject: subjectName,
+                    scheduled_time: lessonData.scheduled_time,
+                    duration_minutes: lessonData.duration_minutes || 60
+                  }
+                })
+              });
+              const teacherEmailResult = await teacherEmailRes.json();
+              console.log(`   ✅ Teacher notification response:`, teacherEmailResult);
+            }
+
+            // Send confirmation email to parent/student
+            if (parentEmail) {
+              console.log(`   📧 Sending student confirmation to ${parentEmail}`);
+              const studentEmailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                },
+                body: JSON.stringify({
+                  type: 'student_booking_confirmation',
+                  recipient_email: parentEmail,
+                  recipient_name: parentProfile?.full_name || 'Student',
+                  data: {
+                    teacher_name: teacherProfile?.full_name || 'Teacher',
+                    subject: subjectName,
+                    scheduled_time: lessonData.scheduled_time,
+                    duration_minutes: lessonData.duration_minutes || 60
+                  }
+                })
+              });
+              const studentEmailResult = await studentEmailRes.json();
+              console.log(`   ✅ Student confirmation response:`, studentEmailResult);
+            }
+          } catch (emailErr: any) {
+            // Don't fail the booking if email fails
+            console.error(`   ⚠️ Failed to send notification email for lesson ${lessonId}:`, emailErr.message);
+          }
+        }
+        console.log('📧 Email notifications complete');
+
+        // Log successful booking
+        await logSecurityEventFromRequest(supabaseClient, req, {
+          eventType: 'booking_created',
+          userId: user.id,
+          resourceType: 'lesson',
+          resourceId: lessonIds.join(','),
+          action: 'create',
+          details: {
+            payment_method: 'credits',
+            credits_used: totalCreditsNeeded,
+            lessons_count: createdLessons.length
+          },
+          severity: 'info'
+        });
+
         // Return success response (no Stripe checkout needed)
         return new Response(
           JSON.stringify({
@@ -462,7 +604,7 @@ serve(async (req) => {
             new_credit_balance: newBalance,
             message: 'Lessons booked successfully using your credits!'
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
         );
 
       } catch (creditError: any) {
@@ -484,7 +626,7 @@ serve(async (req) => {
           }),
           {
             status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...responseHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -595,6 +737,21 @@ serve(async (req) => {
       paymentStatus: session.payment_status
     });
 
+    // Log payment initiated
+    await logSecurityEventFromRequest(supabaseClient, req, {
+      eventType: 'payment_initiated',
+      userId: user.id,
+      resourceType: 'checkout',
+      resourceId: session.id,
+      action: 'create',
+      details: {
+        amount: totalAmount / 100,
+        session_count: sessionCount,
+        pending_booking_id: pendingBooking.id
+      },
+      severity: 'info'
+    });
+
     // Update pending booking with Stripe session ID
     const { error: linkError } = await supabaseClient
       .from('pending_bookings')
@@ -620,7 +777,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -632,7 +789,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

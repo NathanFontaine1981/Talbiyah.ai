@@ -1,6 +1,7 @@
 // @ts-ignore - Deno types
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getHMSManagementToken } from "../_shared/hms.ts";
 
 // This function handles 100ms webhooks - must be publicly accessible
 // Security is handled via x-webhook-secret header validation
@@ -30,10 +31,16 @@ interface HMS100msWebhook {
     duration?: number;
     chat_recording_path?: string;
     chat_recording_presigned_url?: string;
+    // Transcript fields - 100ms uses multiple field names
     transcript_path?: string;
     transcript_presigned_url?: string;
+    transcript_txt_presigned_url?: string;
+    transcript_json_presigned_url?: string;
+    transcript_srt_presigned_url?: string;
+    // Summary fields
     summary_path?: string;
     summary_presigned_url?: string;
+    summary_json_presigned_url?: string;
   };
 }
 
@@ -140,15 +147,29 @@ Deno.serve(async (req: Request) => {
       recordingUrl = hmsData.data.recording_presigned_url;
       recordingSize = hmsData.data.size;
       durationSeconds = hmsData.data.duration;
-      transcriptUrl = hmsData.data.transcript_presigned_url;
-      summaryUrl = hmsData.data.summary_presigned_url;
+
+      // Check all possible transcript URL fields (100ms uses different field names)
+      transcriptUrl = hmsData.data.transcript_json_presigned_url ||
+                      hmsData.data.transcript_txt_presigned_url ||
+                      hmsData.data.transcript_presigned_url;
+
+      // Check all possible summary URL fields
+      summaryUrl = hmsData.data.summary_json_presigned_url ||
+                   hmsData.data.summary_presigned_url;
+
+      // Store session_id for later use if room_id lookup fails
+      const sessionId = hmsData.data.session_id;
 
       console.log("Event details:", {
         type: hmsData.type,
         room_id: roomId,
+        session_id: sessionId,
         has_recording: !!recordingUrl,
         has_transcript: !!transcriptUrl,
         has_summary: !!summaryUrl,
+        transcript_url_source: hmsData.data.transcript_json_presigned_url ? 'json' :
+                               hmsData.data.transcript_txt_presigned_url ? 'txt' :
+                               hmsData.data.transcript_presigned_url ? 'generic' : 'none',
       });
     } else {
       // Legacy format
@@ -267,7 +288,95 @@ Deno.serve(async (req: Request) => {
     const subjectName = subject?.name || "Lesson";
     const learnerName = learner?.name || "Student";
 
-    // If transcript is available (from transcription.success event), generate AI insights
+    // Extract session_id for potential transcript API lookup
+    const sessionId = (rawData as HMS100msWebhook).data?.session_id;
+
+    // If no transcript URL in webhook, try to fetch from 100ms API (for recording.success events)
+    if (!transcriptUrl && !isTranscriptionEvent && sessionId) {
+      console.log("No transcript in webhook, attempting to fetch from 100ms API for session:", sessionId);
+
+      try {
+        const hmsToken = await getHMSManagementToken();
+
+        // Fetch recording assets for this session
+        const assetsResponse = await fetch(
+          `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${hmsToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (assetsResponse.ok) {
+          const assetsData = await assetsResponse.json();
+          console.log("Found", assetsData.data?.length || 0, "recording assets for session");
+
+          // Find transcript assets (prefer JSON, then TXT)
+          const transcriptAsset = assetsData.data?.find((asset: any) =>
+            asset.type === 'transcript' && asset.status === 'completed' &&
+            asset.metadata?.output_mode === 'json'
+          ) || assetsData.data?.find((asset: any) =>
+            asset.type === 'transcript' && asset.status === 'completed'
+          );
+
+          // Find summary asset
+          const summaryAsset = assetsData.data?.find((asset: any) =>
+            asset.type === 'summary' && asset.status === 'completed'
+          );
+
+          if (transcriptAsset) {
+            console.log("Found transcript asset:", transcriptAsset.id, "type:", transcriptAsset.metadata?.output_mode);
+
+            // Get presigned URL for transcript
+            const presignResponse = await fetch(
+              `https://api.100ms.live/v2/recording-assets/${transcriptAsset.id}/presigned-url`,
+              {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${hmsToken}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            if (presignResponse.ok) {
+              const presignData = await presignResponse.json();
+              transcriptUrl = presignData.url;
+              console.log("Got presigned URL for transcript");
+            }
+          }
+
+          if (summaryAsset && !summaryUrl) {
+            console.log("Found summary asset:", summaryAsset.id);
+
+            const presignResponse = await fetch(
+              `https://api.100ms.live/v2/recording-assets/${summaryAsset.id}/presigned-url`,
+              {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${hmsToken}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            if (presignResponse.ok) {
+              const presignData = await presignResponse.json();
+              summaryUrl = presignData.url;
+              console.log("Got presigned URL for summary");
+            }
+          }
+        } else {
+          console.log("Could not fetch recording assets:", assetsResponse.status);
+        }
+      } catch (apiError) {
+        console.error("Error fetching from 100ms API:", apiError);
+      }
+    }
+
+    // If transcript is available (from webhook or API fetch), generate AI insights
     if (transcriptUrl || isTranscriptionEvent) {
       console.log("Transcript available, fetching and generating AI insights...");
 
@@ -275,20 +384,41 @@ Deno.serve(async (req: Request) => {
         // Fetch transcript text
         let transcriptText = "";
         if (transcriptUrl) {
+          console.log("Fetching transcript from URL...");
           const transcriptResponse = await fetch(transcriptUrl);
           if (transcriptResponse.ok) {
-            const transcriptData = await transcriptResponse.json();
-            // Extract text from 100ms transcript format
-            if (Array.isArray(transcriptData)) {
-              // Array of transcript segments
-              transcriptText = transcriptData.map((seg: any) => seg.text || seg.transcript || "").join(" ");
-            } else if (transcriptData.transcript) {
-              transcriptText = transcriptData.transcript;
-            } else if (transcriptData.text) {
-              transcriptText = transcriptData.text;
+            // Try to parse as JSON first, fall back to text
+            const contentType = transcriptResponse.headers.get('content-type') || '';
+            let transcriptData: any;
+
+            if (contentType.includes('application/json') || transcriptUrl.includes('.json')) {
+              transcriptData = await transcriptResponse.json();
+              // Extract text from 100ms JSON transcript format
+              if (Array.isArray(transcriptData)) {
+                // Array of transcript segments with speaker info
+                transcriptText = transcriptData.map((seg: any) => {
+                  const speaker = seg.speaker_name || seg.peer_name || 'Speaker';
+                  const text = seg.text || seg.transcript || '';
+                  return `${speaker}: ${text}`;
+                }).join('\n');
+              } else if (transcriptData.transcript) {
+                transcriptText = transcriptData.transcript;
+              } else if (transcriptData.text) {
+                transcriptText = transcriptData.text;
+              } else if (typeof transcriptData === 'string') {
+                transcriptText = transcriptData;
+              } else {
+                // Last resort - stringify
+                transcriptText = JSON.stringify(transcriptData);
+              }
             } else {
-              transcriptText = JSON.stringify(transcriptData);
+              // Plain text transcript
+              transcriptText = await transcriptResponse.text();
             }
+
+            console.log("Fetched transcript, length:", transcriptText.length);
+          } else {
+            console.error("Failed to fetch transcript:", transcriptResponse.status);
           }
         }
 
@@ -296,10 +426,19 @@ Deno.serve(async (req: Request) => {
         let summaryText = "";
         if (summaryUrl) {
           try {
+            console.log("Fetching summary from URL...");
             const summaryResponse = await fetch(summaryUrl);
             if (summaryResponse.ok) {
               const summaryData = await summaryResponse.json();
-              summaryText = summaryData.summary || summaryData.text || JSON.stringify(summaryData);
+              // Handle 100ms summary format with sections
+              if (summaryData.sections && Array.isArray(summaryData.sections)) {
+                summaryText = summaryData.sections.map((section: any) =>
+                  `## ${section.title}\n${section.content || section.bullets?.join('\n- ') || ''}`
+                ).join('\n\n');
+              } else {
+                summaryText = summaryData.summary || summaryData.text || JSON.stringify(summaryData);
+              }
+              console.log("Fetched summary, length:", summaryText.length);
             }
           } catch (e) {
             console.log("Could not fetch summary:", e);
@@ -421,10 +560,11 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error handling recording webhook:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,15 +1,16 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getHMSManagementToken } from '../_shared/hms.ts'
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const responseHeaders = {
+  ...responseHeaders,
+  ...securityHeaders,
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: responseHeaders })
   }
 
   try {
@@ -357,7 +358,7 @@ serve(async (req) => {
         message: `${createdLessons.length} lesson(s) booked successfully`
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...responseHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     )
@@ -366,7 +367,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...responseHeaders, 'Content-Type': 'application/json' },
         status: 400,
       }
     )

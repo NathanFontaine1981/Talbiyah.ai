@@ -104,12 +104,32 @@ export default function TeacherManagement() {
   async function handleApprove(teacherId: string) {
     setProcessingId(teacherId);
     try {
+      // Find the teacher to get their email and name
+      const teacher = [...pendingApplications, ...approvedTeachers].find(t => t.id === teacherId);
+
       const { error: updateError } = await supabase
         .from('teacher_profiles')
         .update({ status: 'approved' })
         .eq('id', teacherId);
 
       if (updateError) throw updateError;
+
+      // Send approval email notification
+      if (teacher) {
+        try {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'teacher_approved',
+              recipient_email: teacher.email,
+              recipient_name: teacher.full_name,
+              data: {}
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send approval email:', emailError);
+          // Don't fail the approval if email fails
+        }
+      }
 
       await fetchTeachers();
       alert('Teacher approved successfully! They will need to set their availability before students can book.');

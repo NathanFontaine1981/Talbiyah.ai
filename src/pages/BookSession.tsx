@@ -249,11 +249,42 @@ export default function BookSession() {
     }
   }
 
-  function applyPromoCode() {
-    if (promoCode.toLowerCase() === 'admin' || promoCode.toLowerCase() === 'free') {
+  async function applyPromoCode() {
+    if (!promoCode.trim()) {
+      alert('Please enter a promo code');
+      return;
+    }
+
+    try {
+      // Validate promo code against database
+      const { data: promoData, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', promoCode.trim().toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !promoData) {
+        alert('Invalid or expired promo code');
+        return;
+      }
+
+      // Check if promo code has uses remaining
+      if (promoData.max_uses && promoData.current_uses >= promoData.max_uses) {
+        alert('This promo code has reached its usage limit');
+        return;
+      }
+
+      // Check expiry date
+      if (promoData.expires_at && new Date(promoData.expires_at) < new Date()) {
+        alert('This promo code has expired');
+        return;
+      }
+
       setPromoApplied(true);
-    } else {
-      alert('Invalid promo code');
+    } catch (err) {
+      console.error('Error validating promo code:', err);
+      alert('Failed to validate promo code. Please try again.');
     }
   }
 

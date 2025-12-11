@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, CreditCard, Calendar, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 interface PurchaseDetails {
@@ -21,14 +21,25 @@ export default function CreditPurchaseSuccess() {
   const [newBalance, setNewBalance] = useState<number>(0);
   const [verifying, setVerifying] = useState(true);
 
+  // Store interval ID for cleanup
+  const pollIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     verifyPurchaseAndLoadDetails();
+
+    // Cleanup function to clear polling interval on unmount
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function verifyPurchaseAndLoadDetails() {
     try {
       const sessionId = searchParams.get('session_id');
-      console.log('🔍 Credit Purchase Success - Session ID:', sessionId);
 
       if (!sessionId) {
         setError('No session ID found');
@@ -44,8 +55,6 @@ export default function CreditPurchaseSuccess() {
         .eq('stripe_checkout_session_id', sessionId)
         .maybeSingle();
 
-      console.log('🔍 Purchase query result:', { purchase, purchaseError });
-
       if (purchaseError) {
         console.error('❌ Error loading purchase:', purchaseError);
         setError('Could not load purchase details');
@@ -56,15 +65,12 @@ export default function CreditPurchaseSuccess() {
 
       if (!purchase) {
         // Purchase not found yet - webhook might still be processing
-        console.log('⏳ Purchase not found yet, will poll for updates...');
-
         // Poll for purchase creation (webhook might be delayed)
         let attempts = 0;
         const maxAttempts = 15; // 30 seconds (15 attempts * 2 seconds)
 
-        const pollInterval = setInterval(async () => {
+        pollIntervalRef.current = setInterval(async () => {
           attempts++;
-          console.log(`🔄 Polling attempt ${attempts}/${maxAttempts}`);
 
           const { data: polledPurchase } = await supabase
             .from('credit_purchases')
@@ -73,8 +79,6 @@ export default function CreditPurchaseSuccess() {
             .maybeSingle();
 
           if (polledPurchase) {
-            console.log('✅ Purchase found on polling:', polledPurchase.id);
-
             // Get current credit balance
             const { data: balance } = await supabase
               .from('user_credits')
@@ -85,22 +89,25 @@ export default function CreditPurchaseSuccess() {
             setPurchaseDetails(polledPurchase);
             setNewBalance(balance?.credits_remaining || 0);
             setVerifying(false);
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           } else if (attempts >= maxAttempts) {
             console.error('❌ Purchase not found after polling');
             setError('Purchase not found. Please check your dashboard.');
             setVerifying(false);
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
           }
         }, 2000);
 
         return; // Exit early, polling will continue
       }
 
-      // Purchase found!
-      console.log('✅ Found purchase:', purchase.id);
-
-      // Get current credit balance
+      // Purchase found - get current credit balance
       const { data: balance } = await supabase
         .from('user_credits')
         .select('credits_remaining')

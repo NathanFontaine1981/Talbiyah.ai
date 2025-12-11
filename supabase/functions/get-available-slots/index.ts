@@ -1,11 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with',
-  'Access-Control-Max-Age': '86400',
+const responseHeaders = {
+  ...responseHeaders,
+  ...securityHeaders,
 }
 
 serve(async (req) => {
@@ -13,7 +12,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
-      headers: corsHeaders
+      headers: responseHeaders
     })
   }
 
@@ -36,7 +35,7 @@ serve(async (req) => {
     if (!user) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -116,7 +115,7 @@ serve(async (req) => {
       console.log('⚠️ No availability records found')
       return new Response(
         JSON.stringify({ success: true, slots: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -326,14 +325,14 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, slots: availableSlots }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error getting available slots:', error)
     return new Response(
       JSON.stringify({ success: false, error: error.message || 'Failed to get available slots' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

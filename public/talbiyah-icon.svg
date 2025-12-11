@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#064E3B"/>
+  <!-- Open book shape -->
+  <g transform="translate(17, 18)">
+    <path d="M0 28 L15 22 L15 0 L0 6 Z" fill="url(#iconGradient)" opacity="0.95"/>
+    <path d="M30 28 L15 22 L15 0 L30 6 Z" fill="url(#iconGradient)" opacity="0.75"/>
+    <!-- Book spine -->
+    <line x1="15" y1="0" x2="15" y2="22" stroke="#34D399" stroke-width="2"/>
+  </g>
+  <!-- Crescent moon accent -->
+  <path d="M32 12 Q38 16 32 20 Q28 16 32 12" fill="#34D399"/>
+</svg>

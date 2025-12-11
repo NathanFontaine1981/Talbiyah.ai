@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <defs>
+    <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34D399"/>
+      <stop offset="50%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#065F46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: Modern Leaf/Growth with Islamic Star -->
+  <g transform="translate(10, 10)">
+    <!-- Main leaf shape (growth/knowledge) -->
+    <path d="M35 75 C15 60 10 35 25 15 C30 25 35 20 40 10 C55 30 50 55 35 75"
+          fill="url(#grad6)"/>
+
+    <!-- Stem/vein -->
+    <path d="M35 75 Q32 50 35 25" stroke="#065F46" stroke-width="2" fill="none"/>
+
+    <!-- 8-pointed Islamic star in center -->
+    <g transform="translate(35, 40)">
+      <polygon points="0,-8 2,-2 8,0 2,2 0,8 -2,2 -8,0 -2,-2" fill="#fff" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- Text -->
+  <text x="80" y="62" font-family="Georgia, serif" font-size="38" font-weight="600" fill="#10B981">Talbiyah</text>
+  <text x="238" y="62" font-family="Arial, sans-serif" font-size="20" fill="#6B7280">.ai</text>
+</svg>

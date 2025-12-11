@@ -491,7 +491,7 @@ export default function BookingModal({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2 mb-4">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mb-4">
                     {weekDates.map((date) => (
                       <button
                         key={date.toISOString()}
@@ -515,7 +515,7 @@ export default function BookingModal({
                   {selectedDate && (
                     <div className="max-h-64 overflow-y-auto">
                       <p className="text-sm font-medium text-slate-300 mb-3">Available Times</p>
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {timeSlots.map((timeStr) => {
                           const slot = createTimeSlot(selectedDate, timeStr);
                           const available = isTimeSlotAvailable(selectedDate, timeStr);

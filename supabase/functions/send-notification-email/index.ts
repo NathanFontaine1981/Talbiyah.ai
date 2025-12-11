@@ -1,10 +1,28 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
+import { corsHeaders, securityHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+const responseHeaders = {
+  ...corsHeaders,
+  ...securityHeaders,
 };
+
+// Sanitize string to prevent XSS in HTML emails
+function sanitizeForHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// Validate email format
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
 
 type NotificationType =
   | "lesson_reminder_1h"
@@ -18,7 +36,11 @@ type NotificationType =
   | "teacher_application_received"
   | "referral_reward"
   | "hours_transferred"
-  | "teacher_new_booking";
+  | "teacher_new_booking"
+  | "teacher_approved"
+  | "welcome"
+  | "credit_purchase_confirmation"
+  | "student_booking_confirmation";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -29,7 +51,14 @@ interface NotificationPayload {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers: responseHeaders });
+  }
+
+  // Rate limiting: 5 emails per hour per IP
+  const clientIP = getClientIP(req);
+  const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.EMAIL);
+  if (!rateLimitResult.allowed) {
+    return rateLimitResponse(rateLimitResult, responseHeaders);
   }
 
   try {
@@ -39,6 +68,26 @@ Deno.serve(async (req: Request) => {
     }
 
     const payload: NotificationPayload = await req.json();
+
+    // Validate required fields
+    if (!payload.type || !payload.recipient_email || !payload.recipient_name) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { ...responseHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate email format
+    if (!isValidEmail(payload.recipient_email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...responseHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize recipient name to prevent XSS
+    payload.recipient_name = sanitizeForHtml(payload.recipient_name);
+
     console.log("Sending notification email:", payload.type);
 
     let emailContent: { subject: string; html: string };
@@ -80,6 +129,18 @@ Deno.serve(async (req: Request) => {
       case "teacher_new_booking":
         emailContent = getTeacherNewBookingEmail(payload);
         break;
+      case "teacher_approved":
+        emailContent = getTeacherApprovedEmail(payload);
+        break;
+      case "welcome":
+        emailContent = getWelcomeEmail(payload);
+        break;
+      case "credit_purchase_confirmation":
+        emailContent = getCreditPurchaseEmail(payload);
+        break;
+      case "student_booking_confirmation":
+        emailContent = getStudentBookingConfirmationEmail(payload);
+        break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
     }
@@ -110,16 +171,19 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ success: true, email_id: result.id }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...responseHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Error sending notification email:", error);
+    // Log detailed error server-side
+    console.error("Error sending notification email:", error instanceof Error ? error.message : "Unknown error");
+
+    // Return generic error to client
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: "Failed to send notification" }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...responseHeaders, "Content-Type": "application/json" },
       }
     );
   }
@@ -755,6 +819,315 @@ function getTeacherNewBookingEmail(payload: NotificationPayload) {
           <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
             <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
           </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getTeacherApprovedEmail(payload: NotificationPayload): { subject: string; html: string } {
+  return {
+    subject: `🎉 Congratulations! Your Talbiyah.ai Teacher Application is Approved!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">🎉</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">You're Approved!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Welcome to the Talbiyah.ai teaching team</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Alhamdulillah! We're thrilled to inform you that your application to teach on Talbiyah.ai has been <strong>approved</strong>!
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              You are now part of our community of qualified teachers helping Muslims around the world learn the Quran and Arabic.
+            </p>
+
+            <div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 16px 0; color: #065f46; font-size: 18px;">📋 Next Steps:</h3>
+              <ol style="margin: 0; padding-left: 20px; color: #047857;">
+                <li style="margin-bottom: 10px;"><strong>Set Your Availability</strong> - Add your teaching schedule so students can book lessons</li>
+                <li style="margin-bottom: 10px;"><strong>Complete Your Profile</strong> - Add a professional photo and bio to attract students</li>
+                <li style="margin-bottom: 10px;"><strong>Wait for Bookings</strong> - You'll receive email notifications when students book lessons</li>
+              </ol>
+            </div>
+
+            <div style="background: #eff6ff; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+                💡 <strong>Tip:</strong> Teachers who complete their profile and add availability within 24 hours get more bookings!
+              </p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teacher/availability" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Set Your Availability Now
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getWelcomeEmail(payload: NotificationPayload): { subject: string; html: string } {
+  return {
+    subject: `Welcome to Talbiyah.ai - Your Islamic Learning Journey Begins! 🌙`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to Talbiyah.ai</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+          <!-- Header with gradient -->
+          <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 32px;">As-salamu alaykum ${payload.recipient_name}! 🌙</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Welcome to Talbiyah.ai</p>
+          </div>
+
+          <!-- Founder introduction -->
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="margin-bottom: 20px;">
+              <h2 style="margin: 0 0 10px 0; color: #0f172a; font-size: 24px;">From Premier League to At Your Service</h2>
+              <p style="margin: 0; color: #64748b; font-size: 16px;">A Personal Message from Nathan Fontaine, Founder</p>
+            </div>
+
+            <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
+              I'm Nathan Fontaine, and I want to personally welcome you to Talbiyah.ai. My journey from playing football for Bristol Rovers, Wigan Athletic, and West Bromwich Albion to founding this platform has been guided by my love for Islam.
+            </p>
+
+            <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
+              I embraced Islam during my time in the Premier League with Wigan Athletic - a moment that transformed my life forever. For over 20 years, I've been dedicated to learning and sharing Islamic knowledge.
+            </p>
+
+            <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <p style="margin: 0; color: white; font-size: 16px; line-height: 1.7; font-style: italic;">
+                "Talbiyah.ai represents everything I've learned about combining dedication, discipline, and technology to serve the Muslim community. At Your Service isn't just our tagline - it's my personal commitment to you."
+              </p>
+              <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px; text-align: right;">- Nathan Fontaine</p>
+            </div>
+          </div>
+
+          <!-- What makes us different -->
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">What Makes Talbiyah.ai Different</h3>
+
+            <div style="margin-bottom: 16px;">
+              <strong style="color: #0f172a;">1. AI-Powered Study Notes</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">After each lesson, receive personalized Talbiyah Insights - study notes and quizzes generated from YOUR actual conversation with your teacher.</p>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <strong style="color: #0f172a;">2. 3-Stage Quran Mastery</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Understanding → Fluency → Memorization. We track all three stages so you truly master the Quran, not just memorize it.</p>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <strong style="color: #0f172a;">3. Hand-Picked Teachers</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Every teacher is qualified, background-checked, and monitored to ensure the highest quality Islamic education.</p>
+            </div>
+
+            <div>
+              <strong style="color: #0f172a;">4. Sadaqah Jariyah Built-In</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Our referral system means every person you invite earns you ongoing rewards - even after you pass away.</p>
+            </div>
+          </div>
+
+          <!-- Get started CTA -->
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
+            <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">Start Your Free 30-Minute Trial!</h3>
+            <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
+              Experience the difference for yourself - completely free, no credit card required
+            </p>
+            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Browse Our Teachers
+            </a>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+            <p style="margin: 5px 0 0 0;">AI-Powered Islamic Learning</p>
+          </div>
+
+        </body>
+      </html>
+    `
+  };
+}
+
+function getStudentBookingConfirmationEmail(payload: NotificationPayload): { subject: string; html: string } {
+  const { teacher_name, subject, scheduled_time, duration_minutes } = payload.data;
+  const lessonDate = new Date(scheduled_time);
+  const formattedDate = lessonDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const formattedTime = lessonDate.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  return {
+    subject: `✅ Lesson Booked - ${subject} with ${teacher_name}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">✅</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Lesson Booked!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Your lesson has been confirmed</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Great news! Your lesson with <strong>${teacher_name}</strong> has been successfully booked.
+            </p>
+
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
+              <p style="margin: 0 0 8px 0; color: #047857;">Teacher: <strong>${teacher_name}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Date: <strong>${formattedDate}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+              <p style="margin: 0; color: #047857;">Duration: <strong>${duration_minutes} minutes</strong></p>
+            </div>
+
+            <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">📝 Before Your Lesson:</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #78350f;">
+                <li style="margin-bottom: 8px;">Test your camera and microphone</li>
+                <li style="margin-bottom: 8px;">Find a quiet space with good lighting</li>
+                <li style="margin-bottom: 8px;">Have your materials ready (Quran, notebook)</li>
+                <li>Join 5 minutes early</li>
+              </ul>
+            </div>
+
+            <div style="background: #dbeafe; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+                ⏰ <strong>Reminder:</strong> You'll receive another email 1 hour before your lesson starts.
+              </p>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View in Dashboard
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getCreditPurchaseEmail(payload: NotificationPayload): { subject: string; html: string } {
+  const { credits, amount, pack_type, new_balance } = payload.data;
+
+  return {
+    subject: `✅ Payment Confirmed - ${credits} Credits Added to Your Account`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Payment Confirmation</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+          <!-- Header with gradient -->
+          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">✅</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">Payment Confirmed!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">${credits} credits have been added to your account</p>
+          </div>
+
+          <!-- Main content -->
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Thank you for your purchase! Your payment has been processed successfully and your credits are ready to use.
+            </p>
+
+            <!-- Purchase Details -->
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 16px 0; color: #065f46; font-size: 18px;">📋 Purchase Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #047857; border-bottom: 1px solid #a7f3d0;">Pack Type:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #a7f3d0; text-transform: capitalize;">${pack_type}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #047857; border-bottom: 1px solid #a7f3d0;">Credits Added:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #a7f3d0;">${credits} credits</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #047857; border-bottom: 1px solid #a7f3d0;">Amount Paid:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #a7f3d0;">£${amount.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #047857;">New Balance:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 700; text-align: right; font-size: 18px;">${new_balance} credits</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- What's Next -->
+            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #1e40af; font-size: 16px;">🎓 What's Next?</h3>
+              <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
+                Your credits can be used to book lessons with any of our qualified teachers. Each credit equals one hour of learning.
+              </p>
+            </div>
+
+            <!-- Refund Policy Note -->
+            <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.6;">
+                💡 <strong>Refund Policy:</strong> Unused credits can be refunded within 7 days of purchase. Contact support for assistance.
+              </p>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Book a Lesson Now
+            </a>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+            <p style="margin: 5px 0 0 0;">Questions? Reply to this email for support</p>
+          </div>
+
         </body>
       </html>
     `
