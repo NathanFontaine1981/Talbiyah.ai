@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen } from 'lucide-react';
+import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast, differenceInDays } from 'date-fns';
 
@@ -55,6 +55,8 @@ export default function MyClasses() {
   const [filter, setFilter] = useState<'upcoming' | 'past' | 'missed' | 'all'>('upcoming');
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState<string>('');
+  const [cancellingLessonId, setCancellingLessonId] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState<{ lessonId: string; canCancel: boolean; hoursUntil: number } | null>(null);
 
   useEffect(() => {
     loadLessons();
@@ -226,6 +228,54 @@ export default function MyClasses() {
   function closeMessage() {
     setViewingMessage(null);
     setMessageContent('');
+  }
+
+  function handleCancelClick(lessonId: string, scheduledTime: string) {
+    const lessonTime = new Date(scheduledTime);
+    const hoursUntil = (lessonTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    const canCancel = hoursUntil >= 2;
+    setShowCancelModal({ lessonId, canCancel, hoursUntil });
+  }
+
+  async function handleCancelLesson() {
+    if (!showCancelModal) return;
+
+    setCancellingLessonId(showCancelModal.lessonId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-lesson`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            lesson_id: showCancelModal.lessonId,
+            reason: 'Cancelled by student'
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel lesson');
+      }
+
+      // Show success message and reload
+      alert(`Lesson cancelled successfully. ${data.credits_refunded} credit(s) have been refunded to your account.`);
+      setShowCancelModal(null);
+      loadLessons();
+    } catch (error) {
+      console.error('Error cancelling lesson:', error);
+      alert(error instanceof Error ? error.message : 'Failed to cancel lesson');
+    } finally {
+      setCancellingLessonId(null);
+    }
   }
 
   if (loading) {
@@ -504,14 +554,28 @@ export default function MyClasses() {
                           })()
                         )}
 
-                        {!lessonIsPast && canReschedule && (
-                          <button
-                            onClick={handleReschedule}
-                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg font-medium transition flex items-center space-x-2"
-                          >
-                            <CalendarClock className="w-4 h-4" />
-                            <span>Reschedule</span>
-                          </button>
+                        {!lessonIsPast && canReschedule && !isTeacher && (
+                          <>
+                            <button
+                              onClick={() => handleCancelClick(lesson.id, lesson.scheduled_time)}
+                              disabled={cancellingLessonId === lesson.id}
+                              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg font-medium transition flex items-center space-x-2 border border-red-500/30"
+                            >
+                              {cancellingLessonId === lesson.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4" />
+                              )}
+                              <span>Cancel</span>
+                            </button>
+                            <button
+                              onClick={handleReschedule}
+                              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg font-medium transition flex items-center space-x-2"
+                            >
+                              <CalendarClock className="w-4 h-4" />
+                              <span>Reschedule</span>
+                            </button>
+                          </>
                         )}
 
                         {!lessonIsPast && (
@@ -581,6 +645,105 @@ export default function MyClasses() {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Cancel Lesson Modal */}
+      {showCancelModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+            onClick={() => setShowCancelModal(null)}
+          ></div>
+
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-md w-full border border-slate-700">
+              <div className="flex items-center justify-between p-6 border-b border-slate-700">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    showCancelModal.canCancel
+                      ? 'bg-red-500/20'
+                      : 'bg-amber-500/20'
+                  }`}>
+                    <XCircle className={`w-5 h-5 ${
+                      showCancelModal.canCancel ? 'text-red-400' : 'text-amber-400'
+                    }`} />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    {showCancelModal.canCancel ? 'Cancel Lesson' : 'Cannot Cancel'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowCancelModal(null)}
+                  className="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition flex items-center justify-center text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                {showCancelModal.canCancel ? (
+                  <>
+                    <p className="text-slate-300 mb-4">
+                      Are you sure you want to cancel this lesson? Your credit will be refunded to your account.
+                    </p>
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 mb-6">
+                      <p className="text-emerald-400 text-sm">
+                        ✓ Your lesson credit will be refunded immediately
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-300 mb-4">
+                      This lesson starts in less than 2 hours. You cannot cancel at this time.
+                    </p>
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+                      <p className="text-amber-400 text-sm">
+                        ⚠️ Lessons can only be cancelled 2+ hours before start time. You can still reschedule this lesson.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowCancelModal(null)}
+                    className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition"
+                  >
+                    {showCancelModal.canCancel ? 'Keep Lesson' : 'Close'}
+                  </button>
+                  {showCancelModal.canCancel ? (
+                    <button
+                      onClick={handleCancelLesson}
+                      disabled={cancellingLessonId !== null}
+                      className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      {cancellingLessonId ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Cancelling...</span>
+                        </>
+                      ) : (
+                        <span>Yes, Cancel</span>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(null);
+                        navigate(`/reschedule-lesson?lessonId=${showCancelModal.lessonId}`);
+                      }}
+                      className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                      <span>Reschedule Instead</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
