@@ -369,8 +369,8 @@ export default function TeacherSessionsCard() {
           </div>
           <p className="text-xl text-slate-300 mb-2">
             {activeTab === 'upcoming'
-              ? 'No upcoming classes scheduled yet.'
-              : 'No past classes yet.'}
+              ? 'No upcoming lessons scheduled yet.'
+              : 'No past lessons yet.'}
           </p>
           <p className="text-slate-500">
             {activeTab === 'upcoming'

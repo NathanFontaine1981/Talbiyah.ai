@@ -142,7 +142,7 @@ export default function TeacherStatsWidget() {
     },
     {
       icon: TrendingUp,
-      label: 'Upcoming Classes',
+      label: 'Upcoming Lessons',
       value: stats.upcomingLessons.toString(),
       color: 'text-amber-400',
       bgColor: 'bg-amber-500/10',

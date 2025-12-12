@@ -331,7 +331,7 @@ export default function MyClasses() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading your classes...</p>
+          <p className="text-white text-lg">Loading your lessons...</p>
         </div>
       </div>
     );
@@ -409,10 +409,10 @@ export default function MyClasses() {
               <Calendar className="w-10 h-10 text-slate-600" />
             </div>
             <p className="text-xl text-slate-300 mb-2">
-              {filter === 'upcoming' && 'No upcoming classes scheduled'}
-              {filter === 'past' && 'No past classes found'}
-              {filter === 'missed' && 'No missed classes'}
-              {filter === 'all' && 'No classes found'}
+              {filter === 'upcoming' && 'No upcoming lessons scheduled'}
+              {filter === 'past' && 'No past lessons found'}
+              {filter === 'missed' && 'No missed lessons'}
+              {filter === 'all' && 'No lessons found'}
             </p>
             <p className="text-slate-500 mb-8">
               {filter === 'upcoming' && !isTeacher && 'Start your learning journey by booking your first session'}
