@@ -25,7 +25,7 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(), interest-cohort=()"
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()"
     # Cross-Origin policies for additional isolation
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Resource-Policy = "same-origin"
