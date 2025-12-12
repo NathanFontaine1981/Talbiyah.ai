@@ -1110,6 +1110,8 @@ export default function Home() {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
+                  name="email"
                   value={authForm.email}
                   onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -1127,6 +1129,8 @@ export default function Home() {
                 <input
                   type="password"
                   required
+                  autoComplete="current-password"
+                  name="password"
                   value={authForm.password}
                   onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
