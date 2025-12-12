@@ -51,7 +51,7 @@ export default function TalbiyahInsightsShowcase({ courseType }: InsightsShowcas
       icon: ClipboardList,
       color: 'amber',
       content: [
-        'Memorize verses 1-5 of the surah with proper Tajweed',
+        'Memorise verses 1-5 of the surah with proper Tajweed',
         'Practice recitation and record yourself for review',
         'Write a 200-word reflection on the main themes',
         'Research and document the tafsir from 3 different scholars',

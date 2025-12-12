@@ -448,7 +448,7 @@ export default function QuranProgress() {
                 <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-emerald-400" />
               </div>
               <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-1">{totalAyahsMemorized}</p>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">Memorized</p>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">Memorised</p>
               <p className="text-xs text-slate-500 mt-1">{Math.round((totalAyahsMemorized / TOTAL_AYAHS) * 100)}%</p>
             </div>
 
@@ -553,7 +553,7 @@ export default function QuranProgress() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 bg-emerald-500 rounded" />
-              <span className="text-slate-400">Memorized</span>
+              <span className="text-slate-400">Memorised</span>
             </div>
           </div>
 
@@ -629,7 +629,7 @@ export default function QuranProgress() {
                           </div>
                           <div className="text-center">
                             <p className="text-emerald-400 font-bold">{stats.memorization}</p>
-                            <p className="text-xs text-slate-500">Memorized</p>
+                            <p className="text-xs text-slate-500">Memorised</p>
                           </div>
                         </div>
 
@@ -693,7 +693,7 @@ export default function QuranProgress() {
                                           ? 'bg-emerald-500/20 border-emerald-500 hover:bg-emerald-500/30'
                                           : 'border-slate-600 hover:border-emerald-500/50'
                                       } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                      title="Memorization"
+                                      title="Memorisation"
                                     >
                                       {ayah.memorization && (
                                         <Check className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-400" />

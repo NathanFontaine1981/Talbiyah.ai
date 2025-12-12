@@ -46,7 +46,7 @@ export default function AccountSettings() {
   const islamicInterests = [
     'Quran Recitation',
     'Tajweed',
-    'Quran Memorization',
+    'Quran Memorisation',
     'Arabic Grammar',
     'Fiqh',
     'Hadith Studies',

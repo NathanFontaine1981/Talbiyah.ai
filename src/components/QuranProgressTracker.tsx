@@ -179,7 +179,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
               Fluency
             </span>
             <span className="text-xs font-medium text-slate-500 uppercase w-20 text-center">
-              Memorization
+              Memorisation
             </span>
           </div>
         </div>

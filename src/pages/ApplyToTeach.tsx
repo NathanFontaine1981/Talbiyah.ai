@@ -40,7 +40,7 @@ export default function ApplyToTeach() {
   const islamicInterests = [
     'Quran Recitation',
     'Tajweed',
-    'Quran Memorization',
+    'Quran Memorisation',
     'Arabic Grammar',
     'Fiqh',
     'Hadith Studies',

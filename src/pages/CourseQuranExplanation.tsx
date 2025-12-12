@@ -48,13 +48,13 @@ export default function CourseQuranExplanation() {
     {
       step: 3,
       icon: Heart,
-      title: 'Memorization (Hifz)',
-      description: 'Internalize after understanding',
+      title: 'Memorisation (Hifz)',
+      description: 'Internalise after understanding',
       details: [
-        'Proven memorization techniques',
+        'Proven memorisation techniques',
         'Long-term retention strategies',
         'Review and reinforcement',
-        'Memorize with meaning, not just sound'
+        'Memorise with meaning, not just sound'
       ],
       color: 'from-purple-500 to-purple-600'
     }
@@ -64,7 +64,7 @@ export default function CourseQuranExplanation() {
     'Understand what you recite - never read without comprehension again',
     'Follow the methodology of the Sahaba (companions of the Prophet ﷺ)',
     'Build a deep, personal connection with the Quran',
-    'Memorization becomes easier when you understand the meanings',
+    'Memorisation becomes easier when you understand the meanings',
     'Apply Quranic wisdom to your daily life',
     'Learn from qualified teachers with Ijazah and deep Islamic knowledge'
   ];

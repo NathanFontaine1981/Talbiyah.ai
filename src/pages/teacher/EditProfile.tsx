@@ -51,7 +51,7 @@ export default function EditProfile() {
   const [showPreview, setShowPreview] = useState(false);
 
   const availableSpecializations = [
-    'Quran Memorization (Hifz)',
+    'Quran Memorisation (Hifz)',
     'Tajweed',
     'Tafseer (Quranic Interpretation)',
     'Arabic Language',

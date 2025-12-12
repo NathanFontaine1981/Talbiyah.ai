@@ -56,14 +56,14 @@ const TEMPLATE_INFO = {
     name: 'Quran Lesson',
     icon: BookOpen,
     color: 'emerald',
-    description: 'Tajweed, Tafsir, Memorization focus',
+    description: 'Tajweed, Tafsir, Memorisation focus',
     sections: [
       'Lesson Summary',
       'Verses Covered',
       'Tajweed Points Learned',
       'New Vocabulary',
       'Key Tafsir Points',
-      'Memorization Progress',
+      'Memorisation Progress',
       'Practice Recommendations',
       'Next Lesson Preview'
     ]

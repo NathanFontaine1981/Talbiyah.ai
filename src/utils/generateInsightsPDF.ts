@@ -570,9 +570,9 @@ function renderQuranContent(
     });
   }
 
-  // Memorization Progress
+  // Memorisation Progress
   if (content.memorizationProgress) {
-    drawSectionHeader('Memorization Progress', SECTION_ICONS.memorization);
+    drawSectionHeader('Memorisation Progress', SECTION_ICONS.memorization);
     drawKeyValuePair('Reviewed', content.memorizationProgress.versesReviewed);
     drawKeyValuePair('New Verses', content.memorizationProgress.newVerses);
     if (content.memorizationProgress.notes) {

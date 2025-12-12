@@ -345,14 +345,14 @@ export default function Home() {
               <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">Quran</span>
               <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">,</span>
               <br />
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Not Just Memorize It</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Not Just Memorise It</span>
             </h2>
             <p className="text-2xl text-slate-300 max-w-3xl mx-auto mb-6 font-semibold">
-              Track what truly matters - Understanding, Fluency, and Memorization
+              Track what truly matters - Understanding, Fluency, and Memorisation
             </p>
             <div className="max-w-4xl mx-auto text-lg text-slate-400 leading-relaxed space-y-4">
               <p>
-                Our unique 3-stage method ensures you <span className="text-white font-semibold">truly master the Quran</span>. Traditional methods focus on speed of memorization. We focus on deep comprehension and lasting transformation.
+                Our unique 3-stage method ensures you <span className="text-white font-semibold">truly master the Quran</span>. Traditional methods focus on speed of memorisation. We focus on deep comprehension and lasting transformation.
               </p>
               <div className="grid md:grid-cols-3 gap-4 pt-4">
                 <div className="flex items-start space-x-2">
@@ -372,7 +372,7 @@ export default function Home() {
                 <div className="flex items-start space-x-2">
                   <CheckCircle2 className="w-5 h-5 text-purple-400 flex-shrink-0 mt-1" />
                   <div className="text-left">
-                    <p className="text-white font-semibold">Memorize with heart and mind</p>
+                    <p className="text-white font-semibold">Memorise with heart and mind</p>
                     <p className="text-sm text-slate-500">(Hifz)</p>
                   </div>
                 </div>
@@ -426,11 +426,11 @@ export default function Home() {
                 </div>
                 <div className="mb-4">
                   <span className="text-purple-400 font-bold text-sm">STAGE 3</span>
-                  <h3 className="text-2xl font-bold text-white mt-2">Memorization</h3>
+                  <h3 className="text-2xl font-bold text-white mt-2">Memorisation</h3>
                   <p className="text-xs text-slate-400 mt-1">(Hifz)</p>
                 </div>
                 <p className="text-slate-300 leading-relaxed flex-1">
-                  Internalize the Quran in your heart. Memorization becomes natural when you understand and can recite with fluency.
+                  Internalise the Quran in your heart. Memorisation becomes natural when you understand and can recite with fluency.
                 </p>
               </div>
             </div>

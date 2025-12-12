@@ -370,7 +370,7 @@ export default function StudentQuranTracker({
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-5 h-5 text-emerald-400" />
-              <span className="text-slate-400 text-sm">Memorized</span>
+              <span className="text-slate-400 text-sm">Memorised</span>
             </div>
             <p className="text-2xl font-bold text-emerald-400">{totalStats.memorization}</p>
             <p className="text-xs text-slate-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.memorization / TOTAL_AYAHS) * 100)}%)</p>
@@ -574,7 +574,7 @@ export default function StudentQuranTracker({
                         onClick={() => markAllAyahs(surah.number, 'memorization_complete', true)}
                         className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg text-xs font-medium transition"
                       >
-                        Mark All Memorized
+                        Mark All Memorised
                       </button>
                     </div>
 
@@ -596,7 +596,7 @@ export default function StudentQuranTracker({
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-emerald-500 rounded" />
-                        <span className="text-slate-400">Memorized</span>
+                        <span className="text-slate-400">Memorised</span>
                       </div>
                     </div>
 
@@ -658,7 +658,7 @@ export default function StudentQuranTracker({
                                       ? 'bg-emerald-500/20 border-emerald-500'
                                       : 'border-slate-600 hover:border-emerald-500/50'
                                   }`}
-                                  title="Memorized"
+                                  title="Memorised"
                                 >
                                   {progress?.memorization_complete && <Check className="w-5 h-5 text-emerald-400" />}
                                 </button>

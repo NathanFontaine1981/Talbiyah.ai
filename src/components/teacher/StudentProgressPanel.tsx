@@ -345,7 +345,7 @@ export default function StudentProgressPanel({
                 <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-center">
                   <Heart className="w-5 h-5 text-purple-400 mx-auto mb-1" />
                   <p className="text-xl font-bold text-purple-400">{stats.memorized}</p>
-                  <p className="text-xs text-purple-300">Memorized</p>
+                  <p className="text-xs text-purple-300">Memorised</p>
                 </div>
               </div>
 
@@ -450,7 +450,7 @@ export default function StudentProgressPanel({
                             }`}
                           >
                             <Heart className="w-4 h-4" />
-                            <span className="text-sm">Memorized</span>
+                            <span className="text-sm">Memorised</span>
                             {surahProgress?.memorization_complete && <Check className="w-4 h-4" />}
                           </button>
                         </div>
