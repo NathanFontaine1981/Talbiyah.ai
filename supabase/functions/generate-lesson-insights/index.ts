@@ -185,10 +185,11 @@ Use this table format:
 
 ---
 
-**5. Lessons & Tadabbur Points**
-List 7–10 short, impactful lessons or reflections.
+**5. Key Takeaways & Tadabbur Points**
+List 7–10 short, impactful lessons or reflections that the student should remember.
+These key points will help them answer the quiz below, so include all important facts.
 Focus on what the verses teach about:
-- Allah's names and attributes
+- Allah's names and attributes (with specific meanings)
 - Human character and behaviour
 - Spiritual growth and taqwa
 - Practical application in daily life
@@ -196,20 +197,23 @@ Focus on what the verses teach about:
 
 ---
 
-**6. Reflection Questions**
-Provide 4–5 open-ended questions that help students apply the teachings to daily life.
-Encourage deep thinking and self-assessment, not rote recall.
-Make them personal and actionable.
+**6. Mini Quiz (Comprehension Check)**
+Create 5 multiple-choice questions drawn from the Key Takeaways above.
+Mix meaning, tafsīr context, vocabulary, and verse identification.
+IMPORTANT: The quiz tests whether the student understood the Key Takeaways.
+
+Format each question EXACTLY like this - put ✅ ONLY after the CORRECT answer:
+**Q1.** What does "Ar-Raḥmān" specifically refer to?
+A) Allah's mercy only for Muslims B) Allah's universal mercy for all creation ✅ C) Allah's anger toward sinners D) Allah's knowledge of everything
+
+CRITICAL: Double-check that the ✅ is placed after the factually correct answer based on Islamic knowledge.
 
 ---
 
-**7. Mini Quiz (Comprehension Check)**
-Create 5 multiple-choice questions drawn from what was covered in class.
-Mix meaning, tafsīr context, vocabulary, and verse identification.
-
-Format:
-**Q1.** [Question about the lesson content]
-A) [Option] B) [Option] ✅ C) [Option] D) [Option]
+**7. Reflection Questions**
+Provide 4–5 open-ended questions that help students apply the teachings to daily life.
+Encourage deep thinking and self-assessment, not rote recall.
+Make them personal and actionable.
 
 ---
 
@@ -240,6 +244,16 @@ End with a 3–4 sentence summary that captures:
 - The main theme of the verses
 - The spiritual message and emotional impact
 - One key action point for the student
+
+---
+
+### QUIZ ANSWER VERIFICATION
+Before finalizing the quiz, verify each answer is factually correct:
+- Ar-Raḥmān = universal mercy for ALL creation (not just Muslims)
+- Ar-Raḥīm = special mercy for believers
+- Rabb al-'Ālamīn = Lord of all the worlds
+- Mālik Yawm al-Dīn = Master of the Day of Judgment
+Always mark the CORRECT answer with ✅
 
 ---
 
