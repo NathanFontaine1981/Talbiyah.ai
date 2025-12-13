@@ -3,7 +3,7 @@
 
 // Allowed origins for CSRF validation
 const ALLOWED_ORIGINS = [
-  'https://talbiyah.netlify.app',
+  'https://talbiyah.ai',
   'https://talbiyah2025.netlify.app',
   'https://talbiyah.ai',
   'https://www.talbiyah.ai',

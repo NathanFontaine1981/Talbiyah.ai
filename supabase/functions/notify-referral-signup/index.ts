@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="https://talbiyah.netlify.app/my-referrals" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="https://talbiyah.ai/my-referrals" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   View All My Referrals
                 </a>
               </div>

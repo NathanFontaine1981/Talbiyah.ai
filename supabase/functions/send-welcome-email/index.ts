@@ -129,7 +129,7 @@ Deno.serve(async (req: Request) => {
                 <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
                   Experience the difference for yourself - completely free, no credit card required
                 </p>
-                <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   Browse Our Teachers
                 </a>
               </div>
@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
               <!-- Support -->
               <div style="text-align: center; padding: 20px; color: #64748b; font-size: 14px;">
                 <p style="margin: 0 0 10px 0;">Need help getting started? We're here for you!</p>
-                <p style="margin: 0;">Reply to this email or visit our <a href="https://talbiyah.netlify.app" style="color: #06b6d4; text-decoration: none;">Help Center</a></p>
+                <p style="margin: 0;">Reply to this email or visit our <a href="https://talbiyah.ai" style="color: #06b6d4; text-decoration: none;">Help Center</a></p>
               </div>
 
               <!-- Footer -->

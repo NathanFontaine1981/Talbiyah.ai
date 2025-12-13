@@ -312,7 +312,7 @@ function getLessonTimeChangedEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View in Dashboard
             </a>
           </div>
@@ -379,7 +379,7 @@ function getLessonCancelledEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Book Another Lesson
             </a>
           </div>
@@ -429,7 +429,7 @@ function getTeacherMessageEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/dashboard" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Read & Reply
             </a>
           </div>
@@ -478,7 +478,7 @@ function getTierPromotionEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View Your Tier Dashboard
             </a>
           </div>
@@ -569,7 +569,7 @@ function getLessonAcknowledgedEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View in Dashboard
             </a>
           </div>
@@ -624,7 +624,7 @@ function getLessonDeclinedEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Find Another Teacher
             </a>
           </div>
@@ -664,7 +664,7 @@ function getTeacherApplicationEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/admin/teachers" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/admin/teachers" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Review Application
             </a>
           </div>
@@ -708,7 +708,7 @@ function getReferralRewardEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/refer" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/refer" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Share & Earn More
             </a>
           </div>
@@ -757,7 +757,7 @@ function getHoursTransferredEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teacher/tiers" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View Your Stats
             </a>
           </div>
@@ -822,7 +822,7 @@ function getTeacherNewBookingEmail(payload: NotificationPayload) {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teacher" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teacher" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View in Dashboard
             </a>
           </div>
@@ -877,7 +877,7 @@ function getTeacherApprovedEmail(payload: NotificationPayload): { subject: strin
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teacher/availability" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teacher/availability" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Set Your Availability Now
             </a>
           </div>
@@ -964,7 +964,7 @@ function getWelcomeEmail(payload: NotificationPayload): { subject: string; html:
             <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
               Experience the difference for yourself - completely free, no credit card required
             </p>
-            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Browse Our Teachers
             </a>
           </div>
@@ -1042,7 +1042,7 @@ function getStudentBookingConfirmationEmail(payload: NotificationPayload): { sub
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               View in Dashboard
             </a>
           </div>
@@ -1128,7 +1128,7 @@ function getCreditPurchaseEmail(payload: NotificationPayload): { subject: string
 
           <!-- CTA -->
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://talbiyah.netlify.app/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Book a Lesson Now
             </a>
           </div>

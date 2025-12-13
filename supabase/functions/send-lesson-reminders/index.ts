@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
               teacher_name: teacherProfile.full_name,
               subject: lesson.subjects?.name || "Lesson",
               scheduled_time: lesson.scheduled_time,
-              lesson_url: `https://talbiyah.netlify.app/lesson/${lesson.id}`,
+              lesson_url: `https://talbiyah.ai/lesson/${lesson.id}`,
             },
           }),
         });

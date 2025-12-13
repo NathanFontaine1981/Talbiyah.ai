@@ -1,6 +1,6 @@
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://talbiyah.netlify.app',
+  'https://talbiyah.ai',
   'https://talbiyah2025.netlify.app',
   'https://talbiyah.ai',
   'https://www.talbiyah.ai',
@@ -47,7 +47,7 @@ export function getResponseHeaders(req: Request): Record<string, string> {
 
 // Legacy export for backward compatibility (will be updated in each function)
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://talbiyah.netlify.app',
+  'Access-Control-Allow-Origin': 'https://talbiyah.ai',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
   'Access-Control-Allow-Credentials': 'true',

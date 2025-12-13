@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
 
               <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">
                 <p style="margin: 0 0 10px 0;">Need to reschedule or have questions?</p>
-                <p style="margin: 0;">Reply to this email or visit your <a href="https://talbiyah.netlify.app/dashboard" style="color: #06b6d4; text-decoration: none;">Dashboard</a></p>
+                <p style="margin: 0;">Reply to this email or visit your <a href="https://talbiyah.ai/dashboard" style="color: #06b6d4; text-decoration: none;">Dashboard</a></p>
               </div>
 
               <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
