@@ -4,7 +4,7 @@ import { getHMSManagementToken } from "../_shared/hms.ts"
 import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts"
 import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
 import { requireCSRF } from "../_shared/csrf.ts"
-import { logSecurityEventFromRequest, logCSRFBlocked } from "../_shared/securityLog.ts"
+import { logSecurityEventFromRequest } from "../_shared/securityLog.ts"
 
 const responseHeaders = {
   ...corsHeaders,
@@ -22,19 +22,13 @@ interface BookingRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      status: 200,
-      headers: responseHeaders
-    })
+    return new Response('ok', { status: 200, headers: responseHeaders })
   }
 
-  // CSRF protection
   const csrfError = requireCSRF(req, responseHeaders)
   if (csrfError) return csrfError
 
-  // Rate limiting: 10 bookings per hour per IP
   const clientIP = getClientIP(req)
   const rateLimitResult = checkRateLimit(clientIP, RATE_LIMITS.BOOKING)
   if (!rateLimitResult.allowed) {
@@ -42,13 +36,11 @@ serve(async (req) => {
   }
 
   try {
-    // Create client with service role key for database operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Create separate client with anon key for user authentication
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -59,50 +51,26 @@ serve(async (req) => {
       }
     )
 
-    // Get the current user using the auth client
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser()
+    const { data: { user } } = await supabaseAuth.auth.getUser()
 
     if (!user) {
-      console.error('❌ Unauthorized checkout attempt');
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         { status: 401, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('👤 User authenticated:', {
-      userId: user.id,
-      email: user.email
-    });
-
-    // Extract bookings array from request body
     const body = await req.json();
     const { bookings: requestedBookings } = body;
 
     if (!requestedBookings || !Array.isArray(requestedBookings) || requestedBookings.length === 0) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'No bookings provided'
-        }),
-        {
-          status: 400,
-          headers: { ...responseHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ success: false, error: 'No bookings provided' }),
+        { status: 400, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('📋 Checkout request:', {
-      userId: user.id,
-      bookingsCount: requestedBookings?.length || 0,
-      bookings: requestedBookings
-    });
-
-    // ✨ ENHANCEMENT: Check for price locks (grandfather pricing)
-    // Apply price locks for each booking if student has booked with teacher before
-    console.log('🔐 Checking for price locks...');
+    // Check for price locks (grandfather pricing)
     const bookingsWithPriceLocks = await Promise.all(
       requestedBookings.map(async (booking: BookingRequest) => {
         try {
@@ -115,38 +83,21 @@ serve(async (req) => {
           if (!priceError && lockedPrice !== null) {
             const hours = (booking.duration || 60) / 60;
             const finalPrice = lockedPrice * hours;
-            console.log(`   ✅ Price lock applied for ${booking.teacher_id}: £${lockedPrice}/hr → £${finalPrice}`);
             return { ...booking, price: finalPrice, locked_price: lockedPrice };
           }
-        } catch (error) {
-          console.log(`   ⚠️  Price lock check failed for ${booking.teacher_id}:`, error);
+        } catch {
+          // Use provided price on error
         }
-
-        // No price lock or error - use provided price
-        console.log(`   📌 Using provided price for ${booking.teacher_id}: £${booking.price}`);
         return booking;
       })
     );
 
-    // Use learner_id from the booking request if provided
-    // Each booking may have its own learner_id (for different children)
-    console.log('👶 Processing learner_id for bookings...');
-
-    // Check if bookings already have learner_id from frontend
-    const firstBookingLearnerId = bookingsWithPriceLocks[0]?.learner_id;
-    console.log('   📋 First booking learner_id from frontend:', firstBookingLearnerId);
-
-    // Process each booking - use provided learner_id or fallback to finding/creating one
+    // Process learner_id for bookings
     const bookingsWithLearner = await Promise.all(
       bookingsWithPriceLocks.map(async (booking: any) => {
-        // If booking already has learner_id, use it
         if (booking.learner_id) {
-          console.log(`   ✅ Using provided learner_id: ${booking.learner_id}`);
           return booking;
         }
-
-        // Fallback: Find or create a learner for this user
-        console.log('   ⚠️ No learner_id provided, finding/creating one...');
 
         const { data: existingLearner } = await supabaseClient
           .from('learners')
@@ -155,11 +106,9 @@ serve(async (req) => {
           .limit(1);
 
         if (existingLearner && existingLearner.length > 0) {
-          console.log('   ✅ Found existing learner:', existingLearner[0].id);
           return { ...booking, learner_id: existingLearner[0].id };
         }
 
-        // Create new learner for this user
         const { data: profile } = await supabaseClient
           .from('profiles')
           .select('full_name')
@@ -177,119 +126,62 @@ serve(async (req) => {
           .single();
 
         if (learnerError || !newLearner) {
-          console.error('❌ Failed to create learner:', learnerError);
           throw new Error('Failed to create learner profile');
         }
 
-        console.log('   ✅ Created new learner:', newLearner.id);
         return { ...booking, learner_id: newLearner.id };
       })
     );
 
-    console.log('   📋 Final learner_ids:', bookingsWithLearner.map((b: any) => b.learner_id));
-
-    // Calculate total amount from the booking prices (with price locks applied)
     const totalAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
-      return sum + Math.round(booking.price * 100); // Convert pounds to pence
+      return sum + Math.round(booking.price * 100);
     }, 0);
 
     const sessionCount = requestedBookings.length;
 
-    console.log('💰 Total amount:', {
-      totalPounds: totalAmount / 100,
-      totalPence: totalAmount,
-      sessionCount
-    });
-
-    // ✨ NEW: Check if parent has sufficient credits to cover booking
-    console.log('💳 Checking parent credit balance...');
-    const { data: parentCredits, error: creditsError } = await supabaseClient
+    // Check if parent has sufficient credits
+    const { data: parentCredits } = await supabaseClient
       .from('user_credits')
       .select('credits_remaining')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (creditsError) {
-      console.error('⚠️ Error checking credits:', creditsError);
-    }
-
-    // Calculate total credits needed (duration in hours)
     const totalCreditsNeeded = bookingsWithLearner.reduce((sum: number, booking: any) => {
-      const hours = (booking.duration || 60) / 60; // Convert minutes to hours
+      const hours = (booking.duration || 60) / 60;
       return sum + hours;
     }, 0);
 
-    console.log('💳 Credit check:', {
-      parentCreditsAvailable: parentCredits?.credits_remaining || 0,
-      totalCreditsNeeded,
-      canPayWithCredits: (parentCredits?.credits_remaining || 0) >= totalCreditsNeeded
-    });
-
-    // If parent has sufficient credits, use them instead of Stripe
+    // If parent has sufficient credits, use them
     if (parentCredits && parentCredits.credits_remaining >= totalCreditsNeeded) {
-      console.log('✅ Parent has sufficient credits! Processing with credits...');
-
       try {
-        // Deduct credits from parent's account
         const { data: newBalance, error: deductError } = await supabaseClient
           .rpc('deduct_user_credits', {
             p_user_id: user.id,
             p_credits: totalCreditsNeeded,
-            p_lesson_id: null, // Will update after lessons are created
+            p_lesson_id: null,
             p_notes: `Used for ${sessionCount} lesson booking(s)`
           });
 
         if (deductError) {
-          console.error('❌ Failed to deduct credits:', deductError);
           throw new Error(`Failed to deduct credits: ${deductError.message}`);
         }
 
-        console.log('✅ Credits deducted successfully. New balance:', newBalance);
-
-        // Create lessons using minimal required columns only
-        // This avoids schema cache issues with newer columns
-        console.log('📝 Creating lessons with booking data:');
-        bookingsWithLearner.forEach((booking: any, index: number) => {
-          console.log(`Lesson ${index + 1}:`, {
-            date: booking.date,
-            time: booking.time,
-            scheduled_time: booking.scheduled_time,
-            learner_id: booking.learner_id,
-            teacher_id: booking.teacher_id,
-            subject: booking.subject,
-            duration: booking.duration
-          });
-        });
-
         const lessonsToCreate = bookingsWithLearner.map((booking: any) => {
-          // Construct proper timestamp
           let scheduledTime: string;
 
           if (booking.scheduled_time) {
-            // If full timestamp already provided
             scheduledTime = booking.scheduled_time;
           } else if (booking.date && booking.time) {
-            // Construct from separate date and time
-            // booking.date format: "2025-11-20" (YYYY-MM-DD)
-            // booking.time format: "11:00" (HH:MM)
             scheduledTime = `${booking.date}T${booking.time}:00+00:00`;
           } else {
-            console.error('❌ Missing date/time for booking:', JSON.stringify(booking, null, 2));
-            throw new Error(`Missing scheduled_time or date/time for booking. Date: ${booking.date}, Time: ${booking.time}`);
+            throw new Error(`Missing scheduled_time or date/time for booking`);
           }
 
-          // Validate timestamp format
           const timestamp = new Date(scheduledTime);
           if (isNaN(timestamp.getTime())) {
-            console.error('❌ Invalid timestamp:', scheduledTime);
-            console.error('Booking data:', JSON.stringify(booking, null, 2));
             throw new Error(`Invalid timestamp format: ${scheduledTime}`);
           }
 
-          console.log(`✓ Constructed timestamp: ${scheduledTime}`);
-
-          // Only insert columns that exist in schema cache
-          // Schema cache doesn't recognize: price, payment_method, payment_status, booked_at, is_trial
           return {
             learner_id: booking.learner_id,
             teacher_id: booking.teacher_id,
@@ -300,16 +192,13 @@ serve(async (req) => {
           };
         });
 
-        console.log('📋 Final lessons to create:', JSON.stringify(lessonsToCreate, null, 2));
-
         const { data: createdLessons, error: lessonsError } = await supabaseClient
           .from('lessons')
           .insert(lessonsToCreate)
           .select('id');
 
         if (lessonsError) {
-          console.error('❌ Failed to create lessons:', lessonsError);
-          // Refund the credits since lesson creation failed
+          // Refund credits
           await supabaseClient.rpc('add_user_credits', {
             p_user_id: user.id,
             p_credits: totalCreditsNeeded,
@@ -319,11 +208,8 @@ serve(async (req) => {
           throw new Error(`Failed to create lessons: ${lessonsError.message}`);
         }
 
-        console.log('✅ Lessons created successfully. Now updating payment fields...');
-
-        // Update payment fields using UPDATE (bypasses schema cache)
         const lessonIds = createdLessons.map((l: any) => l.id);
-        const { error: updateError } = await supabaseClient
+        await supabaseClient
           .from('lessons')
           .update({
             payment_method: 'credits',
@@ -334,22 +220,12 @@ serve(async (req) => {
           })
           .in('id', lessonIds);
 
-        if (updateError) {
-          console.error('⚠️ Failed to update payment fields:', updateError);
-          // Don't throw - lessons are created, just payment fields missing
-        } else {
-          console.log('✅ Payment fields updated successfully');
-        }
-
-        // Create 100ms rooms for each lesson
-        console.log('🎥 Creating 100ms rooms for lessons...');
-
+        // Create 100ms rooms
         let managementToken: string | null = null
         try {
           managementToken = await getHMSManagementToken()
-          console.log('✅ Generated fresh 100ms token automatically')
-        } catch (tokenError) {
-          console.error('❌ Failed to generate HMS token:', tokenError)
+        } catch {
+          // Continue without rooms
         }
 
         if (managementToken) {
@@ -358,9 +234,6 @@ serve(async (req) => {
             const booking = bookingsWithLearner[i];
 
             try {
-              console.log(`   Creating room for lesson ${lessonId}...`);
-
-              // Create the room
               const roomResponse = await fetch('https://api.100ms.live/v2/rooms', {
                 method: 'POST',
                 headers: {
@@ -370,29 +243,20 @@ serve(async (req) => {
                 body: JSON.stringify({
                   name: `lesson-${lessonId}`,
                   description: `Talbiyah.ai Lesson - ${booking.subject || 'Islamic Studies'}`,
-                  template_id: '6905fb03033903926e627d60',
+                  template_id: Deno.env.get('HMS_TEMPLATE_ID') || '6905fb03033903926e627d60',
                   region: 'in',
                 })
               });
 
               if (roomResponse.ok) {
                 const roomData = await roomResponse.json();
-                console.log(`   ✅ Room created: ${roomData.id}`);
 
-                // Update lesson with room ID
-                const { error: roomUpdateError } = await supabaseClient
+                await supabaseClient
                   .from('lessons')
                   .update({ '100ms_room_id': roomData.id })
                   .eq('id', lessonId);
 
-                if (roomUpdateError) {
-                  console.error(`   ⚠️ Failed to update lesson with room ID:`, roomUpdateError);
-                } else {
-                  console.log(`   ✅ Lesson ${lessonId} updated with room ID: ${roomData.id}`);
-                }
-
-                // Create room codes
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for room init
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 const codesResponse = await fetch(`https://api.100ms.live/v2/room-codes/room/${roomData.id}`, {
                   method: 'POST',
                   headers: {
@@ -404,9 +268,7 @@ serve(async (req) => {
 
                 if (codesResponse.ok) {
                   const codesData = await codesResponse.json();
-                  console.log(`   ✅ Room codes created for lesson ${lessonId}`);
 
-                  // Extract teacher and student codes
                   let teacherCode = null;
                   let studentCode = null;
 
@@ -420,53 +282,29 @@ serve(async (req) => {
                     });
                   }
 
-                  // Update lesson with room codes
                   if (teacherCode || studentCode) {
-                    const { error: codesUpdateError } = await supabaseClient
+                    await supabaseClient
                       .from('lessons')
                       .update({
                         teacher_room_code: teacherCode,
                         student_room_code: studentCode
                       })
                       .eq('id', lessonId);
-
-                    if (codesUpdateError) {
-                      console.error(`   ⚠️ Failed to update room codes:`, codesUpdateError);
-                    } else {
-                      console.log(`   ✅ Room codes saved for lesson ${lessonId}`);
-                    }
                   }
-                } else {
-                  console.error(`   ⚠️ Failed to create room codes for lesson ${lessonId}`);
                 }
-              } else {
-                const roomError = await roomResponse.text();
-                console.error(`   ❌ Failed to create room for lesson ${lessonId}:`, roomError);
               }
-            } catch (roomError: any) {
-              console.error(`   ❌ Error creating room for lesson ${lessonId}:`, roomError.message);
-              // Continue with other lessons - don't fail the whole booking
+            } catch {
+              // Continue with other lessons
             }
           }
-        } else {
-          console.warn('⚠️ Failed to get HMS management token - skipping 100ms room creation');
         }
 
-        console.log('✅ Credit booking complete:', {
-          lessonsCount: createdLessons.length,
-          lessonIds,
-          creditsUsed: totalCreditsNeeded,
-          newBalance
-        });
-
-        // Send email notifications for each lesson booked
-        console.log('📧 Sending booking notification emails...');
+        // Send email notifications
         for (let i = 0; i < createdLessons.length; i++) {
           const lessonId = createdLessons[i].id;
           const booking = bookingsWithLearner[i];
 
           try {
-            // Get full lesson data with teacher and student info
             const { data: lessonData } = await supabaseClient
               .from('lessons')
               .select('id, scheduled_time, duration_minutes, subject_id, teacher_id, learner_id')
@@ -475,14 +313,12 @@ serve(async (req) => {
 
             if (!lessonData) continue;
 
-            // Get teacher profile (include email field if it exists)
             const { data: teacherProfile } = await supabaseClient
               .from('profiles')
               .select('full_name, email')
               .eq('id', lessonData.teacher_id)
               .single();
 
-            // Try to get teacher email from teacher_profiles if not in profiles
             let teacherEmail = teacherProfile?.email;
             if (!teacherEmail) {
               const { data: teacherProfileData } = await supabaseClient
@@ -493,27 +329,20 @@ serve(async (req) => {
               teacherEmail = teacherProfileData?.email;
             }
 
-            console.log(`   📧 Teacher email lookup: ${teacherEmail || 'NOT FOUND'}`);
-
-            // Get learner info
             const { data: learnerData } = await supabaseClient
               .from('learners')
               .select('name, parent_id')
               .eq('id', lessonData.learner_id)
               .single();
 
-            // Get parent profile (the one who booked)
             const { data: parentProfile } = await supabaseClient
               .from('profiles')
               .select('full_name')
               .eq('id', user.id)
               .single();
 
-            // Use email from auth session (profiles.email is often empty)
             const parentEmail = user.email;
-            console.log(`   📧 Parent/Student email from auth: ${parentEmail || 'NOT FOUND'}`);
 
-            // Get subject name
             const { data: subjectData } = await supabaseClient
               .from('subjects')
               .select('name')
@@ -523,10 +352,8 @@ serve(async (req) => {
             const studentName = learnerData?.name || parentProfile?.full_name || 'Student';
             const subjectName = subjectData?.name || booking.subject || 'Lesson';
 
-            // Send email to teacher about new booking
             if (teacherEmail) {
-              console.log(`   📧 Sending teacher notification to ${teacherEmail}`);
-              const teacherEmailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -544,14 +371,10 @@ serve(async (req) => {
                   }
                 })
               });
-              const teacherEmailResult = await teacherEmailRes.json();
-              console.log(`   ✅ Teacher notification response:`, teacherEmailResult);
             }
 
-            // Send confirmation email to parent/student
             if (parentEmail) {
-              console.log(`   📧 Sending student confirmation to ${parentEmail}`);
-              const studentEmailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -569,17 +392,12 @@ serve(async (req) => {
                   }
                 })
               });
-              const studentEmailResult = await studentEmailRes.json();
-              console.log(`   ✅ Student confirmation response:`, studentEmailResult);
             }
-          } catch (emailErr: any) {
-            // Don't fail the booking if email fails
-            console.error(`   ⚠️ Failed to send notification email for lesson ${lessonId}:`, emailErr.message);
+          } catch {
+            // Don't fail booking if email fails
           }
         }
-        console.log('📧 Email notifications complete');
 
-        // Log successful booking
         await logSecurityEventFromRequest(supabaseClient, req, {
           eventType: 'booking_created',
           userId: user.id,
@@ -594,7 +412,6 @@ serve(async (req) => {
           severity: 'info'
         });
 
-        // Return success response (no Stripe checkout needed)
         return new Response(
           JSON.stringify({
             success: true,
@@ -608,15 +425,7 @@ serve(async (req) => {
         );
 
       } catch (creditError: any) {
-        console.error('💥 Credit payment failed:', {
-          error: creditError,
-          message: creditError.message,
-          stack: creditError.stack,
-          userId: user.id,
-          creditsNeeded: totalCreditsNeeded
-        });
-
-        // Return error instead of falling back to Stripe
+        console.error('Credit payment failed:', creditError.message);
         return new Response(
           JSON.stringify({
             success: false,
@@ -624,24 +433,12 @@ serve(async (req) => {
             details: creditError.message,
             fallback_to_stripe: true
           }),
-          {
-            status: 500,
-            headers: { ...responseHeaders, 'Content-Type': 'application/json' }
-          }
+          { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
         );
       }
-    } else if (parentCredits && parentCredits.credits_remaining > 0) {
-      console.log('⚠️ Parent has some credits but not enough:', {
-        available: parentCredits.credits_remaining,
-        needed: totalCreditsNeeded,
-        shortfall: totalCreditsNeeded - parentCredits.credits_remaining
-      });
-      // TODO: Future enhancement - allow partial credit payment + Stripe for remainder
-    } else {
-      console.log('ℹ️ Parent has no credits. Proceeding with Stripe checkout...');
     }
 
-    // Create a single pending booking record (with learner_id and price locks applied)
+    // Proceed with Stripe checkout
     const { data: pendingBooking, error: pendingError } = await supabaseClient
       .from('pending_bookings')
       .insert({
@@ -655,31 +452,19 @@ serve(async (req) => {
       .single();
 
     if (pendingError || !pendingBooking) {
-      console.error('❌ Failed to create pending booking:', pendingError);
       throw new Error('Failed to create pending booking');
     }
 
-    console.log('✅ Pending booking created:', {
-      id: pendingBooking.id,
-      sessionCount,
-      totalAmount
-    });
-
-    // Get Stripe configuration
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeKey) {
-      console.error('❌ Stripe secret key not found');
       throw new Error('Stripe secret key not configured')
     }
 
-    // Create product description
     const sessionText = sessionCount === 1 ? 'Session' : 'Sessions';
     const productName = `${sessionCount} Learning ${sessionText}`;
     const sessionDescription = requestedBookings
       .map((b: BookingRequest) => `${b.duration || 60}min ${b.subject}`)
       .join(', ');
-
-    console.log('🛒 Creating Stripe checkout session...');
 
     const checkoutData = new URLSearchParams({
       'payment_method_types[]': 'card',
@@ -701,15 +486,6 @@ serve(async (req) => {
       'customer_email': user.email || ''
     })
 
-    console.log('📋 Stripe checkout data:', {
-      currency: 'gbp',
-      amount: totalAmount,
-      productName,
-      sessionDescription,
-      pendingBookingId: pendingBooking.id,
-      userEmail: user.email
-    });
-
     const checkoutResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
@@ -721,23 +497,11 @@ serve(async (req) => {
 
     if (!checkoutResponse.ok) {
       const error = await checkoutResponse.text()
-      console.error('❌ Stripe checkout session creation failed:', {
-        status: checkoutResponse.status,
-        error
-      });
       throw new Error(`Failed to create checkout session: ${error}`)
     }
 
     const session = await checkoutResponse.json()
 
-    console.log('✅ Stripe checkout session created:', {
-      sessionId: session.id,
-      url: session.url,
-      mode: session.mode,
-      paymentStatus: session.payment_status
-    });
-
-    // Log payment initiated
     await logSecurityEventFromRequest(supabaseClient, req, {
       eventType: 'payment_initiated',
       userId: user.id,
@@ -752,41 +516,25 @@ serve(async (req) => {
       severity: 'info'
     });
 
-    // Update pending booking with Stripe session ID
-    const { error: linkError } = await supabaseClient
+    await supabaseClient
       .from('pending_bookings')
       .update({ stripe_session_id: session.id })
       .eq('id', pendingBooking.id)
 
-    if (linkError) {
-      console.error('⚠️ Failed to link pending booking to Stripe session:', linkError);
-    } else {
-      console.log('✅ Pending booking linked to Stripe session');
-    }
-
-    const result = {
-      success: true,
-      checkout_url: session.url,
-      session_id: session.id,
-      pending_booking_id: pendingBooking.id,
-      total_amount: totalAmount,
-      session_count: sessionCount
-    };
-
-    console.log('🎉 CHECKOUT INITIATION COMPLETE:', result);
-
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({
+        success: true,
+        checkout_url: session.url,
+        session_id: session.id,
+        pending_booking_id: pendingBooking.id,
+        total_amount: totalAmount,
+        session_count: sessionCount
+      }),
       { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('💥 CHECKOUT INITIATION ERROR:', {
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
-
+    console.error('Checkout error:', error.message);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }

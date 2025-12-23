@@ -102,6 +102,41 @@ serve(async (req) => {
     // Verify webhook signature
     event = await verifyStripeSignature(body, signature, webhookSecret)
 
+    // IDEMPOTENCY CHECK: Prevent duplicate event processing
+    // Check if this event has already been processed
+    const { data: existingEvent } = await supabaseClient
+      .from('processed_webhook_events')
+      .select('id')
+      .eq('event_id', event.id)
+      .single()
+
+    if (existingEvent) {
+      console.log(`Event ${event.id} already processed, skipping`)
+      return new Response(
+        JSON.stringify({ received: true, duplicate: true }),
+        {
+          headers: { ...stripeWebhookHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Record this event as being processed (do this BEFORE processing)
+    await supabaseClient
+      .from('processed_webhook_events')
+      .insert({
+        event_id: event.id,
+        event_type: event.type,
+        processed_at: new Date().toISOString()
+      })
+      .catch(err => {
+        // If insert fails due to unique constraint, another process is handling it
+        if (err.code === '23505') {
+          console.log(`Event ${event.id} being processed by another instance`)
+          return
+        }
+        console.error('Failed to record webhook event:', err.message)
+      })
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
@@ -275,7 +310,10 @@ serve(async (req) => {
         } catch (error) {
           console.error('Failed to generate HMS token:', error.message)
         }
-        const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID') || '6905fb03033903926e627d60'
+        const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID')
+        if (!HMS_TEMPLATE_ID) {
+          console.error('HMS_TEMPLATE_ID environment variable not configured')
+        }
 
         const createdLessons = []
 

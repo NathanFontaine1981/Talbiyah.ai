@@ -35,7 +35,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check if user was referred
+    // Get the learner's parent (profile) ID
+    const { data: learner } = await supabase
+      .from("learners")
+      .select("parent_id")
+      .eq("id", learner_id)
+      .single();
+
+    if (!learner?.parent_id) {
+      return new Response(
+        JSON.stringify({ message: "Learner has no parent" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const parentId = learner.parent_id;
+
+    // Check if the parent (user) was referred
     const { data: referral, error: referralError } = await supabase
       .from("referrals")
       .select(`
@@ -43,7 +59,7 @@ Deno.serve(async (req: Request) => {
         referrer:profiles!referrals_referrer_id_fkey(id, full_name, email),
         referred:profiles!referrals_referred_user_id_fkey(id, full_name, email)
       `)
-      .eq("referred_user_id", learner_id)
+      .eq("referred_user_id", parentId)
       .single();
 
     if (referralError || !referral) {
@@ -93,24 +109,25 @@ Deno.serve(async (req: Request) => {
     const rewardsEarned: string[] = [];
 
     // ═══════════════════════════════════════
-    // TRACK 1: CONVERSION BONUS (First lesson only)
+    // TRACK 1: CONVERSION BONUS (First lesson only) - 1 credit
     // ═══════════════════════════════════════
     if (newLessonCount === 1 && !referral.conversion_paid) {
-      const conversionBonus = tierInfo.conversion_bonus;
+      const conversionBonus = 1; // 1 credit for first lesson
 
       await supabase
         .from("referrals")
         .update({
           conversion_paid: true,
-          credits_earned: conversionBonus,
+          credits_earned: (referral.credits_earned || 0) + conversionBonus,
         })
         .eq("id", referral.id);
 
       await supabase
         .from("referral_credits")
         .update({
-          total_earned: credits.total_earned + conversionBonus,
-          available_balance: credits.available_balance + conversionBonus,
+          active_referrals: (credits.active_referrals || 0) + 1,
+          available_hours: (credits.available_hours || 0) + conversionBonus,
+          earned_hours: (credits.earned_hours || 0) + conversionBonus,
         })
         .eq("user_id", referral.referrer_id);
 
@@ -120,33 +137,29 @@ Deno.serve(async (req: Request) => {
           user_id: referral.referrer_id,
           referral_id: referral.id,
           type: "conversion_bonus",
-          credit_amount: conversionBonus,
-          description: `£${conversionBonus} bonus - ${referral.referred.full_name} completed first lesson`,
+          hours_amount: conversionBonus,
+          description: `+${conversionBonus} credit - ${referral.referred?.full_name || 'Referral'} completed first lesson`,
         });
 
-      rewardsEarned.push(`Conversion bonus: £${conversionBonus}`);
+      rewardsEarned.push(`First lesson bonus: +${conversionBonus} credit`);
     }
 
     // ═══════════════════════════════════════
-    // TRACK 2: HOURLY REWARDS (Every 10 hours)
+    // TRACK 2: HOURLY REWARDS (1 credit per 10 hours)
     // ═══════════════════════════════════════
-    const newReferredHours = credits.referred_hours + lessonHours;
-    const previousMilestone = Math.floor(credits.referred_hours / 10);
+    const newReferredHours = (credits.referred_hours || 0) + lessonHours;
+    const previousMilestone = Math.floor((credits.referred_hours || 0) / 10);
     const newMilestone = Math.floor(newReferredHours / 10);
 
     if (newMilestone > previousMilestone) {
-      const hoursRewarded = newMilestone - previousMilestone;
-      const creditPerHour = 15.0;
-      const totalHourlyReward = hoursRewarded * creditPerHour * tierInfo.hourly_multiplier;
+      const creditsEarned = newMilestone - previousMilestone; // 1 credit per 10h milestone
 
       await supabase
         .from("referral_credits")
         .update({
           referred_hours: newReferredHours,
-          earned_hours: credits.earned_hours + hoursRewarded,
-          available_hours: credits.available_hours + hoursRewarded,
-          total_earned: credits.total_earned + totalHourlyReward,
-          available_balance: credits.available_balance + totalHourlyReward,
+          earned_hours: (credits.earned_hours || 0) + creditsEarned,
+          available_hours: (credits.available_hours || 0) + creditsEarned,
         })
         .eq("user_id", referral.referrer_id);
 
@@ -156,12 +169,11 @@ Deno.serve(async (req: Request) => {
           user_id: referral.referrer_id,
           referral_id: referral.id,
           type: "hourly_reward",
-          credit_amount: totalHourlyReward,
-          hours_amount: hoursRewarded,
-          description: `£${totalHourlyReward.toFixed(2)} earned - ${newMilestone * 10}h referred milestone (${hoursRewarded}h free lessons)`,
+          hours_amount: creditsEarned,
+          description: `+${creditsEarned} credit - ${newMilestone * 10}h milestone reached`,
         });
 
-      rewardsEarned.push(`Hourly reward: £${totalHourlyReward.toFixed(2)} (${hoursRewarded}h free lessons)`);
+      rewardsEarned.push(`Milestone reward: +${creditsEarned} credit (${newMilestone * 10}h total)`);
     } else {
       // Just update hours count
       await supabase
@@ -171,12 +183,12 @@ Deno.serve(async (req: Request) => {
     }
 
     // ═══════════════════════════════════════
-    // TIER CHECK & UPGRADE
+    // MILESTONE CHECK & BONUS (5, 10, 20 referrals)
     // ═══════════════════════════════════════
     if (newLessonCount === 1) {
-      const newActiveCount = credits.active_referrals + 1;
+      const newActiveCount = (credits.active_referrals || 0) + 1;
 
-      // Calculate new tier
+      // Calculate new tier based on active referrals
       let newTier = "bronze";
       if (newActiveCount >= 20) newTier = "platinum";
       else if (newActiveCount >= 10) newTier = "gold";
@@ -185,41 +197,36 @@ Deno.serve(async (req: Request) => {
       const tierUpgraded = newTier !== credits.tier;
 
       if (tierUpgraded) {
-        const { data: newTierInfo } = await supabase
-          .from("referral_tiers")
-          .select("*")
-          .eq("tier", newTier)
-          .single();
-
-        const unlockBonus = newTierInfo.unlock_bonus;
+        // Milestone bonuses: Silver = 5 credits, Gold = 10 credits, Platinum = recognition only
+        let milestoneBonus = 0;
+        if (newTier === "silver") milestoneBonus = 5;
+        else if (newTier === "gold") milestoneBonus = 10;
 
         await supabase
           .from("referral_credits")
           .update({
             tier: newTier,
-            active_referrals: newActiveCount,
-            total_earned: credits.total_earned + unlockBonus,
-            available_balance: credits.available_balance + unlockBonus,
-            transfer_limit_monthly: newTierInfo.transfer_limit_monthly,
+            available_hours: (credits.available_hours || 0) + milestoneBonus,
+            earned_hours: (credits.earned_hours || 0) + milestoneBonus,
             tier_unlocked_at: new Date().toISOString(),
           })
           .eq("user_id", referral.referrer_id);
 
-        await supabase
-          .from("referral_transactions")
-          .insert({
-            user_id: referral.referrer_id,
-            type: "tier_unlock",
-            credit_amount: unlockBonus,
-            description: `${newTier.toUpperCase()} Tier Unlocked! £${unlockBonus} bonus`,
-          });
+        if (milestoneBonus > 0) {
+          await supabase
+            .from("referral_transactions")
+            .insert({
+              user_id: referral.referrer_id,
+              type: "milestone_bonus",
+              hours_amount: milestoneBonus,
+              description: `+${milestoneBonus} credits - ${newActiveCount} referrals milestone!`,
+            });
+        }
 
-        rewardsEarned.push(`🎉 ${newTier.toUpperCase()} TIER UNLOCKED! £${unlockBonus} bonus`);
-      } else {
-        await supabase
-          .from("referral_credits")
-          .update({ active_referrals: newActiveCount })
-          .eq("user_id", referral.referrer_id);
+        const milestoneMessage = newTier === "platinum"
+          ? `🎉 PLATINUM STATUS - ${newActiveCount} referrals!`
+          : `🎉 ${newActiveCount} Referrals Milestone! +${milestoneBonus} credits`;
+        rewardsEarned.push(milestoneMessage);
       }
     }
 

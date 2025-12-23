@@ -125,12 +125,12 @@ Deno.serve(async (req: Request) => {
 
               <!-- Get started CTA -->
               <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
-                <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">🎁 Start Your Free 30-Minute Trial!</h3>
+                <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">🎁 Start Your Free Diagnostic Assessment!</h3>
                 <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
-                  Experience the difference for yourself - completely free, no credit card required
+                  Discover your current level and get a personalized learning plan - completely free, no credit card required
                 </p>
-                <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Browse Our Teachers
+                <a href="https://talbiyah.ai/diagnostic" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Start Free Assessment
                 </a>
               </div>
 
@@ -138,10 +138,10 @@ Deno.serve(async (req: Request) => {
               <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px;">📋 Your Next Steps:</h3>
                 <ol style="margin: 0; padding-left: 20px; color: #334155;">
-                  <li style="margin-bottom: 12px; line-height: 1.6;">Browse our qualified teachers and read their reviews</li>
-                  <li style="margin-bottom: 12px; line-height: 1.6;">Book your FREE 30-minute trial lesson (no payment needed)</li>
-                  <li style="margin-bottom: 12px; line-height: 1.6;">Choose between Quran with Understanding or Arabic Language</li>
-                  <li style="line-height: 1.6;">After your lesson, receive your personalized AI-generated study notes!</li>
+                  <li style="margin-bottom: 12px; line-height: 1.6;">Take your FREE diagnostic assessment (20 mins, no payment needed)</li>
+                  <li style="margin-bottom: 12px; line-height: 1.6;">Get matched with the perfect teacher for your level</li>
+                  <li style="margin-bottom: 12px; line-height: 1.6;">Receive your personalized learning plan (Understanding → Fluency → Memorisation)</li>
+                  <li style="line-height: 1.6;">Start your journey with AI-powered study notes after every lesson!</li>
                 </ol>
               </div>
 

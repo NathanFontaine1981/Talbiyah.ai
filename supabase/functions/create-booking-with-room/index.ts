@@ -96,7 +96,10 @@ serve(async (req) => {
 
     // Create 100ms room for each booking
     const createdLessons = []
-    const HMS_TEMPLATE_ID = '6905fb03033903926e627d60' // Your template ID
+    const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID')
+    if (!HMS_TEMPLATE_ID) {
+      console.error('HMS_TEMPLATE_ID environment variable not configured')
+    }
 
     // Generate 100ms management token dynamically
     let HMS_MANAGEMENT_TOKEN: string | null = null

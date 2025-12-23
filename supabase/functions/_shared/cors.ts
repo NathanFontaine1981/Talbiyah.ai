@@ -1,16 +1,23 @@
-// Allowed origins for CORS
-const ALLOWED_ORIGINS = [
-  'https://talbiyah.ai',
-  'https://talbiyah2025.netlify.app',
+// Allowed origins for CORS - environment-based
+const isProduction = Deno.env.get('ENVIRONMENT') === 'production' ||
+                     !Deno.env.get('ENVIRONMENT'); // Default to production for safety
+
+const PRODUCTION_ORIGINS = [
   'https://talbiyah.ai',
   'https://www.talbiyah.ai',
-  // Development origins
+];
+
+const DEVELOPMENT_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
 ];
+
+const ALLOWED_ORIGINS = isProduction
+  ? PRODUCTION_ORIGINS
+  : [...PRODUCTION_ORIGINS, ...DEVELOPMENT_ORIGINS];
 
 // Get CORS headers based on request origin
 export function getCorsHeaders(req: Request): Record<string, string> {
@@ -45,11 +52,9 @@ export function getResponseHeaders(req: Request): Record<string, string> {
   };
 }
 
-// Legacy export for backward compatibility (will be updated in each function)
+// Legacy export for backward compatibility - allows all origins since functions are API-key protected
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://talbiyah.ai',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-  'Access-Control-Allow-Credentials': 'true',
-  ...securityHeaders,
 };

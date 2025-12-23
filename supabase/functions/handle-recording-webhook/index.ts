@@ -12,8 +12,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret",
 };
 
-// Webhook secret for 100ms - must match what's configured in 100ms dashboard
-const WEBHOOK_SECRET = "talbiyah-hms-2024-secret";
+/**
+ * Constant-time string comparison to prevent timing attacks
+ * Returns true if strings are equal
+ */
+function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 
 // 100ms webhook event types
 interface HMS100msWebhook {
@@ -37,11 +49,45 @@ interface HMS100msWebhook {
     transcript_txt_presigned_url?: string;
     transcript_json_presigned_url?: string;
     transcript_srt_presigned_url?: string;
+    // Transcription asset IDs (from transcription.started.success event)
+    transcript_json_asset_id?: string;
+    transcript_txt_asset_id?: string;
+    transcript_srt_asset_id?: string;
+    transcription_id?: string;
     // Summary fields
     summary_path?: string;
     summary_presigned_url?: string;
     summary_json_presigned_url?: string;
+    summary_json_asset_id?: string;
   };
+}
+
+/**
+ * Fetch presigned URL for a recording asset by ID
+ */
+async function getAssetPresignedUrl(assetId: string, hmsToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.100ms.live/v2/recording-assets/${assetId}/presigned-url`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${hmsToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.url || null;
+    }
+    console.error(`Failed to get presigned URL for asset ${assetId}:`, response.status);
+    return null;
+  } catch (error) {
+    console.error(`Error fetching presigned URL for asset ${assetId}:`, error);
+    return null;
+  }
 }
 
 // Legacy format for backwards compatibility
@@ -88,22 +134,33 @@ Deno.serve(async (req: Request) => {
   });
   console.log("Headers:", JSON.stringify(headersObj, null, 2));
 
-  // Get expected secret from environment or use hardcoded default
-  const expectedSecret = Deno.env.get("HMS_WEBHOOK_SECRET") || WEBHOOK_SECRET;
+  // Get expected secret from environment variable only (no hardcoded fallback)
+  const expectedSecret = Deno.env.get("HMS_WEBHOOK_SECRET");
+
+  if (!expectedSecret) {
+    console.error("HMS_WEBHOOK_SECRET environment variable not configured");
+    return new Response(
+      JSON.stringify({ error: "Server configuration error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   // Verify webhook secret
   const webhookSecret = req.headers.get("x-webhook-secret");
-  console.log("Webhook secret header present:", !!webhookSecret);
-  console.log("Expected secret length:", expectedSecret.length);
-  console.log("Received secret length:", webhookSecret?.length || 0);
 
-  // Compare secrets (trim whitespace for robustness)
-  const secretsMatch = webhookSecret?.trim() === expectedSecret.trim();
-  console.log("Secrets match:", secretsMatch);
+  if (!webhookSecret) {
+    console.error("Missing x-webhook-secret header");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized", message: "Missing webhook secret" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
-  if (webhookSecret && !secretsMatch) {
-    console.error("Invalid webhook secret - received:", webhookSecret?.substring(0, 10) + "...");
-    console.error("Expected:", expectedSecret.substring(0, 10) + "...");
+  // Use constant-time comparison to prevent timing attacks
+  const secretsMatch = constantTimeCompare(webhookSecret.trim(), expectedSecret.trim());
+
+  if (!secretsMatch) {
+    console.error("Invalid webhook secret");
     return new Response(
       JSON.stringify({ error: "Unauthorized", message: "Invalid webhook secret" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -132,8 +189,8 @@ Deno.serve(async (req: Request) => {
       const hmsData = rawData as HMS100msWebhook;
       console.log("100ms webhook type:", hmsData.type);
 
-      // Process recording.success, beam.recording.success, AND transcription.success events
-      const validEvents = ["recording.success", "beam.recording.success", "transcription.success"];
+      // Process recording.success, beam.recording.success, transcription.success, AND transcription.started.success events
+      const validEvents = ["recording.success", "beam.recording.success", "transcription.success", "transcription.started.success"];
       if (!validEvents.includes(hmsData.type)) {
         console.log("Ignoring event type:", hmsData.type);
         return new Response(
@@ -142,7 +199,7 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      isTranscriptionEvent = hmsData.type === "transcription.success";
+      isTranscriptionEvent = hmsData.type === "transcription.success" || hmsData.type === "transcription.started.success";
       roomId = hmsData.data.room_id || "";
       recordingUrl = hmsData.data.recording_presigned_url;
       recordingSize = hmsData.data.size;
@@ -160,6 +217,31 @@ Deno.serve(async (req: Request) => {
       // Store session_id for later use if room_id lookup fails
       const sessionId = hmsData.data.session_id;
 
+      // If transcription event has asset IDs instead of presigned URLs, fetch them
+      if (isTranscriptionEvent && !transcriptUrl) {
+        const transcriptAssetId = hmsData.data.transcript_json_asset_id || hmsData.data.transcript_txt_asset_id;
+        const summaryAssetId = hmsData.data.summary_json_asset_id;
+
+        if (transcriptAssetId || summaryAssetId) {
+          console.log("Transcription event has asset IDs, fetching presigned URLs...");
+          try {
+            const hmsToken = await getHMSManagementToken();
+
+            if (transcriptAssetId && !transcriptUrl) {
+              transcriptUrl = await getAssetPresignedUrl(transcriptAssetId, hmsToken) || undefined;
+              console.log("Got transcript URL from asset ID:", !!transcriptUrl);
+            }
+
+            if (summaryAssetId && !summaryUrl) {
+              summaryUrl = await getAssetPresignedUrl(summaryAssetId, hmsToken) || undefined;
+              console.log("Got summary URL from asset ID:", !!summaryUrl);
+            }
+          } catch (err) {
+            console.error("Error fetching presigned URLs from asset IDs:", err);
+          }
+        }
+      }
+
       console.log("Event details:", {
         type: hmsData.type,
         room_id: roomId,
@@ -169,7 +251,9 @@ Deno.serve(async (req: Request) => {
         has_summary: !!summaryUrl,
         transcript_url_source: hmsData.data.transcript_json_presigned_url ? 'json' :
                                hmsData.data.transcript_txt_presigned_url ? 'txt' :
-                               hmsData.data.transcript_presigned_url ? 'generic' : 'none',
+                               hmsData.data.transcript_presigned_url ? 'generic' :
+                               hmsData.data.transcript_json_asset_id ? 'json_asset' :
+                               hmsData.data.transcript_txt_asset_id ? 'txt_asset' : 'none',
       });
     } else {
       // Legacy format

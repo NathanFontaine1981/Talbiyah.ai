@@ -198,11 +198,16 @@ function isValidEmail(str: string): boolean {
 }
 
 function sanitizeString(str: string): string {
-  // Remove potential XSS characters but keep basic formatting
+  // HTML entity encoding for XSS prevention
   return str
-    .replace(/[<>]/g, '') // Remove angle brackets
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
     .trim();
 }
 

@@ -168,6 +168,13 @@ Deno.serve(async (req: Request) => {
     const emailResult = await emailResponse.json();
     console.log("Email sent successfully:", emailResult);
 
+    // Mark the notification as sent in the referrals table
+    await supabase
+      .from("referrals")
+      .update({ notification_sent: true })
+      .eq("referrer_id", payload.referrer_id)
+      .eq("referred_user_id", payload.referred_id);
+
     return new Response(
       JSON.stringify({
         success: true,

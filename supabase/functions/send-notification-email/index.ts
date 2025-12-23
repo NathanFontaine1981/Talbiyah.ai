@@ -40,7 +40,8 @@ type NotificationType =
   | "teacher_approved"
   | "welcome"
   | "credit_purchase_confirmation"
-  | "student_booking_confirmation";
+  | "student_booking_confirmation"
+  | "admin_new_signup";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -151,6 +152,9 @@ Deno.serve(async (req: Request) => {
         break;
       case "student_booking_confirmation":
         emailContent = getStudentBookingConfirmationEmail(payload);
+        break;
+      case "admin_new_signup":
+        emailContent = getAdminNewSignupEmail(payload);
         break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
@@ -960,12 +964,12 @@ function getWelcomeEmail(payload: NotificationPayload): { subject: string; html:
 
           <!-- Get started CTA -->
           <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
-            <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">Start Your Free 30-Minute Trial!</h3>
+            <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">Start Your Free Diagnostic Assessment!</h3>
             <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
-              Experience the difference for yourself - completely free, no credit card required
+              Discover your current level and get a personalized learning plan - completely free
             </p>
-            <a href="https://talbiyah.ai/teachers" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-              Browse Our Teachers
+            <a href="https://talbiyah.ai/diagnostic" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Start Free Assessment
             </a>
           </div>
 
@@ -1049,6 +1053,86 @@ function getStudentBookingConfirmationEmail(payload: NotificationPayload): { sub
 
           <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
             <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+          </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getAdminNewSignupEmail(payload: NotificationPayload): { subject: string; html: string } {
+  const { user_name, user_email, user_role, signup_time, referral_code } = payload.data;
+  const signupDate = new Date(signup_time);
+  const formattedTime = signupDate.toLocaleString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const roleLabel = user_role === 'parent' ? 'Parent' : user_role === 'teacher' ? 'Teacher Applicant' : 'Student';
+  const roleEmoji = user_role === 'parent' ? '👨‍👩‍👧' : user_role === 'teacher' ? '👨‍🏫' : '📚';
+
+  return {
+    subject: `🆕 New Signup: ${user_name} (${roleLabel})`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">🆕</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">New User Signup!</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Someone just joined Talbiyah.ai</p>
+          </div>
+
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 2px solid #06b6d4;">
+            <div style="background: #f0fdfa; border-radius: 8px; padding: 20px; margin: 0 0 20px 0;">
+              <h3 style="margin: 0 0 16px 0; color: #0d9488; font-size: 18px;">${roleEmoji} New ${roleLabel} Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #0f766e; border-bottom: 1px solid #99f6e4;">Name:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #99f6e4;">${user_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0f766e; border-bottom: 1px solid #99f6e4;">Email:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #99f6e4;">${user_email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0f766e; border-bottom: 1px solid #99f6e4;">Role:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #99f6e4;">${roleLabel}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0f766e; border-bottom: 1px solid #99f6e4;">Signup Time:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right; border-bottom: 1px solid #99f6e4;">${formattedTime}</td>
+                </tr>
+                ${referral_code ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #0f766e;">Referral Code:</td>
+                  <td style="padding: 8px 0; color: #065f46; font-weight: 600; text-align: right;">${referral_code}</td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+
+            ${user_role === 'teacher' ? `
+            <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                ⏰ <strong>Action Required:</strong> This is a teacher application. Please review and approve/reject in the admin panel.
+              </p>
+            </div>
+            ` : ''}
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://talbiyah.ai/admin" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View in Admin Panel
+            </a>
+          </div>
+
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai Admin Notification</p>
           </div>
         </body>
       </html>

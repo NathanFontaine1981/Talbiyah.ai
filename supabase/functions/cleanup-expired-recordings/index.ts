@@ -128,6 +128,36 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Clean up expired diagnostic assessment recordings (30-day retention)
+    // Note: Assessment data and admin reviews are preserved
+    let assessmentsCleared = 0;
+    try {
+      const { data: expiredAssessments, error: assessmentsError } = await supabase
+        .from("diagnostic_assessments")
+        .select("id")
+        .lt("recording_expires_at", new Date().toISOString())
+        .not("recording_url", "is", null);
+
+      if (!assessmentsError && expiredAssessments && expiredAssessments.length > 0) {
+        console.log(`Found ${expiredAssessments.length} diagnostic assessments with expired recordings`);
+
+        const { error: updateAssessmentsError } = await supabase
+          .from("diagnostic_assessments")
+          .update({ recording_url: null })
+          .lt("recording_expires_at", new Date().toISOString())
+          .not("recording_url", "is", null);
+
+        if (!updateAssessmentsError) {
+          assessmentsCleared = expiredAssessments.length;
+          console.log(`Cleared ${assessmentsCleared} expired recording URLs from diagnostic assessments`);
+        } else {
+          console.error("Error clearing diagnostic assessment recording URLs:", updateAssessmentsError);
+        }
+      }
+    } catch (assessmentError) {
+      console.error("Error processing diagnostic assessment recordings:", assessmentError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -135,7 +165,8 @@ Deno.serve(async (req: Request) => {
         error_count: errorCount,
         total_processed: expiredRecordings.length,
         lessons_cleared: lessonsCleared,
-        note: "Insights are preserved - only recording URLs are cleared after 7 days",
+        assessments_cleared: assessmentsCleared,
+        note: "Insights and assessment data are preserved - only recording URLs are cleared (7 days for lessons, 30 days for assessments)",
       }),
       {
         status: 200,

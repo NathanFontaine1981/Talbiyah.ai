@@ -411,6 +411,47 @@ Generate the insights following the exact format specified in the system prompt.
 
     console.log("Insights saved successfully:", savedInsight.id);
 
+    // Analyze transcript for suspicious content (contact sharing, etc.)
+    try {
+      console.log("Analyzing transcript for suspicious content...");
+
+      // Get lesson details for teacher/student IDs
+      const { data: lessonData } = await supabase
+        .from('lessons')
+        .select('teacher_id, learner_id')
+        .eq('id', lesson_id)
+        .single();
+
+      const analyzeResponse = await fetch(`${supabaseUrl}/functions/v1/analyze-lesson-content`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`
+        },
+        body: JSON.stringify({
+          content: transcript,
+          lesson_id: lesson_id,
+          source: 'transcript',
+          teacher_id: lessonData?.teacher_id,
+          student_id: lessonData?.learner_id
+        })
+      });
+
+      if (analyzeResponse.ok) {
+        const analyzeResult = await analyzeResponse.json();
+        if (analyzeResult.flags && analyzeResult.flags.length > 0) {
+          console.log(`Content moderation: Found ${analyzeResult.flags.length} suspicious patterns in transcript`);
+        } else {
+          console.log("Content moderation: No suspicious content detected in transcript");
+        }
+      } else {
+        console.error("Content moderation analysis failed:", await analyzeResponse.text());
+      }
+    } catch (contentAnalysisError) {
+      // Don't fail the whole request if content analysis fails
+      console.error("Error during content moderation analysis:", contentAnalysisError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
