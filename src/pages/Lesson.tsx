@@ -24,10 +24,12 @@ import { supabase } from '../lib/supabaseClient';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
 import LessonMessaging from '../components/messaging/LessonMessaging';
+import { PostLessonForm } from '../components/progress';
 
 interface LessonData {
   id: string;
   teacher_id: string;
+  learner_id: string;
   teacher_name: string;
   learner_name: string;
   subject_name: string;
@@ -66,11 +68,11 @@ function LessonContent() {
   const [showMessaging, setShowMessaging] = useState(true);
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  const [showPostLessonForm, setShowPostLessonForm] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran'>('messages');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
-  const [bothParticipantsJoined, setBothParticipantsJoined] = useState(false);
-  const [waitingForOther, setWaitingForOther] = useState(true);
+  const [lessonStarted, setLessonStarted] = useState(false);
 
   // Use 100ms SDK to track peer count and recording
   const peerCount = useHMSStore(selectPeerCount);
@@ -78,25 +80,19 @@ function LessonContent() {
   const hmsActions = useHMSActions();
   const [recordingStarted, setRecordingStarted] = useState(false);
 
-  // Detect when both participants have joined (peer count >= 2)
+  // Start timer immediately when user joins the room
   useEffect(() => {
-    if (!isConnectedToRoom || !lesson) return;
+    if (!isConnectedToRoom || !lesson || lessonStarted) return;
 
-    if (peerCount >= 2 && !bothParticipantsJoined) {
-      // Both host and guest are in the room - start the timer!
-      setBothParticipantsJoined(true);
-      setWaitingForOther(false);
-      setSessionStartTime(new Date());
+    // Start timer immediately when user joins the video room
+    setLessonStarted(true);
+    setSessionStartTime(new Date());
 
-      // Start recording when both participants join (only if teacher/host)
-      if (userRole === 'teacher' && !recordingStarted) {
-        startBrowserRecording();
-      }
-    } else if (peerCount < 2 && isConnectedToRoom) {
-      // Only one person in the room - show waiting state
-      setWaitingForOther(true);
+    // Start recording when user joins (only if teacher/host)
+    if (userRole === 'teacher' && !recordingStarted) {
+      startBrowserRecording();
     }
-  }, [peerCount, isConnectedToRoom, lesson, bothParticipantsJoined, userRole, recordingStarted]);
+  }, [isConnectedToRoom, lesson, lessonStarted, userRole, recordingStarted]);
 
   // Start browser recording
   const startBrowserRecording = async () => {
@@ -118,25 +114,24 @@ function LessonContent() {
     }
   }, [isConnectedToRoom, isVideoReady]);
 
-  // Allow manual start of timer (fallback if peer detection doesn't work)
+  // Allow manual start of timer (fallback if auto-start doesn't work)
   const startLessonTimer = () => {
-    if (!bothParticipantsJoined) {
-      setBothParticipantsJoined(true);
-      setWaitingForOther(false);
+    if (!lessonStarted) {
+      setLessonStarted(true);
       setSessionStartTime(new Date());
     }
   };
 
-  // Timer effect - starts when both participants have joined
+  // Timer effect - starts when lesson has started
   useEffect(() => {
-    if (!bothParticipantsJoined || !sessionStartTime) return;
+    if (!lessonStarted || !sessionStartTime) return;
 
     const timer = setInterval(() => {
       setElapsedSeconds(prev => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [bothParticipantsJoined, sessionStartTime]);
+  }, [lessonStarted, sessionStartTime]);
 
   // Format elapsed time as HH:MM:SS or MM:SS
   const formatElapsedTime = (seconds: number) => {
@@ -230,6 +225,7 @@ function LessonContent() {
       setLesson({
         id: lessonData.id,
         teacher_id: lessonData.teacher_id,
+        learner_id: lessonData.learner_id,
         teacher_name: lessonData.teacher_profiles.profiles.full_name || 'Teacher',
         learner_name: lessonData.learners?.name || 'Student',
         subject_name: lessonData.subjects.name,
@@ -369,8 +365,13 @@ function LessonContent() {
         })
         .eq('id', lesson.id);
 
-      // Navigate back to dashboard
-      navigate('/dashboard');
+      // For teachers, show post-lesson form to capture feedback
+      // For students, navigate to dashboard (they already see QuickLessonFeedback)
+      if (userRole === 'teacher') {
+        setShowPostLessonForm(true);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Error ending session:', error);
       // Still navigate even if update fails
@@ -408,7 +409,7 @@ function LessonContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900 flex items-center justify-center z-50">
         <div className="text-center text-white max-w-md">
           <div className="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           <h2 className="text-2xl font-semibold mb-3">Loading Lesson...</h2>
@@ -420,7 +421,7 @@ function LessonContent() {
 
   if (error || !lesson) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900 flex items-center justify-center z-50">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -457,7 +458,7 @@ function LessonContent() {
 
   if (!isVideoReady) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 flex items-center justify-center z-50 p-6">
+      <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900 flex items-center justify-center z-50 p-6">
         <div className="max-w-4xl w-full">
           {/* Header */}
           <div className="text-center text-white mb-8">
@@ -496,10 +497,10 @@ function LessonContent() {
             </div>
 
             {/* Mobile/Tablet App Option */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-cyan-400/30 hover:border-cyan-400/60 transition-all">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-emerald-400/30 hover:border-emerald-400/60 transition-all">
               <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mb-4">
-                  <Smartphone className="w-10 h-10 text-cyan-400" />
+                <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4">
+                  <Smartphone className="w-10 h-10 text-emerald-600" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Join via Mobile App</h3>
                 <p className="text-cyan-200 text-sm mb-6">
@@ -507,7 +508,7 @@ function LessonContent() {
                 </p>
                 <button
                   onClick={() => setShowMobileInstructions(true)}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2"
                 >
                   <Smartphone className="w-5 h-5" />
                   <span>View Instructions</span>
@@ -519,10 +520,10 @@ function LessonContent() {
           {/* Mobile Instructions Modal */}
           {showMobileInstructions && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl max-w-2xl w-full p-8 border border-cyan-400/30 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-2xl w-full p-8 border border-emerald-400/30 shadow-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-2xl font-bold text-white flex items-center space-x-3">
-                    <Smartphone className="w-7 h-7 text-cyan-400" />
+                    <Smartphone className="w-7 h-7 text-emerald-600" />
                     <span>Mobile/Tablet Join Instructions</span>
                   </h3>
                   <button
@@ -535,9 +536,9 @@ function LessonContent() {
 
                 <div className="space-y-6">
                   {/* Step 1 */}
-                  <div className="bg-white/5 rounded-xl p-6 border border-cyan-400/20">
+                  <div className="bg-white/5 rounded-xl p-6 border border-emerald-400/20">
                     <div className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         1
                       </div>
                       <div className="flex-1">
@@ -568,7 +569,7 @@ function LessonContent() {
                   </div>
 
                   {/* Step 2 - QR Code (Easiest) */}
-                  <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-6 border border-emerald-400/40">
+                  <div className="bg-gradient-to-r from-emerald-500/20 to-emerald-500/20 rounded-xl p-6 border border-emerald-400/40">
                     <div className="flex items-start space-x-4">
                       <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         2
@@ -599,21 +600,21 @@ function LessonContent() {
                   </div>
 
                   {/* Step 3 - Join Link (Alternative) */}
-                  <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl p-6 border border-cyan-400/40">
+                  <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-xl p-6 border border-emerald-400/40">
                     <div className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         3
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-white mb-3">Or Copy Joining Link</h4>
-                        <div className="bg-white/10 rounded-lg p-4 border border-cyan-400/30 mb-3">
+                        <div className="bg-white/10 rounded-lg p-4 border border-emerald-400/30 mb-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-cyan-300 font-medium uppercase tracking-wider">
                               Joining Link for {userRole === 'teacher' ? 'Teacher' : 'Student'}
                             </span>
                             <button
                               onClick={copyJoinLink}
-                              className="flex items-center space-x-1 px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-lg text-cyan-300 text-xs font-medium transition-colors"
+                              className="flex items-center space-x-1 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-cyan-300 text-xs font-medium transition-colors"
                             >
                               {copiedLink ? (
                                 <>
@@ -634,14 +635,14 @@ function LessonContent() {
                         </div>
 
                         {/* Room code as fallback */}
-                        <div className="bg-white/5 rounded-lg p-3 border border-cyan-400/20">
+                        <div className="bg-white/5 rounded-lg p-3 border border-emerald-400/20">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-cyan-400 font-medium">
+                            <span className="text-xs text-emerald-600 font-medium">
                               Room Code (if asked)
                             </span>
                             <button
                               onClick={copyRoomCode}
-                              className="flex items-center space-x-1 px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-500/30 rounded text-cyan-300 text-xs transition-colors"
+                              className="flex items-center space-x-1 px-2 py-0.5 bg-emerald-500/20 hover:bg-emerald-500/30 rounded text-cyan-300 text-xs transition-colors"
                             >
                               {copiedCode ? (
                                 <>
@@ -665,9 +666,9 @@ function LessonContent() {
                   </div>
 
                   {/* Step 4 */}
-                  <div className="bg-white/5 rounded-xl p-6 border border-cyan-400/20">
+                  <div className="bg-white/5 rounded-xl p-6 border border-emerald-400/20">
                     <div className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                         4
                       </div>
                       <div className="flex-1">
@@ -689,7 +690,7 @@ function LessonContent() {
                   {/* Close Button */}
                   <button
                     onClick={() => setShowMobileInstructions(false)}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg"
+                    className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg"
                   >
                     Got it! Back to Join Options
                   </button>
@@ -745,13 +746,13 @@ function LessonContent() {
           <div className="flex items-center space-x-4">
             {/* Lesson Timer */}
             <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl border ${
-              bothParticipantsJoined
-                ? 'bg-slate-800/60 border-slate-600/50'
+              lessonStarted
+                ? 'bg-gray-100/60 border-gray-300'
                 : 'bg-amber-900/40 border-amber-500/50'
             }`}>
-              <Clock className={`w-5 h-5 ${bothParticipantsJoined ? 'text-cyan-400' : 'text-amber-400 animate-pulse'}`} />
+              <Clock className={`w-5 h-5 ${lessonStarted ? 'text-emerald-600' : 'text-amber-400 animate-pulse'}`} />
               <div className="text-center">
-                {bothParticipantsJoined ? (
+                {lessonStarted ? (
                   <>
                     <p className="text-white text-lg font-mono font-bold tracking-wider">
                       {formatElapsedTime(elapsedSeconds)}
@@ -761,23 +762,23 @@ function LessonContent() {
                 ) : (
                   <>
                     <p className="text-amber-300 text-sm font-semibold">
-                      Waiting...
+                      Ready...
                     </p>
-                    <p className="text-amber-400/70 text-[10px] uppercase tracking-wide">For {userRole === 'teacher' ? 'student' : 'teacher'}</p>
+                    <p className="text-amber-400/70 text-[10px] uppercase tracking-wide">Click Start</p>
                   </>
                 )}
               </div>
-              <div className="h-8 w-px bg-slate-600/50 mx-1"></div>
+              <div className="h-8 w-px bg-gray-600/50 mx-1"></div>
               <div className="text-center">
                 <p className="text-emerald-300 text-sm font-semibold">
                   {lesson.duration_minutes}m
                 </p>
-                <p className="text-slate-400 text-[10px] uppercase tracking-wide">Target</p>
+                <p className="text-gray-500 text-[10px] uppercase tracking-wide">Target</p>
               </div>
             </div>
 
-            {/* Start Lesson Button - shows when waiting for other participant */}
-            {!bothParticipantsJoined && isVideoReady && (
+            {/* Start Lesson Button - shows when timer hasn't started yet */}
+            {!lessonStarted && isVideoReady && (
               <button
                 onClick={startLessonTimer}
                 className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl transition shadow-lg shadow-emerald-500/30 flex items-center space-x-2 animate-pulse hover:animate-none"
@@ -950,7 +951,7 @@ function LessonContent() {
                 setShowMessaging(true);
                 setSidebarMode('messages');
               }}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
+              className="bg-emerald-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
               title="Open messages"
             >
               <MessageCircle className="w-6 h-6" />
@@ -1037,6 +1038,29 @@ function LessonContent() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-Lesson Form for Teachers */}
+      {showPostLessonForm && lesson && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-6 overflow-y-auto">
+          <div className="max-w-2xl w-full my-8">
+            <PostLessonForm
+              lesson={{
+                id: lesson.id,
+                learner_id: lesson.learner_id,
+                student_name: lesson.learner_name
+              }}
+              onComplete={() => {
+                setShowPostLessonForm(false);
+                navigate('/dashboard');
+              }}
+              onCancel={() => {
+                setShowPostLessonForm(false);
+                navigate('/dashboard');
+              }}
+            />
           </div>
         </div>
       )}

@@ -318,15 +318,15 @@ export default function StudentQuranTracker({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 rounded-2xl border border-slate-700/50 overflow-hidden">
+    <div className="bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 p-6">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-600 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-3">
@@ -349,31 +349,31 @@ export default function StudentQuranTracker({
       </div>
 
       {/* Stats Overview */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
-              <Brain className="w-5 h-5 text-cyan-400" />
-              <span className="text-slate-400 text-sm">Understanding</span>
+              <Brain className="w-5 h-5 text-emerald-600" />
+              <span className="text-gray-500 text-sm">Understanding</span>
             </div>
-            <p className="text-2xl font-bold text-cyan-400">{totalStats.understanding}</p>
-            <p className="text-xs text-slate-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.understanding / TOTAL_AYAHS) * 100)}%)</p>
+            <p className="text-2xl font-bold text-emerald-600">{totalStats.understanding}</p>
+            <p className="text-xs text-gray-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.understanding / TOTAL_AYAHS) * 100)}%)</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <Volume2 className="w-5 h-5 text-blue-400" />
-              <span className="text-slate-400 text-sm">Fluency</span>
+              <span className="text-gray-500 text-sm">Fluency</span>
             </div>
             <p className="text-2xl font-bold text-blue-400">{totalStats.fluency}</p>
-            <p className="text-xs text-slate-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.fluency / TOTAL_AYAHS) * 100)}%)</p>
+            <p className="text-xs text-gray-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.fluency / TOTAL_AYAHS) * 100)}%)</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-5 h-5 text-emerald-400" />
-              <span className="text-slate-400 text-sm">Memorised</span>
+              <span className="text-gray-500 text-sm">Memorised</span>
             </div>
             <p className="text-2xl font-bold text-emerald-400">{totalStats.memorization}</p>
-            <p className="text-xs text-slate-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.memorization / TOTAL_AYAHS) * 100)}%)</p>
+            <p className="text-xs text-gray-500">of {TOTAL_AYAHS} ayahs ({Math.round((totalStats.memorization / TOTAL_AYAHS) * 100)}%)</p>
           </div>
           <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-500/30">
             <div className="flex items-center gap-2 mb-2">
@@ -389,16 +389,16 @@ export default function StudentQuranTracker({
       </div>
 
       {/* General Notes Section */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-white font-semibold flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-cyan-400" />
+            <MessageSquare className="w-5 h-5 text-emerald-600" />
             General Notes for Student
           </h3>
           {!editingGeneralNotes && (
             <button
               onClick={() => setEditingGeneralNotes(true)}
-              className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1"
+              className="text-emerald-600 hover:text-cyan-300 text-sm flex items-center gap-1"
             >
               <Edit3 className="w-4 h-4" />
               Edit
@@ -411,52 +411,52 @@ export default function StudentQuranTracker({
               value={generalNotes}
               onChange={(e) => setGeneralNotes(e.target.value)}
               placeholder="Add general notes about the student's Quran progress, goals, areas to improve..."
-              className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+              className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               rows={4}
             />
             <div className="flex gap-2">
               <button
                 onClick={handleSaveGeneralNotes}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-cyan-700 text-white rounded-lg transition disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Notes
               </button>
               <button
                 onClick={() => setEditingGeneralNotes(false)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg transition"
               >
                 Cancel
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             {generalNotes ? (
-              <p className="text-slate-300 whitespace-pre-wrap">{generalNotes}</p>
+              <p className="text-gray-600 whitespace-pre-wrap">{generalNotes}</p>
             ) : (
-              <p className="text-slate-500 italic">No general notes yet. Click Edit to add notes.</p>
+              <p className="text-gray-500 italic">No general notes yet. Click Edit to add notes.</p>
             )}
           </div>
         )}
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-gray-500 mt-2">
           These notes are visible to the student on their Quran Progress page.
         </p>
       </div>
 
       {/* Juz Navigation */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold">Navigate by Juz</h3>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
               placeholder="Search surah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm w-48"
+              className="pl-9 pr-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm w-48"
             />
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function StudentQuranTracker({
           <button
             onClick={() => setSelectedJuz(Math.max(1, selectedJuz - 1))}
             disabled={selectedJuz <= 1}
-            className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition disabled:opacity-30"
+            className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
           </button>
@@ -481,7 +481,7 @@ export default function StudentQuranTracker({
                 className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition ${
                   selectedJuz === juz.juz
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 {juz.juz}
@@ -492,14 +492,14 @@ export default function StudentQuranTracker({
           <button
             onClick={() => setSelectedJuz(Math.min(30, selectedJuz + 1))}
             disabled={selectedJuz >= 30}
-            className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition disabled:opacity-30"
+            className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-30"
           >
             <ChevronRight className="w-5 h-5 text-white" />
           </button>
         </div>
 
         {currentJuz && !searchQuery && (
-          <div className="text-center text-slate-400 text-sm">
+          <div className="text-center text-gray-500 text-sm">
             <span className="font-semibold text-white">Juz {selectedJuz}:</span> {currentJuz.name} • Surahs {currentJuz.surahs[0]}-{currentJuz.surahs[currentJuz.surahs.length - 1]}
           </div>
         )}
@@ -516,51 +516,51 @@ export default function StudentQuranTracker({
             return (
               <div
                 key={surah.number}
-                className={`bg-slate-800/50 rounded-xl border overflow-hidden transition ${
-                  isComplete ? 'border-emerald-500/50' : 'border-slate-700/50'
+                className={`bg-gray-50 rounded-xl border overflow-hidden transition ${
+                  isComplete ? 'border-emerald-500/50' : 'border-gray-200'
                 }`}
               >
                 {/* Surah Header */}
                 <button
                   onClick={() => setExpandedSurah(isExpanded ? null : surah.number)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-slate-800/70 transition"
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-100 transition"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${
                       isComplete
                         ? 'bg-emerald-500/20 text-emerald-400'
-                        : 'bg-slate-700/50 text-cyan-400'
+                        : 'bg-gray-100 text-emerald-600'
                     }`}>
                       {surah.number}
                     </div>
                     <div className="text-left">
                       <h4 className="text-white font-semibold">{surah.name}</h4>
-                      <p className="text-slate-400 text-sm">{surah.englishName} • {surah.ayahCount} ayahs</p>
+                      <p className="text-gray-500 text-sm">{surah.englishName} • {surah.ayahCount} ayahs</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
                     <div className="hidden md:flex items-center gap-3 text-sm">
-                      <span className="text-cyan-400">{stats.understanding}/{stats.total}</span>
+                      <span className="text-emerald-600">{stats.understanding}/{stats.total}</span>
                       <span className="text-blue-400">{stats.fluency}/{stats.total}</span>
                       <span className="text-emerald-400">{stats.memorization}/{stats.total}</span>
                     </div>
                     {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-slate-700/50 pt-4">
+                  <div className="px-4 pb-4 border-t border-gray-200 pt-4">
                     {/* Quick Actions */}
                     <div className="flex flex-wrap gap-2 mb-4">
                       <button
                         onClick={() => markAllAyahs(surah.number, 'understanding_complete', true)}
-                        className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 rounded-lg text-xs font-medium transition"
+                        className="px-3 py-1.5 bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 rounded-lg text-xs font-medium transition"
                       >
                         Mark All Understanding
                       </button>
@@ -579,24 +579,24 @@ export default function StudentQuranTracker({
                     </div>
 
                     {/* Theme */}
-                    <div className="bg-slate-900/50 rounded-lg p-3 mb-4 border border-slate-700/30">
-                      <p className="text-xs text-cyan-400 font-medium mb-1">Theme</p>
-                      <p className="text-sm text-slate-300">{surah.theme}</p>
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                      <p className="text-xs text-emerald-600 font-medium mb-1">Theme</p>
+                      <p className="text-sm text-gray-600">{surah.theme}</p>
                     </div>
 
                     {/* Legend */}
                     <div className="flex items-center gap-4 mb-4 text-xs">
                       <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 bg-cyan-500 rounded" />
-                        <span className="text-slate-400">Understanding</span>
+                        <div className="w-3 h-3 bg-emerald-500 rounded" />
+                        <span className="text-gray-500">Understanding</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-blue-500 rounded" />
-                        <span className="text-slate-400">Fluency</span>
+                        <span className="text-gray-500">Fluency</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-emerald-500 rounded" />
-                        <span className="text-slate-400">Memorised</span>
+                        <span className="text-gray-500">Memorised</span>
                       </div>
                     </div>
 
@@ -610,14 +610,14 @@ export default function StudentQuranTracker({
                         return (
                           <div
                             key={ayahNum}
-                            className="bg-slate-900/30 rounded-lg p-3 border border-slate-700/30"
+                            className="bg-white/30 rounded-lg p-3 border border-gray-200"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <span className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center text-slate-300 font-medium text-sm">
+                                <span className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 font-medium text-sm">
                                   {ayahNum}
                                 </span>
-                                <span className="text-sm text-slate-400">Ayah {ayahNum}</span>
+                                <span className="text-sm text-gray-500">Ayah {ayahNum}</span>
                               </div>
 
                               <div className="flex items-center gap-2">
@@ -627,12 +627,12 @@ export default function StudentQuranTracker({
                                   disabled={saving}
                                   className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition ${
                                     progress?.understanding_complete
-                                      ? 'bg-cyan-500/20 border-cyan-500'
-                                      : 'border-slate-600 hover:border-cyan-500/50'
+                                      ? 'bg-emerald-500/20 border-emerald-500'
+                                      : 'border-gray-300 hover:border-emerald-500/50'
                                   }`}
                                   title="Understanding"
                                 >
-                                  {progress?.understanding_complete && <Check className="w-5 h-5 text-cyan-400" />}
+                                  {progress?.understanding_complete && <Check className="w-5 h-5 text-emerald-600" />}
                                 </button>
 
                                 {/* Fluency */}
@@ -642,7 +642,7 @@ export default function StudentQuranTracker({
                                   className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition ${
                                     progress?.fluency_complete
                                       ? 'bg-blue-500/20 border-blue-500'
-                                      : 'border-slate-600 hover:border-blue-500/50'
+                                      : 'border-gray-300 hover:border-blue-500/50'
                                   }`}
                                   title="Fluency"
                                 >
@@ -656,7 +656,7 @@ export default function StudentQuranTracker({
                                   className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition ${
                                     progress?.memorization_complete
                                       ? 'bg-emerald-500/20 border-emerald-500'
-                                      : 'border-slate-600 hover:border-emerald-500/50'
+                                      : 'border-gray-300 hover:border-emerald-500/50'
                                   }`}
                                   title="Memorised"
                                 >
@@ -676,11 +676,11 @@ export default function StudentQuranTracker({
                                   className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition ${
                                     progress?.teacher_notes
                                       ? 'bg-purple-500/20 border-purple-500'
-                                      : 'border-slate-600 hover:border-purple-500/50'
+                                      : 'border-gray-300 hover:border-purple-500/50'
                                   }`}
                                   title="Notes"
                                 >
-                                  <MessageSquare className={`w-4 h-4 ${progress?.teacher_notes ? 'text-purple-400' : 'text-slate-400'}`} />
+                                  <MessageSquare className={`w-4 h-4 ${progress?.teacher_notes ? 'text-purple-400' : 'text-gray-500'}`} />
                                 </button>
                               </div>
                             </div>
@@ -692,7 +692,7 @@ export default function StudentQuranTracker({
                                   value={notesText}
                                   onChange={(e) => setNotesText(e.target.value)}
                                   placeholder="Add notes for this ayah..."
-                                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm"
+                                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm"
                                   rows={2}
                                 />
                                 <div className="flex gap-2">
@@ -708,7 +708,7 @@ export default function StudentQuranTracker({
                                       setEditingNotes(null);
                                       setNotesText('');
                                     }}
-                                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+                                    className="px-3 py-1.5 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition"
                                   >
                                     Cancel
                                   </button>

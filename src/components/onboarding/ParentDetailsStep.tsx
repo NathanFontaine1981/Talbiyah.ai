@@ -48,7 +48,7 @@ export default function ParentDetailsStep({ data, onChange, onNext }: ParentDeta
           <input
             type="text"
             placeholder="e.g., Fatima Ahmed"
-            className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition"
+            className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
             value={data.fullName}
             onChange={e => onChange({ ...data, fullName: e.target.value })}
           />
@@ -61,7 +61,7 @@ export default function ParentDetailsStep({ data, onChange, onNext }: ParentDeta
           </label>
           <div className="flex gap-2">
             <select
-              className="w-28 p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition bg-white"
+              className="w-28 p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
               value={data.phoneCountryCode}
               onChange={e => onChange({ ...data, phoneCountryCode: e.target.value })}
             >
@@ -74,7 +74,7 @@ export default function ParentDetailsStep({ data, onChange, onNext }: ParentDeta
             <input
               type="tel"
               placeholder="7700 900123"
-              className="flex-1 p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition"
+              className="flex-1 p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
               value={data.phoneNumber}
               onChange={e => onChange({ ...data, phoneNumber: e.target.value.replace(/[^0-9\s]/g, '') })}
             />
@@ -122,7 +122,7 @@ export default function ParentDetailsStep({ data, onChange, onNext }: ParentDeta
             How did you hear about us?
           </label>
           <select
-            className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition bg-white"
+            className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
             value={data.howHeardAboutUs}
             onChange={e => onChange({ ...data, howHeardAboutUs: e.target.value })}
           >
@@ -140,7 +140,7 @@ export default function ParentDetailsStep({ data, onChange, onNext }: ParentDeta
         <button
           onClick={onNext}
           disabled={!isValid}
-          className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/25"
+          className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
         >
           Continue →
         </button>

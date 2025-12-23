@@ -184,6 +184,37 @@ export default function Messages() {
         }
       });
 
+      // Get session once for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      // For teachers, batch fetch all student info at once
+      let studentInfoMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      if (isTeacher && accessToken) {
+        const studentIds = Array.from(groupedByTeacher.values()).map((g: GroupedTeacher) => g.student_id).filter(Boolean);
+        if (studentIds.length > 0) {
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ student_ids: studentIds })
+              }
+            );
+            if (response.ok) {
+              const { students } = await response.json();
+              studentInfoMap = students || {};
+            }
+          } catch (error) {
+            console.error('Error fetching student info:', error);
+          }
+        }
+      }
+
       // Get unread message counts and last messages for each teacher
       const conversationsData = await Promise.all(
         Array.from(groupedByTeacher.values()).map(async (group: GroupedTeacher) => {
@@ -193,46 +224,17 @@ export default function Messages() {
           let otherUserAvatar: string | null;
 
           if (isTeacher) {
-            // Teacher viewing - use Edge Function to get student info (bypasses RLS)
-            try {
-              const response = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-                  },
-                  body: JSON.stringify({ student_ids: [group.student_id] })
-                }
-              );
-
-              if (response.ok) {
-                const { students } = await response.json();
-                const studentInfo = students[group.student_id];
-
-                if (studentInfo) {
-                  otherUserId = group.student_id;
-                  otherUserName = studentInfo.name;
-                  otherUserAvatar = studentInfo.avatar_url;
-                } else {
-                  otherUserId = group.student_id;
-                  otherUserName = 'Student';
-                  otherUserAvatar = null;
-                }
-              } else {
-                // Fallback if Edge Function fails
-                otherUserId = group.student_id;
-                otherUserName = 'Student';
-                otherUserAvatar = null;
-              }
-            } catch (error) {
-              console.error('Error fetching student info:', error);
+            // Teacher viewing - use pre-fetched student info
+            const studentInfo = studentInfoMap[group.student_id];
+            if (studentInfo) {
+              otherUserId = group.student_id;
+              otherUserName = studentInfo.name;
+              otherUserAvatar = studentInfo.avatar_url;
+            } else {
               otherUserId = group.student_id;
               otherUserName = 'Student';
               otherUserAvatar = null;
             }
-
           } else {
             // Student viewing - get teacher info
             otherUserId = group.teacher?.user?.id || group.teacher_id;
@@ -439,7 +441,7 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-12">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
         <div className="container mx-auto px-4">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
@@ -451,7 +453,7 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -481,7 +483,7 @@ export default function Messages() {
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -503,7 +505,7 @@ export default function Messages() {
                       onClick={() => handleConversationClick(conv)}
                       className={`w-full p-4 text-left hover:bg-gray-50 transition ${
                         selectedConversation?.relationship_id === conv.relationship_id
-                          ? 'bg-cyan-50 border-l-4 border-cyan-500'
+                          ? 'bg-cyan-50 border-l-4 border-emerald-500'
                           : conv.is_pre_lesson
                           ? 'bg-blue-50/50'
                           : ''
@@ -512,7 +514,7 @@ export default function Messages() {
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
                         <div className="relative">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                             {conv.other_user_avatar ? (
                               <img
                                 src={conv.other_user_avatar}
@@ -602,7 +604,7 @@ export default function Messages() {
                 {/* Conversation Header */}
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-xl font-semibold">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white text-xl font-semibold">
                       {selectedConversation.other_user_avatar ? (
                         <img
                           src={selectedConversation.other_user_avatar}
@@ -630,57 +632,98 @@ export default function Messages() {
                 {/* Loading state while fetching lessons */}
                 {loadingLessons ? (
                   <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                    <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading messages...</p>
                   </div>
                 ) : (selectedConversation.is_pre_lesson || lessons.length === 0) ? (
                   <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     {/* Welcome Header */}
-                    <div className="p-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+                    <div className="p-6 bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
                           <UserPlus className="w-7 h-7" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold">Welcome!</h3>
+                          <h3 className="text-xl font-bold">
+                            {userRole === 'teacher' ? 'New Student' : 'Welcome!'}
+                          </h3>
                           <p className="text-cyan-100 text-sm mt-1">
-                            You're now connected with {selectedConversation.other_user_name}
+                            {userRole === 'teacher'
+                              ? `${selectedConversation.other_user_name} is ready to learn with you`
+                              : `You're now connected with ${selectedConversation.other_user_name}`
+                            }
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Getting Started Steps */}
+                    {/* Getting Started Steps - Different for teachers vs students */}
                     <div className="p-6 border-b">
-                      <h4 className="font-semibold text-gray-900 mb-4">Getting Started</h4>
+                      <h4 className="font-semibold text-gray-900 mb-4">
+                        {userRole === 'teacher' ? 'How to Message Your Student' : 'Getting Started'}
+                      </h4>
                       <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
-                            1
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">Book your first lesson</p>
-                            <p className="text-sm text-gray-500">Choose a time that works for you</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
-                            2
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-400">Wait for confirmation</p>
-                            <p className="text-sm text-gray-400">Your teacher will confirm the lesson</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
-                            3
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-400">Start learning!</p>
-                            <p className="text-sm text-gray-400">Join your video lesson and begin your journey</p>
-                          </div>
-                        </div>
+                        {userRole === 'teacher' ? (
+                          <>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                1
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">Student books a lesson</p>
+                                <p className="text-sm text-gray-500">Wait for {selectedConversation.other_user_name} to book their first lesson with you</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                2
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-400">Select the lesson</p>
+                                <p className="text-sm text-gray-400">Choose the upcoming lesson from the dropdown</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                3
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-400">Send your message</p>
+                                <p className="text-sm text-gray-400">Introduce yourself, share lesson prep, or ask questions</p>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                1
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">Book your first lesson</p>
+                                <p className="text-sm text-gray-500">Choose a time that works for you</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                2
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-400">Wait for confirmation</p>
+                                <p className="text-sm text-gray-400">Your teacher will confirm the lesson</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                3
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-400">Start learning!</p>
+                                <p className="text-sm text-gray-400">Join your video lesson and begin your journey</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -688,28 +731,42 @@ export default function Messages() {
                     <div className="p-6 bg-gray-50">
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className="bg-white p-4 rounded-lg border">
-                          <BookOpen className="w-5 h-5 text-cyan-500 mb-2" />
+                          <BookOpen className="w-5 h-5 text-emerald-500 mb-2" />
                           <p className="text-sm font-medium text-gray-900">{selectedConversation.subject_name || 'Multiple Subjects'}</p>
                           <p className="text-xs text-gray-500">Subject</p>
                         </div>
                         <div className="bg-white p-4 rounded-lg border">
                           <Calendar className="w-5 h-5 text-emerald-500 mb-2" />
-                          <p className="text-sm font-medium text-gray-900">Ready to book</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {userRole === 'teacher' ? 'Awaiting booking' : 'Ready to book'}
+                          </p>
                           <p className="text-xs text-gray-500">Status</p>
                         </div>
                       </div>
 
-                      {/* Book Lesson CTA */}
-                      <button
-                        onClick={() => navigate(`/teacher/${selectedConversation.teacher_id}/book`)}
-                        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
-                      >
-                        <Calendar className="w-5 h-5" />
-                        Book Your First Lesson
-                      </button>
-                      <p className="text-center text-xs text-gray-500 mt-3">
-                        Messages will be available once you have a booked lesson
-                      </p>
+                      {/* CTA - Different for teachers vs students */}
+                      {userRole === 'teacher' ? (
+                        <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                          <MessageCircle className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                          <p className="text-sm text-blue-800 font-medium">Waiting for student to book</p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            You'll be able to message once {selectedConversation.other_user_name} books a lesson
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => navigate(`/teacher/${selectedConversation.teacher_id}/book`)}
+                            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
+                          >
+                            <Calendar className="w-5 h-5" />
+                            Book Your First Lesson
+                          </button>
+                          <p className="text-center text-xs text-gray-500 mt-3">
+                            Messages will be available once you have a booked lesson
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -723,7 +780,7 @@ export default function Messages() {
                         <select
                           value={selectedLessonId || ''}
                           onChange={(e) => setSelectedLessonId(e.target.value)}
-                          className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                          className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         >
                           <option value="">Choose a lesson...</option>
                           {lessons.map((lesson) => (

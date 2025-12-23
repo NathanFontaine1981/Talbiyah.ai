@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { BookOpen, CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, TrendingUp, Brain, Volume2, Heart } from 'lucide-react';
+import { BookOpen, CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, TrendingUp } from 'lucide-react';
 import TalbiyahInsightsShowcase from '../components/TalbiyahInsightsShowcase';
 import { supabase } from '../lib/supabaseClient';
 
@@ -21,7 +21,7 @@ export default function CourseQuranExplanation() {
   const threeStepApproach = [
     {
       step: 1,
-      icon: Brain,
+      iconSrc: '/images/icons/icon-understanding.png',
       title: 'Understanding (Tafsir & Tadabbur)',
       description: 'Deep comprehension of meanings',
       details: [
@@ -34,7 +34,7 @@ export default function CourseQuranExplanation() {
     },
     {
       step: 2,
-      icon: Volume2,
+      iconSrc: '/images/icons/icon-fluency.png',
       title: 'Fluency (Tajweed & Recitation)',
       description: 'Beautiful recitation with proper pronunciation',
       details: [
@@ -47,7 +47,7 @@ export default function CourseQuranExplanation() {
     },
     {
       step: 3,
-      icon: Heart,
+      iconSrc: '/images/icons/icon-memorisation.png',
       title: 'Memorisation (Hifz)',
       description: 'Internalise after understanding',
       details: [
@@ -85,18 +85,18 @@ export default function CourseQuranExplanation() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <nav className="fixed top-0 w-full bg-slate-900/95 backdrop-blur-lg z-50 border-b border-slate-800 shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-lg z-50 border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
             <BookOpen className="w-7 h-7 text-emerald-400" />
-            <span className="text-2xl font-bold text-white">Talbiyah.ai</span>
+            <span className="text-2xl font-bold text-gray-900">Talbiyah.ai</span>
           </div>
 
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/courses-overview')}
-              className="flex items-center space-x-2 text-slate-300 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Courses</span>
@@ -104,7 +104,7 @@ export default function CourseQuranExplanation() {
 
             <button
               onClick={() => navigate('/courses/quran-progress')}
-              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-gray-900 rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
             >
               <TrendingUp className="w-4 h-4" />
               <span>View My Progress Tracker</span>
@@ -125,7 +125,7 @@ export default function CourseQuranExplanation() {
                     alt="Qur'an with Understanding"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4">
                     <div className="bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 rounded-lg px-6 py-3">
                       <p className="text-emerald-300 font-bold text-xl">Qur'an with Understanding</p>
@@ -142,40 +142,40 @@ export default function CourseQuranExplanation() {
                 <span className="text-emerald-300 font-semibold text-sm">Most Popular Course</span>
               </div>
 
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
                 Qur'an with Understanding
               </h1>
               <p className="text-2xl text-emerald-400 mb-6 leading-relaxed font-semibold">
                 Learn the Quran the way the Sahaba did - understand first, then master
               </p>
 
-              <p className="text-lg text-slate-300 mb-8 leading-relaxed">
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                 The companions of the Prophet ﷺ didn't just memorize the Quran - they understood it deeply before moving forward. They would learn 10 ayat, understand their meanings, reflect on them, and only then memorize and move to the next. This is the Talbiyah method.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
-                <div className="flex items-center space-x-2 px-4 py-2 bg-slate-800/50 rounded-lg border-2 border-slate-700 shadow-sm">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-50 rounded-lg border-2 border-gray-200 shadow-sm">
                   <Users className="w-5 h-5 text-emerald-400" />
-                  <span className="text-sm text-slate-200 font-medium">Expert Teachers with Ijazah</span>
+                  <span className="text-sm text-gray-700 font-medium">Expert Teachers with Ijazah</span>
                 </div>
-                <div className="flex items-center space-x-2 px-4 py-2 bg-slate-800/50 rounded-lg border-2 border-slate-700 shadow-sm">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-50 rounded-lg border-2 border-gray-200 shadow-sm">
                   <Play className="w-5 h-5 text-emerald-400" />
-                  <span className="text-sm text-slate-200 font-medium">Live 1-to-1 Sessions</span>
+                  <span className="text-sm text-gray-700 font-medium">Live 1-to-1 Sessions</span>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => navigate(user ? '/teachers' : '/signup', { state: user ? undefined : { autoRole: 'student' } })}
-                  className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-lg font-bold transition shadow-xl shadow-emerald-500/30 flex items-center justify-center space-x-2"
+                  className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-gray-900 rounded-xl text-lg font-bold transition shadow-xl shadow-emerald-500/30 flex items-center justify-center space-x-2"
                 >
-                  <span>{user ? 'Browse Teachers' : 'Start Free 30-Min Session'}</span>
+                  <span>{user ? 'Browse Teachers' : 'Start Free Assessment'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 {user && (
                   <button
                     onClick={() => navigate('/courses/quran-progress')}
-                    className="px-8 py-4 bg-slate-800 hover:bg-emerald-900/50 border-2 border-emerald-500/50 text-emerald-300 rounded-xl text-lg font-bold transition shadow-sm flex items-center justify-center space-x-2"
+                    className="px-8 py-4 bg-gray-100 hover:bg-emerald-900/50 border-2 border-emerald-500/50 text-emerald-300 rounded-xl text-lg font-bold transition shadow-sm flex items-center justify-center space-x-2"
                   >
                     <TrendingUp className="w-5 h-5" />
                     <span>My Progress</span>
@@ -184,7 +184,7 @@ export default function CourseQuranExplanation() {
                 {!user && (
                   <button
                     onClick={() => navigate('/teachers')}
-                    className="px-8 py-4 bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded-xl text-lg font-semibold transition shadow-sm"
+                    className="px-8 py-4 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 text-gray-900 rounded-xl text-lg font-semibold transition shadow-sm"
                   >
                     Browse Teachers
                   </button>
@@ -196,33 +196,32 @@ export default function CourseQuranExplanation() {
       </section>
 
       {/* 3-Step Approach Section */}
-      <section className="py-20 px-6 bg-slate-900">
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Our 3-Step Approach
             </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Following the Sunnah of the Sahaba: understand deeply, recite beautifully, memorize with meaning
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {threeStepApproach.map((step) => {
-              const Icon = step.icon;
               return (
                 <div key={step.step} className="relative">
                   {/* Step Number Badge */}
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg z-10">
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-gray-900 font-bold text-xl shadow-lg z-10">
                     {step.step}
                   </div>
 
-                  <div className="bg-slate-800/50 backdrop-blur-sm border-2 border-slate-700 rounded-2xl p-8 h-full hover:border-emerald-500/50 transition">
-                    <div className={`w-16 h-16 bg-gradient-to-br ${step.color} rounded-xl flex items-center justify-center mb-6 shadow-lg`}>
-                      <Icon className="w-8 h-8 text-white" />
+                  <div className="bg-gray-50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl p-8 h-full hover:border-emerald-500/50 transition">
+                    <div className="w-20 h-20 mb-6">
+                      <img src={step.iconSrc} alt={step.title} className="w-full h-full object-contain" />
                     </div>
 
-                    <h3 className="text-2xl font-bold text-white mb-3">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
                       {step.title}
                     </h3>
                     <p className="text-emerald-400 mb-6 font-medium">
@@ -233,7 +232,7 @@ export default function CourseQuranExplanation() {
                       {step.details.map((detail, idx) => (
                         <li key={idx} className="flex items-start space-x-3">
                           <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-slate-300 text-sm">{detail}</span>
+                          <span className="text-gray-600 text-sm">{detail}</span>
                         </li>
                       ))}
                     </ul>
@@ -249,8 +248,8 @@ export default function CourseQuranExplanation() {
                 <BookOpen className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white mb-3">Why This Order Matters</h3>
-                <p className="text-slate-300 leading-relaxed">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Why This Order Matters</h3>
+                <p className="text-gray-600 leading-relaxed">
                   When you understand the meaning first, recitation becomes purposeful and memorization becomes natural.
                   This was the way of the Prophet ﷺ and his companions. They didn't race to finish - they absorbed,
                   reflected, and implemented each verse in their lives. The result? A deep, lasting relationship with
@@ -262,11 +261,11 @@ export default function CourseQuranExplanation() {
         </div>
       </section>
 
-      <section className="py-12 px-6 bg-slate-800">
+      <section className="py-12 px-6 bg-gray-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-white mb-4">Experience Talbiyah Insights</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Experience Talbiyah Insights</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               After every session, receive comprehensive AI-generated study materials personalised to your learning
             </p>
           </div>
@@ -277,15 +276,15 @@ export default function CourseQuranExplanation() {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-slate-950">
+      <section className="py-16 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-slate-900 rounded-3xl p-10 border-2 border-slate-700 shadow-xl">
-            <h3 className="text-3xl font-bold text-white mb-8 text-center">What You'll Gain</h3>
+          <div className="bg-white rounded-3xl p-10 border-2 border-gray-200 shadow-xl">
+            <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">What You'll Gain</h3>
             <div className="grid md:grid-cols-2 gap-6">
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-start space-x-3 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                <div key={index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-200">{benefit}</span>
+                  <span className="text-gray-700">{benefit}</span>
                 </div>
               ))}
             </div>
@@ -293,25 +292,25 @@ export default function CourseQuranExplanation() {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-slate-900">
+      <section className="py-16 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">What Our Students Say</h2>
-            <p className="text-xl text-slate-300">Real experiences from our learning community</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Students Say</h2>
+            <p className="text-xl text-gray-600">Real experiences from our learning community</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl border-2 border-slate-700 shadow-lg hover:border-emerald-500/50 transition">
+              <div key={index} className="bg-gray-50 backdrop-blur-sm p-8 rounded-2xl border-2 border-gray-200 shadow-lg hover:border-emerald-500/50 transition">
                 <div className="flex items-center space-x-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
-                <p className="text-slate-200 mb-6 leading-relaxed">{testimonial.text}</p>
+                <p className="text-gray-700 mb-6 leading-relaxed">{testimonial.text}</p>
                 <div>
-                  <p className="font-semibold text-white">{testimonial.name}</p>
-                  <p className="text-sm text-slate-400">{testimonial.role}</p>
+                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                  <p className="text-sm text-gray-500">{testimonial.role}</p>
                 </div>
               </div>
             ))}
@@ -321,11 +320,11 @@ export default function CourseQuranExplanation() {
 
       <section className="py-20 px-6 bg-gradient-to-br from-emerald-600 to-teal-600">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Ready to Begin Your Journey?
           </h2>
           <p className="text-xl text-emerald-50 mb-8">
-            Start with a free 30-minute taster session. No credit card required.
+            Take your free diagnostic assessment. No credit card required.
           </p>
           <button
             onClick={() => navigate('/signup', { state: { autoRole: 'student' } })}

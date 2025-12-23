@@ -89,7 +89,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
               <input
                 type="text"
                 placeholder="e.g., Yusuf"
-                className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition bg-white"
+                className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
                 value={child.firstName}
                 onChange={e => updateChild(index, 'firstName', e.target.value)}
               />
@@ -102,7 +102,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
               </label>
               <input
                 type="date"
-                className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition bg-white"
+                className="w-full p-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
                 value={child.dateOfBirth}
                 onChange={e => updateChild(index, 'dateOfBirth', e.target.value)}
                 max={dateConstraints.max}
@@ -171,7 +171,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
                     key={goal.id}
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
                       child.learningGoals.includes(goal.id)
-                        ? 'bg-cyan-100 border-2 border-cyan-400'
+                        ? 'bg-cyan-100 border-2 border-emerald-400'
                         : 'bg-white border-2 border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -179,7 +179,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
                       type="checkbox"
                       checked={child.learningGoals.includes(goal.id)}
                       onChange={() => toggleGoal(index, goal.id)}
-                      className="w-5 h-5 text-cyan-500 rounded border-gray-300 focus:ring-cyan-500"
+                      className="w-5 h-5 text-emerald-500 rounded border-gray-300 focus:ring-emerald-500"
                     />
                     <span className="text-lg">{goal.icon}</span>
                     <span className={`font-medium ${
@@ -201,7 +201,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
         <button
           type="button"
           onClick={addChild}
-          className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all mb-6 flex items-center justify-center gap-2"
+          className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-emerald-400 hover:text-emerald-600 hover:bg-cyan-50 transition-all mb-6 flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Another Child
@@ -217,7 +217,7 @@ export default function ChildDetailsStep({ children, onChange, onBack, onNext }:
           <button
             onClick={onNext}
             disabled={!isValid}
-            className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/25"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
           >
             Continue →
           </button>

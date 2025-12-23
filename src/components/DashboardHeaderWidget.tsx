@@ -52,31 +52,31 @@ export default function DashboardHeaderWidget() {
   });
 
   return (
-    <div className="bg-gradient-to-r from-slate-800/90 via-slate-900/90 to-slate-800/90 border-b border-slate-700/50 backdrop-blur-sm">
+    <div className="bg-gradient-to-r from-gray-800/90 via-gray-900/90 to-gray-800/90 border-b border-gray-200 backdrop-blur-sm">
       <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
           <div className="lg:col-span-3 flex items-center space-x-4">
-            <div className="flex-1 bg-slate-800/50 rounded-xl px-4 py-3 border border-slate-700/50">
+            <div className="flex-1 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-cyan-400 font-medium mb-1">Next Prayer</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-1">Next Prayer</p>
                   <p className="text-lg font-bold text-white">{nextPrayer.name}</p>
                 </div>
                 <div className="text-right">
-                  <Clock className="w-4 h-4 text-slate-400 mb-1 ml-auto" />
-                  <p className="text-xl font-bold text-cyan-400">{nextPrayer.time}</p>
+                  <Clock className="w-4 h-4 text-gray-500 mb-1 ml-auto" />
+                  <p className="text-xl font-bold text-emerald-600">{nextPrayer.time}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-6 bg-slate-800/50 rounded-xl px-6 py-3 border border-slate-700/50">
+          <div className="lg:col-span-6 bg-gray-50 rounded-xl px-6 py-3 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <div className="flex space-x-2">
                 <button
                   onClick={() => { setCarouselType('names'); setCarouselIndex(0); }}
                   className={`px-2 py-1 text-xs font-medium rounded transition ${
-                    carouselType === 'names' ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+                    carouselType === 'names' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-600'
                   }`}
                 >
                   Names
@@ -84,7 +84,7 @@ export default function DashboardHeaderWidget() {
                 <button
                   onClick={() => { setCarouselType('hadiths'); setCarouselIndex(0); }}
                   className={`px-2 py-1 text-xs font-medium rounded transition ${
-                    carouselType === 'hadiths' ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+                    carouselType === 'hadiths' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-600'
                   }`}
                 >
                   Hadith
@@ -92,7 +92,7 @@ export default function DashboardHeaderWidget() {
                 <button
                   onClick={() => { setCarouselType('ayahs'); setCarouselIndex(0); }}
                   className={`px-2 py-1 text-xs font-medium rounded transition ${
-                    carouselType === 'ayahs' ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+                    carouselType === 'ayahs' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-600'
                   }`}
                 >
                   Ayah
@@ -100,10 +100,10 @@ export default function DashboardHeaderWidget() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <button onClick={handlePrev} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+                <button onClick={handlePrev} className="p-1 text-gray-500 hover:text-emerald-600 transition">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <button onClick={handleNext} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+                <button onClick={handleNext} className="p-1 text-gray-500 hover:text-emerald-600 transition">
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -112,35 +112,35 @@ export default function DashboardHeaderWidget() {
             <div className="min-h-[60px] flex items-center justify-center text-center">
               {carouselType === 'names' && 'arabic' in currentContent && 'transliteration' in currentContent && 'meaning' in currentContent && (
                 <div>
-                  <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                  <p className="text-2xl font-arabic text-emerald-600 mb-1">{currentContent.arabic}</p>
                   <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
-                  <p className="text-xs text-slate-400">{currentContent.meaning}</p>
+                  <p className="text-xs text-gray-500">{currentContent.meaning}</p>
                 </div>
               )}
 
               {carouselType === 'hadiths' && 'text' in currentContent && (
                 <div className="max-w-2xl">
-                  <p className="text-sm text-slate-200 italic">"{currentContent.text}"</p>
-                  <p className="text-xs text-cyan-400 mt-1">{currentContent.source}</p>
+                  <p className="text-sm text-gray-700 italic">"{currentContent.text}"</p>
+                  <p className="text-xs text-emerald-600 mt-1">{currentContent.source}</p>
                 </div>
               )}
 
               {carouselType === 'ayahs' && 'arabic' in currentContent && 'translation' in currentContent && (
                 <div>
-                  <p className="text-xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
-                  <p className="text-sm text-slate-200">{currentContent.translation}</p>
-                  <p className="text-xs text-cyan-400 mt-1">{currentContent.reference}</p>
+                  <p className="text-xl font-arabic text-emerald-600 mb-1">{currentContent.arabic}</p>
+                  <p className="text-sm text-gray-700">{currentContent.translation}</p>
+                  <p className="text-xs text-emerald-600 mt-1">{currentContent.reference}</p>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="lg:col-span-3 bg-slate-800/50 rounded-xl px-4 py-3 border border-slate-700/50">
+          <div className="lg:col-span-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
             <div className="flex items-center space-x-3">
-              <Calendar className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+              <Calendar className="w-5 h-5 text-emerald-600 flex-shrink-0" />
               <div className="text-sm">
                 <p className="text-white font-semibold">{gregorianDate}</p>
-                <p className="text-slate-400 text-xs">{islamicDate}</p>
+                <p className="text-gray-500 text-xs">{islamicDate}</p>
               </div>
             </div>
           </div>

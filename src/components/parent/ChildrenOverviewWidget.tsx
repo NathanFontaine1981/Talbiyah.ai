@@ -119,12 +119,12 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-48"></div>
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2].map(i => (
-              <div key={i} className="h-48 bg-slate-100 rounded-xl"></div>
+              <div key={i} className="h-48 bg-gray-100 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
   const totalUpcoming = children.reduce((sum, c) => sum + c.upcomingLessons, 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg mb-6">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg mb-6">
       {/* Header with Family Stats */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -151,8 +151,8 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
             <Users className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Family Overview</h3>
-            <p className="text-sm text-slate-500">{children.length} {children.length === 1 ? 'child' : 'children'} learning</p>
+            <h3 className="text-xl font-bold text-gray-900">Family Overview</h3>
+            <p className="text-sm text-gray-500">{children.length} {children.length === 1 ? 'child' : 'children'} learning</p>
           </div>
         </div>
       </div>
@@ -168,10 +168,10 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
         </div>
         <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-4 border border-cyan-200">
           <div className="flex items-center space-x-2 mb-2">
-            <Clock className="w-5 h-5 text-cyan-600" />
+            <Clock className="w-5 h-5 text-emerald-600" />
             <span className="text-sm font-medium text-cyan-800">Hours Learned</span>
           </div>
-          <p className="text-2xl font-bold text-cyan-600">{totalHours}</p>
+          <p className="text-2xl font-bold text-emerald-600">{totalHours}</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200">
           <div className="flex items-center space-x-2 mb-2">
@@ -195,7 +195,7 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
           <div
             key={child.id}
             onClick={() => onSelectChild?.(child.id)}
-            className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 hover:border-purple-300 hover:shadow-md transition cursor-pointer group"
+            className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 hover:border-purple-300 hover:shadow-md transition cursor-pointer group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
@@ -207,15 +207,15 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
                   {child.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-lg">{child.name}</h4>
-                  <p className="text-sm text-slate-500">
+                  <h4 className="font-bold text-gray-900 text-lg">{child.name}</h4>
+                  <p className="text-sm text-gray-500">
                     {child.age ? `Age ${child.age}` : ''}
                     {child.age && child.current_level ? ' • ' : ''}
                     Level {child.current_level || 1} ({getLevelTitle(child.current_level || 1)})
                   </p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-purple-500 transition" />
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-purple-500 transition" />
             </div>
 
             {/* Child Stats */}
@@ -225,8 +225,8 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
                   <Trophy className="w-4 h-4 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">XP</p>
-                  <p className="font-semibold text-slate-900">{(child.total_xp || 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">XP</p>
+                  <p className="font-semibold text-gray-900">{(child.total_xp || 0).toLocaleString()}</p>
                 </div>
               </div>
 
@@ -235,8 +235,8 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
                   <Flame className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Streak</p>
-                  <p className="font-semibold text-slate-900">{child.current_streak || 0} days</p>
+                  <p className="text-xs text-gray-500">Streak</p>
+                  <p className="font-semibold text-gray-900">{child.current_streak || 0} days</p>
                 </div>
               </div>
 
@@ -245,26 +245,26 @@ export default function ChildrenOverviewWidget({ parentId, onSelectChild }: Chil
                   <BookOpen className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Lessons</p>
-                  <p className="font-semibold text-slate-900">{child.completedLessons}</p>
+                  <p className="text-xs text-gray-500">Lessons</p>
+                  <p className="font-semibold text-gray-900">{child.completedLessons}</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-cyan-600" />
+                  <Clock className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Hours</p>
-                  <p className="font-semibold text-slate-900">{child.totalHours}h</p>
+                  <p className="text-xs text-gray-500">Hours</p>
+                  <p className="font-semibold text-gray-900">{child.totalHours}h</p>
                 </div>
               </div>
             </div>
 
             {/* Last Lesson / Upcoming */}
-            <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between text-sm">
-              <span className="text-slate-500">
-                Last lesson: <span className="text-slate-700 font-medium">{formatLastLesson(child.lastLessonDate)}</span>
+            <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between text-sm">
+              <span className="text-gray-500">
+                Last lesson: <span className="text-gray-700 font-medium">{formatLastLesson(child.lastLessonDate)}</span>
               </span>
               {child.upcomingLessons > 0 && (
                 <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">

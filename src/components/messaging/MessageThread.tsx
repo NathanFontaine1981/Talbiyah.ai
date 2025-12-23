@@ -92,7 +92,7 @@ export default function MessageThread({
             <div
               className={`max-w-[80%] rounded-lg p-3 ${
                 isSent
-                  ? 'bg-cyan-600 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : isStudent
                   ? 'bg-purple-100 text-purple-900'
                   : 'bg-green-100 text-green-900'

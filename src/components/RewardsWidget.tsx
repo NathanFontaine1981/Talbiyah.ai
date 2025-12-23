@@ -103,7 +103,7 @@ export default function RewardsWidget() {
   return (
     <div className="bg-gradient-to-br from-emerald-50 to-cyan-50 rounded-xl p-6 border border-emerald-200">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-xl flex items-center justify-center">
+        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
           <Gift className="w-5 h-5 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900">Rewards & Referrals</h3>
@@ -116,7 +116,7 @@ export default function RewardsWidget() {
             <span className="text-sm text-gray-600">Free Credits</span>
           </div>
           <div className="text-2xl font-bold text-emerald-600">
-            {stats.learningCredits.toFixed(1)} hrs
+            {Math.floor(stats.learningCredits)}
           </div>
         </div>
 
@@ -132,10 +132,10 @@ export default function RewardsWidget() {
 
         <div className="bg-white rounded-lg p-4 border border-cyan-200">
           <div className="flex items-center space-x-2 mb-2">
-            <Users className="w-4 h-4 text-cyan-600" />
+            <Users className="w-4 h-4 text-emerald-600" />
             <span className="text-sm text-gray-600">Referrals</span>
           </div>
-          <div className="text-2xl font-bold text-cyan-600">
+          <div className="text-2xl font-bold text-emerald-600">
             {stats.totalReferrals}
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function RewardsWidget() {
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Share this link with friends. For every 10 hours they complete, you earn 1 free hour!
+          Share this link with friends. For every 10 hours they complete, you earn 1 credit!
         </p>
       </div>
 
@@ -189,13 +189,13 @@ export default function RewardsWidget() {
                       {referral.learner_name}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {referral.hours_completed.toFixed(1)} hrs completed
+                      {Math.floor(referral.hours_completed)} hrs completed
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 mb-1">
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-cyan-600 transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
                       ></div>
                     </div>
@@ -204,7 +204,7 @@ export default function RewardsWidget() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {hoursToNextCredit.toFixed(1)} more hours to next credit
+                    {Math.ceil(hoursToNextCredit)} more hours to next credit
                   </p>
                 </div>
               );

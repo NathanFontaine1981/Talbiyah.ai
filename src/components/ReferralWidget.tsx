@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Copy, Check, Gift, Users, Share2, DollarSign } from 'lucide-react';
+import { Copy, Check, Gift, Users, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -112,21 +112,57 @@ export default function ReferralWidget() {
 
   async function copyReferralLink() {
     const url = getReferralUrl();
+    if (!url) {
+      console.error('No referral URL to copy');
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(url);
+      // Try the modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
+      // Last resort fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error('Fallback copy failed:', e);
+      }
+      document.body.removeChild(textArea);
     }
   }
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-700/50 rounded w-32"></div>
-          <div className="h-20 bg-slate-700/50 rounded"></div>
+          <div className="h-6 bg-gray-100 rounded w-32"></div>
+          <div className="h-20 bg-gray-100 rounded"></div>
         </div>
       </div>
     );
@@ -138,59 +174,59 @@ export default function ReferralWidget() {
   if (!stats) return null;
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-xl">
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
             <span className="text-3xl">{stats.tierIcon}</span>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">Referral Rewards</h3>
-            <p className="text-xs text-emerald-300 uppercase font-semibold">{stats.tier} Tier</p>
+            <h3 className="text-xl font-bold text-gray-900">Referral Rewards</h3>
+            <p className="text-xs text-emerald-600 uppercase font-semibold">{stats.tier} Tier</p>
           </div>
         </div>
       </div>
 
       {/* Balance Display */}
-      <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
+      <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-slate-400">Available Balance</span>
-          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <span className="text-sm text-gray-600">Available Credits</span>
+          <Gift className="w-4 h-4 text-emerald-600" />
         </div>
-        <p className="text-3xl font-bold text-white mb-1">£{stats.availableBalance.toFixed(2)}</p>
-        <p className="text-sm text-emerald-400">{stats.availableHours.toFixed(1)} free lessons</p>
+        <p className="text-3xl font-bold text-emerald-600 mb-1">{Math.floor(stats.availableHours)}</p>
+        <p className="text-sm text-gray-600">free credits</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/50">
+        <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
           <div className="flex items-center space-x-2 mb-2">
-            <Users className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs text-slate-400">Referrals</span>
+            <Users className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs text-gray-500">Referrals</span>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.totalReferrals}</p>
-          <p className="text-xs text-emerald-400">{stats.activeReferrals} active</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalReferrals}</p>
+          <p className="text-xs text-emerald-600">{stats.activeReferrals} active</p>
         </div>
 
-        <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/50">
+        <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
           <div className="flex items-center space-x-2 mb-2">
-            <Gift className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs text-slate-400">Referred Hours</span>
+            <Gift className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs text-gray-500">Credits Earned</span>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.referredHours.toFixed(1)}</p>
-          <p className="text-xs text-slate-400">total hours learned</p>
+          <p className="text-2xl font-bold text-gray-900">{Math.floor(stats.referredHours / 10)}</p>
+          <p className="text-xs text-gray-500">from referrals</p>
         </div>
       </div>
 
       {/* Quick Link */}
       <div className="mb-6">
-        <label className="text-xs text-slate-400 mb-2 block">Your Link</label>
+        <label className="text-xs text-gray-600 mb-2 block font-medium">Your Referral Link</label>
         <div className="flex items-center space-x-2">
           <input
             type="text"
             value={getReferralUrl()}
             readOnly
-            className="flex-1 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           />
           <button
             onClick={copyReferralLink}
@@ -202,35 +238,28 @@ export default function ReferralWidget() {
       </div>
 
       {/* How it Works */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mb-4">
-        <h4 className="text-sm font-bold text-emerald-300 mb-3 flex items-center space-x-2">
+      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-4">
+        <h4 className="text-sm font-bold text-emerald-600 mb-3 flex items-center space-x-2">
           <Share2 className="w-4 h-4" />
           <span>How It Works</span>
         </h4>
         <div className="space-y-2 text-sm">
-          <p className="text-white font-semibold leading-relaxed">
-            • Get <span className="text-emerald-400">£15 discount</span> for every 10 hours your referrals complete
+          <p className="text-gray-700 font-medium leading-relaxed">
+            • <span className="text-emerald-600 font-bold">1 Credit</span> when they complete their first lesson
           </p>
-          <p className="text-slate-300 text-xs leading-relaxed">
-            Your balance automatically applies at checkout - no codes needed!
+          <p className="text-gray-700 font-medium leading-relaxed">
+            • <span className="text-emerald-600 font-bold">1 Credit</span> for every 10 hours they learn
           </p>
-          <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-lg p-3 border border-emerald-500/30 mt-3">
-            <p className="text-emerald-200 font-semibold text-xs">
-              📊 Track: {stats.referredHours.toFixed(1)} / {Math.ceil(stats.referredHours / 10) * 10} hours to next reward
-            </p>
-          </div>
-          <div className="bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 rounded-lg p-3 border border-cyan-500/30 mt-2">
-            <p className="text-cyan-200 font-semibold text-xs text-center">
-              🎁 Share your link and start earning!
-            </p>
-          </div>
+          <p className="text-gray-500 text-xs leading-relaxed mt-2">
+            1 Credit = 1 Free Lesson Hour. Credits never expire!
+          </p>
         </div>
       </div>
 
       {/* View Full Dashboard */}
       <button
         onClick={() => navigate('/my-referrals')}
-        className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+        className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-green-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
       >
         <span>View Full Dashboard</span>
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

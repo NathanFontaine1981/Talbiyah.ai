@@ -118,19 +118,19 @@ export default function BuyCredits() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 py-16 px-6">
+    <div className="min-h-screen bg-gray-50 py-16 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Buy Lesson Credits</h1>
-          <p className="text-xl text-slate-300 mb-6">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Buy Lesson Credits</h1>
+          <p className="text-xl text-gray-600 mb-6">
             Purchase credits and use them to book lessons anytime
           </p>
 
           {/* Current Balance */}
-          <div className="inline-block bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl px-6 py-4">
-            <p className="text-sm text-slate-400 mb-1">Your Current Balance</p>
-            <p className="text-3xl font-bold text-cyan-400">
+          <div className="inline-block bg-emerald-50 border border-emerald-200 rounded-xl px-6 py-4">
+            <p className="text-sm text-gray-500 mb-1">Your Current Balance</p>
+            <p className="text-3xl font-bold text-emerald-600">
               {currentCredits} {currentCredits === 1 ? 'Credit' : 'Credits'}
             </p>
           </div>
@@ -138,8 +138,8 @@ export default function BuyCredits() {
 
         {/* Cancellation Notice */}
         {cancelled && (
-          <div className="mb-8 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center">
-            <p className="text-yellow-400">
+          <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+            <p className="text-amber-700">
               Your payment was cancelled. No charges were made.
             </p>
           </div>
@@ -147,9 +147,9 @@ export default function BuyCredits() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-8 bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center flex items-center justify-center space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <p className="text-red-400">{error}</p>
+          <div className="mb-8 bg-red-50 border border-red-200 rounded-xl p-4 text-center flex items-center justify-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-red-600">{error}</p>
           </div>
         )}
 
@@ -158,39 +158,39 @@ export default function BuyCredits() {
           {creditPacks.map((pack) => (
             <div
               key={pack.type}
-              className={`relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border ${
+              className={`relative bg-white rounded-2xl p-8 border shadow-sm ${
                 pack.popular
-                  ? 'border-cyan-500/50 shadow-lg shadow-cyan-500/20'
-                  : 'border-slate-700/50'
-              } transition hover:border-cyan-500/30`}
+                  ? 'border-emerald-500 shadow-lg ring-2 ring-emerald-500/20'
+                  : 'border-gray-200'
+              } transition hover:border-emerald-300 hover:shadow-md`}
             >
               {/* Popular Badge */}
               {pack.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold px-4 py-1 rounded-full">
+                  <span className="bg-emerald-500 text-white text-xs font-bold px-4 py-1 rounded-full">
                     MOST POPULAR
                   </span>
                 </div>
               )}
 
               {/* Pack Name */}
-              <h3 className="text-2xl font-bold text-white mb-2">{pack.name}</h3>
-              <p className="text-slate-400 text-sm mb-6">{pack.description}</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{pack.name}</h3>
+              <p className="text-gray-500 text-sm mb-6">{pack.description}</p>
 
               {/* Credits */}
               <div className="mb-6">
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-5xl font-bold text-white">{pack.credits}</span>
-                  <span className="text-slate-400">Credits</span>
+                  <span className="text-5xl font-bold text-gray-900">{pack.credits}</span>
+                  <span className="text-gray-500">Credits</span>
                 </div>
               </div>
 
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline space-x-2 mb-1">
-                  <span className="text-3xl font-bold text-cyan-400">£{pack.price}</span>
+                  <span className="text-3xl font-bold text-emerald-600">£{pack.price}</span>
                 </div>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-gray-500">
                   £{pack.pricePerLesson} per lesson
                 </p>
               </div>
@@ -198,20 +198,20 @@ export default function BuyCredits() {
               {/* Features */}
               <div className="space-y-3 mb-8">
                 <div className="flex items-start space-x-2">
-                  <Check className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">Book anytime</span>
+                  <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">Book anytime</span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <Check className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">Choose any teacher</span>
+                  <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">Choose any teacher</span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <Check className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">All subjects included</span>
+                  <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">All subjects included</span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <Check className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">7-day refund policy</span>
+                  <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">7-day refund policy</span>
                 </div>
               </div>
 
@@ -219,10 +219,10 @@ export default function BuyCredits() {
               <button
                 onClick={() => handlePurchase(pack.type)}
                 disabled={loading}
-                className={`w-full py-4 rounded-xl font-semibold transition flex items-center justify-center space-x-2 ${
+                className={`w-full py-4 rounded-full font-semibold transition flex items-center justify-center space-x-2 ${
                   pack.popular
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                    : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900'
                 } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {loading && selectedPack === pack.type ? (
@@ -242,13 +242,13 @@ export default function BuyCredits() {
         </div>
 
         {/* Info Section */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
-          <h3 className="text-xl font-bold text-white mb-4">How Credits Work</h3>
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">How Credits Work</h3>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-cyan-400 font-semibold mb-2">Purchase & Use</h4>
-              <ul className="space-y-2 text-sm text-slate-300">
+              <h4 className="text-emerald-600 font-semibold mb-2">Purchase & Use</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>• 1 credit = 60-minute lesson, 0.5 credits = 30-minute lesson</li>
                 <li>• Credits never expire</li>
                 <li>• Use credits for any subject or teacher</li>
@@ -257,8 +257,8 @@ export default function BuyCredits() {
             </div>
 
             <div>
-              <h4 className="text-cyan-400 font-semibold mb-2">Refund Policy</h4>
-              <ul className="space-y-2 text-sm text-slate-300">
+              <h4 className="text-emerald-600 font-semibold mb-2">Refund Policy</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>• 7-day refund for unused credits</li>
                 <li>• Partial refunds for unused portions</li>
                 <li>• Contact support for refund requests</li>
@@ -272,7 +272,7 @@ export default function BuyCredits() {
         <div className="mt-8 text-center">
           <button
             onClick={() => navigate('/dashboard')}
-            className="text-slate-400 hover:text-white transition"
+            className="text-gray-500 hover:text-emerald-600 transition"
           >
             ← Back to Dashboard
           </button>

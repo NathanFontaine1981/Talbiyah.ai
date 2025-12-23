@@ -13,7 +13,7 @@ export default function TalbiyahBot() {
     >
       <MessageCircle className="w-7 h-7" />
       <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"></span>
-      <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+      <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-white text-gray-900 text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
         Islamic Sources
       </div>
     </button>

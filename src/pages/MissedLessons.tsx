@@ -114,7 +114,7 @@ export default function MissedLessons() {
         );
       case 'cancelled_by_student':
         return (
-          <span className={`px-3 py-1 ${isLateCancellation ? 'bg-orange-500/20 text-orange-400' : 'bg-slate-600/20 text-slate-400'} text-xs font-bold rounded-full flex items-center space-x-1`}>
+          <span className={`px-3 py-1 ${isLateCancellation ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-600/20 text-gray-500'} text-xs font-bold rounded-full flex items-center space-x-1`}>
             <XCircle className="w-3 h-3" />
             <span>{isLateCancellation ? 'LATE CANCELLATION' : 'CANCELLED'}</span>
           </span>
@@ -201,9 +201,9 @@ export default function MissedLessons() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading your missed lessons...</p>
         </div>
       </div>
@@ -211,13 +211,13 @@ export default function MissedLessons() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition mb-6"
+            className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>
@@ -225,18 +225,18 @@ export default function MissedLessons() {
 
           <div className="mb-6">
             <h1 className="text-4xl font-bold text-white mb-2">Missed & Cancelled Lessons</h1>
-            <p className="text-slate-400 text-lg">Track your missed lessons and cancellations</p>
+            <p className="text-gray-500 text-lg">Track your missed lessons and cancellations</p>
           </div>
 
           {/* Cancellation Policy Info */}
-          <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl p-6">
+          <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6">
             <div className="flex items-start space-x-3">
-              <Info className="w-6 h-6 text-cyan-400 flex-shrink-0 mt-1" />
+              <Info className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-white font-bold text-lg mb-2">Cancellation Policy</h3>
-                <ul className="space-y-2 text-slate-300 text-sm">
+                <ul className="space-y-2 text-gray-600 text-sm">
                   <li className="flex items-start space-x-2">
-                    <span className="text-cyan-400 mt-1">•</span>
+                    <span className="text-emerald-600 mt-1">•</span>
                     <span>Cancel <span className="font-semibold text-white">more than 30 minutes</span> before your lesson to avoid charges</span>
                   </li>
                   <li className="flex items-start space-x-2">
@@ -259,17 +259,17 @@ export default function MissedLessons() {
 
         {/* Lessons List */}
         {lessons.length === 0 ? (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-12 text-center border border-slate-700">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Calendar className="w-10 h-10 text-slate-600" />
+          <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-12 text-center border border-gray-200">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-10 h-10 text-gray-600" />
             </div>
-            <p className="text-xl text-slate-300 mb-2">No missed or cancelled lessons</p>
-            <p className="text-slate-500 mb-8">
+            <p className="text-xl text-gray-600 mb-2">No missed or cancelled lessons</p>
+            <p className="text-gray-500 mb-8">
               Keep attending your lessons to maintain a perfect record!
             </p>
             <button
               onClick={() => navigate('/my-classes')}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
+              className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-emerald-500/20"
             >
               View My Lessons
             </button>
@@ -282,11 +282,11 @@ export default function MissedLessons() {
               return (
                 <div
                   key={lesson.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-red-500/30 transition"
+                  className="bg-gray-50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 hover:border-red-500/30 transition"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
-                      <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
+                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
                         {lesson.teacher_avatar ? (
                           <img
                             src={lesson.teacher_avatar}
@@ -294,7 +294,7 @@ export default function MissedLessons() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-8 h-8 text-slate-400" />
+                          <User className="w-8 h-8 text-gray-500" />
                         )}
                       </div>
 
@@ -303,10 +303,10 @@ export default function MissedLessons() {
                           <h4 className="text-xl font-bold text-white">{lesson.subject_name}</h4>
                           {getStatusBadge(lesson.status, lesson.is_late_cancellation)}
                         </div>
-                        <p className="text-sm text-slate-400">with {lesson.teacher_name}</p>
+                        <p className="text-sm text-gray-500">with {lesson.teacher_name}</p>
 
                         {lesson.cancelled_at && (
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-1">
                             Cancelled on {format(parseISO(lesson.cancelled_at), 'MMM d, yyyy \'at\' h:mm a')}
                           </p>
                         )}
@@ -314,20 +314,20 @@ export default function MissedLessons() {
                     </div>
 
                     <div className="text-right">
-                      <div className="flex items-center space-x-2 text-slate-300 mb-1">
+                      <div className="flex items-center space-x-2 text-gray-600 mb-1">
                         <Calendar className="w-4 h-4" />
                         <span className="text-sm font-medium">
                           {format(lessonDate, 'MMM d, yyyy')}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-2 text-slate-400 mb-1">
+                      <div className="flex items-center space-x-2 text-gray-500 mb-1">
                         <Clock className="w-4 h-4" />
                         <span className="text-sm">
                           {format(lessonDate, 'h:mm a')}
                         </span>
                       </div>
                       <div className="flex items-center justify-end space-x-1">
-                        <span className="px-2 py-1 bg-slate-700/50 text-slate-300 text-sm font-semibold rounded-lg border border-slate-600">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm font-semibold rounded-lg border border-gray-300">
                           {lesson.duration_minutes} min
                         </span>
                       </div>
@@ -344,14 +344,14 @@ export default function MissedLessons() {
 
         {/* Help Section */}
         {lessons.length > 0 && (
-          <div className="mt-8 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+          <div className="mt-8 bg-white border border-gray-200 rounded-xl p-6">
             <h3 className="text-white font-bold text-lg mb-3">Need Help?</h3>
-            <p className="text-slate-400 text-sm mb-4">
+            <p className="text-gray-500 text-sm mb-4">
               If you believe there was an error with any of these charges, or if you have questions about the cancellation policy, please contact our support team.
             </p>
             <button
               onClick={() => navigate('/account/settings')}
-              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition"
+              className="px-6 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
             >
               Contact Support
             </button>

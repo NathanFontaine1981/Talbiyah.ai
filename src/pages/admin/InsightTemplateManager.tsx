@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Star, StarOff, Eye, EyeOff, Copy } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 
 interface InsightTemplate {
   id?: string;
@@ -121,7 +122,7 @@ export default function InsightTemplateManager() {
       await fetchTemplates();
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert('Failed to save: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to save: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -152,7 +153,7 @@ export default function InsightTemplateManager() {
       .insert(newTemplate);
 
     if (error) {
-      alert('Failed to duplicate: ' + error.message);
+      toast.error('Failed to duplicate: ' + error.message);
     } else {
       await fetchTemplates();
     }
@@ -167,7 +168,7 @@ export default function InsightTemplateManager() {
       .eq('id', id);
 
     if (error) {
-      alert('Failed to delete: ' + error.message);
+      toast.error('Failed to delete: ' + error.message);
     } else {
       await fetchTemplates();
     }
@@ -188,7 +189,7 @@ export default function InsightTemplateManager() {
       .eq('id', template.id);
 
     if (error) {
-      alert('Failed to update: ' + error.message);
+      toast.error('Failed to update: ' + error.message);
     } else {
       await fetchTemplates();
     }
@@ -213,7 +214,7 @@ export default function InsightTemplateManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -223,8 +224,8 @@ export default function InsightTemplateManager() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">AI Insight Templates</h1>
-          <p className="text-slate-400">Manage AI prompts for generating lesson insights</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Insight Templates</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage AI prompts for generating lesson insights</p>
         </div>
         <button
           onClick={() => {
@@ -232,7 +233,7 @@ export default function InsightTemplateManager() {
             setEditingId(null);
             setForm(DEFAULT_TEMPLATE);
           }}
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center gap-2"
+          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Create Template
@@ -241,9 +242,9 @@ export default function InsightTemplateManager() {
 
       {/* Creation/Edit Form */}
       {isCreating && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               {editingId ? 'Edit Template' : 'Create New Template'}
             </h2>
             <button
@@ -252,7 +253,7 @@ export default function InsightTemplateManager() {
                 setEditingId(null);
                 setForm(DEFAULT_TEMPLATE);
               }}
-              className="text-slate-400 hover:text-white"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               <X className="w-6 h-6" />
             </button>
@@ -262,11 +263,11 @@ export default function InsightTemplateManager() {
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Display Name *</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Display Name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   placeholder="e.g., Quran Recitation & Tajweed"
                   value={form.display_name}
                   onChange={e => setForm({
@@ -277,10 +278,10 @@ export default function InsightTemplateManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Identifier (slug)</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Identifier (slug)</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-400"
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-400"
                   placeholder="auto-generated"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
@@ -290,9 +291,9 @@ export default function InsightTemplateManager() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Subject Category *</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Subject Category *</label>
                 <select
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   value={form.subject_category}
                   onChange={e => setForm({ ...form, subject_category: e.target.value })}
                 >
@@ -302,10 +303,10 @@ export default function InsightTemplateManager() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   placeholder="Brief description of when to use this template"
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
@@ -315,16 +316,16 @@ export default function InsightTemplateManager() {
 
             {/* AI Prompt */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">AI System Prompt *</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">AI System Prompt *</label>
               <textarea
                 required
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 font-mono text-sm"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono text-sm"
                 rows={12}
                 placeholder="Enter the AI instructions for generating insights..."
                 value={form.system_prompt}
                 onChange={e => setForm({ ...form, system_prompt: e.target.value })}
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 This prompt tells the AI how to process the lesson transcript and what sections to generate.
               </p>
             </div>
@@ -334,60 +335,60 @@ export default function InsightTemplateManager() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                  className="w-5 h-5 rounded bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-emerald-500 focus:ring-emerald-500"
                   checked={form.include_vocabulary}
                   onChange={e => setForm({ ...form, include_vocabulary: e.target.checked })}
                 />
-                <span className="text-white text-sm">Include Vocabulary</span>
+                <span className="text-gray-900 dark:text-white text-sm">Include Vocabulary</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                  className="w-5 h-5 rounded bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-emerald-500 focus:ring-emerald-500"
                   checked={form.include_quiz}
                   onChange={e => setForm({ ...form, include_quiz: e.target.checked })}
                 />
-                <span className="text-white text-sm">Include Quiz</span>
+                <span className="text-gray-900 dark:text-white text-sm">Include Quiz</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                  className="w-5 h-5 rounded bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-emerald-500 focus:ring-emerald-500"
                   checked={form.include_homework}
                   onChange={e => setForm({ ...form, include_homework: e.target.checked })}
                 />
-                <span className="text-white text-sm">Include Homework</span>
+                <span className="text-gray-900 dark:text-white text-sm">Include Homework</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                  className="w-5 h-5 rounded bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-emerald-500 focus:ring-emerald-500"
                   checked={form.is_default}
                   onChange={e => setForm({ ...form, is_default: e.target.checked })}
                 />
-                <span className="text-white text-sm">Set as Default</span>
+                <span className="text-gray-900 dark:text-white text-sm">Set as Default</span>
               </label>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Vocabulary Limit</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Vocabulary Limit</label>
                 <input
                   type="number"
                   min="5"
                   max="50"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   value={form.vocabulary_limit}
                   onChange={e => setForm({ ...form, vocabulary_limit: parseInt(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Quiz Questions</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Quiz Questions</label>
                 <input
                   type="number"
                   min="3"
                   max="20"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   value={form.quiz_questions}
                   onChange={e => setForm({ ...form, quiz_questions: parseInt(e.target.value) })}
                 />
@@ -399,7 +400,7 @@ export default function InsightTemplateManager() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg font-semibold flex items-center gap-2"
+                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg font-semibold flex items-center gap-2"
               >
                 <Save className="w-5 h-5" />
                 {saving ? 'Saving...' : (editingId ? 'Update Template' : 'Create Template')}
@@ -411,7 +412,7 @@ export default function InsightTemplateManager() {
                   setEditingId(null);
                   setForm(DEFAULT_TEMPLATE);
                 }}
-                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg"
               >
                 Cancel
               </button>
@@ -423,30 +424,30 @@ export default function InsightTemplateManager() {
       {/* Templates by Category */}
       {Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
         <div key={category} className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="text-2xl">{getCategoryIcon(category)}</span>
             {getCategoryLabel(category)}
-            <span className="text-slate-400 text-sm font-normal">({categoryTemplates.length} templates)</span>
+            <span className="text-gray-600 dark:text-gray-400 text-sm font-normal">({categoryTemplates.length} templates)</span>
           </h2>
 
           <div className="grid gap-4">
             {categoryTemplates.map(template => (
               <div
                 key={template.id}
-                className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-gray-300 dark:hover:border-gray-600 transition"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-medium text-white">{template.display_name}</h3>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{template.display_name}</h3>
                       {template.is_default && (
                         <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
                           Default
                         </span>
                       )}
                     </div>
-                    <p className="text-slate-400 text-sm mb-2">{template.description}</p>
-                    <div className="flex gap-4 text-xs text-slate-500">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{template.description}</p>
+                    <div className="flex gap-4 text-xs text-gray-600 dark:text-gray-400">
                       <span>ID: {template.name}</span>
                       {template.include_vocabulary && <span>📝 Vocabulary: {template.vocabulary_limit}</span>}
                       {template.include_quiz && <span>❓ Quiz: {template.quiz_questions}q</span>}
@@ -457,7 +458,7 @@ export default function InsightTemplateManager() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowPrompt(showPrompt === template.id ? null : template.id!)}
-                      className="p-2 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-400 rounded transition"
+                      className="p-2 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-300/20 text-gray-500 rounded transition"
                       title={showPrompt === template.id ? 'Hide Prompt' : 'View Prompt'}
                     >
                       {showPrompt === template.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -466,7 +467,7 @@ export default function InsightTemplateManager() {
                       onClick={() => toggleDefault(template)}
                       className={`p-2 ${template.is_default
                         ? 'bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/20 text-yellow-400'
-                        : 'bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-400'
+                        : 'bg-gray-500/10 hover:bg-gray-500/20 border-gray-300/20 text-gray-500'
                         } border rounded transition`}
                       title={template.is_default ? 'Remove Default' : 'Set as Default'}
                     >
@@ -481,7 +482,7 @@ export default function InsightTemplateManager() {
                     </button>
                     <button
                       onClick={() => duplicateTemplate(template)}
-                      className="p-2 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-400 rounded transition"
+                      className="p-2 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-300/20 text-gray-500 rounded transition"
                       title="Duplicate"
                     >
                       <Copy className="w-4 h-4" />
@@ -498,9 +499,9 @@ export default function InsightTemplateManager() {
 
                 {/* Expandable Prompt View */}
                 {showPrompt === template.id && (
-                  <div className="mt-4 p-4 bg-slate-900/50 border border-slate-700 rounded-lg">
-                    <h4 className="text-sm font-medium text-slate-300 mb-2">AI System Prompt:</h4>
-                    <pre className="text-sm text-slate-400 whitespace-pre-wrap font-mono overflow-x-auto">
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">AI System Prompt:</h4>
+                    <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono overflow-x-auto">
                       {template.system_prompt}
                     </pre>
                   </div>
@@ -512,9 +513,9 @@ export default function InsightTemplateManager() {
       ))}
 
       {templates.length === 0 && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-          <p className="text-slate-400 text-lg mb-2">No insight templates found</p>
-          <p className="text-slate-500 text-sm">Click "Create Template" to add your first AI insight template.</p>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+          <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No insight templates found</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Click "Create Template" to add your first AI insight template.</p>
         </div>
       )}
     </div>

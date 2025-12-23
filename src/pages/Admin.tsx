@@ -84,7 +84,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex items-center space-x-4 mb-12">
           <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -103,32 +103,32 @@ export default function Admin() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-4" />
-              <p className="text-slate-400">Loading applications...</p>
+              <p className="text-gray-500">Loading applications...</p>
             </div>
           </div>
         ) : applications.length === 0 ? (
-          <div className="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700/50 p-12 text-center">
-            <p className="text-slate-400 text-lg">No pending applications at this time.</p>
+          <div className="bg-gray-50 backdrop-blur rounded-2xl border border-gray-200 p-12 text-center">
+            <p className="text-gray-500 text-lg">No pending applications at this time.</p>
           </div>
         ) : (
-          <div className="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div className="bg-gray-50 backdrop-blur rounded-2xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Bio</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Hourly Rate</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bio</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Hourly Rate</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700">
+                <tbody className="divide-y divide-gray-700">
                   {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-700/30 transition">
-                      <td className="px-6 py-4 text-slate-300 max-w-md">
+                    <tr key={app.id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-gray-600 max-w-md">
                         <p className="line-clamp-2">{app.bio}</p>
                       </td>
-                      <td className="px-6 py-4 text-slate-300">
+                      <td className="px-6 py-4 text-gray-600">
                         ${app.hourly_rate}/hr
                       </td>
                       <td className="px-6 py-4">

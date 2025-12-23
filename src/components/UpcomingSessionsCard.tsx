@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
@@ -261,11 +262,11 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-700 rounded w-48"></div>
-          <div className="h-24 bg-slate-700 rounded"></div>
-          <div className="h-24 bg-slate-700 rounded"></div>
+          <div className="h-8 bg-gray-100 rounded w-48"></div>
+          <div className="h-24 bg-gray-100 rounded"></div>
+          <div className="h-24 bg-gray-100 rounded"></div>
         </div>
       </div>
     );
@@ -273,20 +274,20 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
   if (lessons.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-        <h3 className="text-2xl font-bold text-white mb-6">My Lessons</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">My Lessons</h3>
 
         <div className="text-center py-12">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Calendar className="w-10 h-10 text-slate-600" />
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-10 h-10 text-gray-600" />
           </div>
-          <p className="text-xl text-slate-300 mb-2">You don't have any sessions scheduled yet.</p>
-          <p className="text-slate-500 mb-8">Start your learning journey by booking your first session</p>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">You don't have any sessions scheduled yet.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">Start your learning journey by booking your first session</p>
 
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => navigate('/subjects')}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20 flex items-center space-x-2"
+              className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-blue-600 hover:to-blue-600 text-gray-900 font-semibold rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center space-x-2"
             >
               <BookOpen className="w-5 h-5" />
               <span>Book a Session</span>
@@ -294,7 +295,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
             <button
               onClick={() => loadUpcomingSessions(true)}
-              className="px-6 py-4 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition flex items-center space-x-2"
+              className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 font-medium rounded-xl transition flex items-center space-x-2"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
@@ -306,20 +307,20 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-white rounded-2xl p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white">My Lessons</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">My Lessons</h3>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => navigate('/my-classes')}
-            className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg font-semibold transition flex items-center space-x-2 border border-cyan-500/30"
+            className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 rounded-lg font-semibold transition flex items-center space-x-2 border border-emerald-500/30"
           >
             <span>View All</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => loadUpcomingSessions(true)}
-            className="p-2 text-slate-400 hover:text-cyan-400 transition hover:rotate-180 duration-500"
+            className="p-2 text-gray-500 hover:text-emerald-600 transition hover:rotate-180 duration-500"
             title="Refresh lessons"
           >
             <RefreshCw className="w-5 h-5" />
@@ -338,7 +339,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
           const handleJoin = () => {
             if (!lesson['100ms_room_id']) {
-              alert('Session room is not ready yet. Please contact support if this issue persists.');
+              toast.error('Session room is not ready yet. Please contact support if this issue persists.');
               return;
             }
             navigate(`/lesson/${lesson.id}`);
@@ -355,11 +356,11 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           return (
             <div
               key={lesson.id}
-              className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/30 transition group"
+              className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-emerald-500/30 transition group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
                     {lesson.teacher_avatar ? (
                       <img
                         src={lesson.teacher_avatar}
@@ -367,15 +368,15 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-6 h-6 text-slate-400" />
+                      <User className="w-6 h-6 text-gray-500" />
                     )}
                   </div>
 
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
-                      <h4 className="text-lg font-semibold text-white">{lesson.subject_name}</h4>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{lesson.subject_name}</h4>
                       {isToday && (
-                        <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full">
+                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 text-xs font-bold rounded-full">
                           TODAY
                         </span>
                       )}
@@ -403,8 +404,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-400">
-                      {!learnerId && <span className="font-semibold text-cyan-400">{lesson.learner_name}'s class</span>}{!learnerId && ' - '}with {lesson.teacher_name}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {!learnerId && <span className="font-semibold text-emerald-600">{lesson.learner_name}'s class</span>}{!learnerId && ' - '}with {lesson.teacher_name}
                     </p>
                     {lesson.teacher_acknowledgment_message && (
                       <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
@@ -418,25 +419,25 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
                 <div className="flex items-center space-x-6">
                   <div className="text-right">
-                    <div className="flex items-center space-x-2 text-slate-300 mb-1">
+                    <div className="flex items-center space-x-2 text-gray-600 mb-1">
                       <Calendar className="w-4 h-4" />
                       <span className="text-sm font-medium">
                         {format(lessonDate, 'MMM d, yyyy')}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-2 text-cyan-400 mb-1">
+                    <div className="flex items-center space-x-2 text-emerald-600 mb-1">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-semibold">
                         {format(lessonDate, 'h:mm a')}
                       </span>
                     </div>
                     <div className="flex items-center justify-end space-x-1 mb-1">
-                      <span className="px-2 py-1 bg-cyan-500/10 text-cyan-300 text-sm font-semibold rounded-lg border border-cyan-500/20">
+                      <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 text-sm font-semibold rounded-lg border border-emerald-500/20">
                         {lesson.duration_minutes} min
                       </span>
                     </div>
                     {!canJoin && minutesUntilStart > 360 && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-gray-500">
                         Opens 6 hours before
                       </p>
                     )}
@@ -446,12 +447,12 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     {lesson.unread_messages > 0 && (
                       <button
                         onClick={() => viewMessage(lesson.id)}
-                        className="relative px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition flex items-center space-x-2 animate-pulse"
+                        className="relative px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-medium transition flex items-center space-x-2 animate-pulse"
                       >
                         <MessageCircle className="w-4 h-4" />
                         <span>Message from Teacher</span>
                         {lesson.unread_messages > 1 && (
-                          <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center">
+                          <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-gray-900 rounded-full text-xs font-bold flex items-center justify-center">
                             {lesson.unread_messages}
                           </span>
                         )}
@@ -463,8 +464,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         onClick={handleViewInsights}
                         className={`px-4 py-2 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center space-x-2 ${
                           lesson.subject_name?.toLowerCase().includes('quran')
-                            ? 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
-                            : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+                            ? 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
+                            : 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
                         }`}
                       >
                         <Sparkles className="w-4 h-4" />
@@ -484,7 +485,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     {!lessonIsPast && canReschedule && (
                       <button
                         onClick={handleReschedule}
-                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg font-medium transition flex items-center space-x-2"
+                        className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium transition flex items-center space-x-2"
                       >
                         <CalendarClock className="w-4 h-4" />
                         <span>Reschedule</span>
@@ -497,8 +498,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         disabled={!canJoin}
                         className={`px-6 py-3 font-semibold rounded-lg transition shadow-lg flex items-center space-x-2 ${
                           canJoin
-                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-cyan-500/20'
-                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/20'
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         }`}
                       >
                         <Video className="w-5 h-5" />
@@ -517,42 +518,42 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       {viewingMessage && messageContent && (
         <>
           <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-gray-50/80 backdrop-blur-sm z-50"
             onClick={closeMessage}
           ></div>
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-700">
-              <div className="flex items-center justify-between p-6 border-b border-slate-700">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Message from Teacher</h3>
-                    <p className="text-sm text-slate-400">
+                    <h3 className="text-xl font-bold text-gray-900">Message from Teacher</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {lessons.find(l => l.id === viewingMessage)?.teacher_name}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={closeMessage}
-                  className="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition flex items-center justify-center text-slate-400 hover:text-white"
+                  className="w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-200 transition flex items-center justify-center text-gray-500 hover:text-gray-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-6">
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {messageContent}
                   </p>
                 </div>
 
                 <button
                   onClick={closeMessage}
-                  className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold transition"
+                  className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-semibold transition"
                 >
                   Close
                 </button>

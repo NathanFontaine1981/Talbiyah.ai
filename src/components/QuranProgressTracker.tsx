@@ -108,19 +108,19 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
         <div className="animate-pulse flex flex-col items-center justify-center py-12">
-          <div className="w-32 h-32 bg-slate-700 rounded-full mb-4"></div>
-          <div className="h-4 bg-slate-700 rounded w-32"></div>
+          <div className="w-32 h-32 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
-        <Book className="w-5 h-5 text-cyan-400" />
+        <Book className="w-5 h-5 text-emerald-600" />
         <span>Qur'an Progress Tracker</span>
       </h3>
 
@@ -134,7 +134,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
               stroke="currentColor"
               strokeWidth="12"
               fill="transparent"
-              className="text-slate-700"
+              className="text-gray-700"
             />
             <circle
               cx="128"
@@ -145,53 +145,53 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
               fill="transparent"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              className="text-cyan-400 transition-all duration-1000 ease-out"
+              className="text-emerald-600 transition-all duration-1000 ease-out"
               strokeLinecap="round"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-5xl font-bold text-cyan-400">{percentageComplete}%</p>
-            <p className="text-sm text-slate-400 mt-2">Qur'an Mastered</p>
+            <p className="text-5xl font-bold text-emerald-600">{percentageComplete}%</p>
+            <p className="text-sm text-gray-500 mt-2">Qur'an Mastered</p>
           </div>
         </div>
 
         <div className="flex items-center justify-center space-x-6 text-sm">
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{completedSurahs}</p>
-            <p className="text-slate-400">Surahs Complete</p>
+            <p className="text-gray-500">Surahs Complete</p>
           </div>
-          <div className="w-px h-12 bg-slate-700"></div>
+          <div className="w-px h-12 bg-gray-200"></div>
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{totalSurahs - completedSurahs}</p>
-            <p className="text-slate-400">Remaining</p>
+            <p className="text-gray-500">Remaining</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-3 px-2">
-          <span className="text-xs font-medium text-slate-500 uppercase">Surah Name</span>
+          <span className="text-xs font-medium text-gray-500 uppercase">Surah Name</span>
           <div className="flex items-center space-x-4">
-            <span className="text-xs font-medium text-slate-500 uppercase w-20 text-center">
+            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
               Understanding
             </span>
-            <span className="text-xs font-medium text-slate-500 uppercase w-20 text-center">
+            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
               Fluency
             </span>
-            <span className="text-xs font-medium text-slate-500 uppercase w-20 text-center">
+            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
               Memorisation
             </span>
           </div>
         </div>
 
         {displayedSurahs.map((surah) => (
-          <div key={surah.surahNumber} className="bg-slate-800/50 rounded-lg overflow-hidden">
+          <div key={surah.surahNumber} className="bg-gray-50 rounded-lg overflow-hidden">
             <div className="flex items-center justify-between p-3">
               <button
                 onClick={() => setExpandedSurah(expandedSurah === surah.surahNumber ? null : surah.surahNumber)}
                 className="flex-1 text-left"
               >
-                <span className="text-sm font-medium text-slate-200">
+                <span className="text-sm font-medium text-gray-700">
                   {surah.surahNumber}. {surah.surahName}
                 </span>
               </button>
@@ -200,37 +200,37 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
                 <div className="w-20 flex justify-center">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     surah.understanding
-                      ? 'bg-cyan-500/20 border-cyan-500'
-                      : 'border-slate-600'
+                      ? 'bg-emerald-500/20 border-emerald-500'
+                      : 'border-gray-300'
                   }`}>
-                    {surah.understanding && <Check className="w-4 h-4 text-cyan-400" />}
+                    {surah.understanding && <Check className="w-4 h-4 text-emerald-600" />}
                   </div>
                 </div>
 
                 <div className="w-20 flex justify-center">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     surah.fluency
-                      ? 'bg-cyan-500/20 border-cyan-500'
-                      : 'border-slate-600'
+                      ? 'bg-emerald-500/20 border-emerald-500'
+                      : 'border-gray-300'
                   }`}>
-                    {surah.fluency && <Check className="w-4 h-4 text-cyan-400" />}
+                    {surah.fluency && <Check className="w-4 h-4 text-emerald-600" />}
                   </div>
                 </div>
 
                 <div className="w-20 flex justify-center">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     surah.memorization
-                      ? 'bg-cyan-500/20 border-cyan-500'
-                      : 'border-slate-600'
+                      ? 'bg-emerald-500/20 border-emerald-500'
+                      : 'border-gray-300'
                   }`}>
-                    {surah.memorization && <Check className="w-4 h-4 text-cyan-400" />}
+                    {surah.memorization && <Check className="w-4 h-4 text-emerald-600" />}
                   </div>
                 </div>
 
                 {surah.teacherNotes && (
                   <button
                     onClick={() => setExpandedSurah(expandedSurah === surah.surahNumber ? null : surah.surahNumber)}
-                    className="p-1 text-slate-400 hover:text-cyan-400 transition"
+                    className="p-1 text-gray-500 hover:text-emerald-600 transition"
                   >
                     {expandedSurah === surah.surahNumber ? (
                       <ChevronUp className="w-4 h-4" />
@@ -244,9 +244,9 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
 
             {expandedSurah === surah.surahNumber && surah.teacherNotes && (
               <div className="px-3 pb-3 pt-0">
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
-                  <p className="text-xs font-medium text-cyan-400 mb-1">Teacher's Notes:</p>
-                  <p className="text-sm text-slate-300">{surah.teacherNotes}</p>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-xs font-medium text-emerald-600 mb-1">Teacher's Notes:</p>
+                  <p className="text-sm text-gray-600">{surah.teacherNotes}</p>
                 </div>
               </div>
             )}
@@ -257,7 +257,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
       {progress.length > 10 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full mt-4 px-4 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-cyan-400 rounded-lg transition flex items-center justify-center space-x-2"
+          className="w-full mt-4 px-4 py-2 bg-gray-100/80 hover:bg-gray-200/80 text-emerald-600 rounded-lg transition flex items-center justify-center space-x-2"
         >
           <span className="text-sm font-medium">
             {showAll ? 'Show Less' : `Show All ${totalSurahs} Surahs`}

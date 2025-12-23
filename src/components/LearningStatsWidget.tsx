@@ -89,11 +89,11 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-700 rounded w-32"></div>
+          <div className="h-6 bg-gray-100 rounded w-32"></div>
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-16 bg-slate-700 rounded"></div>
+            <div key={i} className="h-16 bg-gray-100 rounded"></div>
           ))}
         </div>
       </div>
@@ -105,39 +105,39 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
       icon: Clock,
       label: 'Total Hours',
       value: stats.totalHours.toString(),
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
-      borderColor: 'border-cyan-500/20'
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      borderColor: 'border-emerald-200'
     },
     {
       icon: BookOpen,
       label: 'Lessons Completed',
       value: stats.totalLessons.toString(),
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/20'
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200'
     },
     {
       icon: CheckCircle,
       label: 'Quizzes Passed',
       value: stats.quizzesPassed.toString(),
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/20'
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200'
     },
     {
       icon: Flame,
       label: 'Current Streak',
       value: `${stats.currentStreak} days`,
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-500/10',
-      borderColor: 'border-orange-500/20'
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200'
     }
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-      <h3 className="text-xl font-bold text-white mb-6">Learning Stats</h3>
+    <div className="bg-white rounded-2xl p-6 border border-gray-200">
+      <h3 className="text-lg font-bold text-gray-900 mb-6">Learning Stats</h3>
 
       <div className="space-y-3">
         {statItems.map((item, index) => (
@@ -150,7 +150,7 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
                 <item.icon className={`w-5 h-5 ${item.color}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-400 mb-1">{item.label}</p>
+                <p className="text-xs text-gray-500 mb-1">{item.label}</p>
                 <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
               </div>
             </div>

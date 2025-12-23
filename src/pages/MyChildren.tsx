@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Eye, X, Mail, Lock, User, Calendar, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { calculateAge, calculateSchoolYear, validateDOB, getDateConstraints } from '../utils/ageCalculations';
 
 interface Child {
@@ -62,7 +63,7 @@ export default function MyChildren() {
       if (error) throw error;
       await loadChildren();
     } catch (err: any) {
-      alert('Failed to remove child: ' + err.message);
+      toast.error('Failed to remove child: ' + err.message);
     }
   }
 

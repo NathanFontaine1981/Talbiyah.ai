@@ -86,13 +86,13 @@ export default function AuthCallback() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="bg-slate-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         {status === 'loading' && (
           <>
-            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Verifying Email</h2>
-            <p className="text-slate-400">{message}</p>
+            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Email</h2>
+            <p className="text-gray-500">{message}</p>
           </>
         )}
 
@@ -101,10 +101,10 @@ export default function AuthCallback() {
             <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-12 h-12 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Email Verified!</h2>
-            <p className="text-slate-400">{message}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Verified!</h2>
+            <p className="text-gray-500">{message}</p>
             <div className="mt-6">
-              <div className="w-full bg-slate-800 rounded-full h-2">
+              <div className="w-full bg-gray-100 rounded-full h-2">
                 <div className="bg-emerald-500 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
               </div>
             </div>
@@ -116,11 +116,11 @@ export default function AuthCallback() {
             <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <XCircle className="w-12 h-12 text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Verification Failed</h2>
-            <p className="text-slate-400 mb-6">{message}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Failed</h2>
+            <p className="text-gray-500 mb-6">{message}</p>
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-semibold transition"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-gray-900 rounded-lg font-semibold transition"
             >
               Go to Home
             </button>

@@ -126,11 +126,11 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-700 rounded w-48"></div>
+          <div className="h-8 bg-gray-100 rounded w-48"></div>
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-slate-700 rounded"></div>
+            <div key={i} className="h-20 bg-gray-100 rounded"></div>
           ))}
         </div>
       </div>
@@ -139,33 +139,33 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
 
   if (recordings.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-        <h3 className="text-2xl font-bold text-white mb-6">Recent Recordings</h3>
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Recent Recordings</h3>
         <div className="text-center py-8">
-          <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <PlayCircle className="w-8 h-8 text-slate-600" />
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <PlayCircle className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-slate-400">You don't have any recordings yet</p>
-          <p className="text-slate-500 text-sm mt-2">Complete a lesson to get your first recording</p>
+          <p className="text-gray-500">You don't have any recordings yet</p>
+          <p className="text-gray-400 text-sm mt-2">Complete a lesson to get your first recording</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-white rounded-2xl p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white">Recent Recordings</h3>
+        <h3 className="text-xl font-bold text-gray-900">Recent Recordings</h3>
         <div className="flex items-center space-x-3">
           <button
             onClick={loadRecentRecordings}
-            className="p-2 text-slate-400 hover:text-cyan-400 transition"
+            className="p-2 text-gray-500 hover:text-emerald-600 transition"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigate('/recordings/history')}
-            className="text-sm text-cyan-400 hover:text-cyan-300 font-medium transition flex items-center space-x-1"
+            className="text-sm text-emerald-600 hover:text-cyan-300 font-medium transition flex items-center space-x-1"
           >
             <span>View All</span>
             <ChevronRight className="w-4 h-4" />
@@ -186,19 +186,19 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
           return (
             <div
               key={recording.id}
-              className={`bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 transition group ${
+              className={`bg-gray-50 rounded-xl p-5 border border-gray-200 transition group ${
                 isQuran ? 'hover:border-emerald-500/30' : 'hover:border-blue-500/30'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h4 className={`text-lg font-semibold text-white mb-1 transition ${
-                    isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                  <h4 className={`text-lg font-semibold text-gray-900 mb-1 transition ${
+                    isQuran ? 'group-hover:text-emerald-600' : 'group-hover:text-blue-600'
                   }`}>
                     {recording.subject_name}
                   </h4>
-                  <p className="text-sm text-slate-400 mb-2">with {recording.teacher_name}</p>
-                  <div className="flex items-center space-x-2 text-xs text-slate-500">
+                  <p className="text-sm text-gray-500 mb-2">with {recording.teacher_name}</p>
+                  <div className="flex items-center space-x-2 text-xs text-gray-500">
                     <Calendar className="w-3 h-3" />
                     <span>{format(lessonDate, 'MMM d, yyyy')}</span>
                   </div>
@@ -225,10 +225,10 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
                 {recording.has_insights && (
                   <button
                     onClick={() => navigate(`/lesson/${recording.id}/insights`)}
-                    className={`flex-1 px-4 py-2.5 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
                       isQuran
-                        ? 'from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border-emerald-500/30'
-                        : 'from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 border-blue-500/30'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                     }`}
                   >
                     <FileText className="w-4 h-4" />
@@ -240,22 +240,22 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
                 {recording.recording_url && !isRecordingExpired ? (
                   <button
                     onClick={() => window.open(recording.recording_url!, '_blank')}
-                    className={`flex-1 px-4 py-2.5 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
                       isQuran
-                        ? 'from-teal-500/20 to-cyan-500/20 hover:from-teal-500/30 hover:to-cyan-500/30 border-teal-500/30'
-                        : 'from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border-indigo-500/30'
+                        ? 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'
+                        : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
                     }`}
                   >
                     <PlayCircle className="w-4 h-4" />
                     <span>Watch Video</span>
                   </button>
                 ) : recording.recording_url && isRecordingExpired ? (
-                  <div className="flex-1 px-4 py-2.5 bg-red-500/10 text-red-400 rounded-lg font-medium flex items-center justify-center space-x-2 border border-red-500/30">
+                  <div className="flex-1 px-4 py-2.5 bg-red-50 text-red-600 rounded-lg font-medium flex items-center justify-center space-x-2 border border-red-200">
                     <PlayCircle className="w-4 h-4" />
                     <span>Video Expired</span>
                   </div>
                 ) : !recording.has_insights ? (
-                  <div className="flex-1 px-4 py-2.5 bg-amber-500/10 text-amber-400 rounded-lg font-medium flex items-center justify-center space-x-2 border border-amber-500/30">
+                  <div className="flex-1 px-4 py-2.5 bg-amber-50 text-amber-600 rounded-lg font-medium flex items-center justify-center space-x-2 border border-amber-200">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     <span>Processing (up to 24h)</span>
                   </div>

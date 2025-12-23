@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, RefreshCw, Play, Download, Trash2, X, FileText, CheckSquare, Square, HardDrive, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface Recording {
@@ -235,7 +236,7 @@ export default function Recordings() {
 
   async function handleDownload(recording: Recording) {
     if (!recording.recording_url) {
-      alert('Recording URL not available');
+      toast.error('Recording URL not available');
       return;
     }
 
@@ -244,7 +245,7 @@ export default function Recordings() {
       window.open(recording.recording_url, '_blank');
     } catch (error) {
       console.error('Error downloading recording:', error);
-      alert('Failed to download recording');
+      toast.error('Failed to download recording');
     }
   }
 
@@ -261,10 +262,10 @@ export default function Recordings() {
 
       await fetchRecordings();
       await calculateStorageStats();
-      alert('Recording deleted successfully');
+      toast.success('Recording deleted successfully');
     } catch (error) {
       console.error('Error deleting recording:', error);
-      alert('Failed to delete recording');
+      toast.error('Failed to delete recording');
     }
   }
 
@@ -300,15 +301,15 @@ export default function Recordings() {
       setSelectedRecordings([]);
       await fetchRecordings();
       await calculateStorageStats();
-      alert('Recordings deleted successfully');
+      toast.success('Recordings deleted successfully');
     } catch (error) {
       console.error('Error deleting recordings:', error);
-      alert('Failed to delete recordings');
+      toast.error('Failed to delete recordings');
     }
   }
 
   function handleBulkDownload() {
-    alert('Bulk download feature - Coming soon! Will download all selected recordings as a ZIP file.');
+    toast.info('Bulk download feature - Coming soon! Will download all selected recordings as a ZIP file.');
   }
 
   function getSubjectIcon(name?: string) {
@@ -331,7 +332,7 @@ export default function Recordings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -341,13 +342,13 @@ export default function Recordings() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Class Recordings</h1>
-          <p className="text-slate-400">Review and manage session recordings</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Class Recordings</h1>
+          <p className="text-gray-600 dark:text-gray-400">Review and manage session recordings</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+          className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg transition flex items-center space-x-2"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -356,42 +357,42 @@ export default function Recordings() {
 
       {/* Storage Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
-            <HardDrive className="w-6 h-6 text-cyan-400" />
-            <p className="text-slate-400">Total Recordings</p>
+            <HardDrive className="w-6 h-6 text-emerald-600" />
+            <p className="text-gray-600 dark:text-gray-400">Total Recordings</p>
           </div>
-          <p className="text-3xl font-bold text-white">{storageStats.totalRecordings}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{storageStats.totalRecordings}</p>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
             <HardDrive className="w-6 h-6 text-emerald-400" />
-            <p className="text-slate-400">Storage Used</p>
+            <p className="text-gray-600 dark:text-gray-400">Storage Used</p>
           </div>
-          <p className="text-3xl font-bold text-white">{storageStats.totalStorageGB.toFixed(2)} GB</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{storageStats.totalStorageGB.toFixed(2)} GB</p>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Calendar className="w-6 h-6 text-purple-400" />
-            <p className="text-slate-400">Oldest Recording</p>
+            <p className="text-gray-600 dark:text-gray-400">Oldest Recording</p>
           </div>
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-gray-900 dark:text-white">
             {storageStats.oldestRecording ? format(new Date(storageStats.oldestRecording), 'MMM d, yyyy') : 'N/A'}
           </p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type="text"
               placeholder="Search by student, teacher, or topic..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
             />
           </div>
         </div>
@@ -399,11 +400,11 @@ export default function Recordings() {
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Subject</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Subject</label>
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Subjects</option>
               {subjects.map((subject) => (
@@ -413,11 +414,11 @@ export default function Recordings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Teacher</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Teacher</label>
             <select
               value={teacherFilter}
               onChange={(e) => setTeacherFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Teachers</option>
               {teachers.map((teacher) => (
@@ -429,11 +430,11 @@ export default function Recordings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Date Range</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Date Range</label>
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Time</option>
               <option value="7days">Last 7 Days</option>
@@ -448,21 +449,21 @@ export default function Recordings() {
         {dateFilter === 'custom' && (
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">Start Date</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
               <input
                 type="date"
                 value={customDateRange.start}
                 onChange={(e) => setCustomDateRange({ ...customDateRange, start: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">End Date</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">End Date</label>
               <input
                 type="date"
                 value={customDateRange.end}
                 onChange={(e) => setCustomDateRange({ ...customDateRange, end: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -471,14 +472,14 @@ export default function Recordings() {
 
       {/* Bulk Actions */}
       {selectedRecordings.length > 0 && (
-        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4 mb-6 flex items-center justify-between">
-          <p className="text-cyan-400">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mb-6 flex items-center justify-between">
+          <p className="text-emerald-600">
             {selectedRecordings.length} recording{selectedRecordings.length !== 1 ? 's' : ''} selected
           </p>
           <div className="flex space-x-2">
             <button
               onClick={handleBulkDownload}
-              className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition flex items-center space-x-1"
+              className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 rounded-lg text-sm transition flex items-center space-x-1"
             >
               <Download className="w-4 h-4" />
               <span>Download All</span>
@@ -492,7 +493,7 @@ export default function Recordings() {
             </button>
             <button
               onClick={() => setSelectedRecordings([])}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition"
             >
               Clear
             </button>
@@ -502,12 +503,12 @@ export default function Recordings() {
 
       {/* Results Count */}
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-slate-400">
+        <p className="text-gray-600 dark:text-gray-400">
           Showing {filteredRecordings.length} of {recordings.length} recordings
         </p>
         <button
           onClick={selectAllRecordings}
-          className="text-sm text-cyan-400 hover:text-cyan-300 transition"
+          className="text-sm text-emerald-600 hover:text-cyan-300 transition"
         >
           {selectedRecordings.length === filteredRecordings.length && filteredRecordings.length > 0
             ? 'Deselect All'
@@ -518,10 +519,10 @@ export default function Recordings() {
       {/* Recordings List */}
       <div className="space-y-4">
         {filteredRecordings.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-            <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg">No recordings found</p>
-            <p className="text-slate-500 text-sm mt-2">Try adjusting your filters</p>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No recordings found</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">Try adjusting your filters</p>
           </div>
         ) : (
           filteredRecordings.map((recording) => (
@@ -570,7 +571,7 @@ function RecordingCard({ recording, isSelected, onToggleSelect, onPlay, onDownlo
   const statusBadge = getStatusBadge(recording.status);
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start space-x-4">
         {/* Checkbox */}
         <button
@@ -578,9 +579,9 @@ function RecordingCard({ recording, isSelected, onToggleSelect, onPlay, onDownlo
           className="mt-1"
         >
           {isSelected ? (
-            <CheckSquare className="w-5 h-5 text-cyan-400" />
+            <CheckSquare className="w-5 h-5 text-emerald-600" />
           ) : (
-            <Square className="w-5 h-5 text-slate-400 hover:text-slate-300" />
+            <Square className="w-5 h-5 text-gray-500 hover:text-gray-600" />
           )}
         </button>
 
@@ -590,14 +591,14 @@ function RecordingCard({ recording, isSelected, onToggleSelect, onPlay, onDownlo
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
                 <span className="text-2xl">{getSubjectIcon(recording.lesson?.subject?.name)}</span>
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {recording.lesson?.subject?.name || 'Unknown Subject'} Session
                 </h3>
                 <span className={`px-3 py-1 ${statusBadge.color} border rounded-full text-xs font-medium`}>
                   {statusBadge.label}
                 </span>
               </div>
-              <div className="text-sm text-slate-400 space-y-1">
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p>
                   <span className="font-medium">Teacher:</span> {recording.lesson?.teacher?.full_name || 'Unknown'}
                   {' | '}
@@ -616,11 +617,11 @@ function RecordingCard({ recording, isSelected, onToggleSelect, onPlay, onDownlo
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-slate-700">
+          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={onPlay}
               disabled={recording.status !== 'ready'}
-              className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg transition text-sm flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition text-sm flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Play className="w-4 h-4" />
               <span>Play Recording</span>
@@ -658,10 +659,10 @@ function RecordingCard({ recording, isSelected, onToggleSelect, onPlay, onDownlo
 function VideoPlayerModal({ recording, onClose }: any) {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-5xl w-full">
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <h3 className="text-xl font-semibold text-white">Recording Playback</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl max-w-5xl w-full">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recording Playback</h3>
+          <button onClick={onClose} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -678,30 +679,30 @@ function VideoPlayerModal({ recording, onClose }: any) {
                 Your browser does not support the video tag.
               </video>
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-400">
+              <div className="flex items-center justify-center h-full text-gray-500">
                 <p>Video not available</p>
               </div>
             )}
           </div>
 
           {/* Recording Info */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-slate-500 mb-1">Subject</p>
-                <p className="text-white">{recording.lesson?.subject?.name || 'Unknown'}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-1">Subject</p>
+                <p className="text-gray-900 dark:text-white">{recording.lesson?.subject?.name || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-slate-500 mb-1">Teacher</p>
-                <p className="text-white">{recording.lesson?.teacher?.full_name || 'Unknown'}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-1">Teacher</p>
+                <p className="text-gray-900 dark:text-white">{recording.lesson?.teacher?.full_name || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-slate-500 mb-1">Student</p>
-                <p className="text-white">{recording.lesson?.student?.full_name || 'Unknown'}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-1">Student</p>
+                <p className="text-gray-900 dark:text-white">{recording.lesson?.student?.full_name || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-slate-500 mb-1">Duration</p>
-                <p className="text-white">{recording.duration_minutes} minutes</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-1">Duration</p>
+                <p className="text-gray-900 dark:text-white">{recording.duration_minutes} minutes</p>
               </div>
             </div>
           </div>
@@ -723,10 +724,10 @@ function AINotesModal({ recording, onClose }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">AI Study Notes</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">AI Study Notes</h3>
+          <button onClick={onClose} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -734,15 +735,15 @@ function AINotesModal({ recording, onClose }: any) {
         <div className="space-y-6">
           {/* Summary */}
           <div>
-            <h4 className="text-lg font-semibold text-white mb-2">Summary</h4>
-            <p className="text-slate-300 leading-relaxed">{notes.summary}</p>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Summary</h4>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{notes.summary}</p>
           </div>
 
           {/* Key Topics */}
           {notes.topics && notes.topics.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold text-white mb-2">Key Topics Covered</h4>
-              <ul className="list-disc list-inside space-y-1 text-slate-300">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Key Topics Covered</h4>
+              <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
                 {notes.topics.map((topic: string, index: number) => (
                   <li key={index}>{topic}</li>
                 ))}
@@ -753,8 +754,8 @@ function AINotesModal({ recording, onClose }: any) {
           {/* Questions Asked */}
           {notes.questions && notes.questions.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold text-white mb-2">Questions Asked/Answered</h4>
-              <ul className="list-disc list-inside space-y-1 text-slate-300">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Questions Asked/Answered</h4>
+              <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
                 {notes.questions.map((question: string, index: number) => (
                   <li key={index}>{question}</li>
                 ))}
@@ -765,9 +766,9 @@ function AINotesModal({ recording, onClose }: any) {
           {/* Homework */}
           {notes.homework && (
             <div>
-              <h4 className="text-lg font-semibold text-white mb-2">Homework Assigned</h4>
-              <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
-                <p className="text-slate-300">{notes.homework}</p>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Homework Assigned</h4>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <p className="text-gray-600 dark:text-gray-400">{notes.homework}</p>
               </div>
             </div>
           )}
@@ -775,18 +776,18 @@ function AINotesModal({ recording, onClose }: any) {
           {/* Teacher Feedback */}
           {notes.feedback && (
             <div>
-              <h4 className="text-lg font-semibold text-white mb-2">Teacher Feedback</h4>
-              <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
-                <p className="text-slate-300">{notes.feedback}</p>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Teacher Feedback</h4>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <p className="text-gray-600 dark:text-gray-400">{notes.feedback}</p>
               </div>
             </div>
           )}
 
           {/* Next Lesson Recommendations */}
           <div>
-            <h4 className="text-lg font-semibold text-white mb-2">Next Lesson Recommendations</h4>
-            <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
-              <p className="text-cyan-400 text-sm">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Next Lesson Recommendations</h4>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
+              <p className="text-emerald-600 text-sm">
                 Continue with advanced topics in {recording.lesson?.subject?.name}
               </p>
             </div>
@@ -795,7 +796,7 @@ function AINotesModal({ recording, onClose }: any) {
 
         <button
           onClick={onClose}
-          className="mt-6 w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+          className="mt-6 w-full px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg transition"
         >
           Close
         </button>

@@ -61,11 +61,38 @@ export default function SignUp() {
     }
   }
 
+  function extractReferralCode(value: string): string {
+    // If user pastes a full URL, extract just the referral code
+    const trimmed = value.trim();
+
+    // Check if it's a URL with ?ref= parameter
+    if (trimmed.includes('?ref=') || trimmed.includes('&ref=')) {
+      try {
+        const url = new URL(trimmed);
+        const refParam = url.searchParams.get('ref');
+        if (refParam) {
+          return refParam;
+        }
+      } catch {
+        // Not a valid URL, try regex extraction
+        const match = trimmed.match(/[?&]ref=([^&\s]+)/);
+        if (match) {
+          return match[1];
+        }
+      }
+    }
+
+    // Return as-is if not a URL
+    return trimmed;
+  }
+
   async function handleReferralCodeChange(value: string) {
-    setReferralCode(value);
+    // Extract code if user pastes a full referral URL
+    const extractedCode = extractReferralCode(value);
+    setReferralCode(extractedCode);
 
     // Reset validation when user changes the code
-    if (value.trim() === '') {
+    if (extractedCode === '') {
       setReferralValidation('idle');
       setReferrerName(null);
     }
@@ -153,10 +180,9 @@ export default function SignUp() {
 
       if (data.user) {
 
-        // Generate unique referral code for new user
-        const name = authForm.fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 10) || 'user';
-        const random = Math.random().toString(36).substring(2, 8);
-        const newReferralCode = `${name}-${random}`;
+        // Generate unique 6-char referral code for new user
+        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        const newReferralCode = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 
         // Parents are students with parent capabilities
         const roles = selectedRole === 'parent' ? ['student', 'parent'] : [selectedRole];
@@ -189,35 +215,48 @@ export default function SignUp() {
               .maybeSingle();
 
             if (referrerProfile) {
-              // Create referral record
+              // Update the new user's profile with the referrer
+              await supabase
+                .from('profiles')
+                .update({ referred_by: referrerProfile.id })
+                .eq('id', data.user.id);
+
+              // Create referral record for tracking rewards
               await supabase
                 .from('referrals')
-                .insert({
+                .upsert({
                   referrer_id: referrerProfile.id,
-                  referred_id: data.user.id,
-                  referral_code: referralCode.trim(),
-                  status: 'pending'
+                  referred_user_id: data.user.id,
+                  status: 'pending',
+                  completed_lessons: 0,
+                  total_hours: 0,
+                  credits_earned: 0,
+                  conversion_paid: false
+                }, {
+                  onConflict: 'referrer_id,referred_user_id',
+                  ignoreDuplicates: true
                 });
 
-              // Send email notification to referrer
-              try {
-                const { data: supabaseData } = await supabase.auth.getSession();
-                await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-referral-signup`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`
-                  },
-                  body: JSON.stringify({
-                    referrer_id: referrerProfile.id,
-                    referred_id: data.user.id,
-                    referral_code: referralCode.trim()
-                  })
-                });
-                } catch (emailError) {
-                console.error('Error sending referral notification:', emailError);
-                // Don't block signup if email fails
+              // Update the referrer's total_referrals count
+              const { data: referrerCredits } = await supabase
+                .from('referral_credits')
+                .select('total_referrals')
+                .eq('user_id', referrerProfile.id)
+                .maybeSingle();
+
+              if (referrerCredits) {
+                await supabase
+                  .from('referral_credits')
+                  .update({ total_referrals: (referrerCredits.total_referrals || 0) + 1 })
+                  .eq('user_id', referrerProfile.id);
+              } else {
+                await supabase
+                  .from('referral_credits')
+                  .insert({ user_id: referrerProfile.id, total_referrals: 1 });
               }
+
+              // NOTE: Referral notification is sent AFTER email verification via database trigger
+              // This ensures referrers only get notified for verified users
             }
           } catch (refError) {
             console.error('Error creating referral record:', refError);
@@ -242,6 +281,27 @@ export default function SignUp() {
           // Don't block signup if welcome email fails
         }
 
+        // Send admin notification email
+        try {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'admin_new_signup',
+              recipient_email: 'contact@talbiyah.ai',
+              recipient_name: 'Talbiyah Admin',
+              data: {
+                user_name: authForm.fullName.trim(),
+                user_email: authForm.email,
+                user_role: selectedRole,
+                signup_time: new Date().toISOString(),
+                referral_code: referralCode.trim() || null
+              }
+            }
+          });
+        } catch (adminEmailError) {
+          console.error('Error sending admin notification:', adminEmailError);
+          // Don't block signup if admin email fails
+        }
+
         // Check if email confirmation is required (user not confirmed yet)
         if (!data.user.email_confirmed_at) {
           // Redirect to email verification page
@@ -263,11 +323,11 @@ export default function SignUp() {
 
   if (step === 'role' && !autoRole) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="w-full max-w-4xl">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition mb-8"
+            className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Home</span>
@@ -275,15 +335,14 @@ export default function SignUp() {
 
           <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-2 mb-8">
-              <div className="relative">
-                <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full"></div>
-                <BookOpen className="w-12 h-12 text-cyan-400 relative" />
+              <div className="w-14 h-14 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Create Your Account</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+              Create Your Account
             </h1>
-            <p className="text-xl text-slate-400">Choose how you'd like to get started</p>
+            <p className="text-xl text-gray-500">Choose how you'd like to get started</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -292,15 +351,14 @@ export default function SignUp() {
                 setSelectedRole('student');
                 setStep('form');
               }}
-              className="group relative"
+              className="group"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition"></div>
-              <div className="relative bg-slate-800/80 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50 hover:border-cyan-500/50 transition text-center">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/50">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center">
+                <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">I am a Student</h3>
-                <p className="text-slate-400 text-sm">Learn Quran & Arabic</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I am a Student</h3>
+                <p className="text-gray-500 text-sm">Learn Quran & Arabic</p>
               </div>
             </button>
 
@@ -309,18 +367,17 @@ export default function SignUp() {
                 setSelectedRole('parent');
                 setStep('form');
               }}
-              className="group relative"
+              className="group"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition"></div>
-              <div className="relative bg-slate-800/80 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50 hover:border-emerald-500/50 transition text-center">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/50">
+              <div className="bg-white p-8 rounded-2xl border-2 border-emerald-500 hover:shadow-lg transition text-center relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
+                </div>
+                <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">I am a Parent</h3>
-                <p className="text-slate-400 text-sm mb-3">Manage multiple children</p>
-                <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-emerald-500/10 rounded-lg">
-                  <span className="text-emerald-400 font-semibold text-xs">Most Popular</span>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I am a Parent</h3>
+                <p className="text-gray-500 text-sm">Manage multiple children</p>
               </div>
             </button>
 
@@ -329,15 +386,14 @@ export default function SignUp() {
                 setSelectedRole('teacher');
                 setStep('form');
               }}
-              className="group relative"
+              className="group"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-700/20 to-slate-800/20 rounded-3xl blur-xl group-hover:blur-2xl transition"></div>
-              <div className="relative bg-slate-800/50 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600 transition text-center">
-                <div className="w-16 h-16 mx-auto bg-slate-700 rounded-2xl flex items-center justify-center mb-4">
-                  <GraduationCap className="w-8 h-8 text-slate-300" />
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-lg transition text-center">
+                <div className="w-16 h-16 mx-auto bg-amber-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                  <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">I want to Teach</h3>
-                <p className="text-slate-400 text-sm">Apply as a Teacher</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I want to Teach</h3>
+                <p className="text-gray-500 text-sm">Apply as a Teacher</p>
               </div>
             </button>
           </div>
@@ -347,28 +403,27 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <button
           onClick={() => autoRole ? navigate('/') : setStep('role')}
-          className="flex items-center space-x-2 text-slate-400 hover:text-white transition mb-8"
+          className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back</span>
         </button>
 
-        <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
           <div className="text-center mb-8">
             <div className="inline-flex items-center space-x-2 mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full"></div>
-                <BookOpen className="w-10 h-10 text-cyan-400 relative" />
+              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-md">
+                <BookOpen className="w-7 h-7 text-white" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold mb-2 text-gray-900">
               Create Your Account
             </h2>
-            <p className="text-slate-400">
+            <p className="text-gray-500">
               {selectedRole === 'student' ? 'Start your learning journey' :
                selectedRole === 'parent' ? 'Manage your children\'s learning' :
                'Apply to become a teacher'}
@@ -376,31 +431,31 @@ export default function SignUp() {
           </div>
 
           {referralCodeFromUrl && referrerName && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-lg">
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
               <div className="flex items-start space-x-3">
-                <Gift className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <Gift className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-emerald-400 font-semibold text-sm">You were referred by {referrerName}!</p>
-                  <p className="text-slate-300 text-xs mt-1">Welcome to our community! Complete signup to track your referral.</p>
+                  <p className="text-emerald-700 font-semibold text-sm">You were referred by {referrerName}!</p>
+                  <p className="text-emerald-600 text-xs mt-1">Welcome to our community! Complete signup to track your referral.</p>
                 </div>
               </div>
             </div>
           )}
 
           {authError && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-red-400 text-sm">{authError}</p>
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{authError}</p>
             </div>
           )}
 
           <form onSubmit={handleSignUp} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <User className="w-4 h-4" />
                   <span>{selectedRole === 'parent' ? 'Parent Full Name' : 'Full Name'}</span>
                   {selectedRole === 'parent' && (
-                    <span className="text-xs text-emerald-400">(Required for parent account)</span>
+                    <span className="text-xs text-emerald-600">(Required for parent account)</span>
                   )}
                 </div>
               </label>
@@ -409,13 +464,13 @@ export default function SignUp() {
                 required
                 value={authForm.fullName}
                 onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder={selectedRole === 'parent' ? 'Your full name (e.g., Sarah Ahmed)' : 'Your full name'}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4" />
                   <span>Email Address</span>
@@ -428,19 +483,19 @@ export default function SignUp() {
                   value={authForm.email}
                   onChange={(e) => handleEmailChange(e.target.value)}
                   onBlur={handleEmailBlur}
-                  className={`w-full px-4 py-3 pr-12 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition ${
-                    emailError ? 'border-red-500/50' : 'border-slate-700'
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition ${
+                    emailError ? 'border-red-400' : 'border-gray-300'
                   }`}
                   placeholder="your.email@example.com"
                 />
                 {emailError && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
                   </div>
                 )}
               </div>
               {emailError && (
-                <p className="text-red-400 text-sm mt-2 flex items-start space-x-1">
+                <p className="text-red-500 text-sm mt-2 flex items-start space-x-1">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{emailError}</span>
                 </p>
@@ -448,7 +503,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <Lock className="w-4 h-4" />
                   <span>Password</span>
@@ -459,14 +514,14 @@ export default function SignUp() {
                 required
                 value={authForm.password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="Min 8 chars, uppercase, lowercase, number"
               />
               {/* Password strength indicator */}
               {passwordStrength && authForm.password && (
                 <div className="mt-2">
                   <div className="flex items-center space-x-2 mb-1">
-                    <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${getStrengthColor(passwordStrength.strength)} transition-all duration-300`}
                         style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
@@ -477,14 +532,14 @@ export default function SignUp() {
                     </span>
                   </div>
                   {passwordStrength.errors.length > 0 && (
-                    <p className="text-red-400 text-xs">{passwordStrength.errors[0]}</p>
+                    <p className="text-red-500 text-xs">{passwordStrength.errors[0]}</p>
                   )}
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <Lock className="w-4 h-4" />
                   <span>Confirm Password</span>
@@ -495,7 +550,7 @@ export default function SignUp() {
                 required
                 value={authForm.confirmPassword}
                 onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder="Confirm your password"
               />
             </div>
@@ -504,11 +559,11 @@ export default function SignUp() {
             {selectedRole !== 'teacher' && (
             <>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <Gift className="w-4 h-4" />
                   <span>Referral Code</span>
-                  <span className="text-xs text-slate-500">(Optional)</span>
+                  <span className="text-xs text-gray-400">(Optional)</span>
                 </div>
               </label>
               <div className="relative">
@@ -518,35 +573,35 @@ export default function SignUp() {
                   onChange={(e) => handleReferralCodeChange(e.target.value)}
                   onBlur={validateReferralCode}
                   disabled={!!referralCodeFromUrl}
-                  className={`w-full px-4 py-3 pr-12 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition ${
                     referralCodeFromUrl ? 'opacity-75 cursor-not-allowed' : ''
                   } ${
-                    referralValidation === 'valid' ? 'border-emerald-500/50' :
-                    referralValidation === 'invalid' ? 'border-red-500/50' :
-                    'border-slate-700'
+                    referralValidation === 'valid' ? 'border-emerald-500' :
+                    referralValidation === 'invalid' ? 'border-red-400' :
+                    'border-gray-300'
                   }`}
                   placeholder="e.g., nathan-a3f9x2"
                 />
                 {referralValidation === 'checking' && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                    <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
                   </div>
                 )}
                 {referralValidation === 'valid' && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
                   </div>
                 )}
                 {referralValidation === 'invalid' && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <XCircle className="w-5 h-5 text-red-400" />
+                    <XCircle className="w-5 h-5 text-red-500" />
                   </div>
                 )}
               </div>
 
               {/* Referrer Name Display */}
               {referralValidation === 'valid' && referrerName && (
-                <p className="text-emerald-400 text-sm mt-2 flex items-center space-x-1">
+                <p className="text-emerald-600 text-sm mt-2 flex items-center space-x-1">
                   <CheckCircle className="w-4 h-4" />
                   <span>Referred by: <strong>{referrerName}</strong></span>
                 </p>
@@ -554,67 +609,67 @@ export default function SignUp() {
 
               {/* Invalid Code Message */}
               {referralValidation === 'invalid' && (
-                <p className="text-red-400 text-sm mt-2">
+                <p className="text-red-500 text-sm mt-2">
                   This referral code doesn't exist. Please check and try again.
                 </p>
               )}
 
               {/* Locked Message */}
               {referralCodeFromUrl && (
-                <p className="text-slate-400 text-xs mt-2">
-                  🔒 Referral code locked from your signup link
+                <p className="text-gray-500 text-xs mt-2">
+                  Referral code locked from your signup link
                 </p>
               )}
 
               {/* Benefits Tip */}
               {!referralCodeFromUrl && referralValidation === 'idle' && (
-                <div className="mt-3 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
-                  <p className="text-slate-300 text-xs leading-relaxed">
-                    💡 <strong>Tip:</strong> Get 1 free lesson when your referrer completes 10 learning hours!
+                <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <p className="text-gray-600 text-xs leading-relaxed">
+                    <strong className="text-emerald-600">Tip:</strong> Get 1 free lesson when your referrer completes 10 learning hours!
                   </p>
                 </div>
               )}
             </div>
 
             {/* Referral Benefits Explanation - Only for students and parents (not teachers) */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-5">
-              <h3 className="text-white font-semibold text-base mb-3 flex items-center space-x-2">
-                <Gift className="w-5 h-5 text-cyan-400" />
-                <span>💡 Why Use a Referral Code?</span>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-900 font-semibold text-base mb-3 flex items-center space-x-2">
+                <Gift className="w-5 h-5 text-emerald-500" />
+                <span>Why Use a Referral Code?</span>
               </h3>
 
               <div className="space-y-3">
                 <div>
-                  <p className="text-slate-300 text-sm font-medium mb-2">When you sign up with a referral code:</p>
-                  <ul className="space-y-1.5 text-slate-400 text-sm">
+                  <p className="text-gray-700 text-sm font-medium mb-2">When you sign up with a referral code:</p>
+                  <ul className="space-y-1.5 text-gray-600 text-sm">
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-400 flex-shrink-0">•</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Help a friend/family member earn free lessons</span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-400 flex-shrink-0">•</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Join a community of learners</span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-400 flex-shrink-0">•</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Support someone's learning journey</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="pt-2 border-t border-slate-700">
-                  <p className="text-slate-300 text-sm font-medium mb-2">When you refer others:</p>
-                  <ul className="space-y-1.5 text-slate-400 text-sm">
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-gray-700 text-sm font-medium mb-2">When you refer others:</p>
+                  <ul className="space-y-1.5 text-gray-600 text-sm">
                     <li className="flex items-start space-x-2">
-                      <span className="text-cyan-400 flex-shrink-0">•</span>
-                      <span><strong className="text-cyan-400">Earn 1 FREE lesson</strong> for every 10 learning hours your referrals complete</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
+                      <span><strong className="text-emerald-600">Earn 1 FREE lesson</strong> for every 10 learning hours your referrals complete</span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-cyan-400 flex-shrink-0">•</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Share the gift of Quranic understanding</span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-cyan-400 flex-shrink-0">•</span>
+                      <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Help others while helping yourself</span>
                     </li>
                   </ul>
@@ -627,7 +682,7 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-md disabled:opacity-50 flex items-center justify-center space-x-2"
             >
               {authLoading ? (
                 <>
@@ -643,7 +698,7 @@ export default function SignUp() {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/', { state: { showSignIn: true } })}
-              className="text-cyan-400 hover:text-cyan-300 text-sm font-medium"
+              className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
             >
               Already have an account? Sign in
             </button>

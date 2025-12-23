@@ -68,20 +68,20 @@ export default function ArabicProgress() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
       <div className="max-w-4xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/courses-overview')}
-            className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
           >
             <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Courses</span>
@@ -93,7 +93,7 @@ export default function ArabicProgress() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">Arabic Language Progress</h1>
-              <p className="text-slate-400">Track your journey to Arabic fluency</p>
+              <p className="text-gray-500">Track your journey to Arabic fluency</p>
             </div>
           </div>
         </div>
@@ -102,15 +102,15 @@ export default function ArabicProgress() {
         {learnerId ? (
           <ArabicProgressTracker learnerId={learnerId} />
         ) : (
-          <div className="bg-slate-800/50 rounded-2xl p-8 text-center border border-slate-700/50">
+          <div className="bg-gray-50 rounded-2xl p-8 text-center border border-gray-200">
             <Languages className="w-16 h-16 text-blue-400 mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-semibold text-white mb-2">No Progress Yet</h2>
-            <p className="text-slate-400 mb-6">
+            <p className="text-gray-500 mb-6">
               Book your first Arabic lesson to start tracking your progress
             </p>
             <button
               onClick={() => navigate('/teachers')}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition"
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-white font-semibold rounded-xl transition"
             >
               Find a Teacher
             </button>

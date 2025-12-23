@@ -110,19 +110,19 @@ export default function MyTeachersSection() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-white to-cyan-50 rounded-2xl shadow-lg p-6 border border-cyan-100">
+    <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-lg p-6 border border-blue-100">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <GraduationCap className="w-7 h-7 text-cyan-600" />
+            <GraduationCap className="w-7 h-7 text-emerald-600" />
             My Teachers
           </h2>
           <p className="text-sm text-gray-600 mt-1">
             Your regular instructors
           </p>
         </div>
-        <div className="bg-cyan-100 text-cyan-700 px-4 py-2 rounded-full text-sm font-semibold">
+        <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
           {teachers.length} {teachers.length === 1 ? 'Teacher' : 'Teachers'}
         </div>
       </div>
@@ -143,10 +143,10 @@ export default function MyTeachersSection() {
                   <img
                     src={teacher.teacher_avatar}
                     alt={teacher.teacher_name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-cyan-300"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-blue-300"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl border-2 border-cyan-300">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl border-2 border-blue-300">
                     {getInitials(teacher.teacher_name)}
                   </div>
                 )}
@@ -159,7 +159,7 @@ export default function MyTeachersSection() {
                         {teacher.teacher_name}
                       </h3>
                       {teacher.subject_name && (
-                        <p className="text-sm text-cyan-600 font-medium">
+                        <p className="text-sm text-emerald-600 font-medium">
                           {teacher.subject_name}
                         </p>
                       )}
@@ -210,7 +210,7 @@ export default function MyTeachersSection() {
                     ) : (
                       <button
                         onClick={() => navigate(`/book/${teacher.teacher_id}`)}
-                        className="flex-1 bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition font-medium text-sm flex items-center justify-center gap-2"
+                        className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm flex items-center justify-center gap-2"
                       >
                         <Calendar className="w-4 h-4" />
                         Book Next Lesson
@@ -229,10 +229,10 @@ export default function MyTeachersSection() {
         <div className="mt-4 pt-4 border-t border-gray-200">
           <button
             onClick={() => navigate('/teachers')}
-            className="w-full text-center text-cyan-600 hover:text-cyan-700 font-medium text-sm flex items-center justify-center gap-2 group"
+            className="w-full text-center text-emerald-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center gap-2 group"
           >
             Explore more teachers
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            <ArrowRight className="w-4 h-4 group-hover:trangray-x-1 transition" />
           </button>
         </div>
       )}

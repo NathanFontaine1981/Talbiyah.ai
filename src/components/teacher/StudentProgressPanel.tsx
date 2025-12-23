@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { ChevronDown, ChevronUp, BookOpen, Brain, Volume2, Heart, Edit3, Save, X, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -248,7 +249,7 @@ export default function StudentProgressPanel({
       onNotesUpdate?.();
     } catch (error: any) {
       console.error('Error saving notes:', error);
-      alert('Failed to save notes: ' + error.message);
+      toast.error('Failed to save notes: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -292,18 +293,18 @@ export default function StudentProgressPanel({
       await loadProgress();
     } catch (error: any) {
       console.error('Error updating progress:', error);
-      alert('Failed to update progress: ' + error.message);
+      toast.error('Failed to update progress: ' + error.message);
     }
   };
 
   const stats = calculateOverallProgress();
 
   return (
-    <div className="mt-4 border-t border-slate-700 pt-4">
+    <div className="mt-4 border-t border-gray-200 pt-4">
       {/* Expandable Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 bg-slate-800/50 hover:bg-slate-800 rounded-lg transition"
+        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
       >
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-emerald-400" />
@@ -315,9 +316,9 @@ export default function StudentProgressPanel({
           )}
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-slate-400" />
+          <ChevronUp className="w-5 h-5 text-gray-500" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-400" />
+          <ChevronDown className="w-5 h-5 text-gray-500" />
         )}
       </button>
 
@@ -351,7 +352,7 @@ export default function StudentProgressPanel({
 
               {/* Surah Grid - show last 30 (Juz Amma) by default for quick access */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-slate-400">Juz Amma (78-114)</h4>
+                <h4 className="text-sm font-medium text-gray-500">Juz Amma (78-114)</h4>
                 <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                   {SURAHS.slice(77).map((surah) => {
                     const surahProgress = getProgressForSurah(surah.number);
@@ -377,7 +378,7 @@ export default function StudentProgressPanel({
                             ? 'bg-purple-600/50 hover:bg-purple-600'
                             : hasAnyProgress
                             ? 'bg-blue-600/50 hover:bg-blue-600'
-                            : 'bg-slate-700/50 hover:bg-slate-700'
+                            : 'bg-gray-100 hover:bg-gray-200'
                         }`}
                         title={surah.name}
                       >
@@ -390,7 +391,7 @@ export default function StudentProgressPanel({
 
               {/* Selected Surah Details */}
               {selectedSurah && (
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   {(() => {
                     const surah = SURAHS[selectedSurah - 1];
                     const surahProgress = getProgressForSurah(selectedSurah);
@@ -403,15 +404,15 @@ export default function StudentProgressPanel({
                             <h4 className="text-lg font-bold text-white">
                               {selectedSurah}. {surah.name}
                             </h4>
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-gray-500">
                               {surah.nameAr} • {surah.ayahs} ayahs
                             </p>
                           </div>
                           <button
                             onClick={() => setSelectedSurah(null)}
-                            className="p-2 hover:bg-slate-700 rounded-lg transition"
+                            className="p-2 hover:bg-gray-200 rounded-lg transition"
                           >
-                            <X className="w-4 h-4 text-slate-400" />
+                            <X className="w-4 h-4 text-gray-500" />
                           </button>
                         </div>
 
@@ -422,7 +423,7 @@ export default function StudentProgressPanel({
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${
                               surahProgress?.understanding_complete
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-200'
                             }`}
                           >
                             <Brain className="w-4 h-4" />
@@ -434,7 +435,7 @@ export default function StudentProgressPanel({
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${
                               surahProgress?.fluency_complete
                                 ? 'bg-emerald-600 text-white'
-                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-200'
                             }`}
                           >
                             <Volume2 className="w-4 h-4" />
@@ -446,7 +447,7 @@ export default function StudentProgressPanel({
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${
                               surahProgress?.memorization_complete
                                 ? 'bg-purple-600 text-white'
-                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-200'
                             }`}
                           >
                             <Heart className="w-4 h-4" />
@@ -458,14 +459,14 @@ export default function StudentProgressPanel({
                         {/* Teacher Notes */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm font-medium text-slate-400">Teacher Notes</label>
+                            <label className="text-sm font-medium text-gray-500">Teacher Notes</label>
                             {!editingNotes && (
                               <button
                                 onClick={() => {
                                   setEditingNotes(true);
                                   setNotesText(surahProgress?.teacher_notes || '');
                                 }}
-                                className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition"
+                                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-cyan-300 transition"
                               >
                                 <Edit3 className="w-3 h-3" />
                                 Edit
@@ -479,34 +480,34 @@ export default function StudentProgressPanel({
                                 value={notesText}
                                 onChange={(e) => setNotesText(e.target.value)}
                                 placeholder="Add notes about student's progress on this surah..."
-                                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                                className="w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 rows={3}
                               />
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => handleSaveNotes(selectedSurah)}
                                   disabled={saving}
-                                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition disabled:opacity-50"
+                                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-cyan-700 text-white rounded-lg transition disabled:opacity-50"
                                 >
                                   <Save className="w-4 h-4" />
                                   {saving ? 'Saving...' : 'Save Notes'}
                                 </button>
                                 <button
                                   onClick={() => setEditingNotes(false)}
-                                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                                  className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg transition"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             </div>
                           ) : (
-                            <div className="bg-slate-700/50 rounded-lg p-3 min-h-[60px]">
+                            <div className="bg-gray-100 rounded-lg p-3 min-h-[60px]">
                               {surahProgress?.teacher_notes ? (
-                                <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                                <p className="text-sm text-gray-600 whitespace-pre-wrap">
                                   {surahProgress.teacher_notes}
                                 </p>
                               ) : (
-                                <p className="text-sm text-slate-500 italic">
+                                <p className="text-sm text-gray-500 italic">
                                   No notes yet. Click Edit to add notes.
                                 </p>
                               )}

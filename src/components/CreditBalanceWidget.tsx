@@ -12,6 +12,7 @@ export default function CreditBalanceWidget() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasUnlimitedCredits, setHasUnlimitedCredits] = useState(false);
 
   useEffect(() => {
     loadBalance();
@@ -45,6 +46,19 @@ export default function CreditBalanceWidget() {
         return;
       }
 
+      // Check if user has unlimited credits
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('unlimited_credits')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData?.unlimited_credits) {
+        setHasUnlimitedCredits(true);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('user_credits')
         .select('credits_remaining, total_credits_purchased')
@@ -67,9 +81,9 @@ export default function CreditBalanceWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 animate-pulse">
-        <div className="h-8 bg-slate-700 rounded w-32 mb-4"></div>
-        <div className="h-12 bg-slate-700 rounded w-20"></div>
+      <div className="bg-white rounded-2xl p-6 border border-gray-200 animate-pulse">
+        <div className="h-8 bg-gray-100 rounded w-32 mb-4"></div>
+        <div className="h-12 bg-gray-100 rounded w-20"></div>
       </div>
     );
   }
@@ -77,32 +91,68 @@ export default function CreditBalanceWidget() {
   const creditsRemaining = balance?.credits_remaining || 0;
   const totalPurchased = balance?.total_credits_purchased || 0;
 
+  // Render special UI for unlimited credits (Gold account)
+  if (hasUnlimitedCredits) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-900 via-yellow-800 to-orange-900 rounded-2xl p-6 border-2 border-amber-400 hover:border-amber-300 transition-all shadow-xl shadow-amber-500/40">
+        {/* Shimmer effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/15 to-transparent -translate-x-full animate-pulse" style={{ animationDuration: '3s' }} />
+
+        <div className="relative flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-2xl">👑</span>
+              <h3 className="text-sm font-semibold text-amber-100 uppercase tracking-wider">Gold Member</h3>
+            </div>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200">Unlimited</span>
+            </div>
+            <p className="text-amber-100 text-sm mt-2 font-medium">Free lessons forever</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-amber-600 to-yellow-600 border-2 border-amber-300 rounded-xl px-4 py-2 shadow-lg">
+            <span className="text-white text-sm font-black tracking-widest">GOLD</span>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <button
+          onClick={() => navigate('/teachers')}
+          className="relative w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-300 hover:via-yellow-300 hover:to-amber-300 text-gray-900 py-3 rounded-xl font-black text-lg transition-all shadow-lg shadow-amber-400/50 hover:shadow-amber-300/60 flex items-center justify-center space-x-2"
+        >
+          <span className="text-xl">📚</span>
+          <span>Book a Lesson</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition">
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-emerald-300 transition">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
-            <CreditCard className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-sm font-medium text-slate-400">Lesson Credits</h3>
+            <CreditCard className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-sm font-medium text-gray-500">Lesson Credits</h3>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl font-bold text-white">{creditsRemaining}</span>
-            <span className="text-slate-400 text-sm">
+            <span className="text-4xl font-bold text-gray-900">{creditsRemaining}</span>
+            <span className="text-gray-500 text-sm">
               {creditsRemaining === 1 ? 'credit' : 'credits'}
             </span>
           </div>
         </div>
 
         {creditsRemaining > 0 && (
-          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg px-3 py-1">
-            <span className="text-green-400 text-xs font-medium">Active</span>
+          <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1">
+            <span className="text-green-600 text-xs font-medium">Active</span>
           </div>
         )}
       </div>
 
       {/* Stats */}
       {totalPurchased > 0 && (
-        <div className="flex items-center space-x-2 text-xs text-slate-400 mb-4">
+        <div className="flex items-center space-x-2 text-xs text-gray-500 mb-4">
           <TrendingUp className="w-4 h-4" />
           <span>{totalPurchased} credits purchased total</span>
         </div>
@@ -112,7 +162,7 @@ export default function CreditBalanceWidget() {
       <div className="flex space-x-3">
         <button
           onClick={() => navigate('/buy-credits')}
-          className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2.5 rounded-lg font-semibold transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+          className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
         >
           <Plus className="w-4 h-4" />
           <span>Buy Credits</span>
@@ -120,7 +170,7 @@ export default function CreditBalanceWidget() {
 
         <button
           onClick={() => navigate('/teachers')}
-          className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2.5 rounded-lg font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
+          className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2.5 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
         >
           <span>📚</span>
           <span>Book Lesson</span>
@@ -129,8 +179,8 @@ export default function CreditBalanceWidget() {
 
       {/* Low Balance Warning */}
       {creditsRemaining > 0 && creditsRemaining <= 2 && (
-        <div className="mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-          <p className="text-yellow-400 text-xs">
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-amber-700 text-xs">
             Running low on credits! Buy more to keep learning.
           </p>
         </div>
@@ -138,8 +188,8 @@ export default function CreditBalanceWidget() {
 
       {/* No Credits Message */}
       {creditsRemaining === 0 && (
-        <div className="mt-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
-          <p className="text-cyan-400 text-xs">
+        <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+          <p className="text-emerald-600 text-xs">
             Get started by purchasing your first credit pack!
           </p>
         </div>

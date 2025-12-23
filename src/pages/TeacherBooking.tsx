@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, User, ShoppingCart, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { useCart } from '../contexts/CartContext';
 import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, setMinutes } from 'date-fns';
 
@@ -347,7 +348,7 @@ export default function TeacherBooking() {
       }
     } catch (error) {
       console.error('Error updating cart:', error);
-      alert('Failed to update cart. Please try again.');
+      toast.error('Failed to update cart. Please try again.');
     } finally {
       setAddingToCart(false);
     }
@@ -358,10 +359,10 @@ export default function TeacherBooking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
@@ -372,19 +373,19 @@ export default function TeacherBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/teachers')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back to Teachers</span>
             </button>
 
-            <h1 className="text-xl font-bold text-white">Book with {teacher.full_name}</h1>
+            <h1 className="text-xl font-bold text-gray-900">Book with {teacher.full_name}</h1>
 
             <div className="w-32"></div>
           </div>
@@ -403,17 +404,17 @@ export default function TeacherBooking() {
           {/* Left Column: Booking Controls (50% width) */}
           <div className="lg:col-span-1 space-y-6">
             {/* Teacher Info */}
-            <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
               <div className="flex items-start space-x-4">
                 <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
                   <User className="w-8 h-8 text-emerald-400" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-2">{teacher.full_name}</h2>
-                  <p className="text-slate-300 mb-4">{teacher.bio || 'Experienced teacher'}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{teacher.full_name}</h2>
+                  <p className="text-gray-600 mb-4">{teacher.bio || 'Experienced teacher'}</p>
                   <div className="flex items-center space-x-4 text-sm">
                     <span className="text-emerald-400 font-semibold">£7.50 / 30 min</span>
-                    <span className="text-slate-500">•</span>
+                    <span className="text-gray-500">•</span>
                     <span className="text-emerald-400 font-semibold">£15.00 / 60 min</span>
                   </div>
                 </div>
@@ -422,10 +423,10 @@ export default function TeacherBooking() {
 
             {/* Subject Display (if pre-selected from Step 1) */}
             {preSelectedSubject && preSelectedSubject !== '' && selectedSubject && (
-              <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm text-slate-400 mb-1">Subject (Selected in Step 1)</h3>
+                    <h3 className="text-sm text-gray-500 mb-1">Subject (Selected in Step 1)</h3>
                     <p className="text-xl font-bold text-emerald-400">{selectedSubject.name}</p>
                   </div>
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
@@ -438,8 +439,8 @@ export default function TeacherBooking() {
             {/* Subject & Duration Selection */}
             <div className={`grid grid-cols-1 ${(!preSelectedSubject || preSelectedSubject === '') && subjects.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
               {(!preSelectedSubject || preSelectedSubject === '') && subjects.length > 1 && (
-                <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800">
-                  <h3 className="text-lg font-semibold text-white mb-4">Subject</h3>
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Subject</h3>
                   <div className="space-y-2">
                     {subjects.map((subject) => (
                       <button
@@ -447,8 +448,8 @@ export default function TeacherBooking() {
                         onClick={() => setSelectedSubject(subject)}
                         className={`w-full p-3 rounded-lg text-left transition ${
                           selectedSubject?.id === subject.id
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            ? 'bg-emerald-500 text-gray-900'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                       >
                         {subject.name}
@@ -458,15 +459,15 @@ export default function TeacherBooking() {
                 </div>
               )}
 
-              <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800">
-                <h3 className="text-lg font-semibold text-white mb-4">Duration</h3>
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Duration</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setDuration(30)}
                     className={`p-4 rounded-lg transition ${
                       duration === 30
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-emerald-500 text-gray-900'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     <div className="text-center">
@@ -479,8 +480,8 @@ export default function TeacherBooking() {
                     onClick={() => setDuration(60)}
                     className={`p-4 rounded-lg transition ${
                       duration === 60
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-emerald-500 text-gray-900'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     <div className="text-center">
@@ -494,19 +495,19 @@ export default function TeacherBooking() {
             </div>
 
             {/* Calendar */}
-            <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white">Select Time Slots</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Select Time Slots</h3>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition"
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition"
                   >
                     Previous Week
                   </button>
                   <button
                     onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition"
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition"
                   >
                     Next Week
                   </button>
@@ -520,9 +521,9 @@ export default function TeacherBooking() {
                   return (
                     <div key={day.toISOString()} className="space-y-2">
                       <div className="text-center mb-4">
-                        <div className="text-sm text-slate-400">{format(day, 'EEE')}</div>
-                        <div className="text-lg font-semibold text-white">{format(day, 'd')}</div>
-                        <div className="text-xs text-slate-500">{format(day, 'MMM')}</div>
+                        <div className="text-sm text-gray-500">{format(day, 'EEE')}</div>
+                        <div className="text-lg font-semibold text-gray-900">{format(day, 'd')}</div>
+                        <div className="text-xs text-gray-500">{format(day, 'MMM')}</div>
                       </div>
 
                       <div className="space-y-2">
@@ -538,10 +539,10 @@ export default function TeacherBooking() {
                               disabled={!slot.available || addingToCart}
                               className={`w-full p-2 rounded text-xs transition ${
                                 isInCart
-                                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 font-semibold'
+                                  ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50 font-semibold'
                                   : slot.available
-                                  ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30'
-                                  : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                  ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-gray-900 border border-emerald-500/30'
+                                  : 'bg-gray-100 text-gray-600 cursor-not-allowed'
                               }`}
                             >
                               {format(slot.time, 'h:mm a')}
@@ -558,17 +559,17 @@ export default function TeacherBooking() {
 
           {/* Right Column: Cart Display (50% width) */}
           <div className="lg:col-span-1">
-            <div className="bg-slate-900/80 rounded-xl p-6 border border-slate-800 sticky top-24">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 sticky top-24">
               <div className="flex items-center space-x-2 mb-6">
-                <ShoppingCart className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-xl font-bold text-white">Your Cart</h3>
+                <ShoppingCart className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-xl font-bold text-gray-900">Your Cart</h3>
               </div>
 
               {cartItems.length === 0 ? (
                 <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                  <p className="text-slate-400 text-sm">Your cart is empty</p>
-                  <p className="text-slate-500 text-xs mt-1">Select time slots to add sessions</p>
+                  <ShoppingCart className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Your cart is empty</p>
+                  <p className="text-gray-500 text-xs mt-1">Select time slots to add sessions</p>
                 </div>
               ) : (
                 <>
@@ -576,7 +577,7 @@ export default function TeacherBooking() {
                     {cartItems.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 relative group"
+                        className="bg-gray-50 rounded-lg p-4 border border-gray-200 relative group"
                       >
                         <button
                           onClick={() => removeFromCart(item.id)}
@@ -585,23 +586,23 @@ export default function TeacherBooking() {
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
-                        <p className="text-sm font-semibold text-white mb-1 pr-6">{item.subject_name}</p>
-                        <p className="text-xs text-slate-400 mb-2">with {item.teacher_name}</p>
+                        <p className="text-sm font-semibold text-gray-900 mb-1 pr-6">{item.subject_name}</p>
+                        <p className="text-xs text-gray-500 mb-2">with {item.teacher_name}</p>
                         <div className="flex items-center justify-between text-xs">
-                          <div className="text-slate-400">
+                          <div className="text-gray-500">
                             <p>{format(parseISO(item.scheduled_time), 'MMM d, yyyy')}</p>
                             <p>{format(parseISO(item.scheduled_time), 'h:mm a')} • {item.duration_minutes} min</p>
                           </div>
-                          <p className="text-cyan-400 font-bold">£{item.price.toFixed(2)}</p>
+                          <p className="text-emerald-600 font-bold">£{item.price.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="border-t border-slate-700 pt-4 mb-4">
+                  <div className="border-t border-gray-200 pt-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-slate-400">Subtotal</span>
-                      <span className="text-white font-semibold">£{totalPrice.toFixed(2)}</span>
+                      <span className="text-gray-500">Subtotal</span>
+                      <span className="text-gray-900 font-semibold">£{totalPrice.toFixed(2)}</span>
                     </div>
 
                     {discount > 0 && (
@@ -614,8 +615,8 @@ export default function TeacherBooking() {
                     )}
 
                     <div className="flex items-center justify-between text-lg font-bold">
-                      <span className="text-white">Total</span>
-                      <span className="text-cyan-400">£{finalPrice.toFixed(2)}</span>
+                      <span className="text-gray-900">Total</span>
+                      <span className="text-emerald-600">£{finalPrice.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -626,14 +627,14 @@ export default function TeacherBooking() {
                           clearCart();
                         }
                       }}
-                      className="w-full px-4 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition text-sm font-medium"
+                      className="w-full px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-900 rounded-lg transition text-sm font-medium"
                     >
                       Clear Cart
                     </button>
 
                     <button
                       onClick={() => navigate('/checkout')}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
+                      className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-gray-900 font-semibold rounded-xl transition shadow-lg shadow-emerald-500/20"
                     >
                       Proceed to Checkout
                     </button>

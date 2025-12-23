@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface SessionStats {
@@ -160,7 +161,7 @@ export default function Sessions() {
       scheduled: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
       confirmed: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
       pending: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-      completed: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+      completed: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
       cancelled: 'bg-red-500/10 border-red-500/20 text-red-400',
     };
     return colors[status as keyof typeof colors] || colors.pending;
@@ -203,7 +204,7 @@ export default function Sessions() {
       setSelectedSession(null);
     } catch (error) {
       console.error('Error cancelling session:', error);
-      alert('Failed to cancel session');
+      toast.error('Failed to cancel session');
     }
   }
 
@@ -216,7 +217,7 @@ export default function Sessions() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -226,12 +227,12 @@ export default function Sessions() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Session Management</h1>
-          <p className="text-slate-400">Manage all student and group sessions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Session Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage all student and group sessions</p>
         </div>
         <button
           onClick={() => setShowNewSession(true)}
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
         >
           <Plus className="w-5 h-5" />
           <span>New Session</span>
@@ -267,17 +268,17 @@ export default function Sessions() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
         {/* Search */}
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400" />
             <input
               type="text"
               placeholder="Search by teacher, student, or session ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500"
             />
           </div>
         </div>
@@ -285,11 +286,11 @@ export default function Sessions() {
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Type</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Type</label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Types</option>
               <option value="private">Private</option>
@@ -298,11 +299,11 @@ export default function Sessions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Status</option>
               <option value="scheduled">Scheduled</option>
@@ -314,11 +315,11 @@ export default function Sessions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Subject</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Subject</label>
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Subjects</option>
               <option value="quran">Quran</option>
@@ -330,17 +331,17 @@ export default function Sessions() {
       </div>
 
       {/* Results Count */}
-      <div className="mb-4 text-slate-400">
+      <div className="mb-4 text-gray-600 dark:text-gray-400">
         Showing {indexOfFirstSession + 1}-{Math.min(indexOfLastSession, filteredSessions.length)} of {filteredSessions.length} sessions
       </div>
 
       {/* Session List */}
       <div className="space-y-4 mb-8">
         {currentSessions.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-            <BookOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg">No sessions found</p>
-            <p className="text-slate-500 text-sm mt-2">Try adjusting your filters or create a new session</p>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+            <BookOpen className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No sessions found</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Try adjusting your filters or create a new session</p>
           </div>
         ) : (
           currentSessions.map(session => (
@@ -363,7 +364,7 @@ export default function Sessions() {
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition flex items-center space-x-1"
+            className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-1"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
@@ -378,8 +379,8 @@ export default function Sessions() {
                 onClick={() => setCurrentPage(pageNum)}
                 className={`px-4 py-2 rounded-lg transition ${
                   currentPage === pageNum
-                    ? 'bg-cyan-500 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-white'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                 }`}
               >
                 {pageNum}
@@ -390,7 +391,7 @@ export default function Sessions() {
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition flex items-center space-x-1"
+            className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-1"
           >
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
@@ -418,7 +419,7 @@ export default function Sessions() {
 function StatCard({ label, value, icon: Icon, color }: any) {
   const colors = {
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+    cyan: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
   };
@@ -440,18 +441,18 @@ function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatu
   const formattedDate = format(sessionDate, 'MMM d, yyyy');
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
-            <h3 className="text-lg font-semibold text-white">{session.subject} Session</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{session.subject} Session</h3>
             <span className={`px-3 py-1 ${getStatusColor(session.status)} border rounded-full text-xs font-medium`}>
               {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
             </span>
           </div>
-          <div className="space-y-1 text-sm text-slate-400">
-            <p><span className="text-slate-500">Teacher:</span> {session.teacher_name}</p>
-            <p><span className="text-slate-500">Student:</span> {session.student_name}</p>
+          <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <p><span className="text-gray-500 dark:text-gray-400">Teacher:</span> {session.teacher_name}</p>
+            <p><span className="text-gray-500 dark:text-gray-400">Student:</span> {session.student_name}</p>
             <div className="flex items-center space-x-4 mt-2">
               <span className="flex items-center space-x-1">
                 <Calendar className="w-4 h-4" />
@@ -467,8 +468,8 @@ function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatu
               </span>
             </div>
             <div className="flex items-center space-x-4 mt-2">
-              <span className="text-cyan-400">Type: {session.type.charAt(0).toUpperCase() + session.type.slice(1)}</span>
-              <span className="flex items-center space-x-1 text-emerald-400">
+              <span className="text-emerald-600 dark:text-emerald-400">Type: {session.type.charAt(0).toUpperCase() + session.type.slice(1)}</span>
+              <span className="flex items-center space-x-1 text-emerald-500 dark:text-emerald-400">
                 <DollarSign className="w-4 h-4" />
                 <span>£{(session.price / 100).toFixed(2)}</span>
               </span>
@@ -477,10 +478,10 @@ function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatu
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 pt-4 border-t border-slate-700">
+      <div className="flex items-center space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={() => onView(session)}
-          className="px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg transition text-sm flex items-center space-x-1"
+          className="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition text-sm flex items-center space-x-1"
         >
           <Eye className="w-4 h-4" />
           <span>View Details</span>
@@ -589,7 +590,7 @@ function NewSessionModal({ onClose, onSuccess }: any) {
       onClose();
     } catch (error) {
       console.error('Error creating session:', error);
-      alert('Failed to create session. Please try again.');
+      toast.error('Failed to create session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -597,10 +598,10 @@ function NewSessionModal({ onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Create New Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Session</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
@@ -608,12 +609,12 @@ function NewSessionModal({ onClose, onSuccess }: any) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Teacher</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Teacher</label>
               <select
                 required
                 value={formData.teacher_id}
                 onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Select Teacher</option>
                 {teachers.map((teacher) => (
@@ -625,12 +626,12 @@ function NewSessionModal({ onClose, onSuccess }: any) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Student</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Student</label>
               <select
                 required
                 value={formData.student_id}
                 onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Select Student</option>
                 {students.map((student) => (
@@ -643,12 +644,12 @@ function NewSessionModal({ onClose, onSuccess }: any) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Subject</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Subject</label>
             <select
               required
               value={formData.subject_id}
               onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="">Select Subject</option>
               {subjects.map((subject) => (
@@ -661,31 +662,31 @@ function NewSessionModal({ onClose, onSuccess }: any) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Date</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Date</label>
               <input
                 type="date"
                 required
                 value={formData.scheduled_date}
                 onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Time</label>
               <input
                 type="time"
                 required
                 value={formData.scheduled_time}
                 onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Duration (minutes)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Duration (minutes)</label>
               <input
                 type="number"
                 required
@@ -693,12 +694,12 @@ function NewSessionModal({ onClose, onSuccess }: any) {
                 step="15"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Price (£)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Price (£)</label>
               <input
                 type="number"
                 required
@@ -706,17 +707,17 @@ function NewSessionModal({ onClose, onSuccess }: any) {
                 step="0.01"
                 value={formData.price / 100}
                 onChange={(e) => setFormData({ ...formData, price: Math.round(parseFloat(e.target.value) * 100) })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="scheduled">Scheduled</option>
               <option value="confirmed">Confirmed</option>
@@ -728,14 +729,14 @@ function NewSessionModal({ onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
             >
               {loading ? 'Creating...' : 'Create Session'}
             </button>
@@ -749,56 +750,56 @@ function NewSessionModal({ onClose, onSuccess }: any) {
 function ViewSessionModal({ session, onClose }: any) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Session Details</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Session Details</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-4 text-slate-300">
+        <div className="space-y-4 text-gray-900 dark:text-gray-400">
           <div>
-            <p className="text-slate-500 text-sm">Session ID</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Session ID</p>
             <p className="font-mono text-sm">{session.id}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Subject</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Subject</p>
             <p>{session.subject}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Teacher</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Teacher</p>
             <p>{session.teacher_name}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Student</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Student</p>
             <p>{session.student_name}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Scheduled</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Scheduled</p>
             <p>{format(new Date(session.scheduled_date), 'MMMM d, yyyy')} at {session.scheduled_time}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Duration</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Duration</p>
             <p>{session.duration_minutes} minutes</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Price</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Price</p>
             <p>£{(session.price / 100).toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-slate-500 text-sm">Payment Status</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Payment Status</p>
             <p className="capitalize">{session.payment_status}</p>
           </div>
           {session.room_id && (
             <div>
-              <p className="text-slate-500 text-sm">100ms Room ID</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">100ms Room ID</p>
               <p className="font-mono text-sm">{session.room_id}</p>
             </div>
           )}
         </div>
         <button
           onClick={onClose}
-          className="mt-6 w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+          className="mt-6 w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
         >
           Close
         </button>
@@ -864,7 +865,7 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
       onClose();
     } catch (error) {
       console.error('Error updating session:', error);
-      alert('Failed to update session. Please try again.');
+      toast.error('Failed to update session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -872,26 +873,26 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Edit Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Session</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-4">
-            <p className="text-sm text-slate-400">Editing session for:</p>
-            <p className="text-white font-medium">{session.teacher_name} → {session.student_name}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Editing session for:</p>
+            <p className="text-gray-900 dark:text-white font-medium">{session.teacher_name} → {session.student_name}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Subject (optional)</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Subject (optional)</label>
             <select
               value={formData.subject_id}
               onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="">Keep current ({session.subject})</option>
               {subjects.map((subject) => (
@@ -904,31 +905,31 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Date</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Date</label>
               <input
                 type="date"
                 required
                 value={formData.scheduled_date}
                 onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Time</label>
               <input
                 type="time"
                 required
                 value={formData.scheduled_time}
                 onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Duration (minutes)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Duration (minutes)</label>
               <input
                 type="number"
                 required
@@ -936,12 +937,12 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
                 step="15"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Price (£)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Price (£)</label>
               <input
                 type="number"
                 required
@@ -949,17 +950,17 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
                 step="0.01"
                 value={formData.price / 100}
                 onChange={(e) => setFormData({ ...formData, price: Math.round(parseFloat(e.target.value) * 100) })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="scheduled">Scheduled</option>
               <option value="confirmed">Confirmed</option>
@@ -973,7 +974,7 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
@@ -1017,7 +1018,7 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
       onClose();
     } catch (error) {
       console.error('Error rescheduling session:', error);
-      alert('Failed to reschedule session. Please try again.');
+      toast.error('Failed to reschedule session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1025,44 +1026,44 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-6 max-w-md w-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Reschedule Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Reschedule Session</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-4">
-          <p className="text-sm text-slate-400 mb-1">Current Schedule:</p>
-          <p className="text-white font-medium">
+        <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Schedule:</p>
+          <p className="text-gray-900 dark:text-white font-medium">
             {format(new Date(session.scheduled_date), 'MMMM d, yyyy')} at {session.scheduled_time}
           </p>
-          <p className="text-slate-400 text-sm mt-2">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
             {session.teacher_name} → {session.student_name}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">New Date</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">New Date</label>
             <input
               type="date"
               required
               value={formData.scheduled_date}
               onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">New Time</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">New Time</label>
             <input
               type="time"
               required
               value={formData.scheduled_time}
               onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -1076,7 +1077,7 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
@@ -1097,21 +1098,21 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
 function CancelConfirmModal({ session, onClose, onConfirm }: any) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl p-6 max-w-md w-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Cancel Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Cancel Session</h3>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-slate-300 mb-6">
+        <p className="text-gray-900 dark:text-gray-400 mb-6">
           Are you sure you want to cancel this session with <strong>{session.teacher_name}</strong> and <strong>{session.student_name}</strong>?
         </p>
-        <p className="text-slate-400 text-sm mb-6">This action will update the session status to cancelled.</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">This action will update the session status to cancelled.</p>
         <div className="flex space-x-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
           >
             Keep Session
           </button>

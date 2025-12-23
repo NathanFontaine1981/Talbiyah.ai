@@ -13,6 +13,7 @@ import {
   Users
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface PromoCode {
@@ -95,7 +96,7 @@ export default function PromoCodeManager() {
       fetchPromoCodes();
     } catch (error: any) {
       console.error('Error creating promo code:', error);
-      alert(error.message || 'Failed to create promo code');
+      toast.error(error.message || 'Failed to create promo code');
     }
   }
 
@@ -124,7 +125,7 @@ export default function PromoCodeManager() {
       fetchPromoCodes();
     } catch (error: any) {
       console.error('Error updating promo code:', error);
-      alert(error.message || 'Failed to update promo code');
+      toast.error(error.message || 'Failed to update promo code');
     }
   }
 
@@ -217,8 +218,8 @@ export default function PromoCodeManager() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading promo codes...</p>
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading promo codes...</p>
         </div>
       </div>
     );
@@ -229,12 +230,12 @@ export default function PromoCodeManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Promo Codes</h1>
-          <p className="text-slate-400">Create and manage promotional codes for discounts</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Promo Codes</h1>
+          <p className="text-gray-600 dark:text-gray-400">Create and manage promotional codes for discounts</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center space-x-2"
+          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center space-x-2"
         >
           <Plus className="w-5 h-5" />
           <span>Create Code</span>
@@ -243,111 +244,111 @@ export default function PromoCodeManager() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-              <Tag className="w-5 h-5 text-cyan-400" />
+            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+              <Tag className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{promoCodes.length}</p>
-              <p className="text-sm text-slate-400">Total Codes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{promoCodes.length}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Codes</p>
             </div>
           </div>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
               <Check className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {promoCodes.filter(c => c.is_active).length}
               </p>
-              <p className="text-sm text-slate-400">Active</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
             </div>
           </div>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
               <Users className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {promoCodes.reduce((sum, c) => sum + c.current_uses, 0)}
               </p>
-              <p className="text-sm text-slate-400">Total Uses</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Uses</p>
             </div>
           </div>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
               <Gift className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {promoCodes.filter(c => c.discount_type === 'free_lesson').length}
               </p>
-              <p className="text-sm text-slate-400">Free Lesson Codes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Free Lesson Codes</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Promo Codes List */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700">
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Code</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Discount</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Uses</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Restrictions</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Status</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Code</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Discount</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Uses</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Restrictions</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Actions</th>
             </tr>
           </thead>
           <tbody>
             {promoCodes.map((code) => (
-              <tr key={code.id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+              <tr key={code.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-200/20">
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-white bg-slate-700 px-3 py-1 rounded">
+                    <span className="font-mono font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded">
                       {code.code}
                     </span>
                     <button
                       onClick={() => copyCode(code.code)}
-                      className="p-1 hover:bg-slate-600 rounded transition"
+                      className="p-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition"
                     >
                       {copiedCode === code.code ? (
                         <Check className="w-4 h-4 text-emerald-400" />
                       ) : (
-                        <Copy className="w-4 h-4 text-slate-400" />
+                        <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       )}
                     </button>
                   </div>
                   {code.description && (
-                    <p className="text-sm text-slate-400 mt-1">{code.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{code.description}</p>
                   )}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                       code.discount_type === 'free_lesson' ? 'bg-amber-500/20 text-amber-400' :
-                      code.discount_type === 'percentage' ? 'bg-cyan-500/20 text-cyan-400' :
+                      code.discount_type === 'percentage' ? 'bg-emerald-500/20 text-emerald-600' :
                       'bg-emerald-500/20 text-emerald-400'
                     }`}>
                       {getDiscountIcon(code.discount_type)}
                     </div>
-                    <span className="font-semibold text-white">{getDiscountDisplay(code)}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{getDiscountDisplay(code)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-white">
+                  <div className="text-gray-900 dark:text-white">
                     <span className="font-semibold">{code.current_uses}</span>
                     {code.max_uses && (
-                      <span className="text-slate-400"> / {code.max_uses}</span>
+                      <span className="text-gray-600 dark:text-gray-400"> / {code.max_uses}</span>
                     )}
                   </div>
                 </td>
@@ -376,7 +377,7 @@ export default function PromoCodeManager() {
                     className={`px-3 py-1 rounded-full text-sm font-semibold transition ${
                       code.is_active
                         ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                        : 'bg-slate-600/50 text-slate-400 hover:bg-slate-600'
+                        : 'bg-gray-600/50 text-gray-500 hover:bg-gray-200'
                     }`}
                   >
                     {code.is_active ? 'Active' : 'Inactive'}
@@ -386,9 +387,9 @@ export default function PromoCodeManager() {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => startEdit(code)}
-                      className="p-2 hover:bg-slate-600 rounded-lg transition"
+                      className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                     >
-                      <Edit2 className="w-4 h-4 text-slate-400" />
+                      <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
                     <button
                       onClick={() => deletePromoCode(code.id)}
@@ -405,11 +406,11 @@ export default function PromoCodeManager() {
 
         {promoCodes.length === 0 && (
           <div className="text-center py-12">
-            <Tag className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No promo codes yet</p>
+            <Tag className="w-12 h-12 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">No promo codes yet</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="mt-4 text-cyan-400 hover:text-cyan-300 font-medium"
+              className="mt-4 text-emerald-600 hover:text-cyan-300 font-medium"
             >
               Create your first promo code
             </button>
@@ -420,10 +421,10 @@ export default function PromoCodeManager() {
       {/* Create/Edit Modal */}
       {(showCreateModal || editingCode) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-700">
-            <div className="p-6 border-b border-slate-700">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   {editingCode ? 'Edit Promo Code' : 'Create Promo Code'}
                 </h2>
                 <button
@@ -432,38 +433,38 @@ export default function PromoCodeManager() {
                     setEditingCode(null);
                     resetForm();
                   }}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition"
+                  className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                 >
-                  <X className="w-5 h-5 text-slate-400" />
+                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Code</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Code</label>
                 <input
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   placeholder="e.g. WELCOME20"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Description (optional)</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Description (optional)</label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="e.g. Welcome discount for new users"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Discount Type</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Discount Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'percentage', label: 'Percentage', icon: Percent },
@@ -475,12 +476,12 @@ export default function PromoCodeManager() {
                       onClick={() => setFormData({ ...formData, discount_type: value as any })}
                       className={`p-3 rounded-lg border-2 transition flex flex-col items-center space-y-1 ${
                         formData.discount_type === value
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-slate-600 hover:border-slate-500'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-700'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 ${formData.discount_type === value ? 'text-cyan-400' : 'text-slate-400'}`} />
-                      <span className={`text-xs ${formData.discount_type === value ? 'text-cyan-400' : 'text-slate-400'}`}>
+                      <Icon className={`w-5 h-5 ${formData.discount_type === value ? 'text-emerald-600' : 'text-gray-600 dark:text-gray-400'}`} />
+                      <span className={`text-xs ${formData.discount_type === value ? 'text-emerald-600' : 'text-gray-600 dark:text-gray-400'}`}>
                         {label}
                       </span>
                     </button>
@@ -490,7 +491,7 @@ export default function PromoCodeManager() {
 
               {formData.discount_type !== 'free_lesson' && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                     Discount Value {formData.discount_type === 'percentage' ? '(%)' : '(£)'}
                   </label>
                   <input
@@ -499,42 +500,42 @@ export default function PromoCodeManager() {
                     onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 })}
                     min={0}
                     max={formData.discount_type === 'percentage' ? 100 : undefined}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Max Uses (optional)</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Max Uses (optional)</label>
                   <input
                     type="number"
                     value={formData.max_uses}
                     onChange={(e) => setFormData({ ...formData, max_uses: e.target.value })}
                     placeholder="Unlimited"
                     min={1}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Min Cart Value (£)</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Min Cart Value (£)</label>
                   <input
                     type="number"
                     value={formData.min_cart_value}
                     onChange={(e) => setFormData({ ...formData, min_cart_value: parseFloat(e.target.value) || 0 })}
                     min={0}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Expires On (optional)</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Expires On (optional)</label>
                 <input
                   type="date"
                   value={formData.valid_until}
                   onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -543,27 +544,27 @@ export default function PromoCodeManager() {
                   type="checkbox"
                   checked={formData.first_lesson_only}
                   onChange={(e) => setFormData({ ...formData, first_lesson_only: e.target.checked })}
-                  className="w-5 h-5 rounded border-slate-600 text-cyan-500 focus:ring-cyan-500 bg-slate-700"
+                  className="w-5 h-5 rounded border-gray-200 dark:border-gray-700 text-emerald-500 focus:ring-emerald-500 bg-gray-50 dark:bg-gray-700"
                 />
-                <span className="text-slate-300">Only valid for first lesson</span>
+                <span className="text-gray-600 dark:text-gray-400">Only valid for first lesson</span>
               </label>
             </div>
 
-            <div className="p-6 border-t border-slate-700 flex justify-end space-x-3">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   setEditingCode(null);
                   resetForm();
                 }}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                className="px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition"
               >
                 Cancel
               </button>
               <button
                 onClick={editingCode ? updatePromoCode : createPromoCode}
                 disabled={!formData.code}
-                className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {editingCode ? 'Update' : 'Create'}
               </button>

@@ -165,7 +165,7 @@ export default function TalbiyahInsightsShowcase({ courseType }: InsightsShowcas
       bg: 'bg-cyan-50',
       border: 'border-cyan-200',
       text: 'text-cyan-700',
-      icon: 'text-cyan-600',
+      icon: 'text-emerald-600',
       hover: 'hover:bg-cyan-100'
     }
   };
@@ -205,7 +205,7 @@ export default function TalbiyahInsightsShowcase({ courseType }: InsightsShowcas
                   {section.content.map((item, index) => (
                     <li key={index} className="flex items-start space-x-3">
                       <span className={`${colors.text} font-bold text-sm mt-0.5`}>•</span>
-                      <span className="text-slate-700 leading-relaxed">{item}</span>
+                      <span className="text-gray-700 leading-relaxed">{item}</span>
                     </li>
                   ))}
                 </ul>

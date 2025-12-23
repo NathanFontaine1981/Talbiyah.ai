@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { MessageCircle, Send, Shield, X, Reply } from 'lucide-react';
 import MessageTemplateSelector from './MessageTemplateSelector';
@@ -171,7 +172,7 @@ export default function LessonMessaging({
       // Message will appear via real-time subscription
     } catch (error: any) {
       console.error('Error sending message:', error);
-      alert(error.message || 'Failed to send message. Please try again.');
+      toast.error(error.message || 'Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }
@@ -191,7 +192,7 @@ export default function LessonMessaging({
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4">
+      <div className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white p-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold flex items-center gap-2">
@@ -263,7 +264,7 @@ export default function LessonMessaging({
           <button
             onClick={() => setShowTemplates(true)}
             disabled={sending}
-            className="w-full bg-cyan-600 text-white py-3 rounded-lg hover:bg-cyan-700 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-cyan-700 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Send className="w-4 h-4" />
             Send Message

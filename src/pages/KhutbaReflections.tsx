@@ -34,9 +34,14 @@ import {
   Calendar,
   User,
   MapPin,
-  Save
+  Save,
+  Volume2,
+  Pause,
+  Play,
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { generateTalbiyahInsightsPDF } from '../utils/generateInsightsPDF';
 
 interface KhutbaStudyNotes {
@@ -133,6 +138,11 @@ export default function KhutbaReflections() {
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+  // TTS playback states (using browser speechSynthesis)
+  const [ttsLoading, setTtsLoading] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [ttsSection, setTtsSection] = useState<string | null>(null);
+
   // Audio recording states
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -209,7 +219,7 @@ export default function KhutbaReflections() {
 
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('Could not access microphone. Please ensure you have granted microphone permissions.');
+      toast.error('Could not access microphone. Please ensure you have granted microphone permissions.');
     }
   };
 
@@ -324,7 +334,7 @@ export default function KhutbaReflections() {
 
     } catch (error: any) {
       console.error('Error generating study notes:', error);
-      alert(`Error: ${error.message}`);
+      toast.error(`Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -494,10 +504,10 @@ export default function KhutbaReflections() {
       }
 
       setSavedInsightId(result.id);
-      alert('Talbiyah Insights saved successfully! It is now available in the library for all users.');
+      toast.success('Talbiyah Insights saved successfully! It is now available in the library for all users.');
     } catch (error: any) {
       console.error('Error saving insights:', error);
-      alert(`Error saving: ${error.message}`);
+      toast.error(`Error saving: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -517,16 +527,132 @@ export default function KhutbaReflections() {
       });
     } catch (error: any) {
       console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      toast.error('Error generating PDF. Please try again.');
     } finally {
       setDownloadingPDF(false);
     }
   };
 
+  // Browser-based Text-to-Speech using Web Speech API
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const playTTS = async (text: string, sectionId: string) => {
+    // Check if browser supports speech synthesis
+    if (!('speechSynthesis' in window)) {
+      toast.error('Your browser does not support text-to-speech. Please try Chrome, Edge, or Safari.');
+      return;
+    }
+
+    // If same section is playing, pause it
+    if (ttsSection === sectionId && ttsPlaying) {
+      window.speechSynthesis.pause();
+      setTtsPlaying(false);
+      return;
+    }
+
+    // If same section is paused, resume
+    if (ttsSection === sectionId && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setTtsPlaying(true);
+      return;
+    }
+
+    // Stop any currently playing speech
+    window.speechSynthesis.cancel();
+
+    setTtsLoading(true);
+    setTtsSection(sectionId);
+    setTtsPlaying(false);
+
+    try {
+      // Create utterance
+      const utterance = new SpeechSynthesisUtterance(text);
+      speechSynthRef.current = utterance;
+
+      // Get available voices and prefer a good English voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v =>
+        v.name.includes('Google UK English Male') ||
+        v.name.includes('Daniel') ||
+        v.name.includes('Google US English') ||
+        v.lang.startsWith('en')
+      ) || voices[0];
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      // Configure speech settings
+      utterance.rate = 0.9; // Slightly slower for clarity
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onstart = () => {
+        setTtsPlaying(true);
+        setTtsLoading(false);
+      };
+
+      utterance.onend = () => {
+        setTtsPlaying(false);
+        setTtsSection(null);
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        setTtsPlaying(false);
+        setTtsSection(null);
+        setTtsLoading(false);
+        if (event.error !== 'canceled') {
+          toast.error('Error playing speech. Please try again.');
+        }
+      };
+
+      utterance.onpause = () => {
+        setTtsPlaying(false);
+      };
+
+      utterance.onresume = () => {
+        setTtsPlaying(true);
+      };
+
+      // Start speaking
+      window.speechSynthesis.speak(utterance);
+
+    } catch (error: any) {
+      console.error('Error with TTS:', error);
+      toast.error(`Error: ${error.message}`);
+      setTtsSection(null);
+      setTtsLoading(false);
+    }
+  };
+
+  // Stop TTS function
+  const stopTTS = () => {
+    window.speechSynthesis.cancel();
+    setTtsPlaying(false);
+    setTtsSection(null);
+  };
+
+  // Cleanup TTS on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // Load voices when component mounts (some browsers need this)
+  useEffect(() => {
+    const loadVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
+
   // Show loading state while checking auth
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
       </div>
     );
@@ -539,14 +665,69 @@ export default function KhutbaReflections() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gray-50">
+      {/* Floating Audio Player */}
+      {(ttsPlaying || ttsLoading) && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-violet-500/40 flex items-center space-x-4 animate-in slide-in-from-bottom-4">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            {ttsLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <Volume2 className="w-6 h-6" />
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold">
+              {ttsLoading ? 'Generating Audio...' : 'Now Playing'}
+            </p>
+            <p className="text-violet-200 text-sm">
+              {ttsSection === 'summary' ? 'Summary' : ttsSection === 'transcript' ? 'Full Khutbah' : 'Audio'}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (ttsAudioRef.current) {
+                if (ttsPlaying) {
+                  ttsAudioRef.current.pause();
+                  setTtsPlaying(false);
+                } else {
+                  ttsAudioRef.current.play();
+                  setTtsPlaying(true);
+                }
+              }
+            }}
+            disabled={ttsLoading}
+            className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition disabled:opacity-50"
+          >
+            {ttsPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+          </button>
+          <button
+            onClick={() => {
+              if (ttsAudioRef.current) {
+                ttsAudioRef.current.pause();
+                ttsAudioRef.current = null;
+              }
+              if (ttsAudioUrl) {
+                URL.revokeObjectURL(ttsAudioUrl);
+                setTtsAudioUrl(null);
+              }
+              setTtsPlaying(false);
+              setTtsSection(null);
+            }}
+            className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+      <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back to Dashboard</span>
@@ -554,11 +735,11 @@ export default function KhutbaReflections() {
 
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
+                <Brain className="w-6 h-6 text-gray-900" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Talbiyah Insights</h1>
-                <p className="text-xs text-slate-400">Record, Transcribe, Study</p>
+                <h1 className="text-xl font-bold text-gray-900">Talbiyah Insights</h1>
+                <p className="text-xs text-gray-500">Record, Transcribe, Study</p>
               </div>
             </div>
 
@@ -570,36 +751,36 @@ export default function KhutbaReflections() {
       <main className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Turn Any Khutbah Into Talbiyah Insights
           </h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg">
             Record the khutbah, transcribe it, and receive comprehensive study materials including
             Quranic vocabulary, hadith, quizzes, homework, and family discussion guides.
           </p>
         </div>
 
         {/* Input Section */}
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-8 mb-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8">
 
           {/* Audio Recording Section */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Mic className="w-5 h-5 mr-2 text-amber-400" />
               Record Khutbah Audio
             </h3>
 
-            <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
+            <div className="bg-white/50 rounded-xl p-6 border border-gray-200">
               {!isRecording && !audioBlob && (
                 <div className="text-center">
                   <button
                     onClick={startRecording}
                     className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center mx-auto transition shadow-lg shadow-red-500/30"
                   >
-                    <Mic className="w-10 h-10 text-white" />
+                    <Mic className="w-10 h-10 text-gray-900" />
                   </button>
-                  <p className="text-slate-400 mt-4">Click to start recording</p>
-                  <p className="text-slate-500 text-sm mt-1">Make sure you're in a quiet environment</p>
+                  <p className="text-gray-500 mt-4">Click to start recording</p>
+                  <p className="text-gray-500 text-sm mt-1">Make sure you're in a quiet environment</p>
                 </div>
               )}
 
@@ -611,11 +792,11 @@ export default function KhutbaReflections() {
                       onClick={stopRecording}
                       className="relative w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center transition"
                     >
-                      <Square className="w-8 h-8 text-white" />
+                      <Square className="w-8 h-8 text-gray-900" />
                     </button>
                   </div>
                   <p className="text-2xl font-mono text-red-400 mb-2">{formatTime(recordingTime)}</p>
-                  <p className="text-slate-400">Recording... Click to stop</p>
+                  <p className="text-gray-500">Recording... Click to stop</p>
                 </div>
               )}
 
@@ -626,15 +807,15 @@ export default function KhutbaReflections() {
                       <Check className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div className="text-left">
-                      <p className="text-white font-medium">Recording Complete</p>
-                      <p className="text-slate-400 text-sm">{formatTime(recordingTime)} recorded</p>
+                      <p className="text-gray-900 font-medium">Recording Complete</p>
+                      <p className="text-gray-500 text-sm">{formatTime(recordingTime)} recorded</p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-center space-x-3">
                     <button
                       onClick={transcribeAudio}
-                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-lg font-semibold transition flex items-center space-x-2"
+                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-gray-900 rounded-lg font-semibold transition flex items-center space-x-2"
                     >
                       <FileText className="w-5 h-5" />
                       <span>Transcribe Audio</span>
@@ -644,7 +825,7 @@ export default function KhutbaReflections() {
                         setAudioBlob(null);
                         setRecordingTime(0);
                       }}
-                      className="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition"
+                      className="px-4 py-3 bg-gray-200 hover:bg-gray-200 text-gray-600 rounded-lg transition"
                     >
                       Discard
                     </button>
@@ -655,8 +836,8 @@ export default function KhutbaReflections() {
               {transcribing && (
                 <div className="text-center">
                   <Loader2 className="w-12 h-12 text-amber-400 animate-spin mx-auto mb-4" />
-                  <p className="text-white font-medium mb-1">Transcribing Audio...</p>
-                  <p className="text-slate-400 text-sm">This may take a minute for longer recordings</p>
+                  <p className="text-gray-900 font-medium mb-1">Transcribing Audio...</p>
+                  <p className="text-gray-500 text-sm">This may take a minute for longer recordings</p>
                 </div>
               )}
 
@@ -680,20 +861,20 @@ export default function KhutbaReflections() {
 
           {/* Divider */}
           <div className="flex items-center my-8">
-            <div className="flex-1 border-t border-slate-700"></div>
-            <span className="px-4 text-slate-500 text-sm">OR paste text directly</span>
-            <div className="flex-1 border-t border-slate-700"></div>
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-4 text-gray-500 text-sm">OR paste text directly</span>
+            <div className="flex-1 border-t border-gray-200"></div>
           </div>
 
           {/* Metadata Fields */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2 text-emerald-400" />
               Khutbah Details
             </h3>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
+                <label className="block text-gray-500 text-sm mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
                   Date of Khutbah
                 </label>
@@ -701,11 +882,11 @@ export default function KhutbaReflections() {
                   type="date"
                   value={khutbaDate}
                   onChange={(e) => setKhutbaDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
+                <label className="block text-gray-500 text-sm mb-2">
                   <User className="w-4 h-4 inline mr-1" />
                   Speaker / Imam
                 </label>
@@ -714,11 +895,11 @@ export default function KhutbaReflections() {
                   value={speakerName}
                   onChange={(e) => setSpeakerName(e.target.value)}
                   placeholder="e.g., Sheikh Mustapha Shaybani"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 text-sm mb-2">
+                <label className="block text-gray-500 text-sm mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
                   Location / Mosque
                 </label>
@@ -727,7 +908,7 @@ export default function KhutbaReflections() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g., Al-Azhar Mosque, Cairo"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -735,8 +916,8 @@ export default function KhutbaReflections() {
 
           {/* Text Input */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-cyan-400" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-emerald-600" />
               Khutbah Text / Notes
             </h3>
             <textarea
@@ -745,9 +926,9 @@ export default function KhutbaReflections() {
               placeholder="Paste the khutbah transcription here, or type your notes from the khutbah. The more detail you provide, the better the study notes will be..."
               disabled={loading}
               rows={10}
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-y disabled:opacity-50 font-mono text-sm"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-y disabled:opacity-50 font-mono text-sm"
             />
-            <p className="text-slate-500 text-sm mt-2">
+            <p className="text-gray-500 text-sm mt-2">
               {inputText.length} characters • {inputText.split(/\s+/).filter(Boolean).length} words
             </p>
           </div>
@@ -756,7 +937,7 @@ export default function KhutbaReflections() {
           <button
             onClick={generateStudyNotes}
             disabled={!inputText.trim() || loading}
-            className="w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-lg"
+            className="w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-gray-900 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-lg"
           >
             {loading ? (
               <>
@@ -774,27 +955,27 @@ export default function KhutbaReflections() {
 
         {/* Loading State */}
         {loading && (
-          <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-12 mb-8 text-center">
+          <div className="bg-white border border-gray-200 rounded-2xl p-12 mb-8 text-center">
             <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h3 className="text-xl font-semibold text-white mb-2">Creating Your Talbiyah Insights</h3>
-            <p className="text-slate-400">Extracting Quranic vocabulary, hadith, creating quizzes and homework...</p>
-            <p className="text-slate-500 text-sm mt-2">This may take 30-60 seconds</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Creating Your Talbiyah Insights</h3>
+            <p className="text-gray-500">Extracting Quranic vocabulary, hadith, creating quizzes and homework...</p>
+            <p className="text-gray-500 text-sm mt-2">This may take 30-60 seconds</p>
           </div>
         )}
 
         {/* Generated Study Notes */}
         {studyNotes && (
-          <div ref={studyNotesRef} className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-amber-500/30 rounded-2xl overflow-hidden mb-8">
+          <div ref={studyNotesRef} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-amber-500/30 rounded-2xl overflow-hidden mb-8">
             {/* Header */}
             <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 px-8 py-6 border-b border-amber-500/20">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-amber-400 text-sm font-medium mb-1">Talbiyah Insights</p>
-                  <h3 className="text-2xl font-bold text-white">{studyNotes.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">{studyNotes.title}</h3>
                   {studyNotes.speaker && (
-                    <p className="text-cyan-400 text-sm mt-1">By {studyNotes.speaker}</p>
+                    <p className="text-emerald-600 text-sm mt-1">By {studyNotes.speaker}</p>
                   )}
-                  <p className="text-slate-400 text-sm mt-1">
+                  <p className="text-gray-500 text-sm mt-1">
                     {studyNotes.timestamp.toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
@@ -805,9 +986,40 @@ export default function KhutbaReflections() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
+                    onClick={() => {
+                      // Build summary text for TTS
+                      let summaryText = `${studyNotes.title}. `;
+                      if (studyNotes.speaker) summaryText += `By ${studyNotes.speaker}. `;
+                      if (studyNotes.main_points?.length > 0) {
+                        summaryText += 'Main points: ';
+                        studyNotes.main_points.forEach((p, i) => {
+                          summaryText += `${i + 1}. ${p.point}. ${p.reflection}. `;
+                        });
+                      }
+                      if (studyNotes.key_themes?.length > 0) {
+                        summaryText += 'Key themes: ';
+                        studyNotes.key_themes.forEach(t => {
+                          summaryText += `${t.theme}: ${t.explanation}. `;
+                        });
+                      }
+                      playTTS(summaryText, 'summary');
+                    }}
+                    disabled={ttsLoading && ttsSection === 'summary'}
+                    className="flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white rounded-xl font-semibold transition disabled:opacity-50 shadow-lg shadow-violet-500/30"
+                  >
+                    {ttsLoading && ttsSection === 'summary' ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : ttsPlaying && ttsSection === 'summary' ? (
+                      <Pause className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                    <span>{ttsLoading && ttsSection === 'summary' ? 'Loading...' : ttsPlaying && ttsSection === 'summary' ? 'Pause Audio' : 'Listen to Summary'}</span>
+                  </button>
+                  <button
                     onClick={handleDownloadPDF}
                     disabled={downloadingPDF}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-lg transition disabled:opacity-50"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-gray-900 rounded-lg transition disabled:opacity-50"
                   >
                     {downloadingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     <span>{downloadingPDF ? 'Generating...' : 'PDF'}</span>
@@ -818,7 +1030,7 @@ export default function KhutbaReflections() {
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
                       savedInsightId
                         ? 'bg-emerald-500/20 text-emerald-400 cursor-default'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white'
+                        : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-gray-900'
                     } disabled:opacity-50`}
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedInsightId ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -826,7 +1038,7 @@ export default function KhutbaReflections() {
                   </button>
                   <button
                     onClick={copyStudyNotes}
-                    className="flex items-center space-x-2 px-4 py-2 bg-slate-700/80 hover:bg-slate-600/80 text-white rounded-lg transition"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-200/80 hover:bg-gray-200/80 text-gray-900 rounded-lg transition"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -834,7 +1046,7 @@ export default function KhutbaReflections() {
                   <button
                     onClick={() => generateStudyNotes()}
                     disabled={loading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 rounded-lg transition"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-200/80 hover:bg-gray-200/80 text-gray-600 rounded-lg transition"
                   >
                     <RefreshCw className="w-4 h-4" />
                     <span>Regenerate</span>
@@ -849,31 +1061,47 @@ export default function KhutbaReflections() {
               {/* Cleaned Transcript */}
               {studyNotes.cleaned_transcript && (
                 <div>
-                  <button
-                    onClick={() => setTranscriptExpanded(!transcriptExpanded)}
-                    className="w-full flex items-center justify-between text-left mb-4"
-                  >
-                    <h4 className="text-lg font-semibold text-white flex items-center">
-                      <ScrollText className="w-5 h-5 mr-2 text-emerald-400" />
-                      Full Khutbah (Cleaned Up)
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-slate-400 text-sm">
-                        {transcriptExpanded ? 'Collapse' : 'Expand'}
-                      </span>
-                      {transcriptExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => setTranscriptExpanded(!transcriptExpanded)}
+                      className="flex items-center text-left"
+                    >
+                      <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <ScrollText className="w-5 h-5 mr-2 text-emerald-400" />
+                        Full Khutbah (Cleaned Up)
+                      </h4>
+                      <div className="flex items-center space-x-2 ml-3">
+                        <span className="text-gray-500 text-sm">
+                          {transcriptExpanded ? 'Collapse' : 'Expand'}
+                        </span>
+                        {transcriptExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => playTTS(studyNotes.cleaned_transcript, 'transcript')}
+                      disabled={ttsLoading && ttsSection === 'transcript'}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 rounded-lg transition text-sm disabled:opacity-50"
+                    >
+                      {ttsLoading && ttsSection === 'transcript' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : ttsPlaying && ttsSection === 'transcript' ? (
+                        <Pause className="w-4 h-4" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                        <Volume2 className="w-4 h-4" />
                       )}
-                    </div>
-                  </button>
+                      <span>{ttsPlaying && ttsSection === 'transcript' ? 'Pause' : 'Listen'}</span>
+                    </button>
+                  </div>
 
                   {transcriptExpanded && (
                     <div className="bg-gradient-to-br from-emerald-500/5 to-teal-500/5 border border-emerald-500/20 rounded-xl p-6">
                       <div className="prose prose-invert prose-emerald max-w-none">
                         {studyNotes.cleaned_transcript.split('\n\n').map((paragraph, idx) => (
-                          <p key={idx} className="text-slate-200 leading-relaxed mb-4 last:mb-0">
+                          <p key={idx} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
                             {paragraph}
                           </p>
                         ))}
@@ -883,9 +1111,9 @@ export default function KhutbaReflections() {
 
                   {/* Divider */}
                   <div className="flex items-center my-8">
-                    <div className="flex-1 border-t border-slate-700"></div>
-                    <span className="px-4 text-slate-500 text-sm font-medium">STUDY NOTES</span>
-                    <div className="flex-1 border-t border-slate-700"></div>
+                    <div className="flex-1 border-t border-gray-200"></div>
+                    <span className="px-4 text-gray-500 text-sm font-medium">STUDY NOTES</span>
+                    <div className="flex-1 border-t border-gray-200"></div>
                   </div>
                 </div>
               )}
@@ -893,7 +1121,7 @@ export default function KhutbaReflections() {
               {/* Main Points to Reflect Upon */}
               {studyNotes.main_points && studyNotes.main_points.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Bookmark className="w-5 h-5 mr-2 text-amber-400" />
                     Main Points to Reflect Upon
                   </h4>
@@ -901,12 +1129,12 @@ export default function KhutbaReflections() {
                     {studyNotes.main_points.map((item, idx) => (
                       <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                         <h5 className="text-amber-400 font-semibold mb-2 flex items-center">
-                          <span className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
+                          <span className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
                             {idx + 1}
                           </span>
                           {item.point}
                         </h5>
-                        <p className="text-slate-300 text-sm ml-8">{item.reflection}</p>
+                        <p className="text-gray-600 text-sm ml-8">{item.reflection}</p>
                       </div>
                     ))}
                   </div>
@@ -916,7 +1144,7 @@ export default function KhutbaReflections() {
               {/* Quranic Words & Phrases */}
               {studyNotes.quranic_words_phrases && studyNotes.quranic_words_phrases.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <BookOpen className="w-5 h-5 mr-2 text-emerald-400" />
                     Key Quranic Words & Phrases
                   </h4>
@@ -924,14 +1152,14 @@ export default function KhutbaReflections() {
                     {studyNotes.quranic_words_phrases.map((item, idx) => (
                       <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
-                          <p className="text-2xl md:text-3xl text-white font-arabic leading-relaxed" dir="rtl">
+                          <p className="text-2xl md:text-3xl text-gray-900 font-arabic leading-relaxed" dir="rtl">
                             {item.arabic}
                           </p>
                           <span className="text-emerald-400 font-medium text-sm mt-2 md:mt-0">{item.transliteration}</span>
                         </div>
-                        <p className="text-slate-200 font-medium mb-2">{item.meaning}</p>
-                        <p className="text-slate-400 text-sm mb-2">
-                          <span className="text-slate-500">Context:</span> {item.context}
+                        <p className="text-gray-700 font-medium mb-2">{item.meaning}</p>
+                        <p className="text-gray-500 text-sm mb-2">
+                          <span className="text-gray-500">Context:</span> {item.context}
                         </p>
                         {item.quran_reference && (
                           <p className="text-emerald-400 text-sm font-medium">{item.quran_reference}</p>
@@ -945,7 +1173,7 @@ export default function KhutbaReflections() {
               {/* Key Vocabulary */}
               {studyNotes.key_vocabulary && studyNotes.key_vocabulary.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Key className="w-5 h-5 mr-2 text-purple-400" />
                     Arabic Vocabulary
                   </h4>
@@ -955,10 +1183,10 @@ export default function KhutbaReflections() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-purple-400 font-semibold">{vocab.term}</span>
                           {vocab.arabic && (
-                            <span className="text-xl text-white font-arabic">{vocab.arabic}</span>
+                            <span className="text-xl text-gray-900 font-arabic">{vocab.arabic}</span>
                           )}
                         </div>
-                        <p className="text-slate-300 text-sm">{vocab.definition}</p>
+                        <p className="text-gray-600 text-sm">{vocab.definition}</p>
                       </div>
                     ))}
                   </div>
@@ -968,7 +1196,7 @@ export default function KhutbaReflections() {
               {/* Key Themes */}
               {studyNotes.key_themes && studyNotes.key_themes.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Lightbulb className="w-5 h-5 mr-2 text-yellow-400" />
                     Key Themes
                   </h4>
@@ -976,7 +1204,7 @@ export default function KhutbaReflections() {
                     {studyNotes.key_themes.map((theme, idx) => (
                       <div key={idx} className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
                         <h5 className="text-yellow-400 font-semibold mb-1">{theme.theme}</h5>
-                        <p className="text-slate-300 text-sm">{theme.explanation}</p>
+                        <p className="text-gray-600 text-sm">{theme.explanation}</p>
                       </div>
                     ))}
                   </div>
@@ -994,14 +1222,14 @@ export default function KhutbaReflections() {
                     {studyNotes.quran_references.map((ref, idx) => (
                       <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
                         {ref.arabic && (
-                          <p className="text-2xl md:text-3xl text-white font-arabic text-right mb-4 leading-relaxed" dir="rtl">
+                          <p className="text-2xl md:text-3xl text-gray-900 font-arabic text-right mb-4 leading-relaxed" dir="rtl">
                             {ref.arabic}
                           </p>
                         )}
-                        <p className="text-slate-200 italic mb-3">"{ref.translation}"</p>
+                        <p className="text-gray-700 italic mb-3">"{ref.translation}"</p>
                         <p className="text-emerald-400 font-medium text-sm mb-3">{ref.reference}</p>
                         <div className="bg-emerald-500/10 rounded-lg p-3">
-                          <p className="text-slate-300 text-sm">
+                          <p className="text-gray-600 text-sm">
                             <span className="text-emerald-400 font-medium">Reflection:</span> {ref.reflection}
                           </p>
                         </div>
@@ -1022,14 +1250,14 @@ export default function KhutbaReflections() {
                     {studyNotes.hadith_references.map((ref, idx) => (
                       <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
                         {ref.arabic && (
-                          <p className="text-2xl md:text-3xl text-white font-arabic text-right mb-4 leading-relaxed" dir="rtl">
+                          <p className="text-2xl md:text-3xl text-gray-900 font-arabic text-right mb-4 leading-relaxed" dir="rtl">
                             {ref.arabic}
                           </p>
                         )}
-                        <p className="text-slate-200 italic mb-3">"{ref.translation}"</p>
+                        <p className="text-gray-700 italic mb-3">"{ref.translation}"</p>
                         <p className="text-amber-400 font-medium text-sm mb-3">{ref.reference}</p>
                         <div className="bg-amber-500/10 rounded-lg p-3">
-                          <p className="text-slate-300 text-sm">
+                          <p className="text-gray-600 text-sm">
                             <span className="text-amber-400 font-medium">Reflection:</span> {ref.reflection}
                           </p>
                         </div>
@@ -1042,7 +1270,7 @@ export default function KhutbaReflections() {
               {/* Action Items */}
               {studyNotes.action_items && studyNotes.action_items.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Target className="w-5 h-5 mr-2 text-red-400" />
                     Action Items
                   </h4>
@@ -1050,13 +1278,13 @@ export default function KhutbaReflections() {
                     {studyNotes.action_items.map((item, idx) => (
                       <div key={idx} className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                         <h5 className="text-red-400 font-semibold mb-2 flex items-center">
-                          <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
+                          <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
                             {idx + 1}
                           </span>
                           {item.action}
                         </h5>
-                        <p className="text-slate-300 text-sm ml-8">
-                          <span className="text-slate-500">How:</span> {item.how_to}
+                        <p className="text-gray-600 text-sm ml-8">
+                          <span className="text-gray-500">How:</span> {item.how_to}
                         </p>
                       </div>
                     ))}
@@ -1067,7 +1295,7 @@ export default function KhutbaReflections() {
               {/* Memory Aids */}
               {studyNotes.memory_aids && studyNotes.memory_aids.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Brain className="w-5 h-5 mr-2 text-pink-400" />
                     Memory Aids
                   </h4>
@@ -1075,7 +1303,7 @@ export default function KhutbaReflections() {
                     {studyNotes.memory_aids.map((aid, idx) => (
                       <div key={idx} className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4">
                         <h5 className="text-pink-400 font-semibold mb-1">{aid.concept}</h5>
-                        <p className="text-slate-300 text-sm">{aid.memory_tip}</p>
+                        <p className="text-gray-600 text-sm">{aid.memory_tip}</p>
                       </div>
                     ))}
                   </div>
@@ -1086,7 +1314,7 @@ export default function KhutbaReflections() {
               {studyNotes.quiz && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-white flex items-center">
+                    <h4 className="text-lg font-semibold text-gray-900 flex items-center">
                       <GraduationCap className="w-5 h-5 mr-2 text-blue-400" />
                       Comprehensive Quiz
                     </h4>
@@ -1110,7 +1338,7 @@ export default function KhutbaReflections() {
                         <div className="space-y-6">
                           {studyNotes.quiz.multiple_choice.map((q, idx) => (
                             <div key={idx} className="pb-4 border-b border-blue-500/20 last:border-0 last:pb-0">
-                              <p className="text-slate-200 font-medium mb-3">
+                              <p className="text-gray-700 font-medium mb-3">
                                 <span className="text-blue-400 mr-2">{idx + 1}.</span>
                                 {q.question}
                               </p>
@@ -1129,10 +1357,10 @@ export default function KhutbaReflections() {
                                             ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300'
                                             : isSelected && !isCorrect
                                             ? 'bg-red-500/20 border border-red-500/50 text-red-300'
-                                            : 'bg-slate-700/30 text-slate-400'
+                                            : 'bg-gray-50 text-gray-500'
                                           : isSelected
                                           ? 'bg-blue-500/30 border border-blue-500/50 text-blue-300'
-                                          : 'bg-slate-700/30 hover:bg-slate-700/50 text-slate-300'
+                                          : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
                                       }`}
                                     >
                                       {showQuizAnswers && isCorrect && <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0" />}
@@ -1165,7 +1393,7 @@ export default function KhutbaReflections() {
                         <div className="space-y-4">
                           {studyNotes.quiz.short_answer.map((q, idx) => (
                             <div key={idx} className="pb-4 border-b border-violet-500/20 last:border-0 last:pb-0">
-                              <p className="text-slate-200 font-medium mb-2">
+                              <p className="text-gray-700 font-medium mb-2">
                                 <span className="text-violet-400 mr-2">{idx + 1}.</span>
                                 {q.question}
                               </p>
@@ -1189,15 +1417,15 @@ export default function KhutbaReflections() {
 
                     {/* Reflection Questions */}
                     {studyNotes.quiz.reflection && studyNotes.quiz.reflection.length > 0 && (
-                      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-6">
-                        <h5 className="text-cyan-400 font-semibold mb-4 flex items-center">
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
+                        <h5 className="text-emerald-600 font-semibold mb-4 flex items-center">
                           <MessageCircle className="w-4 h-4 mr-2" />
                           Deep Reflection Questions
                         </h5>
                         <ol className="space-y-3">
                           {studyNotes.quiz.reflection.map((q, idx) => (
-                            <li key={idx} className="text-slate-200">
-                              <span className="text-cyan-400 font-medium mr-2">{idx + 1}.</span>
+                            <li key={idx} className="text-gray-700">
+                              <span className="text-emerald-600 font-medium mr-2">{idx + 1}.</span>
                               {q}
                             </li>
                           ))}
@@ -1211,7 +1439,7 @@ export default function KhutbaReflections() {
               {/* Homework */}
               {studyNotes.homework && studyNotes.homework.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <ClipboardList className="w-5 h-5 mr-2 text-orange-400" />
                     Homework Assignments
                   </h4>
@@ -1220,7 +1448,7 @@ export default function KhutbaReflections() {
                       <div key={idx} className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-5">
                         <div className="flex items-start justify-between mb-2">
                           <h5 className="text-orange-400 font-semibold flex items-center">
-                            <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
+                            <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
                               {idx + 1}
                             </span>
                             {hw.task}
@@ -1229,7 +1457,7 @@ export default function KhutbaReflections() {
                             {hw.duration}
                           </span>
                         </div>
-                        <p className="text-slate-300 text-sm ml-8">{hw.description}</p>
+                        <p className="text-gray-600 text-sm ml-8">{hw.description}</p>
                       </div>
                     ))}
                   </div>
@@ -1239,15 +1467,15 @@ export default function KhutbaReflections() {
               {/* Age-Appropriate Summaries */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-lg font-semibold text-cyan-400 mb-4">For Children (5-10)</h4>
-                  <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
-                    <p className="text-slate-200">{studyNotes.summary_for_children}</p>
+                  <h4 className="text-lg font-semibold text-emerald-600 mb-4">For Children (5-10)</h4>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                    <p className="text-gray-700">{studyNotes.summary_for_children}</p>
                   </div>
                 </div>
                 <div>
                   <h4 className="text-lg font-semibold text-violet-400 mb-4">For Teens (11-17)</h4>
                   <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
-                    <p className="text-slate-200">{studyNotes.summary_for_teens}</p>
+                    <p className="text-gray-700">{studyNotes.summary_for_teens}</p>
                   </div>
                 </div>
               </div>
@@ -1255,7 +1483,7 @@ export default function KhutbaReflections() {
               {/* Family Discussion Guide */}
               {studyNotes.family_discussion_guide && studyNotes.family_discussion_guide.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Clock className="w-5 h-5 mr-2 text-teal-400" />
                     Family Hour Discussion Guide
                   </h4>
@@ -1263,10 +1491,10 @@ export default function KhutbaReflections() {
                     <ol className="space-y-3">
                       {studyNotes.family_discussion_guide.map((item, idx) => (
                         <li key={idx} className="flex items-start">
-                          <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 mr-3 text-white text-sm font-bold">
+                          <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 mr-3 text-gray-900 text-sm font-bold">
                             {idx + 1}
                           </span>
-                          <span className="text-slate-200">{item}</span>
+                          <span className="text-gray-700">{item}</span>
                         </li>
                       ))}
                     </ol>
@@ -1275,8 +1503,8 @@ export default function KhutbaReflections() {
               )}
 
               {/* Footer */}
-              <div className="pt-6 border-t border-slate-700/50 text-center">
-                <p className="text-slate-600 text-xs">
+              <div className="pt-6 border-t border-gray-200 text-center">
+                <p className="text-gray-600 text-xs">
                   Always consult qualified scholars for religious rulings
                 </p>
               </div>
@@ -1285,11 +1513,11 @@ export default function KhutbaReflections() {
         )}
 
         {/* Link to Khutba Creator */}
-        <div className="bg-slate-800/30 border border-cyan-500/30 rounded-2xl p-6 text-center">
-          <p className="text-slate-400 mb-3">Need to create a khutbah from scratch?</p>
+        <div className="bg-white border border-emerald-500/30 rounded-2xl p-6 text-center">
+          <p className="text-gray-500 mb-3">Need to create a khutbah from scratch?</p>
           <button
             onClick={() => navigate('/khutba-creator')}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition"
           >
             Go to Khutbah Creator
           </button>

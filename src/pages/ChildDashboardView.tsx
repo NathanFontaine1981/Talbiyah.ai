@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User as UserIcon, BookOpen, Trophy, Calendar, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import StudentDashboardContent from '../components/StudentDashboardContent';
 
 interface ChildData {
@@ -53,7 +54,7 @@ export default function ChildDashboardView() {
         .single();
 
       if (linkError || !parentChild) {
-        alert('You do not have access to view this child\'s dashboard');
+        toast.error('You do not have access to view this child\'s dashboard');
         navigate('/my-children');
         return;
       }

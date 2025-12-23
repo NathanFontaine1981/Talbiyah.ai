@@ -111,10 +111,10 @@ export default function Breadcrumbs({
     return null;
   }
 
-  const textColor = darkMode ? 'text-slate-400' : 'text-slate-500';
-  const hoverColor = darkMode ? 'hover:text-white' : 'hover:text-slate-900';
-  const activeColor = darkMode ? 'text-white' : 'text-slate-900';
-  const iconColor = darkMode ? 'text-slate-600' : 'text-slate-300';
+  const textColor = darkMode ? 'text-gray-500' : 'text-gray-500';
+  const hoverColor = darkMode ? 'hover:text-white' : 'hover:text-gray-900';
+  const activeColor = darkMode ? 'text-white' : 'text-gray-900';
+  const iconColor = darkMode ? 'text-gray-600' : 'text-gray-600';
 
   return (
     <nav className={`flex items-center text-sm ${className}`} aria-label="Breadcrumb">

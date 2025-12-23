@@ -264,7 +264,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
       case 'message':
         return <MessageCircle className={`${iconClass} text-purple-500`} />;
       case 'insight':
-        return <BookOpen className={`${iconClass} text-cyan-500`} />;
+        return <BookOpen className={`${iconClass} text-emerald-500`} />;
       case 'recording':
         return <Video className={`${iconClass} text-indigo-500`} />;
       case 'streak':
@@ -272,7 +272,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
       case 'credit_low':
         return <AlertCircle className={`${iconClass} text-red-500`} />;
       default:
-        return <Bell className={`${iconClass} text-slate-500`} />;
+        return <Bell className={`${iconClass} text-gray-500`} />;
     }
   }
 
@@ -295,7 +295,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
       case 'credit_low':
         return 'bg-red-50 border-red-200';
       default:
-        return 'bg-slate-50 border-slate-200';
+        return 'bg-gray-50 border-gray-200';
     }
   }
 
@@ -322,12 +322,12 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-48"></div>
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-slate-100 rounded-xl"></div>
+              <div key={i} className="h-20 bg-gray-100 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -351,8 +351,8 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
             )}
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Notifications</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
+            <p className="text-sm text-gray-500">
               {unreadCount > 0 ? `${unreadCount} new` : 'All caught up'}
             </p>
           </div>
@@ -362,9 +362,9 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
       {/* Notifications List */}
       {notifications.length === 0 ? (
         <div className="text-center py-8">
-          <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">No notifications</p>
-          <p className="text-sm text-slate-400">You're all caught up!</p>
+          <Bell className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+          <p className="text-gray-500">No notifications</p>
+          <p className="text-sm text-gray-500">You're all caught up!</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -380,19 +380,19 @@ export default function ParentNotificationsWidget({ parentId, children }: Parent
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-gray-900 text-sm">
                       {notification.title}
                     </p>
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs text-slate-500">{formatTime(notification.createdAt)}</span>
+                      <span className="text-xs text-gray-500">{formatTime(notification.createdAt)}</span>
                       {!notification.read && (
                         <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                       )}
                     </div>
                   </div>
-                  <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
+                  <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
                   {notification.actionUrl && (
-                    <div className="flex items-center mt-2 text-xs text-slate-500">
+                    <div className="flex items-center mt-2 text-xs text-gray-500">
                       <span>Tap to view</span>
                       <ChevronRight className="w-3 h-3 ml-1" />
                     </div>

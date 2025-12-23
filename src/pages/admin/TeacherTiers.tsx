@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import {
   Award,
   Users,
@@ -177,16 +178,16 @@ export default function TeacherTiers() {
       const result = await response.json();
 
       if (result.success) {
-        alert(`Tier updated successfully!\n${result.old_tier} → ${result.new_tier}`);
+        toast.success(`Tier updated successfully!\n${result.old_tier} → ${result.new_tier}`);
         setShowAssignModal(false);
         setShowApplicationModal(false);
         loadData();
       } else {
-        alert(result.error || 'Failed to assign tier');
+        toast.error(result.error || 'Failed to assign tier');
       }
     } catch (error) {
       console.error('Error assigning tier:', error);
-      alert('Failed to assign tier');
+      toast.error('Failed to assign tier');
     }
   }
 
@@ -201,65 +202,65 @@ export default function TeacherTiers() {
         })
         .eq('id', appId);
 
-      alert(`Application ${status}`);
+      toast.success(`Application ${status}`);
       loadData();
     } catch (error) {
       console.error('Error updating application:', error);
-      alert('Failed to update application');
+      toast.error('Failed to update application');
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Teacher Tier Management</h1>
-          <p className="text-slate-400">Manage teacher tiers, applications, and promotions</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Teacher Tier Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage teacher tiers, applications, and promotions</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-2">
-              <Users className="w-6 h-6 text-cyan-400" />
-              <span className="text-sm text-slate-400">Total Teachers</span>
+              <Users className="w-6 h-6 text-emerald-600" />
+              <span className="text-sm text-gray-600 dark:text-gray-400">Total Teachers</span>
             </div>
-            <p className="text-3xl font-bold text-white">{teachers.length}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{teachers.length}</p>
           </div>
 
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-2">
               <FileText className="w-6 h-6 text-amber-400" />
-              <span className="text-sm text-slate-400">Pending Applications</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Pending Applications</span>
             </div>
-            <p className="text-3xl font-bold text-white">{applications.length}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{applications.length}</p>
           </div>
 
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-2">
               <Award className="w-6 h-6 text-emerald-400" />
-              <span className="text-sm text-slate-400">Expert+ Teachers</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Expert+ Teachers</span>
             </div>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">
               {teachers.filter((t) => ['expert', 'master'].includes(t.tier)).length}
             </p>
           </div>
 
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-2">
               <TrendingUp className="w-6 h-6 text-purple-400" />
-              <span className="text-sm text-slate-400">Auto-Eligible</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Auto-Eligible</span>
             </div>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">
               {teachers.filter((t) => t.next_auto_tier && t.hours_to_next_tier === 0).length}
             </p>
           </div>
@@ -268,7 +269,7 @@ export default function TeacherTiers() {
         {/* Pending Applications */}
         {applications.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center space-x-2">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <FileText className="w-6 h-6 text-amber-400" />
               <span>Pending Applications</span>
             </h2>
@@ -277,14 +278,14 @@ export default function TeacherTiers() {
               {applications.map((app) => (
                 <div
                   key={app.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50"
+                  className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-gray-700"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-bold text-white">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                         {app.teacher_name || app.teacher_email}
                       </h3>
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         Applying for <span className="text-amber-400 capitalize font-semibold">{app.requested_tier}</span> tier
                       </p>
                     </div>
@@ -303,37 +304,37 @@ export default function TeacherTiers() {
 
                   {/* Current Stats */}
                   {app.teacher_stats && (
-                    <div className="grid grid-cols-4 gap-4 mb-4 p-4 bg-slate-900/50 rounded-lg">
+                    <div className="grid grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Current Tier</p>
-                        <p className="text-sm font-semibold text-white capitalize">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Current Tier</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
                           {app.teacher_stats.tier_icon} {app.teacher_stats.tier}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Hours Taught</p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Hours Taught</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {app.teacher_stats.hours_taught.toFixed(1)}h
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Rating</p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Rating</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {app.teacher_stats.average_rating.toFixed(1)} ★
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Experience</p>
-                        <p className="text-sm font-semibold text-white">{app.years_experience}y</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Experience</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{app.years_experience}y</p>
                       </div>
                     </div>
                   )}
 
                   {/* Application Details */}
                   <div className="mb-4">
-                    <p className="text-sm text-slate-300 mb-2">{app.application_reason}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{app.application_reason}</p>
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded text-xs text-cyan-300">
+                      <span className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded text-xs text-cyan-300">
                         English: {app.english_proficiency}
                       </span>
                       {app.intro_video_url && (
@@ -418,52 +419,52 @@ export default function TeacherTiers() {
 
         {/* All Teachers Table */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-4">All Teachers</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">All Teachers</h2>
 
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700">
+                <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Teacher
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Tier
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Hours
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Rating
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Earnings
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Students
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {teachers.map((teacher) => (
-                    <tr key={teacher.teacher_id} className="hover:bg-slate-800/30 transition">
+                    <tr key={teacher.teacher_id} className="hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {teacher.full_name || 'No name'}
                           </p>
-                          <p className="text-xs text-slate-400">{teacher.email}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{teacher.email}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-2xl">{teacher.tier_icon}</span>
                           <div>
-                            <p className="text-sm font-semibold text-white capitalize">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
                               {teacher.tier_name}
                             </p>
                             {teacher.next_auto_tier && teacher.hours_to_next_tier === 0 && (
@@ -473,28 +474,28 @@ export default function TeacherTiers() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-white">{teacher.hours_taught.toFixed(1)}h</p>
+                        <p className="text-sm text-gray-900 dark:text-white">{teacher.hours_taught.toFixed(1)}h</p>
                         {teacher.hours_to_next_tier !== null && teacher.hours_to_next_tier > 0 && (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             {teacher.hours_to_next_tier.toFixed(1)}h to next
                           </p>
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-white">{teacher.average_rating.toFixed(1)} ★</p>
+                        <p className="text-sm text-gray-900 dark:text-white">{teacher.average_rating.toFixed(1)} ★</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-emerald-400 font-semibold">
                           £{teacher.teacher_hourly_rate.toFixed(2)}/h
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           Students pay: £{teacher.student_hourly_price.toFixed(2)}
                         </p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-white">{teacher.total_students}</p>
+                        <p className="text-sm text-gray-900 dark:text-white">{teacher.total_students}</p>
                         {teacher.grandfathered_students > 0 && (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             {teacher.grandfathered_students} locked
                           </p>
                         )}
@@ -510,7 +511,7 @@ export default function TeacherTiers() {
                             });
                             setShowAssignModal(true);
                           }}
-                          className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-semibold transition"
+                          className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition"
                         >
                           Assign Tier
                         </button>
@@ -527,23 +528,23 @@ export default function TeacherTiers() {
       {/* Assign Tier Modal */}
       {showAssignModal && selectedTeacher && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-8 max-w-2xl w-full border border-slate-700 shadow-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Assign Tier</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Assign Tier</h2>
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="mb-6">
-              <p className="text-sm text-slate-400 mb-1">Teacher</p>
-              <p className="text-lg font-semibold text-white">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Teacher</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {selectedTeacher.full_name || selectedTeacher.email}
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Current: {selectedTeacher.tier_icon} {selectedTeacher.tier_name}
               </p>
             </div>
@@ -551,13 +552,13 @@ export default function TeacherTiers() {
             <div className="space-y-6">
               {/* Tier Selection */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
                   New Tier
                 </label>
                 <select
                   value={assignData.new_tier}
                   onChange={(e) => setAssignData({ ...assignData, new_tier: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">Select tier...</option>
                   {tiers.map((tier) => (
@@ -570,13 +571,13 @@ export default function TeacherTiers() {
 
               {/* Reason */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
                   Reason for Change
                 </label>
                 <textarea
                   value={assignData.reason}
                   onChange={(e) => setAssignData({ ...assignData, reason: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   rows={3}
                   placeholder="Explain why this tier is being assigned..."
                 />
@@ -591,9 +592,9 @@ export default function TeacherTiers() {
                   onChange={(e) =>
                     setAssignData({ ...assignData, disable_auto_progression: e.target.checked })
                   }
-                  className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-2 focus:ring-cyan-500"
+                  className="w-5 h-5 rounded border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 />
-                <label htmlFor="disable-auto" className="text-sm text-slate-300">
+                <label htmlFor="disable-auto" className="text-sm text-gray-600 dark:text-gray-400">
                   Disable automatic tier progression (manual control only)
                 </label>
               </div>
@@ -603,14 +604,14 @@ export default function TeacherTiers() {
                 <button
                   onClick={assignTier}
                   disabled={!assignData.new_tier || !assignData.reason}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                 >
                   <Send className="w-5 h-5" />
                   <span>Assign Tier</span>
                 </button>
                 <button
                   onClick={() => setShowAssignModal(false)}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>
@@ -623,12 +624,12 @@ export default function TeacherTiers() {
       {/* Application Review Modal */}
       {showApplicationModal && selectedApplication && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-8 max-w-2xl w-full border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full border border-gray-200 dark:border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Approve Application</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Approve Application</h2>
               <button
                 onClick={() => setShowApplicationModal(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -636,27 +637,27 @@ export default function TeacherTiers() {
 
             <div className="space-y-6">
               <div>
-                <p className="text-sm text-slate-400 mb-1">Teacher</p>
-                <p className="text-lg font-semibold text-white">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Teacher</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {selectedApplication.teacher_name || selectedApplication.teacher_email}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-slate-400 mb-1">Requested Tier</p>
-                <p className="text-lg font-semibold text-white capitalize">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Requested Tier</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
                   {selectedApplication.requested_tier}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
                   Assign Tier
                 </label>
                 <select
                   value={assignData.new_tier}
                   onChange={(e) => setAssignData({ ...assignData, new_tier: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   {tiers.map((tier) => (
                     <option key={tier.tier} value={tier.tier}>
@@ -667,13 +668,13 @@ export default function TeacherTiers() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
                   Approval Notes
                 </label>
                 <textarea
                   value={assignData.reason}
                   onChange={(e) => setAssignData({ ...assignData, reason: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   rows={3}
                   placeholder="Notes about this approval..."
                 />
@@ -683,14 +684,14 @@ export default function TeacherTiers() {
                 <button
                   onClick={assignTier}
                   disabled={!assignData.new_tier || !assignData.reason}
-                  className="flex-1 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                  className="flex-1 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-200 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                 >
                   <CheckCircle className="w-5 h-5" />
                   <span>Approve & Assign</span>
                 </button>
                 <button
                   onClick={() => setShowApplicationModal(false)}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>

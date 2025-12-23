@@ -33,6 +33,7 @@ export default function Checkout() {
   const [referralBalance, setReferralBalance] = useState(0);
   const [referralDiscount, setReferralDiscount] = useState(0);
   const [creditBalance, setCreditBalance] = useState(0);
+  const [hasUnlimitedCredits, setHasUnlimitedCredits] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'credits'>('stripe');
   const [freeFirstLesson, setFreeFirstLesson] = useState(false);
   const [freeFirstLessonDiscount, setFreeFirstLessonDiscount] = useState(0);
@@ -171,6 +172,19 @@ export default function Checkout() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Check if user has unlimited credits (Gold account)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('unlimited_credits')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData?.unlimited_credits) {
+        setHasUnlimitedCredits(true);
+        setPaymentMethod('credits'); // Auto-select credits for unlimited users
+        return;
+      }
+
       const { data: credits, error } = await supabase
         .from('user_credits')
         .select('credits_remaining')
@@ -232,7 +246,8 @@ export default function Checkout() {
   const creditsNeeded = cartItems.reduce((total, item) => {
     return total + (item.duration_minutes === 30 ? 0.5 : 1);
   }, 0);
-  const hasEnoughCredits = creditBalance >= creditsNeeded;
+  // Unlimited credits users always have "enough"
+  const hasEnoughCredits = hasUnlimitedCredits || creditBalance >= creditsNeeded;
 
   async function applyPromoCode() {
     if (!promoCode.trim()) {
@@ -567,17 +582,20 @@ export default function Checkout() {
 
         const result = await response.json();
 
-        // Deduct credits using the proper RPC function (handles transaction logging)
-        const { error: creditError } = await supabase
-          .rpc('deduct_user_credits', {
-            p_user_id: session.user.id,
-            p_credits: creditsNeeded,
-            p_lesson_id: result.lessons?.[0]?.id || null,
-            p_notes: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`
-          });
+        // Skip credit deduction for unlimited credits users (Gold accounts)
+        if (!hasUnlimitedCredits) {
+          // Deduct credits using the proper RPC function (handles transaction logging)
+          const { error: creditError } = await supabase
+            .rpc('deduct_user_credits', {
+              p_user_id: session.user.id,
+              p_credits: creditsNeeded,
+              p_lesson_id: result.lessons?.[0]?.id || null,
+              p_notes: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`
+            });
 
-        if (creditError) {
-          console.error('Error deducting credits:', creditError);
+          if (creditError) {
+            console.error('Error deducting credits:', creditError);
+          }
         }
 
         // Clear cart
@@ -607,10 +625,10 @@ export default function Checkout() {
 
   if (loading || cartLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Loading...</p>
+          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
@@ -618,16 +636,16 @@ export default function Checkout() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto bg-slate-800 rounded-full flex items-center justify-center mb-4">
-            <ShoppingCart className="w-10 h-10 text-slate-600" />
+          <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <ShoppingCart className="w-10 h-10 text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Your cart is empty</h2>
-          <p className="text-slate-400 mb-6">Add lessons to your cart to checkout</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+          <p className="text-gray-500 mb-6">Add lessons to your cart to checkout</p>
           <button
             onClick={() => navigate('/teachers')}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition"
           >
             Browse Teachers
           </button>
@@ -638,42 +656,40 @@ export default function Checkout() {
 
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-12 px-6">
+    <div className="min-h-screen bg-gray-50 py-12 px-6">
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => navigate('/teachers')}
-          className="flex items-center space-x-2 text-slate-400 hover:text-white transition mb-8"
+          className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Teachers</span>
         </button>
 
-        <h1 className="text-4xl font-bold mb-8">
-          <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-            Checkout
-          </span>
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">
+          Checkout
         </h1>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4">Order Summary</h2>
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
               <div className="space-y-3">
                 {cartItems.map((item) => {
                   const scheduledDate = new Date(item.scheduled_time);
                   return (
                     <div
                       key={item.id}
-                      className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h4 className="font-semibold text-white">{item.teacher_name}</h4>
-                          <p className="text-sm text-slate-400">{item.subject_name}</p>
+                          <h4 className="font-semibold text-gray-900">{item.teacher_name}</h4>
+                          <p className="text-sm text-gray-500">{item.subject_name}</p>
                         </div>
-                        <span className="font-bold text-white">£{item.price.toFixed(2)}</span>
+                        <span className="font-bold text-gray-900">£{item.price.toFixed(2)}</span>
                       </div>
-                      <div className="text-sm text-slate-400">
+                      <div className="text-sm text-gray-500">
                         {format(scheduledDate, 'EEE, MMM d, yyyy • h:mm a')} ({item.duration_minutes} min)
                       </div>
                     </div>
@@ -682,24 +698,24 @@ export default function Checkout() {
               </div>
             </div>
 
-            {!(promoApplied && promoDiscount >= finalPrice) && (
-              <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+            {!(promoApplied && promoDiscount >= finalPrice) && !hasUnlimitedCredits && (
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                   <CreditCard className="w-5 h-5" />
                   <span>Payment Method</span>
                 </h2>
 
                 {/* Credit Balance Info */}
                 {creditBalance > 0 && (
-                  <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                  <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Coins className="w-5 h-5 text-emerald-400" />
-                        <span className="text-sm font-bold text-emerald-300">Your Credit Balance</span>
+                        <Coins className="w-5 h-5 text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-700">Your Credit Balance</span>
                       </div>
-                      <span className="text-lg font-bold text-emerald-400">{creditBalance} {creditBalance === 1 ? 'credit' : 'credits'}</span>
+                      <span className="text-lg font-bold text-emerald-600">{creditBalance} {creditBalance === 1 ? 'credit' : 'credits'}</span>
                     </div>
-                    <p className="text-xs text-slate-300 mt-1">
+                    <p className="text-xs text-gray-600 mt-1">
                       This booking requires {creditsNeeded} {creditsNeeded === 1 ? 'credit' : 'credits'}
                     </p>
                   </div>
@@ -713,21 +729,21 @@ export default function Checkout() {
                       disabled={!hasEnoughCredits}
                       className={`w-full p-4 rounded-xl text-left transition border-2 ${
                         paymentMethod === 'credits'
-                          ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                          ? 'bg-emerald-50 border-emerald-500 text-gray-900'
                           : hasEnoughCredits
-                            ? 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
-                            : 'bg-slate-800/30 border-slate-700/50 text-slate-500 cursor-not-allowed opacity-60'
+                            ? 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300'
+                            : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          paymentMethod === 'credits' ? 'bg-emerald-500' : 'bg-slate-700'
+                          paymentMethod === 'credits' ? 'bg-emerald-500' : 'bg-gray-200'
                         }`}>
-                          <Coins className="w-6 h-6 text-white" />
+                          <Coins className={`w-6 h-6 ${paymentMethod === 'credits' ? 'text-white' : 'text-gray-500'}`} />
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold">Use Credits</p>
-                          <p className="text-sm opacity-75">
+                          <p className="text-sm text-gray-500">
                             {hasEnoughCredits
                               ? `Use ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} from your balance`
                               : `Need ${creditsNeeded - creditBalance} more ${(creditsNeeded - creditBalance) === 1 ? 'credit' : 'credits'}`
@@ -735,7 +751,7 @@ export default function Checkout() {
                           </p>
                         </div>
                         {paymentMethod === 'credits' && (
-                          <CheckCircle className="w-6 h-6 text-emerald-400" />
+                          <CheckCircle className="w-6 h-6 text-emerald-500" />
                         )}
                       </div>
                     </button>
@@ -746,22 +762,22 @@ export default function Checkout() {
                     onClick={() => setPaymentMethod('stripe')}
                     className={`w-full p-4 rounded-xl text-left transition border-2 ${
                       paymentMethod === 'stripe'
-                        ? 'bg-cyan-500/20 border-cyan-500 text-white'
-                        : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                        ? 'bg-emerald-50 border-emerald-500 text-gray-900'
+                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        paymentMethod === 'stripe' ? 'bg-gradient-to-br from-cyan-500 to-blue-600' : 'bg-slate-700'
+                        paymentMethod === 'stripe' ? 'bg-emerald-500' : 'bg-gray-200'
                       }`}>
-                        <CreditCard className="w-6 h-6 text-white" />
+                        <CreditCard className={`w-6 h-6 ${paymentMethod === 'stripe' ? 'text-white' : 'text-gray-500'}`} />
                       </div>
                       <div className="flex-1">
                         <p className="font-semibold">Pay with Card</p>
-                        <p className="text-sm opacity-75">Secure payment via Stripe</p>
+                        <p className="text-sm text-gray-500">Secure payment via Stripe</p>
                       </div>
                       {paymentMethod === 'stripe' && (
-                        <CheckCircle className="w-6 h-6 text-cyan-400" />
+                        <CheckCircle className="w-6 h-6 text-emerald-500" />
                       )}
                     </div>
                   </button>
@@ -770,20 +786,42 @@ export default function Checkout() {
             )}
 
             {promoApplied && promoDiscount >= finalPrice && (
-              <div className="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-500/30">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+              <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-500" />
                   <span>Free Booking Confirmed</span>
                 </h2>
-                <p className="text-slate-300 mb-4">
-                  Your promo code <span className="font-bold text-emerald-400">{promoCode.toUpperCase()}</span> has been applied! This booking is completely free.
+                <p className="text-gray-600 mb-4">
+                  Your promo code <span className="font-bold text-emerald-600">{promoCode.toUpperCase()}</span> has been applied! This booking is completely free.
                 </p>
-                <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/30">
+                <div className="bg-white rounded-lg p-4 border border-emerald-200">
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-emerald-400">No payment required</p>
-                      <p className="text-sm text-slate-300 mt-1">Click "Confirm Free Booking" to complete your booking.</p>
+                      <p className="font-semibold text-emerald-600">No payment required</p>
+                      <p className="text-sm text-gray-600 mt-1">Click "Confirm Free Booking" to complete your booking.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gold Account - Unlimited Credits */}
+            {hasUnlimitedCredits && (
+              <div className="relative overflow-hidden bg-gradient-to-br from-amber-900 via-yellow-800 to-orange-900 rounded-2xl p-6 border-2 border-amber-400 shadow-xl shadow-amber-500/40">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                  <span className="text-2xl">👑</span>
+                  <span className="text-amber-100">Gold Member</span>
+                </h2>
+                <p className="text-amber-100 mb-4">
+                  As a Gold member, all your lessons are <span className="font-bold text-amber-200">free</span>!
+                </p>
+                <div className="bg-amber-800/60 rounded-xl p-4 border-2 border-amber-400/50">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-6 h-6 text-amber-300 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-amber-100">Unlimited Credits Active</p>
+                      <p className="text-sm text-amber-200 mt-1">Click "Confirm Free Booking" to complete your booking.</p>
                     </div>
                   </div>
                 </div>
@@ -793,8 +831,8 @@ export default function Checkout() {
 
           <div className="lg:col-span-1 space-y-6">
             {isParent && children.length > 0 && (
-              <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
                   <User className="w-5 h-5" />
                   <span>Who is this for?</span>
                 </h3>
@@ -805,8 +843,8 @@ export default function Checkout() {
                       onClick={() => setSelectedChildId(child.id)}
                       className={`w-full p-4 rounded-xl text-left transition ${
                         selectedChildId === child.id
-                          ? 'bg-cyan-500 text-white'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -824,68 +862,68 @@ export default function Checkout() {
               </div>
             )}
 
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 sticky top-6">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm lg:sticky lg:top-24">
               {freeFirstLesson && paymentMethod === 'stripe' && (
-                <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Gift className="w-5 h-5 text-emerald-400" />
-                    <span className="text-sm font-bold text-emerald-300">🎉 Free First Lesson!</span>
+                    <Gift className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-700">Free First Lesson!</span>
                   </div>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-gray-600">
                     Welcome to Talbiyah! Your first lesson is on us. {freeFirstLessonDiscount > 0 && `£${freeFirstLessonDiscount.toFixed(2)} discount applied!`}
                   </p>
                 </div>
               )}
               {referralBalance > 0 && (
-                <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Gift className="w-5 h-5 text-amber-400" />
-                    <span className="text-sm font-bold text-amber-300">Referral Balance Available</span>
+                    <Gift className="w-5 h-5 text-amber-600" />
+                    <span className="text-sm font-bold text-amber-700">Referral Balance Available</span>
                   </div>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-gray-600">
                     You have £{referralBalance.toFixed(2)} in referral rewards. {referralDiscount > 0 ? `£${referralDiscount.toFixed(2)} will be automatically applied to this order!` : 'Will be applied automatically.'}
                   </p>
                 </div>
               )}
-              <h3 className="text-lg font-bold text-white mb-4">Price Breakdown</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Price Breakdown</h3>
               <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between text-slate-300">
+                <div className="flex items-center justify-between text-gray-600">
                   <span>Lessons ({cartCount})</span>
                   <span>£{totalPrice.toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex items-center justify-between text-cyan-400">
+                  <div className="flex items-center justify-between text-emerald-600">
                     <span>Block Discount</span>
                     <span>-£{discount.toFixed(2)}</span>
                   </div>
                 )}
                 {freeFirstLessonDiscount > 0 && paymentMethod === 'stripe' && (
-                  <div className="flex items-center justify-between text-emerald-400">
-                    <span>Free First Lesson 🎉</span>
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <span>Free First Lesson</span>
                     <span>-£{freeFirstLessonDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 {promoApplied && promoDiscount > 0 && (
-                  <div className="flex items-center justify-between text-emerald-400">
+                  <div className="flex items-center justify-between text-emerald-600">
                     <span>Promo Code ({promoCode.toUpperCase()})</span>
                     <span>-£{promoDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 {referralDiscount > 0 && (
-                  <div className="flex items-center justify-between text-amber-400">
-                    <span>Referral Balance (Auto-applied) 🎁</span>
+                  <div className="flex items-center justify-between text-amber-600">
+                    <span>Referral Balance</span>
                     <span>-£{referralDiscount.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="pt-3 border-t border-slate-700 flex items-center justify-between text-xl font-bold text-white">
+                <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
                   <span>£{Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Promo Code Section */}
-              <div className="mb-6 pb-6 border-b border-slate-700">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Promo Code
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -895,12 +933,12 @@ export default function Checkout() {
                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                     placeholder="Enter promo code"
                     disabled={promoApplied || applyingPromo}
-                    className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-3 sm:py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     onClick={applyPromoCode}
                     disabled={promoApplied || applyingPromo || !promoCode.trim()}
-                    className="px-6 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 whitespace-nowrap"
+                    className="px-6 py-3 sm:py-2 min-h-[44px] bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {applyingPromo ? (
                       <>
@@ -913,32 +951,36 @@ export default function Checkout() {
                   </button>
                 </div>
                 {promoApplied && (
-                  <div className="mt-2 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-emerald-400">Promo code applied!</span>
+                  <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-emerald-600">Promo code applied!</span>
                   </div>
                 )}
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <p className="text-red-400 text-sm">{error}</p>
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
 
               <button
                 onClick={handleCheckout}
                 disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits)}
-                className={`w-full px-6 py-4 text-white rounded-xl text-lg font-bold transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
-                  paymentMethod === 'credits'
-                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-emerald-500/25'
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/25'
+                className={`w-full px-6 py-4 text-white rounded-full text-lg font-bold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                  hasUnlimitedCredits
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600'
+                    : 'bg-emerald-500 hover:bg-emerald-600'
                 }`}
               >
                 {processing || checkoutLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
+                  </>
+                ) : hasUnlimitedCredits ? (
+                  <>
+                    <span>Confirm Free Booking</span>
                   </>
                 ) : promoApplied && promoDiscount >= finalPrice ? (
                   <>
@@ -958,18 +1000,23 @@ export default function Checkout() {
                 )}
               </button>
 
-              {!(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'stripe' && (
-                <p className="text-xs text-center text-slate-500 mt-4">
+              {hasUnlimitedCredits && (
+                <p className="text-xs text-center text-amber-600 mt-4">
+                  Gold Account - Free booking with unlimited credits
+                </p>
+              )}
+              {!hasUnlimitedCredits && !(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'stripe' && (
+                <p className="text-xs text-center text-gray-500 mt-4">
                   Secure payment powered by Stripe
                 </p>
               )}
-              {!(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'credits' && (
-                <p className="text-xs text-center text-emerald-400 mt-4">
+              {!hasUnlimitedCredits && !(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'credits' && (
+                <p className="text-xs text-center text-emerald-600 mt-4">
                   {creditsNeeded} {creditsNeeded === 1 ? 'credit' : 'credits'} will be deducted from your balance
                 </p>
               )}
               {promoApplied && promoDiscount >= finalPrice && (
-                <p className="text-xs text-center text-emerald-400 mt-4">
+                <p className="text-xs text-center text-emerald-600 mt-4">
                   Your booking is completely free with promo code {promoCode.toUpperCase()}!
                 </p>
               )}

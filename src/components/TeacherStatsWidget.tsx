@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clock, Users, BookOpen, DollarSign, Star, TrendingUp, Award } from 'lucide-react';
+import { Clock, Users, BookOpen, PoundSterling, Star, TrendingUp, Award } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -66,8 +66,7 @@ export default function TeacherStatsWidget() {
         .single();
 
       if (tierError) {
-        console.error('Error fetching tier stats:', tierError);
-        console.log('Attempting to query teacher_profile_id:', teacherProfile.id);
+        // Tier stats not available yet
       }
 
       const { data: upcomingLessons } = await supabase
@@ -92,11 +91,9 @@ export default function TeacherStatsWidget() {
           tierIcon: tierStats.tier_icon || '🥉',
           teacherHourlyRate: tierStats.teacher_hourly_rate || 15.0
         });
-      } else {
-        console.warn('No tier stats found for teacher:', teacherProfile.id);
       }
     } catch (error) {
-      console.error('Error loading teacher stats:', error);
+      // Error loading teacher stats
     } finally {
       setLoading(false);
     }
@@ -104,11 +101,11 @@ export default function TeacherStatsWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-700 rounded w-32"></div>
+          <div className="h-6 bg-gray-200 rounded w-32"></div>
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-16 bg-slate-700 rounded"></div>
+            <div key={i} className="h-16 bg-gray-200 rounded"></div>
           ))}
         </div>
       </div>
@@ -128,9 +125,9 @@ export default function TeacherStatsWidget() {
       icon: Users,
       label: 'Total Students',
       value: stats.totalStudents.toString(),
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
-      borderColor: 'border-cyan-500/20'
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/20'
     },
     {
       icon: BookOpen,
@@ -157,7 +154,7 @@ export default function TeacherStatsWidget() {
       borderColor: 'border-yellow-500/20'
     },
     {
-      icon: DollarSign,
+      icon: PoundSterling,
       label: 'Total Earnings',
       value: `£${stats.totalEarnings.toFixed(0)}`,
       color: 'text-emerald-400',
@@ -167,29 +164,29 @@ export default function TeacherStatsWidget() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <h3 className="text-xl font-bold text-white mb-6">Teaching Stats</h3>
 
       {/* Teacher Tier Badge */}
       <div
         onClick={() => navigate('/teacher/tiers')}
-        className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 rounded-xl p-4 border border-cyan-500/30 mb-4 cursor-pointer hover:border-cyan-500/50 transition"
+        className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 rounded-xl p-4 border border-emerald-500/30 mb-4 cursor-pointer hover:border-emerald-500/50 transition"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="text-3xl">{stats.tierIcon}</div>
             <div>
-              <p className="text-xs text-slate-400">Current Tier</p>
+              <p className="text-xs text-gray-500">Current Tier</p>
               <p className="text-lg font-bold text-white">{stats.tierName}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-400">Hourly Rate</p>
+            <p className="text-xs text-gray-500">Hourly Rate</p>
             <p className="text-lg font-bold text-emerald-400">£{stats.teacherHourlyRate.toFixed(2)}</p>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-center">
-          <button className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center space-x-1">
+          <button className="text-xs text-emerald-600 hover:text-blue-400 font-medium flex items-center space-x-1">
             <Award className="w-3 h-3" />
             <span>View Tier Progress</span>
           </button>
@@ -207,7 +204,7 @@ export default function TeacherStatsWidget() {
                 <item.icon className={`w-5 h-5 ${item.color}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-400 mb-1">{item.label}</p>
+                <p className="text-xs text-gray-500 mb-1">{item.label}</p>
                 <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
               </div>
             </div>

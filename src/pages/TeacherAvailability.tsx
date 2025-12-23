@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Check, X, Calendar, ChevronLeft, ChevronRight, Repeat, Ban, Info, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format, startOfWeek, addDays, getDay, isBefore, startOfDay } from 'date-fns';
 
 interface DateAvailability {
@@ -560,7 +561,7 @@ export default function TeacherAvailability() {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error applying recurring schedule:', error);
-      alert('Failed to apply recurring schedule. Please try again.');
+      toast.error('Failed to apply recurring schedule. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -614,7 +615,7 @@ export default function TeacherAvailability() {
       setBlockReason('Holiday');
     } catch (error) {
       console.error('Error blocking dates:', error);
-      alert('Failed to block dates. Please try again.');
+      toast.error('Failed to block dates. Please try again.');
     }
   }
 
@@ -633,7 +634,7 @@ export default function TeacherAvailability() {
       await loadBlockedDates();
     } catch (error) {
       console.error('Error unblocking date:', error);
-      alert('Failed to unblock date. Please try again.');
+      toast.error('Failed to unblock date. Please try again.');
     }
   }
 
@@ -651,7 +652,7 @@ export default function TeacherAvailability() {
       setIsAcceptingBookings(newValue);
     } catch (error) {
       console.error('Error updating booking status:', error);
-      alert('Failed to update booking status. Please try again.');
+      toast.error('Failed to update booking status. Please try again.');
     }
   }
 
@@ -816,7 +817,7 @@ export default function TeacherAvailability() {
       await loadAvailability();
     } catch (error) {
       console.error('Error saving availability:', error);
-      alert('Failed to save availability. Please try again.');
+      toast.error('Failed to save availability. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -830,7 +831,7 @@ export default function TeacherAvailability() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-white">Loading availability...</p>
         </div>
       </div>
@@ -839,24 +840,24 @@ export default function TeacherAvailability() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800">
-      <header className="bg-slate-900 border-b border-slate-800">
+      <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+                className="flex items-center space-x-2 text-gray-500 hover:text-white transition"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back to Dashboard</span>
               </button>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">Set Your Availability</h1>
-                  <p className="text-sm text-slate-400">Manage your teaching schedule</p>
+                  <p className="text-sm text-gray-500">Manage your teaching schedule</p>
                 </div>
               </div>
             </div>
@@ -867,7 +868,7 @@ export default function TeacherAvailability() {
               className={`px-6 py-3 rounded-xl font-semibold transition flex items-center space-x-2 ${
                 saveSuccess
                   ? 'bg-green-500 text-white'
-                  : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white'
+                  : 'bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {saveSuccess ? (
@@ -887,11 +888,11 @@ export default function TeacherAvailability() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-1">Booking Availability Status</h3>
-              <p className="text-sm text-slate-600">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Booking Availability Status</h3>
+              <p className="text-sm text-gray-600">
                 {isAcceptingBookings
                   ? 'Students can currently book sessions with you'
                   : 'You are not accepting new bookings. Your schedule is saved.'}
@@ -904,32 +905,32 @@ export default function TeacherAvailability() {
                 onChange={(e) => toggleAcceptingBookings(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-14 h-8 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
-              <span className="ml-3 text-sm font-medium text-slate-900">
+              <div className="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+              <span className="ml-3 text-sm font-medium text-gray-900">
                 {isAcceptingBookings ? 'Available' : 'Unavailable'}
               </span>
             </label>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
           {/* Week Navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setCurrentWeekOffset(prev => prev - 1)}
                 disabled={currentWeekOffset === 0}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 rounded-lg font-semibold transition flex items-center space-x-2"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-lg font-semibold transition flex items-center space-x-2"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span>Previous Week</span>
               </button>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-bold text-gray-900">
                 {format(startDate, 'MMM d')} - {format(addDays(startDate, 13), 'MMM d, yyyy')}
               </h3>
               <button
                 onClick={() => setCurrentWeekOffset(prev => prev + 1)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition flex items-center space-x-2"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition flex items-center space-x-2"
               >
                 <span>Next Week</span>
                 <ChevronRight className="w-5 h-5" />
@@ -965,7 +966,7 @@ export default function TeacherAvailability() {
             </button>
             <button
               onClick={removeAllAvailability}
-              className="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-semibold transition flex items-center space-x-2"
+              className="px-4 py-2 bg-gray-500 hover:bg-gray-400 text-white rounded-lg font-semibold transition flex items-center space-x-2"
             >
               <Trash2 className="w-5 h-5" />
               <span>Clear All</span>
@@ -1004,27 +1005,27 @@ export default function TeacherAvailability() {
           )}
 
           {/* Color Legend */}
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-4 mb-6">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-center gap-6 flex-wrap">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-green-500/20 rounded border border-green-300"></div>
-                <span className="text-sm font-medium text-slate-700">Available for booking</span>
+                <span className="text-sm font-medium text-gray-700">Available for booking</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-blue-500 rounded border border-blue-600"></div>
-                <span className="text-sm font-medium text-slate-700">Selected (not saved yet)</span>
+                <span className="text-sm font-medium text-gray-700">Selected (not saved yet)</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-white rounded border border-slate-300"></div>
-                <span className="text-sm font-medium text-slate-700">Not available</span>
+                <div className="w-4 h-4 bg-white rounded border border-gray-300"></div>
+                <span className="text-sm font-medium text-gray-700">Not available</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-red-100 rounded border border-red-300"></div>
-                <span className="text-sm font-medium text-slate-700">Blocked/Holiday</span>
+                <span className="text-sm font-medium text-gray-700">Blocked/Holiday</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-slate-100 rounded border border-slate-300"></div>
-                <span className="text-sm font-medium text-slate-700">Past date</span>
+                <div className="w-4 h-4 bg-gray-100 rounded border border-gray-300"></div>
+                <span className="text-sm font-medium text-gray-700">Past date</span>
               </div>
             </div>
           </div>
@@ -1041,7 +1042,7 @@ export default function TeacherAvailability() {
                 return (
                   <div key={dateKey} className="flex flex-col">
                     {/* Date Header */}
-                    <div className="bg-gradient-to-br from-cyan-500 to-blue-500 rounded-t-xl p-3 text-center">
+                    <div className="bg-gradient-to-br from-emerald-500 to-blue-500 rounded-t-xl p-3 text-center">
                       <div className="text-xs font-semibold text-white/90">
                         {format(date, 'EEE')}
                       </div>
@@ -1067,7 +1068,7 @@ export default function TeacherAvailability() {
                     </div>
 
                     {/* Time Slots */}
-                    <div className="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
+                    <div className="border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
                       {dateAvail?.slots.map((slot, slotIndex) => {
                         const slotKey = `${dateKey}-${slotIndex}`;
                         const isSelected = selectedSlots.has(slotKey);
@@ -1082,16 +1083,16 @@ export default function TeacherAvailability() {
                               handleSlotClick(dateKey, slotIndex, e.shiftKey);
                             }}
                             disabled={isPast || isBlocked}
-                            className={`w-full px-3 py-2 text-sm font-medium transition border-b border-slate-100 last:border-b-0 relative ${
+                            className={`w-full px-3 py-2 text-sm font-medium transition border-b border-gray-100 last:border-b-0 relative ${
                               isPast
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                                 : isBlocked
                                 ? 'bg-red-100 text-red-400 cursor-not-allowed'
                                 : isSelected
                                 ? 'bg-blue-500 text-white hover:bg-blue-600'
                                 : slot.available
                                 ? 'bg-green-500/20 text-green-700 hover:bg-green-500/30 border-green-300'
-                                : 'bg-white text-slate-700 hover:bg-slate-50'
+                                : 'bg-white text-gray-700 hover:bg-gray-50'
                             } ${isFocused && !isPast && !isBlocked ? 'ring-2 ring-inset ring-amber-400 ring-offset-0' : ''}`}
                           >
                             {slot.time}
@@ -1117,7 +1118,7 @@ export default function TeacherAvailability() {
                   return (
                     <div key={dateKey} className="flex flex-col">
                       {/* Date Header */}
-                      <div className="bg-gradient-to-br from-cyan-500 to-blue-500 rounded-t-xl p-3 text-center">
+                      <div className="bg-gradient-to-br from-emerald-500 to-blue-500 rounded-t-xl p-3 text-center">
                         <div className="text-xs font-semibold text-white/90">
                           {format(date, 'EEE')}
                         </div>
@@ -1143,7 +1144,7 @@ export default function TeacherAvailability() {
                       </div>
 
                       {/* Time Slots */}
-                      <div className="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
+                      <div className="border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
                         {dateAvail?.slots.map((slot, slotIndex) => {
                           const slotKey = `${dateKey}-${slotIndex}`;
                           const isSelected = selectedSlots.has(slotKey);
@@ -1158,16 +1159,16 @@ export default function TeacherAvailability() {
                                 handleSlotClick(dateKey, slotIndex, e.shiftKey);
                               }}
                               disabled={isPast || isBlocked}
-                              className={`w-full px-3 py-2 text-sm font-medium transition border-b border-slate-100 last:border-b-0 relative ${
+                              className={`w-full px-3 py-2 text-sm font-medium transition border-b border-gray-100 last:border-b-0 relative ${
                                 isPast
-                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                                   : isBlocked
                                   ? 'bg-red-100 text-red-400 cursor-not-allowed'
                                   : isSelected
                                   ? 'bg-blue-500 text-white hover:bg-blue-600'
                                   : slot.available
                                   ? 'bg-green-500/20 text-green-700 hover:bg-green-500/30 border-green-300'
-                                  : 'bg-white text-slate-700 hover:bg-slate-50'
+                                  : 'bg-white text-gray-700 hover:bg-gray-50'
                               } ${isFocused && !isPast && !isBlocked ? 'ring-2 ring-inset ring-amber-400 ring-offset-0' : ''}`}
                             >
                               {slot.time}
@@ -1192,21 +1193,21 @@ export default function TeacherAvailability() {
             ></div>
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-slate-900">Configure Availability</h3>
+                <h3 className="text-xl font-bold text-gray-900">Configure Availability</h3>
                 <button
                   onClick={() => setShowApplyModal(false)}
-                  className="p-1 hover:bg-slate-100 rounded-lg transition"
+                  className="p-1 hover:bg-gray-100 rounded-lg transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <p className="text-sm text-slate-600 mb-4">
+              <p className="text-sm text-gray-600 mb-4">
                 Apply to {selectedSlots.size} selected slot{selectedSlots.size !== 1 ? 's' : ''}
               </p>
 
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Duration
                 </label>
                 <div className="flex items-center space-x-4">
@@ -1219,7 +1220,7 @@ export default function TeacherAvailability() {
                       onChange={() => setApplyDuration(30)}
                       className="w-4 h-4 text-blue-500"
                     />
-                    <span className="text-sm font-medium text-slate-700">30 minutes</span>
+                    <span className="text-sm font-medium text-gray-700">30 minutes</span>
                   </label>
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -1230,20 +1231,20 @@ export default function TeacherAvailability() {
                       onChange={() => setApplyDuration(60)}
                       className="w-4 h-4 text-blue-500"
                     />
-                    <span className="text-sm font-medium text-slate-700">60 minutes</span>
+                    <span className="text-sm font-medium text-gray-700">60 minutes</span>
                   </label>
                 </div>
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Subjects
                 </label>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {subjects.map((subject) => (
                     <label
                       key={subject.id}
-                      className="flex items-center space-x-3 p-3 border-2 border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition"
+                      className="flex items-center space-x-3 p-3 border-2 border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition"
                     >
                       <input
                         type="checkbox"
@@ -1259,7 +1260,7 @@ export default function TeacherAvailability() {
                         }}
                         className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-slate-700">{subject.name}</span>
+                      <span className="text-sm font-medium text-gray-700">{subject.name}</span>
                     </label>
                   ))}
                 </div>
@@ -1268,7 +1269,7 @@ export default function TeacherAvailability() {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowApplyModal(false)}
-                  className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition"
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>
@@ -1285,7 +1286,7 @@ export default function TeacherAvailability() {
 
         {selectedSlots.size > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-blue-200 p-6 mt-6">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
               Selected Specific Times ({selectedSlots.size})
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1302,7 +1303,7 @@ export default function TeacherAvailability() {
                     className="flex items-center justify-between p-4 border-2 border-blue-200 bg-blue-50 rounded-lg"
                   >
                     <div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="font-semibold text-gray-900">
                         {format(date, 'MMM dd')} - {slot.time}
                       </div>
                       <div className="text-sm text-blue-600">
@@ -1328,12 +1329,12 @@ export default function TeacherAvailability() {
 
         {(selectedRecurringDays.size > 0 && selectedRecurringTimes.size > 0) && (
           <div className="bg-white rounded-2xl shadow-lg border border-green-200 p-6 mt-6">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
               Recurring Availability
             </h3>
             <div className="space-y-3">
               <div className="p-4 border-2 border-green-200 bg-green-50 rounded-lg">
-                <div className="font-semibold text-slate-900 mb-2">Days:</div>
+                <div className="font-semibold text-gray-900 mb-2">Days:</div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(selectedRecurringDays).sort().map(day => (
                     <span key={day} className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">
@@ -1343,7 +1344,7 @@ export default function TeacherAvailability() {
                 </div>
               </div>
               <div className="p-4 border-2 border-green-200 bg-green-50 rounded-lg">
-                <div className="font-semibold text-slate-900 mb-2">Times:</div>
+                <div className="font-semibold text-gray-900 mb-2">Times:</div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(selectedRecurringTimes).sort().map(time => (
                     <span key={time} className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">
@@ -1353,7 +1354,7 @@ export default function TeacherAvailability() {
                 </div>
               </div>
               <div className="p-4 border-2 border-green-200 bg-green-50 rounded-lg">
-                <div className="font-semibold text-slate-900 mb-2">Subjects: {selectedRecurringSubjects.size}</div>
+                <div className="font-semibold text-gray-900 mb-2">Subjects: {selectedRecurringSubjects.size}</div>
               </div>
             </div>
           </div>
@@ -1361,7 +1362,7 @@ export default function TeacherAvailability() {
 
         {persistedBlockedDates.size > 0 && (
           <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-6 mt-6">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
               Blocked Dates ({persistedBlockedDates.size})
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1375,7 +1376,7 @@ export default function TeacherAvailability() {
                       className="flex items-center justify-between p-4 border-2 border-red-200 bg-red-50 rounded-lg"
                     >
                       <div>
-                        <div className="font-semibold text-slate-900">
+                        <div className="font-semibold text-gray-900">
                           {format(date, 'MMM dd, yyyy')}
                         </div>
                         <div className="text-sm text-red-600">{info.reason}</div>
@@ -1403,17 +1404,17 @@ export default function TeacherAvailability() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Set Recurring Schedule</h3>
+                <h3 className="text-2xl font-bold text-gray-900">Set Recurring Schedule</h3>
                 <button
                   onClick={() => setShowRecurringModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Which days repeat weekly?
                 </label>
                 <div className="grid grid-cols-7 gap-2">
@@ -1432,7 +1433,7 @@ export default function TeacherAvailability() {
                       className={`p-3 rounded-lg border-2 transition ${
                         selectedRecurringDays.has(index)
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 hover:border-slate-300'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="text-xs font-semibold">{day.substring(0, 3)}</div>
@@ -1442,7 +1443,7 @@ export default function TeacherAvailability() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Select times that repeat
                 </label>
                 <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
@@ -1461,7 +1462,7 @@ export default function TeacherAvailability() {
                       className={`p-2 rounded-lg border transition ${
                         selectedRecurringTimes.has(time)
                           ? 'border-green-500 bg-green-50 text-green-700 font-semibold'
-                          : 'border-slate-200 hover:border-slate-300'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       {time}
@@ -1471,7 +1472,7 @@ export default function TeacherAvailability() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Select subjects you'll teach during these times
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1490,7 +1491,7 @@ export default function TeacherAvailability() {
                       className={`p-3 rounded-lg border-2 transition text-left ${
                         selectedRecurringSubjects.has(subject.id)
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
-                          : 'border-slate-200 hover:border-slate-300'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       {subject.name}
@@ -1502,7 +1503,7 @@ export default function TeacherAvailability() {
               <div className="flex space-x-4">
                 <button
                   onClick={() => setShowRecurringModal(false)}
-                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition"
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>
@@ -1528,23 +1529,23 @@ export default function TeacherAvailability() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Block Specific Dates</h3>
+                <h3 className="text-2xl font-bold text-gray-900">Block Specific Dates</h3>
                 <button
                   onClick={() => setShowBlockModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Reason for blocking
                 </label>
                 <select
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="Holiday">Holiday</option>
                   <option value="Vacation">Vacation</option>
@@ -1555,7 +1556,7 @@ export default function TeacherAvailability() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Select dates to block
                 </label>
                 <div className="grid grid-cols-7 gap-2 max-h-96 overflow-y-auto">
@@ -1581,7 +1582,7 @@ export default function TeacherAvailability() {
                             ? 'border-red-300 bg-red-100 text-red-400 cursor-not-allowed opacity-50'
                             : blockedDates.has(dateKey)
                             ? 'border-red-500 bg-red-50 text-red-700'
-                            : 'border-slate-200 hover:border-slate-300'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <div className="text-xs">{format(date, 'EEE')}</div>
@@ -1595,7 +1596,7 @@ export default function TeacherAvailability() {
               <div className="flex space-x-4">
                 <button
                   onClick={() => setShowBlockModal(false)}
-                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition"
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>

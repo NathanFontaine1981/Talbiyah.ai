@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import ParentDetailsStep from '../components/onboarding/ParentDetailsStep';
 import ChildDetailsStep from '../components/onboarding/ChildDetailsStep';
 import WelcomeStep from '../components/onboarding/WelcomeStep';
@@ -217,7 +218,7 @@ export default function Onboarding() {
     } catch (error) {
       console.error('Error completing onboarding:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to save your information: ${errorMessage}. Please try again.`);
+      toast.error(`Failed to save your information: ${errorMessage}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -227,7 +228,7 @@ export default function Onboarding() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -241,7 +242,7 @@ export default function Onboarding() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <BookOpen className="w-7 h-7 text-cyan-500" />
+              <BookOpen className="w-7 h-7 text-emerald-500" />
               <span className="text-xl font-semibold text-gray-900">Talbiyah.ai</span>
             </div>
             <div className="text-sm text-gray-500">
@@ -264,9 +265,9 @@ export default function Onboarding() {
                 <div className="flex items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                     step > s.num
-                      ? 'bg-cyan-500 text-white'
+                      ? 'bg-emerald-500 text-white'
                       : step === s.num
-                        ? 'bg-cyan-500 text-white ring-4 ring-cyan-100'
+                        ? 'bg-emerald-500 text-white ring-4 ring-cyan-100'
                         : 'bg-gray-200 text-gray-500'
                   }`}>
                     {step > s.num ? '✓' : s.num}
@@ -279,7 +280,7 @@ export default function Onboarding() {
                 </div>
                 {index < 2 && (
                   <div className={`flex-1 h-1 mx-4 rounded ${
-                    step > s.num ? 'bg-cyan-500' : 'bg-gray-200'
+                    step > s.num ? 'bg-emerald-500' : 'bg-gray-200'
                   }`} />
                 )}
               </div>

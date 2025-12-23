@@ -1,6 +1,6 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Calendar, Mail, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { supabase } from '../lib/supabaseClient';
 import { format } from 'date-fns';
@@ -204,10 +204,10 @@ export default function PaymentSuccess() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-300 text-lg">Loading booking details...</p>
+          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Loading booking details...</p>
         </div>
       </div>
     );
@@ -215,16 +215,16 @@ export default function PaymentSuccess() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
-        <div className="max-w-md w-full bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-12 border border-red-500/30 backdrop-blur-sm shadow-xl text-center">
-          <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <div className="max-w-md w-full bg-white rounded-2xl p-12 border border-red-200 shadow-lg text-center">
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-14 h-14 text-red-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Oops!</h1>
-          <p className="text-slate-300 mb-8">{error}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Oops!</h1>
+          <p className="text-gray-600 mb-8">{error}</p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition"
+            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-full transition"
           >
             Go to Dashboard
           </button>
@@ -234,100 +234,100 @@ export default function PaymentSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="max-w-2xl w-full">
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-12 border border-slate-700/50 backdrop-blur-sm shadow-xl text-center">
+        <div className="bg-white rounded-2xl p-12 border border-gray-200 shadow-lg text-center">
           {verifying ? (
             <>
-              <div className="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/20">
+              <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
                 <Loader2 className="w-14 h-14 text-white animate-spin" />
               </div>
-              <h1 className="text-4xl font-bold text-white mb-4">Verifying Payment...</h1>
-              <p className="text-xl text-slate-300 mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Verifying Payment...</h1>
+              <p className="text-xl text-gray-600 mb-8">
                 Please wait while we confirm your payment
               </p>
             </>
           ) : (
             <>
-              <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20">
+              <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
                 <CheckCircle className="w-14 h-14 text-white" />
               </div>
 
-              <h1 className="text-4xl font-bold text-white mb-4">Payment Successful!</h1>
-              <p className="text-xl text-slate-300 mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
+              <p className="text-xl text-gray-600 mb-8">
                 {lessons.length === 1
                   ? 'Your lesson has been booked successfully'
                   : `${lessons.length} lessons have been booked successfully`}
               </p>
 
               {lessons.length > 0 && (
-                <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8 text-left">
-                  <h2 className="text-lg font-semibold text-white mb-4">
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8 text-left">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     {lessons.length === 1 ? 'Booking Details' : 'Booking Details (All Lessons)'}
                   </h2>
 
                   {lessons.length === 1 ? (
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Teacher:</span>
-                        <span className="text-white font-medium">{lessons[0].teacher_profiles?.profiles?.full_name}</span>
+                        <span className="text-gray-500">Teacher:</span>
+                        <span className="text-gray-900 font-medium">{lessons[0].teacher_profiles?.profiles?.full_name}</span>
                       </div>
                       {lessons[0].subjects && (
                         <div className="flex justify-between">
-                          <span className="text-slate-400">Subject:</span>
-                          <span className="text-white font-medium">{lessons[0].subjects.name}</span>
+                          <span className="text-gray-500">Subject:</span>
+                          <span className="text-gray-900 font-medium">{lessons[0].subjects.name}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Date & Time:</span>
-                        <span className="text-white font-medium">
+                        <span className="text-gray-500">Date & Time:</span>
+                        <span className="text-gray-900 font-medium">
                           {format(new Date(lessons[0].scheduled_time), 'PPP p')}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Duration:</span>
-                        <span className="text-white font-medium">{lessons[0].duration_minutes} minutes</span>
+                        <span className="text-gray-500">Duration:</span>
+                        <span className="text-gray-900 font-medium">{lessons[0].duration_minutes} minutes</span>
                       </div>
-                      <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
-                        <span className="text-slate-400">Amount Paid:</span>
-                        <span className="text-emerald-400 font-bold text-lg">£{lessons[0].total_cost_paid.toFixed(2)}</span>
+                      <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
+                        <span className="text-gray-500">Amount Paid:</span>
+                        <span className="text-emerald-600 font-bold text-lg">£{lessons[0].total_cost_paid.toFixed(2)}</span>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {lessons.map((lesson, index) => (
-                        <div key={lesson.id} className="pb-4 border-b border-slate-700/50 last:border-0 last:pb-0">
+                        <div key={lesson.id} className="pb-4 border-b border-gray-200 last:border-0 last:pb-0">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold text-slate-500">LESSON {index + 1}</span>
-                            <span className="text-xs text-emerald-400 font-medium">£{lesson.total_cost_paid.toFixed(2)}</span>
+                            <span className="text-xs font-semibold text-gray-400">LESSON {index + 1}</span>
+                            <span className="text-xs text-emerald-600 font-medium">£{lesson.total_cost_paid.toFixed(2)}</span>
                           </div>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-slate-400">Teacher:</span>
-                              <span className="text-white font-medium">{lesson.teacher_profiles?.profiles?.full_name}</span>
+                              <span className="text-gray-500">Teacher:</span>
+                              <span className="text-gray-900 font-medium">{lesson.teacher_profiles?.profiles?.full_name}</span>
                             </div>
                             {lesson.subjects && (
                               <div className="flex justify-between">
-                                <span className="text-slate-400">Subject:</span>
-                                <span className="text-white font-medium">{lesson.subjects.name}</span>
+                                <span className="text-gray-500">Subject:</span>
+                                <span className="text-gray-900 font-medium">{lesson.subjects.name}</span>
                               </div>
                             )}
                             <div className="flex justify-between">
-                              <span className="text-slate-400">When:</span>
-                              <span className="text-white font-medium">
+                              <span className="text-gray-500">When:</span>
+                              <span className="text-gray-900 font-medium">
                                 {format(new Date(lesson.scheduled_time), 'PPP p')}
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-400">Duration:</span>
-                              <span className="text-white font-medium">{lesson.duration_minutes} min</span>
+                              <span className="text-gray-500">Duration:</span>
+                              <span className="text-gray-900 font-medium">{lesson.duration_minutes} min</span>
                             </div>
                           </div>
                         </div>
                       ))}
-                      <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
-                        <span className="text-slate-400 font-semibold">Total Amount Paid:</span>
-                        <span className="text-emerald-400 font-bold text-xl">£{totalAmount.toFixed(2)}</span>
+                      <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
+                        <span className="text-gray-500 font-semibold">Total Amount Paid:</span>
+                        <span className="text-emerald-600 font-bold text-xl">£{totalAmount.toFixed(2)}</span>
                       </div>
                     </div>
                   )}
@@ -336,41 +336,41 @@ export default function PaymentSuccess() {
             </>
           )}
 
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8 text-left">
-            <h2 className="text-lg font-semibold text-white mb-4">What's Next?</h2>
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8 text-left">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">What's Next?</h2>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-cyan-500/20">
-                  <Calendar className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-emerald-200">
+                  <Calendar className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">Check Your Dashboard</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">Check Your Dashboard</p>
+                  <p className="text-sm text-gray-500">
                     View all your upcoming sessions and join them when it's time. You'll find everything you need on your dashboard.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-blue-500/20">
-                  <Mail className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-blue-200">
+                  <Mail className="w-5 h-5 text-blue-500" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">Check Your Email</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">Check Your Email</p>
+                  <p className="text-sm text-gray-500">
                     We've sent you a confirmation email with all your session details and calendar invites.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-purple-500/20">
-                  <CheckCircle className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-purple-200">
+                  <CheckCircle className="w-5 h-5 text-purple-500" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">Prepare for Your Sessions</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">Prepare for Your Sessions</p>
+                  <p className="text-sm text-gray-500">
                     Make sure you have a quiet space and good internet connection. You'll receive a reminder 15 minutes before each session. You can reschedule anytime up to 30 mins before the session starts.
                   </p>
                 </div>
@@ -378,18 +378,18 @@ export default function PaymentSuccess() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl p-6 border border-cyan-500/20 mb-8">
-            <p className="text-sm text-slate-300 mb-2">
+          <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200 mb-8">
+            <p className="text-sm text-gray-600 mb-2">
               Need help or have questions?
             </p>
-            <p className="text-cyan-400 font-medium">
+            <p className="text-emerald-600 font-medium">
               Contact us at contact@talbiyah.ai
             </p>
           </div>
 
           <button
             onClick={() => navigate('/dashboard')}
-            className="w-full px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+            className="w-full px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-full transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
           >
             <span>Go to Dashboard</span>
             <ArrowRight className="w-5 h-5" />
@@ -397,14 +397,14 @@ export default function PaymentSuccess() {
 
           <button
             onClick={() => navigate('/teachers')}
-            className="w-full mt-4 px-8 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition"
+            className="w-full mt-4 px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 font-medium rounded-full transition"
           >
             Book More Sessions
           </button>
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
+          <p className="text-gray-500 text-sm">
             Thank you for choosing Talbiyah.ai for your Islamic learning journey
           </p>
         </div>

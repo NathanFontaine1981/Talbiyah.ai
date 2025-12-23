@@ -41,6 +41,7 @@ export default function StudentDashboardContent({
   const [referralCopied, setReferralCopied] = useState(false);
   const [showDailyReward, setShowDailyReward] = useState(false);
   const [dailyRewardChecked, setDailyRewardChecked] = useState(false);
+  const [parentReferralCode, setParentReferralCode] = useState<string | null>(null);
 
   useEffect(() => {
     loadLearnerData();
@@ -84,15 +85,20 @@ export default function StudentDashboardContent({
 
       if (error) throw error;
 
-      // Generate referral code if it doesn't exist
-      if (learnerData && !learnerData.referral_code) {
-        const newCode = await generateReferralCode(learnerData.id, learnerData.name);
-        if (newCode) {
-          learnerData.referral_code = newCode;
+      setLearner(learnerData);
+
+      // Fetch parent's referral code from profiles
+      if (learnerData?.parent_id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('referral_code')
+          .eq('id', learnerData.parent_id)
+          .single();
+
+        if (profileData?.referral_code) {
+          setParentReferralCode(profileData.referral_code);
         }
       }
-
-      setLearner(learnerData);
     } catch (err) {
       console.error('Error loading learner data:', err);
     } finally {
@@ -100,29 +106,10 @@ export default function StudentDashboardContent({
     }
   }
 
-  async function generateReferralCode(learnerId: string, learnerName: string) {
-    try {
-      const name = (learnerName || 'student').toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const code = `${name || 'student'}-${random}`;
-
-      const { error } = await supabase
-        .from('learners')
-        .update({ referral_code: code })
-        .eq('id', learnerId);
-
-      if (error) throw error;
-      return code;
-    } catch (error) {
-      console.error('Error generating referral code:', error);
-      return null;
-    }
-  }
-
   function copyReferralLink() {
-    if (!learner?.referral_code) return;
+    if (!parentReferralCode) return;
 
-    const referralLink = `${window.location.origin}/signup?ref=${learner.referral_code}`;
+    const referralLink = `${window.location.origin}/signup?ref=${parentReferralCode}`;
     navigator.clipboard.writeText(referralLink);
     setReferralCopied(true);
     setTimeout(() => setReferralCopied(false), 2000);
@@ -140,7 +127,7 @@ export default function StudentDashboardContent({
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -150,7 +137,7 @@ export default function StudentDashboardContent({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <p className="text-slate-600">Unable to load student data</p>
+          <p className="text-gray-600">Unable to load student data</p>
         </div>
       </div>
     );
@@ -190,36 +177,37 @@ export default function StudentDashboardContent({
           </div>
         </div>
 
-      {learner.referral_code && (
-        <div className="bg-white rounded-2xl p-8 mb-6 border border-slate-200 shadow-lg">
+      {parentReferralCode && (
+        <div className="bg-white rounded-2xl p-8 mb-6 border border-gray-200 shadow-lg">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
                   <Gift className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900">Earn Free Lessons</h3>
+                <h3 className="text-2xl font-bold text-gray-900">Earn Free Lessons</h3>
               </div>
-              <p className="text-slate-700 mb-3 text-lg">
-                Share Talbiyah.ai with friends and earn 1 free hour for every 10 hours they complete!
+              <p className="text-gray-700 mb-3 text-lg">
+                Earn 1 credit for every 10 hours your referrals complete. 1 Credit = 1 Free Lesson!
               </p>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
                   <Trophy className="w-5 h-5 text-emerald-600" />
-                  <span className="font-semibold text-slate-900">{learner.learning_credits?.toFixed(1) || 0} Free Hours Earned</span>
+                  <span className="font-semibold text-gray-900">{Math.floor(learner?.learning_credits || 0)} Free Credits Earned</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-6 min-w-[320px] border border-slate-200">
-              <label className="text-sm font-semibold text-slate-700 mb-2 block">Your Referral Code</label>
+            <div className="bg-gray-50 rounded-xl p-6 min-w-[320px] border border-gray-200">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">Your Referral Code</label>
               <div className="flex items-center space-x-2 mb-3">
-                <div className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-lg font-mono text-xl font-bold text-emerald-600 text-center">
-                  {learner.referral_code}
+                <div className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg font-mono text-xl font-bold text-emerald-600 text-center">
+                  {parentReferralCode}
                 </div>
                 <button
                   onClick={copyReferralLink}
                   className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
+                  title="Copy full referral link"
                 >
                   {referralCopied ? (
                     <CheckCircle className="w-5 h-5" />
@@ -228,12 +216,12 @@ export default function StudentDashboardContent({
                   )}
                 </button>
               </div>
-              <div className="mb-3 p-2 bg-white border border-slate-200 rounded text-xs text-slate-600 break-all">
-                {`${window.location.origin}/signup?ref=${learner.referral_code}`}
+              <div className="mb-3 p-2 bg-white border border-gray-200 rounded text-xs text-gray-600 break-all">
+                {`${window.location.origin}/signup?ref=${parentReferralCode}`}
               </div>
               <button
                 onClick={() => navigate('/refer')}
-                className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
               >
                 <span>View Full Details</span>
                 <ArrowRight className="w-4 h-4" />

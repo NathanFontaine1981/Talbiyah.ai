@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, X, Loader2, Mail, Calendar, User, Clock, CheckCircle, ChevronDown, ChevronUp, MapPin, Phone, Globe, GraduationCap, BookOpen, Video } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 
 interface TeacherApplication {
   id: string;
@@ -132,10 +133,10 @@ export default function TeacherManagement() {
       }
 
       await fetchTeachers();
-      alert('Teacher approved successfully! They will need to set their availability before students can book.');
+      toast.success('Teacher approved successfully! They will need to set their availability before students can book.');
     } catch (error) {
       console.error('Error approving teacher:', error);
-      alert('Failed to approve teacher. Please try again.');
+      toast.error('Failed to approve teacher. Please try again.');
     } finally {
       setProcessingId(null);
     }
@@ -152,10 +153,10 @@ export default function TeacherManagement() {
       if (error) throw error;
 
       await fetchTeachers();
-      alert('Teacher application rejected.');
+      toast.info('Teacher application rejected.');
     } catch (error) {
       console.error('Error rejecting teacher:', error);
-      alert('Failed to reject teacher. Please try again.');
+      toast.error('Failed to reject teacher. Please try again.');
     } finally {
       setProcessingId(null);
     }
@@ -165,7 +166,7 @@ export default function TeacherManagement() {
     const isExpanded = expandedId === teacher.id;
 
     return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden hover:border-slate-600 transition">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition">
         {/* Header - Always visible */}
         <div
           className="p-6 cursor-pointer"
@@ -173,37 +174,37 @@ export default function TeacherManagement() {
         >
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-4 flex-1">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center flex-shrink-0">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-semibold text-white">{teacher.full_name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{teacher.full_name}</h3>
                   {teacher.gender && (
-                    <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-400 rounded">
+                    <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
                       {teacher.gender}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center space-x-4 text-sm">
-                  <span className="text-cyan-400 font-semibold">£{teacher.hourly_rate}/hr</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="text-slate-400">Applied {new Date(teacher.created_at).toLocaleDateString()}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">£{teacher.hourly_rate}/hr</span>
+                  <span className="text-gray-500 dark:text-gray-400">•</span>
+                  <span className="text-gray-500 dark:text-gray-400">Applied {new Date(teacher.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-3 ml-4">
               <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-400' :
-                teacher.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                'bg-red-500/20 text-red-400'
+                teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-500 dark:text-amber-400' :
+                teacher.status === 'approved' ? 'bg-green-500/20 text-green-500 dark:text-green-400' :
+                'bg-red-500/20 text-red-500 dark:text-red-400'
               }`}>
                 {teacher.status === 'pending_approval' ? 'Pending' : teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
               </div>
               {isExpanded ? (
-                <ChevronUp className="w-5 h-5 text-slate-400" />
+                <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-slate-400" />
+                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
             </div>
           </div>
@@ -211,48 +212,48 @@ export default function TeacherManagement() {
 
         {/* Expanded Details */}
         {isExpanded && (
-          <div className="px-6 pb-6 border-t border-slate-700">
+          <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-700">
             <div className="pt-6 space-y-6">
               {/* Contact Information */}
               <div>
-                <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
-                  <Mail className="w-4 h-4 text-cyan-400" />
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                  <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Contact Information</span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4 text-slate-500" />
-                    <span className="text-slate-400">Email:</span>
-                    <a href={`mailto:${teacher.email}`} className="text-cyan-400 hover:text-cyan-300">
+                    <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-gray-500 dark:text-gray-400">Email:</span>
+                    <a href={`mailto:${teacher.email}`} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500">
                       {teacher.email}
                     </a>
                   </div>
                   {teacher.phone_number && (
                     <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-400">Phone:</span>
-                      <span className="text-white">{teacher.phone_number}</span>
+                      <Phone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-500 dark:text-gray-400">Phone:</span>
+                      <span className="text-gray-900 dark:text-white">{teacher.phone_number}</span>
                     </div>
                   )}
                   {teacher.location && (
                     <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-400">Location:</span>
-                      <span className="text-white">{teacher.location}</span>
+                      <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-500 dark:text-gray-400">Location:</span>
+                      <span className="text-gray-900 dark:text-white">{teacher.location}</span>
                     </div>
                   )}
                   {teacher.timezone && (
                     <div className="flex items-center space-x-2">
-                      <Globe className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-400">Timezone:</span>
-                      <span className="text-white">{teacher.timezone}</span>
+                      <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-500 dark:text-gray-400">Timezone:</span>
+                      <span className="text-gray-900 dark:text-white">{teacher.timezone}</span>
                     </div>
                   )}
                   {teacher.date_of_birth && (
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-400">Date of Birth:</span>
-                      <span className="text-white">{new Date(teacher.date_of_birth).toLocaleDateString()}</span>
+                      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-500 dark:text-gray-400">Date of Birth:</span>
+                      <span className="text-gray-900 dark:text-white">{new Date(teacher.date_of_birth).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
@@ -260,23 +261,23 @@ export default function TeacherManagement() {
 
               {/* Education & Qualifications */}
               <div>
-                <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
-                  <GraduationCap className="w-4 h-4 text-cyan-400" />
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                  <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Education & Qualifications</span>
                 </h4>
                 <div className="space-y-3 text-sm">
                   {teacher.education_level && (
                     <div className="flex items-center space-x-2">
-                      <span className="text-slate-400">Education Level:</span>
-                      <span className="text-white">{teacher.education_level}</span>
+                      <span className="text-gray-500 dark:text-gray-400">Education Level:</span>
+                      <span className="text-gray-900 dark:text-white">{teacher.education_level}</span>
                     </div>
                   )}
                   {teacher.islamic_learning_interests && teacher.islamic_learning_interests.length > 0 && (
                     <div>
-                      <span className="text-slate-400 block mb-2">Teaching Subjects:</span>
+                      <span className="text-gray-500 dark:text-gray-400 block mb-2">Teaching Subjects:</span>
                       <div className="flex flex-wrap gap-2">
                         {teacher.islamic_learning_interests.map((subject, idx) => (
-                          <span key={idx} className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-full text-xs">
+                          <span key={idx} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs">
                             {subject}
                           </span>
                         ))}
@@ -289,34 +290,34 @@ export default function TeacherManagement() {
               {/* Bio */}
               {teacher.bio && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>About</span>
                   </h4>
-                  <p className="text-sm text-slate-300 leading-relaxed">{teacher.bio}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{teacher.bio}</p>
                 </div>
               )}
 
               {/* Video Introduction */}
               {teacher.video_intro_url && (
                 <div>
-                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center space-x-2">
-                    <Video className="w-4 h-4 text-cyan-400" />
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                    <Video className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Video Introduction</span>
                   </h4>
                   <video
                     src={teacher.video_intro_url}
                     controls
-                    className="w-full max-w-md rounded-lg bg-slate-900"
+                    className="w-full max-w-md rounded-lg bg-gray-100 dark:bg-gray-900"
                   />
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex space-x-3 pt-4 border-t border-slate-700">
+              <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <a
                   href={`mailto:${teacher.email}`}
-                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition flex items-center justify-center space-x-2"
                 >
                   <Mail className="w-4 h-4" />
                   <span>Contact Teacher</span>
@@ -371,7 +372,7 @@ export default function TeacherManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -379,8 +380,8 @@ export default function TeacherManagement() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">Teacher Management</h2>
-        <p className="text-slate-400">Review and manage teacher applications</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Teacher Management</h2>
+        <p className="text-gray-600 dark:text-gray-400">Review and manage teacher applications</p>
       </div>
 
       <div className="flex space-x-4 mb-6">
@@ -388,8 +389,8 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('pending')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
             activeTab === 'pending'
-              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-              : 'bg-slate-800/50 text-slate-400 hover:text-white'
+              ? 'bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/30'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
           <div className="flex items-center space-x-2">
@@ -401,8 +402,8 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('approved')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
             activeTab === 'approved'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : 'bg-slate-800/50 text-slate-400 hover:text-white'
+              ? 'bg-green-500/20 text-green-500 dark:text-green-400 border border-green-500/30'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
           <div className="flex items-center space-x-2">
@@ -414,11 +415,11 @@ export default function TeacherManagement() {
 
       {activeTab === 'pending' && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-4">Pending Teacher Applications</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Teacher Applications</h3>
           {pendingApplications.length === 0 ? (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-              <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400">No pending applications at this time</p>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+              <Clock className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No pending applications at this time</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -432,11 +433,11 @@ export default function TeacherManagement() {
 
       {activeTab === 'approved' && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-4">Approved Teachers</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Approved Teachers</h3>
           {approvedTeachers.length === 0 ? (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-              <CheckCircle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400">No approved teachers yet</p>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+              <CheckCircle className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No approved teachers yet</p>
             </div>
           ) : (
             <div className="space-y-4">

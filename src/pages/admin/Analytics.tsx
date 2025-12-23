@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays } from 'date-fns';
 
 interface Metrics {
@@ -381,7 +382,7 @@ export default function Analytics() {
       const csv = generateCSV(exportData);
       downloadFile(csv, 'analytics-report.csv', 'text/csv');
     } else {
-      alert(`Export as ${format.toUpperCase()} - Coming soon!`);
+      toast.info(`Export as ${format.toUpperCase()} - Coming soon!`);
     }
   }
 
@@ -426,7 +427,7 @@ export default function Analytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -436,8 +437,8 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Analytics</h1>
-          <p className="text-slate-400">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Last updated: {format(lastUpdated, 'h:mm a')}
           </p>
         </div>
@@ -446,7 +447,7 @@ export default function Analytics() {
           <select
             value={timePeriod}
             onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
-            className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+            className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
           >
             <option value="7days">Last 7 days</option>
             <option value="30days">Last 30 days</option>
@@ -461,7 +462,7 @@ export default function Analytics() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-2"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -469,26 +470,26 @@ export default function Analytics() {
 
           {/* Export */}
           <div className="relative group">
-            <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2">
+            <button className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2">
               <Download className="w-4 h-4" />
               <span>Export</span>
             </button>
-            <div className="absolute right-0 top-full mt-2 w-40 bg-slate-800 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <button
                 onClick={() => handleExport('csv')}
-                className="w-full px-4 py-2 text-left text-white hover:bg-slate-700 rounded-t-lg"
+                className="w-full px-4 py-2 text-left text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
               >
                 Export as CSV
               </button>
               <button
                 onClick={() => handleExport('pdf')}
-                className="w-full px-4 py-2 text-left text-white hover:bg-slate-700"
+                className="w-full px-4 py-2 text-left text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Export as PDF
               </button>
               <button
                 onClick={() => handleExport('excel')}
-                className="w-full px-4 py-2 text-left text-white hover:bg-slate-700 rounded-b-lg"
+                className="w-full px-4 py-2 text-left text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
               >
                 Export as Excel
               </button>
@@ -499,24 +500,24 @@ export default function Analytics() {
 
       {/* Custom Date Range */}
       {timePeriod === 'custom' && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-8">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">Start Date</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
               <input
                 type="date"
                 value={customDateRange.start}
                 onChange={(e) => setCustomDateRange({ ...customDateRange, start: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">End Date</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">End Date</label>
               <input
                 type="date"
                 value={customDateRange.end}
                 onChange={(e) => setCustomDateRange({ ...customDateRange, end: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -525,7 +526,7 @@ export default function Analytics() {
 
       {/* Key Metrics */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Key Metrics</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Key Metrics</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
             icon={Users}
@@ -560,11 +561,11 @@ export default function Analytics() {
       </div>
 
       {/* Subject Popularity */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Subject Popularity</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Subject Popularity</h2>
         <div className="space-y-4">
           {subjectStats.length === 0 ? (
-            <p className="text-slate-400">No data available for this period</p>
+            <p className="text-gray-500 dark:text-gray-400">No data available for this period</p>
           ) : (
             subjectStats.map((subject, index) => (
               <SubjectBar key={index} subject={subject} />
@@ -574,48 +575,48 @@ export default function Analytics() {
       </div>
 
       {/* Teacher Performance */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Teacher Performance</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Teacher Performance</h2>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
-            <p className="text-slate-400 text-sm mb-1">Total Teachers</p>
-            <p className="text-2xl font-bold text-white">{teacherPerformance.total}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Total Teachers</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.total}</p>
           </div>
-          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
-            <p className="text-slate-400 text-sm mb-1">Active This Period</p>
-            <p className="text-2xl font-bold text-white">{teacherPerformance.activeThisPeriod}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Active This Period</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.activeThisPeriod}</p>
           </div>
-          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
-            <p className="text-slate-400 text-sm mb-1">Average Rating</p>
+          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Average Rating</p>
             <div className="flex items-center space-x-2">
               <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <p className="text-2xl font-bold text-white">{teacherPerformance.avgRating.toFixed(1)}</p>
-              <span className="text-slate-400">/ 5.0</span>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.avgRating.toFixed(1)}</p>
+              <span className="text-gray-600 dark:text-gray-400">/ 5.0</span>
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-3">Top Performers</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Top Performers</h3>
           {teacherPerformance.topPerformers.length === 0 ? (
-            <p className="text-slate-400">No teacher data available</p>
+            <p className="text-gray-500 dark:text-gray-400">No teacher data available</p>
           ) : (
             <div className="space-y-2">
               {teacherPerformance.topPerformers.map((teacher, index) => (
-                <div key={teacher.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+                <div key={teacher.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                   <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-cyan-500/20 border border-cyan-500/30 rounded-full flex items-center justify-center">
-                      <span className="text-cyan-400 font-bold text-sm">{index + 1}</span>
+                    <div className="w-8 h-8 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center">
+                      <span className="text-emerald-600 font-bold text-sm">{index + 1}</span>
                     </div>
                     <div>
-                      <p className="text-white font-medium">{teacher.name}</p>
-                      <p className="text-slate-400 text-sm">{teacher.sessionCount} sessions</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{teacher.name}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">{teacher.sessionCount} sessions</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-white font-medium">{teacher.rating.toFixed(1)}</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{teacher.rating.toFixed(1)}</span>
                   </div>
                 </div>
               ))}
@@ -627,14 +628,14 @@ export default function Analytics() {
       {/* Daily Activity Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Sessions per Day */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Sessions per Day</h2>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sessions per Day</h2>
           <LineChart data={dailyActivity.map(d => d.sessions)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="cyan" />
         </div>
 
         {/* Active Users per Day */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Active Users per Day</h2>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Users per Day</h2>
           <BarChart data={dailyActivity.map(d => d.activeUsers)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="emerald" />
         </div>
       </div>
@@ -645,7 +646,7 @@ export default function Analytics() {
 // Metric Card Component
 function MetricCard({ icon: Icon, label, value, change, subtitle, warning, color }: any) {
   const colors = {
-    cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+    cyan: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     green: 'bg-green-500/10 border-green-500/20 text-green-400',
     purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
@@ -690,16 +691,16 @@ function SubjectBar({ subject }: { subject: SubjectStats }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <span className="text-xl">{getSubjectIcon(subject.name)}</span>
-          <span className="text-white font-medium">{subject.name}</span>
+          <span className="text-gray-900 dark:text-white font-medium">{subject.name}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-slate-400 text-sm">{subject.count} sessions</span>
-          <span className="text-cyan-400 font-medium">{subject.percentage.toFixed(0)}%</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">{subject.count} sessions</span>
+          <span className="text-emerald-600 font-medium">{subject.percentage.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden">
+      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500"
+          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-500"
           style={{ width: `${subject.percentage}%` }}
         ></div>
       </div>
@@ -728,10 +729,10 @@ function LineChart({ data, labels, color }: { data: number[]; labels: string[]; 
       <div className="relative h-48 mb-4">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           {/* Grid lines */}
-          <line x1="0" y1="20" x2="100" y2="20" stroke="#334155" strokeWidth="0.2" />
-          <line x1="0" y1="40" x2="100" y2="40" stroke="#334155" strokeWidth="0.2" />
-          <line x1="0" y1="60" x2="100" y2="60" stroke="#334155" strokeWidth="0.2" />
-          <line x1="0" y1="80" x2="100" y2="80" stroke="#334155" strokeWidth="0.2" />
+          <line x1="0" y1="20" x2="100" y2="20" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
+          <line x1="0" y1="40" x2="100" y2="40" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
+          <line x1="0" y1="60" x2="100" y2="60" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
+          <line x1="0" y1="80" x2="100" y2="80" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
 
           {/* Area fill */}
           <polygon
@@ -766,7 +767,7 @@ function LineChart({ data, labels, color }: { data: number[]; labels: string[]; 
         </svg>
 
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-slate-500 -translate-x-8">
+        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 -translate-x-8">
           <span>{maxValue}</span>
           <span>{Math.round(maxValue * 0.5)}</span>
           <span>0</span>
@@ -774,7 +775,7 @@ function LineChart({ data, labels, color }: { data: number[]; labels: string[]; 
       </div>
 
       {/* X-axis labels */}
-      <div className="flex justify-between text-xs text-slate-500">
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         {labels.map((label, index) => {
           // Show every nth label to avoid crowding
           const showEvery = Math.ceil(labels.length / 7);
@@ -793,7 +794,7 @@ function BarChart({ data, labels, color }: { data: number[]; labels: string[]; c
   const maxValue = Math.max(...data, 1);
 
   const colors = {
-    cyan: 'bg-cyan-500',
+    cyan: 'bg-emerald-500',
     emerald: 'bg-emerald-500',
   };
 
@@ -804,13 +805,13 @@ function BarChart({ data, labels, color }: { data: number[]; labels: string[]; c
       <div className="h-48 flex items-end justify-between space-x-1 mb-4">
         {data.map((value, index) => (
           <div key={index} className="flex-1 flex flex-col items-center">
-            <div className="w-full bg-slate-900 rounded-t relative group">
+            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-t relative group">
               <div
                 className={`${barColor} rounded-t transition-all duration-500`}
                 style={{ height: `${(value / maxValue) * 192}px` }}
               >
                 {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                   {value}
                 </div>
               </div>
@@ -820,7 +821,7 @@ function BarChart({ data, labels, color }: { data: number[]; labels: string[]; c
       </div>
 
       {/* X-axis labels */}
-      <div className="flex justify-between text-xs text-slate-500">
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         {labels.map((label, index) => {
           const showEvery = Math.ceil(labels.length / 7);
           if (index % showEvery === 0 || index === labels.length - 1) {

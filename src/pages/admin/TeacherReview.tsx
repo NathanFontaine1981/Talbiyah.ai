@@ -189,42 +189,42 @@ export default function TeacherReview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading applications...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading applications...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white dark:bg-gray-800 py-8">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pending Teacher Applications</h1>
-          <p className="text-gray-600">{pendingTeachers.length} application(s) awaiting review</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pending Teacher Applications</h1>
+          <p className="text-gray-600 dark:text-gray-400">{pendingTeachers.length} application(s) awaiting review</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg flex items-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <p className="text-green-800 text-sm font-medium">{successMessage}</p>
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <p className="text-green-800 dark:text-green-200 text-sm font-medium">{successMessage}</p>
           </div>
         )}
 
         {pendingTeachers.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Pending Applications</h3>
-            <p className="text-gray-600">All teacher applications have been reviewed.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Pending Applications</h3>
+            <p className="text-gray-600 dark:text-gray-400">All teacher applications have been reviewed.</p>
           </div>
         )}
 
@@ -274,9 +274,9 @@ function TeacherApplicationCard({
   const tierInfo = getTierInfo(selectedTier);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-500 to-cyan-600 p-6 text-white">
+      <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6 text-white">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold mb-1">{teacher.profiles.full_name}</h2>
@@ -293,34 +293,34 @@ function TeacherApplicationCard({
       <div className="p-6 space-y-6">
         {/* Qualifications Summary */}
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <Award className="w-5 h-5 text-emerald-500" />
             <span>Qualifications Summary</span>
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Experience</p>
-              <p className="font-semibold text-gray-900">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Experience</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
                 {teacher.years_experience === 0 ? '< 1 year' : `${teacher.years_experience}+ years`}
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">English Level</p>
-              <p className="font-semibold text-gray-900 capitalize">{teacher.english_level}</p>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">English Level</p>
+              <p className="font-semibold text-gray-900 dark:text-white capitalize">{teacher.english_level}</p>
             </div>
 
-            <div className={`rounded-lg p-4 border-2 ${teacher.has_ijazah ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
-              <p className="text-xs text-gray-600 mb-1">Ijazah</p>
-              <p className="font-semibold text-gray-900">
+            <div className={`rounded-lg p-4 border-2 ${teacher.has_ijazah ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700'}`}>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ijazah</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
                 {teacher.has_ijazah ? `✅ Yes (${teacher.ijazah_type?.join(', ')})` : '❌ No'}
               </p>
             </div>
 
-            <div className={`rounded-lg p-4 border-2 ${teacher.has_degree ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'}`}>
-              <p className="text-xs text-gray-600 mb-1">Degree</p>
-              <p className="font-semibold text-gray-900">
+            <div className={`rounded-lg p-4 border-2 ${teacher.has_degree ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700'}`}>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Degree</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
                 {teacher.has_degree ? `✅ ${teacher.degree_type}` : '❌ No'}
               </p>
             </div>
@@ -328,8 +328,8 @@ function TeacherApplicationCard({
         </div>
 
         {/* Requested Rate */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-900">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+          <p className="text-sm text-amber-900 dark:text-amber-200">
             <strong>Requested Hourly Rate:</strong> £{teacher.hourly_rate.toFixed(2)}/hour
           </p>
         </div>
@@ -337,8 +337,8 @@ function TeacherApplicationCard({
         {/* Certificates */}
         {teacher.certificates && teacher.certificates.length > 0 && (
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-              <FileText className="w-4 h-4 text-gray-600" />
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+              <FileText className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <span>Uploaded Certificates ({teacher.certificates.length})</span>
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -348,7 +348,7 @@ function TeacherApplicationCard({
                   href={cert.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200 text-sm font-medium transition flex items-center space-x-2"
+                  className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-700 text-sm font-medium transition flex items-center space-x-2"
                 >
                   <FileText className="w-4 h-4" />
                   <span>{cert.name || `Certificate ${i + 1}`}</span>
@@ -362,14 +362,14 @@ function TeacherApplicationCard({
         {/* Intro Video */}
         {(teacher.intro_video_url || teacher.video_intro_url) && (
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-              <Video className="w-4 h-4 text-gray-600" />
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+              <Video className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <span>Introduction Video</span>
             </h4>
             <video
               src={teacher.intro_video_url || teacher.video_intro_url}
               controls
-              className="w-full max-w-2xl rounded-lg border border-gray-300"
+              className="w-full max-w-2xl rounded-lg border border-gray-300 dark:border-gray-700"
             />
           </div>
         )}
@@ -377,14 +377,14 @@ function TeacherApplicationCard({
         {/* Bio */}
         {teacher.bio && (
           <div>
-            <h4 className="font-semibold text-gray-900 mb-2">About</h4>
-            <p className="text-gray-700 text-sm bg-gray-50 rounded-lg p-4 border border-gray-200">{teacher.bio}</p>
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">About</h4>
+            <p className="text-gray-700 dark:text-gray-300 text-sm bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700">{teacher.bio}</p>
           </div>
         )}
 
         {/* Tier Assignment Section */}
-        <div className="border-t border-gray-200 pt-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Assign Tier & Approve</h3>
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Assign Tier & Approve</h3>
 
           {/* Suggested Tier Badge */}
           <div className="mb-4 inline-block">
@@ -399,11 +399,11 @@ function TeacherApplicationCard({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* Tier Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">Select Tier:</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Select Tier:</label>
               <select
                 value={selectedTier}
                 onChange={(e) => setSelectedTier(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 disabled={processing}
               >
                 <option value="newcomer">🌱 Newcomer (£5/hr → £15 student)</option>
@@ -416,8 +416,8 @@ function TeacherApplicationCard({
 
             {/* Interview Required */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">Interview Required?</label>
-              <label className="flex items-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Interview Required?</label>
+              <label className="flex items-center space-x-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
                 <input
                   type="checkbox"
                   checked={needsInterview}
@@ -425,14 +425,14 @@ function TeacherApplicationCard({
                   className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
                   disabled={processing}
                 />
-                <span className="text-sm text-gray-700">Schedule interview before approval</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Schedule interview before approval</span>
               </label>
             </div>
 
             {/* Lock Tier */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">Lock Tier?</label>
-              <label className="flex items-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Lock Tier?</label>
+              <label className="flex items-center space-x-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
                 <input
                   type="checkbox"
                   checked={lockTier}
@@ -440,7 +440,7 @@ function TeacherApplicationCard({
                   className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
                   disabled={processing}
                 />
-                <span className="text-sm text-gray-700 flex items-center space-x-1">
+                <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                   {lockTier ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                   <span>Prevent auto-promotion</span>
                 </span>
@@ -450,13 +450,13 @@ function TeacherApplicationCard({
 
           {/* Admin Notes */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-900 mb-2">Admin Notes (internal):</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Admin Notes (internal):</label>
             <textarea
               rows={3}
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               placeholder="Reason for tier assignment, observations, concerns..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
               disabled={processing}
             />
           </div>
@@ -501,8 +501,8 @@ function TeacherApplicationCard({
 
           {/* Reject Form */}
           {showRejectForm && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <label className="block text-sm font-medium text-red-900 mb-2">
+            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+              <label className="block text-sm font-medium text-red-900 dark:text-red-200 mb-2">
                 Rejection Reason (will be sent to applicant):
               </label>
               <textarea
@@ -510,7 +510,7 @@ function TeacherApplicationCard({
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="Please provide a clear reason for rejection..."
-                className="w-full px-4 py-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 mb-3"
+                className="w-full px-4 py-3 border border-red-300 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 mb-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 disabled={processing}
               />
               <div className="flex gap-2">
@@ -526,7 +526,7 @@ function TeacherApplicationCard({
                     setShowRejectForm(false);
                     setRejectReason('');
                   }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded font-medium transition"
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded font-medium transition"
                 >
                   Cancel
                 </button>

@@ -17,32 +17,32 @@ export default function AnnouncementsCard() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-white rounded-2xl p-6 border border-gray-200">
       <div className="flex items-center space-x-2 mb-4">
-        <Megaphone className="w-5 h-5 text-amber-400" />
-        <h3 className="text-xl font-bold text-white">Announcements</h3>
+        <Megaphone className="w-5 h-5 text-amber-500" />
+        <h3 className="text-lg font-bold text-gray-900">Announcements</h3>
       </div>
 
       <div className="space-y-3">
         {announcements.map((announcement, index) => (
           <div
             key={index}
-            className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-slate-600 transition cursor-pointer group"
+            className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition cursor-pointer group"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-1">
-                  <span className="inline-block px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-xs font-medium text-amber-400">
+                  <span className="inline-block px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs font-medium text-amber-600">
                     {announcement.tag}
                   </span>
-                  <span className="text-xs text-slate-500">{announcement.date}</span>
+                  <span className="text-xs text-gray-500">{announcement.date}</span>
                 </div>
-                <h4 className="text-sm font-semibold text-white group-hover:text-cyan-400 transition">
+                <h4 className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition">
                   {announcement.title}
                 </h4>
-                <p className="text-xs text-slate-400 mt-1">{announcement.description}</p>
+                <p className="text-xs text-gray-500 mt-1">{announcement.description}</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition flex-shrink-0 ml-2" />
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 transition flex-shrink-0 ml-2" />
             </div>
           </div>
         ))}

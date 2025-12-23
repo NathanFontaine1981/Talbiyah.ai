@@ -157,7 +157,7 @@ export default function TeacherAvailabilityCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-center py-8">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -168,13 +168,13 @@ export default function TeacherAvailabilityCard() {
   // No availability set
   if (availability.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b border-blue-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">My Availability</h3>
+            <h3 className="text-lg font-bold text-gray-900">My Availability</h3>
           </div>
         </div>
 
@@ -182,10 +182,10 @@ export default function TeacherAvailabilityCard() {
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-amber-600" />
           </div>
-          <h4 className="text-lg font-semibold text-slate-900 mb-2">
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
             You haven't set your availability yet
           </h4>
-          <p className="text-slate-600 mb-6 max-w-md mx-auto">
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
             Students can't book you until you set your available times. Let them know when you're ready to teach!
           </p>
           <button
@@ -203,13 +203,13 @@ export default function TeacherAvailabilityCard() {
 
   // Has availability - show schedule
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b border-blue-100 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
             <Calendar className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">My Availability</h3>
+          <h3 className="text-lg font-bold text-gray-900">My Availability</h3>
         </div>
         <button
           onClick={() => navigate('/teacher/availability')}
@@ -221,7 +221,7 @@ export default function TeacherAvailabilityCard() {
       </div>
 
       <div className="p-6">
-        <p className="text-sm text-slate-600 mb-4 font-medium">Current Schedule:</p>
+        <p className="text-sm text-gray-600 mb-4 font-medium">Current Schedule:</p>
 
         <div className="space-y-4">
           {Object.keys(groupedByDay)
@@ -235,12 +235,12 @@ export default function TeacherAvailabilityCard() {
                 <div key={dayNum} className="border-l-4 border-emerald-500 pl-4 py-2 bg-emerald-50/50 rounded-r-lg border border-emerald-200">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <h4 className="font-bold text-slate-900">{dayName}</h4>
+                    <h4 className="font-bold text-gray-900">{dayName}</h4>
                   </div>
                   {mergedSlots.map((slot, idx) => (
                     <div key={idx} className="ml-5 mb-2 last:mb-0">
-                      <div className="flex items-center space-x-2 text-slate-700">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center space-x-2 text-gray-700">
+                        <Clock className="w-4 h-4 text-gray-500" />
                         <span className="font-medium">
                           {formatTime(slot.start)} - {formatTime(slot.end)}
                         </span>
@@ -264,7 +264,7 @@ export default function TeacherAvailabilityCard() {
             })}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-slate-200">
+        <div className="mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={() => navigate('/teacher/availability')}
             className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition shadow-md flex items-center justify-center space-x-2"

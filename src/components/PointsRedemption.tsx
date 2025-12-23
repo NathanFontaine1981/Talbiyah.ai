@@ -47,38 +47,38 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
 
   if (availableCredits < 1) {
     return (
-      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+      <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
         <div className="flex items-center space-x-3 mb-3">
-          <Coins className="w-6 h-6 text-slate-400" />
-          <h3 className="text-lg font-bold text-slate-900">Redeem Points</h3>
+          <Coins className="w-6 h-6 text-gray-500" />
+          <h3 className="text-lg font-bold text-gray-900">Redeem Points</h3>
         </div>
-        <p className="text-slate-600 text-sm mb-4">
+        <p className="text-gray-600 text-sm mb-4">
           Convert your earned points into free lesson credits
         </p>
-        <div className="bg-white rounded-lg p-4 border border-slate-200 mb-4">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
           <div className="text-center">
-            <p className="text-sm text-slate-600 mb-1">Your Points</p>
-            <p className="text-3xl font-bold text-slate-900">{currentPoints.toLocaleString()}</p>
+            <p className="text-sm text-gray-600 mb-1">Your Points</p>
+            <p className="text-3xl font-bold text-gray-900">{currentPoints.toLocaleString()}</p>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-200">
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Points needed for 1 credit:</span>
-              <span className="font-semibold text-slate-900">{POINTS_PER_CREDIT.toLocaleString()}</span>
+              <span className="text-gray-600">Points needed for 1 credit:</span>
+              <span className="font-semibold text-gray-900">{POINTS_PER_CREDIT.toLocaleString()}</span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-300"
                 style={{ width: `${Math.min((currentPoints / POINTS_PER_CREDIT) * 100, 100)}%` }}
               ></div>
             </div>
-            <p className="text-xs text-slate-500 mt-1 text-center">
+            <p className="text-xs text-gray-500 mt-1 text-center">
               {POINTS_PER_CREDIT - currentPoints} more points needed
             </p>
           </div>
         </div>
         <button
           disabled
-          className="w-full px-4 py-3 bg-slate-200 text-slate-400 rounded-lg font-semibold cursor-not-allowed"
+          className="w-full px-4 py-3 bg-gray-200 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
         >
           Not Enough Points
         </button>
@@ -93,19 +93,19 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
           <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
             <Coins className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Redeem Points</h3>
+          <h3 className="text-lg font-bold text-gray-900">Redeem Points</h3>
         </div>
-        <p className="text-slate-700 text-sm mb-4">
+        <p className="text-gray-700 text-sm mb-4">
           You have enough points to redeem for free lesson credits!
         </p>
         <div className="bg-white rounded-lg p-4 border border-amber-200 mb-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-sm text-slate-600 mb-1">Your Points</p>
+              <p className="text-sm text-gray-600 mb-1">Your Points</p>
               <p className="text-2xl font-bold text-amber-600">{currentPoints.toLocaleString()}</p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-slate-600 mb-1">Available Credits</p>
+              <p className="text-sm text-gray-600 mb-1">Available Credits</p>
               <p className="text-2xl font-bold text-emerald-600">{availableCredits}</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
           <span>Redeem 1 Free Hour</span>
           <ArrowRight className="w-5 h-5" />
         </button>
-        <p className="text-xs text-slate-600 mt-2 text-center">
+        <p className="text-xs text-gray-600 mt-2 text-center">
           {POINTS_PER_CREDIT} points = 1 free lesson hour
         </p>
       </div>
@@ -130,18 +130,18 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
                 <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-10 h-10 text-green-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Success!</h3>
-                <p className="text-slate-600 mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Success!</h3>
+                <p className="text-gray-600 mb-6">
                   You've redeemed 1 free lesson hour
                 </p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-slate-900">Confirm Redemption</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">Confirm Redemption</h3>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 transition"
+                    className="p-2 text-gray-500 hover:text-gray-600 transition"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -150,21 +150,21 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200 mb-6">
                   <div className="flex items-center justify-center space-x-4 mb-4">
                     <div className="text-center">
-                      <p className="text-sm text-slate-600 mb-1">You'll Spend</p>
+                      <p className="text-sm text-gray-600 mb-1">You'll Spend</p>
                       <p className="text-3xl font-bold text-amber-600">{POINTS_PER_CREDIT}</p>
-                      <p className="text-xs text-slate-500">points</p>
+                      <p className="text-xs text-gray-500">points</p>
                     </div>
-                    <ArrowRight className="w-6 h-6 text-slate-400" />
+                    <ArrowRight className="w-6 h-6 text-gray-500" />
                     <div className="text-center">
-                      <p className="text-sm text-slate-600 mb-1">You'll Receive</p>
+                      <p className="text-sm text-gray-600 mb-1">You'll Receive</p>
                       <p className="text-3xl font-bold text-emerald-600">1</p>
-                      <p className="text-xs text-slate-500">free hour</p>
+                      <p className="text-xs text-gray-500">free hour</p>
                     </div>
                   </div>
                   <div className="pt-4 border-t border-amber-200">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Remaining Points</span>
-                      <span className="font-semibold text-slate-900">
+                      <span className="text-gray-600">Remaining Points</span>
+                      <span className="font-semibold text-gray-900">
                         {(currentPoints - POINTS_PER_CREDIT).toLocaleString()}
                       </span>
                     </div>
@@ -181,7 +181,7 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
                   <button
                     onClick={() => setShowModal(false)}
                     disabled={redeeming}
-                    className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition"
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
                   >
                     Cancel
                   </button>
@@ -194,7 +194,7 @@ export default function PointsRedemption({ learnerId, currentPoints, onRedemptio
                   </button>
                 </div>
 
-                <p className="text-xs text-slate-500 text-center mt-4">
+                <p className="text-xs text-gray-500 text-center mt-4">
                   Free hours never expire and can be used for any lesson
                 </p>
               </>

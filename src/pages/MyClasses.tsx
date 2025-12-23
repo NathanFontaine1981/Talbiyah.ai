@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format, parseISO, differenceInMinutes, isPast, differenceInDays, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
 interface Lesson {
@@ -57,6 +58,7 @@ export default function MyClasses() {
   const [messageContent, setMessageContent] = useState<string>('');
   const [cancellingLessonId, setCancellingLessonId] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<{ lessonId: string; canCancel: boolean; hoursUntil: number } | null>(null);
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set(['This Week']));
 
   useEffect(() => {
     loadLessons();
@@ -268,12 +270,12 @@ export default function MyClasses() {
       }
 
       // Show success message and reload
-      alert(`Lesson cancelled successfully. ${data.credits_refunded} credit(s) have been refunded to your account.`);
+      toast.success(`Lesson cancelled successfully. ${data.credits_refunded} credit(s) have been refunded to your account.`);
       setShowCancelModal(null);
       loadLessons();
     } catch (error) {
       console.error('Error cancelling lesson:', error);
-      alert(error instanceof Error ? error.message : 'Failed to cancel lesson');
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel lesson');
     } finally {
       setCancellingLessonId(null);
     }
@@ -328,23 +330,23 @@ export default function MyClasses() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading your lessons...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading your lessons...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition mb-6"
+            className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>
@@ -352,18 +354,18 @@ export default function MyClasses() {
 
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">My Lessons</h1>
-              <p className="text-slate-400 text-lg">View and manage all your lessons</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">My Lessons</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">View and manage all your lessons</p>
             </div>
 
             {/* Filter Buttons */}
-            <div className="flex items-center space-x-2 bg-slate-800/50 rounded-xl p-2 border border-slate-700">
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700 shadow-sm">
               <button
                 onClick={() => setFilter('upcoming')}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'upcoming'
-                    ? 'bg-cyan-500 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Upcoming
@@ -372,8 +374,8 @@ export default function MyClasses() {
                 onClick={() => setFilter('past')}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'past'
-                    ? 'bg-cyan-500 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Past
@@ -383,7 +385,7 @@ export default function MyClasses() {
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'missed'
                     ? 'bg-red-500 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Missed
@@ -392,8 +394,8 @@ export default function MyClasses() {
                 onClick={() => setFilter('all')}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'all'
-                    ? 'bg-cyan-500 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 All
@@ -404,24 +406,24 @@ export default function MyClasses() {
 
         {/* Lessons List */}
         {lessons.length === 0 ? (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-12 text-center border border-slate-700">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Calendar className="w-10 h-10 text-slate-600" />
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-sm">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-10 h-10 text-gray-400" />
             </div>
-            <p className="text-xl text-slate-300 mb-2">
+            <p className="text-xl text-gray-700 mb-2">
               {filter === 'upcoming' && 'No upcoming lessons scheduled'}
               {filter === 'past' && 'No past lessons found'}
               {filter === 'missed' && 'No missed lessons'}
               {filter === 'all' && 'No lessons found'}
             </p>
-            <p className="text-slate-500 mb-8">
+            <p className="text-gray-500 mb-8">
               {filter === 'upcoming' && !isTeacher && 'Start your learning journey by booking your first session'}
               {filter === 'upcoming' && isTeacher && 'You are viewing this as a teacher. Your teaching schedule is on your teacher dashboard.'}
             </p>
             {filter === 'upcoming' && !isTeacher && (
               <button
                 onClick={() => navigate('/subjects')}
-                className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
+                className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-full transition shadow-md"
               >
                 Book a Session
               </button>
@@ -429,28 +431,51 @@ export default function MyClasses() {
           </div>
         ) : (
           <div className="space-y-8">
-            {groupedLessons.map((group) => (
+            {groupedLessons.map((group) => {
+              const isExpanded = expandedWeeks.has(group.weekLabel);
+              const toggleWeek = () => {
+                setExpandedWeeks(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(group.weekLabel)) {
+                    newSet.delete(group.weekLabel);
+                  } else {
+                    newSet.add(group.weekLabel);
+                  }
+                  return newSet;
+                });
+              };
+
+              return (
               <div key={group.weekLabel} className="space-y-4">
-                {/* Week Header */}
-                <div className="flex items-center space-x-4">
-                  <div className={`px-4 py-2 rounded-xl font-bold text-sm ${
+                {/* Week Header - Clickable */}
+                <button
+                  onClick={toggleWeek}
+                  className="w-full flex items-center space-x-4 group cursor-pointer"
+                >
+                  <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold text-sm transition ${
                     group.weekLabel === 'This Week'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 group-hover:bg-emerald-100'
                       : group.weekLabel === 'Next Week'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200 group-hover:bg-blue-100'
                       : group.weekLabel === 'Last Week'
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      : 'bg-slate-700/50 text-slate-300 border border-slate-600'
+                      ? 'bg-amber-50 text-amber-600 border border-amber-200 group-hover:bg-amber-100'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 group-hover:bg-gray-200'
                   }`}>
-                    {group.weekLabel}
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                    <span>{group.weekLabel}</span>
                   </div>
-                  <div className="flex-1 h-px bg-slate-700/50"></div>
-                  <span className="text-sm text-slate-500">
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <span className="text-sm text-gray-500">
                     {group.lessons.length} lesson{group.lessons.length !== 1 ? 's' : ''}
                   </span>
-                </div>
+                </button>
 
-                {/* Lessons in this week */}
+                {/* Lessons in this week - Only show when expanded */}
+                {isExpanded && (
                 <div className="space-y-3">
                   {group.lessons.map((lesson) => {
                     const lessonDate = parseISO(lesson.scheduled_time);
@@ -462,7 +487,7 @@ export default function MyClasses() {
 
                     const handleJoin = () => {
                       if (!lesson['100ms_room_id']) {
-                        alert('Session room is not ready yet. Please contact support if this issue persists.');
+                        toast.error('Session room is not ready yet. Please contact support if this issue persists.');
                         return;
                       }
                       navigate(`/lesson/${lesson.id}`);
@@ -479,11 +504,11 @@ export default function MyClasses() {
                     return (
                       <div
                         key={lesson.id}
-                        className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition"
+                        className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 transition shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
-                      <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
+                      <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden border-2 border-emerald-200">
                         {lesson.teacher_avatar ? (
                           <img
                             src={lesson.teacher_avatar}
@@ -491,37 +516,37 @@ export default function MyClasses() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-8 h-8 text-slate-400" />
+                          <User className="w-8 h-8 text-emerald-600" />
                         )}
                       </div>
 
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="text-xl font-bold text-white">{lesson.subject_name}</h4>
+                          <h4 className="text-xl font-bold text-gray-900 dark:text-white">{lesson.subject_name}</h4>
                           {isToday && !lessonIsPast && (
-                            <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full">
+                            <span className="px-2 py-1 bg-emerald-100 text-emerald-600 text-xs font-bold rounded-full">
                               TODAY
                             </span>
                           )}
                           {canJoin && (
-                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full animate-pulse">
+                            <span className="px-2 py-1 bg-green-100 text-green-600 text-xs font-bold rounded-full animate-pulse">
                               READY
                             </span>
                           )}
                           {(lesson.status === 'missed' || lesson.status === 'cancelled') && (
-                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
+                            <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full">
                               MISSED
                             </span>
                           )}
                           {lessonIsPast && lesson.status !== 'missed' && lesson.status !== 'cancelled' && (
-                            <span className="px-2 py-1 bg-slate-700 text-slate-400 text-xs font-bold rounded-full">
+                            <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full">
                               COMPLETED
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {isTeacher ? (
-                            <>for <span className="font-semibold text-cyan-400">{lesson.learner_name}</span></>
+                            <>for <span className="font-semibold text-emerald-600">{lesson.learner_name}</span></>
                           ) : (
                             <>with {lesson.teacher_name}</>
                           )}
@@ -531,25 +556,25 @@ export default function MyClasses() {
 
                     <div className="flex items-center space-x-6">
                       <div className="text-right">
-                        <div className="flex items-center space-x-2 text-slate-300 mb-1">
+                        <div className="flex items-center space-x-2 text-gray-600 mb-1">
                           <Calendar className="w-4 h-4" />
                           <span className="text-sm font-medium">
                             {format(lessonDate, 'MMM d, yyyy')}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-2 text-cyan-400 mb-1">
+                        <div className="flex items-center space-x-2 text-emerald-600 mb-1">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm font-semibold">
                             {format(lessonDate, 'h:mm a')}
                           </span>
                         </div>
                         <div className="flex items-center justify-end space-x-1 mb-1">
-                          <span className="px-2 py-1 bg-cyan-500/10 text-cyan-300 text-sm font-semibold rounded-lg border border-cyan-500/20">
+                          <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-sm font-semibold rounded-lg border border-emerald-200">
                             {lesson.duration_minutes} min
                           </span>
                         </div>
                         {!lessonIsPast && (
-                          <p className="text-xs text-cyan-400/70">
+                          <p className="text-xs text-gray-400">
                             Room opens 6hrs before
                           </p>
                         )}
@@ -562,8 +587,8 @@ export default function MyClasses() {
                             onClick={() => navigate(`/lesson/${lesson.id}`)}
                             className={`relative px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
                               lesson.unread_messages > 0
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white animate-pulse'
-                                : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+                                ? 'bg-purple-500 hover:bg-purple-600 text-white animate-pulse'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             <MessageCircle className="w-4 h-4" />
@@ -577,17 +602,24 @@ export default function MyClasses() {
                         )}
 
                         {lessonIsPast && (
-                          <button
-                            onClick={handleViewInsights}
-                            className={`px-4 py-2 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center space-x-2 ${
-                              lesson.subject_name?.toLowerCase().includes('quran')
-                                ? 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
-                                : 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
-                            }`}
-                          >
-                            <BookOpen className="w-4 h-4" />
-                            <span>Insights</span>
-                          </button>
+                          lesson.has_insights ? (
+                            <button
+                              onClick={handleViewInsights}
+                              className={`px-4 py-2 text-white rounded-lg font-medium transition flex items-center space-x-2 ${
+                                lesson.subject_name?.toLowerCase().includes('quran')
+                                  ? 'bg-emerald-500 hover:bg-emerald-600'
+                                  : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              <span>Insights</span>
+                            </button>
+                          ) : (
+                            <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium flex items-center space-x-2 cursor-default">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Processing...</span>
+                            </div>
+                          )
                         )}
 
                         {/* Recording buttons for past lessons */}
@@ -599,14 +631,14 @@ export default function MyClasses() {
                             const isExpired = daysLeft <= 0;
 
                             return isExpired ? (
-                              <span className="text-xs text-slate-500 px-2">Recording expired</span>
+                              <span className="text-xs text-gray-400 px-2">Recording expired</span>
                             ) : (
                               <div className="flex items-center space-x-2">
                                 <a
                                   href={lesson.recording_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 rounded-lg border border-cyan-500/30 hover:border-cyan-500/50 transition text-sm flex items-center space-x-1"
+                                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg border border-emerald-200 transition text-sm flex items-center space-x-1"
                                 >
                                   <Play className="w-4 h-4" />
                                   <span>Watch</span>
@@ -614,12 +646,12 @@ export default function MyClasses() {
                                 <a
                                   href={lesson.recording_url}
                                   download
-                                  className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg transition"
+                                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg transition"
                                   title={`Download - ${daysLeft} days left`}
                                 >
                                   <Download className="w-4 h-4" />
                                 </a>
-                                <span className="text-xs text-amber-400">{daysLeft}d left</span>
+                                <span className="text-xs text-amber-600">{daysLeft}d left</span>
                               </div>
                             );
                           })()
@@ -630,7 +662,7 @@ export default function MyClasses() {
                             <button
                               onClick={() => handleCancelClick(lesson.id, lesson.scheduled_time)}
                               disabled={cancellingLessonId === lesson.id}
-                              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg font-medium transition flex items-center space-x-2 border border-red-500/30"
+                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition flex items-center space-x-2 border border-red-200"
                             >
                               {cancellingLessonId === lesson.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -641,7 +673,7 @@ export default function MyClasses() {
                             </button>
                             <button
                               onClick={handleReschedule}
-                              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg font-medium transition flex items-center space-x-2"
+                              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium transition flex items-center space-x-2"
                             >
                               <CalendarClock className="w-4 h-4" />
                               <span>Reschedule</span>
@@ -653,10 +685,10 @@ export default function MyClasses() {
                           <button
                             onClick={handleJoin}
                             disabled={!canJoin}
-                            className={`px-6 py-3 font-semibold rounded-lg transition shadow-lg flex items-center space-x-2 ${
+                            className={`px-6 py-3 font-semibold rounded-lg transition shadow-md flex items-center space-x-2 ${
                               canJoin
-                                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-cyan-500/20'
-                                : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}
                           >
                             <Video className="w-5 h-5" />
@@ -670,8 +702,10 @@ export default function MyClasses() {
                     );
                   })}
                 </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -680,42 +714,42 @@ export default function MyClasses() {
       {viewingMessage && messageContent && (
         <>
           <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50"
             onClick={closeMessage}
           ></div>
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-700">
-              <div className="flex items-center justify-between p-6 border-b border-slate-700">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Message from Teacher</h3>
-                    <p className="text-sm text-slate-400">
+                    <h3 className="text-xl font-bold text-gray-900">Message from Teacher</h3>
+                    <p className="text-sm text-gray-500">
                       {lessons.find(l => l.id === viewingMessage)?.teacher_name}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={closeMessage}
-                  className="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition flex items-center justify-center text-slate-400 hover:text-white"
+                  className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center text-gray-500 hover:text-gray-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-6">
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {messageContent}
                   </p>
                 </div>
 
                 <button
                   onClick={closeMessage}
-                  className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold transition"
+                  className="w-full mt-6 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition"
                 >
                   Close
                 </button>
@@ -729,30 +763,30 @@ export default function MyClasses() {
       {showCancelModal && (
         <>
           <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50"
             onClick={() => setShowCancelModal(null)}
           ></div>
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-md w-full border border-slate-700">
-              <div className="flex items-center justify-between p-6 border-b border-slate-700">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     showCancelModal.canCancel
-                      ? 'bg-red-500/20'
-                      : 'bg-amber-500/20'
+                      ? 'bg-red-100'
+                      : 'bg-amber-100'
                   }`}>
                     <XCircle className={`w-5 h-5 ${
-                      showCancelModal.canCancel ? 'text-red-400' : 'text-amber-400'
+                      showCancelModal.canCancel ? 'text-red-600' : 'text-amber-600'
                     }`} />
                   </div>
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-xl font-bold text-gray-900">
                     {showCancelModal.canCancel ? 'Cancel Lesson' : 'Cannot Cancel'}
                   </h3>
                 </div>
                 <button
                   onClick={() => setShowCancelModal(null)}
-                  className="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition flex items-center justify-center text-slate-400 hover:text-white"
+                  className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center text-gray-500 hover:text-gray-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -761,23 +795,23 @@ export default function MyClasses() {
               <div className="p-6">
                 {showCancelModal.canCancel ? (
                   <>
-                    <p className="text-slate-300 mb-4">
+                    <p className="text-gray-600 mb-4">
                       Are you sure you want to cancel this lesson? Your credit will be refunded to your account.
                     </p>
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 mb-6">
-                      <p className="text-emerald-400 text-sm">
-                        ✓ Your lesson credit will be refunded immediately
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+                      <p className="text-emerald-600 text-sm">
+                        Your lesson credit will be refunded immediately
                       </p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <p className="text-slate-300 mb-4">
+                    <p className="text-gray-600 mb-4">
                       This lesson starts in less than 2 hours. You cannot cancel at this time.
                     </p>
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
-                      <p className="text-amber-400 text-sm">
-                        ⚠️ Lessons can only be cancelled 2+ hours before start time. You can still reschedule this lesson.
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                      <p className="text-amber-600 text-sm">
+                        Lessons can only be cancelled 2+ hours before start time. You can still reschedule this lesson.
                       </p>
                     </div>
                   </>
@@ -786,7 +820,7 @@ export default function MyClasses() {
                 <div className="flex space-x-3">
                   <button
                     onClick={() => setShowCancelModal(null)}
-                    className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition"
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
                   >
                     {showCancelModal.canCancel ? 'Keep Lesson' : 'Close'}
                   </button>
@@ -811,7 +845,7 @@ export default function MyClasses() {
                         setShowCancelModal(null);
                         navigate(`/reschedule-lesson?lessonId=${showCancelModal.lessonId}`);
                       }}
-                      className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                      className="flex-1 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
                     >
                       <CalendarClock className="w-4 h-4" />
                       <span>Reschedule Instead</span>

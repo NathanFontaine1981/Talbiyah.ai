@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, ChevronRight, Star, Clock, Award, ThumbsUp, UserPlus, X, Check } from 'lucide-react';
+import { toast } from 'sonner';
+import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, ChevronRight, Star, Clock, Award, ThumbsUp, UserPlus, X, Check, Shield } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import CartDrawer from '../components/CartDrawer';
 import TalbiyahBot from '../components/TalbiyahBot';
+import { TeacherProfileModal, GentlenessBadge } from '../components/teachers';
 
 interface Teacher {
   id: string;
@@ -53,6 +55,10 @@ export default function Teachers() {
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [myTeacherIds, setMyTeacherIds] = useState<Set<string>>(new Set());
   const [studentProfileId, setStudentProfileId] = useState<string | null>(null);
+
+  // Profile modal state
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedTeacherForProfile, setSelectedTeacherForProfile] = useState<string | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -402,24 +408,24 @@ export default function Teachers() {
       setSelectedSubjectForAdd('');
 
       // Show success - could navigate to messages
-      alert(`${selectedTeacherForAdd.full_name} has been added to your teachers! You can now message them.`);
+      toast.success(`${selectedTeacherForAdd.full_name} has been added to your teachers! You can now message them.`);
     } catch (error: any) {
       console.error('Error adding teacher:', error);
-      alert(error.message || 'Failed to add teacher. Please try again.');
+      toast.error(error.message || 'Failed to add teacher. Please try again.');
     } finally {
       setAddingTeacher(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="fixed top-0 w-full bg-white backdrop-blur-md z-50 border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <nav className="fixed top-0 w-full bg-white dark:bg-gray-800 backdrop-blur-md z-50 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {user ? (
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span>Back to Dashboard</span>
@@ -427,23 +433,28 @@ export default function Teachers() {
             ) : searchParams.get('subject') ? (
               <button
                 onClick={() => navigate('/subjects')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span>Back to Subjects</span>
               </button>
             ) : null}
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+            <button
+              type="button"
+              className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition"
+              onClick={() => navigate('/')}
+              aria-label="Go to home page"
+            >
               <BookOpen className="w-7 h-7 text-emerald-500" />
-              <span className="text-2xl font-semibold text-gray-900">Talbiyah.ai</span>
-            </div>
+              <span className="text-2xl font-semibold text-gray-900 dark:text-white">Talbiyah.ai</span>
+            </button>
           </div>
 
           <div className="flex items-center space-x-4">
             {user && (
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2"
+                className="relative px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center space-x-2"
               >
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
@@ -500,19 +511,19 @@ export default function Teachers() {
                 <span className="text-emerald-600 font-semibold text-sm">Step 2 of 3: Choose Your Teacher</span>
               </div>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Find a Teacher</h1>
-            <p className="text-lg text-gray-600">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Find a Teacher</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
               Connect with experienced, approved teachers for personalised learning
             </p>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="w-full lg:w-64 flex-shrink-0">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 sticky top-24">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-24">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h2>
 
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Subject</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Subject</h3>
                   <div className="space-y-2">
                     {subjects.map((subject) => (
                       <label key={subject.id} className="flex items-center space-x-2 cursor-pointer">
@@ -522,14 +533,14 @@ export default function Teachers() {
                           onChange={() => handleSubjectToggle(subject.id)}
                           className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                         />
-                        <span className="text-sm text-gray-700">{subject.name}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-200">{subject.name}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Gender</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">Gender</h3>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -538,7 +549,7 @@ export default function Teachers() {
                         onChange={() => handleGenderToggle('male')}
                         className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                       />
-                      <span className="text-sm text-gray-700">Male</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-200">Male</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -547,7 +558,7 @@ export default function Teachers() {
                         onChange={() => handleGenderToggle('female')}
                         className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                       />
-                      <span className="text-sm text-gray-700">Female</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-200">Female</span>
                     </label>
                   </div>
                 </div>
@@ -577,7 +588,7 @@ export default function Teachers() {
                       switch (tier) {
                         case 'master': return 'from-purple-500 to-pink-500';
                         case 'expert': return 'from-yellow-500 to-amber-500';
-                        case 'skilled': return 'from-blue-500 to-cyan-500';
+                        case 'skilled': return 'from-blue-500 to-emerald-500';
                         case 'apprentice': return 'from-gray-400 to-gray-500';
                         default: return 'from-amber-700 to-amber-800';
                       }
@@ -596,7 +607,7 @@ export default function Teachers() {
                     return (
                       <div
                         key={teacher.id}
-                        className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300"
+                        className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
                       >
                         {/* Tier Badge Header */}
                         <div className={`px-4 py-2 ${getTierBg(teacher.tier)} border-b`}>
@@ -644,10 +655,10 @@ export default function Teachers() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">
                                 {teacher.full_name}
                               </h3>
-                              <div className="flex items-center space-x-3 text-xs text-gray-600">
+                              <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-300">
                                 {teacher.hours_taught > 0 && (
                                   <div className="flex items-center space-x-1">
                                     <Clock className="w-3 h-3" />
@@ -664,8 +675,13 @@ export default function Teachers() {
                             </div>
                           </div>
 
+                          {/* Gentleness Badge */}
+                          <div className="mb-3">
+                            <GentlenessBadge />
+                          </div>
+
                           {/* Bio */}
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-3 min-h-[3.75rem]">
+                          <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
                             {teacher.bio || 'Experienced teacher ready to help you learn.'}
                           </p>
 
@@ -674,7 +690,7 @@ export default function Teachers() {
                             <div className="mb-4">
                               <div className="text-xs text-gray-500 mb-1">Starting from</div>
                               <div className="flex items-baseline space-x-2">
-                                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
+                                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 bg-clip-text text-transparent">
                                   £{(teacher.student_hourly_price / 2).toFixed(2)}
                                 </span>
                                 <span className="text-sm text-gray-500">/ 30 min</span>
@@ -686,7 +702,10 @@ export default function Teachers() {
                             <div className="space-y-2">
                               <div className="grid grid-cols-2 gap-2">
                                 <button
-                                  onClick={() => navigate(`/teacher/${teacher.id}`)}
+                                  onClick={() => {
+                                    setSelectedTeacherForProfile(teacher.id);
+                                    setProfileModalOpen(true);
+                                  }}
                                   className="px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-semibold transition"
                                 >
                                   Profile
@@ -865,7 +884,7 @@ export default function Teachers() {
                 <button
                   onClick={handleAddToMyTeachers}
                   disabled={!selectedSubjectForAdd || addingTeacher}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {addingTeacher ? (
                     <span>Adding...</span>
@@ -890,6 +909,24 @@ export default function Teachers() {
           navigate('/checkout');
         }}
       />
+
+      {/* Teacher Profile Modal */}
+      {selectedTeacherForProfile && (
+        <TeacherProfileModal
+          teacherId={selectedTeacherForProfile}
+          isOpen={profileModalOpen}
+          onClose={() => {
+            setProfileModalOpen(false);
+            setSelectedTeacherForProfile(null);
+          }}
+          onBookLesson={(teacherId) => {
+            setProfileModalOpen(false);
+            const subjectParam = searchParams.get('subject');
+            navigate(`/teacher/${teacherId}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
+          }}
+        />
+      )}
+
       <TalbiyahBot />
     </div>
   );

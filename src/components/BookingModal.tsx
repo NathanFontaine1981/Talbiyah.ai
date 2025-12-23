@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { X, User, CreditCard, Gift, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, addDays, startOfWeek, addWeeks, isSameDay } from 'date-fns';
@@ -54,6 +55,7 @@ export default function BookingModal({
   const [teacherAvailability, setTeacherAvailability] = useState<TeacherAvailability[]>([]);
   const [oneOffAvailability, setOneOffAvailability] = useState<OneOffAvailability[]>([]);
   const [existingBookings, setExistingBookings] = useState<Array<{scheduled_time: string, duration_minutes: number}>>([]);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }), i)
@@ -214,6 +216,17 @@ export default function BookingModal({
 
       if (bookingsError) throw bookingsError;
       setExistingBookings(bookingsData || []);
+
+      // Fetch blocked dates for next 30 days
+      const { data: blockedData, error: blockedError } = await supabase
+        .from('blocked_dates')
+        .select('blocked_date')
+        .eq('teacher_id', teacherId)
+        .gte('blocked_date', today.toISOString().split('T')[0])
+        .lte('blocked_date', futureDate.toISOString().split('T')[0]);
+
+      if (blockedError) throw blockedError;
+      setBlockedDates((blockedData || []).map(d => d.blocked_date));
     } catch (err) {
       console.error('Error fetching teacher availability:', err);
     }
@@ -237,6 +250,10 @@ export default function BookingModal({
     const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
     if (slot < twoHoursFromNow) return false;
 
+    // Check if date is blocked
+    const dateKey = format(date, 'yyyy-MM-dd');
+    if (blockedDates.includes(dateKey)) return false;
+
     // Check for conflicts with existing bookings
     const slotEnd = new Date(slot.getTime() + duration * 60 * 1000);
     const hasConflict = existingBookings.some(booking => {
@@ -251,7 +268,6 @@ export default function BookingModal({
 
     // Normalize time format (database returns HH:MM:SS, we have HH:MM)
     const normalizeTime = (t: string) => t.substring(0, 5);
-    const dateKey = format(date, 'yyyy-MM-dd');
 
     // Check one-off availability first (takes precedence over recurring)
     const oneOff = oneOffAvailability.find(
@@ -309,7 +325,7 @@ export default function BookingModal({
       setSelectedDate(null);
       setSelectedTime(null);
 
-      alert('Booking confirmed! Check your dashboard for lesson details.');
+      toast.success('Booking confirmed! Check your dashboard for lesson details.');
     } catch (err: any) {
       console.error('Booking error:', err);
       setError(err.message || 'Failed to complete booking');
@@ -323,22 +339,29 @@ export default function BookingModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-gray-50/80 backdrop-blur-sm z-50"
         onClick={onClose}
+        aria-hidden="true"
       ></div>
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full my-8 border border-slate-800">
-          <div className="flex items-center justify-between p-6 border-b border-slate-800">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="booking-modal-title"
+      >
+        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8 border border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
-              <h2 className="text-2xl font-bold text-white">Book a Lesson</h2>
-              <p className="text-slate-400 text-sm mt-1">
+              <h2 id="booking-modal-title" className="text-2xl font-bold text-gray-900">Book a Lesson</h2>
+              <p className="text-gray-500 text-sm mt-1">
                 {teacherName} • {subjectName}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center text-slate-400 hover:text-white"
+              className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center text-gray-500 hover:text-gray-900"
+              aria-label="Close booking modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -351,8 +374,8 @@ export default function BookingModal({
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
                       step >= s
-                        ? 'bg-cyan-500 text-white'
-                        : 'bg-slate-800 text-slate-500'
+                        ? 'bg-emerald-500 text-gray-900'
+                        : 'bg-gray-100 text-gray-500'
                     }`}
                   >
                     {s}
@@ -360,7 +383,7 @@ export default function BookingModal({
                   {s < 3 && (
                     <div
                       className={`w-20 h-1 mx-2 ${
-                        step > s ? 'bg-cyan-500' : 'bg-slate-800'
+                        step > s ? 'bg-emerald-500' : 'bg-gray-100'
                       }`}
                     ></div>
                   )}
@@ -376,15 +399,15 @@ export default function BookingModal({
 
             {step === 1 && (
               <div>
-                <h3 className="text-xl font-bold text-white mb-4">Select Student</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Select Student</h3>
                 {loading ? (
                   <div className="text-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mx-auto" />
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
                   </div>
                 ) : learners.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-slate-400 mb-4">No student profiles found</p>
-                    <p className="text-sm text-slate-500">Please complete your profile setup</p>
+                    <p className="text-gray-500 mb-4">No student profiles found</p>
+                    <p className="text-sm text-gray-500">Please complete your profile setup</p>
                   </div>
                 ) : (
                   <>
@@ -395,29 +418,29 @@ export default function BookingModal({
                           onClick={() => setSelectedLearner(learner.id)}
                           className={`p-4 rounded-xl border-2 transition text-left ${
                             selectedLearner === learner.id
-                              ? 'border-cyan-500 bg-cyan-500/10'
-                              : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                              ? 'border-emerald-500 bg-emerald-500/10'
+                              : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-                                <User className="w-5 h-5 text-slate-400" />
+                              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                <User className="w-5 h-5 text-gray-500" />
                               </div>
                               <div>
-                                <p className="font-semibold text-white">{learner.name}</p>
+                                <p className="font-semibold text-gray-900">{learner.name}</p>
                                 {!learner.is_free_trial_used && (
                                   <div className="flex items-center space-x-1 mt-1">
-                                    <Gift className="w-3 h-3 text-cyan-400" />
-                                    <span className="text-xs text-cyan-400 font-semibold">
-                                      Free trial available
+                                    <Gift className="w-3 h-3 text-emerald-600" />
+                                    <span className="text-xs text-emerald-600 font-semibold">
+                                      Free first lesson
                                     </span>
                                   </div>
                                 )}
                               </div>
                             </div>
                             {selectedLearner === learner.id && (
-                              <CheckCircle className="w-6 h-6 text-cyan-500" />
+                              <CheckCircle className="w-6 h-6 text-emerald-500" />
                             )}
                           </div>
                         </button>
@@ -427,7 +450,7 @@ export default function BookingModal({
                     <button
                       onClick={() => setStep(2)}
                       disabled={!selectedLearner}
-                      className="w-full px-6 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition"
+                      className="w-full px-6 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-200 disabled:text-gray-500 text-gray-900 rounded-lg font-semibold transition"
                     >
                       Continue
                     </button>
@@ -438,10 +461,10 @@ export default function BookingModal({
 
             {step === 2 && (
               <div>
-                <h3 className="text-xl font-bold text-white mb-4">Select Date & Time</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Select Date & Time</h3>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-300 mb-3">
+                  <label className="block text-sm font-medium text-gray-600 mb-3">
                     Lesson Duration
                   </label>
                   <div className="grid grid-cols-2 gap-4">
@@ -449,26 +472,26 @@ export default function BookingModal({
                       onClick={() => setDuration(30)}
                       className={`p-4 rounded-xl border-2 transition ${
                         duration === 30
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                       }`}
                     >
                       <div className="text-center">
-                        <p className="font-bold text-white text-lg">30 Minutes</p>
-                        <p className="text-cyan-400 font-semibold">£7.50</p>
+                        <p className="font-bold text-gray-900 text-lg">30 Minutes</p>
+                        <p className="text-emerald-600 font-semibold">£7.50</p>
                       </div>
                     </button>
                     <button
                       onClick={() => setDuration(60)}
                       className={`p-4 rounded-xl border-2 transition ${
                         duration === 60
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                       }`}
                     >
                       <div className="text-center">
-                        <p className="font-bold text-white text-lg">60 Minutes</p>
-                        <p className="text-cyan-400 font-semibold">£15.00</p>
+                        <p className="font-bold text-gray-900 text-lg">60 Minutes</p>
+                        <p className="text-emerald-600 font-semibold">£15.00</p>
                       </div>
                     </button>
                   </div>
@@ -479,13 +502,13 @@ export default function BookingModal({
                     <button
                       onClick={() => setWeekOffset(weekOffset - 1)}
                       disabled={weekOffset === 0}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm transition"
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 rounded-lg text-sm transition"
                     >
                       Previous Week
                     </button>
                     <button
                       onClick={() => setWeekOffset(weekOffset + 1)}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm transition"
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg text-sm transition"
                     >
                       Next Week
                     </button>
@@ -501,20 +524,20 @@ export default function BookingModal({
                         }}
                         className={`p-2 rounded-lg border transition text-center ${
                           selectedDate && isSameDay(selectedDate, date)
-                            ? 'border-cyan-500 bg-cyan-500/10'
-                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                         }`}
                       >
-                        <div className="text-xs text-slate-400">{format(date, 'EEE')}</div>
-                        <div className="text-sm font-semibold text-white">{format(date, 'd')}</div>
-                        <div className="text-xs text-slate-500">{format(date, 'MMM')}</div>
+                        <div className="text-xs text-gray-500">{format(date, 'EEE')}</div>
+                        <div className="text-sm font-semibold text-gray-900">{format(date, 'd')}</div>
+                        <div className="text-xs text-gray-500">{format(date, 'MMM')}</div>
                       </button>
                     ))}
                   </div>
 
                   {selectedDate && (
                     <div className="max-h-64 overflow-y-auto">
-                      <p className="text-sm font-medium text-slate-300 mb-3">Available Times</p>
+                      <p className="text-sm font-medium text-gray-600 mb-3">Available Times</p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {timeSlots.map((timeStr) => {
                           const slot = createTimeSlot(selectedDate, timeStr);
@@ -527,10 +550,10 @@ export default function BookingModal({
                               disabled={!available}
                               className={`p-2 rounded-lg border text-sm transition ${
                                 selectedTime && selectedTime.getTime() === slot.getTime()
-                                  ? 'border-cyan-500 bg-cyan-500/10 text-white font-semibold'
+                                  ? 'border-emerald-500 bg-emerald-500/10 text-gray-900 font-semibold'
                                   : available
                                   ? 'border-green-600 bg-green-500/20 hover:bg-green-500/30 text-green-300 font-semibold'
-                                  : 'border-slate-800 bg-slate-900 text-slate-600 cursor-not-allowed'
+                                  : 'border-gray-200 bg-white text-gray-600 cursor-not-allowed'
                               }`}
                             >
                               {timeStr}
@@ -545,14 +568,14 @@ export default function BookingModal({
                 <div className="flex space-x-4">
                   <button
                     onClick={() => setStep(1)}
-                    className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition"
+                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition"
                   >
                     Back
                   </button>
                   <button
                     onClick={() => setStep(3)}
                     disabled={!selectedDate || !selectedTime}
-                    className="flex-1 px-6 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition"
+                    className="flex-1 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-200 disabled:text-gray-500 text-gray-900 rounded-lg font-semibold transition"
                   >
                     Continue
                   </button>
@@ -562,39 +585,39 @@ export default function BookingModal({
 
             {step === 3 && (
               <div>
-                <h3 className="text-xl font-bold text-white mb-6">Confirm & Pay</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Confirm & Pay</h3>
 
-                <div className="bg-slate-800/50 rounded-xl p-6 mb-6 border border-slate-700">
-                  <h4 className="font-semibold text-white mb-4">Booking Summary</h4>
+                <div className="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-4">Booking Summary</h4>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Teacher</span>
-                      <span className="text-white font-medium">{teacherName}</span>
+                      <span className="text-gray-500">Teacher</span>
+                      <span className="text-gray-900 font-medium">{teacherName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Subject</span>
-                      <span className="text-white font-medium">{subjectName}</span>
+                      <span className="text-gray-500">Subject</span>
+                      <span className="text-gray-900 font-medium">{subjectName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Student</span>
-                      <span className="text-white font-medium">
+                      <span className="text-gray-500">Student</span>
+                      <span className="text-gray-900 font-medium">
                         {learners.find(l => l.id === selectedLearner)?.name}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Date & Time</span>
-                      <span className="text-white font-medium">
+                      <span className="text-gray-500">Date & Time</span>
+                      <span className="text-gray-900 font-medium">
                         {selectedDate && selectedTime &&
                           format(selectedTime, 'MMM d, yyyy • h:mm a')}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Duration</span>
-                      <span className="text-white font-medium">{duration} minutes</span>
+                      <span className="text-gray-500">Duration</span>
+                      <span className="text-gray-900 font-medium">{duration} minutes</span>
                     </div>
-                    <div className="pt-3 border-t border-slate-700 flex justify-between">
-                      <span className="text-white font-semibold">Total</span>
-                      <span className="text-cyan-400 font-bold text-lg">
+                    <div className="pt-3 border-t border-gray-200 flex justify-between">
+                      <span className="text-gray-900 font-semibold">Total</span>
+                      <span className="text-emerald-600 font-bold text-lg">
                         {isFreeSession ? 'FREE' : `£${price.toFixed(2)}`}
                       </span>
                     </div>
@@ -602,28 +625,28 @@ export default function BookingModal({
                 </div>
 
                 {isFreeSession ? (
-                  <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                  <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
                     <div className="flex items-start space-x-3">
-                      <Gift className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+                      <Gift className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-cyan-400 font-semibold">Free Taster Session</p>
-                        <p className="text-sm text-slate-300 mt-1">
-                          This is your complimentary 30-minute taster session. No payment required!
+                        <p className="text-emerald-600 font-semibold">Free First Lesson</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Your first 30-minute lesson is on us. No payment required!
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="mb-6">
-                    <h4 className="font-semibold text-white mb-3">Payment Method</h4>
-                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                    <h4 className="font-semibold text-gray-900 mb-3">Payment Method</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center">
+                          <CreditCard className="w-6 h-6 text-gray-900" />
                         </div>
                         <div>
-                          <p className="font-semibold text-white">Demo Payment</p>
-                          <p className="text-sm text-slate-400">Payment processing will be integrated</p>
+                          <p className="font-semibold text-gray-900">Demo Payment</p>
+                          <p className="text-sm text-gray-500">Payment processing will be integrated</p>
                         </div>
                       </div>
                     </div>
@@ -633,14 +656,14 @@ export default function BookingModal({
                 <div className="flex space-x-4">
                   <button
                     onClick={() => setStep(2)}
-                    className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition"
+                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition"
                   >
                     Back
                   </button>
                   <button
                     onClick={handleBooking}
                     disabled={processing}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg font-bold transition flex items-center justify-center space-x-2"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 disabled:opacity-50 text-gray-900 rounded-lg font-bold transition flex items-center justify-center space-x-2"
                   >
                     {processing ? (
                       <>

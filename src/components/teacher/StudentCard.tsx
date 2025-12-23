@@ -95,7 +95,7 @@ export default function StudentCard({
               className="w-12 h-12 rounded-full object-cover border-2 border-cyan-200"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg border-2 border-cyan-200">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg border-2 border-cyan-200">
               {getInitials(studentName)}
             </div>
           )}
@@ -127,7 +127,7 @@ export default function StudentCard({
                 onClick={() => setSelectedSubjectIndex(index)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
                   selectedSubjectIndex === index
-                    ? 'bg-cyan-600 text-white'
+                    ? 'bg-emerald-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -177,7 +177,7 @@ export default function StudentCard({
 
         {/* Student Since */}
         <div className="bg-cyan-50 rounded-lg p-3 text-center">
-          <div className="flex items-center justify-center text-cyan-600 mb-1">
+          <div className="flex items-center justify-center text-emerald-600 mb-1">
             <Calendar className="w-4 h-4" />
           </div>
           <p className="text-xs font-bold text-cyan-900">
@@ -186,7 +186,7 @@ export default function StudentCard({
               year: '2-digit',
             })}
           </p>
-          <p className="text-xs text-cyan-600">Since</p>
+          <p className="text-xs text-emerald-600">Since</p>
         </div>
       </div>
 
@@ -211,7 +211,7 @@ export default function StudentCard({
       <div className="flex gap-2">
         <button
           onClick={() => navigate(`/teacher/book-with-student/${studentId}`)}
-          className="flex-1 bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 transition font-medium text-sm flex items-center justify-center gap-2"
+          className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 transition font-medium text-sm flex items-center justify-center gap-2"
         >
           <Calendar className="w-4 h-4" />
           Book Lesson
@@ -259,7 +259,7 @@ export default function StudentCard({
 
       {/* Progress Panel (Quick View) */}
       {showProgress && (
-        <div className="mt-3 bg-slate-900 rounded-lg p-4">
+        <div className="mt-3 bg-white rounded-lg p-4">
           <StudentProgressPanel
             studentId={studentId}
             studentName={studentName}

@@ -142,7 +142,7 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
               <button
                 onClick={() => { setCarouselType('names'); setCarouselIndex(0); }}
                 className={`px-2 py-1 text-xs font-medium rounded transition ${
-                  carouselType === 'names' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                  carouselType === 'names' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
                 }`}
               >
                 Names
@@ -150,7 +150,7 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
               <button
                 onClick={() => { setCarouselType('hadiths'); setCarouselIndex(0); }}
                 className={`px-2 py-1 text-xs font-medium rounded transition ${
-                  carouselType === 'hadiths' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                  carouselType === 'hadiths' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
                 }`}
               >
                 Hadith
@@ -158,7 +158,7 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
               <button
                 onClick={() => { setCarouselType('ayahs'); setCarouselIndex(0); }}
                 className={`px-2 py-1 text-xs font-medium rounded transition ${
-                  carouselType === 'ayahs' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                  carouselType === 'ayahs' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
                 }`}
               >
                 Ayah
@@ -166,10 +166,18 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
             </div>
 
             <div className="flex items-center space-x-1">
-              <button onClick={handlePrev} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+              <button
+                onClick={handlePrev}
+                className="p-1 text-white/60 hover:text-white transition"
+                aria-label="Previous item"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button onClick={handleNext} className="p-1 text-slate-400 hover:text-cyan-400 transition">
+              <button
+                onClick={handleNext}
+                className="p-1 text-white/60 hover:text-white transition"
+                aria-label="Next item"
+              >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -178,33 +186,33 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
           <div className="min-h-[70px] flex items-center justify-center text-center">
             {carouselType === 'names' && 'arabic' in currentContent && 'transliteration' in currentContent && 'meaning' in currentContent && (
               <div>
-                <p className="text-3xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
+                <p className="text-3xl font-arabic text-amber-300 mb-1">{currentContent.arabic}</p>
                 <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
-                <p className="text-xs text-slate-400">{currentContent.meaning}</p>
+                <p className="text-xs text-white/70">{currentContent.meaning}</p>
               </div>
             )}
 
             {carouselType === 'hadiths' && 'text' in currentContent && (
               <div className="max-w-3xl">
-                <p className="text-sm text-slate-200 italic">"{currentContent.text}"</p>
-                <p className="text-xs text-cyan-400 mt-1">{currentContent.source}</p>
+                <p className="text-sm text-white/90 italic">"{currentContent.text}"</p>
+                <p className="text-xs text-amber-300 mt-1">{currentContent.source}</p>
               </div>
             )}
 
             {carouselType === 'ayahs' && 'arabic' in currentContent && 'translation' in currentContent && (
               <div>
-                <p className="text-2xl font-arabic text-cyan-400 mb-1">{currentContent.arabic}</p>
-                <p className="text-sm text-slate-200">{currentContent.translation}</p>
-                <p className="text-xs text-cyan-400 mt-1">{currentContent.reference}</p>
+                <p className="text-2xl font-arabic text-amber-300 mb-1">{currentContent.arabic}</p>
+                <p className="text-sm text-white/90">{currentContent.translation}</p>
+                <p className="text-xs text-sky-300 mt-1">{currentContent.reference}</p>
               </div>
             )}
           </div>
         </div>
 
         <div className={`${colors.cardBg} backdrop-blur-sm rounded-xl px-3 py-2 border ${colors.cardBorder} flex items-center space-x-2`}>
-          <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+          <Clock className="w-4 h-4 text-amber-300 flex-shrink-0" />
           <div>
-            <p className="text-[10px] text-slate-400 mb-0.5">Time</p>
+            <p className="text-[10px] text-white/60 mb-0.5">Time</p>
             <p className="text-sm font-bold text-white">
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import {
   TrendingUp,
   Award,
@@ -208,15 +209,15 @@ export default function TeacherTierDashboard() {
       const result = await response.json();
 
       if (result.success) {
-        alert(result.message);
+        toast.success(result.message);
         setShowApplicationModal(false);
         loadData();
       } else {
-        alert(result.error || 'Application failed');
+        toast.error(result.error || 'Application failed');
       }
     } catch (error) {
       console.error('Error submitting application:', error);
-      alert('Failed to submit application');
+      toast.error('Failed to submit application');
     }
   }
 
@@ -228,13 +229,13 @@ export default function TeacherTierDashboard() {
     >
       {children}
       {hoveredTooltip === id && (
-        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl w-64">
+        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-xl w-64">
           <div className="flex items-start space-x-2">
-            <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-300 leading-relaxed">{text}</p>
+            <Info className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-gray-600 leading-relaxed">{text}</p>
           </div>
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-            <div className="border-8 border-transparent border-t-slate-900"></div>
+            <div className="border-8 border-transparent border-t-gray-900"></div>
           </div>
         </div>
       )}
@@ -269,31 +270,31 @@ export default function TeacherTierDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
         <div className="text-white text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">Teacher Profile Required</h2>
-          <p className="text-slate-300 mb-6">
+          <p className="text-gray-600 mb-6">
             You need to be an approved teacher to view this page.
           </p>
           <div className="space-y-3">
             <button
               onClick={() => window.location.href = '/apply-to-teach'}
-              className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg"
+              className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg"
             >
               Apply to Teach
             </button>
             <button
               onClick={() => window.location.href = '/teacher/tier-info'}
-              className="w-full px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg font-semibold transition"
+              className="w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg font-semibold transition"
             >
               View Tier Information
             </button>
@@ -307,19 +308,19 @@ export default function TeacherTierDashboard() {
   const currentTierInfo = allTiers.find((t) => t.tier === stats.tier);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate('/dashboard')}
-          className="mb-6 flex items-center space-x-2 text-slate-400 hover:text-cyan-400 transition"
+          className="mb-6 flex items-center space-x-2 text-gray-500 hover:text-emerald-600 transition"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back to Dashboard</span>
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-8 border border-cyan-500/30 shadow-xl mb-8">
+        <div className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-8 border border-emerald-500/30 shadow-xl mb-8">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
               <div
@@ -332,12 +333,12 @@ export default function TeacherTierDashboard() {
                 <h1 className="text-4xl font-bold text-white mb-2">
                   {stats.tier_name} Teacher
                 </h1>
-                <p className="text-slate-300">
+                <p className="text-gray-600">
                   Your current earnings rate and tier status
                 </p>
                 <button
                   onClick={() => navigate('/teacher/tier-info')}
-                  className="mt-3 inline-flex items-center space-x-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 text-sm font-medium transition"
+                  className="mt-3 inline-flex items-center space-x-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-600 text-sm font-medium transition"
                 >
                   <BookOpen className="w-4 h-4" />
                   <span>Learn About All Tiers</span>
@@ -346,11 +347,11 @@ export default function TeacherTierDashboard() {
             </div>
 
             <div className="text-right">
-              <p className="text-sm text-slate-400 mb-1">Your Hourly Rate</p>
+              <p className="text-sm text-gray-500 mb-1">Your Hourly Rate</p>
               <p className="text-4xl font-bold text-emerald-400">
                 £{stats.teacher_hourly_rate.toFixed(2)}
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Earnings per hour taught
               </p>
             </div>
@@ -363,15 +364,15 @@ export default function TeacherTierDashboard() {
             id="hours-taught"
             text="Total hours you've taught on the platform. More hours = higher tier eligibility."
           >
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-cyan-500/50 transition">
+            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
               <div className="flex items-center justify-between mb-2">
-                <Clock className="w-6 h-6 text-cyan-400" />
-                <Info className="w-4 h-4 text-slate-600" />
+                <Clock className="w-6 h-6 text-emerald-600" />
+                <Info className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-bold text-white mb-1">
                 {stats.hours_taught.toFixed(1)}h
               </p>
-              <p className="text-sm text-slate-400">Hours Taught</p>
+              <p className="text-sm text-gray-500">Hours Taught</p>
             </div>
           </Tooltip>
 
@@ -379,16 +380,16 @@ export default function TeacherTierDashboard() {
             id="retention-rate"
             text="Percentage of students who return for 2+ lessons. Higher retention unlocks advanced tiers. Requires 5+ unique students to count."
           >
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-emerald-500/50 transition">
+            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
               <div className="flex items-center justify-between mb-2">
                 <TrendingUp className="w-6 h-6 text-emerald-400" />
-                <Info className="w-4 h-4 text-slate-600" />
+                <Info className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-bold text-white mb-1">
                 {stats.total_unique_students >= 5 ? `${stats.retention_rate.toFixed(0)}%` : 'N/A'}
               </p>
-              <p className="text-sm text-slate-400">Student Retention</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-gray-500">Student Retention</p>
+              <p className="text-xs text-gray-500 mt-1">
                 {stats.returning_students} of {stats.total_unique_students} students return
               </p>
             </div>
@@ -398,14 +399,14 @@ export default function TeacherTierDashboard() {
             id="total-students"
             text="Number of unique students you've taught. Some may have locked pricing from when you were a lower tier."
           >
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 cursor-help hover:border-purple-500/50 transition">
+            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-purple-500/50 transition">
               <div className="flex items-center justify-between mb-2">
                 <Users className="w-6 h-6 text-purple-400" />
-                <Info className="w-4 h-4 text-slate-600" />
+                <Info className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-bold text-white mb-1">{stats.total_students}</p>
-              <p className="text-sm text-slate-400">Total Students</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm text-gray-500">Total Students</p>
+              <p className="text-xs text-gray-500 mt-1">
                 {stats.grandfathered_students} with locked pricing
               </p>
             </div>
@@ -426,19 +427,19 @@ export default function TeacherTierDashboard() {
               {/* Hours Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-300">Hours Taught</span>
+                  <span className="text-sm text-gray-600">Hours Taught</span>
                   <span className="text-sm font-semibold text-white">
                     {stats.hours_taught.toFixed(1)} / {progress.nextTier.min_hours_taught}h
                   </span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-3 mb-2">
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                   <div
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-emerald-500 to-blue-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${progress.hoursProgress}%` }}
                   ></div>
                 </div>
                 {progress.hoursNeeded > 0 && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-gray-500">
                     {progress.hoursNeeded.toFixed(1)}h more needed
                   </p>
                 )}
@@ -447,14 +448,14 @@ export default function TeacherTierDashboard() {
               {/* Retention Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-300">Student Retention</span>
+                  <span className="text-sm text-gray-600">Student Retention</span>
                   <span className="text-sm font-semibold text-white">
                     {progress.hasEnoughStudents
                       ? `${stats.retention_rate.toFixed(0)}% / ${progress.nextTier.min_retention_rate}%`
                       : `Need ${progress.studentsNeeded} more students`}
                   </span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-3 mb-2">
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-green-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${progress.retentionProgress}%` }}
@@ -462,7 +463,7 @@ export default function TeacherTierDashboard() {
                 </div>
                 {progress.hasEnoughStudents ? (
                   progress.retentionNeeded > 0 && (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-gray-500">
                       {progress.retentionNeeded.toFixed(0)}% more retention needed
                     </p>
                   )
@@ -488,7 +489,7 @@ export default function TeacherTierDashboard() {
         {/* All Tiers Breakdown */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-3">
-            <Award className="w-6 h-6 text-cyan-400" />
+            <Award className="w-6 h-6 text-emerald-600" />
             <span>All Teacher Tiers</span>
           </h2>
 
@@ -502,8 +503,8 @@ export default function TeacherTierDashboard() {
                   key={tier.tier}
                   className={`rounded-xl p-6 border-2 transition ${
                     isCurrent
-                      ? 'bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border-cyan-500 shadow-xl'
-                      : 'bg-slate-800/30 border-slate-700 hover:border-slate-600'
+                      ? 'bg-gradient-to-br from-emerald-500/20 to-blue-600/20 border-emerald-500 shadow-xl'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   {/* Tier Header */}
@@ -512,45 +513,45 @@ export default function TeacherTierDashboard() {
                       <span className="text-4xl">{tier.tier_icon}</span>
                       <div>
                         <h3 className="text-xl font-bold text-white">{tier.tier_name}</h3>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-gray-500">
                           {tier.requires_manual_approval ? 'Manual Approval' : 'Auto-Promotion'}
                         </p>
                       </div>
                     </div>
                     {isCurrent && (
-                      <div className="px-3 py-1 bg-cyan-500/20 border border-cyan-500 rounded-full">
-                        <span className="text-xs font-bold text-cyan-400">CURRENT</span>
+                      <div className="px-3 py-1 bg-emerald-500/20 border border-emerald-500 rounded-full">
+                        <span className="text-xs font-bold text-emerald-600">CURRENT</span>
                       </div>
                     )}
                   </div>
 
                   {/* Earnings */}
-                  <div className="bg-slate-900/50 rounded-lg p-4 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-400">Hourly Rate</span>
+                      <span className="text-sm text-gray-500">Hourly Rate</span>
                       <span className="text-3xl font-bold text-emerald-400">
                         £{tier.teacher_hourly_rate.toFixed(2)}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-500 text-center mt-1">
+                    <div className="text-xs text-gray-500 text-center mt-1">
                       Your earnings per hour taught
                     </div>
                   </div>
 
                   {/* Requirements */}
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-slate-300 mb-2">Requirements</h4>
+                    <h4 className="text-sm font-semibold text-gray-600 mb-2">Requirements</h4>
                     <div className="space-y-2">
                       {!tier.requires_manual_approval && (
                         <>
                           <div className="flex items-center space-x-2 text-xs">
-                            <Clock className="w-3 h-3 text-cyan-400" />
-                            <span className="text-slate-300">{tier.min_hours_taught}+ hours taught</span>
+                            <Clock className="w-3 h-3 text-emerald-600" />
+                            <span className="text-gray-600">{tier.min_hours_taught}+ hours taught</span>
                           </div>
                           {tier.min_retention_rate > 0 && (
                             <div className="flex items-center space-x-2 text-xs">
                               <TrendingUp className="w-3 h-3 text-emerald-400" />
-                              <span className="text-slate-300">
+                              <span className="text-gray-600">
                                 {tier.min_retention_rate}% retention ({tier.min_students_for_retention}+ students)
                               </span>
                             </div>
@@ -560,7 +561,7 @@ export default function TeacherTierDashboard() {
                       {tier.qualifications_required.slice(0, 2).map((qual, idx) => (
                         <div key={idx} className="flex items-start space-x-2 text-xs">
                           <CheckCircle className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-slate-300">{qual}</span>
+                          <span className="text-gray-600">{qual}</span>
                         </div>
                       ))}
                     </div>
@@ -574,7 +575,7 @@ export default function TeacherTierDashboard() {
                       </span>
                     )}
                     {benefits.featured_profile && (
-                      <span className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded text-xs text-cyan-300">
+                      <span className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded text-xs text-cyan-300">
                         Featured Profile
                       </span>
                     )}
@@ -592,7 +593,7 @@ export default function TeacherTierDashboard() {
                         setApplicationTier(tier.tier as 'expert' | 'master');
                         setShowApplicationModal(true);
                       }}
-                      className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                      className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                     >
                       <Send className="w-4 h-4" />
                       <span>Apply for {tier.tier_name}</span>
@@ -612,7 +613,7 @@ export default function TeacherTierDashboard() {
               {applications.map((app) => (
                 <div
                   key={app.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50"
+                  className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-white capitalize">
@@ -631,9 +632,9 @@ export default function TeacherTierDashboard() {
                     </span>
                   </div>
                   {app.review_notes && (
-                    <p className="text-sm text-slate-300 mb-2">{app.review_notes}</p>
+                    <p className="text-sm text-gray-600 mb-2">{app.review_notes}</p>
                   )}
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-gray-500">
                     Applied: {new Date(app.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -650,7 +651,7 @@ export default function TeacherTierDashboard() {
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50"
+                  className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200"
                 >
                   <div className="flex items-center space-x-4 mb-2">
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -661,14 +662,14 @@ export default function TeacherTierDashboard() {
                       className={`px-2 py-1 rounded text-xs font-semibold ${
                         item.promotion_type === 'automatic'
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-cyan-500/20 text-cyan-400'
+                          : 'bg-emerald-500/20 text-emerald-600'
                       }`}
                     >
                       {item.promotion_type}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-300 mb-2">{item.promotion_reason}</p>
-                  <div className="flex items-center space-x-6 text-xs text-slate-400">
+                  <p className="text-sm text-gray-600 mb-2">{item.promotion_reason}</p>
+                  <div className="flex items-center space-x-6 text-xs text-gray-500">
                     <span>{item.hours_at_promotion.toFixed(1)}h taught</span>
                     <span>{item.rating_at_promotion.toFixed(1)} ★ rating</span>
                     <span>{new Date(item.promoted_at).toLocaleDateString()}</span>
@@ -683,14 +684,14 @@ export default function TeacherTierDashboard() {
       {/* Application Modal */}
       {showApplicationModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl">
+          <div className="bg-gray-100 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white capitalize">
                 Apply for {applicationTier} Tier
               </h2>
               <button
                 onClick={() => setShowApplicationModal(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-gray-500 hover:text-white transition"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -699,7 +700,7 @@ export default function TeacherTierDashboard() {
             <div className="space-y-6">
               {/* Reason */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
                   Why do you want to apply for this tier?
                 </label>
                 <textarea
@@ -707,7 +708,7 @@ export default function TeacherTierDashboard() {
                   onChange={(e) =>
                     setFormData({ ...formData, application_reason: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   rows={4}
                   placeholder="Explain your qualifications and teaching experience..."
                 />
@@ -715,7 +716,7 @@ export default function TeacherTierDashboard() {
 
               {/* Years Experience */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
                   Years of Teaching Experience
                 </label>
                 <input
@@ -724,14 +725,14 @@ export default function TeacherTierDashboard() {
                   onChange={(e) =>
                     setFormData({ ...formData, years_experience: parseInt(e.target.value) })
                   }
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   min="0"
                 />
               </div>
 
               {/* English Proficiency */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
                   English Proficiency
                 </label>
                 <select
@@ -739,7 +740,7 @@ export default function TeacherTierDashboard() {
                   onChange={(e) =>
                     setFormData({ ...formData, english_proficiency: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="basic">Basic (A1-A2)</option>
                   <option value="intermediate">Intermediate (B1-B2)</option>
@@ -750,7 +751,7 @@ export default function TeacherTierDashboard() {
 
               {/* Video URLs */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
                   Introduction Video URL (Optional)
                 </label>
                 <input
@@ -759,13 +760,13 @@ export default function TeacherTierDashboard() {
                   onChange={(e) =>
                     setFormData({ ...formData, intro_video_url: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="https://youtube.com/..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
                   Quran Recitation Sample URL (Optional)
                 </label>
                 <input
@@ -774,7 +775,7 @@ export default function TeacherTierDashboard() {
                   onChange={(e) =>
                     setFormData({ ...formData, recitation_sample_url: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="https://youtube.com/..."
                 />
               </div>
@@ -783,14 +784,14 @@ export default function TeacherTierDashboard() {
               <div className="flex space-x-4">
                 <button
                   onClick={submitApplication}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                 >
                   <Send className="w-5 h-5" />
                   <span>Submit Application</span>
                 </button>
                 <button
                   onClick={() => setShowApplicationModal(false)}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>

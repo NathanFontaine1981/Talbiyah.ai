@@ -41,6 +41,7 @@ import RecentMessagesCard from '../components/RecentMessagesCard';
 import LearningStatsWidget from '../components/LearningStatsWidget';
 import RecommendedActionsCard from '../components/RecommendedActionsCard';
 import TalbiyahBot from '../components/TalbiyahBot';
+import FeedbackWidget from '../components/FeedbackWidget';
 import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
@@ -52,11 +53,20 @@ import ReferralWidget from '../components/ReferralWidget';
 import TeacherAvailabilityCard from '../components/TeacherAvailabilityCard';
 import CreditBalanceWidget from '../components/CreditBalanceWidget';
 import MyTeachersSection from '../components/student/MyTeachersSection';
+import { DiagnosticCTACard } from '../components/diagnostic';
+import {
+  ProgressOverview,
+  AreasToFocusCard,
+  MilestoneVerification,
+} from '../components/progress';
+import ThemeToggle from '../components/ThemeToggle';
+import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
 
 interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   roles?: string[];
+  referral_code?: string | null;
 }
 
 interface LearnerData {
@@ -97,6 +107,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userRole, setUserRole] = useState<string>('Student');
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [selectedViewRole, setSelectedViewRole] = useState<string>('Student');
   const [referralCopied, setReferralCopied] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(true);
   const [hasChildren, setHasChildren] = useState(true);
@@ -106,6 +118,8 @@ export default function Dashboard() {
   const [bookingPaymentMethod, setBookingPaymentMethod] = useState<string | null>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -182,9 +196,11 @@ export default function Dashboard() {
         return;
       }
 
+      setUserId(user.id);
+
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, roles')
+        .select('full_name, avatar_url, roles, referral_code')
         .eq('id', user.id)
         .single();
 
@@ -206,36 +222,65 @@ export default function Dashboard() {
         setHasChildren(childrenList.length > 0);
       }
 
-      if (profileData?.roles && profileData.roles.includes('admin')) {
-        setUserRole('Admin');
-      } else {
-        const { data: teacherProfile } = await supabase
-          .from('teacher_profiles')
-          .select('id, status')
-          .eq('user_id', user.id)
-          .maybeSingle();
+      // Build available roles for this user
+      const roles: string[] = [];
 
-        if (teacherProfile) {
-          if (teacherProfile.status === 'pending_approval') {
-            navigate('/teacher/pending-approval');
-            return;
-          } else if (teacherProfile.status === 'rejected') {
-            navigate('/teacher/rejected');
-            return;
-          }
-          setUserRole('Teacher');
+      // Check for admin role
+      const isAdmin = profileData?.roles?.includes('admin') || false;
+      if (isAdmin) {
+        roles.push('Admin');
+      }
 
-          const { data: availabilityData } = await supabase
-            .from('teacher_availability')
-            .select('id')
-            .eq('teacher_id', teacherProfile.id)
-            .eq('is_available', true)
-            .limit(1);
+      // Check for teacher role
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-          setHasAvailability((availabilityData?.length || 0) > 0);
-        } else {
-          setUserRole('Student');
+      if (teacherProfile) {
+        if (teacherProfile.status === 'pending_approval') {
+          navigate('/teacher/pending-approval');
+          return;
+        } else if (teacherProfile.status === 'rejected') {
+          navigate('/teacher/rejected');
+          return;
         }
+        roles.push('Teacher');
+
+        const { data: availabilityData } = await supabase
+          .from('teacher_availability')
+          .select('id')
+          .eq('teacher_id', teacherProfile.id)
+          .eq('is_available', true)
+          .limit(1);
+
+        setHasAvailability((availabilityData?.length || 0) > 0);
+      }
+
+      // Check for student role (either explicitly in roles array or as default)
+      const isStudent = profileData?.roles?.includes('student') || (!teacherProfile && !isAdmin);
+      if (isStudent) {
+        roles.push('Student');
+      }
+
+      setAvailableRoles(roles);
+
+      // Set primary role (for display) - Admin takes precedence, then Teacher, then Student
+      let primaryRole = 'Student';
+      if (isAdmin) {
+        primaryRole = 'Admin';
+      } else if (teacherProfile) {
+        primaryRole = 'Teacher';
+      }
+      setUserRole(primaryRole);
+
+      // Set selected view role - if user has multiple roles, default to Admin view; they can switch
+      // But if they explicitly have student role alongside admin, start with Student view for familiar UX
+      if (roles.length > 1 && roles.includes('Student')) {
+        setSelectedViewRole('Student');
+      } else {
+        setSelectedViewRole(primaryRole);
       }
 
       const { data: learnerData } = await supabase
@@ -258,15 +303,15 @@ export default function Dashboard() {
   }
 
   function copyReferralLink() {
-    if (!learner?.referral_code) return;
+    if (!profile?.referral_code) return;
 
-    const referralLink = `${window.location.origin}/signup?ref=${learner.referral_code}`;
+    const referralLink = `${window.location.origin}/signup?ref=${profile.referral_code}`;
     navigator.clipboard.writeText(referralLink);
     setReferralCopied(true);
     setTimeout(() => setReferralCopied(false), 2000);
   }
 
-  // Organized menu sections
+  // Organised menu sections
   const menuSections = [
     {
       title: null, // No header for home section
@@ -341,11 +386,11 @@ export default function Dashboard() {
     },
   ];
 
-  // Filter sections based on user role
+  // Filter sections based on selected view role (allows dual-role users to switch views)
   const filteredSections = menuSections.map(section => ({
     ...section,
     items: section.items.filter(item => {
-      if (item.roles.includes(userRole)) return true;
+      if (item.roles.includes(selectedViewRole)) return true;
       if (item.label === 'My Children' && profile?.roles?.includes('parent')) return true;
       return false;
     })
@@ -353,21 +398,21 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your dashboard...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       {/* Booking Success Toast */}
       {showBookingSuccess && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center space-x-3 max-w-md">
+          <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-lg shadow-emerald-500/30 flex items-center space-x-3 max-w-md">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
               <CheckCircle className="w-6 h-6" />
             </div>
@@ -400,10 +445,10 @@ export default function Dashboard() {
       <aside
         className={`${
           sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
-        } w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 fixed h-full z-50
+        } w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 fixed h-full z-50
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <button
             onClick={() => {
               navigate('/');
@@ -411,22 +456,23 @@ export default function Dashboard() {
             }}
             className="flex items-center space-x-3 group flex-1"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
-              <BookOpen className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+              <span className="text-white font-bold text-lg">T</span>
             </div>
             {!sidebarCollapsed && (
               <div className="overflow-hidden">
-                <h1 className="text-lg font-bold text-white group-hover:text-cyan-400 transition whitespace-nowrap">
-                  Talbiyah.ai
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition whitespace-nowrap">
+                  Talbiyah<span className="text-emerald-500">.ai</span>
                 </h1>
-                <p className="text-xs text-slate-400 whitespace-nowrap">Islamic Learning</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Islamic Learning</p>
               </div>
             )}
           </button>
           {/* Mobile close button */}
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800"
+            className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition rounded-lg hover:bg-gray-100"
+            aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
           </button>
@@ -436,12 +482,12 @@ export default function Dashboard() {
           {filteredSections.map((section, sectionIdx) => (
             <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
               {section.title && !sidebarCollapsed && (
-                <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   {section.title}
                 </p>
               )}
               {section.title && sidebarCollapsed && (
-                <div className="border-t border-slate-800 my-2"></div>
+                <div className="border-t border-gray-200 my-2"></div>
               )}
               <div className="space-y-1">
                 {section.items.map((item: MenuItem) => (
@@ -456,10 +502,10 @@ export default function Dashboard() {
                     disabled={item.comingSoon}
                     className={`w-full px-4 py-2.5 rounded-xl flex items-center space-x-3 transition ${
                       item.active
-                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                         : item.comingSoon
-                        ? 'text-slate-600 cursor-not-allowed'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
@@ -480,10 +526,10 @@ export default function Dashboard() {
                       </span>
                     )}
                     {!sidebarCollapsed && item.isNew && (
-                      <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded">NEW</span>
+                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[10px] font-bold rounded">NEW</span>
                     )}
                     {!sidebarCollapsed && item.comingSoon && (
-                      <span className="px-1.5 py-0.5 bg-slate-700 text-slate-500 text-[10px] font-medium rounded">SOON</span>
+                      <span className="px-1.5 py-0.5 bg-gray-200 text-gray-500 text-[10px] font-medium rounded">SOON</span>
                     )}
                   </button>
                 ))}
@@ -492,13 +538,13 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={() => {
               handleSignOut();
               setMobileMenuOpen(false);
             }}
-            className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-slate-300 hover:bg-red-500/10 hover:text-red-400"
+            className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-gray-600 hover:bg-red-50 hover:text-red-600"
             title={sidebarCollapsed ? 'Sign Out' : undefined}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -509,7 +555,8 @@ export default function Dashboard() {
         {/* Desktop collapse button - hidden on mobile */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition shadow-lg"
+          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-400 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -520,33 +567,86 @@ export default function Dashboard() {
       </aside>
 
       <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ml-0 transition-all duration-300`}>
-        <header className="bg-slate-900 border-b border-slate-800 flex-shrink-0">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800"
+              className="lg:hidden p-2 text-gray-500 hover:text-gray-700 transition rounded-lg hover:bg-gray-100"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
             <div className="hidden lg:block"></div>
 
             <div className="flex items-center space-x-2 sm:space-x-6">
-              <button className="relative p-2 text-slate-400 hover:text-white transition">
+              <ThemeToggle variant="dropdown" />
+              <button className="relative p-2 text-gray-500 hover:text-gray-700 transition">
                 <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
+              {/* Role Switcher for users with multiple roles */}
+              {availableRoles.length > 1 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg transition"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${
+                      selectedViewRole === 'Admin' ? 'bg-amber-500' :
+                      selectedViewRole === 'Teacher' ? 'bg-blue-500' :
+                      'bg-emerald-500'
+                    }`}></span>
+                    <span className="text-sm font-medium text-gray-700 hidden sm:inline">{selectedViewRole} View</span>
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${showRoleSwitcher ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  {showRoleSwitcher && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-400 uppercase">Switch Dashboard View</p>
+                      </div>
+                      {availableRoles.map(role => (
+                        <button
+                          key={role}
+                          onClick={() => {
+                            setSelectedViewRole(role);
+                            setShowRoleSwitcher(false);
+                          }}
+                          className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
+                            selectedViewRole === role
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${
+                            role === 'Admin' ? 'bg-amber-500' :
+                            role === 'Teacher' ? 'bg-blue-500' :
+                            'bg-emerald-500'
+                          }`}></span>
+                          <span className="font-medium">{role} Dashboard</span>
+                          {selectedViewRole === role && (
+                            <CheckCircle className="w-4 h-4 ml-auto" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-white">{profile?.full_name || 'Student'}</p>
-                  <p className="text-xs text-slate-400">{isParent ? 'Parent' : userRole}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{profile?.full_name || 'Student'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{isParent ? 'Parent' : (availableRoles.length > 1 ? availableRoles.join(' & ') : userRole)}</p>
                 </div>
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                   isParent ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
-                  userRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
-                  userRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
-                  userRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
+                  selectedViewRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
+                  selectedViewRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
+                  selectedViewRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
                   'bg-gradient-to-br from-emerald-400 to-emerald-600'
                 }`}>
                   {profile?.avatar_url ? (
@@ -559,7 +659,7 @@ export default function Dashboard() {
 
               <button
                 onClick={handleSignOut}
-                className="hidden sm:block p-2 text-slate-400 hover:text-red-400 transition"
+                className="hidden sm:block p-2 text-gray-500 hover:text-red-500 transition"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -573,17 +673,17 @@ export default function Dashboard() {
               <div className="lg:col-span-2">
                 <DashboardHeader
                   userName={profile?.full_name?.split(' ')[0] || 'Student'}
-                  userRole={isParent ? 'Parent' : userRole}
+                  userRole={isParent ? 'Parent' : selectedViewRole}
                 />
               </div>
 
               <div className="lg:col-span-1">
-                <PrayerTimesWidget userRole={isParent ? 'Parent' : userRole} />
+                <PrayerTimesWidget userRole={isParent ? 'Parent' : selectedViewRole} />
               </div>
             </div>
 
             {/* Teacher Availability Warning Banner */}
-            {userRole === 'Teacher' && !hasAvailability && (
+            {selectedViewRole === 'Teacher' && !hasAvailability && (
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 mb-6 border border-amber-400/30 shadow-xl">
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
@@ -607,22 +707,57 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Courses Card - Prominent at Top */}
-            {(userRole === 'Student' || isParent) && (
-              <div className="mb-6 bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-6 border border-cyan-500/30 shadow-xl">
+            {/* Connect Referrer - Only shows if eligible (no referrer, no completed lessons) */}
+            {(selectedViewRole === 'Student' || isParent) && userId && (
+              <div className="mb-6">
+                <ConnectReferrerWidget userId={userId} />
+              </div>
+            )}
+
+            {/* PRIORITY 1: Your Progress - Students want to see immediate stats */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6">
+                <ProgressOverview />
+              </div>
+            )}
+
+            {/* PRIORITY 2: Areas to Focus - Actionable teacher feedback */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6">
+                <AreasToFocusCard />
+              </div>
+            )}
+
+            {/* PRIORITY 3: Upcoming Sessions - What's coming next */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6">
+                <UpcomingSessionsCard />
+              </div>
+            )}
+
+            {/* PRIORITY 4: My Learning Journey - Recent recordings/insights */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6">
+                <MyLearningJourneyCard />
+              </div>
+            )}
+
+            {/* PRIORITY 5: Start Learning Journey - Course browsing (lower priority for existing students) */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 shadow-lg">
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0 w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
                     <GraduationCap className="w-8 h-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white mb-2">📚 Start Your Learning Journey</h3>
-                    <p className="text-cyan-50 mb-4">
-                      Explore our structured courses in Quranic Studies, Arabic Language, Islamic History, and more. Learn at your own pace with expert guidance.
+                    <h3 className="text-2xl font-bold text-white mb-2">Explore Courses</h3>
+                    <p className="text-amber-50 mb-4">
+                      Browse structured courses in Quranic Studies, Arabic Language, Islamic History, and more.
                     </p>
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={() => navigate('/courses-overview')}
-                        className="px-6 py-3 bg-white hover:bg-cyan-50 text-cyan-700 rounded-lg font-bold transition shadow-lg flex items-center space-x-2"
+                        className="px-6 py-3 bg-white hover:bg-amber-50 text-amber-700 rounded-full font-bold transition shadow-lg flex items-center space-x-2"
                       >
                         <GraduationCap className="w-5 h-5" />
                         <span>Browse Courses</span>
@@ -634,8 +769,15 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* PRIORITY 6: Diagnostic Assessment - One-time, not daily priority */}
+            {(selectedViewRole === 'Student' && userId) && (
+              <div className="mb-6">
+                <DiagnosticCTACard userId={userId} />
+              </div>
+            )}
+
             {isParent && !hasChildren && (
-              <div className="mb-6 bg-gradient-to-r from-purple-500 to-violet-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
+              <div className="mb-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Users className="w-6 h-6 text-white" />
@@ -729,27 +871,27 @@ export default function Dashboard() {
             )}
 
             {/* Islamic Source Reference Card - For All Users */}
-            <div className="mb-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+            <div className="mb-6 bg-white rounded-2xl p-6 border border-gray-200">
               <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
+                <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2">📖 Need Islamic Guidance?</h3>
-                  <p className="text-slate-300 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Need Islamic Guidance?</h3>
+                  <p className="text-gray-500 mb-4">
                     Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
                   </p>
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => navigate('/islamic-source-reference')}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
+                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-md flex items-center space-x-2"
                     >
-                      <MessageCircle className="w-5 h-5" />
+                      <MessageCircle className="w-4 h-4" />
                       <span>Find Sources Now</span>
                     </button>
                     <button
                       onClick={() => navigate('/about/islamic-source-reference')}
-                      className="px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition"
+                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-medium transition"
                     >
                       Learn More
                     </button>
@@ -761,19 +903,19 @@ export default function Dashboard() {
             {/* Khutbah Tools Card - For All Users */}
             <div className="mb-6 grid md:grid-cols-2 gap-4">
               {/* Khutbah Creator */}
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-cyan-500/30 backdrop-blur-sm shadow-xl">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <span className="text-xl">🕌</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Mic className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-2">Khutbah Creator</h3>
-                    <p className="text-slate-400 text-sm mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Khutbah Creator</h3>
+                    <p className="text-gray-500 text-sm mb-4">
                       Generate complete, authentic Friday khutbahs for school Jummah, youth groups, or community masajid.
                     </p>
                     <button
                       onClick={() => navigate('/khutba-creator')}
-                      className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2 text-sm"
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-semibold transition shadow-md flex items-center space-x-2 text-sm"
                     >
                       <Mic className="w-4 h-4" />
                       <span>Create Khutbah</span>
@@ -783,21 +925,21 @@ export default function Dashboard() {
               </div>
 
               {/* Khutbah Reflections */}
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-amber-500/30 backdrop-blur-sm shadow-xl">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200">
                 <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-                    <span className="text-xl">👨‍👩‍👧‍👦</span>
+                  <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-amber-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-2">Khutbah Reflections</h3>
-                    <p className="text-slate-400 text-sm mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Khutbah Reflections</h3>
+                    <p className="text-gray-500 text-sm mb-4">
                       Turn today's Jummah khutbah into a family-friendly reflection guide for your weekend "Family Hour".
                     </p>
                     <button
                       onClick={() => navigate('/khutba-reflections')}
-                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2 text-sm"
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full font-semibold transition shadow-md flex items-center space-x-2 text-sm"
                     >
-                      <Mic className="w-4 h-4" />
+                      <Users className="w-4 h-4" />
                       <span>Family Hour</span>
                     </button>
                   </div>
@@ -805,37 +947,38 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Gamified Referrals - Moved down */}
-            {learner?.referral_code && (
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 mb-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+            {/* Your Referrals */}
+            {profile?.referral_code && (
+              <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
                 <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-                        <Gift className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <Gift className="w-6 h-6 text-amber-600" />
                       </div>
-                      <h3 className="text-xl font-bold text-white">Gamified Referrals</h3>
+                      <h3 className="text-xl font-bold text-gray-900">Your Referrals</h3>
                     </div>
-                    <p className="text-slate-300 mb-2">
-                      Share Talbiyah.ai and earn £15 discount for every 10 hours your referrals learn!
+                    <p className="text-gray-500 mb-2">
+                      Share Talbiyah.ai and earn 1 free credit for every 10 hours your referrals complete!
                     </p>
                     <div className="flex items-center space-x-4 text-sm flex-wrap gap-2">
                       <div className="flex items-center space-x-2">
-                        <Trophy className="w-5 h-5 text-amber-400" />
-                        <span className="font-semibold text-white">{learner.learning_credits?.toFixed(1) || '0.0'}h Free Lessons</span>
+                        <Trophy className="w-5 h-5 text-amber-500" />
+                        <span className="font-semibold text-gray-900">{Math.floor(learner?.learning_credits || 0)} Free Credits</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 min-w-[280px]">
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Your Referral Code</label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 min-w-[320px]">
+                    <label className="text-sm font-semibold text-gray-600 mb-2 block">Your Referral Code</label>
                     <div className="flex items-center space-x-2 mb-3">
-                      <div className="flex-1 px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg font-mono text-lg font-bold text-cyan-400 text-center">
-                        {learner.referral_code}
+                      <div className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg font-mono text-xl font-bold text-emerald-600 text-center">
+                        {profile.referral_code}
                       </div>
                       <button
                         onClick={copyReferralLink}
-                        className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+                        className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
+                        title="Copy full referral link"
                       >
                         {referralCopied ? (
                           <CheckCircle className="w-5 h-5" />
@@ -844,9 +987,12 @@ export default function Dashboard() {
                         )}
                       </button>
                     </div>
+                    <div className="mb-3 p-2 bg-white border border-gray-200 rounded text-xs text-gray-600 break-all">
+                      {`${window.location.origin}/signup?ref=${profile.referral_code}`}
+                    </div>
                     <button
                       onClick={() => navigate('/refer')}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2 text-sm"
+                      className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition flex items-center justify-center space-x-2 text-sm"
                     >
                       <span>View Referral Dashboard</span>
                       <ArrowRight className="w-4 h-4" />
@@ -856,7 +1002,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {userRole === 'Teacher' ? (
+            {selectedViewRole === 'Teacher' ? (
               <>
                 <div className="mb-6">
                   <button
@@ -872,6 +1018,10 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <TeacherSessionsCard />
+                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Milestone Verifications</h3>
+                      <MilestoneVerification variant="dashboard" />
+                    </div>
                     <RecentMessagesCard />
                     <TeacherAvailabilityCard />
                     <TeacherStudentsCard />
@@ -891,7 +1041,6 @@ export default function Dashboard() {
                     <UpcomingSessionsCard />
                     <RecentMessagesCard />
                     <RecentRecordingsCard />
-                    <MyLearningJourneyCard />
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
@@ -908,6 +1057,7 @@ export default function Dashboard() {
         </main>
       </div>
       <TalbiyahBot />
+      <FeedbackWidget />
     </div>
   );
 }

@@ -136,11 +136,11 @@ export default function TeacherStudentsCard() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-700 rounded w-48"></div>
-          <div className="h-16 bg-slate-700 rounded"></div>
-          <div className="h-16 bg-slate-700 rounded"></div>
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
+          <div className="h-16 bg-gray-200 rounded"></div>
+          <div className="h-16 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -148,19 +148,19 @@ export default function TeacherStudentsCard() {
 
   if (students.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-        <h3 className="text-2xl font-bold text-white mb-6">My Students</h3>
+      <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">My Students</h3>
 
         <div className="text-center py-12">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Users className="w-10 h-10 text-slate-600" />
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Users className="w-10 h-10 text-gray-400" />
           </div>
-          <p className="text-xl text-slate-300 mb-2">No students yet.</p>
-          <p className="text-slate-500 mb-8">Students will appear here when they assign you as their teacher or after completing lessons</p>
+          <p className="text-xl text-gray-700 mb-2">No students yet.</p>
+          <p className="text-gray-500 mb-8">Students will appear here when they assign you as their teacher or after completing lessons</p>
 
           <button
             onClick={loadStudents}
-            className="px-6 py-4 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition flex items-center space-x-2 mx-auto"
+            className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 font-medium rounded-xl transition flex items-center space-x-2 mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -171,12 +171,12 @@ export default function TeacherStudentsCard() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white">My Students</h3>
+        <h3 className="text-2xl font-bold text-gray-900">My Students</h3>
         <button
           onClick={loadStudents}
-          className="p-2 text-slate-400 hover:text-cyan-400 transition"
+          className="p-2 text-gray-500 hover:text-emerald-600 transition"
         >
           <RefreshCw className="w-5 h-5" />
         </button>
@@ -186,10 +186,10 @@ export default function TeacherStudentsCard() {
         {students.map((student) => (
           <div
             key={student.id}
-            className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-blue-500/30 transition"
+            className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-blue-500/30 transition"
           >
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600 flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 flex-shrink-0">
                 {student.avatar_url ? (
                   <img
                     src={student.avatar_url}
@@ -197,17 +197,17 @@ export default function TeacherStudentsCard() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="w-6 h-6 text-slate-400" />
+                  <User className="w-6 h-6 text-gray-500" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                  <h4 className="text-base font-semibold text-white truncate">
+                  <h4 className="text-base font-semibold text-gray-900 truncate">
                     {student.name}
                   </h4>
                   {student.is_assigned && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 rounded text-xs font-medium text-cyan-400">
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded text-xs font-medium text-emerald-600">
                       <CheckCircle className="w-3 h-3" />
                       <span>Assigned</span>
                     </span>
@@ -216,18 +216,18 @@ export default function TeacherStudentsCard() {
                 <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs">
                   {student.total_lessons > 0 && (
                     <>
-                      <div className="flex items-center space-x-1 text-slate-400">
+                      <div className="flex items-center space-x-1 text-gray-500">
                         <BookOpen className="w-3.5 h-3.5" />
                         <span>{student.total_lessons} lessons</span>
                       </div>
-                      <div className="flex items-center space-x-1 text-slate-400">
+                      <div className="flex items-center space-x-1 text-gray-500">
                         <Clock className="w-3.5 h-3.5" />
                         <span>{student.total_hours.toFixed(1)}h</span>
                       </div>
                     </>
                   )}
                   {student.is_assigned && student.assigned_at && (
-                    <div className="flex items-center space-x-1 text-slate-500">
+                    <div className="flex items-center space-x-1 text-gray-500">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>Since {new Date(student.assigned_at).toLocaleDateString()}</span>
                     </div>

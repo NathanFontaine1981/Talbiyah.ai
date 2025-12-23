@@ -129,10 +129,10 @@ export default function CreditPurchaseSuccess() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-300 text-lg">Loading purchase details...</p>
+          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Loading purchase details...</p>
         </div>
       </div>
     );
@@ -140,16 +140,16 @@ export default function CreditPurchaseSuccess() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
-        <div className="max-w-md w-full bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-12 border border-red-500/30 backdrop-blur-sm shadow-xl text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <div className="max-w-md w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-12 border border-red-500/30 backdrop-blur-sm shadow-xl text-center">
           <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-14 h-14 text-red-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Oops!</h1>
-          <p className="text-slate-300 mb-8">{error}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Oops!</h1>
+          <p className="text-gray-600 mb-8">{error}</p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition"
+            className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-gray-900 font-semibold rounded-xl transition"
           >
             Go to Dashboard
           </button>
@@ -159,48 +159,48 @@ export default function CreditPurchaseSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="max-w-2xl w-full">
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-12 border border-slate-700/50 backdrop-blur-sm shadow-xl text-center">
+        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-12 border border-gray-200 backdrop-blur-sm shadow-xl text-center">
           {verifying ? (
             <>
-              <div className="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/20">
-                <Loader2 className="w-14 h-14 text-white animate-spin" />
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
+                <Loader2 className="w-14 h-14 text-gray-900 animate-spin" />
               </div>
-              <h1 className="text-4xl font-bold text-white mb-4">Verifying Payment...</h1>
-              <p className="text-xl text-slate-300 mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Verifying Payment...</h1>
+              <p className="text-xl text-gray-600 mb-8">
                 Please wait while we confirm your purchase
               </p>
             </>
           ) : (
             <>
               <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20">
-                <CheckCircle className="w-14 h-14 text-white" />
+                <CheckCircle className="w-14 h-14 text-gray-900" />
               </div>
 
-              <h1 className="text-4xl font-bold text-white mb-4">Purchase Successful!</h1>
-              <p className="text-xl text-slate-300 mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Purchase Successful!</h1>
+              <p className="text-xl text-gray-600 mb-8">
                 Your credits have been added to your account
               </p>
 
               {purchaseDetails && (
-                <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8 text-left">
-                  <h2 className="text-lg font-semibold text-white mb-4">Purchase Details</h2>
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8 text-left">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Purchase Details</h2>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Credits Purchased:</span>
-                      <span className="text-white font-medium">{purchaseDetails.credits_added} credits</span>
+                      <span className="text-gray-500">Credits Purchased:</span>
+                      <span className="text-gray-900 font-medium">{purchaseDetails.credits_added} credits</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Pack Size:</span>
-                      <span className="text-white font-medium">{purchaseDetails.pack_size} lessons</span>
+                      <span className="text-gray-500">Pack Size:</span>
+                      <span className="text-gray-900 font-medium">{purchaseDetails.pack_size} lessons</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">New Balance:</span>
-                      <span className="text-cyan-400 font-bold text-lg">{newBalance} credits</span>
+                      <span className="text-gray-500">New Balance:</span>
+                      <span className="text-emerald-600 font-bold text-lg">{newBalance} credits</span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-700 pt-3 mt-3">
-                      <span className="text-slate-400">Amount Paid:</span>
+                    <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
+                      <span className="text-gray-500">Amount Paid:</span>
                       <span className="text-emerald-400 font-bold text-lg">£{purchaseDetails.pack_price.toFixed(2)}</span>
                     </div>
                   </div>
@@ -209,17 +209,17 @@ export default function CreditPurchaseSuccess() {
             </>
           )}
 
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8 text-left">
-            <h2 className="text-lg font-semibold text-white mb-4">What's Next?</h2>
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8 text-left">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">What's Next?</h2>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-cyan-500/20">
-                  <Calendar className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
+                  <Calendar className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">Book Your Lessons</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">Book Your Lessons</p>
+                  <p className="text-sm text-gray-500">
                     Browse our teachers and use your credits to book lessons anytime. Each booking uses 1 credit.
                   </p>
                 </div>
@@ -230,8 +230,8 @@ export default function CreditPurchaseSuccess() {
                   <CreditCard className="w-5 h-5 text-blue-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">Credits Never Expire</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">Credits Never Expire</p>
+                  <p className="text-sm text-gray-500">
                     Your credits are valid forever. Use them at your own pace without any time pressure.
                   </p>
                 </div>
@@ -242,8 +242,8 @@ export default function CreditPurchaseSuccess() {
                   <CheckCircle className="w-5 h-5 text-purple-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium mb-1">7-Day Refund Policy</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-gray-900 font-medium mb-1">7-Day Refund Policy</p>
+                  <p className="text-sm text-gray-500">
                     You have 7 days to request a refund for unused credits. Contact support if needed.
                   </p>
                 </div>
@@ -251,18 +251,18 @@ export default function CreditPurchaseSuccess() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl p-6 border border-cyan-500/20 mb-8">
-            <p className="text-sm text-slate-300 mb-2">
+          <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 rounded-xl p-6 border border-emerald-500/20 mb-8">
+            <p className="text-sm text-gray-600 mb-2">
               Need help or have questions?
             </p>
-            <p className="text-cyan-400 font-medium">
+            <p className="text-emerald-600 font-medium">
               Contact us at contact@talbiyah.ai
             </p>
           </div>
 
           <button
             onClick={() => navigate('/teachers')}
-            className="w-full px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+            className="w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-gray-900 font-semibold rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
           >
             <span>Browse Teachers & Book Lessons</span>
             <ArrowRight className="w-5 h-5" />
@@ -270,14 +270,14 @@ export default function CreditPurchaseSuccess() {
 
           <button
             onClick={() => navigate('/dashboard')}
-            className="w-full mt-4 px-8 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition"
+            className="w-full mt-4 px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 font-medium rounded-xl transition"
           >
             Go to Dashboard
           </button>
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
+          <p className="text-gray-500 text-sm">
             Thank you for choosing Talbiyah.ai for your Islamic learning journey
           </p>
         </div>

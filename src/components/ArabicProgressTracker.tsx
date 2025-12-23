@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { ChevronDown, ChevronUp, Languages, Check, BookOpen, GraduationCap, Loader, Edit3, Paperclip } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import ArabicHomeworkUpload from './ArabicHomeworkUpload';
@@ -157,7 +158,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
       }));
     } catch (error) {
       console.error('Error updating progress:', error);
-      alert('Failed to update progress. Please try again.');
+      toast.error('Failed to update progress. Please try again.');
     } finally {
       setSaving(null);
     }
@@ -183,24 +184,24 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
         <div className="animate-pulse flex flex-col items-center justify-center py-12">
-          <div className="w-32 h-32 bg-slate-700 rounded-full mb-4"></div>
-          <div className="h-4 bg-slate-700 rounded w-32"></div>
+          <div className="w-32 h-32 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
           <Languages className="w-5 h-5 text-orange-400" />
           <span>Arabic Progress Tracker</span>
         </h3>
         {editable && learnerId && (
-          <span className="text-xs text-slate-400 flex items-center gap-1">
+          <span className="text-xs text-gray-500 flex items-center gap-1">
             <Edit3 className="w-3 h-3" />
             Click circles to update
           </span>
@@ -217,7 +218,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
               stroke="currentColor"
               strokeWidth="12"
               fill="transparent"
-              className="text-slate-700"
+              className="text-gray-700"
             />
             <circle
               cx="128"
@@ -234,19 +235,19 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-5xl font-bold text-orange-400">{percentageComplete}%</p>
-            <p className="text-sm text-slate-400 mt-2">Arabic Mastered</p>
+            <p className="text-sm text-gray-500 mt-2">Arabic Mastered</p>
           </div>
         </div>
 
         <div className="flex items-center justify-center space-x-6 text-sm">
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{completedUnits}</p>
-            <p className="text-slate-400">Units Complete</p>
+            <p className="text-gray-500">Units Complete</p>
           </div>
-          <div className="w-px h-12 bg-slate-700"></div>
+          <div className="w-px h-12 bg-gray-200"></div>
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{totalUnits - completedUnits}</p>
-            <p className="text-slate-400">Remaining</p>
+            <p className="text-gray-500">Remaining</p>
           </div>
         </div>
       </div>
@@ -258,7 +259,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
             selectedBook === '1A' && !showAll
               ? 'bg-emerald-600 text-white'
-              : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           Book 1A ({book1AUnits.length} units)
@@ -267,8 +268,8 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
           onClick={() => { setSelectedBook('1B'); setShowAll(false); }}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
             selectedBook === '1B' && !showAll
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           Book 1B ({book1BUnits.length} units)
@@ -279,9 +280,9 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
       {/* Unit List */}
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-3 px-2">
-          <span className="text-xs font-medium text-slate-500 uppercase">Unit</span>
+          <span className="text-xs font-medium text-gray-500 uppercase">Unit</span>
           <div className="flex items-center gap-2 pr-8">
-            <span className="text-xs font-medium text-cyan-400 uppercase w-8 text-center" title="Understanding">
+            <span className="text-xs font-medium text-emerald-600 uppercase w-8 text-center" title="Understanding">
               U
             </span>
             <span className="text-xs font-medium text-blue-400 uppercase w-8 text-center" title="Practice">
@@ -294,9 +295,9 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-end gap-4 mb-2 px-2 text-xs text-slate-500">
+        <div className="flex items-center justify-end gap-4 mb-2 px-2 text-xs text-gray-500">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full border-2 border-cyan-500 bg-cyan-500/20"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-emerald-500 bg-emerald-500/20"></div>
             <span>Understanding</span>
           </div>
           <div className="flex items-center gap-1">
@@ -316,7 +317,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                             unitProgress?.mastery_complete;
 
           return (
-            <div key={unit.id} className="bg-slate-800/50 rounded-lg overflow-hidden">
+            <div key={unit.id} className="bg-gray-50 rounded-lg overflow-hidden">
               <div className="flex items-center justify-between p-3">
                 <button
                   onClick={() => setExpandedUnit(expandedUnit === unit.id ? null : unit.id)}
@@ -325,13 +326,13 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                   <div className="flex items-center gap-3">
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
                       isComplete
-                        ? unit.book === '1A' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-cyan-500/20 text-cyan-400'
-                        : 'bg-slate-700/50 text-slate-300'
+                        ? unit.book === '1A' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-600'
+                        : 'bg-gray-100 text-gray-600'
                     }`}>
                       {unit.unit_number}
                     </span>
                     <div>
-                      <span className="text-sm font-medium text-slate-200">
+                      <span className="text-sm font-medium text-gray-700">
                         {unit.unit_title_english}
                       </span>
                       <span className="text-orange-400 text-sm ml-2 font-arabic">
@@ -347,15 +348,15 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                     disabled={saving === unit.id || !editable || !learnerId}
                     className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                       unitProgress?.understanding_complete
-                        ? 'bg-cyan-500/20 border-cyan-500'
-                        : 'border-slate-600 hover:border-cyan-400'
+                        ? 'bg-emerald-500/20 border-emerald-500'
+                        : 'border-gray-300 hover:border-emerald-400'
                     } ${editable && learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                     title="Understanding"
                   >
                     {saving === unit.id ? (
-                      <Loader className="w-3 h-3 text-slate-400 animate-spin" />
+                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
                     ) : unitProgress?.understanding_complete ? (
-                      <Check className="w-4 h-4 text-cyan-400" />
+                      <Check className="w-4 h-4 text-emerald-600" />
                     ) : null}
                   </button>
 
@@ -365,12 +366,12 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                     className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                       unitProgress?.practice_complete
                         ? 'bg-blue-500/20 border-blue-500'
-                        : 'border-slate-600 hover:border-blue-400'
+                        : 'border-gray-300 hover:border-blue-400'
                     } ${editable && learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                     title="Practice"
                   >
                     {saving === unit.id ? (
-                      <Loader className="w-3 h-3 text-slate-400 animate-spin" />
+                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
                     ) : unitProgress?.practice_complete ? (
                       <Check className="w-4 h-4 text-blue-400" />
                     ) : null}
@@ -382,12 +383,12 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                     className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
                       unitProgress?.mastery_complete
                         ? 'bg-emerald-500/20 border-emerald-500'
-                        : 'border-slate-600 hover:border-emerald-400'
+                        : 'border-gray-300 hover:border-emerald-400'
                     } ${editable && learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                     title="Mastery"
                   >
                     {saving === unit.id ? (
-                      <Loader className="w-3 h-3 text-slate-400 animate-spin" />
+                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
                     ) : unitProgress?.mastery_complete ? (
                       <Check className="w-4 h-4 text-emerald-400" />
                     ) : null}
@@ -395,7 +396,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
 
                   <button
                     onClick={() => setExpandedUnit(expandedUnit === unit.id ? null : unit.id)}
-                    className="p-1 text-slate-400 hover:text-orange-400 transition ml-1"
+                    className="p-1 text-gray-500 hover:text-orange-400 transition ml-1"
                   >
                     {expandedUnit === unit.id ? (
                       <ChevronUp className="w-4 h-4" />
@@ -411,15 +412,15 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                 <div className="px-3 pb-3 pt-0 space-y-3">
                   {/* Theme */}
                   {unit.unit_theme && (
-                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                       <p className="text-xs font-medium text-orange-400 mb-1">Theme</p>
-                      <p className="text-sm text-slate-300">{unit.unit_theme}</p>
+                      <p className="text-sm text-gray-600">{unit.unit_theme}</p>
                     </div>
                   )}
 
                   {/* Vocabulary Preview */}
                   {unit.key_vocabulary && unit.key_vocabulary.length > 0 && (
-                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                       <p className="text-xs font-medium text-orange-400 mb-2 flex items-center gap-1">
                         <BookOpen className="w-3 h-3" />
                         Key Vocabulary
@@ -436,14 +437,14 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
 
                   {/* Grammar Topics */}
                   {unit.grammar_topics && unit.grammar_topics.length > 0 && (
-                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                       <p className="text-xs font-medium text-purple-400 mb-2 flex items-center gap-1">
                         <GraduationCap className="w-3 h-3" />
                         Grammar Topics
                       </p>
                       <ul className="space-y-1">
                         {unit.grammar_topics.map((topic, i) => (
-                          <li key={i} className="text-xs text-slate-300">• {topic}</li>
+                          <li key={i} className="text-xs text-gray-600">• {topic}</li>
                         ))}
                       </ul>
                     </div>
@@ -451,9 +452,9 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
 
                   {/* Teacher Notes */}
                   {unitProgress?.teacher_notes && (
-                    <div className="bg-slate-900/50 rounded-lg p-3 border border-cyan-500/30">
-                      <p className="text-xs font-medium text-cyan-400 mb-1">Teacher's Notes</p>
-                      <p className="text-sm text-slate-300">{unitProgress.teacher_notes}</p>
+                    <div className="bg-gray-50 rounded-lg p-3 border border-emerald-500/30">
+                      <p className="text-xs font-medium text-emerald-600 mb-1">Teacher's Notes</p>
+                      <p className="text-sm text-gray-600">{unitProgress.teacher_notes}</p>
                     </div>
                   )}
 
@@ -474,7 +475,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                           />
                           <button
                             onClick={() => setShowHomeworkUpload(null)}
-                            className="w-full mt-2 py-2 text-slate-400 hover:text-slate-300 text-sm"
+                            className="w-full mt-2 py-2 text-gray-500 hover:text-gray-600 text-sm"
                           >
                             Hide Upload Form
                           </button>
@@ -500,7 +501,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
 
                           {/* Show quiz score if available */}
                           {homework[unit.id].quiz_score !== null && homework[unit.id].quiz_total !== null && (
-                            <p className="text-sm text-cyan-400 mb-2">
+                            <p className="text-sm text-emerald-600 mb-2">
                               Quiz Score: {homework[unit.id].quiz_score}/{homework[unit.id].quiz_total}
                               ({Math.round((homework[unit.id].quiz_score! / homework[unit.id].quiz_total!) * 100)}%)
                             </p>
@@ -510,7 +511,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
                           {homework[unit.id].status === 'reviewed' && homework[unit.id].teacher_feedback && (
                             <div className="bg-emerald-500/10 rounded p-2 mb-2">
                               <p className="text-xs text-emerald-400 font-medium">Teacher Feedback:</p>
-                              <p className="text-sm text-slate-300">{homework[unit.id].teacher_feedback}</p>
+                              <p className="text-sm text-gray-600">{homework[unit.id].teacher_feedback}</p>
                               {homework[unit.id].teacher_rating && (
                                 <p className="text-xs text-amber-400 mt-1">Rating: {homework[unit.id].teacher_rating}</p>
                               )}
@@ -546,7 +547,7 @@ export default function ArabicProgressTracker({ learnerId, editable = true }: Ar
       {syllabus.length > 8 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full mt-4 px-4 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-orange-400 rounded-lg transition flex items-center justify-center space-x-2"
+          className="w-full mt-4 px-4 py-2 bg-gray-100/80 hover:bg-gray-200/80 text-orange-400 rounded-lg transition flex items-center justify-center space-x-2"
         >
           <span className="text-sm font-medium">
             {showAll ? 'Show Less' : `Show All ${totalUnits} Units`}

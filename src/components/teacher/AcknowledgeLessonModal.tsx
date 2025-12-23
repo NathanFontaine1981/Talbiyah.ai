@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { X, Send } from 'lucide-react';
 
@@ -37,7 +38,7 @@ export default function AcknowledgeLessonModal({
       onComplete();
     } catch (error: any) {
       console.error('Error acknowledging lesson:', error);
-      alert('Failed to acknowledge lesson. Please try again.');
+      toast.error('Failed to acknowledge lesson. Please try again.');
     } finally {
       setSubmitting(false);
     }

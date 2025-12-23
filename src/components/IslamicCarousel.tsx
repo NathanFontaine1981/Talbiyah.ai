@@ -66,7 +66,7 @@ export default function IslamicCarousel() {
   const current = content[currentIndex];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex space-x-2">
           <button
@@ -76,8 +76,8 @@ export default function IslamicCarousel() {
             }}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
               carouselType === 'names'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-slate-300 border border-transparent'
+                ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                : 'text-gray-500 hover:text-gray-600 border border-transparent'
             }`}
           >
             Names of Allah
@@ -89,8 +89,8 @@ export default function IslamicCarousel() {
             }}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
               carouselType === 'hadith'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-slate-300 border border-transparent'
+                ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                : 'text-gray-500 hover:text-gray-600 border border-transparent'
             }`}
           >
             Hadith
@@ -102,8 +102,8 @@ export default function IslamicCarousel() {
             }}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
               carouselType === 'ayah'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-slate-300 border border-transparent'
+                ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                : 'text-gray-500 hover:text-gray-600 border border-transparent'
             }`}
           >
             Ayah
@@ -113,13 +113,13 @@ export default function IslamicCarousel() {
         <div className="flex items-center space-x-2">
           <button
             onClick={handlePrevious}
-            className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg transition"
+            className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={handleNext}
-            className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg transition"
+            className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -129,27 +129,27 @@ export default function IslamicCarousel() {
       <div className="min-h-[120px] flex items-center justify-center">
         {carouselType === 'names' && 'arabic' in current && 'transliteration' in current && 'meaning' in current && (
           <div className="text-center space-y-2">
-            <p className="text-4xl font-arabic text-cyan-400 mb-3">{current.arabic}</p>
+            <p className="text-4xl font-arabic text-emerald-600 mb-3">{current.arabic}</p>
             <p className="text-lg font-semibold text-white">{current.transliteration}</p>
-            <p className="text-sm text-slate-400">{current.meaning}</p>
+            <p className="text-sm text-gray-500">{current.meaning}</p>
           </div>
         )}
 
         {carouselType === 'hadith' && 'text' in current && (
           <div className="text-center space-y-3">
-            <p className="text-base text-slate-200 italic leading-relaxed max-w-2xl">
+            <p className="text-base text-gray-700 italic leading-relaxed max-w-2xl">
               "{current.text}"
             </p>
-            <p className="text-xs text-cyan-400 font-medium">{current.source}</p>
+            <p className="text-xs text-emerald-600 font-medium">{current.source}</p>
           </div>
         )}
 
         {carouselType === 'ayah' && 'arabic' in current && 'translation' in current && (
           <div className="text-center space-y-3">
-            <p className="text-3xl font-arabic text-cyan-400 mb-3">{current.arabic}</p>
-            <p className="text-sm text-slate-300 italic">{current.transliteration}</p>
-            <p className="text-base text-slate-200 leading-relaxed">{current.translation}</p>
-            <p className="text-xs text-cyan-400 font-medium">{current.reference}</p>
+            <p className="text-3xl font-arabic text-emerald-600 mb-3">{current.arabic}</p>
+            <p className="text-sm text-gray-600 italic">{current.transliteration}</p>
+            <p className="text-base text-gray-700 leading-relaxed">{current.translation}</p>
+            <p className="text-xs text-emerald-600 font-medium">{current.reference}</p>
           </div>
         )}
       </div>
@@ -160,7 +160,7 @@ export default function IslamicCarousel() {
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`w-1.5 h-1.5 rounded-full transition ${
-              index === currentIndex ? 'bg-cyan-400 w-6' : 'bg-slate-600'
+              index === currentIndex ? 'bg-emerald-400 w-6' : 'bg-gray-600'
             }`}
           />
         ))}

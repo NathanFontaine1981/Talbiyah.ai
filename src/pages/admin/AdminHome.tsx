@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface DashboardStats {
   totalStudents: number;
@@ -346,7 +347,7 @@ export default function AdminHome() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -356,22 +357,23 @@ export default function AdminHome() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-slate-400">Welcome to your academy admin portal</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400">Welcome to your academy admin portal</p>
         </div>
         <div className="flex items-center space-x-3">
+          <ThemeToggle variant="dropdown" />
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-2"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
-          <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition relative">
+          <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition relative">
             <Bell className="w-5 h-5" />
             {notifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
                 {notifications.length}
               </span>
             )}
@@ -385,9 +387,9 @@ export default function AdminHome() {
           icon={Users}
           label="Total Students"
           value={stats.totalStudents}
-          bgColor="bg-cyan-500/10"
-          borderColor="border-cyan-500/20"
-          iconColor="text-cyan-400"
+          bgColor="bg-emerald-500/10"
+          borderColor="border-emerald-500/20"
+          iconColor="text-emerald-600"
         />
         <StatCard
           icon={BookCheck}
@@ -433,15 +435,15 @@ export default function AdminHome() {
 
       {/* Teacher Tier Structure */}
       {tiers.length > 0 && (
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700 rounded-xl p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               <Award className="w-6 h-6 text-amber-400" />
-              <h2 className="text-2xl font-semibold text-white">Teacher Tier Structure</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Teacher Tier Structure</h2>
             </div>
             <button
               onClick={() => navigate('/admin/teacher-tiers')}
-              className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-lg transition flex items-center space-x-2"
+              className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition flex items-center space-x-2"
             >
               <span>Manage Tiers</span>
               <ArrowRight className="w-4 h-4" />
@@ -452,33 +454,33 @@ export default function AdminHome() {
             {tiers.map((tier) => (
               <div
                 key={tier.tier}
-                className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-5 hover:border-cyan-500/30 transition group"
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-5 hover:border-emerald-500/30 transition group"
               >
                 {/* Tier Icon & Name */}
                 <div className="text-center mb-4">
                   <div className="text-5xl mb-2">{tier.tier_icon}</div>
-                  <h3 className="text-lg font-bold text-white capitalize">{tier.tier_name}</h3>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider">Level {tier.tier_level}</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white capitalize">{tier.tier_name}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Level {tier.tier_level}</p>
                 </div>
 
                 {/* Teacher Count */}
-                <div className="mb-4 p-3 bg-cyan-500/5 border border-cyan-500/10 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-cyan-400">{tier.teacher_count}</p>
-                  <p className="text-xs text-slate-400">Teacher{tier.teacher_count !== 1 ? 's' : ''}</p>
+                <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-emerald-600">{tier.teacher_count}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Teacher{tier.teacher_count !== 1 ? 's' : ''}</p>
                 </div>
 
                 {/* Rates */}
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between items-center p-2 bg-emerald-500/5 border border-emerald-500/10 rounded">
-                    <span className="text-xs text-slate-400">Teacher Rate</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Teacher Rate</span>
                     <span className="text-sm font-bold text-emerald-400">£{tier.teacher_hourly_rate.toFixed(2)}/h</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-blue-500/5 border border-blue-500/10 rounded">
-                    <span className="text-xs text-slate-400">Student Price</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Student Price</span>
                     <span className="text-sm font-bold text-blue-400">£{tier.student_hourly_price.toFixed(2)}/h</span>
                   </div>
                   <div className="flex justify-between items-center p-2 bg-purple-500/5 border border-purple-500/10 rounded">
-                    <span className="text-xs text-slate-400">Platform</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Platform</span>
                     <span className="text-sm font-bold text-purple-400">£{tier.platform_margin.toFixed(2)}/h</span>
                   </div>
                 </div>
@@ -489,7 +491,7 @@ export default function AdminHome() {
                     <p className="text-xs text-amber-400 font-semibold">Manual Approval</p>
                   </div>
                 ) : (
-                  <div className="space-y-1 text-xs text-slate-500">
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                     <p>Min {tier.min_hours_taught}h taught</p>
                     <p>Min {tier.min_rating.toFixed(1)}★ rating</p>
                   </div>
@@ -502,23 +504,23 @@ export default function AdminHome() {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
               <p className="text-sm text-green-400 font-semibold mb-1">Automatic Progression</p>
-              <p className="text-xs text-slate-400">Tiers 1-3 auto-promote based on hours & ratings</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Tiers 1-3 auto-promote based on hours & ratings</p>
             </div>
             <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-sm text-amber-400 font-semibold mb-1">Manual Review</p>
-              <p className="text-xs text-slate-400">Expert & Master tiers require admin approval</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Expert & Master tiers require admin approval</p>
             </div>
-            <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
-              <p className="text-sm text-cyan-400 font-semibold mb-1">Price Protection</p>
-              <p className="text-xs text-slate-400">Students keep rates for 12 months after booking</p>
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <p className="text-sm text-emerald-600 font-semibold mb-1">Price Protection</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Students keep rates for 12 months after booking</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Quick Actions */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <ActionButton
             icon={UserPlus}
@@ -554,8 +556,8 @@ export default function AdminHome() {
       </div>
 
       {/* System Health */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">System Health</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">System Health</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <HealthStatus
             icon={Database}
@@ -588,8 +590,8 @@ export default function AdminHome() {
 
       {/* Recent Notifications */}
       {notifications.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Recent Notifications</h2>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Notifications</h2>
           <div className="space-y-3">
             {notifications.map(notif => (
               <NotificationItem key={notif.id} notification={notif} />
@@ -609,14 +611,14 @@ export default function AdminHome() {
 // Stat Card Component
 function StatCard({ icon: Icon, label, value, bgColor, borderColor, iconColor }: any) {
   return (
-    <div className={`${bgColor} border ${borderColor} rounded-xl p-6`}>
+    <div className={`bg-white dark:bg-gray-800 ${borderColor} border rounded-xl p-6 shadow-sm`}>
       <div className="flex items-center justify-between mb-3">
         <div className={`w-12 h-12 ${bgColor} border ${borderColor} rounded-lg flex items-center justify-center`}>
           <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
       </div>
-      <p className="text-slate-400 text-sm mb-1">{label}</p>
-      <p className="text-3xl font-bold text-white">{value}</p>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">{label}</p>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -624,7 +626,7 @@ function StatCard({ icon: Icon, label, value, bgColor, borderColor, iconColor }:
 // Action Button Component
 function ActionButton({ icon: Icon, label, onClick, color }: any) {
   const colors = {
-    cyan: 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/20 text-cyan-400',
+    cyan: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600',
     emerald: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400',
     blue: 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400',
     purple: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-400',
@@ -686,7 +688,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
       case 'success': return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
       case 'warning': return 'bg-amber-500/10 border-amber-500/20 text-amber-400';
       case 'error': return 'bg-red-500/10 border-red-500/20 text-red-400';
-      default: return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400';
+      default: return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600';
     }
   };
 
@@ -713,17 +715,17 @@ function NotificationItem({ notification }: { notification: Notification }) {
 function CreateUserModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Create New User</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create New User</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-slate-400 text-sm mb-4">User creation modal - Coming soon!</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">User creation modal - Coming soon!</p>
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition"
+          className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
         >
           Close
         </button>
@@ -736,14 +738,14 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
 function ScheduleSessionModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Schedule Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Schedule Session</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-slate-400 text-sm mb-4">Session scheduling modal - Coming soon!</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Session scheduling modal - Coming soon!</p>
         <button
           onClick={onClose}
           className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
@@ -759,14 +761,14 @@ function ScheduleSessionModal({ onClose }: { onClose: () => void }) {
 function AnnouncementModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Send Announcement</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Send Announcement</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-slate-400 text-sm mb-4">Announcement modal - Coming soon!</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Announcement modal - Coming soon!</p>
         <button
           onClick={onClose}
           className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"

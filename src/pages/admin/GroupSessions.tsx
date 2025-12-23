@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Users, Calendar, Clock, X, Edit, UserPlus, Mail, Check, Video, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface GroupSession {
@@ -157,7 +158,7 @@ export default function GroupSessions() {
 
   function getSessionStatus(session: GroupSession) {
     if (session.status === 'cancelled') return { label: 'Cancelled', color: 'bg-red-500/10 border-red-500/20 text-red-400', icon: '❌' };
-    if (session.status === 'closed') return { label: 'Closed', color: 'bg-slate-500/10 border-slate-500/20 text-slate-400', icon: '⚫' };
+    if (session.status === 'closed') return { label: 'Closed', color: 'bg-gray-500/10 border-gray-300/20 text-gray-500', icon: '⚫' };
     if (session.current_participants >= session.max_participants) return { label: 'Full', color: 'bg-red-500/10 border-red-500/20 text-red-400', icon: '🔴' };
 
     const startDate = new Date(session.start_date);
@@ -172,7 +173,7 @@ export default function GroupSessions() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -182,12 +183,12 @@ export default function GroupSessions() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Group Sessions</h1>
-          <p className="text-slate-400">Manage group learning sessions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Group Sessions</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage group learning sessions</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
         >
           <Plus className="w-5 h-5" />
           <span>Create Group Session</span>
@@ -195,13 +196,13 @@ export default function GroupSessions() {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 mb-6 bg-slate-800/50 border border-slate-700 rounded-lg p-1">
+      <div className="flex space-x-1 mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
         <button
           onClick={() => setCurrentTab('browse')}
           className={`flex-1 px-4 py-2 rounded-md transition ${
             currentTab === 'browse'
-              ? 'bg-cyan-500 text-white'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-emerald-500 text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           Browse Sessions
@@ -210,8 +211,8 @@ export default function GroupSessions() {
           onClick={() => setCurrentTab('my-sessions')}
           className={`flex-1 px-4 py-2 rounded-md transition ${
             currentTab === 'my-sessions'
-              ? 'bg-cyan-500 text-white'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-emerald-500 text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           My Sessions
@@ -219,15 +220,15 @@ export default function GroupSessions() {
       </div>
 
       {/* Filters */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
-        <h3 className="text-lg font-semibold text-white mb-4">Filters</h3>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Subject</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Subject</label>
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Subjects</option>
               {subjects.map((subject) => (
@@ -237,11 +238,11 @@ export default function GroupSessions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Type</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Type</label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All</option>
               <option value="free">Free Sessions</option>
@@ -250,11 +251,11 @@ export default function GroupSessions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Level</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Level</label>
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value as LevelFilter)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Levels</option>
               <option value="beginner">Beginner</option>
@@ -268,10 +269,10 @@ export default function GroupSessions() {
       {/* Sessions List */}
       <div className="space-y-4">
         {filteredSessions.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
-            <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg mb-2">No group sessions found</p>
-            <p className="text-slate-500 text-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+            <Users className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No group sessions found</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {currentTab === 'my-sessions'
                 ? "You haven't created any group sessions yet"
                 : "Try adjusting your filters or create a new group session"}
@@ -363,11 +364,11 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
         throw new Error(result.error || 'Failed to create room');
       }
 
-      alert('Room created successfully!');
+      toast.success('Room created successfully!');
       onRefresh();
     } catch (error: any) {
       console.error('Error creating room:', error);
-      alert('Failed to create room: ' + error.message);
+      toast.error('Failed to create room: ' + error.message);
     } finally {
       setCreatingRoom(false);
     }
@@ -396,17 +397,17 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
   };
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
             <span className="text-2xl">{getSubjectIcon(session.subject?.name)}</span>
-            <h3 className="text-xl font-semibold text-white">{session.name}</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{session.name}</h3>
             <span className={`px-3 py-1 ${status.color} border rounded-full text-xs font-medium`}>
               {status.icon} {status.label}
             </span>
           </div>
-          <p className="text-slate-400 text-sm mb-3">Teacher: {session.teacher?.full_name || 'Unknown'}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Teacher: {session.teacher?.full_name || 'Unknown'}</p>
         </div>
         <div className="text-right">
           {session.is_free ? (
@@ -414,7 +415,7 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
               FREE
             </span>
           ) : (
-            <span className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-lg text-sm font-medium">
+            <span className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-lg text-sm font-medium">
               £{((session.price_per_session || 0) / 100).toFixed(2)}/session
             </span>
           )}
@@ -427,24 +428,24 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
             {session.level}
           </div>
         </div>
-        <div className="flex items-center space-x-2 text-slate-300">
-          <Users className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm">
             {session.current_participants || 0}/{session.max_participants}
           </span>
         </div>
-        <div className="flex items-center space-x-2 text-slate-300">
-          <Calendar className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm">Every {session.schedule_day}</span>
         </div>
-        <div className="flex items-center space-x-2 text-slate-300">
-          <Clock className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm">{session.schedule_time} ({session.duration_minutes}m)</span>
         </div>
       </div>
 
       <div className="mb-4">
-        <p className="text-slate-400 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           <span className="font-medium">Starts:</span> {format(new Date(session.start_date), 'MMMM d, yyyy')}
           {session.end_date && (
             <span className="ml-4">
@@ -455,7 +456,7 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
       </div>
 
       {session.description && (
-        <p className="text-slate-300 text-sm mb-4 line-clamp-2">{session.description}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{session.description}</p>
       )}
 
       {/* Room Info Section */}
@@ -478,24 +479,24 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-xs text-slate-400 mb-1">Teacher Room Code</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Teacher Room Code</p>
               <div className="flex items-center space-x-2">
-                <code className="text-xs bg-slate-800 px-2 py-1 rounded text-white">{session.teacher_room_code}</code>
+                <code className="text-xs bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-white">{session.teacher_room_code}</code>
                 <button
                   onClick={() => copyToClipboard(session.teacher_room_code, 'teacher')}
-                  className="text-slate-400 hover:text-white"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
                   {copiedCode === 'teacher' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
             </div>
             <div>
-              <p className="text-xs text-slate-400 mb-1">Student Room Code</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Student Room Code</p>
               <div className="flex items-center space-x-2">
-                <code className="text-xs bg-slate-800 px-2 py-1 rounded text-white">{session.student_room_code}</code>
+                <code className="text-xs bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-white">{session.student_room_code}</code>
                 <button
                   onClick={() => copyToClipboard(session.student_room_code, 'student')}
-                  className="text-slate-400 hover:text-white"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
                   {copiedCode === 'student' ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
                 </button>
@@ -505,7 +506,7 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
         </div>
       )}
 
-      <div className="flex items-center flex-wrap gap-2 pt-4 border-t border-slate-700">
+      <div className="flex items-center flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
         {!hasRoom && (
           <button
             onClick={handleCreateRoom}
@@ -586,7 +587,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
       await onSuccess();
     } catch (error: any) {
       console.error('Error creating group session:', error);
-      alert('Failed to create group session: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to create group session: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -594,35 +595,35 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Create Group Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create Group Session</h3>
+          <button onClick={onClose} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Session Name</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Session Name</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               placeholder="Beginner Quran Group"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Subject</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Subject</label>
               <select
                 required
                 value={formData.subject_id}
                 onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Select Subject</option>
                 {subjects.map((subject: any) => (
@@ -632,12 +633,12 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Teacher</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Teacher</label>
               <select
                 required
                 value={formData.teacher_id}
                 onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Select Teacher</option>
                 {teachers.map((teacher) => (
@@ -650,7 +651,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Level</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Level</label>
             <div className="flex space-x-4">
               {['beginner', 'intermediate', 'advanced'].map((level) => (
                 <label key={level} className="flex items-center space-x-2">
@@ -660,16 +661,16 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
                     value={level}
                     checked={formData.level === level}
                     onChange={(e) => setFormData({ ...formData, level: e.target.value as any })}
-                    className="w-4 h-4 text-cyan-500"
+                    className="w-4 h-4 text-emerald-500"
                   />
-                  <span className="text-white capitalize">{level}</span>
+                  <span className="text-gray-900 dark:text-white capitalize">{level}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Max Participants</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Max Participants</label>
             <input
               type="number"
               required
@@ -677,19 +678,19 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
               max="20"
               value={formData.max_participants}
               onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          <div className="border border-slate-700 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-slate-300 mb-3">Schedule</h4>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Schedule</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Day</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Day</label>
                 <select
                   value={formData.schedule_day}
                   onChange={(e) => setFormData({ ...formData, schedule_day: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <option key={day} value={day}>{day}</option>
@@ -697,22 +698,22 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Time</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Time</label>
                 <input
                   type="time"
                   required
                   value={formData.schedule_time}
                   onChange={(e) => setFormData({ ...formData, schedule_time: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-sm text-slate-400 mb-2">Duration (minutes)</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Duration (minutes)</label>
               <select
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="30">30 minutes</option>
                 <option value="45">45 minutes</option>
@@ -725,57 +726,57 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Start Date</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
               <input
                 type="date"
                 required
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">End Date (optional)</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">End Date (optional)</label>
               <input
                 type="date"
                 value={formData.end_date}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
-          <div className="border border-slate-700 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-slate-300 mb-3">Pricing</h4>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Pricing</h4>
             <div className="space-y-3">
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
                   checked={formData.is_free}
                   onChange={() => setFormData({ ...formData, is_free: true, price_per_session: 0 })}
-                  className="w-4 h-4 text-cyan-500"
+                  className="w-4 h-4 text-emerald-500"
                 />
-                <span className="text-white">Free</span>
+                <span className="text-gray-900 dark:text-white">Free</span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
                   checked={!formData.is_free}
                   onChange={() => setFormData({ ...formData, is_free: false })}
-                  className="w-4 h-4 text-cyan-500"
+                  className="w-4 h-4 text-emerald-500"
                 />
-                <span className="text-white">Paid</span>
+                <span className="text-gray-900 dark:text-white">Paid</span>
               </label>
               {!formData.is_free && (
                 <div className="ml-6">
-                  <label className="block text-sm text-slate-400 mb-2">Price per session (£)</label>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Price per session (£)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={formData.price_per_session / 100}
                     onChange={(e) => setFormData({ ...formData, price_per_session: Math.round(parseFloat(e.target.value) * 100) })}
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               )}
@@ -783,12 +784,12 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Description</label>
             <textarea
               rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               placeholder="Describe the group session, learning objectives, and requirements..."
             ></textarea>
           </div>
@@ -797,14 +798,14 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
             >
               {loading ? 'Creating...' : 'Create Session'}
             </button>
@@ -849,7 +850,7 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
       await onSuccess();
     } catch (error) {
       console.error('Error updating group session:', error);
-      alert('Failed to update group session');
+      toast.error('Failed to update group session');
     } finally {
       setLoading(false);
     }
@@ -857,32 +858,32 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Edit Group Session</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Group Session</h3>
+          <button onClick={onClose} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Session Name</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Session Name</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="open">Open</option>
               <option value="closed">Closed</option>
@@ -891,7 +892,7 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Max Participants</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Max Participants</label>
             <input
               type="number"
               required
@@ -899,17 +900,17 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
               max="20"
               value={formData.max_participants}
               onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Description</label>
             <textarea
               rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             ></textarea>
           </div>
 
@@ -917,7 +918,7 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
@@ -995,7 +996,7 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
       await onUpdate();
     } catch (error) {
       console.error('Error removing participant:', error);
-      alert('Failed to remove participant');
+      toast.error('Failed to remove participant');
     }
   }
 
@@ -1024,7 +1025,7 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
       setSelectedStudent('');
     } catch (error) {
       console.error('Error adding student:', error);
-      alert('Failed to add student');
+      toast.error('Failed to add student');
     }
   }
 
@@ -1032,34 +1033,34 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Participants ({participants.length}/{session.max_participants})
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {loading ? (
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         ) : (
           <>
             {/* Current Students */}
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-slate-300 mb-3">Current Students:</h4>
+              <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Current Students:</h4>
               {participants.length === 0 ? (
-                <p className="text-slate-400 text-sm">No students enrolled yet</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">No students enrolled yet</p>
               ) : (
                 <div className="space-y-2">
                   {participants.map((participant, index) => (
-                    <div key={participant.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-700 rounded-lg p-3">
+                    <div key={participant.id} className="flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex items-center space-x-3">
-                        <span className="text-slate-400 text-sm">{index + 1}.</span>
+                        <span className="text-gray-600 dark:text-gray-400 text-sm">{index + 1}.</span>
                         <div>
-                          <p className="text-white text-sm">{(participant.student as any)?.full_name}</p>
-                          <p className="text-slate-400 text-xs">{(participant.student as any)?.email}</p>
+                          <p className="text-gray-900 dark:text-white text-sm">{(participant.student as any)?.full_name}</p>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">{(participant.student as any)?.email}</p>
                         </div>
                       </div>
                       <button
@@ -1075,8 +1076,8 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
             </div>
 
             {/* Open Spots */}
-            <div className="mb-6 p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
-              <p className="text-cyan-400 text-sm">
+            <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <p className="text-emerald-600 text-sm">
                 Open Spots: <span className="font-bold">{openSpots}</span>
               </p>
             </div>
@@ -1086,7 +1087,7 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
               <button
                 onClick={() => setShowAddStudent(true)}
                 disabled={openSpots === 0}
-                className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition flex items-center justify-center space-x-2 mb-3"
+                className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition flex items-center justify-center space-x-2 mb-3"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Add Student</span>
@@ -1096,7 +1097,7 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
                 <select
                   value={selectedStudent}
                   onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 mb-2"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 mb-2"
                 >
                   <option value="">Select Student</option>
                   {students.filter(s => !participants.find(p => p.student_id === s.id)).map((student) => (
@@ -1111,14 +1112,14 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
                       setShowAddStudent(false);
                       setSelectedStudent('');
                     }}
-                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                    className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleAddStudent}
                     disabled={!selectedStudent}
-                    className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg transition"
+                    className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
                   >
                     Add
                   </button>
@@ -1134,7 +1135,7 @@ function ManageParticipantsModal({ session, onClose, onUpdate }: any) {
               </button>
               <button
                 onClick={onClose}
-                className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition"
               >
                 Close
               </button>

@@ -15,6 +15,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 
 interface PlatformSettings {
   // General
@@ -144,7 +145,7 @@ export default function AdminSettings() {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings. The settings table may not exist yet.');
+      toast.error('Failed to save settings. The settings table may not exist yet.');
     } finally {
       setSaving(false);
     }
@@ -166,8 +167,8 @@ export default function AdminSettings() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading settings...</p>
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400">Loading settings...</p>
         </div>
       </div>
     );
@@ -179,14 +180,14 @@ export default function AdminSettings() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Platform Settings</h1>
-            <p className="text-slate-400">Configure platform-wide settings and defaults</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Platform Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400">Configure platform-wide settings and defaults</p>
           </div>
           <div className="flex items-center space-x-3">
             {hasChanges && (
               <button
                 onClick={resetSettings}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Reset</span>
@@ -197,8 +198,8 @@ export default function AdminSettings() {
               disabled={!hasChanges || saving}
               className={`px-6 py-2 rounded-lg font-semibold transition flex items-center space-x-2 ${
                 hasChanges
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
               }`}
             >
               {saving ? (
@@ -243,7 +244,7 @@ export default function AdminSettings() {
                 type="text"
                 value={settings.platform_name}
                 onChange={(e) => updateSetting('platform_name', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </SettingField>
 
@@ -252,7 +253,7 @@ export default function AdminSettings() {
                 type="email"
                 value={settings.support_email}
                 onChange={(e) => updateSetting('support_email', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </SettingField>
 
@@ -280,9 +281,9 @@ export default function AdminSettings() {
                   value={settings.default_lesson_price_per_credit}
                   onChange={(e) => updateSetting('default_lesson_price_per_credit', parseInt(e.target.value) || 1)}
                   min={1}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">credits per lesson</span>
+                <span className="text-gray-500 dark:text-gray-400">credits per lesson</span>
               </div>
             </SettingField>
 
@@ -293,9 +294,9 @@ export default function AdminSettings() {
                   value={settings.referral_reward_credits}
                   onChange={(e) => updateSetting('referral_reward_credits', parseInt(e.target.value) || 0)}
                   min={0}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">credits</span>
+                <span className="text-gray-500 dark:text-gray-400">credits</span>
               </div>
             </SettingField>
 
@@ -306,9 +307,9 @@ export default function AdminSettings() {
                   value={settings.min_credits_purchase}
                   onChange={(e) => updateSetting('min_credits_purchase', parseInt(e.target.value) || 1)}
                   min={1}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">credits</span>
+                <span className="text-gray-500 dark:text-gray-400">credits</span>
               </div>
             </SettingField>
           </div>
@@ -325,7 +326,7 @@ export default function AdminSettings() {
               <select
                 value={settings.default_lesson_duration}
                 onChange={(e) => updateSetting('default_lesson_duration', parseInt(e.target.value))}
-                className="w-40 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-40 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value={30}>30 minutes</option>
                 <option value={45}>45 minutes</option>
@@ -342,9 +343,9 @@ export default function AdminSettings() {
                   onChange={(e) => updateSetting('max_booking_days_ahead', parseInt(e.target.value) || 7)}
                   min={1}
                   max={90}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">days</span>
+                <span className="text-gray-500 dark:text-gray-400">days</span>
               </div>
             </SettingField>
 
@@ -355,9 +356,9 @@ export default function AdminSettings() {
                   value={settings.cancellation_window_hours}
                   onChange={(e) => updateSetting('cancellation_window_hours', parseInt(e.target.value) || 24)}
                   min={1}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">hours</span>
+                <span className="text-gray-500 dark:text-gray-400">hours</span>
               </div>
             </SettingField>
 
@@ -392,9 +393,9 @@ export default function AdminSettings() {
                   onChange={(e) => updateSetting('lesson_reminder_hours', parseInt(e.target.value) || 2)}
                   min={1}
                   max={48}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">hours before</span>
+                <span className="text-gray-500 dark:text-gray-400">hours before</span>
               </div>
             </SettingField>
           </div>
@@ -409,10 +410,10 @@ export default function AdminSettings() {
           <div className="space-y-6">
             <SettingField label="Video Provider" description="Service used for video calls">
               <div className="flex items-center space-x-4">
-                <span className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg border border-cyan-500/30 font-medium">
+                <span className="px-4 py-2 bg-emerald-500/20 text-emerald-600 rounded-lg border border-emerald-500/30 font-medium">
                   100ms
                 </span>
-                <span className="text-slate-500 text-sm">Currently the only supported provider</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Currently the only supported provider</span>
               </div>
             </SettingField>
 
@@ -431,9 +432,9 @@ export default function AdminSettings() {
                   onChange={(e) => updateSetting('recording_retention_days', parseInt(e.target.value) || 30)}
                   min={7}
                   max={365}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">days</span>
+                <span className="text-gray-500 dark:text-gray-400">days</span>
               </div>
             </SettingField>
           </div>
@@ -453,9 +454,9 @@ export default function AdminSettings() {
                   value={settings.xp_per_lesson_completed}
                   onChange={(e) => updateSetting('xp_per_lesson_completed', parseInt(e.target.value) || 0)}
                   min={0}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">XP</span>
+                <span className="text-gray-500 dark:text-gray-400">XP</span>
               </div>
             </SettingField>
 
@@ -466,9 +467,9 @@ export default function AdminSettings() {
                   value={settings.xp_per_streak_day}
                   onChange={(e) => updateSetting('xp_per_streak_day', parseInt(e.target.value) || 0)}
                   min={0}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">XP per day</span>
+                <span className="text-gray-500 dark:text-gray-400">XP per day</span>
               </div>
             </SettingField>
 
@@ -479,9 +480,9 @@ export default function AdminSettings() {
                   value={settings.daily_login_reward_xp}
                   onChange={(e) => updateSetting('daily_login_reward_xp', parseInt(e.target.value) || 0)}
                   min={0}
-                  className="w-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-24 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <span className="text-slate-400">XP</span>
+                <span className="text-gray-500 dark:text-gray-400">XP</span>
               </div>
             </SettingField>
           </div>
@@ -489,11 +490,11 @@ export default function AdminSettings() {
       </div>
 
       {/* Info Box */}
-      <div className="mt-8 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+      <div className="mt-8 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
         <div className="flex items-start space-x-3">
-          <Info className="w-5 h-5 text-cyan-400 mt-0.5" />
+          <Info className="w-5 h-5 text-emerald-600 mt-0.5" />
           <div>
-            <p className="text-slate-300 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               These settings affect the entire platform. Changes will take effect immediately after saving.
               Some settings may require users to refresh their browsers to see the changes.
             </p>
@@ -520,35 +521,35 @@ function SettingsSection({ section, expanded, onToggle, children }: SettingsSect
     purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400' },
     amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400' },
     rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400' },
-    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400' }
+    cyan: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-600' }
   };
 
   const colors = colorClasses[section.color];
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-700/30 transition"
+        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition"
       >
         <div className="flex items-center space-x-4">
           <div className={`w-10 h-10 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
             <section.icon className={`w-5 h-5 ${colors.text}`} />
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-white">{section.title}</h3>
-            <p className="text-sm text-slate-400">{section.description}</p>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{section.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
           </div>
         </div>
         {expanded ? (
-          <ChevronUp className="w-5 h-5 text-slate-400" />
+          <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-400" />
+          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         )}
       </button>
 
       {expanded && (
-        <div className="px-6 pb-6 pt-2 border-t border-slate-700/50">
+        <div className="px-6 pb-6 pt-2 border-t border-gray-200 dark:border-gray-700">
           {children}
         </div>
       )}
@@ -566,8 +567,8 @@ function SettingField({ label, description, children }: SettingFieldProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div className="flex-1">
-        <label className="font-medium text-white">{label}</label>
-        <p className="text-sm text-slate-400">{description}</p>
+        <label className="font-medium text-gray-900 dark:text-white">{label}</label>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
       </div>
       <div className="flex-shrink-0">
         {children}
@@ -590,8 +591,8 @@ function ToggleSwitch({ enabled, onChange, danger }: ToggleSwitchProps) {
         enabled
           ? danger
             ? 'bg-red-500'
-            : 'bg-cyan-500'
-          : 'bg-slate-600'
+            : 'bg-emerald-500'
+          : 'bg-gray-300 dark:bg-gray-600'
       }`}
     >
       <div

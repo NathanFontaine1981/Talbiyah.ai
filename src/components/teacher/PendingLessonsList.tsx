@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { Clock, User, Calendar, AlertCircle } from 'lucide-react';
 import AcknowledgeLessonModal from './AcknowledgeLessonModal';
@@ -89,7 +90,7 @@ export default function PendingLessonsList({ teacherId }: PendingLessonsListProp
       fetchPendingLessons();
     } catch (error) {
       console.error('Error dismissing lesson:', error);
-      alert('Failed to dismiss notification. Please try again.');
+      toast.error('Failed to dismiss notification. Please try again.');
     }
   };
 

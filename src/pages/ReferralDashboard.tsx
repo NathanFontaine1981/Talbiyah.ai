@@ -175,12 +175,48 @@ export default function ReferralDashboard() {
 
   async function copyReferralLink() {
     const url = getReferralUrl();
+    if (!url) {
+      console.error('No referral URL to copy');
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(url);
+      // Try the modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
+      // Last resort fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error('Fallback copy failed:', e);
+      }
+      document.body.removeChild(textArea);
     }
   }
 
@@ -204,9 +240,9 @@ export default function ReferralDashboard() {
   const getTierColor = (tierName: string) => {
     const colors: Record<string, string> = {
       'Bronze': 'from-amber-600 to-amber-700',
-      'Silver': 'from-slate-400 to-slate-600',
+      'Silver': 'from-gray-400 to-gray-600',
       'Gold': 'from-yellow-400 to-yellow-600',
-      'Platinum': 'from-cyan-400 to-cyan-600',
+      'Platinum': 'from-emerald-400 to-emerald-600',
       'Diamond': 'from-purple-500 to-purple-700'
     };
     return colors[tierName] || 'from-gray-400 to-gray-600';
@@ -214,14 +250,14 @@ export default function ReferralDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
       <div className="bg-gradient-to-r from-cyan-600 to-blue-600 py-12 px-6">
         <div className="max-w-7xl mx-auto">
@@ -235,10 +271,10 @@ export default function ReferralDashboard() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Referral Dashboard</h1>
-              <p className="text-cyan-100 mb-1">Share the gift of Islamic learning and earn free lesson hours</p>
+              <h1 className="text-4xl font-bold text-white mb-2">Referral Dashboard</h1>
+              <p className="text-cyan-100 mb-1">Share the gift of Islamic learning and earn free credits</p>
               <p className="text-cyan-200/80 text-sm">
-                🎁 Initial reward: 1-5h • Ongoing: 1-3h per 10h they complete • Climb tiers for more!
+                🎁 Initial reward: 1-5 credits • Ongoing: 1-3 credits per 10 lessons • Climb tiers for more!
               </p>
             </div>
 
@@ -260,36 +296,36 @@ export default function ReferralDashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
-              <Users className="w-6 h-6 text-cyan-400" />
-              <span className="text-slate-400">Total Referrals</span>
+              <Users className="w-6 h-6 text-emerald-600" />
+              <span className="text-gray-500">Total Referrals</span>
             </div>
             <p className="text-4xl font-bold">{stats?.total_referrals || 0}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
               <Check className="w-6 h-6 text-emerald-400" />
-              <span className="text-slate-400">Completed</span>
+              <span className="text-gray-500">Completed</span>
             </div>
             <p className="text-4xl font-bold text-emerald-400">{stats?.completed_referrals || 0}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
               <TrendingUp className="w-6 h-6 text-amber-400" />
-              <span className="text-slate-400">Pending</span>
+              <span className="text-gray-500">Pending</span>
             </div>
             <p className="text-4xl font-bold text-amber-400">{stats?.pending_referrals || 0}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
               <Gift className="w-6 h-6 text-purple-400" />
-              <span className="text-slate-400">Free Hours Earned</span>
+              <span className="text-gray-500">Credits Earned</span>
             </div>
-            <p className="text-4xl font-bold text-purple-400">{stats?.total_rewards.toFixed(1) || '0.0'}h</p>
+            <p className="text-4xl font-bold text-purple-400">{stats?.total_rewards.toFixed(0) || '0'}</p>
           </div>
         </div>
 
@@ -297,7 +333,7 @@ export default function ReferralDashboard() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Current Tier & Progress */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-2xl font-bold mb-6 flex items-center space-x-2">
                 <Crown className="w-6 h-6 text-amber-400" />
                 <span>Your Tier Progress</span>
@@ -310,16 +346,16 @@ export default function ReferralDashboard() {
                       <span className="text-5xl">{stats.current_tier.badge_icon}</span>
                       <div>
                         <h3 className="text-3xl font-bold">{stats.current_tier.tier_name}</h3>
-                        <p className="text-white/90 text-xl font-semibold">
-                          {stats.current_tier.initial_reward_hours}h initial + {stats.current_tier.ongoing_reward_rate}h per 10h
+                        <p className="text-gray-900/90 text-xl font-semibold">
+                          {stats.current_tier.initial_reward_hours} credits initial + {stats.current_tier.ongoing_reward_rate} per 10 lessons
                         </p>
-                        <p className="text-white/60 text-sm">
-                          Free lesson hours for you when they complete lessons
+                        <p className="text-gray-900/60 text-sm">
+                          Free credits for you when they complete lessons
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-white/60">Tier Benefits</p>
+                      <p className="text-sm text-gray-900/60">Tier Benefits</p>
                       <p className="text-lg font-semibold">{stats.current_tier.tier_benefits.length} Active</p>
                     </div>
                   </div>
@@ -329,23 +365,23 @@ export default function ReferralDashboard() {
               {stats?.next_tier && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-400">Progress to {stats.next_tier.tier_name}</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-gray-500">Progress to {stats.next_tier.tier_name}</span>
+                    <span className="text-gray-900 font-semibold">
                       {stats.completed_referrals} / {stats.next_tier.min_referrals}
                     </span>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-4 mb-4 overflow-hidden">
+                  <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-emerald-500 to-blue-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${stats.progress_to_next_tier}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <p className="text-slate-400">
+                    <p className="text-gray-500">
                       {stats.next_tier.min_referrals - stats.completed_referrals} more referrals to unlock {stats.next_tier.tier_name}
                     </p>
                     <p className="text-emerald-400 font-semibold">
-                      → {stats.next_tier.initial_reward_hours}h initial + {stats.next_tier.ongoing_reward_rate}h per 10h
+                      → {stats.next_tier.initial_reward_hours} credits + {stats.next_tier.ongoing_reward_rate} per 10 lessons
                     </p>
                   </div>
                 </div>
@@ -355,22 +391,22 @@ export default function ReferralDashboard() {
             {/* Share Section */}
             <div className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 rounded-2xl p-8 border border-emerald-500/30">
               <h2 className="text-2xl font-bold mb-4">Share Your Referral Link</h2>
-              <p className="text-slate-300 mb-4">
+              <p className="text-gray-600 mb-4">
                 Invite friends and family to join Talbiyah.ai and earn rewards!
               </p>
-              <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-700/50">
-                <p className="text-sm text-slate-300 mb-2">
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                <p className="text-sm text-gray-600 mb-2">
                   <strong className="text-emerald-400">How it works:</strong>
                 </p>
-                <ol className="text-sm text-slate-300 space-y-1.5 ml-4 list-decimal">
+                <ol className="text-sm text-gray-600 space-y-1.5 ml-4 list-decimal">
                   <li>Friend signs up using your link</li>
                   <li>They book and pay for their first lesson</li>
                   <li>They complete the lesson (attend + finish)</li>
-                  <li>You earn {stats?.current_tier?.initial_reward_hours || 1}h free lessons! 🎉</li>
-                  <li>For every 10h they complete, you earn {stats?.current_tier?.ongoing_reward_rate || 1}h more!</li>
+                  <li>You earn {stats?.current_tier?.initial_reward_hours || 1} free credits! 🎉</li>
+                  <li>For every 10 lessons they complete, you earn {stats?.current_tier?.ongoing_reward_rate || 1} more credits!</li>
                 </ol>
-                <p className="text-xs text-slate-400 mt-3">
-                  💡 Initial reward after first lesson + ongoing rewards every 10h milestone
+                <p className="text-xs text-gray-500 mt-3">
+                  💡 Initial reward after first lesson + ongoing rewards every 10 lessons
                 </p>
               </div>
 
@@ -379,11 +415,11 @@ export default function ReferralDashboard() {
                   type="text"
                   value={getReferralUrl()}
                   readOnly
-                  className="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-300"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600"
                 />
                 <button
                   onClick={copyReferralLink}
-                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition flex items-center space-x-2"
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-lg font-semibold transition flex items-center space-x-2"
                 >
                   {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                   <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -393,14 +429,14 @@ export default function ReferralDashboard() {
               <div className="relative">
                 <button
                   onClick={() => setShareMenuOpen(!shareMenuOpen)}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-gray-900 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
                 >
                   <Share2 className="w-5 h-5" />
                   <span>Share on Social Media</span>
                 </button>
 
                 {shareMenuOpen && (
-                  <div className="absolute top-full mt-2 left-0 right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-4 z-10">
+                  <div className="absolute top-full mt-2 left-0 right-0 bg-gray-100 border border-gray-200 rounded-lg shadow-xl p-4 z-10">
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => shareVia('facebook')}
@@ -425,7 +461,7 @@ export default function ReferralDashboard() {
                       </button>
                       <button
                         onClick={() => shareVia('email')}
-                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-slate-600 hover:bg-slate-700 rounded-lg transition"
+                        className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-600 hover:bg-gray-200 rounded-lg transition"
                       >
                         <Mail className="w-5 h-5" />
                         <span>Email</span>
@@ -437,10 +473,10 @@ export default function ReferralDashboard() {
             </div>
 
             {/* All Tiers Overview */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-2xl font-bold mb-4">All Tiers & Rewards</h2>
-              <p className="text-slate-400 text-sm mb-6">
-                Earn free lesson hours with our hybrid reward system: initial reward + ongoing rewards every 10 hours!
+              <p className="text-gray-500 text-sm mb-6">
+                Earn free credits with our hybrid reward system: initial reward + ongoing rewards every 10 lessons!
               </p>
               <div className="space-y-4">
                 {tiers.map((tier) => {
@@ -450,7 +486,7 @@ export default function ReferralDashboard() {
                       className={`p-6 rounded-xl border-2 transition ${
                         stats?.current_tier?.id === tier.id
                           ? `bg-gradient-to-r ${getTierColor(tier.tier_name)} border-white/30`
-                          : 'bg-slate-800/50 border-slate-700/50'
+                          : 'bg-gray-50 border-gray-200'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
@@ -458,15 +494,15 @@ export default function ReferralDashboard() {
                           <span className="text-4xl">{tier.badge_icon}</span>
                           <div>
                             <h3 className="text-xl font-bold">{tier.tier_name}</h3>
-                            <p className="text-sm text-white/70">
+                            <p className="text-sm text-gray-900/70">
                               {tier.min_referrals} - {tier.max_referrals || '∞'} referrals
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-emerald-400">{tier.initial_reward_hours}h initial</p>
-                          <p className="text-lg font-semibold text-cyan-400">+{tier.ongoing_reward_rate}h per 10h</p>
-                          <p className="text-xs text-white/50 mt-1">ongoing rewards</p>
+                          <p className="text-2xl font-bold text-emerald-400">{tier.initial_reward_hours} credits</p>
+                          <p className="text-lg font-semibold text-emerald-600">+{tier.ongoing_reward_rate} per 10 lessons</p>
+                          <p className="text-xs text-gray-900/50 mt-1">ongoing rewards</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -489,12 +525,12 @@ export default function ReferralDashboard() {
           {/* Right Column */}
           <div className="space-y-8">
             {/* Achievements */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h2 className="text-xl font-bold mb-4 flex items-center space-x-2">
                 <Award className="w-6 h-6 text-amber-400" />
                 <span>Achievements</span>
               </h2>
-              <p className="text-sm text-slate-400 mb-4">
+              <p className="text-sm text-gray-500 mb-4">
                 {userAchievements.length} of {achievements.length} unlocked
               </p>
 
@@ -507,23 +543,23 @@ export default function ReferralDashboard() {
                       className={`p-4 rounded-lg border transition ${
                         earned
                           ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500/50'
-                          : 'bg-slate-800/30 border-slate-700/50 opacity-60'
+                          : 'bg-white border-gray-200 opacity-60'
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-3xl">{achievement.achievement_icon}</span>
                         <div className="flex-1">
                           <h3 className="font-semibold">{achievement.achievement_name}</h3>
-                          <p className="text-xs text-slate-400">{achievement.achievement_description}</p>
+                          <p className="text-xs text-gray-500">{achievement.achievement_description}</p>
                           <div className="flex items-center space-x-2 mt-2 text-xs">
                             {achievement.points_reward > 0 && (
-                              <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded">
+                              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-600 rounded">
                                 +{achievement.points_reward} pts
                               </span>
                             )}
                             {achievement.credits_reward > 0 && (
                               <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">
-                                {achievement.credits_reward}h free
+                                +{achievement.credits_reward} credits
                               </span>
                             )}
                           </div>
@@ -537,27 +573,27 @@ export default function ReferralDashboard() {
             </div>
 
             {/* Recent Referrals */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h2 className="text-xl font-bold mb-4">Recent Referrals</h2>
               <div className="space-y-3">
                 {stats?.recent_referrals.length === 0 && (
-                  <p className="text-slate-400 text-center py-8">No referrals yet. Start sharing!</p>
+                  <p className="text-gray-500 text-center py-8">No referrals yet. Start sharing!</p>
                 )}
                 {stats?.recent_referrals.map((referral) => (
-                  <div key={referral.id} className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                  <div key={referral.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-600 flex items-center justify-center text-gray-900 font-bold">
                       {referral.referred_user?.full_name?.[0] || '?'}
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold">{referral.referred_user?.full_name || 'New User'}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-gray-500">
                         {new Date(referral.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       referral.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
                       referral.status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-cyan-500/20 text-cyan-400'
+                      'bg-emerald-500/20 text-emerald-600'
                     }`}>
                       {referral.status}
                     </span>
@@ -569,7 +605,7 @@ export default function ReferralDashboard() {
             {/* View Leaderboard */}
             <button
               onClick={() => navigate('/referral/leaderboard')}
-              className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+              className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-gray-900 rounded-xl font-semibold transition flex items-center justify-center space-x-2"
             >
               <Trophy className="w-5 h-5" />
               <span>View Leaderboard</span>

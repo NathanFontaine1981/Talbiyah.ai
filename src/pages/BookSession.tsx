@@ -4,6 +4,7 @@ import { ChevronLeft, Check, Star, Clock, User, ShoppingCart } from 'lucide-reac
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import TalbiyahBot from '../components/TalbiyahBot';
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 
@@ -245,13 +246,13 @@ export default function BookSession() {
       }
     } catch (error) {
       console.error('Error updating cart:', error);
-      alert('Failed to update cart. Please try again.');
+      toast.error('Failed to update cart. Please try again.');
     }
   }
 
   async function applyPromoCode() {
     if (!promoCode.trim()) {
-      alert('Please enter a promo code');
+      toast.warning('Please enter a promo code');
       return;
     }
 
@@ -265,26 +266,26 @@ export default function BookSession() {
         .single();
 
       if (error || !promoData) {
-        alert('Invalid or expired promo code');
+        toast.error('Invalid or expired promo code');
         return;
       }
 
       // Check if promo code has uses remaining
       if (promoData.max_uses && promoData.current_uses >= promoData.max_uses) {
-        alert('This promo code has reached its usage limit');
+        toast.error('This promo code has reached its usage limit');
         return;
       }
 
       // Check expiry date
       if (promoData.expires_at && new Date(promoData.expires_at) < new Date()) {
-        alert('This promo code has expired');
+        toast.error('This promo code has expired');
         return;
       }
 
       setPromoApplied(true);
     } catch (err) {
       console.error('Error validating promo code:', err);
-      alert('Failed to validate promo code. Please try again.');
+      toast.error('Failed to validate promo code. Please try again.');
     }
   }
 
@@ -305,29 +306,29 @@ export default function BookSession() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => currentStep > 2 ? setCurrentStep(2) : navigate('/subjects')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back</span>
             </button>
 
-            <h1 className="text-xl font-bold text-white">Book a Session</h1>
+            <h1 className="text-xl font-bold text-gray-900">Book a Session</h1>
 
             <div className="w-20"></div>
           </div>
@@ -337,10 +338,10 @@ export default function BookSession() {
       <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
         {/* Subject Header */}
         {subject && (
-          <div className="mb-6 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl p-4 border border-cyan-500/30">
+          <div className="mb-6 bg-emerald-50 rounded-xl p-4 border border-emerald-200">
             <div className="flex items-center justify-center space-x-2">
-              <span className="text-slate-400 text-sm">Booking:</span>
-              <span className="text-cyan-400 font-bold text-lg">{subject.name}</span>
+              <span className="text-gray-500 text-sm">Booking:</span>
+              <span className="text-emerald-600 font-bold text-lg">{subject.name}</span>
             </div>
           </div>
         )}
@@ -353,17 +354,17 @@ export default function BookSession() {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition ${
                       step.completed
-                        ? 'bg-cyan-500 text-white'
+                        ? 'bg-emerald-500 text-white'
                         : currentStep === step.number
-                        ? 'bg-cyan-500/20 text-cyan-400 border-2 border-cyan-500'
-                        : 'bg-slate-800 text-slate-500 border-2 border-slate-700'
+                        ? 'bg-emerald-50 text-emerald-600 border-2 border-emerald-500'
+                        : 'bg-gray-100 text-gray-400 border-2 border-gray-200'
                     }`}
                   >
                     {step.completed ? <Check className="w-6 h-6" /> : step.number}
                   </div>
                   <p
                     className={`mt-2 text-sm font-medium ${
-                      currentStep >= step.number ? 'text-white' : 'text-slate-500'
+                      currentStep >= step.number ? 'text-gray-900' : 'text-gray-400'
                     }`}
                   >
                     {step.label}
@@ -372,7 +373,7 @@ export default function BookSession() {
                 {index < steps.length - 1 && (
                   <div
                     className={`w-24 h-0.5 mx-4 ${
-                      step.completed ? 'bg-cyan-500' : 'bg-slate-700'
+                      step.completed ? 'bg-emerald-500' : 'bg-gray-200'
                     }`}
                   />
                 )}
@@ -384,28 +385,28 @@ export default function BookSession() {
         <div className={`grid grid-cols-1 gap-8 ${currentStep === 3 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           <div className={currentStep === 3 ? 'lg:col-span-3' : 'lg:col-span-2'}>
             {currentStep === 1 && subject && (
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
-                <h2 className="text-2xl font-bold text-white mb-4">Selected Subject</h2>
-                <p className="text-lg text-cyan-400">{subject.name}</p>
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Selected Subject</h2>
+                <p className="text-lg text-emerald-600">{subject.name}</p>
               </div>
             )}
 
             {currentStep === 2 && (
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-8 border border-slate-700/50">
-                <h2 className="text-2xl font-bold text-white mb-6">Choose Your Teacher</h2>
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose Your Teacher</h2>
 
                 {teachers.length === 0 ? (
-                  <p className="text-slate-400 text-center py-8">No teachers available for this subject</p>
+                  <p className="text-gray-500 text-center py-8">No teachers available for this subject</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {teachers.map((teacher) => (
                       <button
                         key={teacher.id}
                         onClick={() => handleSelectTeacher(teacher)}
-                        className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:border-cyan-500/50 transition text-left group"
+                        className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-emerald-500 hover:shadow-md transition text-left group"
                       >
                         <div className="flex items-start space-x-4 mb-4">
-                          <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-600">
+                          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden border-2 border-emerald-200">
                             {teacher.avatar_url ? (
                               <img
                                 src={teacher.avatar_url}
@@ -413,26 +414,26 @@ export default function BookSession() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <User className="w-8 h-8 text-slate-400" />
+                              <User className="w-8 h-8 text-emerald-600" />
                             )}
                           </div>
 
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition mb-1">
                               {teacher.full_name}
                             </h3>
                             <div className="flex items-center space-x-1 mb-2">
                               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                              <span className="text-sm text-slate-300">{teacher.rating.toFixed(1)}</span>
+                              <span className="text-sm text-gray-600">{teacher.rating.toFixed(1)}</span>
                             </div>
-                            <p className="text-2xl font-bold text-cyan-400">
-                              £{teacher.hourly_rate.toFixed(2)}<span className="text-sm text-slate-400">/hour</span>
+                            <p className="text-2xl font-bold text-emerald-600">
+                              £{teacher.hourly_rate.toFixed(2)}<span className="text-sm text-gray-500">/hour</span>
                             </p>
                           </div>
                         </div>
 
                         {teacher.bio && (
-                          <p className="text-sm text-slate-400 line-clamp-2">{teacher.bio}</p>
+                          <p className="text-sm text-gray-500 line-clamp-2">{teacher.bio}</p>
                         )}
                       </button>
                     ))}
@@ -443,65 +444,65 @@ export default function BookSession() {
 
             {currentStep === 3 && selectedTeacher && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50">
-                  <h2 className="text-xl font-bold text-white mb-4">Session Duration</h2>
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Session Duration</h2>
 
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => setDuration(30)}
                       className={`p-4 rounded-xl border-2 transition ${
                         duration === 30
-                          ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
-                          : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">30 Minutes</p>
                       <p className="text-xl font-bold mt-1">£7.50</p>
-                      <p className="text-xs text-slate-500 mt-2">30-min slots</p>
+                      <p className="text-xs text-gray-400 mt-2">30-min slots</p>
                     </button>
 
                     <button
                       onClick={() => setDuration(60)}
                       className={`p-4 rounded-xl border-2 transition ${
                         duration === 60
-                          ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
-                          : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">60 Minutes</p>
                       <p className="text-xl font-bold mt-1">£15.00</p>
-                      <p className="text-xs text-slate-500 mt-2">Hourly slots</p>
+                      <p className="text-xs text-gray-400 mt-2">Hourly slots</p>
                     </button>
                   </div>
 
-                  <div className="mt-4 p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
-                    <p className="text-xs text-slate-400">
+                  <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-xs text-gray-500">
                       {duration === 30
-                        ? '⏱️ Showing 30-minute intervals (9:00, 9:30, 10:00...)'
-                        : '⏱️ Showing hourly intervals (9:00, 10:00, 11:00...)'}
+                        ? 'Showing 30-minute intervals (9:00, 9:30, 10:00...)'
+                        : 'Showing hourly intervals (9:00, 10:00, 11:00...)'}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50">
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Select Time Slots</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Select Time Slots</h2>
 
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
-                        className="p-1.5 text-slate-400 hover:text-cyan-400 transition"
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 transition"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
-                      <span className="text-slate-300 font-medium text-sm">
+                      <span className="text-gray-700 font-medium text-sm">
                         {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
                       </span>
                       <button
                         onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
-                        className="p-1.5 text-slate-400 hover:text-cyan-400 transition"
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 transition"
                       >
                         <ChevronLeft className="w-4 h-4 rotate-180" />
                       </button>
@@ -511,14 +512,14 @@ export default function BookSession() {
                   {loadingSlots ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="text-center">
-                        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-slate-400 text-sm">Loading available time slots...</p>
+                        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-gray-500 text-sm">Loading available time slots...</p>
                       </div>
                     </div>
                   ) : timeSlots.length === 0 ? (
                     <div className="text-center py-12">
-                      <p className="text-slate-400 text-sm mb-2">No available slots for this week</p>
-                      <p className="text-slate-500 text-xs">Try selecting a different week or duration</p>
+                      <p className="text-gray-500 text-sm mb-2">No available slots for this week</p>
+                      <p className="text-gray-400 text-xs">Try selecting a different week or duration</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-7 gap-1">
@@ -527,16 +528,16 @@ export default function BookSession() {
 
                         return (
                           <div key={day.toISOString()} className="text-center">
-                            <p className="text-[10px] text-slate-500 font-medium mb-1">
+                            <p className="text-[10px] text-gray-400 font-medium mb-1">
                               {format(day, 'EEE')}
                             </p>
-                            <p className="text-xs text-white font-semibold mb-2">
+                            <p className="text-xs text-gray-900 font-semibold mb-2">
                               {format(day, 'd')}
                             </p>
 
                             <div className="space-y-1">
                               {daySlots.length === 0 ? (
-                                <p className="text-[10px] text-slate-600 py-2">No slots</p>
+                                <p className="text-[10px] text-gray-400 py-2">No slots</p>
                               ) : (
                                 daySlots.map((slot, idx) => {
                                   const isInCart = cartItems.some(item =>
@@ -548,12 +549,12 @@ export default function BookSession() {
                                       key={idx}
                                       onClick={() => handleSelectTimeSlot(slot)}
                                       disabled={!slot.available}
-                                      className={`w-full text-[10px] py-1.5 px-1 rounded transition ${
+                                      className={`w-full text-xs sm:text-[10px] py-2 sm:py-1.5 px-1 min-h-[36px] sm:min-h-0 rounded transition ${
                                         isInCart
-                                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 font-semibold'
+                                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold'
                                           : slot.available
-                                          ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30'
-                                          : 'bg-slate-800/30 text-slate-600 cursor-not-allowed'
+                                          ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
+                                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                       }`}
                                     >
                                       {format(slot.time, 'HH:mm')}
@@ -573,17 +574,17 @@ export default function BookSession() {
           </div>
 
           <div className={currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-1'}>
-            <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 sticky top-24">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-24">
               <div className="flex items-center space-x-2 mb-6">
-                <ShoppingCart className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-xl font-bold text-white">Shopping Cart</h3>
+                <ShoppingCart className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-xl font-bold text-gray-900">Shopping Cart</h3>
               </div>
 
               {cartItems.length === 0 ? (
                 <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                  <p className="text-slate-400 text-sm">Your cart is empty</p>
-                  <p className="text-slate-500 text-xs mt-1">Select time slots to add sessions</p>
+                  <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Your cart is empty</p>
+                  <p className="text-gray-400 text-xs mt-1">Select time slots to add sessions</p>
                 </div>
               ) : (
                 <>
@@ -591,59 +592,59 @@ export default function BookSession() {
                     {cartItems.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 relative group"
+                        className="bg-gray-50 rounded-lg p-4 border border-gray-200 relative group"
                       >
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded text-red-400 opacity-0 group-hover:opacity-100 transition"
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-500 opacity-0 group-hover:opacity-100 transition"
                           title="Remove from cart"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
-                        <p className="text-sm font-semibold text-white mb-1 pr-6">{item.subject_name}</p>
-                        <p className="text-xs text-slate-400 mb-2">with {item.teacher_name}</p>
+                        <p className="text-sm font-semibold text-gray-900 mb-1 pr-6">{item.subject_name}</p>
+                        <p className="text-xs text-gray-500 mb-2">with {item.teacher_name}</p>
                         <div className="flex items-center justify-between text-xs">
-                          <div className="text-slate-400">
+                          <div className="text-gray-500">
                             <p>{format(parseISO(item.scheduled_time), 'MMM d, yyyy')}</p>
                             <p>{format(parseISO(item.scheduled_time), 'h:mm a')} • {item.duration_minutes} min</p>
                           </div>
-                          <p className="text-cyan-400 font-bold">£{item.price.toFixed(2)}</p>
+                          <p className="text-emerald-600 font-bold">£{item.price.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="border-t border-slate-700 pt-4 mb-4">
+                  <div className="border-t border-gray-200 pt-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-slate-400">Subtotal</span>
-                      <span className="text-white font-semibold">£{totalPrice.toFixed(2)}</span>
+                      <span className="text-gray-500">Subtotal</span>
+                      <span className="text-gray-900 font-semibold">£{totalPrice.toFixed(2)}</span>
                     </div>
 
                     {discount > 0 && (
                       <div className="space-y-1 mb-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-emerald-400">Block Booking Discount</span>
-                          <span className="text-emerald-400 font-semibold">-£{discount.toFixed(2)}</span>
+                          <span className="text-emerald-600">Block Booking Discount</span>
+                          <span className="text-emerald-600 font-semibold">-£{discount.toFixed(2)}</span>
                         </div>
-                        <p className="text-xs text-slate-500">Every 10 sessions = 1 free 60-min session!</p>
+                        <p className="text-xs text-gray-400">Every 10 sessions = 1 free 60-min session!</p>
                       </div>
                     )}
 
                     {promoApplied && (
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-green-400">Promo Applied</span>
-                        <span className="text-green-400 font-semibold">-£{totalPrice.toFixed(2)}</span>
+                        <span className="text-green-600">Promo Applied</span>
+                        <span className="text-green-600 font-semibold">-£{totalPrice.toFixed(2)}</span>
                       </div>
                     )}
 
                     <div className="flex items-center justify-between text-lg font-bold">
-                      <span className="text-white">Total</span>
-                      <span className="text-cyan-400">£{finalTotal.toFixed(2)}</span>
+                      <span className="text-gray-900">Total</span>
+                      <span className="text-emerald-600">£{finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Promo Code
                     </label>
                     <div className="flex space-x-2">
@@ -653,12 +654,12 @@ export default function BookSession() {
                         onChange={(e) => setPromoCode(e.target.value)}
                         placeholder="Enter code"
                         disabled={promoApplied}
-                        className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 disabled:opacity-50"
                       />
                       <button
                         onClick={applyPromoCode}
                         disabled={promoApplied || !promoCode}
-                        className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg font-medium hover:bg-cyan-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg font-medium hover:bg-emerald-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Apply
                       </button>
@@ -672,14 +673,14 @@ export default function BookSession() {
                           clearCart();
                         }
                       }}
-                      className="w-full px-4 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition text-sm font-medium"
+                      className="w-full px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-900 rounded-lg transition text-sm font-medium"
                     >
                       Clear Cart
                     </button>
 
                     <button
                       onClick={handleCheckout}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition shadow-lg shadow-cyan-500/20"
+                      className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-full transition shadow-md"
                     >
                       Proceed to Checkout
                     </button>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Copy, Trash2, Calendar, Users, DollarSign, Save, X, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 
 interface SessionTemplate {
   id?: string;
@@ -214,7 +215,7 @@ export default function GroupSessionCreator() {
       await fetchTemplates();
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert('Failed to save: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to save: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -246,7 +247,7 @@ export default function GroupSessionCreator() {
       .insert(newTemplate);
 
     if (error) {
-      alert('Failed to duplicate: ' + error.message);
+      toast.error('Failed to duplicate: ' + error.message);
     } else {
       await fetchTemplates();
     }
@@ -261,7 +262,7 @@ export default function GroupSessionCreator() {
       .eq('id', id);
 
     if (error) {
-      alert('Failed to delete: ' + error.message);
+      toast.error('Failed to delete: ' + error.message);
     } else {
       await fetchTemplates();
     }
@@ -277,9 +278,9 @@ export default function GroupSessionCreator() {
     });
 
     if (error) {
-      alert('Failed to generate sessions: ' + error.message);
+      toast.error('Failed to generate sessions: ' + error.message);
     } else {
-      alert(`Generated ${data} sessions!`);
+      toast.success(`Generated ${data} sessions!`);
     }
   };
 
@@ -289,7 +290,7 @@ export default function GroupSessionCreator() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      draft: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+      draft: 'bg-gray-500/20 text-gray-600 border-gray-300/30',
       active: 'bg-green-500/20 text-green-400 border-green-500/30',
       paused: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
       archived: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -304,7 +305,7 @@ export default function GroupSessionCreator() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -314,8 +315,8 @@ export default function GroupSessionCreator() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Group Session Creator</h1>
-          <p className="text-slate-400">Create and manage group class templates</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Group Session Creator</h1>
+          <p className="text-gray-500 dark:text-gray-400">Create and manage group class templates</p>
         </div>
         <button
           onClick={() => {
@@ -324,7 +325,7 @@ export default function GroupSessionCreator() {
             setForm(DEFAULT_FORM);
             setExpandedSection('basic');
           }}
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center gap-2"
+          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Create New Class
@@ -333,9 +334,9 @@ export default function GroupSessionCreator() {
 
       {/* Creation/Edit Form */}
       {isCreating && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               {editingId ? 'Edit Class Template' : 'Create New Class Template'}
             </h2>
             <button
@@ -344,7 +345,7 @@ export default function GroupSessionCreator() {
                 setEditingId(null);
                 setForm(DEFAULT_FORM);
               }}
-              className="text-slate-400 hover:text-white"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               <X className="w-6 h-6" />
             </button>
@@ -352,45 +353,45 @@ export default function GroupSessionCreator() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* BASIC INFO */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('basic')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <span>📋</span> Basic Information
                 </span>
-                {expandedSection === 'basic' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'basic' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'basic' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Class Name *</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Class Name *</label>
                       <input
                         type="text"
                         required
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         placeholder="e.g., Kids Quran Circle"
                         value={form.name}
                         onChange={e => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">URL Slug</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">URL Slug</label>
                       <input
                         type="text"
-                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-400"
+                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400"
                         value={form.slug}
                         onChange={e => setForm({ ...form, slug: e.target.value })}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
                     <textarea
-                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       rows={3}
                       placeholder="Describe what students will learn..."
                       value={form.description}
@@ -399,9 +400,9 @@ export default function GroupSessionCreator() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Subject Category *</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Subject Category *</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.subject_category}
                         onChange={e => setForm({ ...form, subject_category: e.target.value })}
                       >
@@ -411,10 +412,10 @@ export default function GroupSessionCreator() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Cover Image URL</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Cover Image URL</label>
                       <input
                         type="url"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         placeholder="https://..."
                         value={form.image_url}
                         onChange={e => setForm({ ...form, image_url: e.target.value })}
@@ -426,24 +427,24 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* SCHEDULE */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('schedule')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Calendar className="w-5 h-5" /> Schedule
                 </span>
-                {expandedSection === 'schedule' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'schedule' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'schedule' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Duration</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Duration</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.duration_minutes}
                         onChange={e => setForm({ ...form, duration_minutes: parseInt(e.target.value) })}
                       >
@@ -455,9 +456,9 @@ export default function GroupSessionCreator() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Recurrence</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Recurrence</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.recurrence}
                         onChange={e => setForm({ ...form, recurrence: e.target.value })}
                       >
@@ -470,9 +471,9 @@ export default function GroupSessionCreator() {
                     </div>
                     {form.recurrence !== 'once' && form.recurrence !== 'daily' && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Day of Week</label>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Day of Week</label>
                         <select
-                          className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                           value={form.day_of_week ?? 0}
                           onChange={e => setForm({ ...form, day_of_week: parseInt(e.target.value) })}
                         >
@@ -485,29 +486,29 @@ export default function GroupSessionCreator() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Start Time *</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Start Time *</label>
                       <input
                         type="time"
                         required
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.start_time}
                         onChange={e => setForm({ ...form, start_time: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Start Date</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Start Date</label>
                       <input
                         type="date"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.start_date}
                         onChange={e => setForm({ ...form, start_date: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">End Date (optional)</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">End Date (optional)</label>
                       <input
                         type="date"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.end_date}
                         onChange={e => setForm({ ...form, end_date: e.target.value })}
                       />
@@ -518,60 +519,60 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* PRICING */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('pricing')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <DollarSign className="w-5 h-5" /> Pricing
                 </span>
-                {expandedSection === 'pricing' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'pricing' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'pricing' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                      className="w-5 h-5 rounded bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500"
                       checked={form.is_free}
                       onChange={e => setForm({ ...form, is_free: e.target.checked })}
                     />
-                    <span className="text-white font-medium">This is a FREE class</span>
+                    <span className="text-gray-900 dark:text-white font-medium">This is a FREE class</span>
                   </label>
                   {!form.is_free && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Price per Session (£)</label>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Price per Session (£)</label>
                         <input
                           type="number"
                           step="0.50"
                           min="0"
-                          className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                           value={form.price_per_session || ''}
                           onChange={e => setForm({ ...form, price_per_session: parseFloat(e.target.value) || null })}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">4-Session Bundle (£)</label>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">4-Session Bundle (£)</label>
                         <input
                           type="number"
                           step="0.50"
                           min="0"
-                          className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                           placeholder="e.g., 18.00"
                           value={form.price_bundle_4 || ''}
                           onChange={e => setForm({ ...form, price_bundle_4: parseFloat(e.target.value) || null })}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">8-Session Bundle (£)</label>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">8-Session Bundle (£)</label>
                         <input
                           type="number"
                           step="0.50"
                           min="0"
-                          className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                           placeholder="e.g., 32.00"
                           value={form.price_bundle_8 || ''}
                           onChange={e => setForm({ ...form, price_bundle_8: parseFloat(e.target.value) || null })}
@@ -584,45 +585,45 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* CAPACITY & TEACHER */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('capacity')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Users className="w-5 h-5" /> Capacity & Teacher
                 </span>
-                {expandedSection === 'capacity' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'capacity' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'capacity' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Minimum Participants</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Minimum Participants</label>
                       <input
                         type="number"
                         min="1"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.min_participants}
                         onChange={e => setForm({ ...form, min_participants: parseInt(e.target.value) })}
                       />
-                      <p className="text-xs text-slate-500 mt-1">Class won't run with fewer</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Class won't run with fewer</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Maximum Participants</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Maximum Participants</label>
                       <input
                         type="number"
                         min="1"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.max_participants}
                         onChange={e => setForm({ ...form, max_participants: parseInt(e.target.value) })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Assign Teacher</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Assign Teacher</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.teacher_id || ''}
                         onChange={e => setForm({ ...form, teacher_id: e.target.value || null })}
                       >
@@ -640,24 +641,24 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* TARGET AUDIENCE */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('audience')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <span>🎯</span> Target Audience
                 </span>
-                {expandedSection === 'audience' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'audience' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'audience' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Age Group</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Age Group</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.age_group}
                         onChange={e => setForm({ ...form, age_group: e.target.value })}
                       >
@@ -667,9 +668,9 @@ export default function GroupSessionCreator() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Gender</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Gender</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.gender}
                         onChange={e => setForm({ ...form, gender: e.target.value })}
                       >
@@ -679,9 +680,9 @@ export default function GroupSessionCreator() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Skill Level</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Skill Level</label>
                       <select
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                         value={form.skill_level}
                         onChange={e => setForm({ ...form, skill_level: e.target.value })}
                       >
@@ -696,23 +697,23 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* AI INSIGHTS */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('insights')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <span>🤖</span> AI Insight Template
                 </span>
-                {expandedSection === 'insights' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'insights' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'insights' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Select Template</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Select Template</label>
                     <select
-                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       value={form.insight_template_name}
                       onChange={e => setForm({ ...form, insight_template_name: e.target.value })}
                     >
@@ -725,17 +726,17 @@ export default function GroupSessionCreator() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Custom AI Prompt (Optional)
                     </label>
                     <textarea
-                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 font-mono text-sm"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono text-sm"
                       rows={5}
                       placeholder="Add custom instructions for AI insight generation... Leave blank to use the selected template."
                       value={form.custom_insight_prompt}
                       onChange={e => setForm({ ...form, custom_insight_prompt: e.target.value })}
                     />
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       This will be appended to the base template for class-specific instructions.
                     </p>
                   </div>
@@ -744,61 +745,61 @@ export default function GroupSessionCreator() {
             </div>
 
             {/* FEATURES & STATUS */}
-            <div className="border border-slate-700 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('features')}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-700/50 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition"
               >
-                <span className="font-semibold text-white flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <span>⚙️</span> Features & Status
                 </span>
-                {expandedSection === 'features' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                {expandedSection === 'features' ? <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
               </button>
               {expandedSection === 'features' && (
-                <div className="p-4 space-y-4 border-t border-slate-700">
+                <div className="p-4 space-y-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="flex flex-wrap gap-6">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500"
                         checked={form.recording_enabled}
                         onChange={e => setForm({ ...form, recording_enabled: e.target.checked })}
                       />
-                      <span className="text-white">🎥 Recording</span>
+                      <span className="text-gray-900 dark:text-white">🎥 Recording</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500"
                         checked={form.homework_enabled}
                         onChange={e => setForm({ ...form, homework_enabled: e.target.checked })}
                       />
-                      <span className="text-white">📚 Homework</span>
+                      <span className="text-gray-900 dark:text-white">📚 Homework</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500"
                         checked={form.chat_enabled}
                         onChange={e => setForm({ ...form, chat_enabled: e.target.checked })}
                       />
-                      <span className="text-white">💬 Chat</span>
+                      <span className="text-gray-900 dark:text-white">💬 Chat</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                        className="w-5 h-5 rounded bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500"
                         checked={form.featured}
                         onChange={e => setForm({ ...form, featured: e.target.checked })}
                       />
-                      <span className="text-white">⭐ Featured</span>
+                      <span className="text-gray-900 dark:text-white">⭐ Featured</span>
                     </label>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
                     <select
-                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-emerald-500"
                       value={form.status}
                       onChange={e => setForm({ ...form, status: e.target.value })}
                     >
@@ -817,7 +818,7 @@ export default function GroupSessionCreator() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg font-semibold flex items-center gap-2"
+                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg font-semibold flex items-center gap-2"
               >
                 <Save className="w-5 h-5" />
                 {saving ? 'Saving...' : (editingId ? 'Update Class' : 'Create Class')}
@@ -829,7 +830,7 @@ export default function GroupSessionCreator() {
                   setEditingId(null);
                   setForm(DEFAULT_FORM);
                 }}
-                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg"
               >
                 Cancel
               </button>
@@ -839,28 +840,28 @@ export default function GroupSessionCreator() {
       )}
 
       {/* Templates List */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-900/50">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="text-left p-4 text-slate-400 font-medium">Class</th>
-                <th className="text-left p-4 text-slate-400 font-medium">Schedule</th>
-                <th className="text-left p-4 text-slate-400 font-medium">Price</th>
-                <th className="text-left p-4 text-slate-400 font-medium">Capacity</th>
-                <th className="text-left p-4 text-slate-400 font-medium">Status</th>
-                <th className="text-left p-4 text-slate-400 font-medium">Actions</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Class</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Schedule</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Price</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Capacity</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Status</th>
+                <th className="text-left p-4 text-gray-500 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {templates.map(template => (
-                <tr key={template.id} className="border-t border-slate-700 hover:bg-slate-800/50 transition">
+                <tr key={template.id} className="border-t border-gray-200 hover:bg-gray-50 transition">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getCategoryIcon(template.subject_category)}</span>
                       <div>
                         <div className="font-medium text-white">{template.name}</div>
-                        <div className="text-sm text-slate-400">
+                        <div className="text-sm text-gray-500">
                           {template.teacher?.full_name || 'No teacher assigned'}
                         </div>
                       </div>
@@ -868,7 +869,7 @@ export default function GroupSessionCreator() {
                   </td>
                   <td className="p-4">
                     <div className="text-white capitalize">{template.recurrence}</div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-gray-500">
                       {template.day_of_week !== null && template.recurrence !== 'once' && template.recurrence !== 'daily'
                         ? `${DAYS_OF_WEEK[template.day_of_week]} `
                         : ''
@@ -902,7 +903,7 @@ export default function GroupSessionCreator() {
                       </button>
                       <button
                         onClick={() => duplicateTemplate(template)}
-                        className="p-2 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-400 rounded transition"
+                        className="p-2 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-300/20 text-gray-500 rounded transition"
                         title="Duplicate"
                       >
                         <Copy className="w-4 h-4" />
@@ -927,7 +928,7 @@ export default function GroupSessionCreator() {
               ))}
               {templates.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-slate-400">
+                  <td colSpan={6} className="p-12 text-center text-gray-500">
                     No group class templates yet. Click "Create New Class" to get started.
                   </td>
                 </tr>

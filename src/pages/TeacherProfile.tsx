@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, ArrowLeft, Play, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, ArrowLeft, Play, Calendar, Clock, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import BookingModal from '../components/BookingModal';
 import TeacherRatingDisplay from '../components/TeacherRatingDisplay';
+import {
+  TierBadge,
+  TeacherStatsDisplay,
+  GentlenessGuarantee,
+  TrustBanner
+} from '../components/teachers';
 
 interface AvailabilitySlot {
   date: string;
@@ -22,7 +28,21 @@ interface TeacherData {
   video_intro_url: string | null;
   education_level: string | null;
   islamic_learning_interests: string[] | null;
+  is_talbiyah_certified: boolean | null;
   profiles: ProfileData | ProfileData[];
+  // Tier stats (from view)
+  tier?: string;
+  tier_name?: string;
+  tier_icon?: string;
+  student_hourly_price?: number;
+  hours_taught?: number;
+  average_rating?: number;
+  completed_lessons?: number;
+  // Rating stats
+  rating_avg?: number;
+  rating_count?: number;
+  thumbs_up_percentage?: number;
+  total_feedback?: number;
 }
 
 interface Subject {
@@ -62,6 +82,7 @@ export default function TeacherProfile() {
             video_intro_url,
             education_level,
             islamic_learning_interests,
+            is_talbiyah_certified,
             profiles!teacher_profiles_user_id_fkey (
               full_name
             )
@@ -78,9 +99,47 @@ export default function TeacherProfile() {
           return;
         }
 
+        // Get tier stats from the view
+        const { data: tierStats } = await supabase
+          .from('teacher_tier_stats')
+          .select(`
+            tier,
+            tier_name,
+            tier_icon,
+            student_hourly_price,
+            hours_taught,
+            average_rating,
+            completed_lessons
+          `)
+          .eq('teacher_id', id)
+          .maybeSingle();
+
+        // Get rating summary
+        const { data: ratingStats } = await supabase
+          .from('teacher_rating_summary')
+          .select(`
+            avg_rating,
+            total_detailed_ratings,
+            thumbs_up_percentage,
+            total_quick_feedback
+          `)
+          .eq('teacher_id', id)
+          .maybeSingle();
+
         const teacherData: TeacherData = {
           ...data,
-          profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles
+          profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
+          tier: tierStats?.tier || 'newcomer',
+          tier_name: tierStats?.tier_name || 'Newcomer',
+          tier_icon: tierStats?.tier_icon || '🌱',
+          student_hourly_price: tierStats?.student_hourly_price || 15,
+          hours_taught: tierStats?.hours_taught || 0,
+          average_rating: tierStats?.average_rating || 0,
+          completed_lessons: tierStats?.completed_lessons || 0,
+          rating_avg: ratingStats?.avg_rating || 0,
+          rating_count: ratingStats?.total_detailed_ratings || 0,
+          thumbs_up_percentage: ratingStats?.thumbs_up_percentage || 0,
+          total_feedback: ratingStats?.total_quick_feedback || 0
         };
 
         setTeacher(teacherData);
@@ -319,9 +378,36 @@ export default function TeacherProfile() {
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto">
+          {/* Enhanced Header with Tier Badge and Stats */}
           <div className="mb-8">
-            <h1 className="text-5xl font-bold text-gray-900 mb-2">{teacherName}</h1>
-            <p className="text-2xl text-emerald-600 font-semibold">£{totalPrice.toFixed(2)} / hour</p>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-4xl sm:text-5xl font-bold text-gray-900">{teacherName}</h1>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <TierBadge tier={teacher.tier || 'newcomer'} size="md" showDescription />
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-emerald-600">
+                  £{(teacher.student_hourly_price || totalPrice).toFixed(2)}
+                </p>
+                <p className="text-gray-500 text-sm">per hour</p>
+              </div>
+            </div>
+
+            {/* Stats Row */}
+            <TeacherStatsDisplay
+              hoursTaught={teacher.hours_taught || 0}
+              averageRating={teacher.rating_avg || teacher.average_rating || 0}
+              ratingCount={teacher.rating_count || 0}
+              completedLessons={teacher.completed_lessons || 0}
+              thumbsUpPercentage={teacher.thumbs_up_percentage}
+              totalFeedback={teacher.total_feedback}
+              variant="full"
+              className="mb-6"
+            />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12 mb-12">
@@ -347,7 +433,7 @@ export default function TeacherProfile() {
                   )}
                 </div>
               ) : (
-                <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl aspect-video flex items-center justify-center border border-slate-600">
+                <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl aspect-video flex items-center justify-center border border-gray-300">
                   <div className="text-center">
                     <div className="w-20 h-20 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
                       <Play className="w-10 h-10 text-emerald-400" />
@@ -486,7 +572,7 @@ export default function TeacherProfile() {
               )}
 
               <p className="text-sm text-gray-500 mt-4 text-center">
-                Click "Book Your FREE 30-Min Trial" below to see all available time slots and book a lesson
+                Click "Book Your FREE First Lesson" below to see all available time slots
               </p>
             </div>
           )}
@@ -496,7 +582,16 @@ export default function TeacherProfile() {
             <TeacherRatingDisplay teacherId={teacher.id} />
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-12 text-center">
+          {/* Trust & Safety Section */}
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            <GentlenessGuarantee variant="compact" />
+            <TrustBanner
+              badges={teacher.is_talbiyah_certified ? ['identity_verified', 'talbiyah_certified'] : ['identity_verified']}
+              isTalbiyahCertified={teacher.is_talbiyah_certified || false}
+            />
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-12 text-center">
             <div className="max-w-2xl mx-auto">
               <h3 className="text-3xl font-bold text-white mb-4">Ready to Start Learning?</h3>
               <p className="text-gray-300 text-lg mb-8">
@@ -505,17 +600,17 @@ export default function TeacherProfile() {
               <button
                 onClick={() => setBookingModalOpen(true)}
                 disabled={!hasAvailability || subjects.length === 0}
-                className="px-12 py-5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg text-xl font-bold transition shadow-lg shadow-emerald-500/20 inline-flex items-center space-x-3"
+                className="px-12 py-5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xl font-bold transition shadow-lg shadow-emerald-500/20 inline-flex items-center space-x-3"
               >
                 <Calendar className="w-6 h-6" />
-                <span>Book Your FREE 30-Min Trial</span>
+                <span>Book Your FREE First Lesson</span>
               </button>
               {(!hasAvailability || subjects.length === 0) ? (
                 <p className="text-red-400 text-sm mt-4">
                   {!hasAvailability ? 'This teacher has no available time slots at the moment.' : 'This teacher is not teaching any subjects yet.'}
                 </p>
               ) : (
-                <p className="text-gray-400 text-sm mt-4">No payment required for your first trial lesson</p>
+                <p className="text-gray-400 text-sm mt-4">No payment required for your first lesson</p>
               )}
             </div>
           </div>

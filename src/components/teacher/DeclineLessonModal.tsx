@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { X, AlertCircle } from 'lucide-react';
 
@@ -35,12 +36,12 @@ export default function DeclineLessonModal({
 
   const handleSubmit = async () => {
     if (!declineReason) {
-      alert('Please select a reason for declining');
+      toast.warning('Please select a reason for declining');
       return;
     }
 
     if (declineReason === 'other' && !customReason.trim()) {
-      alert('Please provide a reason');
+      toast.warning('Please provide a reason');
       return;
     }
 
@@ -64,7 +65,7 @@ export default function DeclineLessonModal({
       onComplete();
     } catch (error: any) {
       console.error('Error declining lesson:', error);
-      alert('Failed to decline lesson. Please try again.');
+      toast.error('Failed to decline lesson. Please try again.');
     } finally {
       setSubmitting(false);
     }

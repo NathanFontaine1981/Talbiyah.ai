@@ -141,30 +141,30 @@ export default function RecordingsHistory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading recordings...</p>
+          <Loader2 className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading recordings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition"
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back to Dashboard</span>
             </button>
 
-            <h1 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-              <Video className="w-6 h-6 text-cyan-500" />
+            <h1 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <Video className="w-6 h-6 text-emerald-500" />
               <span>My Recordings</span>
             </h1>
 
@@ -175,16 +175,16 @@ export default function RecordingsHistory() {
 
       <main className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <p className="text-slate-600">
+          <p className="text-gray-600">
             {recordings.length} {recordings.length === 1 ? 'recording' : 'recordings'} available
           </p>
         </div>
 
         {recordings.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-            <Video className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No recordings yet</h3>
-            <p className="text-slate-600 mb-6">
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-200">
+            <Video className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No recordings yet</h3>
+            <p className="text-gray-600 mb-6">
               {isTeacher
                 ? 'Your completed lessons will appear here with recordings'
                 : 'Complete some lessons to see your recordings here'
@@ -193,7 +193,7 @@ export default function RecordingsHistory() {
             {!isTeacher && (
               <button
                 onClick={() => navigate('/subjects')}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
               >
                 Book a Lesson
               </button>
@@ -204,33 +204,33 @@ export default function RecordingsHistory() {
             {recordings.map((recording) => (
               <div
                 key={recording.id}
-                className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 transition shadow-sm hover:shadow-md"
+                className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition shadow-sm hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center">
                         <Video className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{recording.subject_name}</h3>
-                        <p className="text-sm text-slate-600">
+                        <h3 className="text-lg font-semibold text-gray-900">{recording.subject_name}</h3>
+                        <p className="text-sm text-gray-600">
                           {isTeacher ? `Student: ${recording.teacher_name}` : `with ${recording.teacher_name}`}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-6 text-sm text-slate-600 mb-4">
+                    <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
                       <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <Calendar className="w-4 h-4 text-gray-500" />
                         <span>{format(parseISO(recording.scheduled_time), 'MMMM d, yyyy')}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                        <Clock className="w-4 h-4 text-gray-500" />
                         <span>{format(parseISO(recording.scheduled_time), 'h:mm a')}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                        <Clock className="w-4 h-4 text-gray-500" />
                         <span>{recording.duration_minutes} min duration</span>
                       </div>
                     </div>
@@ -239,7 +239,7 @@ export default function RecordingsHistory() {
                       {recording.has_insights && (
                         <button
                           onClick={() => navigate(`/lesson/${recording.id}/insights`)}
-                          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-medium transition flex items-center space-x-2"
+                          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-medium transition flex items-center space-x-2"
                         >
                           <FileText className="w-4 h-4" />
                           <span>View AI Notes</span>
@@ -249,7 +249,7 @@ export default function RecordingsHistory() {
                       {recording.recording_url ? (
                         <button
                           onClick={() => window.open(recording.recording_url!, '_blank')}
-                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition flex items-center space-x-2"
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition flex items-center space-x-2"
                         >
                           <Video className="w-4 h-4" />
                           <span>Watch Video</span>
@@ -257,7 +257,7 @@ export default function RecordingsHistory() {
                       ) : (
                         <button
                           disabled
-                          className="px-4 py-2 bg-slate-200 text-slate-500 rounded-lg font-medium cursor-not-allowed flex items-center space-x-2"
+                          className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg font-medium cursor-not-allowed flex items-center space-x-2"
                         >
                           <Video className="w-4 h-4" />
                           <span>Video Processing</span>

@@ -5,6 +5,7 @@ import {
   MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Home
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
 import TalbiyahBot from '../components/TalbiyahBot';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -297,7 +298,7 @@ export default function QuranProgress() {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating ayah progress:', error);
-      alert('Failed to save progress. Please try again.');
+      toast.error('Failed to save progress. Please try again.');
       await loadProgress();
     } finally {
       setSavingAyah(null);
@@ -359,18 +360,18 @@ export default function QuranProgress() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading Quran Progress...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading Quran Progress...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50 sticky top-0 z-40">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col gap-3">
             <Breadcrumbs
@@ -383,7 +384,7 @@ export default function QuranProgress() {
             />
             <div className="flex items-center justify-between">
               <h1 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
-                <Book className="w-5 sm:w-6 h-5 sm:h-6 text-cyan-400" />
+                <Book className="w-5 sm:w-6 h-5 sm:h-6 text-emerald-400" />
                 <span className="hidden sm:inline">Qur'an Progress Tracker</span>
                 <span className="sm:hidden">Quran Progress</span>
               </h1>
@@ -391,7 +392,7 @@ export default function QuranProgress() {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition flex items-center space-x-1"
+                  className="px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white rounded-lg text-sm transition flex items-center space-x-1 border border-gray-600/50"
                 >
                   <Home className="w-4 h-4" />
                   <span className="hidden sm:inline">Dashboard</span>
@@ -404,11 +405,11 @@ export default function QuranProgress() {
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Stats Overview */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
+        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Overall Progress</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-4 sm:p-6 border border-purple-500/50">
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-4 sm:p-6 border border-purple-500/30">
               <div className="flex items-center justify-between mb-2">
                 <Book className="w-6 sm:w-8 h-6 sm:h-8 text-purple-400" />
               </div>
@@ -417,42 +418,42 @@ export default function QuranProgress() {
               <p className="text-xs text-purple-400/70 mt-1">Fully Completed</p>
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 sm:p-6 border border-slate-700/50">
+            <div className="bg-gray-700/30 rounded-xl p-4 sm:p-6 border border-gray-600/30">
               <div className="flex items-center justify-between mb-2">
-                <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-slate-400" />
+                <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-gray-400" />
               </div>
               <p className="text-2xl sm:text-4xl font-bold text-white mb-1">{TOTAL_AYAHS}</p>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">Total Ayahs</p>
+              <p className="text-xs sm:text-sm text-gray-400 font-medium">Total Ayahs</p>
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 sm:p-6 border border-slate-700/50">
+            <div className="bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-xl p-4 sm:p-6 border border-cyan-500/30">
               <div className="flex items-center justify-between mb-2">
                 <Brain className="w-6 sm:w-8 h-6 sm:h-8 text-cyan-400" />
               </div>
               <p className="text-2xl sm:text-4xl font-bold text-cyan-400 mb-1">{totalAyahsUnderstanding}</p>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">Understood</p>
-              <p className="text-xs text-slate-500 mt-1">{Math.round((totalAyahsUnderstanding / TOTAL_AYAHS) * 100)}%</p>
+              <p className="text-xs sm:text-sm text-cyan-300 font-medium">Understood</p>
+              <p className="text-xs text-cyan-400/70 mt-1">{Math.round((totalAyahsUnderstanding / TOTAL_AYAHS) * 100)}%</p>
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 sm:p-6 border border-slate-700/50">
+            <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-xl p-4 sm:p-6 border border-blue-500/30">
               <div className="flex items-center justify-between mb-2">
                 <Volume2 className="w-6 sm:w-8 h-6 sm:h-8 text-blue-400" />
               </div>
               <p className="text-2xl sm:text-4xl font-bold text-blue-400 mb-1">{totalAyahsFluency}</p>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">Fluent</p>
-              <p className="text-xs text-slate-500 mt-1">{Math.round((totalAyahsFluency / TOTAL_AYAHS) * 100)}%</p>
+              <p className="text-xs sm:text-sm text-blue-300 font-medium">Fluent</p>
+              <p className="text-xs text-blue-400/70 mt-1">{Math.round((totalAyahsFluency / TOTAL_AYAHS) * 100)}%</p>
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 sm:p-6 border border-slate-700/50">
+            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl p-4 sm:p-6 border border-amber-500/30">
               <div className="flex items-center justify-between mb-2">
-                <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-emerald-400" />
+                <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-amber-400" />
               </div>
-              <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-1">{totalAyahsMemorized}</p>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">Memorised</p>
-              <p className="text-xs text-slate-500 mt-1">{Math.round((totalAyahsMemorized / TOTAL_AYAHS) * 100)}%</p>
+              <p className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1">{totalAyahsMemorized}</p>
+              <p className="text-xs sm:text-sm text-amber-300 font-medium">Memorised</p>
+              <p className="text-xs text-amber-400/70 mt-1">{Math.round((totalAyahsMemorized / TOTAL_AYAHS) * 100)}%</p>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl p-4 sm:p-6 border border-emerald-500/50">
+            <div className="bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl p-4 sm:p-6 border border-emerald-500/30">
               <div className="flex items-center justify-between mb-2">
                 <Award className="w-6 sm:w-8 h-6 sm:h-8 text-emerald-400" />
               </div>
@@ -464,7 +465,7 @@ export default function QuranProgress() {
 
         {/* Teacher Notes Section */}
         {teacherNotes && (
-          <div className="bg-gradient-to-br from-purple-800/40 to-pink-800/40 rounded-2xl p-4 sm:p-6 lg:p-8 border border-purple-500/50 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
+          <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-2xl p-4 sm:p-6 lg:p-8 border border-purple-500/30 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="w-10 sm:w-12 h-10 sm:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <MessageSquare className="w-5 sm:w-6 h-5 sm:h-6 text-purple-400" />
@@ -474,24 +475,24 @@ export default function QuranProgress() {
                   <h3 className="text-base sm:text-lg font-bold text-white">Notes from {teacherName}</h3>
                   <User className="w-4 h-4 text-purple-400" />
                 </div>
-                <p className="text-sm sm:text-base text-purple-100 whitespace-pre-wrap leading-relaxed">{teacherNotes}</p>
+                <p className="text-sm sm:text-base text-purple-200 whitespace-pre-wrap leading-relaxed">{teacherNotes}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Juz Navigation */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
             <h2 className="text-xl sm:text-2xl font-bold text-white">Navigate by Juz</h2>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search surah..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-48 pl-9 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                className="w-full sm:w-48 pl-9 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
               />
             </div>
           </div>
@@ -501,7 +502,7 @@ export default function QuranProgress() {
             <button
               onClick={() => setSelectedJuz(Math.max(1, selectedJuz - 1))}
               disabled={selectedJuz <= 1}
-              className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition disabled:opacity-30"
+              className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30 border border-gray-600/50"
             >
               <ChevronLeft className="w-5 h-5 text-white" />
             </button>
@@ -516,8 +517,8 @@ export default function QuranProgress() {
                   }}
                   className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition ${
                     selectedJuz === juz.juz
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 border border-gray-600/50'
                   }`}
                 >
                   {juz.juz}
@@ -528,7 +529,7 @@ export default function QuranProgress() {
             <button
               onClick={() => setSelectedJuz(Math.min(30, selectedJuz + 1))}
               disabled={selectedJuz >= 30}
-              className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition disabled:opacity-30"
+              className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30 border border-gray-600/50"
             >
               <ChevronRight className="w-5 h-5 text-white" />
             </button>
@@ -536,7 +537,7 @@ export default function QuranProgress() {
 
           {/* Current Juz Info */}
           {currentJuz && !searchQuery && (
-            <div className="text-center text-slate-400 text-sm mb-6">
+            <div className="text-center text-gray-400 text-sm mb-6">
               <span className="font-semibold text-white">Juz {selectedJuz}:</span> {currentJuz.name} • {currentJuz.surahs.length} Surah{currentJuz.surahs.length > 1 ? 's' : ''}
             </div>
           )}
@@ -545,15 +546,15 @@ export default function QuranProgress() {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-6 text-xs sm:text-sm">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 bg-cyan-500 rounded" />
-              <span className="text-slate-400">Understanding</span>
+              <span className="text-gray-400">Understanding</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 bg-blue-500 rounded" />
-              <span className="text-slate-400">Fluency</span>
+              <span className="text-gray-400">Fluency</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-emerald-500 rounded" />
-              <span className="text-slate-400">Memorised</span>
+              <div className="w-3 h-3 bg-amber-500 rounded" />
+              <span className="text-gray-400">Memorised</span>
             </div>
           </div>
 
@@ -566,26 +567,26 @@ export default function QuranProgress() {
               return (
                 <div
                   key={surah.number}
-                  className={`bg-slate-800/50 rounded-xl border overflow-hidden transition ${
-                    isComplete ? 'border-emerald-500/50' : 'border-slate-700/50'
+                  className={`bg-gray-700/30 rounded-xl border overflow-hidden transition ${
+                    isComplete ? 'border-emerald-500/50' : 'border-gray-600/30'
                   }`}
                 >
                   <button
                     onClick={() => toggleSurahExpansion(surah.number)}
-                    className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-slate-800/70 transition"
+                    className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-600/30 transition"
                   >
                     <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-lg flex items-center justify-center ${
                         isComplete
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-slate-700/50 text-cyan-400'
+                          : 'bg-gray-600/50 text-emerald-400'
                       }`}>
                         <span className="font-bold text-sm sm:text-base">{surah.number}</span>
                       </div>
 
                       <div className="text-left">
                         <h3 className="text-sm sm:text-lg font-semibold text-white">{surah.name}</h3>
-                        <p className="text-xs sm:text-sm text-slate-400">{surah.englishName} • {surah.ayahCount} Ayahs</p>
+                        <p className="text-xs sm:text-sm text-gray-400">{surah.englishName} • {surah.ayahCount} Ayahs</p>
                       </div>
                     </div>
 
@@ -593,43 +594,43 @@ export default function QuranProgress() {
                       <div className="hidden sm:flex items-center gap-3 text-sm">
                         <span className="text-cyan-400 font-semibold">{stats.understanding}/{stats.total}</span>
                         <span className="text-blue-400 font-semibold">{stats.fluency}/{stats.total}</span>
-                        <span className="text-emerald-400 font-semibold">{stats.memorization}/{stats.total}</span>
+                        <span className="text-amber-400 font-semibold">{stats.memorization}/{stats.total}</span>
                       </div>
                       {/* Mobile stats */}
                       <div className="flex sm:hidden items-center gap-1.5 text-xs">
-                        <span className="text-emerald-400 font-semibold">{stats.memorization}/{stats.total}</span>
+                        <span className="text-amber-400 font-semibold">{stats.memorization}/{stats.total}</span>
                       </div>
 
                       {surah.expanded ? (
-                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                        <ChevronUp className="w-5 h-5 text-gray-400" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-400" />
                       )}
                     </div>
                   </button>
 
                   {surah.expanded && (
-                    <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-slate-700/50">
+                    <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-600/30">
                       <div className="pt-4 sm:pt-6 space-y-4 sm:space-y-6">
                         {/* Theme */}
-                        <div className="bg-slate-900/50 rounded-lg p-3 sm:p-4 border border-slate-700/30">
-                          <h4 className="text-xs sm:text-sm font-semibold text-cyan-400 mb-1 sm:mb-2">Theme Summary</h4>
-                          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{surah.theme}</p>
+                        <div className="bg-gray-600/30 rounded-lg p-3 sm:p-4 border border-gray-500/30">
+                          <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 mb-1 sm:mb-2">Theme Summary</h4>
+                          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{surah.theme}</p>
                         </div>
 
                         {/* Mobile stats row */}
-                        <div className="flex sm:hidden justify-around bg-slate-900/30 rounded-lg p-3">
+                        <div className="flex sm:hidden justify-around bg-gray-600/30 rounded-lg p-3">
                           <div className="text-center">
                             <p className="text-cyan-400 font-bold">{stats.understanding}</p>
-                            <p className="text-xs text-slate-500">Understood</p>
+                            <p className="text-xs text-gray-400">Understood</p>
                           </div>
                           <div className="text-center">
                             <p className="text-blue-400 font-bold">{stats.fluency}</p>
-                            <p className="text-xs text-slate-500">Fluent</p>
+                            <p className="text-xs text-gray-400">Fluent</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-emerald-400 font-bold">{stats.memorization}</p>
-                            <p className="text-xs text-slate-500">Memorised</p>
+                            <p className="text-amber-400 font-bold">{stats.memorization}</p>
+                            <p className="text-xs text-gray-400">Memorised</p>
                           </div>
                         </div>
 
@@ -642,16 +643,16 @@ export default function QuranProgress() {
                             return (
                               <div
                                 key={ayah.ayahNumber}
-                                className="bg-slate-900/30 rounded-lg p-3 sm:p-4 border border-slate-700/30 hover:border-slate-600/50 transition"
+                                className="bg-gray-600/30 rounded-lg p-3 sm:p-4 border border-gray-500/30 hover:border-gray-400/50 transition"
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2 sm:space-x-3">
-                                    <div className="w-8 sm:w-10 h-8 sm:h-10 bg-slate-700/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                      <span className="text-slate-300 font-semibold text-xs sm:text-sm">
+                                    <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gray-700/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <span className="text-gray-300 font-semibold text-xs sm:text-sm">
                                         {ayah.ayahNumber}
                                       </span>
                                     </div>
-                                    <span className="text-xs sm:text-sm text-slate-400">Ayah {ayah.ayahNumber}</span>
+                                    <span className="text-xs sm:text-sm text-gray-400">Ayah {ayah.ayahNumber}</span>
                                   </div>
 
                                   <div className="flex items-center space-x-1.5 sm:space-x-2">
@@ -660,13 +661,13 @@ export default function QuranProgress() {
                                       disabled={isSaving}
                                       className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
                                         ayah.understanding
-                                          ? 'bg-cyan-500/20 border-cyan-500 hover:bg-cyan-500/30'
-                                          : 'border-slate-600 hover:border-cyan-500/50'
+                                          ? 'bg-emerald-500/20 border-emerald-500 hover:bg-emerald-500/30'
+                                          : 'border-gray-300 hover:border-emerald-500/50'
                                       } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                                       title="Understanding"
                                     >
                                       {ayah.understanding && (
-                                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-cyan-400" />
+                                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
                                       )}
                                     </button>
 
@@ -676,7 +677,7 @@ export default function QuranProgress() {
                                       className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
                                         ayah.fluency
                                           ? 'bg-blue-500/20 border-blue-500 hover:bg-blue-500/30'
-                                          : 'border-slate-600 hover:border-blue-500/50'
+                                          : 'border-gray-300 hover:border-blue-500/50'
                                       } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                                       title="Fluency"
                                     >
@@ -691,7 +692,7 @@ export default function QuranProgress() {
                                       className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
                                         ayah.memorization
                                           ? 'bg-emerald-500/20 border-emerald-500 hover:bg-emerald-500/30'
-                                          : 'border-slate-600 hover:border-emerald-500/50'
+                                          : 'border-gray-300 hover:border-emerald-500/50'
                                       } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                                       title="Memorisation"
                                     >
@@ -701,7 +702,7 @@ export default function QuranProgress() {
                                     </button>
 
                                     {isSaving && (
-                                      <div className="w-4 sm:w-5 h-4 sm:h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                                      <div className="w-4 sm:w-5 h-4 sm:h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                                     )}
                                   </div>
                                 </div>

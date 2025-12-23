@@ -81,7 +81,7 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
       case 'refunded':
         return <RefreshCw className="w-4 h-4 text-blue-500" />;
       default:
-        return <Clock className="w-4 h-4 text-slate-400" />;
+        return <Clock className="w-4 h-4 text-gray-500" />;
     }
   }
 
@@ -94,7 +94,7 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${styles[status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${styles[status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -102,12 +102,12 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-48"></div>
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-slate-100 rounded-xl"></div>
+              <div key={i} className="h-16 bg-gray-100 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
   const displayPurchases = expanded ? purchases : purchases.slice(0, 3);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -134,8 +134,8 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
             <CreditCard className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Payment History</h3>
-            <p className="text-sm text-slate-500">{purchases.length} transactions</p>
+            <h3 className="text-xl font-bold text-gray-900">Payment History</h3>
+            <p className="text-sm text-gray-500">{purchases.length} transactions</p>
           </div>
         </div>
       </div>
@@ -161,38 +161,38 @@ export default function PaymentHistoryWidget({ parentId }: PaymentHistoryWidgetP
       {/* Transactions List */}
       {purchases.length === 0 ? (
         <div className="text-center py-8">
-          <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">No purchases yet</p>
-          <p className="text-sm text-slate-400">Your payment history will appear here</p>
+          <CreditCard className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+          <p className="text-gray-500">No purchases yet</p>
+          <p className="text-sm text-gray-500">Your payment history will appear here</p>
         </div>
       ) : (
         <div className="space-y-3">
           {displayPurchases.map((purchase) => (
             <div
               key={purchase.id}
-              className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-slate-300 transition"
+              className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(purchase.status)}
                   <div>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-gray-900">
                       {purchase.pack_name || `${purchase.credits_purchased} Credits`}
                     </p>
-                    <div className="flex items-center space-x-2 text-sm text-slate-500">
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
                       <Calendar className="w-3 h-3" />
                       <span>{formatDate(purchase.created_at)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-slate-900">{formatAmount(purchase.amount)}</p>
+                  <p className="font-bold text-gray-900">{formatAmount(purchase.amount)}</p>
                   {getStatusBadge(purchase.status)}
                 </div>
               </div>
               {purchase.stripe_payment_intent_id && purchase.status === 'completed' && (
-                <div className="mt-2 pt-2 border-t border-slate-200">
-                  <p className="text-xs text-slate-400 font-mono truncate">
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 font-mono truncate">
                     ID: {purchase.stripe_payment_intent_id.slice(-12)}
                   </p>
                 </div>

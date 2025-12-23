@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2 } from 'lucide-react';
+import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2, Clock, AlertCircle, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function TeacherProfileSetup() {
@@ -18,8 +18,9 @@ export default function TeacherProfileSetup() {
     timezone: 'UTC',
     bio: '',
     education_level: '',
-    hourly_rate: '15.00',
   });
+  const [hasAvailability, setHasAvailability] = useState(false);
+  const [hasSubjects, setHasSubjects] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -53,7 +54,7 @@ export default function TeacherProfileSetup() {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('bio, education_level, hourly_rate')
+        .select('id, bio, education_level')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -62,8 +63,25 @@ export default function TeacherProfileSetup() {
           ...prev,
           bio: teacherProfile.bio || '',
           education_level: teacherProfile.education_level || '',
-          hourly_rate: teacherProfile.hourly_rate || '15.00',
         }));
+
+        // Check if teacher has set availability
+        const { data: availability } = await supabase
+          .from('teacher_availability')
+          .select('id')
+          .eq('teacher_id', teacherProfile.id)
+          .limit(1);
+
+        setHasAvailability((availability?.length || 0) > 0);
+
+        // Check if teacher has set subjects
+        const { data: subjects } = await supabase
+          .from('teacher_subjects')
+          .select('id')
+          .eq('teacher_id', teacherProfile.id)
+          .limit(1);
+
+        setHasSubjects((subjects?.length || 0) > 0);
       }
     } catch (err) {
       console.error('Error loading profile:', err);
@@ -106,29 +124,26 @@ export default function TeacherProfileSetup() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Round hourly rate to 2 decimal places to avoid floating-point precision issues
-      const hourlyRateRounded = Math.round(parseFloat(formData.hourly_rate) * 100) / 100;
-
       if (existingTeacher) {
         const { error: teacherError } = await supabase
           .from('teacher_profiles')
           .update({
             bio: formData.bio || null,
             education_level: formData.education_level || null,
-            hourly_rate: hourlyRateRounded,
             status: 'pending_approval',
           })
           .eq('user_id', user.id);
 
         if (teacherError) throw teacherError;
       } else {
+        // New teachers start at 'newcomer' tier - hourly_rate is determined by tier
         const { error: teacherError } = await supabase
           .from('teacher_profiles')
           .insert({
             user_id: user.id,
             bio: formData.bio || null,
             education_level: formData.education_level || null,
-            hourly_rate: hourlyRateRounded,
+            current_tier: 'newcomer',
             status: 'pending_approval',
           });
 
@@ -149,22 +164,22 @@ export default function TeacherProfileSetup() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading your profile...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <nav className="fixed top-0 w-full bg-slate-900/80 backdrop-blur-lg z-50 border-b border-slate-800">
+    <div className="min-h-screen bg-gray-50">
+      <nav className="fixed top-0 w-full bg-white backdrop-blur-lg z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BookOpen className="w-7 h-7 text-cyan-400" />
-            <span className="text-2xl font-bold text-white">Talbiyah.ai</span>
+            <BookOpen className="w-7 h-7 text-emerald-600" />
+            <span className="text-2xl font-bold text-gray-900">Talbiyah.ai</span>
           </div>
         </div>
       </nav>
@@ -172,11 +187,11 @@ export default function TeacherProfileSetup() {
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl mb-4">
-              <User className="w-8 h-8 text-cyan-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl mb-4">
+              <User className="w-8 h-8 text-emerald-600" />
             </div>
-            <h1 className="text-4xl font-bold text-white mb-3">Complete Your Teacher Profile</h1>
-            <p className="text-slate-400 text-lg">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">Complete Your Teacher Profile</h1>
+            <p className="text-gray-500 text-lg">
               Please fill in the required information below. Your profile will be reviewed by our team before approval.
             </p>
           </div>
@@ -198,15 +213,15 @@ export default function TeacherProfileSetup() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <User className="w-5 h-5 text-cyan-400" />
+            <div className="bg-white backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <User className="w-5 h-5 text-emerald-600" />
                 <span>Basic Information</span>
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Full Name <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -214,20 +229,20 @@ export default function TeacherProfileSetup() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="Enter your full name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Gender <span className="text-red-400">*</span>
                   </label>
                   <select
                     required
                     value={formData.gender}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
@@ -237,7 +252,7 @@ export default function TeacherProfileSetup() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">
+                    <label className="block text-sm font-semibold text-gray-600 mb-2">
                       <Calendar className="w-4 h-4 inline mr-1" />
                       Date of Birth
                     </label>
@@ -245,12 +260,12 @@ export default function TeacherProfileSetup() {
                       type="date"
                       value={formData.date_of_birth}
                       onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">
+                    <label className="block text-sm font-semibold text-gray-600 mb-2">
                       <MapPin className="w-4 h-4 inline mr-1" />
                       Location
                     </label>
@@ -258,21 +273,21 @@ export default function TeacherProfileSetup() {
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       placeholder="e.g., London, UK"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Timezone <span className="text-red-400">*</span>
                   </label>
                   <select
                     required
                     value={formData.timezone}
                     onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
                     <option value="UTC">UTC (GMT+0)</option>
                     <option value="Europe/London">Europe/London (GMT+0/+1)</option>
@@ -288,15 +303,15 @@ export default function TeacherProfileSetup() {
               </div>
             </div>
 
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <Award className="w-5 h-5 text-cyan-400" />
+            <div className="bg-white backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <Award className="w-5 h-5 text-emerald-600" />
                 <span>Teaching Information</span>
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
                     <FileText className="w-4 h-4 inline mr-1" />
                     Bio
                   </label>
@@ -304,19 +319,19 @@ export default function TeacherProfileSetup() {
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="Tell students about your teaching experience and qualifications..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Education Level
                   </label>
                   <select
                     value={formData.education_level}
                     onChange={(e) => setFormData({ ...formData, education_level: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
                     <option value="">Select education level</option>
                     <option value="High School">High School</option>
@@ -328,37 +343,135 @@ export default function TeacherProfileSetup() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
-                    Hourly Rate (GBP)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="5"
-                    max="100"
-                    value={formData.hourly_rate}
-                    onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                    placeholder="15.00"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Platform fee of £10 applies to all lessons</p>
+                {/* Note: Hourly rate is determined by teacher tier, not set manually */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-semibold text-emerald-600">💡 Hourly Rate</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Your earnings rate is determined by your teacher tier. New teachers start at the Newcomer tier (£4/hour).
+                    As you teach more hours and maintain good ratings, you'll automatically progress through tiers with higher rates (up to £8/hour).
+                  </p>
+                  <a
+                    href="/teacher/tier-info"
+                    className="text-xs text-emerald-600 hover:text-cyan-300 mt-2 inline-block"
+                  >
+                    Learn about teacher tiers →
+                  </a>
                 </div>
               </div>
+            </div>
+
+            {/* Visibility & Matching Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <span>Student Matching & Visibility</span>
+              </h2>
+
+              <p className="text-gray-600 text-sm mb-4">
+                To appear in student searches and be matched with diagnostic assessments, you need to set your availability and subjects.
+                Students are automatically matched with teachers based on schedule compatibility.
+              </p>
+
+              <div className="space-y-3">
+                {/* Availability Status */}
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                  hasAvailability
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="flex items-center space-x-3">
+                    {hasAvailability ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    )}
+                    <div>
+                      <p className={`font-semibold ${hasAvailability ? 'text-green-700' : 'text-amber-700'}`}>
+                        {hasAvailability ? 'Availability Set' : 'Availability Not Set'}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {hasAvailability
+                          ? 'Students can see when you\'re available'
+                          : 'Set your availability to be matched with students'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/teacher/availability')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition ${
+                      hasAvailability
+                        ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                    }`}
+                  >
+                    <span>{hasAvailability ? 'Edit' : 'Set Availability'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Subjects Status */}
+                <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                  hasSubjects
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="flex items-center space-x-3">
+                    {hasSubjects ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    )}
+                    <div>
+                      <p className={`font-semibold ${hasSubjects ? 'text-green-700' : 'text-amber-700'}`}>
+                        {hasSubjects ? 'Subjects Set' : 'Subjects Not Set'}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {hasSubjects
+                          ? 'Students can find you by subject'
+                          : 'Add subjects you teach to appear in searches'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/teacher/edit-profile')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition ${
+                      hasSubjects
+                        ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                    }`}
+                  >
+                    <span>{hasSubjects ? 'Edit' : 'Add Subjects'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {(!hasAvailability || !hasSubjects) && (
+                <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Tip:</span> Teachers with complete profiles (availability + subjects)
+                    are shown first to students during diagnostic assessment booking and receive more lesson requests.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-4">
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg font-semibold transition"
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 rounded-lg font-semibold transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25 disabled:opacity-50 flex items-center space-x-2"
+                className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center space-x-2"
               >
                 {saving ? (
                   <>

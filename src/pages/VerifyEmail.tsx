@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { Mail, CheckCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function VerifyEmail() {
@@ -16,13 +17,55 @@ export default function VerifyEmail() {
     // Listen for auth state changes (email verification)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        // Email is now verified, redirect to dashboard
+        // Email is now verified - send referral notification if applicable
+        await sendReferralNotificationIfNeeded(session.user.id);
+        // Redirect to dashboard
         navigate('/dashboard');
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  async function sendReferralNotificationIfNeeded(userId: string) {
+    try {
+      // Check if this user was referred and notification hasn't been sent yet
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('id, referrer_id, notification_sent, status')
+        .eq('referred_user_id', userId)
+        .eq('notification_sent', false)
+        .maybeSingle();
+
+      if (referral && referral.referrer_id) {
+        // Get the referrer's referral code
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('referral_code')
+          .eq('id', referral.referrer_id)
+          .single();
+
+        // Send the notification to the referrer
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-referral-signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            referrer_id: referral.referrer_id,
+            referred_id: userId,
+            referral_code: referrer?.referral_code || 'UNKNOWN'
+          })
+        });
+
+        console.log('Referral notification sent to referrer');
+      }
+    } catch (error) {
+      console.error('Error sending referral notification:', error);
+      // Don't block the user flow if notification fails
+    }
+  }
 
   async function checkEmailStatus() {
     try {
@@ -67,7 +110,7 @@ export default function VerifyEmail() {
       }
     } catch (error: any) {
       console.error('Error resending email:', error);
-      alert(error?.message || 'Failed to resend email. Please try again.');
+      toast.error(error?.message || 'Failed to resend email. Please try again.');
     } finally {
       setResending(false);
     }
@@ -93,7 +136,7 @@ export default function VerifyEmail() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         {/* Header Icon */}
-        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
           <Mail className="w-10 h-10 text-white" />
         </div>
 

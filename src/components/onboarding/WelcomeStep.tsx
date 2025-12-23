@@ -17,19 +17,19 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
           Welcome, {parentName}!
         </h1>
         <p className="text-gray-600 mb-8">
-          You're all set! <span className="font-semibold text-cyan-600">{childName}</span> is about to start an amazing learning journey.
+          You're all set! <span className="font-semibold text-emerald-600">{childName}</span> is about to start an amazing learning journey.
         </p>
 
         {/* What's Next Card */}
         <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-5 mb-8 text-left border border-cyan-100">
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="text-cyan-500">✨</span>
+            <span className="text-emerald-500">✨</span>
             What's next?
           </h3>
           <ul className="space-y-3">
             <li className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Search className="w-4 h-4 text-cyan-600" />
+                <Search className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
                 <span className="font-medium text-gray-800">Browse our qualified teachers</span>
@@ -77,7 +77,7 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
         <button
           onClick={onComplete}
           disabled={saving}
-          className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white p-4 rounded-xl font-semibold transition-all disabled:opacity-50 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
         >
           {saving ? (
             <>

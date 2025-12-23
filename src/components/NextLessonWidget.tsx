@@ -84,10 +84,10 @@ export default function NextLessonWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl p-6 border border-cyan-500/30 backdrop-blur-sm shadow-xl">
+      <div className="bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-2xl p-6 border border-emerald-500/30 backdrop-blur-sm shadow-xl">
         <div className="animate-pulse">
-          <div className="h-6 bg-slate-700 rounded w-32 mb-4"></div>
-          <div className="h-20 bg-slate-700 rounded"></div>
+          <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+          <div className="h-20 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -95,20 +95,20 @@ export default function NextLessonWidget() {
 
   if (!nextLesson) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-          <Calendar className="w-5 h-5 text-cyan-400" />
+          <Calendar className="w-5 h-5 text-emerald-600" />
           <span>Next Lesson</span>
         </h3>
         <div className="text-center py-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30">
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30">
             <Calendar className="w-10 h-10 text-white" />
           </div>
-          <p className="text-slate-300 mb-2 text-lg font-medium">No upcoming lessons</p>
-          <p className="text-slate-500 mb-6 text-sm">Book your next session with a teacher</p>
+          <p className="text-gray-600 dark:text-gray-300 mb-2 text-lg font-medium">No upcoming lessons</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Book your next session with a teacher</p>
           <a
             href="/teachers"
-            className="inline-block px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl transition shadow-xl shadow-emerald-500/30 text-lg animate-pulse hover:animate-none"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl transition shadow-xl shadow-emerald-500/30 text-lg animate-pulse hover:animate-none"
           >
             📚 Book a Lesson Now
           </a>
@@ -121,14 +121,14 @@ export default function NextLessonWidget() {
   const isToday = format(lessonDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl p-6 border border-cyan-500/30 backdrop-blur-sm shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
+    <div className="bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-2xl p-6 border border-emerald-500/30 backdrop-blur-sm shadow-xl relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
 
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2 relative z-10">
-        <Calendar className="w-5 h-5 text-cyan-400" />
+        <Calendar className="w-5 h-5 text-emerald-600" />
         <span>Next Lesson</span>
         {isToday && (
-          <span className="ml-auto px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full animate-pulse">
+          <span className="ml-auto px-2 py-1 bg-emerald-500/20 text-emerald-600 text-xs font-bold rounded-full animate-pulse">
             TODAY
           </span>
         )}
@@ -136,7 +136,7 @@ export default function NextLessonWidget() {
 
       <div className="relative z-10 space-y-4">
         <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-cyan-500/30">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-emerald-500/30">
             {nextLesson.teacher_avatar ? (
               <img
                 src={nextLesson.teacher_avatar}
@@ -144,33 +144,33 @@ export default function NextLessonWidget() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-6 h-6 text-slate-400" />
+              <User className="w-6 h-6 text-gray-500" />
             )}
           </div>
 
           <div className="flex-1">
-            <p className="text-sm text-cyan-400 font-medium mb-1">{nextLesson.subject_name}</p>
-            <p className="text-lg font-semibold text-white">with {nextLesson.teacher_name}</p>
+            <p className="text-sm text-emerald-600 font-medium mb-1">{nextLesson.subject_name}</p>
+            <p className="text-lg font-semibold text-white dark:text-gray-200">with {nextLesson.teacher_name}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-slate-800/50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 text-slate-400 mb-1">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center space-x-2 text-gray-500 mb-1">
               <Calendar className="w-4 h-4" />
               <span className="text-xs font-medium">Date</span>
             </div>
-            <p className="text-white font-semibold">
+            <p className="text-white dark:text-gray-200 font-semibold">
               {format(lessonDate, 'MMM d, yyyy')}
             </p>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 text-slate-400 mb-1">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center space-x-2 text-gray-500 mb-1">
               <Clock className="w-4 h-4" />
               <span className="text-xs font-medium">Time</span>
             </div>
-            <p className="text-white font-semibold">
+            <p className="text-white dark:text-gray-200 font-semibold">
               {format(lessonDate, 'h:mm a')}
             </p>
           </div>
@@ -179,21 +179,21 @@ export default function NextLessonWidget() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate(`/lesson/${nextLesson.id}`)}
-            className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+            className="px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
           >
             <Video className="w-5 h-5" />
             <span>Join</span>
           </button>
           <button
             onClick={() => navigate('/my-classes')}
-            className="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition flex items-center justify-center space-x-2"
+            className="px-4 py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition flex items-center justify-center space-x-2"
           >
             <span>View All</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-xs text-center text-slate-500">
+        <p className="text-xs text-center text-gray-500">
           Duration: {nextLesson.duration_minutes} minutes
         </p>
       </div>

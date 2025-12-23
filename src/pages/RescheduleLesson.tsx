@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format, addDays, startOfWeek, isSameDay, isPast, parseISO, setHours, setMinutes } from 'date-fns';
 import { ArrowLeft, CalendarClock, Check } from 'lucide-react';
 
@@ -72,7 +73,7 @@ export default function RescheduleLesson() {
       });
     } catch (error) {
       console.error('Error loading lesson:', error);
-      alert('Failed to load lesson details');
+      toast.error('Failed to load lesson details');
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -174,11 +175,11 @@ export default function RescheduleLesson() {
 
       if (error) throw error;
 
-      alert('Lesson rescheduled successfully!');
+      toast.success('Lesson rescheduled successfully!');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error rescheduling lesson:', error);
-      alert('Failed to reschedule lesson. Please try again.');
+      toast.error('Failed to reschedule lesson. Please try again.');
     } finally {
       setRescheduling(false);
     }
@@ -186,9 +187,9 @@ export default function RescheduleLesson() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading lesson details...</p>
         </div>
       </div>
@@ -197,12 +198,12 @@ export default function RescheduleLesson() {
 
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-white text-lg">Lesson not found</p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="mt-4 px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition"
+            className="mt-4 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
           >
             Return to Dashboard
           </button>
@@ -212,43 +213,43 @@ export default function RescheduleLesson() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition mb-6"
+            className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>
           </button>
 
           <div className="flex items-center space-x-4 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl flex items-center justify-center">
               <CalendarClock className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-4xl font-bold text-white">Reschedule Lesson</h1>
-              <p className="text-slate-400 text-lg">Choose a new date and time</p>
+              <p className="text-gray-500 text-lg">Choose a new date and time</p>
             </div>
           </div>
         </div>
 
         {/* Current Lesson Info */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-cyan-400/30">
-          <h2 className="text-cyan-400 text-sm font-semibold mb-3">Current Lesson</h2>
+        <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-emerald-400/30">
+          <h2 className="text-emerald-600 text-sm font-semibold mb-3">Current Lesson</h2>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <p className="text-slate-400 text-sm">Subject</p>
+              <p className="text-gray-500 text-sm">Subject</p>
               <p className="text-white font-semibold text-lg">{lesson.subject_name}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm">Teacher</p>
+              <p className="text-gray-500 text-sm">Teacher</p>
               <p className="text-white font-semibold text-lg">{lesson.teacher_name}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm">Current Time</p>
+              <p className="text-gray-500 text-sm">Current Time</p>
               <p className="text-cyan-300 font-semibold text-lg">
                 {format(parseISO(lesson.scheduled_time), 'EEE, MMM d, yyyy \'at\' h:mm a')}
               </p>
@@ -261,7 +262,7 @@ export default function RescheduleLesson() {
           <button
             onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
             disabled={weekOffset === 0}
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition font-semibold"
+            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-xl transition font-semibold"
           >
             Previous Week
           </button>
@@ -270,14 +271,14 @@ export default function RescheduleLesson() {
           </span>
           <button
             onClick={() => setWeekOffset(weekOffset + 1)}
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition font-semibold"
+            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition font-semibold"
           >
             Next Week
           </button>
         </div>
 
         {/* Calendar */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-slate-700">
+        <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-gray-200">
           <h2 className="text-white text-xl font-bold mb-6">Select a Date</h2>
           <div className="grid grid-cols-7 gap-4">
             {Array.from({ length: 7 }, (_, i) => {
@@ -292,15 +293,15 @@ export default function RescheduleLesson() {
                   disabled={isPastDate}
                   className={`p-6 rounded-xl border-2 transition text-center ${
                     isSelected
-                      ? 'border-cyan-500 bg-cyan-500/20 shadow-lg shadow-cyan-500/20'
+                      ? 'border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/20'
                       : isPastDate
-                      ? 'border-slate-800 bg-slate-900 opacity-50 cursor-not-allowed'
-                      : 'border-slate-700 bg-slate-800/50 hover:border-cyan-500/50 hover:bg-slate-700'
+                      ? 'border-gray-200 bg-white opacity-50 cursor-not-allowed'
+                      : 'border-gray-200 bg-gray-50 hover:border-emerald-500/50 hover:bg-gray-200'
                   }`}
                 >
-                  <div className="text-sm text-slate-400 mb-2">{format(date, 'EEE')}</div>
+                  <div className="text-sm text-gray-500 mb-2">{format(date, 'EEE')}</div>
                   <div className="text-3xl font-bold text-white mb-2">{format(date, 'd')}</div>
-                  <div className="text-sm text-slate-500">{format(date, 'MMM')}</div>
+                  <div className="text-sm text-gray-500">{format(date, 'MMM')}</div>
                 </button>
               );
             })}
@@ -309,19 +310,19 @@ export default function RescheduleLesson() {
 
         {/* Time Slots */}
         {selectedDate && (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-slate-700">
+          <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-gray-200">
             <h2 className="text-white text-xl font-bold mb-6">
               Available Times for {format(selectedDate, 'MMMM d, yyyy')}
             </h2>
             {loadingSlots ? (
               <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-400">Loading available times...</p>
+                <div className="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading available times...</p>
               </div>
             ) : availableSlots.length === 0 ? (
-              <div className="text-center py-12 bg-slate-800/30 rounded-xl">
-                <p className="text-slate-400 text-lg">No available times for this date</p>
-                <p className="text-slate-500 mt-2">Please select another day</p>
+              <div className="text-center py-12 bg-white rounded-xl">
+                <p className="text-gray-500 text-lg">No available times for this date</p>
+                <p className="text-gray-500 mt-2">Please select another day</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -332,7 +333,7 @@ export default function RescheduleLesson() {
                     className={`p-4 rounded-xl border-2 transition font-semibold ${
                       selectedTime === timeSlot
                         ? 'border-emerald-500 bg-emerald-500/20 text-white shadow-lg shadow-emerald-500/20'
-                        : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-700'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-emerald-500/50 hover:bg-gray-200'
                     }`}
                   >
                     {timeSlot}
@@ -347,14 +348,14 @@ export default function RescheduleLesson() {
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex-1 px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold text-lg transition"
+            className="flex-1 px-8 py-4 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-lg transition"
           >
             Cancel
           </button>
           <button
             onClick={handleReschedule}
             disabled={!selectedDate || !selectedTime || rescheduling}
-            className="flex-1 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-lg transition flex items-center justify-center space-x-2"
+            className="flex-1 px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-lg transition flex items-center justify-center space-x-2"
           >
             {rescheduling ? (
               <>

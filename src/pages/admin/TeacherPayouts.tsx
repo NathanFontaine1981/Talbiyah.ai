@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { DollarSign, Send, CheckCircle, XCircle, AlertCircle, Filter, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { PoundSterling, Send, CheckCircle, XCircle, AlertCircle, Filter, Search } from 'lucide-react';
 
 interface TeacherEarningsOverview {
   teacher_profile_id: string;
@@ -94,7 +95,7 @@ export default function TeacherPayouts() {
 
   const processPayouts = async () => {
     if (selectedTeachers.size === 0) {
-      alert('Please select at least one teacher');
+      toast.warning('Please select at least one teacher');
       return;
     }
 
@@ -190,18 +191,19 @@ export default function TeacherPayouts() {
       }
 
       // Show summary
-      let message = `Successfully processed ${successCount} payout(s)`;
-      if (failureCount > 0) {
-        message += `\n${failureCount} failed:\n${errors.join('\n')}`;
+      if (successCount > 0) {
+        toast.success(`Successfully processed ${successCount} payout(s)`);
       }
-      alert(message);
+      if (failureCount > 0) {
+        toast.error(`${failureCount} payout(s) failed:\n${errors.join('\n')}`);
+      }
 
       setSelectedTeachers(new Set());
       loadPayoutsData();
 
     } catch (error) {
       console.error('Error processing payouts:', error);
-      alert('Error processing payouts. Check console for details.');
+      toast.error('Error processing payouts. Check console for details.');
     } finally {
       setProcessingPayout(false);
     }
@@ -243,11 +245,11 @@ export default function TeacherPayouts() {
     const colors: Record<string, string> = {
       requested: 'bg-purple-500/20 text-purple-400 border border-purple-500/50',
       pending: 'bg-amber-500/20 text-amber-400 border border-amber-500/50',
-      processing: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50',
+      processing: 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50',
       completed: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50',
       failed: 'bg-red-500/20 text-red-400 border border-red-500/50',
     };
-    return colors[status] || 'bg-slate-700 text-slate-300';
+    return colors[status] || 'bg-gray-200 text-gray-600';
   };
 
   const processPayoutRequest = async (payout: TeacherPayout, action: 'approve' | 'reject') => {
@@ -289,7 +291,7 @@ export default function TeacherPayouts() {
 
         if (payoutError) throw payoutError;
 
-        alert('Payout approved and marked as completed!');
+        toast.success('Payout approved and marked as completed!');
       } else {
         // Reject - revert earnings back to cleared status
         const { data: earningsToRevert, error: fetchError } = await supabase
@@ -323,13 +325,13 @@ export default function TeacherPayouts() {
 
         if (payoutError) throw payoutError;
 
-        alert('Payout request rejected. Earnings returned to cleared status.');
+        toast.info('Payout request rejected. Earnings returned to cleared status.');
       }
 
       loadPayoutsData();
     } catch (error) {
       console.error('Error processing payout request:', error);
-      alert('Error processing payout request. Check console for details.');
+      toast.error('Error processing payout request. Check console for details.');
     }
   };
 
@@ -357,106 +359,106 @@ export default function TeacherPayouts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
-          <p className="mt-4 text-slate-400">Loading payouts...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading payouts...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Teacher Payouts</h1>
-          <p className="text-slate-400 mt-1">Process teacher payments and view payout history</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Teacher Payouts</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Process teacher payments and view payout history</p>
         </div>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-slate-800 rounded-xl shadow-lg border border-emerald-500/30 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-emerald-500/30 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-emerald-500/20 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-emerald-400" />
               </div>
-              <h3 className="text-sm font-medium text-slate-300">Ready for Payout</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Ready for Payout</h3>
             </div>
             <p className="text-2xl font-bold text-emerald-300">
               {formatCurrency(teachers.reduce((sum, t) => sum + t.cleared_earnings, 0))}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               {teachers.filter(t => t.cleared_earnings > 0).length} teachers
             </p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl shadow-lg border border-amber-500/30 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-amber-500/30 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-amber-500/20 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-amber-400" />
               </div>
-              <h3 className="text-sm font-medium text-slate-300">On Hold</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">On Hold</h3>
             </div>
             <p className="text-2xl font-bold text-amber-400">
               {formatCurrency(teachers.reduce((sum, t) => sum + t.held_earnings, 0))}
             </p>
-            <p className="text-xs text-slate-400 mt-1">7-day hold period</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">7-day hold period</p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl shadow-lg border border-cyan-500/30 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-emerald-500/30 p-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-cyan-500/20 rounded-lg">
-                <DollarSign className="w-5 h-5 text-cyan-400" />
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <PoundSterling className="w-5 h-5 text-emerald-600" />
               </div>
-              <h3 className="text-sm font-medium text-slate-300">Total Paid</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Paid</h3>
             </div>
             <p className="text-2xl font-bold text-cyan-300">
               {formatCurrency(teachers.reduce((sum, t) => sum + t.paid_earnings, 0))}
             </p>
-            <p className="text-xs text-slate-400 mt-1">All time</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">All time</p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-purple-500/20 rounded-lg">
                 <Send className="w-5 h-5 text-purple-400" />
               </div>
-              <h3 className="text-sm font-medium text-slate-300">Eligible</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Eligible</h3>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
               {teachers.filter(t => t.eligible_for_payout).length}
             </p>
-            <p className="text-xs text-slate-400 mt-1">Above minimum threshold</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Above minimum threshold</p>
           </div>
         </div>
 
         {/* Filters and Actions */}
-        <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
           <div className="p-6">
             <div className="flex flex-col md:flex-row gap-4 justify-between">
               {/* Search */}
               <div className="flex-1 max-w-md">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search teachers..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400"
                   />
                 </div>
               </div>
 
               {/* Filter */}
               <div className="flex items-center gap-3">
-                <Filter className="w-5 h-5 text-slate-400" />
+                <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white"
+                  className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 dark:text-white"
                 >
                   <option value="all">All Teachers</option>
                   <option value="eligible">Eligible for Payout</option>
@@ -467,9 +469,9 @@ export default function TeacherPayouts() {
 
             {/* Batch Actions */}
             {selectedTeachers.size > 0 && (
-              <div className="mt-4 p-4 bg-cyan-500/20 border border-cyan-500/50 rounded-lg flex items-center justify-between">
+              <div className="mt-4 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-gray-900 dark:text-white">
                     {selectedTeachers.size} teacher(s) selected
                   </p>
                   <p className="text-sm text-cyan-300">
@@ -479,14 +481,14 @@ export default function TeacherPayouts() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSelectedTeachers(new Set())}
-                    className="px-4 py-2 text-slate-300 bg-slate-900 border border-slate-600 rounded-lg hover:bg-slate-700 transition-colors"
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                   >
                     Clear Selection
                   </button>
                   <button
                     onClick={processPayouts}
                     disabled={processingPayout}
-                    className="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4" />
                     {processingPayout ? 'Processing...' : 'Process Payouts'}
@@ -499,7 +501,7 @@ export default function TeacherPayouts() {
               <div className="mt-4">
                 <button
                   onClick={selectAllEligible}
-                  className="text-sm text-cyan-400 hover:text-cyan-300 font-medium"
+                  className="text-sm text-emerald-600 hover:text-cyan-300 font-medium"
                 >
                   Select all eligible teachers
                 </button>
@@ -509,10 +511,10 @@ export default function TeacherPayouts() {
         </div>
 
         {/* Teachers Table */}
-        <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <input
@@ -525,67 +527,67 @@ export default function TeacherPayouts() {
                           setSelectedTeachers(new Set());
                         }
                       }}
-                      className="w-4 h-4 text-cyan-600 border-slate-600 rounded focus:ring-cyan-500 bg-slate-900"
+                      className="w-4 h-4 text-emerald-600 border-gray-200 dark:border-gray-700 rounded focus:ring-emerald-500 bg-gray-50 dark:bg-gray-700"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Teacher
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Cleared Balance
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     On Hold
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Total Paid
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Lessons
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-slate-800 divide-y divide-slate-700">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredTeachers.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
-                      <DollarSign className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400">No teachers found</p>
+                      <PoundSterling className="w-12 h-12 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">No teachers found</p>
                     </td>
                   </tr>
                 ) : (
                   filteredTeachers.map((teacher) => (
-                    <tr key={teacher.teacher_profile_id} className="hover:bg-slate-700/50">
+                    <tr key={teacher.teacher_profile_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedTeachers.has(teacher.teacher_profile_id)}
                           onChange={() => toggleTeacherSelection(teacher.teacher_profile_id)}
                           disabled={teacher.cleared_earnings <= 0}
-                          className="w-4 h-4 text-cyan-600 border-slate-600 rounded focus:ring-cyan-500 disabled:opacity-50 bg-slate-900"
+                          className="w-4 h-4 text-emerald-600 border-gray-200 dark:border-gray-700 rounded focus:ring-emerald-500 disabled:opacity-50 bg-gray-50 dark:bg-gray-700"
                         />
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-white">{teacher.teacher_name}</p>
-                          <p className="text-sm text-slate-400">{teacher.teacher_email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{teacher.teacher_name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{teacher.teacher_email}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`font-medium ${teacher.cleared_earnings > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        <span className={`font-medium ${teacher.cleared_earnings > 0 ? 'text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`}>
                           {formatCurrency(teacher.cleared_earnings)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatCurrency(teacher.held_earnings)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatCurrency(teacher.paid_earnings)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {teacher.cleared_lessons} cleared
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -599,7 +601,7 @@ export default function TeacherPayouts() {
                             Below minimum
                           </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-slate-700 text-slate-400">
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                             No balance
                           </span>
                         )}
@@ -617,7 +619,7 @@ export default function TeacherPayouts() {
           <div className="mb-6 p-4 bg-purple-500/20 border border-purple-500/50 rounded-lg flex items-center gap-3">
             <AlertCircle className="w-6 h-6 text-purple-400" />
             <div>
-              <p className="font-medium text-white">
+              <p className="font-medium text-gray-900 dark:text-white">
                 {recentPayouts.filter(p => p.status === 'requested').length} pending payout request(s)
               </p>
               <p className="text-sm text-purple-300">
@@ -628,68 +630,68 @@ export default function TeacherPayouts() {
         )}
 
         {/* Recent Payouts */}
-        <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-700">
-            <h2 className="text-lg font-semibold text-white">Recent Payouts</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Payouts</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Teacher
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Lessons
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Method
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-slate-800 divide-y divide-slate-700">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {recentPayouts.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
-                      <Send className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400">No payouts processed yet</p>
+                      <Send className="w-12 h-12 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">No payouts processed yet</p>
                     </td>
                   </tr>
                 ) : (
                   recentPayouts.map((payout) => (
-                    <tr key={payout.id} className="hover:bg-slate-700/50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                    <tr key={payout.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(payout.created_at)}
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-gray-900 dark:text-white">
                             {payout.teacher_profiles.profiles.full_name}
                           </p>
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {payout.teacher_profiles.profiles.email}
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-cyan-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600">
                         {formatCurrency(payout.total_amount)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {payout.earnings_count}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400 capitalize">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 capitalize">
                         {payout.payout_method.replace('_', ' ')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -718,7 +720,7 @@ export default function TeacherPayouts() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-slate-500 text-sm">-</span>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm">-</span>
                         )}
                       </td>
                     </tr>

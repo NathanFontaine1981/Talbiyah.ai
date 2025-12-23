@@ -146,20 +146,20 @@ export default function TierDiagnostic() {
       case 'success': return 'border-emerald-500/30 bg-emerald-500/10';
       case 'error': return 'border-red-500/30 bg-red-500/10';
       case 'warning': return 'border-amber-500/30 bg-amber-500/10';
-      default: return 'border-slate-700';
+      default: return 'border-gray-200';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 shadow-xl">
+        <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 shadow-xl">
           <h1 className="text-3xl font-bold text-white mb-2">Teacher Tier System Diagnostics</h1>
-          <p className="text-slate-400 mb-8">Checking database setup and permissions</p>
+          <p className="text-gray-500 mb-8">Checking database setup and permissions</p>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -174,13 +174,13 @@ export default function TierDiagnostic() {
                       <h3 className="text-lg font-semibold text-white mb-1">
                         {result.name}
                       </h3>
-                      <p className="text-slate-300 mb-3">{result.message}</p>
+                      <p className="text-gray-600 mb-3">{result.message}</p>
                       {result.details && (
                         <details className="mt-3">
-                          <summary className="text-sm text-cyan-400 cursor-pointer hover:text-cyan-300">
+                          <summary className="text-sm text-emerald-600 cursor-pointer hover:text-cyan-300">
                             View Details
                           </summary>
-                          <pre className="mt-2 text-xs text-slate-400 bg-slate-900/50 p-4 rounded-lg overflow-x-auto">
+                          <pre className="mt-2 text-xs text-gray-500 bg-gray-50 p-4 rounded-lg overflow-x-auto">
                             {JSON.stringify(result.details, null, 2)}
                           </pre>
                         </details>
@@ -196,13 +196,13 @@ export default function TierDiagnostic() {
             <button
               onClick={runDiagnostics}
               disabled={loading}
-              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-600 text-white rounded-lg font-semibold transition"
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-lg font-semibold transition"
             >
               {loading ? 'Running...' : 'Run Diagnostics Again'}
             </button>
             <button
               onClick={() => window.location.href = '/dashboard'}
-              className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+              className="px-6 py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
             >
               Back to Dashboard
             </button>

@@ -42,8 +42,8 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
         name: 'Arabic Language',
         progress: 0,
         icon: Languages,
-        color: 'text-cyan-400',
-        bgColor: 'from-cyan-500/20 to-blue-500/20',
+        color: 'text-emerald-600',
+        bgColor: 'from-emerald-500/20 to-blue-500/20',
         route: '/courses/arabic-progress',
         action: 'Start Learning'
       },
@@ -52,7 +52,7 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
         progress: 0,
         icon: Star,
         color: 'text-purple-400',
-        bgColor: 'from-purple-500/20 to-pink-500/20',
+        bgColor: 'from-purple-500/20 to-purple-600/20',
         route: '/courses/islamic-studies',
         action: 'Explore'
       }
@@ -166,8 +166,8 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
           name: 'Arabic Language',
           progress: arabicProgress,
           icon: Languages,
-          color: 'text-cyan-400',
-          bgColor: 'from-cyan-500/20 to-blue-500/20',
+          color: 'text-emerald-600',
+          bgColor: 'from-emerald-500/20 to-blue-500/20',
           route: '/courses/arabic-progress',
           action: arabicProgress > 0 ? 'Continue' : 'Start Learning'
         },
@@ -176,7 +176,7 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
           progress: islamicProgress,
           icon: Star,
           color: 'text-purple-400',
-          bgColor: 'from-purple-500/20 to-pink-500/20',
+          bgColor: 'from-purple-500/20 to-purple-600/20',
           route: '/courses/islamic-studies',
           action: islamicProgress > 0 ? 'Continue' : 'Explore'
         }
@@ -194,11 +194,11 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-700 rounded w-48"></div>
+          <div className="h-6 bg-gray-100 rounded w-48"></div>
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-slate-700 rounded"></div>
+            <div key={i} className="h-24 bg-gray-100 rounded"></div>
           ))}
         </div>
       </div>
@@ -206,19 +206,19 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-      <h3 className="text-xl font-bold text-white mb-4">My Learning Journey</h3>
+    <div className="bg-white rounded-2xl p-6 border border-gray-200">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">My Learning Journey</h3>
 
       <div className="space-y-4">
         {courses.map((course, index) => (
-          <div key={index} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div key={index} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 bg-gradient-to-br ${course.bgColor} rounded-lg flex items-center justify-center border border-slate-700/30`}>
+                <div className={`w-10 h-10 bg-gradient-to-br ${course.bgColor} rounded-lg flex items-center justify-center border border-gray-200`}>
                   <course.icon className={`w-5 h-5 ${course.color}`} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">{course.name}</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{course.name}</h4>
                   <p className={`text-xs ${course.color} font-medium`}>{course.progress}% Complete</p>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
               </button>
             </div>
 
-            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full bg-gradient-to-r ${course.bgColor.replace('/20', '')} transition-all duration-500`}
                 style={{ width: `${course.progress}%` }}

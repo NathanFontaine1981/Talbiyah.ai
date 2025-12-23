@@ -65,7 +65,7 @@ export default function MessageTemplateSelector({
             value={formData.value || ''}
             onChange={(e) => setFormData({ value: e.target.value })}
             min={minDate.toISOString().slice(0, 16)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
           />
         </div>
@@ -117,7 +117,7 @@ export default function MessageTemplateSelector({
             onChange={(e) => setFormData({ value: e.target.value })}
             maxLength={maxLength}
             placeholder="Type your question here..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 min-h-[80px]"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[80px]"
             required
           />
           <div className="flex justify-between items-center mt-1">
@@ -167,7 +167,7 @@ export default function MessageTemplateSelector({
               <button
                 key={template.id}
                 onClick={() => handleTemplateClick(template)}
-                className="w-full text-left p-3 border-2 border-gray-200 rounded-lg hover:border-cyan-500 hover:bg-cyan-50 transition group"
+                className="w-full text-left p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-cyan-50 transition group"
               >
                 <p className="text-sm font-medium text-gray-900 group-hover:text-cyan-900">
                   {preview}
@@ -226,7 +226,7 @@ export default function MessageTemplateSelector({
         <button
           onClick={handleSend}
           disabled={!canSend() || sending}
-          className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-cyan-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {sending ? (
             <>

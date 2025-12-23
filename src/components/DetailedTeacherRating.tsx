@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 import { Star, Send, X } from 'lucide-react';
 
@@ -36,7 +37,7 @@ export default function DetailedTeacherRating({
 
   const handleSubmit = async () => {
     if (Object.values(ratings).some(r => r === 0) || wouldRecommend === null) {
-      alert('Please complete all ratings');
+      toast.warning('Please complete all ratings');
       return;
     }
 
@@ -67,7 +68,7 @@ export default function DetailedTeacherRating({
       onComplete();
     } catch (error) {
       console.error('Error submitting rating:', error);
-      alert('Failed to submit rating');
+      toast.error('Failed to submit rating');
     } finally {
       setSubmitting(false);
     }
@@ -87,7 +88,7 @@ export default function DetailedTeacherRating({
               className={`w-10 h-10 ${
                 star <= currentRating
                   ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-slate-600 hover:text-slate-400'
+                  : 'text-gray-600 hover:text-gray-500'
               }`}
             />
           </button>
@@ -106,23 +107,23 @@ export default function DetailedTeacherRating({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full my-8 border border-slate-700 shadow-2xl">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-2xl w-full my-8 border border-gray-200 shadow-2xl">
         <div className="flex justify-between items-start mb-6">
           <div className="text-center flex-1">
             <div className="text-6xl mb-4">🎉</div>
             <h2 className="text-3xl font-bold text-white mb-2">
               {lessonCount} {lessonCount === 1 ? 'Lesson' : 'Lessons'} Complete!
             </h2>
-            <p className="text-cyan-400 font-medium mb-1">
+            <p className="text-emerald-600 font-medium mb-1">
               {milestoneMessages[milestoneType as keyof typeof milestoneMessages]}
             </p>
-            <p className="text-slate-400">
+            <p className="text-gray-500">
               Rate your experience with {teacherName}
             </p>
           </div>
           <button
             onClick={onComplete}
-            className="text-slate-400 hover:text-white transition"
+            className="text-gray-500 hover:text-white transition"
           >
             <X className="w-6 h-6" />
           </button>
@@ -130,47 +131,47 @@ export default function DetailedTeacherRating({
 
         <div className="space-y-6">
           {/* Teaching Quality */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <label className="block text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <span className="text-2xl">📚</span>
               Teaching Quality
             </label>
-            <p className="text-sm text-slate-400 mb-3">How well does the teacher explain concepts?</p>
+            <p className="text-sm text-gray-500 mb-3">How well does the teacher explain concepts?</p>
             {renderStars('teaching_quality', ratings.teaching_quality)}
           </div>
 
           {/* Punctuality */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <label className="block text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <span className="text-2xl">⏰</span>
               Punctuality
             </label>
-            <p className="text-sm text-slate-400 mb-3">Does the teacher start lessons on time?</p>
+            <p className="text-sm text-gray-500 mb-3">Does the teacher start lessons on time?</p>
             {renderStars('punctuality', ratings.punctuality)}
           </div>
 
           {/* Communication */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <label className="block text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <span className="text-2xl">🗣️</span>
               Communication
             </label>
-            <p className="text-sm text-slate-400 mb-3">How clear and responsive is the teacher?</p>
+            <p className="text-sm text-gray-500 mb-3">How clear and responsive is the teacher?</p>
             {renderStars('communication', ratings.communication)}
           </div>
 
           {/* Goal Progress */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <label className="block text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <span className="text-2xl">🎯</span>
               Helping You Reach Your Goals
             </label>
-            <p className="text-sm text-slate-400 mb-3">Are you making progress toward your learning goals?</p>
+            <p className="text-sm text-gray-500 mb-3">Are you making progress toward your learning goals?</p>
             {renderStars('goal_progress', ratings.goal_progress)}
           </div>
 
           {/* Recommendation */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <label className="block text-lg font-semibold text-white mb-3">
               Would you recommend this teacher to others?
             </label>
@@ -181,7 +182,7 @@ export default function DetailedTeacherRating({
                 className={`flex-1 py-4 rounded-lg border-2 font-bold transition ${
                   wouldRecommend === true
                     ? 'border-green-500 bg-green-500/20 text-green-400'
-                    : 'border-slate-700 hover:border-green-500 text-slate-400'
+                    : 'border-gray-200 hover:border-green-500 text-gray-500'
                 }`}
               >
                 👍 Yes, Definitely
@@ -192,7 +193,7 @@ export default function DetailedTeacherRating({
                 className={`flex-1 py-4 rounded-lg border-2 font-bold transition ${
                   wouldRecommend === false
                     ? 'border-red-500 bg-red-500/20 text-red-400'
-                    : 'border-slate-700 hover:border-red-500 text-slate-400'
+                    : 'border-gray-200 hover:border-red-500 text-gray-500'
                 }`}
               >
                 👎 Not Really
@@ -203,17 +204,17 @@ export default function DetailedTeacherRating({
           {/* Positive Feedback */}
           <div>
             <label className="block text-lg font-semibold text-white mb-2">
-              💚 What's going well? <span className="text-slate-500 text-sm font-normal">(optional)</span>
+              💚 What's going well? <span className="text-gray-500 text-sm font-normal">(optional)</span>
             </label>
             <textarea
               value={positiveFeedback}
               onChange={(e) => setPositiveFeedback(e.target.value)}
               placeholder="Share what you appreciate about this teacher..."
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               rows={3}
               maxLength={500}
             />
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {positiveFeedback.length}/500 characters
             </p>
           </div>
@@ -221,17 +222,17 @@ export default function DetailedTeacherRating({
           {/* Improvement Feedback */}
           <div>
             <label className="block text-lg font-semibold text-white mb-2">
-              💡 What could improve? <span className="text-slate-500 text-sm font-normal">(optional)</span>
+              💡 What could improve? <span className="text-gray-500 text-sm font-normal">(optional)</span>
             </label>
             <textarea
               value={improvementFeedback}
               onChange={(e) => setImprovementFeedback(e.target.value)}
               placeholder="Constructive feedback helps teachers grow..."
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               rows={3}
               maxLength={500}
             />
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {improvementFeedback.length}/500 characters
             </p>
           </div>
@@ -240,7 +241,7 @@ export default function DetailedTeacherRating({
         <div className="flex gap-4 mt-8">
           <button
             onClick={onComplete}
-            className="flex-1 px-6 py-4 border border-slate-700 rounded-lg hover:bg-slate-800 text-white transition font-semibold"
+            className="flex-1 px-6 py-4 border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-700 transition font-semibold"
             type="button"
           >
             Skip for now
@@ -248,7 +249,7 @@ export default function DetailedTeacherRating({
           <button
             onClick={handleSubmit}
             disabled={submitting || Object.values(ratings).some(r => r === 0) || wouldRecommend === null}
-            className="flex-1 px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold flex items-center justify-center gap-2"
             type="button"
           >
             {submitting ? (

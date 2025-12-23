@@ -9,9 +9,9 @@ export default function RecommendedActionsCard() {
       icon: UserPlus,
       title: 'Complete Profile',
       points: '+50 XP',
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
-      borderColor: 'border-cyan-500/20',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/20',
       route: '/account/settings'
     },
     {
@@ -35,7 +35,7 @@ export default function RecommendedActionsCard() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <h3 className="text-xl font-bold text-white mb-4">Recommended Actions</h3>
 
       <div className="space-y-3">

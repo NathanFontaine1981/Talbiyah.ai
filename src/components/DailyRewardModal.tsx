@@ -124,17 +124,17 @@ export default function DailyRewardModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 max-w-md w-full border border-purple-500/30 shadow-2xl shadow-purple-500/20 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-3xl p-8 max-w-md w-full border border-purple-500/30 shadow-2xl shadow-purple-500/20 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
         </div>
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition z-10"
+          className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition z-10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -144,7 +144,7 @@ export default function DailyRewardModal({
             <div className="text-center py-8">
               <div className="w-20 h-20 mx-auto mb-6 relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse"></div>
-                <Gift className="w-10 h-10 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <Gift className="w-10 h-10 text-white absolute top-1/2 left-1/2 -trangray-x-1/2 -trangray-y-1/2" />
               </div>
               <p className="text-xl text-white font-semibold">Opening your reward...</p>
             </div>
@@ -152,27 +152,27 @@ export default function DailyRewardModal({
             result.alreadyClaimed ? (
               // Already claimed today
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-slate-700/50 rounded-full flex items-center justify-center">
-                  <Gift className="w-10 h-10 text-slate-400" />
+                <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Gift className="w-10 h-10 text-gray-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Come Back Tomorrow!</h2>
-                <p className="text-slate-300 mb-6">
+                <p className="text-gray-600 mb-6">
                   You've already claimed today's reward.
                 </p>
-                <div className="bg-slate-800/50 rounded-xl p-4 mb-6">
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <div className="flex items-center justify-center space-x-2">
                     <Flame className="w-6 h-6 text-orange-500" />
                     <span className="text-2xl font-bold text-orange-400">
                       {result.streak || 0} Day Streak
                     </span>
                   </div>
-                  <p className="text-slate-400 text-sm mt-2">
+                  <p className="text-gray-500 text-sm mt-2">
                     Keep logging in daily to build your streak!
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition"
+                  className="w-full py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition"
                 >
                   Got It
                 </button>
@@ -184,7 +184,7 @@ export default function DailyRewardModal({
                 <h2 className="text-3xl font-bold text-white mb-2">
                   Welcome Back, {learnerName.split(' ')[0]}!
                 </h2>
-                <p className="text-slate-300 mb-6">{getStreakMessage(result.newStreak || 1)}</p>
+                <p className="text-gray-600 mb-6">{getStreakMessage(result.newStreak || 1)}</p>
 
                 {/* XP Reward Card */}
                 <div className={`bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl p-6 mb-6 border border-amber-500/30 ${animatingXP ? 'animate-bounce' : ''}`}>
@@ -194,13 +194,13 @@ export default function DailyRewardModal({
                   </div>
 
                   <div className="flex items-center justify-center space-x-4 text-sm">
-                    <div className="bg-slate-800/50 px-3 py-1.5 rounded-lg">
-                      <span className="text-slate-400">Base: </span>
+                    <div className="bg-gray-50 px-3 py-1.5 rounded-lg">
+                      <span className="text-gray-500">Base: </span>
                       <span className="text-amber-400 font-semibold">{result.baseXP} XP</span>
                     </div>
                     {(result.streakBonus || 0) > 0 && (
-                      <div className="bg-slate-800/50 px-3 py-1.5 rounded-lg">
-                        <span className="text-slate-400">Streak Bonus: </span>
+                      <div className="bg-gray-50 px-3 py-1.5 rounded-lg">
+                        <span className="text-gray-500">Streak Bonus: </span>
                         <span className="text-orange-400 font-semibold">+{result.streakBonus} XP</span>
                       </div>
                     )}
@@ -208,7 +208,7 @@ export default function DailyRewardModal({
                 </div>
 
                 {/* Streak Display */}
-                <div className="bg-slate-800/50 rounded-xl p-4 mb-6">
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <div className="flex items-center justify-center space-x-2 mb-2">
                     <Flame className="w-6 h-6 text-orange-500" />
                     <span className="text-2xl font-bold text-orange-400">
@@ -223,14 +223,14 @@ export default function DailyRewardModal({
                       />
                     ))}
                     {Array.from({ length: Math.max(0, 7 - (result.newStreak || 0)) }).map((_, i) => (
-                      <div key={`empty-${i}`} className="w-8 h-2 bg-slate-700 rounded-full" />
+                      <div key={`empty-${i}`} className="w-8 h-2 bg-gray-200 rounded-full" />
                     ))}
                   </div>
                 </div>
 
                 {/* Level Up Notification */}
                 {result.levelUp && (
-                  <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 mb-6 border border-purple-500/30 animate-pulse">
+                  <div className="bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-xl p-4 mb-6 border border-purple-500/30 animate-pulse">
                     <div className="flex items-center justify-center space-x-2">
                       <ChevronUp className="w-6 h-6 text-purple-400" />
                       <span className="text-xl font-bold text-purple-400">
@@ -242,13 +242,13 @@ export default function DailyRewardModal({
                 )}
 
                 {/* Total XP */}
-                <div className="text-sm text-slate-400 mb-6">
+                <div className="text-sm text-gray-500 mb-6">
                   Total XP: <span className="text-white font-semibold">{result.totalXP?.toLocaleString()}</span>
                 </div>
 
                 <button
                   onClick={onClose}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white rounded-xl font-semibold transition shadow-lg shadow-emerald-500/25"
+                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-blue-700 text-white rounded-xl font-semibold transition shadow-lg shadow-emerald-500/25"
                 >
                   Let's Learn!
                 </button>

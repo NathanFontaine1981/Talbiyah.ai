@@ -93,6 +93,37 @@ export default function RecentMessagesCard() {
         return;
       }
 
+      // Get session once before processing
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      // For teachers, batch fetch all student info at once
+      let studentInfoMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      if (isTeacher && accessToken) {
+        const studentIds = relationships.map((rel: any) => rel.student_id).filter(Boolean);
+        if (studentIds.length > 0) {
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ student_ids: studentIds })
+              }
+            );
+            if (response.ok) {
+              const { students } = await response.json();
+              studentInfoMap = students || {};
+            }
+          } catch (error) {
+            console.error('Error fetching student info:', error);
+          }
+        }
+      }
+
       // Get recent messages for each relationship
       const recentMessagesData = await Promise.all(
         relationships.map(async (rel: any) => {
@@ -101,37 +132,12 @@ export default function RecentMessagesCard() {
           let otherUserAvatar: string | null;
 
           if (isTeacher) {
-            // Teacher viewing - use Edge Function to get student info (bypasses RLS)
-            try {
-              const response = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-student-info`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-                  },
-                  body: JSON.stringify({ student_ids: [rel.student_id] })
-                }
-              );
-
-              if (response.ok) {
-                const { students } = await response.json();
-                const studentInfo = students[rel.student_id];
-
-                if (studentInfo) {
-                  otherUserName = studentInfo.name;
-                  otherUserAvatar = studentInfo.avatar_url;
-                } else {
-                  otherUserName = 'Student';
-                  otherUserAvatar = null;
-                }
-              } else {
-                otherUserName = 'Student';
-                otherUserAvatar = null;
-              }
-            } catch (error) {
-              console.error('Error fetching student info:', error);
+            // Teacher viewing - use pre-fetched student info
+            const studentInfo = studentInfoMap[rel.student_id];
+            if (studentInfo) {
+              otherUserName = studentInfo.name;
+              otherUserAvatar = studentInfo.avatar_url;
+            } else {
               otherUserName = 'Student';
               otherUserAvatar = null;
             }
@@ -218,10 +224,10 @@ export default function RecentMessagesCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-100 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-100 rounded w-1/2"></div>
         </div>
       </div>
     );
@@ -232,24 +238,24 @@ export default function RecentMessagesCard() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-6">
+      <div className="bg-emerald-50 border-b border-emerald-100 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">Recent Messages</h3>
-              <p className="text-cyan-100 text-sm">
+              <h3 className="text-xl font-bold text-gray-900">Recent Messages</h3>
+              <p className="text-emerald-600 text-sm">
                 {totalUnread > 0 ? `${totalUnread} unread message${totalUnread !== 1 ? 's' : ''}` : 'All caught up!'}
               </p>
             </div>
           </div>
           <button
             onClick={() => navigate('/messages')}
-            className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg font-medium transition flex items-center gap-2"
+            className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg font-medium transition flex items-center gap-2"
           >
             View All
             <ArrowRight className="w-4 h-4" />
@@ -266,7 +272,7 @@ export default function RecentMessagesCard() {
             className="w-full p-4 hover:bg-gray-50 transition text-left flex items-start gap-3"
           >
             {/* Avatar */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
               {message.other_user_avatar ? (
                 <img
                   src={message.other_user_avatar}
@@ -290,7 +296,7 @@ export default function RecentMessagesCard() {
                     {formatRelativeTime(message.message_time)}
                   </span>
                   {message.unread_count > 0 && (
-                    <span className="bg-cyan-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-emerald-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                       {message.unread_count}
                     </span>
                   )}
@@ -317,7 +323,7 @@ export default function RecentMessagesCard() {
         <div className="bg-gray-50 p-4 text-center">
           <button
             onClick={() => navigate('/messages')}
-            className="text-cyan-600 hover:text-cyan-700 font-medium text-sm flex items-center gap-2 mx-auto"
+            className="text-emerald-600 hover:text-blue-700 font-medium text-sm flex items-center gap-2 mx-auto"
           >
             <Users className="w-4 h-4" />
             View all conversations

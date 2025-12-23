@@ -73,7 +73,7 @@ interface StudentArabicTrackerProps {
 
 const BOOK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   '1A': { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50' },
-  '1B': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/50' },
+  '1B': { bg: 'bg-emerald-500/20', text: 'text-emerald-600', border: 'border-emerald-500/50' },
   '2A': { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/50' },
   '2B': { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/50' },
 };
@@ -368,13 +368,13 @@ export default function StudentArabicTracker({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 rounded-2xl border border-slate-700/50 overflow-hidden">
+    <div className="bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6">
         <div className="flex items-center justify-between">
@@ -399,31 +399,31 @@ export default function StudentArabicTracker({
       </div>
 
       {/* Stats Overview */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="w-5 h-5 text-orange-400" />
-              <span className="text-slate-400 text-sm">Total Units</span>
+              <span className="text-gray-500 text-sm">Total Units</span>
             </div>
             <p className="text-2xl font-bold text-orange-400">{overallStats.totalUnits}</p>
-            <p className="text-xs text-slate-500">Book 1A & 1B</p>
+            <p className="text-xs text-gray-500">Book 1A & 1B</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
               <GraduationCap className="w-5 h-5 text-emerald-400" />
-              <span className="text-slate-400 text-sm">Completed</span>
+              <span className="text-gray-500 text-sm">Completed</span>
             </div>
             <p className="text-2xl font-bold text-emerald-400">{overallStats.completed}</p>
-            <p className="text-xs text-slate-500">{Math.round((overallStats.completed / overallStats.totalUnits) * 100)}% mastered</p>
+            <p className="text-xs text-gray-500">{Math.round((overallStats.completed / overallStats.totalUnits) * 100)}% mastered</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
-              <Brain className="w-5 h-5 text-cyan-400" />
-              <span className="text-slate-400 text-sm">In Progress</span>
+              <Brain className="w-5 h-5 text-emerald-600" />
+              <span className="text-gray-500 text-sm">In Progress</span>
             </div>
-            <p className="text-2xl font-bold text-cyan-400">{overallStats.inProgress}</p>
-            <p className="text-xs text-slate-500">Currently learning</p>
+            <p className="text-2xl font-bold text-emerald-600">{overallStats.inProgress}</p>
+            <p className="text-xs text-gray-500">Currently learning</p>
           </div>
           <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-xl p-4 border border-orange-500/30">
             <div className="flex items-center gap-2 mb-2">
@@ -439,7 +439,7 @@ export default function StudentArabicTracker({
       </div>
 
       {/* General Notes Section */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-white font-semibold flex items-center gap-2">
             <Edit3 className="w-5 h-5 text-orange-400" />
@@ -461,7 +461,7 @@ export default function StudentArabicTracker({
               value={generalNotes}
               onChange={(e) => setGeneralNotes(e.target.value)}
               placeholder="Add notes about the student's Arabic progress, strengths, areas to improve..."
-              className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
               rows={4}
             />
             <div className="flex gap-2">
@@ -475,35 +475,35 @@ export default function StudentArabicTracker({
               </button>
               <button
                 onClick={() => setEditingGeneralNotes(false)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg transition"
               >
                 Cancel
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             {generalNotes ? (
-              <p className="text-slate-300 whitespace-pre-wrap">{generalNotes}</p>
+              <p className="text-gray-600 whitespace-pre-wrap">{generalNotes}</p>
             ) : (
-              <p className="text-slate-500 italic">No general notes yet. Click Edit to add notes.</p>
+              <p className="text-gray-500 italic">No general notes yet. Click Edit to add notes.</p>
             )}
           </div>
         )}
       </div>
 
       {/* Book Navigation */}
-      <div className="p-6 border-b border-slate-700/50">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold">Select Book</h3>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
               placeholder="Search units..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-48"
+              className="pl-9 pr-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-48"
             />
           </div>
         </div>
@@ -522,18 +522,18 @@ export default function StudentArabicTracker({
                 className={`flex-1 p-4 rounded-xl border-2 transition ${
                   selectedBook === book && !searchQuery
                     ? `${colors.bg} ${colors.border}`
-                    : 'bg-slate-800/50 border-slate-700/50 hover:border-slate-600'
+                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div className="text-left">
                   <h4 className={`font-bold ${selectedBook === book && !searchQuery ? colors.text : 'text-white'}`}>
                     Book {book}
                   </h4>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-gray-500 text-sm">
                     {book === '1A' ? 'Units 1-8 (Beginner)' : 'Units 9-16 (Elementary)'}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${colors.bg.replace('/20', '')} transition-all`}
                         style={{ width: `${stats.percentage}%` }}
@@ -562,18 +562,18 @@ export default function StudentArabicTracker({
             return (
               <div
                 key={unit.id}
-                className={`bg-slate-800/50 rounded-xl border overflow-hidden transition ${
-                  isComplete ? colors.border : 'border-slate-700/50'
+                className={`bg-gray-50 rounded-xl border overflow-hidden transition ${
+                  isComplete ? colors.border : 'border-gray-200'
                 }`}
               >
                 {/* Unit Header */}
                 <button
                   onClick={() => setExpandedUnit(isExpanded ? null : unit.id)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-slate-800/70 transition"
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-100 transition"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${
-                      isComplete ? colors.bg + ' ' + colors.text : 'bg-slate-700/50 text-slate-300'
+                      isComplete ? colors.bg + ' ' + colors.text : 'bg-gray-100 text-gray-600'
                     }`}>
                       {unit.unit_number}
                     </div>
@@ -582,7 +582,7 @@ export default function StudentArabicTracker({
                         {unit.unit_title_english}
                         <span className="text-lg text-orange-400 font-arabic">{unit.unit_title_arabic}</span>
                       </h4>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-gray-500 text-sm">
                         Book {unit.book} • {unit.unit_theme}
                       </p>
                     </div>
@@ -594,24 +594,24 @@ export default function StudentArabicTracker({
                       unitProgress?.status === 'completed'
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : unitProgress?.status === 'in_progress'
-                        ? 'bg-cyan-500/20 text-cyan-400'
+                        ? 'bg-emerald-500/20 text-emerald-600'
                         : unitProgress?.status === 'needs_review'
                         ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-slate-700/50 text-slate-400'
+                        : 'bg-gray-100 text-gray-500'
                     }`}>
                       {unitProgress?.status?.replace('_', ' ') || 'Not Started'}
                     </span>
                     {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-slate-700/50 pt-4 space-y-4">
+                  <div className="px-4 pb-4 border-t border-gray-200 pt-4 space-y-4">
                     {/* Progress Checkboxes */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* Understanding */}
@@ -620,18 +620,18 @@ export default function StudentArabicTracker({
                         disabled={saving}
                         className={`p-4 rounded-xl border-2 transition flex items-center gap-3 ${
                           unitProgress?.understanding_complete
-                            ? 'bg-cyan-500/20 border-cyan-500'
-                            : 'bg-slate-900/30 border-slate-700/50 hover:border-cyan-500/50'
+                            ? 'bg-emerald-500/20 border-emerald-500'
+                            : 'bg-white/30 border-gray-200 hover:border-emerald-500/50'
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
-                          unitProgress?.understanding_complete ? 'border-cyan-500 bg-cyan-500/20' : 'border-slate-600'
+                          unitProgress?.understanding_complete ? 'border-emerald-500 bg-emerald-500/20' : 'border-gray-300'
                         }`}>
-                          {unitProgress?.understanding_complete && <Check className="w-5 h-5 text-cyan-400" />}
+                          {unitProgress?.understanding_complete && <Check className="w-5 h-5 text-emerald-600" />}
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-white">Understanding</p>
-                          <p className="text-xs text-slate-400">Can understand vocabulary</p>
+                          <p className="text-xs text-gray-500">Can understand vocabulary</p>
                         </div>
                       </button>
 
@@ -642,17 +642,17 @@ export default function StudentArabicTracker({
                         className={`p-4 rounded-xl border-2 transition flex items-center gap-3 ${
                           unitProgress?.practice_complete
                             ? 'bg-blue-500/20 border-blue-500'
-                            : 'bg-slate-900/30 border-slate-700/50 hover:border-blue-500/50'
+                            : 'bg-white/30 border-gray-200 hover:border-blue-500/50'
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
-                          unitProgress?.practice_complete ? 'border-blue-500 bg-blue-500/20' : 'border-slate-600'
+                          unitProgress?.practice_complete ? 'border-blue-500 bg-blue-500/20' : 'border-gray-300'
                         }`}>
                           {unitProgress?.practice_complete && <Check className="w-5 h-5 text-blue-400" />}
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-white">Practice</p>
-                          <p className="text-xs text-slate-400">Can use in exercises</p>
+                          <p className="text-xs text-gray-500">Can use in exercises</p>
                         </div>
                       </button>
 
@@ -663,17 +663,17 @@ export default function StudentArabicTracker({
                         className={`p-4 rounded-xl border-2 transition flex items-center gap-3 ${
                           unitProgress?.mastery_complete
                             ? 'bg-emerald-500/20 border-emerald-500'
-                            : 'bg-slate-900/30 border-slate-700/50 hover:border-emerald-500/50'
+                            : 'bg-white/30 border-gray-200 hover:border-emerald-500/50'
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
-                          unitProgress?.mastery_complete ? 'border-emerald-500 bg-emerald-500/20' : 'border-slate-600'
+                          unitProgress?.mastery_complete ? 'border-emerald-500 bg-emerald-500/20' : 'border-gray-300'
                         }`}>
                           {unitProgress?.mastery_complete && <Check className="w-5 h-5 text-emerald-400" />}
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-white">Mastery</p>
-                          <p className="text-xs text-slate-400">Fluent in conversation</p>
+                          <p className="text-xs text-gray-500">Fluent in conversation</p>
                         </div>
                       </button>
                     </div>
@@ -686,11 +686,11 @@ export default function StudentArabicTracker({
                         className={`p-3 rounded-xl border transition flex items-center gap-3 ${
                           unitProgress?.grammar_mastered
                             ? 'bg-purple-500/20 border-purple-500/50'
-                            : 'bg-slate-900/30 border-slate-700/50 hover:border-purple-500/30'
+                            : 'bg-white/30 border-gray-200 hover:border-purple-500/30'
                         }`}
                       >
-                        <PenTool className={`w-5 h-5 ${unitProgress?.grammar_mastered ? 'text-purple-400' : 'text-slate-400'}`} />
-                        <span className={unitProgress?.grammar_mastered ? 'text-purple-300' : 'text-slate-300'}>
+                        <PenTool className={`w-5 h-5 ${unitProgress?.grammar_mastered ? 'text-purple-400' : 'text-gray-500'}`} />
+                        <span className={unitProgress?.grammar_mastered ? 'text-purple-300' : 'text-gray-600'}>
                           Grammar Mastered
                         </span>
                       </button>
@@ -700,11 +700,11 @@ export default function StudentArabicTracker({
                         className={`p-3 rounded-xl border transition flex items-center gap-3 ${
                           unitProgress?.conversation_practiced
                             ? 'bg-amber-500/20 border-amber-500/50'
-                            : 'bg-slate-900/30 border-slate-700/50 hover:border-amber-500/30'
+                            : 'bg-white/30 border-gray-200 hover:border-amber-500/30'
                         }`}
                       >
-                        <MessageCircle className={`w-5 h-5 ${unitProgress?.conversation_practiced ? 'text-amber-400' : 'text-slate-400'}`} />
-                        <span className={unitProgress?.conversation_practiced ? 'text-amber-300' : 'text-slate-300'}>
+                        <MessageCircle className={`w-5 h-5 ${unitProgress?.conversation_practiced ? 'text-amber-400' : 'text-gray-500'}`} />
+                        <span className={unitProgress?.conversation_practiced ? 'text-amber-300' : 'text-gray-600'}>
                           Conversation Practiced
                         </span>
                       </button>
@@ -714,7 +714,7 @@ export default function StudentArabicTracker({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* Key Vocabulary */}
                       {unit.key_vocabulary && unit.key_vocabulary.length > 0 && (
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/30">
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                           <p className="text-xs text-orange-400 font-medium mb-2 flex items-center gap-1">
                             <BookOpen className="w-4 h-4" />
                             Key Vocabulary
@@ -726,7 +726,7 @@ export default function StudentArabicTracker({
                               </span>
                             ))}
                             {unit.key_vocabulary.length > 6 && (
-                              <span className="px-2 py-1 text-slate-400 text-xs">
+                              <span className="px-2 py-1 text-gray-500 text-xs">
                                 +{unit.key_vocabulary.length - 6} more
                               </span>
                             )}
@@ -736,14 +736,14 @@ export default function StudentArabicTracker({
 
                       {/* Grammar Topics */}
                       {unit.grammar_topics && unit.grammar_topics.length > 0 && (
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/30">
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                           <p className="text-xs text-purple-400 font-medium mb-2 flex items-center gap-1">
                             <PenTool className="w-4 h-4" />
                             Grammar Topics
                           </p>
                           <ul className="space-y-1">
                             {unit.grammar_topics.slice(0, 3).map((topic, i) => (
-                              <li key={i} className="text-xs text-slate-300">
+                              <li key={i} className="text-xs text-gray-600">
                                 • {topic}
                               </li>
                             ))}
@@ -753,14 +753,14 @@ export default function StudentArabicTracker({
 
                       {/* Conversation Topics */}
                       {unit.conversation_topics && unit.conversation_topics.length > 0 && (
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/30">
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                           <p className="text-xs text-amber-400 font-medium mb-2 flex items-center gap-1">
                             <MessageCircle className="w-4 h-4" />
                             Conversation Topics
                           </p>
                           <ul className="space-y-1">
                             {unit.conversation_topics.map((topic, i) => (
-                              <li key={i} className="text-xs text-slate-300">
+                              <li key={i} className="text-xs text-gray-600">
                                 • {topic}
                               </li>
                             ))}
@@ -770,10 +770,10 @@ export default function StudentArabicTracker({
                     </div>
 
                     {/* Teacher Notes */}
-                    <div className="bg-slate-900/30 rounded-xl p-4 border border-slate-700/30">
+                    <div className="bg-white/30 rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm text-white font-medium flex items-center gap-2">
-                          <Edit3 className="w-4 h-4 text-cyan-400" />
+                          <Edit3 className="w-4 h-4 text-emerald-600" />
                           Teacher Notes for Unit {unit.unit_number}
                         </p>
                         {editingNotes !== unit.id && (
@@ -782,7 +782,7 @@ export default function StudentArabicTracker({
                               setEditingNotes(unit.id);
                               setNotesText(unitProgress?.teacher_notes || '');
                             }}
-                            className="text-cyan-400 hover:text-cyan-300 text-xs"
+                            className="text-emerald-600 hover:text-cyan-300 text-xs"
                           >
                             {unitProgress?.teacher_notes ? 'Edit' : 'Add Notes'}
                           </button>
@@ -795,14 +795,14 @@ export default function StudentArabicTracker({
                             value={notesText}
                             onChange={(e) => setNotesText(e.target.value)}
                             placeholder="Add notes about the student's progress in this unit..."
-                            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none text-sm"
+                            className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm"
                             rows={3}
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleSaveNotes(unit.id)}
                               disabled={saving}
-                              className="flex-1 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
+                              className="flex-1 py-2 bg-emerald-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
                             >
                               {saving ? 'Saving...' : 'Save Notes'}
                             </button>
@@ -811,16 +811,16 @@ export default function StudentArabicTracker({
                                 setEditingNotes(null);
                                 setNotesText('');
                               }}
-                              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition"
                             >
                               Cancel
                             </button>
                           </div>
                         </div>
                       ) : unitProgress?.teacher_notes ? (
-                        <p className="text-sm text-slate-300 whitespace-pre-wrap">{unitProgress.teacher_notes}</p>
+                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{unitProgress.teacher_notes}</p>
                       ) : (
-                        <p className="text-sm text-slate-500 italic">No notes yet.</p>
+                        <p className="text-sm text-gray-500 italic">No notes yet.</p>
                       )}
                     </div>
 
@@ -847,7 +847,7 @@ export default function StudentArabicTracker({
                         {/* Uploaded Files */}
                         {homework[unit.id].uploaded_files && homework[unit.id].uploaded_files!.length > 0 && (
                           <div className="mb-3">
-                            <p className="text-xs text-slate-400 mb-2">Submitted Files</p>
+                            <p className="text-xs text-gray-500 mb-2">Submitted Files</p>
                             <div className="space-y-2">
                               {homework[unit.id].uploaded_files!.map((file, index) => (
                                 <a
@@ -855,13 +855,13 @@ export default function StudentArabicTracker({
                                   href={file.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2 hover:bg-slate-700/50 transition"
+                                  className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition"
                                 >
                                   {getFileIcon(file.type)}
-                                  <span className="text-sm text-cyan-400 hover:text-cyan-300 truncate flex-1">
+                                  <span className="text-sm text-emerald-600 hover:text-cyan-300 truncate flex-1">
                                     {file.name}
                                   </span>
-                                  <span className="text-xs text-slate-500">{formatFileSize(file.size)}</span>
+                                  <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
                                 </a>
                               ))}
                             </div>
@@ -875,7 +875,7 @@ export default function StudentArabicTracker({
                             homework[unit.id].confidence_level === 2 ? 'bg-amber-500/10 border-amber-500/30' :
                             homework[unit.id].confidence_level === 3 ? 'bg-yellow-500/10 border-yellow-500/30' :
                             homework[unit.id].confidence_level === 4 ? 'bg-emerald-500/10 border-emerald-500/30' :
-                            'bg-cyan-500/10 border-cyan-500/30'
+                            'bg-emerald-500/10 border-emerald-500/30'
                           }`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -884,7 +884,7 @@ export default function StudentArabicTracker({
                                   homework[unit.id].confidence_level === 2 ? 'text-amber-400' :
                                   homework[unit.id].confidence_level === 3 ? 'text-yellow-400' :
                                   homework[unit.id].confidence_level === 4 ? 'text-emerald-400' :
-                                  'text-cyan-400'
+                                  'text-emerald-600'
                                 }`} />
                                 <span className="text-sm font-medium text-white">Student Confidence</span>
                               </div>
@@ -894,16 +894,16 @@ export default function StudentArabicTracker({
                                   homework[unit.id].confidence_level === 2 ? 'bg-amber-500/20 text-amber-400' :
                                   homework[unit.id].confidence_level === 3 ? 'bg-yellow-500/20 text-yellow-400' :
                                   homework[unit.id].confidence_level === 4 ? 'bg-emerald-500/20 text-emerald-400' :
-                                  'bg-cyan-500/20 text-cyan-400'
+                                  'bg-emerald-500/20 text-emerald-600'
                                 }`}>
                                   {CONFIDENCE_LEVELS[homework[unit.id].confidence_level!]?.label}
                                 </span>
-                                <span className="text-xs text-slate-400">
+                                <span className="text-xs text-gray-500">
                                   ({homework[unit.id].confidence_level}/5)
                                 </span>
                               </div>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">
+                            <p className="text-xs text-gray-500 mt-2">
                               {CONFIDENCE_LEVELS[homework[unit.id].confidence_level!]?.description}
                             </p>
                             {homework[unit.id].confidence_level! <= 2 && (
@@ -916,24 +916,24 @@ export default function StudentArabicTracker({
 
                         {/* Student Notes */}
                         {homework[unit.id].student_notes && (
-                          <div className="mb-3 bg-slate-800/30 rounded-lg p-3">
-                            <p className="text-xs text-slate-400 mb-1">Student's Notes</p>
-                            <p className="text-sm text-slate-300">{homework[unit.id].student_notes}</p>
+                          <div className="mb-3 bg-white rounded-lg p-3">
+                            <p className="text-xs text-gray-500 mb-1">Student's Notes</p>
+                            <p className="text-sm text-gray-600">{homework[unit.id].student_notes}</p>
                           </div>
                         )}
 
                         {/* Quiz Score */}
                         {homework[unit.id].quiz_score !== null && homework[unit.id].quiz_total !== null && (
-                          <div className="mb-3 bg-cyan-500/10 rounded-lg p-3 flex items-center justify-between">
+                          <div className="mb-3 bg-emerald-500/10 rounded-lg p-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Star className="w-5 h-5 text-cyan-400" />
-                              <span className="text-sm text-cyan-400 font-medium">Quiz Score</span>
+                              <Star className="w-5 h-5 text-emerald-600" />
+                              <span className="text-sm text-emerald-600 font-medium">Quiz Score</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xl font-bold text-white">
                                 {homework[unit.id].quiz_score}/{homework[unit.id].quiz_total}
                               </span>
-                              <span className="text-sm text-slate-400 ml-2">
+                              <span className="text-sm text-gray-500 ml-2">
                                 ({Math.round((homework[unit.id].quiz_score! / homework[unit.id].quiz_total!) * 100)}%)
                               </span>
                             </div>
@@ -942,7 +942,7 @@ export default function StudentArabicTracker({
 
                         {/* Submission Time */}
                         {homework[unit.id].submitted_at && (
-                          <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                          <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Submitted {new Date(homework[unit.id].submitted_at!).toLocaleString()}
                           </p>
@@ -961,9 +961,9 @@ export default function StudentArabicTracker({
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-slate-300">{homework[unit.id].teacher_feedback}</p>
+                            <p className="text-sm text-gray-600">{homework[unit.id].teacher_feedback}</p>
                             {homework[unit.id].reviewed_at && (
-                              <p className="text-xs text-slate-500 mt-2">
+                              <p className="text-xs text-gray-500 mt-2">
                                 Reviewed {new Date(homework[unit.id].reviewed_at!).toLocaleDateString()}
                               </p>
                             )}
@@ -972,21 +972,21 @@ export default function StudentArabicTracker({
                           reviewingHomework === unit.id ? (
                             <div className="space-y-3">
                               <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Your Feedback</label>
+                                <label className="text-xs text-gray-500 mb-1 block">Your Feedback</label>
                                 <textarea
                                   value={feedbackText}
                                   onChange={(e) => setFeedbackText(e.target.value)}
                                   placeholder="Provide feedback on the student's homework..."
-                                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-sm"
+                                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-sm"
                                   rows={3}
                                 />
                               </div>
                               <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Rating (optional)</label>
+                                <label className="text-xs text-gray-500 mb-1 block">Rating (optional)</label>
                                 <select
                                   value={ratingValue}
                                   onChange={(e) => setRatingValue(e.target.value)}
-                                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                                 >
                                   <option value="">Select rating...</option>
                                   <option value="Excellent">⭐⭐⭐⭐⭐ Excellent</option>
@@ -1000,7 +1000,7 @@ export default function StudentArabicTracker({
                                 <button
                                   onClick={() => handleReviewHomework(unit.id)}
                                   disabled={saving || !feedbackText.trim()}
-                                  className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                  className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
                                 >
                                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   Submit Review
@@ -1011,7 +1011,7 @@ export default function StudentArabicTracker({
                                     setFeedbackText('');
                                     setRatingValue('');
                                   }}
-                                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+                                  className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition"
                                 >
                                   Cancel
                                 </button>
@@ -1032,7 +1032,7 @@ export default function StudentArabicTracker({
 
                     {/* Last Lesson Date */}
                     {unitProgress?.last_lesson_date && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-gray-500">
                         Last updated: {new Date(unitProgress.last_lesson_date).toLocaleDateString()}
                       </p>
                     )}

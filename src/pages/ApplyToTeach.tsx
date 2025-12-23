@@ -438,32 +438,32 @@ export default function ApplyToTeach() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <nav className="bg-slate-900 border-b border-slate-800 shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-emerald-500" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Talbiyah.ai</h1>
-              <p className="text-sm text-slate-400">Teacher Application</p>
+              <h1 className="text-xl font-bold text-gray-900">Talbiyah.ai</h1>
+              <p className="text-sm text-gray-500">Teacher Application</p>
             </div>
           </div>
 
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2 text-slate-300"
+            className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2 text-gray-600"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
@@ -473,8 +473,8 @@ export default function ApplyToTeach() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Apply to Teach at Talbiyah.ai</h2>
-          <p className="text-slate-400">Complete your teacher profile and application</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Apply to Teach at Talbiyah.ai</h2>
+          <p className="text-gray-500">Complete your teacher profile and application</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
@@ -504,7 +504,7 @@ export default function ApplyToTeach() {
                     Upload Photo
                   </label>
                   <div className="flex items-center space-x-6">
-                    <div className="w-24 h-24 rounded-full bg-slate-700 border-2 border-slate-700 flex items-center justify-center overflow-hidden">
+                    <div className="w-24 h-24 rounded-full bg-gray-200 border-2 border-gray-200 flex items-center justify-center overflow-hidden">
                       {avatarPreview ? (
                         <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -546,7 +546,7 @@ export default function ApplyToTeach() {
                       type="email"
                       value={formData.email}
                       disabled
-                      className="w-full px-4 py-3 border border-slate-600 rounded-lg bg-slate-800 text-slate-400"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
                     />
                   </div>
                 </div>
@@ -895,7 +895,7 @@ export default function ApplyToTeach() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting Application...' : 'Save and Submit Application'}
               </button>

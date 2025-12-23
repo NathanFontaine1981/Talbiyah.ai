@@ -250,7 +250,7 @@ export default function TeacherTierProgressWidget() {
               </div>
               <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-600 h-3 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-500"
                   style={{ width: `${progressToNext.hours}%` }}
                 />
               </div>
@@ -310,7 +310,7 @@ export default function TeacherTierProgressWidget() {
 
       {/* Max Tier Achieved */}
       {!nextTierInfo && (
-        <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl p-6 text-center shadow-lg">
+        <div className="bg-gradient-to-r from-emerald-500 to-purple-600 text-white rounded-xl p-6 text-center shadow-lg">
           <div className="text-6xl mb-3">🏆</div>
           <h4 className="text-2xl font-bold mb-2">Highest Tier Achieved!</h4>
           <p className="text-purple-100">

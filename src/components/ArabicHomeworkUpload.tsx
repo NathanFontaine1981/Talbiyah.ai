@@ -208,9 +208,9 @@ export default function ArabicHomeworkUpload({
   const isSubmitted = existingSubmission?.status === 'submitted';
 
   return (
-    <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
+    <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600/20 to-amber-600/20 p-4 border-b border-slate-700/50">
+      <div className="bg-gradient-to-r from-orange-600/20 to-amber-600/20 p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
@@ -218,7 +218,7 @@ export default function ArabicHomeworkUpload({
             </div>
             <div>
               <h3 className="font-semibold text-white">Homework for {unitTitle}</h3>
-              <p className="text-xs text-slate-400">Upload your completed work</p>
+              <p className="text-xs text-gray-500">Upload your completed work</p>
             </div>
           </div>
           {existingSubmission && (
@@ -251,9 +251,9 @@ export default function ArabicHomeworkUpload({
                 </span>
               )}
             </div>
-            <p className="text-slate-300 text-sm">{existingSubmission.teacher_feedback}</p>
+            <p className="text-gray-600 text-sm">{existingSubmission.teacher_feedback}</p>
             {existingSubmission.reviewed_at && (
-              <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+              <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 Reviewed {new Date(existingSubmission.reviewed_at).toLocaleDateString()}
               </p>
@@ -263,17 +263,17 @@ export default function ArabicHomeworkUpload({
 
         {/* Quiz Results (if any) */}
         {existingSubmission && existingSubmission.quiz_score !== null && existingSubmission.quiz_total !== null && (
-          <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-cyan-400" />
-                <span className="font-semibold text-cyan-400">Quiz Score</span>
+                <Star className="w-5 h-5 text-emerald-600" />
+                <span className="font-semibold text-emerald-600">Quiz Score</span>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-white">
                   {existingSubmission.quiz_score}/{existingSubmission.quiz_total}
                 </span>
-                <span className="text-sm text-slate-400 ml-2">
+                <span className="text-sm text-gray-500 ml-2">
                   ({Math.round((existingSubmission.quiz_score / existingSubmission.quiz_total) * 100)}%)
                 </span>
               </div>
@@ -283,23 +283,23 @@ export default function ArabicHomeworkUpload({
 
         {/* Confidence/Retention Level Selector */}
         {!isReviewed ? (
-          <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-5 h-5 text-purple-400" />
               <span className="font-semibold text-white">How confident do you feel about this unit?</span>
             </div>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-gray-500 mb-4">
               Help your teacher understand your retention level so they can focus on reinforcing areas where you need more practice.
             </p>
             <div className="space-y-2">
               {CONFIDENCE_LEVELS.map((level) => {
                 const isSelected = confidenceLevel === level.value;
                 const colorClasses: Record<string, string> = {
-                  red: isSelected ? 'bg-red-500/20 border-red-500 text-red-400' : 'border-slate-600 hover:border-red-500/50',
-                  amber: isSelected ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'border-slate-600 hover:border-amber-500/50',
-                  yellow: isSelected ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400' : 'border-slate-600 hover:border-yellow-500/50',
-                  emerald: isSelected ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-slate-600 hover:border-emerald-500/50',
-                  cyan: isSelected ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'border-slate-600 hover:border-cyan-500/50',
+                  red: isSelected ? 'bg-red-500/20 border-red-500 text-red-400' : 'border-gray-300 hover:border-red-500/50',
+                  amber: isSelected ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'border-gray-300 hover:border-amber-500/50',
+                  yellow: isSelected ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400' : 'border-gray-300 hover:border-yellow-500/50',
+                  emerald: isSelected ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-gray-300 hover:border-emerald-500/50',
+                  cyan: isSelected ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600' : 'border-gray-300 hover:border-emerald-500/50',
                 };
                 return (
                   <button
@@ -315,14 +315,14 @@ export default function ArabicHomeworkUpload({
                             : level.color === 'amber' ? 'bg-amber-500/30 text-amber-300'
                             : level.color === 'yellow' ? 'bg-yellow-500/30 text-yellow-300'
                             : level.color === 'emerald' ? 'bg-emerald-500/30 text-emerald-300'
-                            : 'bg-cyan-500/30 text-cyan-300'
-                            : 'bg-slate-700 text-slate-400'
+                            : 'bg-emerald-500/30 text-cyan-300'
+                            : 'bg-gray-200 text-gray-500'
                         }`}>
                           {level.value}
                         </div>
                         <div>
                           <p className={`font-medium ${isSelected ? '' : 'text-white'}`}>{level.label}</p>
-                          <p className="text-xs text-slate-500">{level.description}</p>
+                          <p className="text-xs text-gray-500">{level.description}</p>
                         </div>
                       </div>
                       {isSelected && <Check className="w-5 h-5" />}
@@ -348,13 +348,13 @@ export default function ArabicHomeworkUpload({
                     : level.color === 'amber' ? 'bg-amber-500/30 text-amber-300'
                     : level.color === 'yellow' ? 'bg-yellow-500/30 text-yellow-300'
                     : level.color === 'emerald' ? 'bg-emerald-500/30 text-emerald-300'
-                    : 'bg-cyan-500/30 text-cyan-300'
+                    : 'bg-emerald-500/30 text-cyan-300'
                   }`}>
                     {level.value}
                   </div>
                   <div>
                     <p className="font-medium text-white">{level.label}</p>
-                    <p className="text-xs text-slate-400">{level.description}</p>
+                    <p className="text-xs text-gray-500">{level.description}</p>
                   </div>
                 </div>
               );
@@ -365,12 +365,12 @@ export default function ArabicHomeworkUpload({
         {/* Uploaded Files */}
         {uploadedFiles.length > 0 && (
           <div>
-            <p className="text-sm text-slate-400 mb-2">Uploaded Files</p>
+            <p className="text-sm text-gray-500 mb-2">Uploaded Files</p>
             <div className="space-y-2">
               {uploadedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2"
+                  className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     {getFileIcon(file.type)}
@@ -378,11 +378,11 @@ export default function ArabicHomeworkUpload({
                       href={file.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-cyan-400 hover:text-cyan-300 truncate max-w-[200px]"
+                      className="text-sm text-emerald-600 hover:text-cyan-300 truncate max-w-[200px]"
                     >
                       {file.name}
                     </a>
-                    <span className="text-xs text-slate-500">{formatFileSize(file.size)}</span>
+                    <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
                   </div>
                   {!isReviewed && (
                     <button
@@ -401,7 +401,7 @@ export default function ArabicHomeworkUpload({
         {/* New Files to Upload */}
         {files.length > 0 && (
           <div>
-            <p className="text-sm text-slate-400 mb-2">Files to Upload</p>
+            <p className="text-sm text-gray-500 mb-2">Files to Upload</p>
             <div className="space-y-2">
               {files.map((file, index) => (
                 <div
@@ -411,7 +411,7 @@ export default function ArabicHomeworkUpload({
                   <div className="flex items-center gap-2">
                     {getFileIcon(file.type)}
                     <span className="text-sm text-white truncate max-w-[200px]">{file.name}</span>
-                    <span className="text-xs text-slate-500">{formatFileSize(file.size)}</span>
+                    <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
                   </div>
                   <button
                     onClick={() => removeFile(index)}
@@ -451,7 +451,7 @@ export default function ArabicHomeworkUpload({
               {/* Take Photo Button */}
               <button
                 onClick={() => cameraInputRef.current?.click()}
-                className="py-3 border-2 border-dashed border-slate-600 hover:border-cyan-500/50 rounded-xl text-slate-400 hover:text-cyan-400 transition flex items-center justify-center gap-2"
+                className="py-3 border-2 border-dashed border-gray-300 hover:border-emerald-500/50 rounded-xl text-gray-500 hover:text-emerald-600 transition flex items-center justify-center gap-2"
               >
                 <Camera className="w-5 h-5" />
                 <span className="text-sm">Take Photo</span>
@@ -460,14 +460,14 @@ export default function ArabicHomeworkUpload({
               {/* Browse Files Button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="py-3 border-2 border-dashed border-slate-600 hover:border-orange-500/50 rounded-xl text-slate-400 hover:text-orange-400 transition flex items-center justify-center gap-2"
+                className="py-3 border-2 border-dashed border-gray-300 hover:border-orange-500/50 rounded-xl text-gray-500 hover:text-orange-400 transition flex items-center justify-center gap-2"
               >
                 <Upload className="w-5 h-5" />
                 <span className="text-sm">Browse Files</span>
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 text-center">
+            <p className="text-xs text-gray-500 text-center">
               Supported: Images, PDF, Word docs (max 10MB each)
             </p>
           </div>
@@ -476,7 +476,7 @@ export default function ArabicHomeworkUpload({
         {/* Student Notes */}
         {!isReviewed ? (
           <div>
-            <label className="text-sm text-slate-400 mb-2 block flex items-center gap-2">
+            <label className="text-sm text-gray-500 mb-2 block flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               Notes for Teacher (optional)
             </label>
@@ -484,17 +484,17 @@ export default function ArabicHomeworkUpload({
               value={studentNotes}
               onChange={(e) => setStudentNotes(e.target.value)}
               placeholder="Any questions or comments about this homework..."
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-sm"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-sm"
               rows={3}
             />
           </div>
         ) : existingSubmission?.student_notes && (
           <div>
-            <p className="text-sm text-slate-400 mb-1 flex items-center gap-2">
+            <p className="text-sm text-gray-500 mb-1 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               Your Notes
             </p>
-            <p className="text-sm text-slate-300 bg-slate-800/50 rounded-lg px-3 py-2">
+            <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
               {existingSubmission.student_notes}
             </p>
           </div>
@@ -513,7 +513,7 @@ export default function ArabicHomeworkUpload({
           <button
             onClick={handleSubmit}
             disabled={submitting || uploading || (files.length === 0 && uploadedFiles.length === 0 && !studentNotes.trim())}
-            className="w-full py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:from-slate-600 disabled:to-slate-600 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
           >
             {uploading ? (
               <>
@@ -541,7 +541,7 @@ export default function ArabicHomeworkUpload({
 
         {/* Submission Info */}
         {existingSubmission?.submitted_at && (
-          <p className="text-xs text-slate-500 text-center flex items-center justify-center gap-1">
+          <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
             <Clock className="w-3 h-3" />
             Submitted {new Date(existingSubmission.submitted_at).toLocaleString()}
           </p>

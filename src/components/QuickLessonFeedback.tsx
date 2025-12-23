@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 import { ThumbsUp, ThumbsDown, X } from 'lucide-react';
 
@@ -55,7 +56,7 @@ export default function QuickLessonFeedback({
       onComplete();
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback');
+      toast.error('Failed to submit feedback');
     } finally {
       setSubmitting(false);
     }
@@ -64,14 +65,14 @@ export default function QuickLessonFeedback({
   if (showIssueForm) {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700 shadow-2xl">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-gray-200 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-bold text-white">
               What went wrong?
             </h3>
             <button
               onClick={() => setShowIssueForm(false)}
-              className="text-slate-400 hover:text-white transition"
+              className="text-gray-500 hover:text-white transition"
             >
               <X className="w-6 h-6" />
             </button>
@@ -90,8 +91,8 @@ export default function QuickLessonFeedback({
                 key={option.value}
                 className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition ${
                   issueType === option.value
-                    ? 'border-cyan-500 bg-cyan-500/10'
-                    : 'border-slate-700 hover:border-slate-600 bg-slate-800/50'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-gray-200 hover:border-gray-300 bg-gray-50'
                 }`}
               >
                 <input
@@ -114,11 +115,11 @@ export default function QuickLessonFeedback({
                 value={issueDetail}
                 onChange={(e) => setIssueDetail(e.target.value)}
                 placeholder="Please tell us more..."
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 rows={3}
                 maxLength={200}
               />
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {issueDetail.length}/200 characters
               </p>
             </div>
@@ -127,14 +128,14 @@ export default function QuickLessonFeedback({
           <div className="flex gap-3">
             <button
               onClick={() => setShowIssueForm(false)}
-              className="flex-1 px-4 py-3 border border-slate-700 rounded-lg hover:bg-slate-800 text-white transition"
+              className="flex-1 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-700 transition"
             >
               Back
             </button>
             <button
               onClick={handleIssueSubmit}
               disabled={submitting || !issueType}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
             >
               {submitting ? 'Submitting...' : 'Submit'}
             </button>
@@ -146,13 +147,13 @@ export default function QuickLessonFeedback({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full mx-4 text-center border border-slate-700 shadow-2xl">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full mx-4 text-center border border-gray-200 shadow-2xl">
         <div className="mb-6">
           <div className="text-5xl mb-4">💭</div>
           <h3 className="text-3xl font-bold text-white mb-2">
             How was today's lesson?
           </h3>
-          <p className="text-slate-400">
+          <p className="text-gray-500">
             Your quick feedback helps us improve
           </p>
         </div>
@@ -179,7 +180,7 @@ export default function QuickLessonFeedback({
 
         <button
           onClick={onComplete}
-          className="text-slate-400 hover:text-white text-sm transition"
+          className="text-gray-500 hover:text-white text-sm transition"
         >
           Skip for now
         </button>
