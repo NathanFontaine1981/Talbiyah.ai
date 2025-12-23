@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield } from 'lucide-react';
+import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield, RotateCcw, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface User {
@@ -11,6 +12,9 @@ interface User {
   roles: string[];
   created_at: string;
   last_sign_in_at?: string;
+  deleted_at?: string;
+  hard_delete_at?: string;
+  deletion_reason?: string;
   teacher_profile?: {
     id: string;
     status: string;
@@ -186,10 +190,10 @@ export default function UserManagement() {
       await fetchUsers();
 
       // Show success message
-      alert(`Roles updated successfully for ${user.full_name}`);
+      toast.success(`Roles updated successfully for ${user.full_name}`);
     } catch (error) {
       console.error('Error updating roles:', error);
-      alert('Failed to update roles. Please try again.');
+      toast.error('Failed to update roles. Please try again.');
     }
   }
 
@@ -209,30 +213,76 @@ export default function UserManagement() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email);
       if (error) throw error;
-      alert(`Password reset email sent to ${user.email}`);
+      toast.success(`Password reset email sent to ${user.email}`);
     } catch (error) {
       console.error('Error sending reset email:', error);
-      alert('Failed to send password reset email');
+      toast.error('Failed to send password reset email');
     }
   }
 
-  async function handleDeleteUser(user: User) {
-    if (!confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) return;
+  async function handleSoftDeleteUser(user: User) {
+    const reason = prompt(`Enter reason for deleting ${user.full_name} (optional):`);
+
+    if (!confirm(`Are you sure you want to delete ${user.full_name}?\n\nThe account will be suspended and scheduled for permanent deletion in 1 year. You can restore it before then.`)) return;
 
     try {
-      // Note: In production, you'd want to use an admin function to delete auth users
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+      const { data, error } = await supabase.functions.invoke('soft-delete-user', {
+        body: { user_id: user.id, reason: reason || undefined }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await fetchUsers();
-      alert(`User ${user.full_name} deleted successfully`);
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('Failed to delete user. Please try again.');
+      toast.success(`User ${user.full_name} has been deleted. Scheduled for permanent removal in 1 year.`);
+    } catch (error: any) {
+      console.error('Error soft-deleting user:', error);
+      toast.error(error.message || 'Failed to delete user. Please try again.');
+    }
+  }
+
+  async function handleHardDeleteUser(user: User) {
+    const confirmText = prompt(
+      `⚠️ PERMANENT DELETION ⚠️\n\nThis will permanently delete ${user.full_name} and ALL their data.\nThis action CANNOT be undone.\n\nType "PERMANENTLY DELETE" to confirm:`
+    );
+
+    if (confirmText !== 'PERMANENTLY DELETE') {
+      toast.error('Deletion cancelled - confirmation text did not match');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('hard-delete-user', {
+        body: { user_id: user.id, confirm: 'PERMANENTLY_DELETE' }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      await fetchUsers();
+      toast.success(`User ${user.full_name} has been permanently deleted`);
+    } catch (error: any) {
+      console.error('Error hard-deleting user:', error);
+      toast.error(error.message || 'Failed to delete user. Please try again.');
+    }
+  }
+
+  async function handleRestoreUser(user: User) {
+    if (!confirm(`Are you sure you want to restore ${user.full_name}?`)) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('restore-user', {
+        body: { user_id: user.id }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      await fetchUsers();
+      toast.success(`User ${user.full_name} has been restored`);
+    } catch (error: any) {
+      console.error('Error restoring user:', error);
+      toast.error(error.message || 'Failed to restore user. Please try again.');
     }
   }
 
@@ -257,10 +307,10 @@ export default function UserManagement() {
       });
 
       if (error) throw error;
-      alert(`Email sent to ${user.email}`);
+      toast.success(`Email sent to ${user.email}`);
     } catch (error) {
       console.error('Error sending email:', error);
-      alert('Failed to send email. Please try again.');
+      toast.error('Failed to send email. Please try again.');
     }
   }
 
@@ -286,10 +336,10 @@ export default function UserManagement() {
       if (error) throw error;
 
       await fetchUsers();
-      alert(`User ${user.full_name} has been ${action}ed`);
+      toast.success(`User ${user.full_name} has been ${action}ed`);
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);
-      alert(`Failed to ${action} user. Please try again.`);
+      toast.error(`Failed to ${action} user. Please try again.`);
     }
   }
 
@@ -321,12 +371,12 @@ export default function UserManagement() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    alert(`Exported ${usersToExport.length} users`);
+    toast.success(`Exported ${usersToExport.length} users`);
   }
 
   async function handleBulkSendEmail() {
     if (selectedUserIds.length === 0) {
-      alert('Please select at least one user');
+      toast.warning('Please select at least one user');
       return;
     }
 
@@ -361,10 +411,10 @@ export default function UserManagement() {
         }
       }
 
-      alert(`Emails sent: ${successCount} successful, ${failCount} failed`);
+      toast.success(`Emails sent: ${successCount} successful, ${failCount} failed`);
     } catch (error) {
       console.error('Error sending bulk emails:', error);
-      alert('Failed to send emails. Please try again.');
+      toast.error('Failed to send emails. Please try again.');
     }
   }
 
@@ -382,7 +432,7 @@ export default function UserManagement() {
     );
 
     if (userConfirm !== confirmText) {
-      alert('Action cancelled');
+      toast.info('Action cancelled');
       return;
     }
 
@@ -393,16 +443,13 @@ export default function UserManagement() {
       const nonAdminUsers = users.filter(u => !u.roles?.includes('admin'));
 
       if (nonAdminUsers.length === 0) {
-        alert('No non-admin users to delete');
+        toast.info('No non-admin users to delete');
         return;
       }
-
-      console.log(`Deleting ${nonAdminUsers.length} non-admin users...`);
 
       // Delete all related data for non-admin users
       const nonAdminIds = nonAdminUsers.map(u => u.id);
 
-      console.log('Step 1: Getting learner IDs...');
       // Get all learner IDs for these users
       const { data: learnersData } = await supabase
         .from('learners')
@@ -410,53 +457,35 @@ export default function UserManagement() {
         .in('parent_id', nonAdminIds);
 
       const learnerIds = learnersData?.map(l => l.id) || [];
-      console.log(`Found ${learnerIds.length} learners to delete`);
 
       // Delete in order to respect foreign key constraints
       if (learnerIds.length > 0) {
-        console.log('Step 2: Deleting lessons...');
         await supabase.from('lessons').delete().in('learner_id', learnerIds);
-
-        console.log('Step 3: Deleting student_teacher_relationships...');
         await supabase.from('student_teacher_relationships').delete().in('student_id', learnerIds);
       }
 
-      console.log('Step 4: Deleting teacher data...');
       await supabase.from('teacher_availability').delete().in('teacher_id', nonAdminIds);
       await supabase.from('teacher_profiles').delete().in('user_id', nonAdminIds);
 
-      console.log('Step 5: Deleting bookings and credits...');
       await supabase.from('pending_bookings').delete().in('user_id', nonAdminIds);
       await supabase.from('credit_transactions').delete().in('user_id', nonAdminIds);
       await supabase.from('credit_purchases').delete().in('user_id', nonAdminIds);
       await supabase.from('user_credits').delete().in('user_id', nonAdminIds);
 
-      console.log('Step 6: Deleting learners...');
       if (learnerIds.length > 0) {
         await supabase.from('learners').delete().in('id', learnerIds);
       }
-
-      console.log('Step 7: Deleting parent_children relationships...');
       // Delete both as parent and as child
       const { error: parentChildError1 } = await supabase
         .from('parent_children')
         .delete()
         .in('parent_id', nonAdminIds);
 
-      if (parentChildError1) {
-        console.warn('Error deleting parent_children (as parent):', parentChildError1);
-      }
-
       const { error: parentChildError2 } = await supabase
         .from('parent_children')
         .delete()
         .in('child_id', nonAdminIds);
 
-      if (parentChildError2) {
-        console.warn('Error deleting parent_children (as child):', parentChildError2);
-      }
-
-      console.log('Step 8: Deleting profiles...');
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -468,15 +497,10 @@ export default function UserManagement() {
       }
 
       await fetchUsers();
-      alert(
-        `✅ Successfully deleted ${nonAdminUsers.length} users!\n\n` +
-        `⚠️ Note: You still need to delete these users from Supabase Authentication:\n` +
-        `https://supabase.com/dashboard/project/boyrjgivpepjiboekwuu/auth/users\n\n` +
-        `Or the database cleanup will be undone when they log in again.`
-      );
+      toast.success(`Successfully deleted ${nonAdminUsers.length} users! Note: You still need to delete these users from Supabase Authentication.`);
     } catch (error) {
       console.error('Error clearing users:', error);
-      alert('Failed to clear users. Please check console for details.');
+      toast.error('Failed to clear users. Please check console for details.');
     } finally {
       setLoading(false);
     }
@@ -505,7 +529,7 @@ export default function UserManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -515,14 +539,14 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
-          <p className="text-slate-400">Manage users and their roles</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">User Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage users and their roles</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center space-x-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition flex items-center space-x-2"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -536,7 +560,7 @@ export default function UserManagement() {
           </button>
           <button
             onClick={() => setShowCreateUser(true)}
-            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition flex items-center space-x-2"
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2"
           >
             <Plus className="w-5 h-5" />
             <span>Create User</span>
@@ -554,17 +578,17 @@ export default function UserManagement() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
         {/* Search */}
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search users by name, email, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500"
             />
           </div>
         </div>
@@ -572,11 +596,11 @@ export default function UserManagement() {
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Role</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Role</label>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Users</option>
               <option value="student">Students</option>
@@ -587,11 +611,11 @@ export default function UserManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All</option>
               <option value="active">Active</option>
@@ -601,11 +625,11 @@ export default function UserManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Sort by</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Sort by</label>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -617,26 +641,26 @@ export default function UserManagement() {
 
       {/* Bulk Actions */}
       {selectedUserIds.length > 0 && (
-        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4 mb-4 flex items-center justify-between">
-          <p className="text-cyan-400">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mb-4 flex items-center justify-between">
+          <p className="text-emerald-600">
             {selectedUserIds.length} user{selectedUserIds.length !== 1 ? 's' : ''} selected
           </p>
           <div className="flex space-x-2">
             <button
               onClick={handleExportUsers}
-              className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition"
+              className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 rounded-lg text-sm transition"
             >
               Export
             </button>
             <button
               onClick={handleBulkSendEmail}
-              className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm transition"
+              className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 rounded-lg text-sm transition"
             >
               Send Email
             </button>
             <button
               onClick={() => setSelectedUserIds([])}
-              className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+              className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition"
             >
               Clear Selection
             </button>
@@ -645,36 +669,36 @@ export default function UserManagement() {
       )}
 
       {/* Results Count */}
-      <div className="mb-4 text-slate-400">
+      <div className="mb-4 text-gray-600 dark:text-gray-400">
         Showing {filteredUsers.length} of {users.length} users
       </div>
 
       {/* User Table */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-900/50 border-b border-slate-700">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
                     onChange={selectAllUsers}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-emerald-500 focus:ring-emerald-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Phone</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Role(s)</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Joined</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-400">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Phone</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Role(s)</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Joined</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                     No users found
                   </td>
                 </tr>
@@ -689,7 +713,9 @@ export default function UserManagement() {
                     onView={() => handleViewUser(user)}
                     onEdit={() => handleEditUser(user)}
                     onResetPassword={() => handleResetPassword(user)}
-                    onDelete={() => handleDeleteUser(user)}
+                    onSoftDelete={() => handleSoftDeleteUser(user)}
+                    onHardDelete={() => handleHardDeleteUser(user)}
+                    onRestore={() => handleRestoreUser(user)}
                     onSendEmail={() => handleSendEmail(user)}
                     onSuspend={() => handleSuspendUser(user)}
                   />
@@ -734,7 +760,7 @@ export default function UserManagement() {
 function StatCard({ icon: Icon, label, value, color }: any) {
   const colors = {
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+    cyan: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     pink: 'bg-pink-500/10 border-pink-500/20 text-pink-400',
     purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
@@ -745,14 +771,14 @@ function StatCard({ icon: Icon, label, value, color }: any) {
       <div className="flex items-center justify-between mb-2">
         <Icon className="w-6 h-6" />
       </div>
-      <p className="text-sm opacity-75 mb-1">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
 
 // User Row Component
-function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onDelete, onSendEmail, onSuspend }: any) {
+function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onSoftDelete, onHardDelete, onRestore, onSendEmail, onSuspend }: any) {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(user.roles || []);
@@ -778,38 +804,55 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
 
   function getRoleBadgeColor(role: string) {
     const colors = {
-      student: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+      student: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
       teacher: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
       parent: 'bg-pink-500/10 border-pink-500/20 text-pink-400',
       admin: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
     };
-    return colors[role as keyof typeof colors] || 'bg-slate-500/10 border-slate-500/20 text-slate-400';
+    return colors[role as keyof typeof colors] || 'bg-gray-500/10 border-gray-300/20 text-gray-500';
   }
 
+  const isDeleted = !!user.deleted_at;
+
   return (
-    <tr className="hover:bg-slate-700/30 transition">
+    <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${isDeleted ? 'opacity-60 bg-red-500/5' : ''}`}>
       <td className="px-4 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onToggleSelect}
-          className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+          className="w-4 h-4 rounded border-gray-300 bg-gray-100 text-emerald-500 focus:ring-emerald-500"
         />
       </td>
       <td className="px-4 py-4">
-        <p className="text-white font-medium">{user.full_name || 'Unnamed User'}</p>
+        <div className="flex items-center space-x-2">
+          <p className={`font-medium ${isDeleted ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+            {user.full_name || 'Unnamed User'}
+          </p>
+          {isDeleted && (
+            <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded text-xs flex items-center space-x-1">
+              <AlertTriangle className="w-3 h-3" />
+              <span>Deleted</span>
+            </span>
+          )}
+        </div>
+        {isDeleted && user.hard_delete_at && (
+          <p className="text-xs text-red-400 mt-1">
+            Permanent deletion: {format(new Date(user.hard_delete_at), 'MMM d, yyyy')}
+          </p>
+        )}
       </td>
       <td className="px-4 py-4">
-        <p className="text-slate-300 text-sm">{user.email}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">{user.email}</p>
       </td>
       <td className="px-4 py-4">
-        <p className="text-slate-300 text-sm">{user.phone || '-'}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">{user.phone || '-'}</p>
       </td>
       <td className="px-4 py-4">
         <div className="relative">
           <button
             onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-            className="flex items-center space-x-1 px-3 py-1 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-sm transition"
+            className="flex items-center space-x-1 px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg text-sm transition"
           >
             <div className="flex flex-wrap gap-1">
               {(user.roles || []).map((role: string) => (
@@ -818,27 +861,27 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                 </span>
               ))}
               {(!user.roles || user.roles.length === 0) && (
-                <span className="text-slate-400 text-xs">No roles</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs">No roles</span>
               )}
             </div>
-            <ChevronDown className="w-4 h-4 text-slate-400" />
+            <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           </button>
 
           {showRoleDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+            <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
               <div className="p-3">
-                <p className="text-xs text-slate-400 mb-2">Select roles (can be multiple):</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Select roles (can be multiple):</p>
                 <div className="space-y-2 mb-3">
                   {roleOptions.map((option) => (
-                    <label key={option.value} className="flex items-center space-x-2 cursor-pointer hover:bg-slate-700/50 p-2 rounded">
+                    <label key={option.value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
                       <input
                         type="checkbox"
                         checked={selectedRoles.includes(option.value)}
                         onChange={() => toggleRole(option.value)}
-                        className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-cyan-500"
+                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500 focus:ring-emerald-500"
                       />
-                      <option.icon className="w-4 h-4 text-slate-400" />
-                      <span className="text-white text-sm">{option.label}</span>
+                      <option.icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-900 dark:text-white text-sm">{option.label}</span>
                     </label>
                   ))}
                 </div>
@@ -848,13 +891,13 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                       setSelectedRoles(user.roles || []);
                       setShowRoleDropdown(false);
                     }}
-                    className="flex-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition"
+                    className="flex-1 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-sm transition"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={saveRoles}
-                    className="flex-1 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-sm transition"
+                    className="flex-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm transition"
                   >
                     Save
                   </button>
@@ -865,7 +908,7 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
         </div>
       </td>
       <td className="px-4 py-4">
-        <p className="text-slate-300 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           {format(new Date(user.created_at), 'MMM d, yyyy')}
         </p>
       </td>
@@ -873,21 +916,21 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
         <div className="relative">
           <button
             onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-sm text-white transition flex items-center space-x-1"
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 transition flex items-center space-x-1"
           >
             <span>Actions</span>
             <ChevronDown className="w-4 h-4" />
           </button>
 
           {showActionsDropdown && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
               <div className="py-1">
                 <button
                   onClick={() => {
                     onView();
                     setShowActionsDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                 >
                   <Eye className="w-4 h-4" />
                   <span>View Profile</span>
@@ -897,7 +940,7 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                     onEdit();
                     setShowActionsDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                 >
                   <Edit className="w-4 h-4" />
                   <span>Edit User</span>
@@ -907,7 +950,7 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                     onResetPassword();
                     setShowActionsDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                 >
                   <Key className="w-4 h-4" />
                   <span>Reset Password</span>
@@ -917,19 +960,19 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                     onSendEmail();
                     setShowActionsDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                 >
                   <Mail className="w-4 h-4" />
                   <span>Send Email</span>
                 </button>
-                <div className="border-t border-slate-700 my-1"></div>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                 <button
                   onClick={() => {
                     onSuspend();
                     setShowActionsDropdown(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-700 flex items-center space-x-2 ${
-                    user.roles?.includes('suspended') ? 'text-emerald-400' : 'text-amber-400'
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+                    user.roles?.includes('suspended') ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'
                   }`}
                 >
                   {user.roles?.includes('suspended') ? (
@@ -944,16 +987,53 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                     </>
                   )}
                 </button>
-                <button
-                  onClick={() => {
-                    onDelete();
-                    setShowActionsDropdown(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-slate-700 flex items-center space-x-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete Account</span>
-                </button>
+                {isDeleted ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        onRestore();
+                        setShowActionsDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-emerald-500 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Restore Account</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onHardDelete();
+                        setShowActionsDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Permanently</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        onSoftDelete();
+                        setShowActionsDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Account</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onHardDelete();
+                        setShowActionsDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Delete Permanently</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1043,11 +1123,11 @@ function CreateUserModal({ onClose, onSuccess }: any) {
 
         await onSuccess();
         onClose();
-        alert(`User created successfully! ${formData.sendWelcomeEmail ? 'Welcome email sent to ' + formData.email : ''}`);
+        toast.success(`User created successfully! ${formData.sendWelcomeEmail ? 'Welcome email sent to ' + formData.email : ''}`);
       }
     } catch (error: any) {
       console.error('Error creating user:', error);
-      alert('Failed to create user: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to create user: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -1055,61 +1135,61 @@ function CreateUserModal({ onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Create New User</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create New User</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Full Name</label>
             <input
               type="text"
               required
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               placeholder="John Doe"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Email</label>
             <input
               type="email"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               placeholder="john@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Phone (optional)</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Phone (optional)</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               placeholder="+44 123 456 7890"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Password</label>
             <div className="space-y-2">
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={formData.autoGeneratePassword}
                   onChange={(e) => setFormData({ ...formData, autoGeneratePassword: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500"
                 />
-                <span className="text-sm text-slate-300">Auto-generate secure password</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Auto-generate secure password</span>
               </label>
               {!formData.autoGeneratePassword && (
                 <input
@@ -1117,7 +1197,7 @@ function CreateUserModal({ onClose, onSuccess }: any) {
                   required={!formData.autoGeneratePassword}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   placeholder="Enter password"
                 />
               )}
@@ -1125,7 +1205,7 @@ function CreateUserModal({ onClose, onSuccess }: any) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Assign Roles</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Assign Roles</label>
             <div className="space-y-2">
               {[
                 { value: 'student', label: 'Student', icon: Users },
@@ -1133,15 +1213,15 @@ function CreateUserModal({ onClose, onSuccess }: any) {
                 { value: 'parent', label: 'Parent', icon: Heart },
                 { value: 'admin', label: 'Admin', icon: Shield },
               ].map((role) => (
-                <label key={role.value} className="flex items-center space-x-2 cursor-pointer hover:bg-slate-700/50 p-2 rounded">
+                <label key={role.value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
                   <input
                     type="checkbox"
                     checked={formData.roles.includes(role.value)}
                     onChange={() => toggleRole(role.value)}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500"
                   />
-                  <role.icon className="w-4 h-4 text-slate-400" />
-                  <span className="text-white text-sm">{role.label}</span>
+                  <role.icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-900 dark:text-white text-sm">{role.label}</span>
                 </label>
               ))}
             </div>
@@ -1153,9 +1233,9 @@ function CreateUserModal({ onClose, onSuccess }: any) {
                 type="checkbox"
                 checked={formData.sendWelcomeEmail}
                 onChange={(e) => setFormData({ ...formData, sendWelcomeEmail: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
+                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500"
               />
-              <span className="text-sm text-slate-300">Send welcome email with login credentials</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Send welcome email with login credentials</span>
             </label>
           </div>
 
@@ -1163,14 +1243,14 @@ function CreateUserModal({ onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
             >
               {loading ? 'Creating...' : 'Create User'}
             </button>
@@ -1230,10 +1310,10 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
 
       await onSuccess();
       onClose();
-      alert('User updated successfully');
+      toast.success('User updated successfully');
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user. Please try again.');
+      toast.error('Failed to update user. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1241,49 +1321,49 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Edit User</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Edit User</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Full Name</label>
             <input
               type="text"
               required
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Email</label>
             <input
               type="email"
               disabled
               value={formData.email}
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-400 cursor-not-allowed"
+              className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-500 cursor-not-allowed"
             />
-            <p className="text-xs text-slate-500 mt-1">Email cannot be changed here</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed here</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Phone</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Roles</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Roles</label>
             <div className="space-y-2">
               {[
                 { value: 'student', label: 'Student', icon: Users },
@@ -1291,15 +1371,15 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
                 { value: 'parent', label: 'Parent', icon: Heart },
                 { value: 'admin', label: 'Admin', icon: Shield },
               ].map((role) => (
-                <label key={role.value} className="flex items-center space-x-2 cursor-pointer hover:bg-slate-700/50 p-2 rounded">
+                <label key={role.value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
                   <input
                     type="checkbox"
                     checked={formData.roles.includes(role.value)}
                     onChange={() => toggleRole(role.value)}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500"
                   />
-                  <role.icon className="w-4 h-4 text-slate-400" />
-                  <span className="text-white text-sm">{role.label}</span>
+                  <role.icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-900 dark:text-white text-sm">{role.label}</span>
                 </label>
               ))}
             </div>
@@ -1309,14 +1389,14 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white rounded-lg transition"
+              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
@@ -1356,25 +1436,25 @@ function UserDetailsModal({ user, onClose }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">User Details</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">User Details</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* User Info */}
-        <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-6">
+        <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h4 className="text-lg font-semibold text-white mb-1">{user.full_name}</h4>
-              <p className="text-slate-400 text-sm">{user.email}</p>
-              {user.phone && <p className="text-slate-400 text-sm">{user.phone}</p>}
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{user.full_name}</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{user.email}</p>
+              {user.phone && <p className="text-gray-500 dark:text-gray-400 text-sm">{user.phone}</p>}
             </div>
             <div className="flex flex-wrap gap-1">
               {(user.roles || []).map((role: string) => (
-                <span key={role} className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded text-xs capitalize">
+                <span key={role} className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded text-xs capitalize">
                   {role}
                 </span>
               ))}
@@ -1383,12 +1463,12 @@ function UserDetailsModal({ user, onClose }: any) {
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-slate-500">Joined</p>
-              <p className="text-white">{format(new Date(user.created_at), 'MMMM d, yyyy')}</p>
+              <p className="text-gray-500 dark:text-gray-400">Joined</p>
+              <p className="text-gray-900 dark:text-white">{format(new Date(user.created_at), 'MMMM d, yyyy')}</p>
             </div>
             <div>
-              <p className="text-slate-500">Last Sign In</p>
-              <p className="text-white">
+              <p className="text-gray-500 dark:text-gray-400">Last Sign In</p>
+              <p className="text-gray-900 dark:text-white">
                 {user.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'MMM d, yyyy') : 'Never'}
               </p>
             </div>
@@ -1397,21 +1477,21 @@ function UserDetailsModal({ user, onClose }: any) {
 
         {/* Sessions */}
         <div className="mb-6">
-          <h4 className="text-lg font-semibold text-white mb-3">Recent Sessions</h4>
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Recent Sessions</h4>
           {loading ? (
-            <p className="text-slate-400">Loading...</p>
+            <p className="text-gray-500 dark:text-gray-400">Loading...</p>
           ) : sessions.length === 0 ? (
-            <p className="text-slate-400">No sessions found</p>
+            <p className="text-gray-500 dark:text-gray-400">No sessions found</p>
           ) : (
             <div className="space-y-2">
               {sessions.map((session) => (
-                <div key={session.id} className="bg-slate-900/50 border border-slate-700 rounded-lg p-3">
+                <div key={session.id} className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-white text-sm">Session on {session.scheduled_date}</p>
-                      <p className="text-slate-400 text-xs">{session.scheduled_time} - {session.duration_minutes}min</p>
+                      <p className="text-gray-900 dark:text-white text-sm">Session on {session.scheduled_date}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">{session.scheduled_time} - {session.duration_minutes}min</p>
                     </div>
-                    <span className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded text-xs">
+                    <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded text-xs">
                       {session.status}
                     </span>
                   </div>
@@ -1423,7 +1503,7 @@ function UserDetailsModal({ user, onClose }: any) {
 
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+          className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition"
         >
           Close
         </button>

@@ -21,7 +21,10 @@ import {
   Brain,
   UsersRound,
   FileVideo,
-  Tag
+  Tag,
+  MessageSquare,
+  ClipboardCheck,
+  Shield
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -66,6 +69,13 @@ export default function AdminDashboard() {
       ]
     },
     {
+      title: 'Quality Control',
+      items: [
+        { icon: ClipboardCheck, label: 'Diagnostic Assessments', path: '/admin/diagnostic-assessments' },
+        { icon: Shield, label: 'Content Moderation', path: '/admin/content-moderation' },
+      ]
+    },
+    {
       title: 'Content & Recordings',
       items: [
         { icon: FileVideo, label: 'Recordings', path: '/admin/recordings' },
@@ -83,6 +93,7 @@ export default function AdminDashboard() {
     {
       title: 'System',
       items: [
+        { icon: MessageSquare, label: 'User Feedback', path: '/admin/feedback' },
         { icon: Tag, label: 'Promo Codes', path: '/admin/promo-codes' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
       ]
@@ -136,24 +147,24 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading admin dashboard...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading admin dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-slate-900 overflow-hidden">
-      <aside className={`bg-gradient-to-b from-slate-950 to-slate-900 text-white flex-shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col border-r border-slate-800`}>
-        <div className="p-6 border-b border-slate-800">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <aside className={`bg-gradient-to-b from-gray-950 to-gray-900 flex-shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col border-r border-gray-800`}>
+        <div className="p-6 border-b border-gray-800">
           <button onClick={() => navigate('/')} className="flex items-center space-x-3 hover:opacity-80 transition">
-            <BookOpen className="w-8 h-8 text-cyan-400" />
+            <BookOpen className="w-8 h-8 text-emerald-400" />
             {!sidebarCollapsed && (
               <div>
-                <span className="text-xl font-bold block">Talbiyah.ai</span>
+                <span className="text-xl font-bold text-white block">Talbiyah.ai</span>
                 <span className="text-xs text-amber-400 font-semibold">ADMIN PORTAL</span>
               </div>
             )}
@@ -165,12 +176,12 @@ export default function AdminDashboard() {
             {menuSections.map((section, sectionIndex) => (
               <div key={sectionIndex}>
                 {!sidebarCollapsed && (
-                  <h3 className="px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <h3 className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     {section.title}
                   </h3>
                 )}
                 {sidebarCollapsed && sectionIndex > 0 && (
-                  <div className="border-t border-slate-800 my-2" />
+                  <div className="border-t border-gray-700 my-2" />
                 )}
                 <ul className="space-y-1">
                   {section.items.map((item, itemIndex) => (
@@ -180,8 +191,8 @@ export default function AdminDashboard() {
                         title={sidebarCollapsed ? item.label : undefined}
                         className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition ${
                           isActive(item.path, item.exact)
-                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                            : 'text-slate-300 hover:bg-slate-800/50'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                         }`}
                       >
                         <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -195,10 +206,10 @@ export default function AdminDashboard() {
           </div>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-gray-800">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center py-2 text-slate-400 hover:text-white transition"
+            className="w-full flex items-center justify-center py-2 text-gray-400 hover:text-white transition"
           >
             <ChevronLeft className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
           </button>
@@ -206,23 +217,23 @@ export default function AdminDashboard() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-slate-950 border-b border-slate-800 flex-shrink-0">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="px-6 lg:px-8 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-sm text-slate-400">Manage your academy platform</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Manage your academy platform</p>
             </div>
 
             <div className="flex items-center space-x-6">
-              <button className="relative p-2 text-slate-400 hover:text-white transition">
+              <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">
                 <Bell className="w-6 h-6" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
               <div className="flex items-center space-x-3">
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{profile?.full_name || 'Admin'}</p>
-                  <p className="text-xs text-amber-400">Administrator</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{profile?.full_name || 'Admin'}</p>
+                  <p className="text-xs text-amber-500">Administrator</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                   {profile?.avatar_url ? (
@@ -235,7 +246,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleSignOut}
-                className="p-2 text-slate-400 hover:text-red-400 transition"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -243,7 +254,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto bg-slate-900">
+        <main className="flex-1 p-6 lg:p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <Outlet />
         </main>
       </div>

@@ -150,14 +150,14 @@ export default function SessionsManagement() {
       case 'confirmed': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'scheduled': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+      default: return 'bg-gray-500/20 text-gray-500 border-gray-300/30';
     }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -167,12 +167,12 @@ export default function SessionsManagement() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Sessions Management</h2>
-            <p className="text-slate-400">Manage and schedule all learning sessions</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sessions Management</h2>
+            <p className="text-gray-600 dark:text-gray-400">Manage and schedule all learning sessions</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-cyan-500/25 flex items-center space-x-2"
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition shadow-lg shadow-emerald-500/25 flex items-center space-x-2"
           >
             <Plus className="w-5 h-5" />
             <span>Create Session</span>
@@ -181,47 +181,47 @@ export default function SessionsManagement() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-6">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
-            <Calendar className="w-6 h-6 text-cyan-400" />
-            <p className="text-slate-400 text-sm">Total Sessions</p>
+            <Calendar className="w-6 h-6 text-emerald-600" />
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Sessions</p>
           </div>
-          <p className="text-3xl font-bold text-white">{stats.total}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
         </div>
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Video className="w-6 h-6 text-blue-400" />
-            <p className="text-slate-400 text-sm">Private Sessions</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Private Sessions</p>
           </div>
-          <p className="text-3xl font-bold text-white">{stats.private}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.private}</p>
         </div>
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Users className="w-6 h-6 text-emerald-400" />
-            <p className="text-slate-400 text-sm">Group Sessions</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Group Sessions</p>
           </div>
-          <p className="text-3xl font-bold text-white">{stats.group}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.group}</p>
         </div>
       </div>
 
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
             <input
               type="text"
               placeholder="Search by title, teacher, or student..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center space-x-3">
-            <Filter className="w-5 h-5 text-slate-400" />
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
               <option value="all">All Types</option>
               <option value="private">Private</option>
@@ -230,7 +230,7 @@ export default function SessionsManagement() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="scheduled">Scheduled</option>
@@ -242,30 +242,30 @@ export default function SessionsManagement() {
         </div>
       </div>
 
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-900/50 border-b border-slate-700">
+            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Session</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Teacher</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Date & Time</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Session</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Teacher</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Student</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date & Time</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSessions.map((session) => (
-                <tr key={session.id} className="hover:bg-slate-800/30 transition">
+                <tr key={session.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center">
                         <Video className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-white font-medium">{session.title}</p>
-                        <p className="text-slate-400 text-xs">{session.duration_minutes} minutes</p>
+                        <p className="text-gray-900 dark:text-white font-medium">{session.title}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">{session.duration_minutes} minutes</p>
                       </div>
                     </div>
                   </td>
@@ -279,15 +279,15 @@ export default function SessionsManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-slate-300 text-sm">{session.teacher_name}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{session.teacher_name}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-slate-300 text-sm">{session.student_name}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{session.student_name}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-slate-300 text-sm">
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">
                       <p>{new Date(session.scheduled_time).toLocaleDateString()}</p>
-                      <p className="text-slate-400 text-xs">{new Date(session.scheduled_time).toLocaleTimeString()}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-xs">{new Date(session.scheduled_time).toLocaleTimeString()}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -303,20 +303,20 @@ export default function SessionsManagement() {
         </div>
         {filteredSessions.length === 0 && (
           <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No sessions found</p>
+            <Calendar className="w-12 h-12 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">No sessions found</p>
           </div>
         )}
       </div>
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-2xl w-full">
-            <h3 className="text-2xl font-bold text-white mb-6">Create New Session</h3>
-            <p className="text-slate-400 mb-6">Session creation form coming soon. This will allow you to manually schedule private and group sessions.</p>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 max-w-2xl w-full">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Session</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Session creation form coming soon. This will allow you to manually schedule private and group sessions.</p>
             <button
               onClick={() => setShowCreateModal(false)}
-              className="w-full px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition"
+              className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition"
             >
               Close
             </button>

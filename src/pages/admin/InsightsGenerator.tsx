@@ -341,11 +341,11 @@ export default function InsightsGenerator() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-cyan-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Sparkles className="w-8 h-8 text-emerald-600" />
             Talbiyah Insights Generator
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Create beautiful lesson insight PDFs from transcripts or audio
           </p>
         </div>
@@ -356,8 +356,8 @@ export default function InsightsGenerator() {
           }}
           className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
             showHistory
-              ? 'bg-cyan-500 text-white'
-              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              ? 'bg-emerald-500 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
           }`}
         >
           <History className="w-5 h-5" />
@@ -385,15 +385,15 @@ export default function InsightsGenerator() {
 
       {showHistory ? (
         /* History View */
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Generated Insights History</h2>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Generated Insights History</h2>
 
           {loadingHistory ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-gray-600 dark:text-gray-400">
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No insights generated yet</p>
             </div>
@@ -405,7 +405,7 @@ export default function InsightsGenerator() {
                 return (
                   <div
                     key={insight.id}
-                    className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600 transition"
+                    className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-4 hover:border-gray-300 dark:hover:border-gray-500 transition"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
@@ -413,12 +413,12 @@ export default function InsightsGenerator() {
                           <Icon className={`w-6 h-6 text-${info.color}-400`} />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-white">{insight.title}</h3>
-                          <p className="text-sm text-slate-400 mt-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{insight.title}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             {info.name} • {insight.teacher_name}
                             {insight.student_name && ` • ${insight.student_name}`}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             {new Date(insight.lesson_date).toLocaleDateString('en-GB', {
                               day: 'numeric',
                               month: 'short',
@@ -434,7 +434,7 @@ export default function InsightsGenerator() {
                             href={insight.pdf_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition"
+                            className="p-2 text-emerald-600 hover:bg-emerald-500/10 rounded-lg transition"
                             title="Download PDF"
                           >
                             <Download className="w-5 h-5" />
@@ -468,8 +468,8 @@ export default function InsightsGenerator() {
           {/* Left Column - Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Template Selector */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">1. Choose Template</h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">1. Choose Template</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {(Object.keys(TEMPLATE_INFO) as TemplateType[]).map((type) => {
                   const info = TEMPLATE_INFO[type];
@@ -482,14 +482,14 @@ export default function InsightsGenerator() {
                       className={`p-4 rounded-xl border-2 transition text-left ${
                         isSelected
                           ? `border-${info.color}-500 bg-${info.color}-500/10`
-                          : 'border-slate-700 hover:border-slate-600 bg-slate-900/50'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-gray-50 dark:bg-gray-700'
                       }`}
                     >
-                      <Icon className={`w-8 h-8 mb-2 ${isSelected ? `text-${info.color}-400` : 'text-slate-400'}`} />
-                      <h3 className={`font-semibold ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+                      <Icon className={`w-8 h-8 mb-2 ${isSelected ? `text-${info.color}-400` : 'text-gray-500 dark:text-gray-400'}`} />
+                      <h3 className={`font-semibold ${isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
                         {info.name}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">{info.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{info.description}</p>
                     </button>
                   );
                 })}
@@ -497,8 +497,8 @@ export default function InsightsGenerator() {
             </div>
 
             {/* Input Method */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">2. Add Transcript</h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">2. Add Transcript</h2>
 
               {/* Input Method Toggle */}
               <div className="flex gap-2 mb-4">
@@ -506,8 +506,8 @@ export default function InsightsGenerator() {
                   onClick={() => setInputMethod('text')}
                   className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
                     inputMethod === 'text'
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                   }`}
                 >
                   <FileText className="w-4 h-4" />
@@ -517,8 +517,8 @@ export default function InsightsGenerator() {
                   onClick={() => setInputMethod('audio')}
                   className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
                     inputMethod === 'audio'
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                   }`}
                 >
                   <Upload className="w-4 h-4" />
@@ -531,13 +531,13 @@ export default function InsightsGenerator() {
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
                   placeholder="Paste your lesson transcript here..."
-                  className="w-full h-64 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none"
+                  className="w-full h-64 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500 resize-none"
                 />
               ) : (
                 <div className="space-y-4">
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-cyan-500/50 transition"
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500/50 transition"
                   >
                     <input
                       ref={fileInputRef}
@@ -546,18 +546,18 @@ export default function InsightsGenerator() {
                       onChange={handleAudioUpload}
                       className="hidden"
                     />
-                    <Upload className="w-12 h-12 mx-auto text-slate-500 mb-3" />
+                    <Upload className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" />
                     {audioFile ? (
                       <div>
-                        <p className="text-white font-medium">{audioFile.name}</p>
-                        <p className="text-sm text-slate-400 mt-1">
+                        <p className="text-gray-900 dark:text-white font-medium">{audioFile.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-slate-400">Click to upload audio file</p>
-                        <p className="text-sm text-slate-500 mt-1">MP3, M4A, or WAV (max 25MB)</p>
+                        <p className="text-gray-600 dark:text-gray-400">Click to upload audio file</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">MP3, M4A, or WAV (max 25MB)</p>
                       </div>
                     )}
                   </div>
@@ -566,7 +566,7 @@ export default function InsightsGenerator() {
                     <button
                       onClick={transcribeAudio}
                       disabled={transcribing}
-                      className="w-full px-4 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-700 text-white rounded-xl transition flex items-center justify-center gap-2"
+                      className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 disabled:text-gray-200 text-white rounded-xl transition flex items-center justify-center gap-2"
                     >
                       {transcribing ? (
                         <>
@@ -584,30 +584,30 @@ export default function InsightsGenerator() {
 
                   {transcript && inputMethod === 'audio' && (
                     <div>
-                      <label className="block text-sm text-slate-400 mb-2">Transcription Result:</label>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Transcription Result:</label>
                       <textarea
                         value={transcript}
                         onChange={(e) => setTranscript(e.target.value)}
-                        className="w-full h-48 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none"
+                        className="w-full h-48 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500 resize-none"
                       />
                     </div>
                   )}
                 </div>
               )}
 
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 {transcript.length.toLocaleString()} characters
               </p>
             </div>
 
             {/* Metadata */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">3. Lesson Details</h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">3. Lesson Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Title */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     Lesson Title *
                   </label>
                   <input
@@ -615,13 +615,13 @@ export default function InsightsGenerator() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g., Surah Al-Baqarah Verses 1-5"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Teacher Name */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     <GraduationCap className="w-4 h-4 inline mr-1" />
                     Teacher Name *
                   </label>
@@ -629,7 +629,7 @@ export default function InsightsGenerator() {
                     <select
                       value={teacherName}
                       onChange={(e) => setTeacherName(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white appearance-none focus:outline-none focus:border-cyan-500"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white appearance-none focus:outline-none focus:border-emerald-500"
                     >
                       <option value="">Select or type below...</option>
                       {teachers.map((teacher) => (
@@ -638,20 +638,20 @@ export default function InsightsGenerator() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none" />
                   </div>
                   <input
                     type="text"
                     value={teacherName}
                     onChange={(e) => setTeacherName(e.target.value)}
                     placeholder="Or type teacher name..."
-                    className="w-full mt-2 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full mt-2 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Student Name */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     <User className="w-4 h-4 inline mr-1" />
                     Student Name (optional)
                   </label>
@@ -659,14 +659,14 @@ export default function InsightsGenerator() {
                     type="text"
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
-                    placeholder="For personalized PDF"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    placeholder="For personalised PDF"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Date */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Lesson Date *
                   </label>
@@ -674,13 +674,13 @@ export default function InsightsGenerator() {
                     type="date"
                     value={lessonDate}
                     onChange={(e) => setLessonDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Duration */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     <Clock className="w-4 h-4 inline mr-1" />
                     Duration (minutes)
                   </label>
@@ -689,13 +689,13 @@ export default function InsightsGenerator() {
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="e.g., 60"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Tags */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                     Subject/Topic Tags (comma-separated)
                   </label>
                   <input
@@ -703,7 +703,7 @@ export default function InsightsGenerator() {
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="e.g., tajweed, surah al-baqarah, beginners"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -713,7 +713,7 @@ export default function InsightsGenerator() {
             <button
               onClick={generateInsights}
               disabled={loading || !transcript.trim() || !title.trim() || !teacherName.trim()}
-              className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-slate-700 disabled:to-slate-700 text-white rounded-xl transition flex items-center justify-center gap-3 text-lg font-semibold"
+              className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl transition flex items-center justify-center gap-3 text-lg font-semibold"
             >
               {loading ? (
                 <>
@@ -736,15 +736,15 @@ export default function InsightsGenerator() {
               <div className="flex items-center gap-3 mb-4">
                 <TemplateIcon className={`w-8 h-8 text-${templateInfo.color}-400`} />
                 <div>
-                  <h3 className="font-semibold text-white">{templateInfo.name}</h3>
-                  <p className="text-sm text-slate-400">{templateInfo.description}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{templateInfo.name}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{templateInfo.description}</p>
                 </div>
               </div>
 
-              <h4 className="text-sm font-medium text-slate-300 mb-2">PDF Sections:</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">PDF Sections:</h4>
               <ul className="space-y-1">
                 {templateInfo.sections.map((section, i) => (
-                  <li key={i} className="text-sm text-slate-400 flex items-center gap-2">
+                  <li key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                     <CheckCircle className={`w-4 h-4 text-${templateInfo.color}-400`} />
                     {section}
                   </li>
@@ -754,8 +754,8 @@ export default function InsightsGenerator() {
 
             {/* Generated Content Preview */}
             {(generatedContent || htmlContent) && (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-400" />
                   Generation Complete!
                 </h3>
@@ -764,7 +764,7 @@ export default function InsightsGenerator() {
                   {htmlContent && (
                     <button
                       onClick={previewInNewWindow}
-                      className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl transition flex items-center justify-center gap-2 font-semibold"
+                      className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl transition flex items-center justify-center gap-2 font-semibold"
                     >
                       <Eye className="w-5 h-5" />
                       Preview & Print PDF
@@ -784,7 +784,7 @@ export default function InsightsGenerator() {
                   )}
                 </div>
 
-                <p className="text-xs text-slate-500 mt-4 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-4 text-center">
                   Use browser print (Ctrl/Cmd + P) to save as PDF
                 </p>
               </div>
