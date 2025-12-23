@@ -375,6 +375,7 @@ Generate the insights following the exact format specified in the system prompt.
     const processingTime = Date.now() - startTime;
 
     // Save to lesson_insights table
+    // Store raw_transcript to enable insight regeneration even after video expiration
     const { data: savedInsight, error: upsertError } = await supabase
       .from('lesson_insights')
       .upsert({
@@ -389,6 +390,7 @@ Generate the insights following the exact format specified in the system prompt.
           verified_verses: verifiedVerses, // Store verified Quran data
           quran_api_source: 'quran.com/api/v4',
         },
+        raw_transcript: transcript, // Preserve transcript for future regeneration
         ai_model: 'claude-3-5-sonnet-20241022',
         confidence_score: 0.90,
         processing_time_ms: processingTime,
