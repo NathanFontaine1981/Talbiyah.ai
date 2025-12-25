@@ -30,7 +30,9 @@ import {
   Home
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import Breadcrumbs from '../../components/Breadcrumbs';
+import { VerseListMemorizer } from '../../components/VerseMemorizer';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -69,7 +71,7 @@ async function loadArabicFontForPDF(): Promise<string | null> {
           return arabicFontBase64;
         }
       } catch (e) {
-        console.warn('Failed to load font from:', url);
+        // Font URL failed, try next one
       }
     }
     throw new Error('All font URLs failed');
@@ -107,6 +109,16 @@ interface LessonInsight {
       lesson_date: string;
       duration_minutes?: number;
     };
+    verified_verses?: {
+      ayahNumber: number;
+      verseKey: string;
+      firstWord: string;
+      transliteration: string;
+      translation: string;
+      fullVerseUthmani: string;
+      fullVerseTranslation: string;
+    }[];
+    quran_api_source?: string;
   } | null;
   key_topics?: string[];
   areas_of_strength?: string[];
@@ -1066,14 +1078,18 @@ function DialogueCard({ line }: { line: DialogueLine }) {
 // Key Sentence Card Component
 function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence; isQuran?: boolean }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+    <div className={`rounded-xl p-4 border-l-4 ${
+      isQuran
+        ? 'bg-emerald-50 border-emerald-500'
+        : 'bg-blue-50 border-blue-500'
+    }`}>
       {/* Ayah number badge for Quran verses */}
       {isQuran && sentence.ayahNumber && (
         <div className="flex items-center gap-2 mb-2">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full font-bold text-sm border border-emerald-200">
             {sentence.ayahNumber}
           </span>
-          <span className="text-sm text-gray-500">Ayah {sentence.ayahNumber}</span>
+          <span className="text-sm text-emerald-600">Ayah {sentence.ayahNumber}</span>
         </div>
       )}
 
@@ -1083,7 +1099,7 @@ function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence;
       </p>
 
       {/* Transliteration */}
-      <p className="text-cyan-700 mb-1 italic">
+      <p className={`mb-1 italic ${isQuran ? 'text-emerald-700' : 'text-blue-700'}`}>
         {sentence.transliteration}
       </p>
 
@@ -1396,7 +1412,7 @@ function CollapsibleSection({
     teal: { bg: 'bg-teal-50', border: 'border-teal-200', headerBg: 'bg-gradient-to-r from-teal-500 to-teal-600' },
     amber: { bg: 'bg-amber-50', border: 'border-amber-200', headerBg: 'bg-gradient-to-r from-amber-500 to-amber-600' },
     rose: { bg: 'bg-rose-50', border: 'border-rose-200', headerBg: 'bg-gradient-to-r from-rose-500 to-rose-600' },
-    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', headerBg: 'bg-gradient-to-r from-cyan-500 to-cyan-600' },
+    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', headerBg: 'bg-gradient-to-r from-emerald-500 to-emerald-600' },
   };
 
   const colors = colorClasses[color] || colorClasses.indigo;
@@ -1794,7 +1810,7 @@ export default function LessonInsights() {
 
     } catch (err) {
       console.error('Error generating PDF:', err);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF. Please try again.');
     } finally {
       setDownloadingPDF(false);
     }
@@ -1942,7 +1958,7 @@ export default function LessonInsights() {
       setHomeworkSubmitted(true);
     } catch (err: any) {
       console.error('Error submitting homework:', err);
-      alert('Failed to submit homework. Please try again.');
+      toast.error('Failed to submit homework. Please try again.');
     } finally {
       setSubmittingHomework(false);
     }
@@ -1955,7 +1971,7 @@ export default function LessonInsights() {
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
           </div>
-          <p className="text-slate-600 font-medium">Loading your lesson insights...</p>
+          <p className="text-gray-600 font-medium">Loading your lesson insights...</p>
         </div>
       </div>
     );
@@ -1998,7 +2014,17 @@ export default function LessonInsights() {
   const vocabulary = vocabSection ? parseVocabulary(vocabSection.content) : [];
 
   const sentenceSection = sections.find(s => s.type === 'sentences');
-  const sentences = sentenceSection ? parseKeySentences(sentenceSection.content) : [];
+
+  // For Quran lessons, prefer verified verses from Quran.com API (full verses, not truncated)
+  const verifiedVerses = insight.detailed_insights?.verified_verses;
+  const sentences: KeySentence[] = (isQuran && verifiedVerses && verifiedVerses.length > 0)
+    ? verifiedVerses.map(v => ({
+        arabic: v.fullVerseUthmani,
+        transliteration: v.transliteration || '',
+        english: v.fullVerseTranslation,
+        ayahNumber: v.ayahNumber
+      }))
+    : (sentenceSection ? parseKeySentences(sentenceSection.content) : []);
 
   const grammarSection = sections.find(s => s.type === 'grammar');
   const grammarPoints = grammarSection ? parseGrammarPoints(grammarSection.content) : [];
@@ -2119,6 +2145,12 @@ export default function LessonInsights() {
                     <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 )}
+                {metadata?.duration_minutes && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span>{metadata.duration_minutes} min</span>
+                  </div>
+                )}
                 {metadata?.teacher_name && (
                   <div className="flex items-center gap-2">
                     <GraduationCap className="w-4 h-4" />
@@ -2164,7 +2196,7 @@ export default function LessonInsights() {
             </div>
           )}
 
-          {/* Focus Words with Flip Cards */}
+          {/* Focus Words with Matching Quiz and Flip Cards */}
           {vocabulary.length > 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -2175,15 +2207,18 @@ export default function LessonInsights() {
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
-                <Scissors className="w-4 h-4" />
-                Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
-              </p>
+              {/* Flip Cards Section */}
+              <div className="border-t border-gray-200 pt-6 mt-6">
+                <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+                  <Scissors className="w-4 h-4" />
+                  Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
+                </p>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {vocabulary.map((word, idx) => (
-                  <FlipCard key={idx} word={word} />
-                ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {vocabulary.map((word, idx) => (
+                    <FlipCard key={idx} word={word} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -2196,16 +2231,40 @@ export default function LessonInsights() {
             {/* Key Sentences / Verses Covered */}
             {sentences.length > 0 && (
               <CollapsibleSection
-                title={isQuran ? "Key Verses" : "Key Sentences"}
+                title={isQuran ? "Verses Covered" : "Key Sentences"}
                 icon={MessageCircle}
                 color="cyan"
                 defaultOpen={true}
               >
-                <div className="space-y-3">
-                  {sentences.map((sentence, i) => (
-                    <KeySentenceCard key={i} sentence={sentence} isQuran={isQuran} />
-                  ))}
-                </div>
+                {isQuran && lessonId ? (
+                  <VerseListMemorizer
+                    verses={sentences.map((s, idx) => {
+                      // If ayahNumber is not set, try to calculate from ayah_range
+                      let ayahNum = s.ayahNumber;
+                      if (!ayahNum && metadata?.ayah_range) {
+                        const rangeMatch = metadata.ayah_range.match(/(\d+)/);
+                        if (rangeMatch) {
+                          ayahNum = parseInt(rangeMatch[1], 10) + idx;
+                        }
+                      }
+                      return {
+                        ayahNumber: ayahNum,
+                        arabic: s.arabic,
+                        transliteration: s.transliteration,
+                        english: s.english
+                      };
+                    })}
+                    lessonId={lessonId}
+                    surahNumber={metadata?.surah_number}
+                    surahName={metadata?.surah_name}
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {sentences.map((sentence, i) => (
+                      <KeySentenceCard key={i} sentence={sentence} isQuran={isQuran} />
+                    ))}
+                  </div>
+                )}
               </CollapsibleSection>
             )}
 
@@ -2303,7 +2362,7 @@ export default function LessonInsights() {
           {(homeworkTasks.length > 0 || quizQuestions.length > 0) && (
             <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl shadow-sm border border-cyan-200 p-4 sm:p-6 mt-6 sm:mt-8 print:hidden">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
                   <Send className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -2378,7 +2437,7 @@ export default function LessonInsights() {
                         value={studentNotes}
                         onChange={(e) => setStudentNotes(e.target.value)}
                         placeholder="Write any notes about what you learned, what you found interesting, or what you want to remember..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                         rows={3}
                       />
                     </div>
@@ -2392,7 +2451,7 @@ export default function LessonInsights() {
                         value={questionsForTeacher}
                         onChange={(e) => setQuestionsForTeacher(e.target.value)}
                         placeholder="Any questions you'd like to ask your teacher about this lesson?"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                         rows={2}
                       />
                     </div>
