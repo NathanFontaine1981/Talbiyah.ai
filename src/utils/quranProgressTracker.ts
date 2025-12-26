@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabaseClient';
 
 export interface QuranProgress {
   surah_number: number;
@@ -73,7 +73,6 @@ export async function extractLessonCoverage(
     });
 
     if (error || !data) {
-      console.warn('Could not extract coverage from transcript:', error);
       return null;
     }
 
@@ -413,7 +412,6 @@ export async function autoTrackLessonProgress(
     );
 
     if (!coverage) {
-      console.warn('Could not extract lesson coverage');
       return false;
     }
 
@@ -426,11 +424,7 @@ export async function autoTrackLessonProgress(
     );
 
     if (success) {
-      console.log('✅ Quran progress auto-updated:', {
-        surah: coverage.surah_name,
-        ayat: coverage.ayat_covered,
-        stage: detectedStage
-      });
+      // Progress auto-updated successfully
     }
 
     return success;

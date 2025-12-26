@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft, UserPlus } from 'lucide-react';
+import { MessageCircle, Search, Users, Calendar, BookOpen, ArrowLeft, UserPlus, ChevronDown, ChevronUp, Clock, CheckCircle } from 'lucide-react';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 
 interface Conversation {
@@ -73,6 +73,7 @@ export default function Messages() {
 
   // Pre-lesson messaging state
   const [loadingLessons, setLoadingLessons] = useState(false);
+  const [showPastLessons, setShowPastLessons] = useState(false);
 
   useEffect(() => {
     loadConversations();
@@ -385,7 +386,7 @@ export default function Messages() {
         `)
         .eq('learner_id', conversation.student_id)
         .eq('teacher_id', conversation.teacher_id)
-        .order('scheduled_time', { ascending: false });
+        .order('scheduled_time', { ascending: true }); // Ascending for upcoming first
 
       if (error) {
         console.error('Error loading lessons:', error);
@@ -395,9 +396,13 @@ export default function Messages() {
 
       setLessons(lessonsList || []);
 
-      // Auto-select the most recent lesson if available
+      // Auto-select the next upcoming lesson (booked/in_progress), or most recent if none
       if (lessonsList && lessonsList.length > 0) {
-        setSelectedLessonId(lessonsList[0].id);
+        const now = new Date();
+        const upcomingLesson = lessonsList.find(
+          l => new Date(l.scheduled_time) > now && (l.status === 'booked' || l.status === 'in_progress')
+        );
+        setSelectedLessonId(upcomingLesson?.id || lessonsList[lessonsList.length - 1].id);
       }
     } catch (error) {
       console.error('Error loading lessons:', error);
@@ -771,26 +776,118 @@ export default function Messages() {
                   </div>
                 ) : (
                   <>
-                    {/* Lesson Selector */}
-                    {lessons.length > 0 && (
-                      <div className="bg-white rounded-xl shadow-sm p-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Select a lesson to view messages
-                        </label>
-                        <select
-                          value={selectedLessonId || ''}
-                          onChange={(e) => setSelectedLessonId(e.target.value)}
-                          className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        >
-                          <option value="">Choose a lesson...</option>
-                          {lessons.map((lesson) => (
-                            <option key={lesson.id} value={lesson.id}>
-                              {formatLessonTime(lesson.scheduled_time)} - {Array.isArray(lesson.subject) ? lesson.subject[0]?.name : lesson.subject.name} ({lesson.status})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    {/* Lesson Selector - Improved UX */}
+                    {lessons.length > 0 && (() => {
+                      const now = new Date();
+                      const upcomingLessons = lessons.filter(l =>
+                        new Date(l.scheduled_time) > now || l.status === 'in_progress'
+                      );
+                      const pastLessons = lessons.filter(l =>
+                        new Date(l.scheduled_time) <= now && l.status !== 'in_progress'
+                      ).reverse(); // Most recent past lesson first
+
+                      return (
+                        <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Select a lesson to view messages
+                          </label>
+
+                          {/* Upcoming Lessons */}
+                          {upcomingLessons.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 mb-2">
+                                <Clock className="w-3 h-3" />
+                                Upcoming Lessons
+                              </div>
+                              <div className="space-y-1">
+                                {upcomingLessons.map((lesson) => (
+                                  <button
+                                    key={lesson.id}
+                                    onClick={() => setSelectedLessonId(lesson.id)}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                                      selectedLessonId === lesson.id
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-medium">
+                                        {Array.isArray(lesson.subject) ? lesson.subject[0]?.name : lesson.subject.name}
+                                      </span>
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                        lesson.status === 'in_progress'
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : 'bg-emerald-100 text-emerald-700'
+                                      }`}>
+                                        {lesson.status === 'in_progress' ? 'Live' : 'Booked'}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {formatLessonTime(lesson.scheduled_time)}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Past Lessons - Collapsible */}
+                          {pastLessons.length > 0 && (
+                            <div>
+                              <button
+                                onClick={() => setShowPastLessons(!showPastLessons)}
+                                className="flex items-center justify-between w-full text-xs font-medium text-gray-500 hover:text-gray-700 py-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Past Lessons ({pastLessons.length})
+                                </div>
+                                {showPastLessons ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4" />
+                                )}
+                              </button>
+
+                              {showPastLessons && (
+                                <div className="space-y-1 max-h-48 overflow-y-auto">
+                                  {pastLessons.map((lesson) => (
+                                    <button
+                                      key={lesson.id}
+                                      onClick={() => setSelectedLessonId(lesson.id)}
+                                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                                        selectedLessonId === lesson.id
+                                          ? 'bg-gray-200 text-gray-800 border border-gray-300'
+                                          : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+                                      }`}
+                                    >
+                                      <div className="flex justify-between items-center">
+                                        <span>
+                                          {Array.isArray(lesson.subject) ? lesson.subject[0]?.name : lesson.subject.name}
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                          {lesson.status}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs text-gray-400">
+                                        {formatLessonTime(lesson.scheduled_time)}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Empty state if no lessons at all */}
+                          {upcomingLessons.length === 0 && pastLessons.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-2">
+                              No lessons found
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Messages */}
                     {selectedLessonId ? (

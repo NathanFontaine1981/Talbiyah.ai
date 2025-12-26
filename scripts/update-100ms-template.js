@@ -8,7 +8,7 @@ import crypto from 'crypto';
 
 const HMS_APP_ACCESS_KEY = '6905f77ebd0dab5f9a014498';
 const HMS_APP_SECRET = '1yLUaILAzsih3HYjiEyNHzYmVm4aHJpd_KQoGrkuOTNuECVxbmZP7Jqre7bYYEkjaAfCryrETHYNaq0tVmrxnoLz2KzIMeg8TFhA_oE8caW0-yL4O5_NtwIozlriUG6tVYV4KC0vQjJD5SYI322zneMTwZzhN6DoE5iYLGCBnp0=';
-const TEMPLATE_ID = '6905fb03033903926e627d60';
+const TEMPLATE_ID = '694e3cd62f99d9b901d90528';
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -67,25 +67,37 @@ async function updateTemplate() {
   console.log('Current transcriptions:', Object.keys(template.destinations?.transcriptions || {}));
   console.log('');
 
-  // Update destinations - keep existing config and add/update transcription
+  // Log the full current template for debugging
+  console.log('Full template destinations:', JSON.stringify(template.destinations, null, 2));
+
+  // Get the browser recording role - this MUST match the transcription role
+  // According to 100ms docs: "The role given in the transcriptions destinations object
+  // and browserRecordings destinations object needs to be same"
+  const browserRecordings = template.destinations?.browserRecordings || {};
+  const browserRecordingRole = Object.values(browserRecordings)[0]?.role || '__internal_recorder';
+
+  console.log('Browser recording role:', browserRecordingRole);
+  console.log('Setting transcription role to match:', browserRecordingRole);
+
+  // Update destinations - keep existing config and update transcription
+  // The transcription role MUST match the browser recording role
   const updatedDestinations = {
     ...template.destinations,
-    // Add transcription config for recorded mode (post-session transcription)
     transcriptions: {
       "lesson-transcription": {
         name: "lesson-transcription",
-        role: "host",
+        role: browserRecordingRole, // Must match browserRecordings role
         modes: ["recorded"],
         outputModes: ["txt", "json", "srt"],
-        customVocabulary: ["Quran", "Surah", "Ayah", "Tajweed", "Tafseer", "Arabic", "Bismillah", "Alhamdulillah", "SubhanAllah", "MashaAllah", "InshaAllah"],
+        customVocabulary: ["Quran", "Surah", "Ayah", "Tajweed", "Tafseer", "Arabic", "Bismillah", "Alhamdulillah", "SubhanAllah", "MashaAllah", "InshaAllah", "Salaf", "Talbiyah"],
         summary: {
           enabled: true,
-          context: "This is an Islamic education lesson covering Quran recitation, Arabic language learning, or Islamic studies. Focus on religious terminology, Arabic vocabulary, Quranic verses, and educational content.",
+          context: "This is an Islamic education lesson covering Quran recitation, Arabic language learning, or Islamic studies. Focus on religious terminology, Arabic vocabulary, Quranic verses, and educational content. Transcribe both teacher and student speech.",
           sections: [
             { title: "Topics Covered", format: "bullets" },
             { title: "Key Quranic Verses", format: "bullets" },
             { title: "Arabic Vocabulary", format: "bullets" },
-            { title: "Main Takeaways", format: "bullets" },
+            { title: "Questions and Answers", format: "bullets" },
             { title: "Summary", format: "paragraph" }
           ],
           temperature: 0.5
@@ -117,10 +129,10 @@ async function updateTemplate() {
 
   // Display the current configuration
   console.log('📹 Recording Configuration:');
-  const browserRecordings = updatedTemplate.destinations?.browserRecordings || {};
-  if (Object.keys(browserRecordings).length > 0) {
+  const updatedBrowserRecordings = updatedTemplate.destinations?.browserRecordings || {};
+  if (Object.keys(updatedBrowserRecordings).length > 0) {
     console.log('   - Browser Composite Recording: Enabled');
-    const firstRecording = Object.values(browserRecordings)[0];
+    const firstRecording = Object.values(updatedBrowserRecordings)[0];
     console.log('   - Resolution:', firstRecording.width + 'x' + firstRecording.height);
     console.log('   - Max Duration:', firstRecording.maxDuration, 'seconds');
   } else {

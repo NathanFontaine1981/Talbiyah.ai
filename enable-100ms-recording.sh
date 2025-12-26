@@ -4,7 +4,7 @@
 # This ensures all lessons are automatically recorded with transcripts
 
 HMS_TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjI1NjAwNTUsImV4cCI6MTc2MzE2NDg1NSwianRpIjoiNTcyZjgzYWMtNDQzMC00NDAzLWE5OTctYWJmNzc5NmE3YzQwIiwidHlwZSI6Im1hbmFnZW1lbnQiLCJ2ZXJzaW9uIjoyLCJuYmYiOjE3NjI1NjAwNTUsImFjY2Vzc19rZXkiOiI2OTA1Zjc3ZWJkMGRhYjVmOWEwMTQ0OTgifQ.2zkr68GOvEQ2GqkEPdAQN6IM0C8guLbRhueGNDnn3Ng"
-HMS_TEMPLATE_ID="${HMS_TEMPLATE_ID:-6905fb03033903926e627d60}"
+HMS_TEMPLATE_ID="${HMS_TEMPLATE_ID:-694e3cd62f99d9b901d90528}"
 
 echo "🎥 Enabling Recording on 100ms Template..."
 echo ""

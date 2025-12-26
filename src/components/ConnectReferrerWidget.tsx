@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Check, Loader2, X, Gift } from 'lucide-react';
+import { UserPlus, Check, Loader2, X, Gift, Heart } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 
@@ -8,12 +8,17 @@ interface ConnectReferrerWidgetProps {
   onConnected?: () => void;
 }
 
+interface ReferrerInfo {
+  name: string;
+}
+
 export default function ConnectReferrerWidget({ userId, onConnected }: ConnectReferrerWidgetProps) {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [hasReferrer, setHasReferrer] = useState(false);
+  const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [hasCompletedLesson, setHasCompletedLesson] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -23,7 +28,7 @@ export default function ConnectReferrerWidget({ userId, onConnected }: ConnectRe
 
   async function checkEligibility() {
     try {
-      // Check if user already has a referrer
+      // Check if user already has a referrer in profiles
       const { data: profile } = await supabase
         .from('profiles')
         .select('referred_by')
@@ -31,20 +36,42 @@ export default function ConnectReferrerWidget({ userId, onConnected }: ConnectRe
         .single();
 
       if (profile?.referred_by) {
+        // Fetch referrer's name
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', profile.referred_by)
+          .single();
+
+        setReferrerInfo({ name: referrer?.full_name || 'Someone' });
         setHasReferrer(true);
-        setShow(false);
         setLoading(false);
         return;
       }
 
-      // Check if user has completed any lessons
+      // Check if the user's learner has a referrer (from signup via referral link)
       const { data: learner } = await supabase
         .from('learners')
-        .select('id')
+        .select('id, referred_by')
         .eq('parent_id', userId)
         .maybeSingle();
 
+      if (learner?.referred_by) {
+        // learner.referred_by is a profile ID, fetch referrer's name directly
+        const { data: referrerProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', learner.referred_by)
+          .single();
+
+        setReferrerInfo({ name: referrerProfile?.full_name || 'Someone' });
+        setHasReferrer(true);
+        setLoading(false);
+        return;
+      }
+
       if (learner) {
+        // Check if user has completed any lessons
         const { data: completedLessons } = await supabase
           .from('lessons')
           .select('id')
@@ -181,7 +208,33 @@ export default function ConnectReferrerWidget({ userId, onConnected }: ConnectRe
     }
   }
 
-  if (loading || !show || hasReferrer || hasCompletedLesson || dismissed) {
+  if (loading) {
+    return null;
+  }
+
+  // Show who referred them if they have a referrer
+  if (hasReferrer && referrerInfo) {
+    return (
+      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-5">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
+            <Heart className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-1">
+              Referred by {referrerInfo.name}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              They'll earn rewards when you complete lessons. Keep learning!
+            </p>
+          </div>
+          <Check className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!show || hasCompletedLesson || dismissed) {
     return null;
   }
 

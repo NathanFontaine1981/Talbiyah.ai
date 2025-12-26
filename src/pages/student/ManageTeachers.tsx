@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { ArrowLeft, Plus, User, BookOpen, X, UserPlus, Trash2 } from 'lucide-react';
 
 interface Teacher {
@@ -150,9 +151,10 @@ export default function ManageTeachers() {
 
       await loadTeachers();
       setShowModal(false);
+      toast.success('Teacher assigned successfully');
     } catch (error: any) {
       console.error('Error assigning teacher:', error);
-      alert(error.message || 'Failed to assign teacher');
+      toast.error(error.message || 'Failed to assign teacher');
     } finally {
       setAssigning(null);
     }
@@ -171,9 +173,10 @@ export default function ManageTeachers() {
       if (error) throw error;
 
       await loadTeachers();
+      toast.success('Teacher removed successfully');
     } catch (error: any) {
       console.error('Error removing teacher:', error);
-      alert(error.message || 'Failed to remove teacher');
+      toast.error(error.message || 'Failed to remove teacher');
     } finally {
       setRemoving(null);
     }
@@ -181,29 +184,29 @@ export default function ManageTeachers() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading teachers...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading teachers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Dashboard</span>
             </button>
 
-            <h1 className="text-xl font-bold text-white">My Teachers</h1>
+            <h1 className="text-xl font-bold text-gray-900">My Teachers</h1>
 
             <div className="w-32"></div>
           </div>
@@ -214,12 +217,12 @@ export default function ManageTeachers() {
         {/* Header with Add Button */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">My Teachers</h2>
-            <p className="text-slate-400">Manage your assigned teachers and track your progress</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">My Teachers</h2>
+            <p className="text-gray-500">Manage your assigned teachers and track your progress</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition"
           >
             <Plus className="w-5 h-5" />
             <span>Add Teacher</span>
@@ -228,17 +231,17 @@ export default function ManageTeachers() {
 
         {/* Assigned Teachers List */}
         {assignedTeachers.length === 0 ? (
-          <div className="text-center py-20 bg-slate-900/50 rounded-2xl border border-slate-800">
-            <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center mb-6">
-              <User className="w-12 h-12 text-slate-600" />
+          <div className="text-center py-20 bg-white/50 rounded-2xl border border-gray-200">
+            <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <User className="w-12 h-12 text-gray-600" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">No Teachers Assigned</h3>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto">
-              Start by assigning a teacher to track your learning progress and get personalized guidance.
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Teachers Assigned</h3>
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              Start by assigning a teacher to track your learning progress and get personalised guidance.
             </p>
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition"
             >
               <Plus className="w-5 h-5" />
               <span>Add Your First Teacher</span>
@@ -249,30 +252,30 @@ export default function ManageTeachers() {
             {assignedTeachers.map((teacher) => (
               <div
                 key={teacher.assignment_id}
-                className="bg-slate-900/80 rounded-xl p-6 border border-slate-800 hover:border-slate-700 transition"
+                className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-200 transition"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4 flex-1">
-                    <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-8 h-8 text-cyan-400" />
+                    <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-8 h-8 text-emerald-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-white mb-2">{teacher.full_name}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{teacher.full_name}</h3>
                       {teacher.bio && (
-                        <p className="text-slate-400 text-sm mb-3 line-clamp-2">{teacher.bio}</p>
+                        <p className="text-gray-500 text-sm mb-3 line-clamp-2">{teacher.bio}</p>
                       )}
                       <div className="flex flex-wrap gap-2 mb-3">
                         {teacher.subjects.map((subject, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center space-x-1 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-xs font-medium text-cyan-400"
+                            className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs font-medium text-emerald-600"
                           >
                             <BookOpen className="w-3 h-3" />
                             <span>{subject}</span>
                           </span>
                         ))}
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-slate-500">
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <span>Assigned {new Date(teacher.assigned_at).toLocaleDateString()}</span>
                         <span>•</span>
                         <span>£{teacher.hourly_rate.toFixed(2)}/hour</span>
@@ -282,7 +285,7 @@ export default function ManageTeachers() {
                   <div className="flex items-center space-x-2 ml-4">
                     <button
                       onClick={() => navigate(`/teacher/${teacher.id}`)}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg font-medium transition text-sm"
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium transition text-sm"
                     >
                       View Profile
                     </button>
@@ -314,18 +317,18 @@ export default function ManageTeachers() {
       {/* Add Teacher Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-2xl border border-gray-200 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h3 className="text-2xl font-bold text-white">Assign a Teacher</h3>
-                <p className="text-slate-400 text-sm mt-1">Choose a teacher to track your learning progress</p>
+                <h3 className="text-2xl font-bold text-gray-900">Assign a Teacher</h3>
+                <p className="text-gray-500 text-sm mt-1">Choose a teacher to track your learning progress</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg transition"
+                className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
-                <X className="w-5 h-5 text-slate-400" />
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
@@ -333,38 +336,38 @@ export default function ManageTeachers() {
             <div className="flex-1 overflow-y-auto p-6">
               {availableTeachers.length === 0 ? (
                 <div className="text-center py-12">
-                  <User className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400">All available teachers have been assigned.</p>
+                  <User className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-500">All available teachers have been assigned.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {availableTeachers.map((teacher) => (
                     <div
                       key={teacher.id}
-                      className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 hover:border-cyan-500/50 transition"
+                      className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-emerald-500/50 transition"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4 flex-1">
-                          <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                            <User className="w-6 h-6 text-cyan-400" />
+                          <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-6 h-6 text-emerald-600" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-bold text-white mb-2">{teacher.full_name}</h4>
+                            <h4 className="text-lg font-bold text-gray-900 mb-2">{teacher.full_name}</h4>
                             {teacher.bio && (
-                              <p className="text-slate-400 text-sm mb-3 line-clamp-2">{teacher.bio}</p>
+                              <p className="text-gray-500 text-sm mb-3 line-clamp-2">{teacher.bio}</p>
                             )}
                             <div className="flex flex-wrap gap-2 mb-2">
                               {teacher.subjects.map((subject, idx) => (
                                 <span
                                   key={idx}
-                                  className="inline-flex items-center space-x-1 px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded text-xs font-medium text-cyan-400"
+                                  className="inline-flex items-center space-x-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs font-medium text-emerald-600"
                                 >
                                   <BookOpen className="w-3 h-3" />
                                   <span>{subject}</span>
                                 </span>
                               ))}
                             </div>
-                            <div className="text-sm text-slate-500">
+                            <div className="text-sm text-gray-500">
                               £{teacher.hourly_rate.toFixed(2)}/hour
                             </div>
                           </div>
@@ -372,7 +375,7 @@ export default function ManageTeachers() {
                         <button
                           onClick={() => assignTeacher(teacher.id)}
                           disabled={assigning === teacher.id}
-                          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ml-4"
+                          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ml-4"
                         >
                           {assigning === teacher.id ? (
                             <>

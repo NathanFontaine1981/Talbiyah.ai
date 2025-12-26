@@ -64,7 +64,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         description: description || `Live Islamic Learning Session: ${roomName}`,
-        template_id: '6905fb03033903926e627d60', // Talbiyah.ai template
+        template_id: '694e3cd62f99d9b901d90528', // Talbiyah.ai template
         region: 'eu', // EU region for UK users - lowest latency
       })
     })

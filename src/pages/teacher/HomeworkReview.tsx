@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
   ClipboardCheck,
@@ -83,7 +84,7 @@ const CONFIDENCE_LEVELS: Record<number, { label: string; color: string; bgColor:
   2: { label: 'Getting There', color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30', description: 'Understands some but needs reinforcement' },
   3: { label: 'Fairly Confident', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20 border-yellow-500/30', description: 'Can recall most with effort' },
   4: { label: 'Strong', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30', description: 'Comfortable with material, minor gaps' },
-  5: { label: 'Mastered', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20 border-cyan-500/30', description: 'Uses vocabulary/rules naturally' },
+  5: { label: 'Mastered', color: 'text-emerald-600', bgColor: 'bg-emerald-500/20 border-emerald-500/30', description: 'Uses vocabulary/rules naturally' },
 };
 
 export default function HomeworkReview() {
@@ -157,7 +158,6 @@ export default function HomeworkReview() {
       if (error) {
         if (error.code === 'PGRST205') {
           // Table doesn't exist yet
-          console.log('homework_submissions table not created yet');
           setSubmissions([]);
           return;
         }
@@ -306,7 +306,7 @@ export default function HomeworkReview() {
       fetchArabicSubmissions();
     } catch (error: any) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback: ' + error.message);
+      toast.error('Failed to submit feedback: ' + error.message);
     } finally {
       setSubmittingFeedback(false);
     }
@@ -374,7 +374,7 @@ export default function HomeworkReview() {
       fetchSubmissions();
     } catch (error: any) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback: ' + error.message);
+      toast.error('Failed to submit feedback: ' + error.message);
     } finally {
       setSubmittingFeedback(false);
     }
@@ -406,7 +406,7 @@ export default function HomeworkReview() {
       case 'needs_revision':
         return 'bg-red-500/20 text-red-400 border-red-500/50';
       default:
-        return 'bg-slate-500/20 text-slate-400 border-slate-500/50';
+        return 'bg-gray-500/20 text-gray-500 border-gray-300/50';
     }
   }
 
@@ -430,10 +430,10 @@ export default function HomeworkReview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="flex items-center justify-center h-64">
-            <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
       </div>
@@ -448,13 +448,13 @@ export default function HomeworkReview() {
   const currentSubmissions = viewMode === 'arabic' ? arabicSubmissions : submissions;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/teacher/hub')}
-            className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Teacher Hub</span>
@@ -466,7 +466,7 @@ export default function HomeworkReview() {
                 <ClipboardCheck className="w-10 h-10 text-emerald-400" />
                 Homework Review
               </h1>
-              <p className="text-slate-300">
+              <p className="text-gray-600">
                 Review student homework submissions and provide feedback
               </p>
             </div>
@@ -488,7 +488,7 @@ export default function HomeworkReview() {
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition ${
               viewMode === 'arabic'
                 ? 'bg-orange-500/30 text-orange-400 border-2 border-orange-500/50'
-                : 'bg-white/5 text-slate-400 hover:bg-white/10 border-2 border-transparent'
+                : 'bg-white/5 text-gray-500 hover:bg-white/10 border-2 border-transparent'
             }`}
           >
             <Languages className="w-5 h-5" />
@@ -503,14 +503,14 @@ export default function HomeworkReview() {
             onClick={() => setViewMode('lesson')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition ${
               viewMode === 'lesson'
-                ? 'bg-cyan-500/30 text-cyan-400 border-2 border-cyan-500/50'
-                : 'bg-white/5 text-slate-400 hover:bg-white/10 border-2 border-transparent'
+                ? 'bg-emerald-500/30 text-emerald-600 border-2 border-emerald-500/50'
+                : 'bg-white/5 text-gray-500 hover:bg-white/10 border-2 border-transparent'
             }`}
           >
             <BookOpen className="w-5 h-5" />
             Lesson Insights
             {pendingLessonCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-cyan-500/30 text-xs">
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/30 text-xs">
                 {pendingLessonCount}
               </span>
             )}
@@ -529,8 +529,8 @@ export default function HomeworkReview() {
               onClick={() => setFilterStatus(tab.key as any)}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 filterStatus === tab.key
-                  ? 'bg-cyan-500/30 text-cyan-400 border border-cyan-500/50'
-                  : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                  ? 'bg-emerald-500/30 text-emerald-600 border border-emerald-500/50'
+                  : 'bg-white/5 text-gray-500 hover:bg-white/10'
               }`}
             >
               {tab.label}
@@ -573,7 +573,7 @@ export default function HomeworkReview() {
                       </div>
                       <div className="text-left">
                         <h3 className="font-semibold text-lg">{submission.learner_name}</h3>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-gray-500">
                           Book {submission.book} • Unit {submission.unit_number}: {submission.unit_title}
                         </p>
                       </div>
@@ -593,8 +593,8 @@ export default function HomeworkReview() {
                       {/* Quiz Score */}
                       {submission.quiz_score !== null && (
                         <div className="hidden md:block text-center">
-                          <p className="text-xs text-slate-500">Quiz</p>
-                          <p className="font-semibold text-cyan-400">
+                          <p className="text-xs text-gray-500">Quiz</p>
+                          <p className="font-semibold text-emerald-600">
                             {submission.quiz_score}/{submission.quiz_total}
                           </p>
                         </div>
@@ -602,7 +602,7 @@ export default function HomeworkReview() {
 
                       {/* Files indicator */}
                       {submission.uploaded_files && submission.uploaded_files.length > 0 && (
-                        <div className="hidden md:flex items-center gap-1 text-slate-400">
+                        <div className="hidden md:flex items-center gap-1 text-gray-500">
                           <Paperclip className="w-4 h-4" />
                           <span className="text-xs">{submission.uploaded_files.length}</span>
                         </div>
@@ -615,9 +615,9 @@ export default function HomeworkReview() {
 
                       {/* Expand Icon */}
                       {expandedArabicId === submission.id ? (
-                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                        <ChevronUp className="w-5 h-5 text-gray-500" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
                       )}
                     </div>
                   </button>
@@ -645,7 +645,7 @@ export default function HomeworkReview() {
                               <p className={`text-lg font-semibold ${CONFIDENCE_LEVELS[submission.confidence_level]?.color}`}>
                                 {CONFIDENCE_LEVELS[submission.confidence_level]?.label}
                               </p>
-                              <p className="text-sm text-slate-400 mt-1">
+                              <p className="text-sm text-gray-500 mt-1">
                                 {CONFIDENCE_LEVELS[submission.confidence_level]?.description}
                               </p>
                               {submission.confidence_level <= 2 && (
@@ -672,13 +672,13 @@ export default function HomeworkReview() {
                                     href={file.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2 hover:bg-slate-700/50 transition"
+                                    className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition"
                                   >
                                     {getFileIcon(file.type)}
-                                    <span className="text-sm text-cyan-400 hover:text-cyan-300 truncate flex-1">
+                                    <span className="text-sm text-emerald-600 hover:text-cyan-300 truncate flex-1">
                                       {file.name}
                                     </span>
-                                    <span className="text-xs text-slate-500">{formatFileSize(file.size)}</span>
+                                    <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
                                   </a>
                                 ))}
                               </div>
@@ -687,16 +687,16 @@ export default function HomeworkReview() {
 
                           {/* Quiz Score */}
                           {submission.quiz_score !== null && submission.quiz_total !== null && (
-                            <div className="bg-cyan-500/10 rounded-lg p-4 flex items-center justify-between border border-cyan-500/30">
+                            <div className="bg-emerald-500/10 rounded-lg p-4 flex items-center justify-between border border-emerald-500/30">
                               <div className="flex items-center gap-2">
-                                <Star className="w-5 h-5 text-cyan-400" />
-                                <span className="font-medium text-cyan-400">Quiz Score</span>
+                                <Star className="w-5 h-5 text-emerald-600" />
+                                <span className="font-medium text-emerald-600">Quiz Score</span>
                               </div>
                               <div className="text-right">
                                 <span className="text-xl font-bold text-white">
                                   {submission.quiz_score}/{submission.quiz_total}
                                 </span>
-                                <span className="text-sm text-slate-400 ml-2">
+                                <span className="text-sm text-gray-500 ml-2">
                                   ({Math.round((submission.quiz_score / submission.quiz_total) * 100)}%)
                                 </span>
                               </div>
@@ -707,7 +707,7 @@ export default function HomeworkReview() {
                           {submission.student_notes && (
                             <div className="bg-white/5 rounded-lg p-4">
                               <h5 className="font-medium mb-2">Student Notes</h5>
-                              <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                              <p className="text-sm text-gray-600 whitespace-pre-wrap">
                                 {submission.student_notes}
                               </p>
                             </div>
@@ -715,7 +715,7 @@ export default function HomeworkReview() {
 
                           {/* Submission Time */}
                           {submission.submitted_at && (
-                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               Submitted {formatDate(submission.submitted_at)}
                             </p>
@@ -728,7 +728,7 @@ export default function HomeworkReview() {
 
                           {/* Rating Select */}
                           <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">
+                            <label className="block text-sm font-medium text-gray-500 mb-2">
                               Rating
                             </label>
                             <select
@@ -736,18 +736,18 @@ export default function HomeworkReview() {
                               onChange={(e) => setRating(e.target.value)}
                               className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             >
-                              <option value="" className="bg-slate-800">Select rating...</option>
-                              <option value="Excellent" className="bg-slate-800">Excellent</option>
-                              <option value="Very Good" className="bg-slate-800">Very Good</option>
-                              <option value="Good" className="bg-slate-800">Good</option>
-                              <option value="Needs Improvement" className="bg-slate-800">Needs Improvement</option>
-                              <option value="Incomplete" className="bg-slate-800">Incomplete</option>
+                              <option value="" className="bg-gray-100">Select rating...</option>
+                              <option value="Excellent" className="bg-gray-100">Excellent</option>
+                              <option value="Very Good" className="bg-gray-100">Very Good</option>
+                              <option value="Good" className="bg-gray-100">Good</option>
+                              <option value="Needs Improvement" className="bg-gray-100">Needs Improvement</option>
+                              <option value="Incomplete" className="bg-gray-100">Incomplete</option>
                             </select>
                           </div>
 
                           {/* Feedback */}
                           <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">
+                            <label className="block text-sm font-medium text-gray-500 mb-2">
                               Feedback
                             </label>
                             <textarea
@@ -755,7 +755,7 @@ export default function HomeworkReview() {
                               onChange={(e) => setFeedback(e.target.value)}
                               rows={4}
                               placeholder="Provide feedback on their Arabic progress, vocabulary retention, and grammar usage..."
-                              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                           </div>
 
@@ -786,12 +786,12 @@ export default function HomeworkReview() {
                               </p>
                               {submission.teacher_rating && (
                                 <p className="text-sm">
-                                  <span className="text-slate-400">Rating:</span>{' '}
+                                  <span className="text-gray-500">Rating:</span>{' '}
                                   <span className="text-emerald-400">{submission.teacher_rating}</span>
                                 </p>
                               )}
                               {submission.teacher_feedback && (
-                                <p className="text-sm text-slate-300 mt-2">{submission.teacher_feedback}</p>
+                                <p className="text-sm text-gray-600 mt-2">{submission.teacher_feedback}</p>
                               )}
                             </div>
                           )}
@@ -831,12 +831,12 @@ export default function HomeworkReview() {
                   className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-cyan-400" />
+                    <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-semibold text-lg">{submission.learner_name}</h3>
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-gray-500">
                         {submission.lesson_subject} - {formatDate(submission.lesson_date)}
                       </p>
                     </div>
@@ -847,15 +847,15 @@ export default function HomeworkReview() {
                     <div className="hidden md:flex items-center gap-4 mr-4">
                       {submission.quiz_score !== null && (
                         <div className="text-center">
-                          <p className="text-xs text-slate-500">Quiz</p>
-                          <p className="font-semibold text-cyan-400">
+                          <p className="text-xs text-gray-500">Quiz</p>
+                          <p className="font-semibold text-emerald-600">
                             {submission.quiz_score}/{submission.quiz_total}
                           </p>
                         </div>
                       )}
                       {submission.tasks_total_count > 0 && (
                         <div className="text-center">
-                          <p className="text-xs text-slate-500">Tasks</p>
+                          <p className="text-xs text-gray-500">Tasks</p>
                           <p className="font-semibold text-emerald-400">
                             {submission.tasks_completed_count}/{submission.tasks_total_count}
                           </p>
@@ -876,9 +876,9 @@ export default function HomeworkReview() {
 
                     {/* Expand Icon */}
                     {expandedId === submission.id ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                 </button>
@@ -890,7 +890,7 @@ export default function HomeworkReview() {
                     <div className="grid md:grid-cols-2 gap-6">
                       {/* Left Column - Student Work */}
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-cyan-400">Student Submission</h4>
+                        <h4 className="font-semibold text-lg text-emerald-600">Student Submission</h4>
 
                         {/* Quiz Results */}
                         {submission.quiz_answers && submission.quiz_answers.length > 0 && (
@@ -909,11 +909,11 @@ export default function HomeworkReview() {
                                       : 'bg-red-500/10 border border-red-500/30'
                                   }`}
                                 >
-                                  <p className="text-slate-300">{answer.question || `Question ${idx + 1}`}</p>
+                                  <p className="text-gray-600">{answer.question || `Question ${idx + 1}`}</p>
                                   <p className={answer.correct ? 'text-emerald-400' : 'text-red-400'}>
                                     Answer: {answer.selectedAnswer}
                                     {!answer.correct && answer.correctAnswer && (
-                                      <span className="text-slate-400"> (Correct: {answer.correctAnswer})</span>
+                                      <span className="text-gray-500"> (Correct: {answer.correctAnswer})</span>
                                     )}
                                   </p>
                                 </div>
@@ -936,15 +936,15 @@ export default function HomeworkReview() {
                                   className={`flex items-start gap-2 p-2 rounded ${
                                     task.completed
                                       ? 'bg-emerald-500/10 border border-emerald-500/30'
-                                      : 'bg-slate-500/10 border border-slate-500/30'
+                                      : 'bg-gray-500/10 border border-gray-300/30'
                                   }`}
                                 >
                                   {task.completed ? (
                                     <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5" />
                                   ) : (
-                                    <Clock className="w-4 h-4 text-slate-400 mt-0.5" />
+                                    <Clock className="w-4 h-4 text-gray-500 mt-0.5" />
                                   )}
-                                  <span className={task.completed ? 'text-emerald-300' : 'text-slate-400'}>
+                                  <span className={task.completed ? 'text-emerald-300' : 'text-gray-500'}>
                                     {task.task}
                                   </span>
                                 </div>
@@ -964,11 +964,11 @@ export default function HomeworkReview() {
                                   className={`w-5 h-5 ${
                                     star <= submission.difficulty_rating!
                                       ? 'text-amber-400 fill-amber-400'
-                                      : 'text-slate-600'
+                                      : 'text-gray-600'
                                   }`}
                                 />
                               ))}
-                              <span className="text-sm text-slate-400 ml-2">
+                              <span className="text-sm text-gray-500 ml-2">
                                 {getDifficultyLabel(submission.difficulty_rating)}
                               </span>
                             </div>
@@ -979,7 +979,7 @@ export default function HomeworkReview() {
                         {submission.student_notes && (
                           <div className="bg-white/5 rounded-lg p-4">
                             <h5 className="font-medium mb-2">Student Notes</h5>
-                            <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
                               {submission.student_notes}
                             </p>
                           </div>
@@ -992,7 +992,7 @@ export default function HomeworkReview() {
                               <AlertCircle className="w-4 h-4" />
                               Question for You
                             </h5>
-                            <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
                               {submission.questions_for_teacher}
                             </p>
                           </div>
@@ -1005,7 +1005,7 @@ export default function HomeworkReview() {
 
                         {/* Rating Select */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-400 mb-2">
+                          <label className="block text-sm font-medium text-gray-500 mb-2">
                             Overall Rating
                           </label>
                           <select
@@ -1013,17 +1013,17 @@ export default function HomeworkReview() {
                             onChange={(e) => setRating(e.target.value)}
                             className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           >
-                            <option value="" className="bg-slate-800">Select rating...</option>
-                            <option value="excellent" className="bg-slate-800">Excellent</option>
-                            <option value="good" className="bg-slate-800">Good</option>
-                            <option value="satisfactory" className="bg-slate-800">Satisfactory</option>
-                            <option value="needs_improvement" className="bg-slate-800">Needs Improvement</option>
+                            <option value="" className="bg-gray-100">Select rating...</option>
+                            <option value="excellent" className="bg-gray-100">Excellent</option>
+                            <option value="good" className="bg-gray-100">Good</option>
+                            <option value="satisfactory" className="bg-gray-100">Satisfactory</option>
+                            <option value="needs_improvement" className="bg-gray-100">Needs Improvement</option>
                           </select>
                         </div>
 
                         {/* Encouragement */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-400 mb-2">
+                          <label className="block text-sm font-medium text-gray-500 mb-2">
                             Encouragement / Praise
                           </label>
                           <textarea
@@ -1031,13 +1031,13 @@ export default function HomeworkReview() {
                             onChange={(e) => setEncouragement(e.target.value)}
                             rows={2}
                             placeholder="e.g., Great effort on the vocabulary! You're making excellent progress..."
-                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
 
                         {/* Detailed Feedback */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-400 mb-2">
+                          <label className="block text-sm font-medium text-gray-500 mb-2">
                             Detailed Feedback
                           </label>
                           <textarea
@@ -1045,13 +1045,13 @@ export default function HomeworkReview() {
                             onChange={(e) => setFeedback(e.target.value)}
                             rows={4}
                             placeholder="Provide constructive feedback on their work..."
-                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
 
                         {/* Areas to Focus */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-400 mb-2">
+                          <label className="block text-sm font-medium text-gray-500 mb-2">
                             Areas to Focus (comma separated)
                           </label>
                           <input
@@ -1059,7 +1059,7 @@ export default function HomeworkReview() {
                             value={areasToFocus}
                             onChange={(e) => setAreasToFocus(e.target.value)}
                             placeholder="e.g., Verb conjugation, Vocabulary retention, Pronunciation"
-                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
 
@@ -1090,7 +1090,7 @@ export default function HomeworkReview() {
                             </p>
                             {submission.teacher_rating && (
                               <p className="text-sm">
-                                <span className="text-slate-400">Rating:</span>{' '}
+                                <span className="text-gray-500">Rating:</span>{' '}
                                 <span className="text-emerald-400 capitalize">
                                   {submission.teacher_rating.replace('_', ' ')}
                                 </span>
@@ -1105,7 +1105,7 @@ export default function HomeworkReview() {
                     <div className="pt-4 border-t border-white/10">
                       <button
                         onClick={() => navigate(`/lesson/${submission.lesson_id}/insights`)}
-                        className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-2"
+                        className="text-emerald-600 hover:text-cyan-300 text-sm flex items-center gap-2"
                       >
                         <BookOpen className="w-4 h-4" />
                         View Full Lesson Insights

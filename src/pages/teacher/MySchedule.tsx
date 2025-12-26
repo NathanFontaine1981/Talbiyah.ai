@@ -42,10 +42,10 @@ export default function MySchedule() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
+            <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
           </div>
         </div>
       </div>
@@ -53,25 +53,25 @@ export default function MySchedule() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/teacher/hub')}
-            className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Teacher Hub</span>
           </button>
 
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-cyan-500/20 rounded-2xl flex items-center justify-center">
-              <Calendar className="w-7 h-7 text-cyan-400" />
+            <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+              <Calendar className="w-7 h-7 text-emerald-600" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">My Schedule</h1>
-              <p className="text-slate-400">View and manage your weekly lesson schedule</p>
+              <p className="text-gray-500">View and manage your weekly lesson schedule</p>
             </div>
           </div>
         </div>

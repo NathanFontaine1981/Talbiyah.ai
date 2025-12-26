@@ -21,7 +21,6 @@ export default function EditProfile() {
   const [, setHourlyRate] = useState('10');
   const [videoUrl, setVideoUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [specializations, setSpecializations] = useState<string[]>([]);
 
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -50,18 +49,6 @@ export default function EditProfile() {
   const [customText, setCustomText] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
-  const availableSpecializations = [
-    'Quran Memorisation (Hifz)',
-    'Tajweed',
-    'Tafseer (Quranic Interpretation)',
-    'Arabic Language',
-    'Islamic History',
-    'Fiqh (Islamic Jurisprudence)',
-    'Hadith Studies',
-    'Islamic Ethics',
-    'Seerah (Prophet\'s Biography)',
-    'Aqeedah (Islamic Creed)'
-  ];
 
   const teachingStyleOptions = [
     'Patient and encouraging',
@@ -110,7 +97,7 @@ export default function EditProfile() {
       ? ageGroups.slice(0, -1).join(', ') + ' and ' + ageGroups[ageGroups.length - 1]
       : ageGroups[0];
 
-    let generatedBio = `I am a ${teachingStyle.toLowerCase()} ${subjectsText} teacher with a passion for ${focusArea.toLowerCase()}. I specialize in teaching ${ageGroupsText} and have ${yearsExperience} years of experience. My approach is ${methodology.toLowerCase()}.`;
+    let generatedBio = `I am a ${teachingStyle.toLowerCase()} ${subjectsText} teacher with a passion for ${focusArea.toLowerCase()}. I specialise in teaching ${ageGroupsText} and have ${yearsExperience} years of experience. My approach is ${methodology.toLowerCase()}.`;
 
     if (customText.trim()) {
       generatedBio += ' ' + customText.trim();
@@ -317,7 +304,7 @@ export default function EditProfile() {
       // Get teacher profile
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id, bio, hourly_rate, video_intro_url, youtube_intro_url, education_level, islamic_learning_interests')
+        .select('id, bio, hourly_rate, video_intro_url, youtube_intro_url, education_level')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -334,7 +321,6 @@ export default function EditProfile() {
       setHourlyRate(teacherProfile.hourly_rate?.toString() || '10');
       setVideoUrl(teacherProfile.video_intro_url || '');
       setYoutubeUrl(teacherProfile.youtube_intro_url || '');
-      setSpecializations(teacherProfile.islamic_learning_interests || []);
 
       // Set current intro type and URL
       if (teacherProfile.video_intro_url) {
@@ -384,13 +370,6 @@ export default function EditProfile() {
     );
   }
 
-  function toggleSpecialization(spec: string) {
-    setSpecializations(prev =>
-      prev.includes(spec)
-        ? prev.filter(s => s !== spec)
-        : [...prev, spec]
-    );
-  }
 
   async function handleSave() {
     if (!teacherProfileId) {
@@ -437,7 +416,6 @@ export default function EditProfile() {
           // hourly_rate is NOT updated - managed by tier system
           video_intro_url: introType === 'video' ? (videoUrl.trim() || currentIntroUrl) : null,
           youtube_intro_url: introType === 'youtube' ? (youtubeUrl.trim() || currentIntroUrl) : null,
-          islamic_learning_interests: specializations.length > 0 ? specializations : null,
         })
         .eq('id', teacherProfileId);
 
@@ -710,6 +688,9 @@ export default function EditProfile() {
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Subjects You Teach <span className="text-red-500">*</span>
             </label>
+            <p className="text-sm text-gray-500 mb-3">
+              Select all subjects you are qualified to teach. Students will find you based on these subjects.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {subjects.map((subject) => (
                 <label key={subject.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
@@ -720,26 +701,6 @@ export default function EditProfile() {
                     className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <span className="text-gray-700 font-medium">{subject.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Specializations */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Specializations
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {availableSpecializations.map((spec) => (
-                <label key={spec} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                  <input
-                    type="checkbox"
-                    checked={specializations.includes(spec)}
-                    onChange={() => toggleSpecialization(spec)}
-                    className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700 text-sm">{spec}</span>
                 </label>
               ))}
             </div>

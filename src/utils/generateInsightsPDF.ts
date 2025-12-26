@@ -41,11 +41,10 @@ async function loadArabicFont(): Promise<string | null> {
             binary += String.fromCharCode(uint8Array[i]);
           }
           arabicFontBase64 = btoa(binary);
-          console.log('Arabic font loaded successfully from:', url);
           return arabicFontBase64;
         }
       } catch (e) {
-        console.warn('Failed to load font from:', url, e);
+        // Font URL failed, try next one
       }
     }
     throw new Error('All font URLs failed');

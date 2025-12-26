@@ -797,9 +797,9 @@ export default function GroupSessionCreator() {
                     </label>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
                     <select
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       value={form.status}
                       onChange={e => setForm({ ...form, status: e.target.value })}
                     >
@@ -830,7 +830,7 @@ export default function GroupSessionCreator() {
                   setEditingId(null);
                   setForm(DEFAULT_FORM);
                 }}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg"
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg"
               >
                 Cancel
               </button>
@@ -840,36 +840,36 @@ export default function GroupSessionCreator() {
       )}
 
       {/* Templates List */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="text-left p-4 text-gray-500 font-medium">Class</th>
-                <th className="text-left p-4 text-gray-500 font-medium">Schedule</th>
-                <th className="text-left p-4 text-gray-500 font-medium">Price</th>
-                <th className="text-left p-4 text-gray-500 font-medium">Capacity</th>
-                <th className="text-left p-4 text-gray-500 font-medium">Status</th>
-                <th className="text-left p-4 text-gray-500 font-medium">Actions</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Class</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Schedule</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Price</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Capacity</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Status</th>
+                <th className="text-left p-4 text-gray-500 dark:text-gray-400 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {templates.map(template => (
-                <tr key={template.id} className="border-t border-gray-200 hover:bg-gray-50 transition">
+                <tr key={template.id} className="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getCategoryIcon(template.subject_category)}</span>
                       <div>
-                        <div className="font-medium text-white">{template.name}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="font-medium text-gray-900 dark:text-white">{template.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {template.teacher?.full_name || 'No teacher assigned'}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="text-white capitalize">{template.recurrence}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-gray-900 dark:text-white capitalize">{template.recurrence}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {template.day_of_week !== null && template.recurrence !== 'once' && template.recurrence !== 'daily'
                         ? `${DAYS_OF_WEEK[template.day_of_week]} `
                         : ''
@@ -879,12 +879,12 @@ export default function GroupSessionCreator() {
                   </td>
                   <td className="p-4">
                     {template.is_free ? (
-                      <span className="text-green-400 font-medium">FREE</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">FREE</span>
                     ) : (
-                      <span className="text-white">£{template.price_per_session?.toFixed(2)}</span>
+                      <span className="text-gray-900 dark:text-white">£{template.price_per_session?.toFixed(2)}</span>
                     )}
                   </td>
-                  <td className="p-4 text-white">
+                  <td className="p-4 text-gray-900 dark:text-white">
                     {template.min_participants}-{template.max_participants}
                   </td>
                   <td className="p-4">
@@ -928,7 +928,7 @@ export default function GroupSessionCreator() {
               ))}
               {templates.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-gray-500">
+                  <td colSpan={6} className="p-12 text-center text-gray-500 dark:text-gray-400">
                     No group class templates yet. Click "Create New Class" to get started.
                   </td>
                 </tr>

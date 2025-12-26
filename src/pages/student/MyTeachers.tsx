@@ -49,7 +49,6 @@ export default function MyTeachers() {
       }
 
       if (!studentId) {
-        console.log('No learner profile found');
         setLoading(false);
         return;
       }
@@ -203,24 +202,24 @@ export default function MyTeachers() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading your teachers...</p>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your teachers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+      <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-slate-400 hover:text-white transition"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back to Dashboard</span>
@@ -228,17 +227,17 @@ export default function MyTeachers() {
 
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+                <Users className="w-6 h-6 text-gray-900" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">My Teachers</h1>
-                <p className="text-xs text-slate-400">{teachers.length} teacher{teachers.length !== 1 ? 's' : ''}</p>
+                <h1 className="text-xl font-bold text-gray-900">My Teachers</h1>
+                <p className="text-xs text-gray-500">{teachers.length} teacher{teachers.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
 
             <button
               onClick={() => navigate('/teachers')}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition text-sm"
+              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition text-sm"
             >
               Find New Teacher
             </button>
@@ -251,13 +250,13 @@ export default function MyTeachers() {
         {teachers.length > 0 && (
           <div className="mb-6">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search teachers or subjects..."
-                className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -265,37 +264,37 @@ export default function MyTeachers() {
 
         {/* Empty State */}
         {teachers.length === 0 ? (
-          <div className="text-center py-20 bg-slate-900/50 rounded-2xl border border-slate-800">
-            <div className="w-24 h-24 mx-auto bg-slate-800 rounded-full flex items-center justify-center mb-6">
-              <Users className="w-12 h-12 text-slate-600" />
+          <div className="text-center py-20 bg-white/50 rounded-2xl border border-gray-200">
+            <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <Users className="w-12 h-12 text-gray-600" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">No Teachers Yet</h3>
-            <p className="text-slate-400 mb-8 max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Teachers Yet</h3>
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
               You haven't added any teachers yet. Browse our teachers and add them to your list to start a conversation before booking!
             </p>
             <button
               onClick={() => navigate('/teachers')}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition"
             >
               <Search className="w-5 h-5" />
               <span>Find a Teacher</span>
             </button>
           </div>
         ) : filteredTeachers.length === 0 ? (
-          <div className="text-center py-12 bg-slate-900/50 rounded-2xl border border-slate-800">
-            <Search className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No teachers match your search</p>
+          <div className="text-center py-12 bg-white/50 rounded-2xl border border-gray-200">
+            <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-500">No teachers match your search</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {filteredTeachers.map((teacher) => (
               <div
                 key={teacher.teacher_id}
-                className={`bg-slate-900/80 rounded-xl border ${teacher.is_new_relationship ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800'} hover:border-slate-700 transition overflow-hidden`}
+                className={`bg-white rounded-xl border ${teacher.is_new_relationship ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-gray-200'} hover:border-gray-200 transition overflow-hidden`}
               >
                 {/* New Relationship Badge */}
                 {teacher.is_new_relationship && (
-                  <div className="px-6 py-3 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-b border-blue-500/30">
+                  <div className="px-6 py-3 bg-gradient-to-r from-blue-600/20 to-emerald-600/20 border-b border-blue-500/30">
                     <div className="flex items-center space-x-2">
                       <UserPlus className="w-4 h-4 text-blue-400" />
                       <span className="text-sm font-medium text-blue-300">Newly Added - Send a message to introduce yourself!</span>
@@ -314,7 +313,7 @@ export default function MyTeachers() {
                           className="w-16 h-16 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-gray-900 font-bold text-xl">
                           {teacher.teacher_name[0]}
                         </div>
                       )}
@@ -322,7 +321,7 @@ export default function MyTeachers() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-white mb-1">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
                         {teacher.teacher_name}
                       </h3>
 
@@ -331,11 +330,11 @@ export default function MyTeachers() {
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="flex items-center">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                            <span className="ml-1 text-sm font-medium text-white">
+                            <span className="ml-1 text-sm font-medium text-gray-900">
                               {teacher.average_rating?.toFixed(1)}
                             </span>
                           </div>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-gray-500">
                             ({teacher.total_ratings} {teacher.total_ratings === 1 ? 'rating' : 'ratings'})
                           </span>
                         </div>
@@ -346,7 +345,7 @@ export default function MyTeachers() {
                         {teacher.subjects.map((subject, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded text-xs font-medium text-cyan-400"
+                            className="inline-flex items-center px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs font-medium text-emerald-600"
                           >
                             <BookOpen className="w-3 h-3 mr-1" />
                             {subject}
@@ -355,7 +354,7 @@ export default function MyTeachers() {
                       </div>
 
                       {/* Stats */}
-                      <div className="flex items-center space-x-4 text-sm text-slate-400">
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <span className="flex items-center">
                           <Video className="w-4 h-4 mr-1" />
                           {teacher.total_lessons} lesson{teacher.total_lessons !== 1 ? 's' : ''}
@@ -372,13 +371,13 @@ export default function MyTeachers() {
                 </div>
 
                 {/* Actions */}
-                <div className="px-6 py-4 bg-slate-800/30 border-t border-slate-800 flex items-center justify-between">
+                <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between">
                   <button
                     onClick={() => navigate(`/messages?teacher=${teacher.teacher_id}`)}
                     className={`flex items-center space-x-2 px-4 py-2 ${
                       teacher.is_new_relationship
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold'
-                        : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white'
+                        ? 'bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-gray-900 font-semibold'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
                     } rounded-lg transition text-sm`}
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -386,7 +385,7 @@ export default function MyTeachers() {
                   </button>
                   <button
                     onClick={() => navigate(`/teacher/${teacher.teacher_id}/book`)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-lg font-semibold transition text-sm"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-gray-900 rounded-lg font-semibold transition text-sm"
                   >
                     <Calendar className="w-4 h-4" />
                     <span>Book Lesson</span>

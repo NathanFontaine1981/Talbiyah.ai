@@ -154,9 +154,9 @@ export default function RecordingWithInsights() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
           <p>Loading recording...</p>
         </div>
       </div>
@@ -165,8 +165,8 @@ export default function RecordingWithInsights() {
 
   if (error || !recording) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-        <div className="bg-slate-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6">
+        <div className="bg-gray-100 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-red-400" />
           </div>
@@ -175,7 +175,7 @@ export default function RecordingWithInsights() {
           </h2>
           <button
             onClick={() => navigate('/dashboard')}
-            className="mt-6 px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition"
+            className="mt-6 px-6 py-3 bg-emerald-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition"
           >
             Back to Dashboard
           </button>
@@ -187,22 +187,22 @@ export default function RecordingWithInsights() {
   const sections = insight ? parseInsightsIntoSections(insight.detailed_insights.content) : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header */}
-      <header className="bg-slate-800/50 border-b border-slate-700/50 backdrop-blur-sm sticky top-0 z-40">
+      <header className="bg-gray-50 border-b border-gray-200 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
                 <span>{recording.lessons.subjects.name} Session - Recording</span>
               </h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {recording.lessons.subjects.name} • {format(new Date(recording.lessons.scheduled_time), 'MMMM d, yyyy')}
               </p>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-700/50"
+              className="p-2 text-gray-500 hover:text-white transition rounded-lg hover:bg-gray-100"
             >
               <X className="w-6 h-6" />
             </button>
@@ -214,7 +214,7 @@ export default function RecordingWithInsights() {
       <div className="max-w-[1920px] mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Video Player */}
-          <div className="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
             <div className="aspect-video bg-black relative">
               <video
                 controls
@@ -227,9 +227,9 @@ export default function RecordingWithInsights() {
           </div>
 
           {/* Right: Interactive Study Notes */}
-          <div className="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-500 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -241,19 +241,19 @@ export default function RecordingWithInsights() {
             {insight ? (
               <>
                 {/* Lesson Info Card */}
-                <div className="bg-gradient-to-r from-slate-700/50 to-slate-800/50 rounded-xl p-4 mb-6 border border-slate-600/50">
+                <div className="bg-gradient-to-r from-gray-700/50 to-gray-800/50 rounded-xl p-4 mb-6 border border-gray-300">
                   <h3 className="text-sm font-semibold text-emerald-400 mb-3">Lesson Information</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start">
-                      <span className="text-slate-400 w-24">Lesson:</span>
+                      <span className="text-gray-500 w-24">Lesson:</span>
                       <span className="text-white font-medium">{recording.lessons.subjects.name} Session</span>
                     </div>
                     <div className="flex items-start">
-                      <span className="text-slate-400 w-24">Date:</span>
+                      <span className="text-gray-500 w-24">Date:</span>
                       <span className="text-white">{format(new Date(recording.lessons.scheduled_time), 'MMMM d, yyyy')}</span>
                     </div>
                     <div className="flex items-start">
-                      <span className="text-slate-400 w-24">Class Type:</span>
+                      <span className="text-gray-500 w-24">Class Type:</span>
                       <span className="text-white">Qur'an with Tadabbur (Understanding & Reflection)</span>
                     </div>
                   </div>
@@ -264,14 +264,14 @@ export default function RecordingWithInsights() {
                   {sections.map((section, index) => (
                     <div
                       key={index}
-                      className="bg-slate-700/30 rounded-xl border border-slate-600/50 overflow-hidden"
+                      className="bg-gray-50 rounded-xl border border-gray-300 overflow-hidden"
                     >
                       <button
                         onClick={() => toggleSection(index)}
-                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-700/50 transition"
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/20 to-emerald-500/20 rounded-lg flex items-center justify-center">
                             <BookOpen className="w-4 h-4 text-emerald-400" />
                           </div>
                           <h3 className="text-left font-semibold text-white">
@@ -279,15 +279,15 @@ export default function RecordingWithInsights() {
                           </h3>
                         </div>
                         {expandedSections.has(index) ? (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
+                          <ChevronRight className="w-5 h-5 text-gray-500" />
                         )}
                       </button>
 
                       {expandedSections.has(index) && (
                         <div className="px-4 pb-4 pt-2">
-                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-emerald-400 prose-p:text-slate-300 prose-li:text-slate-300 prose-strong:text-white">
+                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-emerald-400 prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-white">
                             <ReactMarkdown>{section.content}</ReactMarkdown>
                           </div>
                         </div>
@@ -298,9 +298,9 @@ export default function RecordingWithInsights() {
               </>
             ) : (
               <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">No study notes available for this recording yet</p>
-                <p className="text-sm text-slate-500 mt-2">Insights will be generated after the lesson</p>
+                <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500">No study notes available for this recording yet</p>
+                <p className="text-sm text-gray-500 mt-2">Insights will be generated after the lesson</p>
               </div>
             )}
           </div>

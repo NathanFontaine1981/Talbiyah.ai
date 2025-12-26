@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   BookOpen,
   Bell,
@@ -842,19 +842,19 @@ export default function DashboardPremium() {
                     Use Islamic Source Reference to find relevant ayahs and authentic Hadith.
                   </p>
                   <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => navigate('/islamic-source-reference')}
+                    <Link
+                      to="/islamic-source-reference"
                       className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center space-x-2"
                     >
                       <MessageCircle className="w-4 h-4" />
                       <span>Find Sources</span>
-                    </button>
-                    <button
-                      onClick={() => navigate('/about/islamic-source-reference')}
+                    </Link>
+                    <Link
+                      to="/about/islamic-source-reference"
                       className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition"
                     >
                       Learn More
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

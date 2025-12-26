@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { validateEmail } from '../utils/emailValidation';
 import { validatePassword, getStrengthColor, getStrengthTextColor } from '../utils/passwordValidation';
 
@@ -304,8 +305,13 @@ export default function SignUp() {
 
         // Check if email confirmation is required (user not confirmed yet)
         if (!data.user.email_confirmed_at) {
-          // Redirect to email verification page
-          navigate('/verify-email');
+          // Show toast before redirecting
+          toast.success('Account created! Check your email for the verification code.', {
+            description: 'Be sure to check your spam/junk folder too.',
+            duration: 5000
+          });
+          // Redirect to email verification page with email in state
+          navigate('/verify-email', { state: { email: authForm.email } });
         } else if (selectedRole === 'parent') {
           // Parents go through onboarding wizard to add children
           navigate('/onboarding');

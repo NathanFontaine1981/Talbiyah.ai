@@ -1,6 +1,4 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import DOMPurify from 'dompurify';
 
 interface KhutbaContent {
   title: string;
@@ -36,9 +34,9 @@ interface KhutbaContent {
 // Fixed Arabic text components for khutba structure
 const KHUTBA_ARABIC = {
   opening_praise: {
-    arabic: 'الحمد لله نحمده ونستعينه ونستغفره، ونعوذ بالله من شرور أنفسنا ومن سيئات أعمالنا، من يهده الله فلا مضل له، ومن يضلل فلا هادي له',
-    transliteration: "Alhamdulillah, nahmaduhu wa nasta'eenahu wa nastaghfiruhu, wa na'oodhu billahi min shuroori anfusina wa min sayyi'aati a'maalina. Man yahdihillahu fala mudilla lah, wa man yudlil fala haadiya lah.",
-    translation: 'All praise is due to Allah. We praise Him, seek His help and His forgiveness. We seek refuge in Allah from the evil of our souls and from our bad deeds. Whomever Allah guides, no one can misguide, and whomever Allah leaves astray, no one can guide.'
+    arabic: 'إِنَّ الْحَمْدَ لِلَّهِ نَحْمَدُهُ وَنَسْتَعِينُهُ وَنَسْتَغْفِرُهُ، وَنَعُوذُ بِاللَّهِ مِنْ شُرُورِ أَنْفُسِنَا وَمِنْ سَيِّئَاتِ أَعْمَالِنَا، مَنْ يَهْدِهِ اللَّهُ فَلَا مُضِلَّ لَهُ، وَمَنْ يُضْلِلْ فَلَا هَادِيَ لَهُ. وَأَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ. أَمَّا بَعْدُ، فَإِنَّ أَصْدَقَ الْحَدِيثِ كِتَابُ اللَّهِ، وَخَيْرَ الْهُدَىٰ هُدَىٰ مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، وَشَرَّ الْأُمُورِ مُحْدَثَاتُهَا، وَكُلَّ مُحْدَثَةٍ بِدْعَةٌ، وَكُلَّ بِدْعَةٍ ضَلَالَةٌ، وَكُلَّ ضَلَالَةٍ فِي النَّارِ',
+    transliteration: "Innal hamda lillahi nahmaduhu wa nasta'eenahu wa nastaghfiruhu, wa na'oodhu billahi min shuroori anfusina wa min sayyi'aati a'maalina. Man yahdihillahu fala mudilla lah, wa man yudlil fala haadiya lah. Wa ashhadu an la ilaha illallahu wahdahu la shareeka lah, wa ashhadu anna Muhammadan 'abduhu wa rasooluhu. Amma ba'du, fa inna asdaqal hadeethi kitabullah, wa khayral hudaa hudaa Muhammadin sallallahu 'alayhi wa sallam, wa sharral umoori muhdathatuha, wa kulla muhdathatin bid'ah, wa kulla bid'atin dalalah, wa kulla dalalatin fin naar.",
+    translation: 'Indeed, all praise is due to Allah. We praise Him, seek His help and His forgiveness. We seek refuge in Allah from the evil of our souls and from our bad deeds. Whomever Allah guides, no one can misguide, and whomever Allah leads astray, no one can guide. I bear witness that there is no deity worthy of worship except Allah alone, with no partner, and I bear witness that Muhammad is His slave and messenger. To proceed: Indeed, the most truthful speech is the Book of Allah, and the best guidance is the guidance of Muhammad ﷺ. The worst of affairs are newly invented matters, every newly invented matter is an innovation, every innovation is misguidance, and every misguidance is in the Fire.'
   },
   testimony: {
     arabic: 'وأشهد أن لا إله إلا الله وحده لا شريك له، وأشهد أن محمداً عبده ورسوله',
@@ -83,306 +81,548 @@ const KHUTBA_ARABIC = {
   }
 };
 
-function createPrintableHTML(khutba: KhutbaContent): string {
-  const durationLabel = khutba.duration === 'short' ? 'Short (3-5 min)' : khutba.duration === 'medium' ? 'Medium (7-10 min)' : 'Long (12-15 min)';
-  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+// Arabic font loading
+let arabicFontLoaded = false;
+let arabicFontBase64: string | null = null;
 
-  const renderArabicBlock = (arabic: string, transliteration: string, translation: string, reference?: string, bgColor = '#f8fafc') => `
-    <div style="background: ${bgColor}; border-radius: 8px; padding: 20px; margin-bottom: 14px;">
-      <p style="font-size: 26px; font-family: 'Amiri', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', serif; direction: rtl; text-align: right; margin: 0 0 12px 0; line-height: 2.2; color: #1e293b;">
-        ${arabic}
-      </p>
-      <p style="font-size: 11px; font-style: italic; color: #64748b; margin: 0 0 6px 0; line-height: 1.5;">
-        ${transliteration}
-      </p>
-      <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.5;">
-        ${translation}
-      </p>
-      ${reference ? `<p style="font-size: 11px; color: #0891b2; font-weight: 600; margin: 8px 0 0 0;">[${reference}]</p>` : ''}
-    </div>
-  `;
+async function loadArabicFont(): Promise<string | null> {
+  if (arabicFontBase64) return arabicFontBase64;
 
-  const renderSectionHeader = (title: string, color = '#0891b2') => `
-    <div style="background: ${color}; color: white; padding: 8px 12px; border-radius: 6px; margin: 16px 0 8px 0;">
-      <p style="margin: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${title}</p>
-    </div>
-  `;
+  try {
+    const fontUrls = [
+      'https://fonts.gstatic.com/s/amiriquran/v7/_Xm4-HfI5MFmLCUOWR0HcLKqYxI.ttf',
+      'https://fonts.gstatic.com/s/amiri/v27/J7aRnpd8CGxBHqUpvrIw74NL.ttf',
+      'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf'
+    ];
 
-  let html = `
-    <div id="khutba-pdf-content" style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 210mm; padding: 20px; background: white; color: #1e293b;">
-      <!-- Header -->
-      <div style="background: linear-gradient(135deg, #0891b2, #3b82f6); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-        <p style="font-size: 10px; margin: 0 0 4px 0; opacity: 0.9;">FRIDAY KHUTBAH</p>
-        <h1 style="font-size: 22px; margin: 0 0 8px 0; font-weight: 700;">${khutba.title}</h1>
-        <p style="font-size: 11px; margin: 0; opacity: 0.85;">${durationLabel} | ${khutba.audience} | ${dateStr}</p>
-      </div>
+    for (const url of fontUrls) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binary = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+          }
+          arabicFontBase64 = btoa(binary);
+          return arabicFontBase64;
+        }
+      } catch (e) {
+        // Font URL failed, try next
+      }
+    }
+    throw new Error('All font URLs failed');
+  } catch (error) {
+    console.error('Failed to load Arabic font:', error);
+    return null;
+  }
+}
 
-      <!-- First Khutbah -->
-      <div style="background: #3b82f6; color: white; padding: 10px 16px; border-radius: 8px; text-align: center; margin-bottom: 16px;">
-        <p style="margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 1px;">FIRST KHUTBAH</p>
-      </div>
+async function setupArabicFont(doc: jsPDF): Promise<boolean> {
+  if (arabicFontLoaded && arabicFontBase64) {
+    doc.addFileToVFS('AmiriQuran-Regular.ttf', arabicFontBase64);
+    doc.addFont('AmiriQuran-Regular.ttf', 'AmiriQuran', 'normal');
+    return true;
+  }
 
-      ${renderSectionHeader('Opening Praise')}
-      ${renderArabicBlock(KHUTBA_ARABIC.opening_praise.arabic, KHUTBA_ARABIC.opening_praise.transliteration, KHUTBA_ARABIC.opening_praise.translation)}
+  const fontData = await loadArabicFont();
+  if (fontData) {
+    doc.addFileToVFS('AmiriQuran-Regular.ttf', fontData);
+    doc.addFont('AmiriQuran-Regular.ttf', 'AmiriQuran', 'normal');
+    arabicFontLoaded = true;
+    return true;
+  }
+  return false;
+}
 
-      ${renderSectionHeader('Testimony of Faith')}
-      ${renderArabicBlock(KHUTBA_ARABIC.testimony.arabic, KHUTBA_ARABIC.testimony.transliteration, KHUTBA_ARABIC.testimony.translation)}
+// PDF generation with proper Arabic support
+class KhutbaPDFGenerator {
+  private pdf: jsPDF;
+  private y: number = 20;
+  private pageWidth: number = 210;
+  private pageHeight: number = 297;
+  private marginLeft: number = 15;
+  private marginRight: number = 15;
+  private marginBottom: number = 20;
+  private contentWidth: number;
+  private hasArabicFont: boolean = false;
 
-      ${renderSectionHeader('Opening Verse', '#10b981')}
-      ${renderArabicBlock(KHUTBA_ARABIC.opening_verse.arabic, KHUTBA_ARABIC.opening_verse.transliteration, KHUTBA_ARABIC.opening_verse.translation, KHUTBA_ARABIC.opening_verse.reference, '#ecfdf5')}
-  `;
+  constructor() {
+    this.pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    this.contentWidth = this.pageWidth - this.marginLeft - this.marginRight;
+  }
 
-  // Main Content
-  if (khutba.first_khutbah?.main_content) {
-    const content = khutba.first_khutbah.main_content;
+  async init(): Promise<void> {
+    this.hasArabicFont = await setupArabicFont(this.pdf);
+  }
 
-    if (content.introduction) {
-      html += `
-        ${renderSectionHeader('Introduction', '#f59e0b')}
-        <div style="background: #fffbeb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-          <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.6;">${content.introduction}</p>
-        </div>
-      `;
+  private checkPageBreak(neededHeight: number): void {
+    if (this.y + neededHeight > this.pageHeight - this.marginBottom) {
+      this.pdf.addPage();
+      this.y = 20;
+    }
+  }
+
+  private addArabicText(text: string, fontSize: number, x: number, maxWidth?: number): number {
+    if (!this.hasArabicFont) {
+      // Fallback: show transliteration note
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setFontSize(9);
+      this.pdf.setTextColor(150, 150, 150);
+      this.pdf.text('[Arabic text - see transliteration below]', x, this.y);
+      return 6;
     }
 
-    if (content.quran_evidence && content.quran_evidence.length > 0) {
-      html += renderSectionHeader('Quranic Evidence', '#10b981');
-      for (const verse of content.quran_evidence) {
-        if (verse.arabic) {
-          html += renderArabicBlock(verse.arabic, verse.transliteration || '', verse.translation || '', verse.reference, '#ecfdf5');
-        } else if (verse.translation) {
-          html += `
-            <div style="background: #ecfdf5; border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #10b981;">
-              <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.6;">"${verse.translation}"</p>
-              ${verse.reference ? `<p style="font-size: 11px; color: #10b981; font-weight: 600; margin: 8px 0 0 0;">[${verse.reference}]</p>` : ''}
-            </div>
-          `;
-        }
-        if (verse.explanation) {
-          html += `<p style="font-size: 11px; color: #64748b; font-style: italic; margin: 0 0 12px 16px; line-height: 1.5;">${verse.explanation}</p>`;
-        }
+    this.pdf.setFont('AmiriQuran', 'normal');
+    this.pdf.setFontSize(fontSize);
+    this.pdf.setTextColor(30, 30, 30);
+
+    // For Arabic, we need to handle RTL properly
+    const width = maxWidth || this.contentWidth;
+    const lines = this.pdf.splitTextToSize(text, width);
+    const lineHeight = fontSize * 0.6;
+    let totalHeight = 0;
+
+    for (const line of lines) {
+      this.checkPageBreak(lineHeight);
+      // Right-align Arabic text
+      this.pdf.text(line, this.pageWidth - this.marginRight, this.y, { align: 'right' });
+      this.y += lineHeight;
+      totalHeight += lineHeight;
+    }
+
+    return totalHeight;
+  }
+
+  private addText(text: string, fontSize: number, color: [number, number, number], options: {
+    bold?: boolean;
+    italic?: boolean;
+    align?: 'left' | 'center' | 'right';
+    maxWidth?: number;
+  } = {}): void {
+    const { bold = false, italic = false, align = 'left', maxWidth = this.contentWidth } = options;
+
+    this.pdf.setFontSize(fontSize);
+    this.pdf.setTextColor(color[0], color[1], color[2]);
+
+    const fontStyle = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal';
+    this.pdf.setFont('helvetica', fontStyle);
+
+    const lines = this.pdf.splitTextToSize(text, maxWidth);
+    const lineHeight = fontSize * 0.45;
+
+    for (const line of lines) {
+      this.checkPageBreak(lineHeight);
+
+      let xPos = this.marginLeft;
+      if (align === 'center') {
+        xPos = this.pageWidth / 2;
+      } else if (align === 'right') {
+        xPos = this.pageWidth - this.marginRight;
+      }
+
+      this.pdf.text(line, xPos, this.y, { align });
+      this.y += lineHeight;
+    }
+  }
+
+  private addSectionHeader(title: string, bgColor: [number, number, number]): void {
+    this.checkPageBreak(12);
+    this.y += 3;
+
+    this.pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    this.pdf.roundedRect(this.marginLeft, this.y - 5, this.contentWidth, 9, 2, 2, 'F');
+
+    this.pdf.setFontSize(10);
+    this.pdf.setTextColor(255, 255, 255);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text(title.toUpperCase(), this.marginLeft + 4, this.y);
+
+    this.y += 10;
+  }
+
+  private addArabicBlock(arabic: string, transliteration: string, translation: string, reference?: string): void {
+    // Calculate needed height
+    const estimatedHeight = 45 + (reference ? 6 : 0);
+    this.checkPageBreak(estimatedHeight);
+
+    // Background box
+    const startY = this.y - 2;
+    this.pdf.setFillColor(250, 250, 252);
+    this.pdf.setDrawColor(220, 220, 230);
+    this.pdf.roundedRect(this.marginLeft, startY, this.contentWidth, estimatedHeight, 3, 3, 'FD');
+
+    this.y += 4;
+
+    // Arabic text (right-aligned, Uthmani script)
+    if (arabic && this.hasArabicFont) {
+      this.pdf.setFont('AmiriQuran', 'normal');
+      this.pdf.setFontSize(16);
+      this.pdf.setTextColor(20, 20, 20);
+
+      const arabicLines = this.pdf.splitTextToSize(arabic, this.contentWidth - 10);
+      for (const line of arabicLines) {
+        this.pdf.text(line, this.pageWidth - this.marginRight - 5, this.y, { align: 'right' });
+        this.y += 8;
+      }
+      this.y += 2;
+    } else if (arabic) {
+      // Fallback when font not loaded
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setFontSize(9);
+      this.pdf.setTextColor(120, 120, 120);
+      this.pdf.text('[Arabic text available in app]', this.marginLeft + 5, this.y);
+      this.y += 6;
+    }
+
+    // Transliteration (italic)
+    if (transliteration) {
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setFontSize(10);
+      this.pdf.setTextColor(100, 116, 139);
+      const transLines = this.pdf.splitTextToSize(transliteration, this.contentWidth - 10);
+      for (const line of transLines) {
+        this.pdf.text(line, this.marginLeft + 5, this.y);
+        this.y += 5;
+      }
+      this.y += 2;
+    }
+
+    // Translation
+    if (translation) {
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setFontSize(10);
+      this.pdf.setTextColor(51, 65, 85);
+      const translationLines = this.pdf.splitTextToSize(translation, this.contentWidth - 10);
+      for (const line of translationLines) {
+        this.pdf.text(line, this.marginLeft + 5, this.y);
+        this.y += 5;
       }
     }
 
-    if (content.hadith_evidence && content.hadith_evidence.length > 0) {
-      html += renderSectionHeader('Hadith Evidence', '#f59e0b');
-      for (const hadith of content.hadith_evidence) {
-        if (hadith.arabic) {
-          html += renderArabicBlock(hadith.arabic, hadith.transliteration || '', hadith.translation || '', hadith.reference, '#fffbeb');
-        } else if (hadith.translation) {
-          html += `
-            <div style="background: #fffbeb; border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #f59e0b;">
-              <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.6;">"${hadith.translation}"</p>
-              ${hadith.reference ? `<p style="font-size: 11px; color: #f59e0b; font-weight: 600; margin: 8px 0 0 0;">[${hadith.reference}]</p>` : ''}
-            </div>
-          `;
+    // Reference
+    if (reference) {
+      this.y += 2;
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setFontSize(9);
+      this.pdf.setTextColor(16, 185, 129);
+      this.pdf.text(`[${reference}]`, this.marginLeft + 5, this.y);
+      this.y += 5;
+    }
+
+    this.y += 6;
+  }
+
+  private addContentBlock(text: string, bgColor: [number, number, number] = [248, 250, 252]): void {
+    const lines = this.pdf.splitTextToSize(text, this.contentWidth - 10);
+    const boxHeight = (lines.length * 5) + 10;
+
+    this.checkPageBreak(boxHeight);
+
+    this.pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    this.pdf.roundedRect(this.marginLeft, this.y - 2, this.contentWidth, boxHeight, 3, 3, 'F');
+
+    this.y += 4;
+
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setFontSize(10);
+    this.pdf.setTextColor(51, 65, 85);
+
+    for (const line of lines) {
+      this.pdf.text(line, this.marginLeft + 5, this.y);
+      this.y += 5;
+    }
+
+    this.y += 6;
+  }
+
+  async generate(khutba: KhutbaContent): Promise<jsPDF> {
+    await this.init();
+
+    const durationLabel = khutba.duration === 'short' ? 'Short (3-5 min)' : khutba.duration === 'medium' ? 'Medium (7-10 min)' : 'Long (12-15 min)';
+    const audienceLabel = khutba.audience === 'youth' ? 'Youth/Students' : khutba.audience === 'new_muslims' ? 'New Muslims' : 'General Community';
+    const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Header
+    this.pdf.setFillColor(16, 185, 129);
+    this.pdf.roundedRect(this.marginLeft, this.y, this.contentWidth, 28, 4, 4, 'F');
+
+    this.y += 7;
+    this.pdf.setFontSize(9);
+    this.pdf.setTextColor(255, 255, 255);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.text('FRIDAY KHUTBAH', this.marginLeft + 5, this.y);
+
+    this.y += 7;
+    this.pdf.setFontSize(14);
+    this.pdf.setFont('helvetica', 'bold');
+    const titleLines = this.pdf.splitTextToSize(khutba.title, this.contentWidth - 10);
+    this.pdf.text(titleLines[0], this.marginLeft + 5, this.y);
+
+    this.y += 7;
+    this.pdf.setFontSize(8);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.text(`${durationLabel} | ${audienceLabel} | ${dateStr}`, this.marginLeft + 5, this.y);
+
+    this.y += 15;
+
+    // First Khutbah Banner
+    this.pdf.setFillColor(59, 130, 246);
+    this.pdf.roundedRect(this.marginLeft, this.y, this.contentWidth, 10, 3, 3, 'F');
+    this.pdf.setFontSize(11);
+    this.pdf.setTextColor(255, 255, 255);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text('FIRST KHUTBAH', this.pageWidth / 2, this.y + 7, { align: 'center' });
+    this.y += 16;
+
+    // Opening sections with Arabic
+    this.addSectionHeader('Opening Praise', [16, 185, 129]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.opening_praise.arabic,
+      KHUTBA_ARABIC.opening_praise.transliteration,
+      KHUTBA_ARABIC.opening_praise.translation
+    );
+
+    this.addSectionHeader('Testimony of Faith', [16, 185, 129]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.testimony.arabic,
+      KHUTBA_ARABIC.testimony.transliteration,
+      KHUTBA_ARABIC.testimony.translation
+    );
+
+    this.addSectionHeader('Opening Verse', [59, 130, 246]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.opening_verse.arabic,
+      KHUTBA_ARABIC.opening_verse.transliteration,
+      KHUTBA_ARABIC.opening_verse.translation,
+      KHUTBA_ARABIC.opening_verse.reference
+    );
+
+    // Main Content
+    if (khutba.first_khutbah?.main_content) {
+      const content = khutba.first_khutbah.main_content;
+
+      if (content.introduction) {
+        this.addSectionHeader('Introduction', [245, 158, 11]);
+        this.addContentBlock(content.introduction, [255, 251, 235]);
+      }
+
+      if (content.quran_evidence && content.quran_evidence.length > 0) {
+        this.addSectionHeader('Quranic Evidence', [16, 185, 129]);
+        for (const verse of content.quran_evidence) {
+          this.addArabicBlock(
+            verse.arabic || '',
+            verse.transliteration || '',
+            verse.translation || '',
+            verse.reference
+          );
+          if (verse.explanation) {
+            this.addText(verse.explanation, 9, [100, 116, 139], { italic: true });
+            this.y += 3;
+          }
         }
-        if (hadith.explanation) {
-          html += `<p style="font-size: 11px; color: #64748b; font-style: italic; margin: 0 0 12px 16px; line-height: 1.5;">${hadith.explanation}</p>`;
+      }
+
+      if (content.hadith_evidence && content.hadith_evidence.length > 0) {
+        this.addSectionHeader('Hadith Evidence', [245, 158, 11]);
+        for (const hadith of content.hadith_evidence) {
+          this.addArabicBlock(
+            hadith.arabic || '',
+            hadith.transliteration || '',
+            hadith.translation || '',
+            hadith.reference
+          );
+          if (hadith.explanation) {
+            this.addText(hadith.explanation, 9, [100, 116, 139], { italic: true });
+            this.y += 3;
+          }
         }
+      }
+
+      if (content.practical_application && content.practical_application.length > 0) {
+        this.addSectionHeader('Practical Application', [16, 185, 129]);
+
+        const totalLines = content.practical_application.reduce((acc, point) => {
+          return acc + this.pdf.splitTextToSize(point, this.contentWidth - 20).length;
+        }, 0);
+        const boxHeight = (totalLines * 5) + (content.practical_application.length * 3) + 10;
+
+        this.checkPageBreak(boxHeight);
+
+        this.pdf.setFillColor(248, 250, 252);
+        this.pdf.roundedRect(this.marginLeft, this.y - 2, this.contentWidth, boxHeight, 3, 3, 'F');
+
+        this.y += 4;
+
+        content.practical_application.forEach((point, idx) => {
+          const lines = this.pdf.splitTextToSize(point, this.contentWidth - 18);
+
+          this.pdf.setFillColor(16, 185, 129);
+          this.pdf.circle(this.marginLeft + 7, this.y - 1.5, 2.5, 'F');
+          this.pdf.setFontSize(8);
+          this.pdf.setTextColor(255, 255, 255);
+          this.pdf.text(`${idx + 1}`, this.marginLeft + 7, this.y - 0.5, { align: 'center' });
+
+          this.pdf.setFont('helvetica', 'normal');
+          this.pdf.setFontSize(10);
+          this.pdf.setTextColor(51, 65, 85);
+
+          for (let i = 0; i < lines.length; i++) {
+            this.pdf.text(lines[i], this.marginLeft + 14, this.y);
+            this.y += 5;
+          }
+          this.y += 1;
+        });
+
+        this.y += 5;
+      }
+
+      if (content.call_to_action) {
+        this.addSectionHeader('Call to Action', [59, 130, 246]);
+        this.addContentBlock(content.call_to_action, [239, 246, 255]);
       }
     }
 
-    if (content.practical_application && content.practical_application.length > 0) {
-      html += renderSectionHeader('Practical Application');
-      html += `<div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 12px;">`;
-      content.practical_application.forEach((point, idx) => {
-        html += `
-          <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
-            <span style="background: #0891b2; color: white; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; margin-right: 10px; flex-shrink: 0;">${idx + 1}</span>
-            <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.5;">${point}</p>
-          </div>
-        `;
-      });
-      html += `</div>`;
+    // Closing of First Khutbah
+    this.addSectionHeader('Closing of First Khutbah', [16, 185, 129]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.first_khutbah_closing.arabic,
+      KHUTBA_ARABIC.first_khutbah_closing.transliteration,
+      KHUTBA_ARABIC.first_khutbah_closing.translation
+    );
+
+    // Sitting moment
+    this.checkPageBreak(15);
+    this.y += 3;
+    this.pdf.setDrawColor(200, 200, 210);
+    this.pdf.setLineDashPattern([2, 2], 0);
+    this.pdf.line(this.marginLeft, this.y, this.pageWidth - this.marginRight, this.y);
+    this.y += 5;
+    this.pdf.setFontSize(9);
+    this.pdf.setTextColor(120, 130, 150);
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.text('[ KHATEEB SITS BRIEFLY ]', this.pageWidth / 2, this.y, { align: 'center' });
+    this.y += 5;
+    this.pdf.line(this.marginLeft, this.y, this.pageWidth - this.marginRight, this.y);
+    this.pdf.setLineDashPattern([], 0);
+    this.y += 10;
+
+    // Second Khutbah Banner
+    this.checkPageBreak(18);
+    this.pdf.setFillColor(59, 130, 246);
+    this.pdf.roundedRect(this.marginLeft, this.y, this.contentWidth, 10, 3, 3, 'F');
+    this.pdf.setFontSize(11);
+    this.pdf.setTextColor(255, 255, 255);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text('SECOND KHUTBAH', this.pageWidth / 2, this.y + 7, { align: 'center' });
+    this.y += 16;
+
+    // Second Khutbah content
+    this.addSectionHeader('Opening Praise', [16, 185, 129]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.second_opening.arabic,
+      KHUTBA_ARABIC.second_opening.transliteration,
+      KHUTBA_ARABIC.second_opening.translation
+    );
+
+    if (khutba.second_khutbah?.reminder) {
+      this.addSectionHeader('Brief Reminder', [100, 116, 139]);
+      this.addContentBlock(khutba.second_khutbah.reminder);
     }
 
-    if (content.call_to_action) {
-      html += `
-        ${renderSectionHeader('Call to Action', '#3b82f6')}
-        <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">
-          <p style="font-size: 12px; color: #1e40af; margin: 0; line-height: 1.6; font-weight: 500;">${content.call_to_action}</p>
-        </div>
-      `;
+    // Duas
+    this.addSectionHeader('Dua for the Ummah', [147, 51, 234]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.dua_ummah.arabic,
+      KHUTBA_ARABIC.dua_ummah.transliteration,
+      KHUTBA_ARABIC.dua_ummah.translation
+    );
+    this.addArabicBlock(
+      KHUTBA_ARABIC.dua_oppressed.arabic,
+      KHUTBA_ARABIC.dua_oppressed.transliteration,
+      KHUTBA_ARABIC.dua_oppressed.translation
+    );
+
+    // Final Salawat
+    this.addSectionHeader('Final Salawat', [16, 185, 129]);
+    this.addArabicBlock(
+      KHUTBA_ARABIC.salawat.arabic,
+      KHUTBA_ARABIC.salawat.transliteration,
+      KHUTBA_ARABIC.salawat.translation,
+      KHUTBA_ARABIC.salawat.reference
+    );
+
+    // Final blessing with Arabic
+    this.checkPageBreak(22);
+    this.pdf.setFillColor(248, 250, 252);
+    this.pdf.roundedRect(this.marginLeft, this.y, this.contentWidth, 18, 3, 3, 'F');
+    this.y += 6;
+
+    if (this.hasArabicFont) {
+      this.pdf.setFont('AmiriQuran', 'normal');
+      this.pdf.setFontSize(14);
+      this.pdf.setTextColor(30, 30, 30);
+      this.pdf.text(KHUTBA_ARABIC.final_salawat.arabic, this.pageWidth / 2, this.y, { align: 'center' });
     }
+
+    this.y += 7;
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.setFontSize(10);
+    this.pdf.setTextColor(100, 116, 139);
+    this.pdf.text(KHUTBA_ARABIC.final_salawat.translation, this.pageWidth / 2, this.y, { align: 'center' });
+    this.y += 12;
+
+    // Sources
+    if (khutba.sources && khutba.sources.length > 0) {
+      this.checkPageBreak(18);
+      this.pdf.setDrawColor(220, 225, 235);
+      this.pdf.line(this.marginLeft, this.y, this.pageWidth - this.marginRight, this.y);
+      this.y += 6;
+
+      this.pdf.setFontSize(8);
+      this.pdf.setTextColor(100, 116, 139);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.text('SOURCES', this.marginLeft, this.y);
+      this.y += 5;
+
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setTextColor(140, 150, 165);
+      const sourcesText = khutba.sources.join(' | ');
+      const sourceLines = this.pdf.splitTextToSize(sourcesText, this.contentWidth);
+      for (const line of sourceLines) {
+        this.pdf.text(line, this.marginLeft, this.y);
+        this.y += 4;
+      }
+      this.y += 5;
+    }
+
+    // Footer
+    this.checkPageBreak(12);
+    this.pdf.setDrawColor(220, 225, 235);
+    this.pdf.line(this.marginLeft, this.y, this.pageWidth - this.marginRight, this.y);
+    this.y += 5;
+    this.pdf.setFontSize(8);
+    this.pdf.setTextColor(150, 160, 175);
+    this.pdf.text('Generated by Talbiyah.ai | www.talbiyah.ai', this.pageWidth / 2, this.y, { align: 'center' });
+
+    return this.pdf;
   }
-
-  // Closing of First Khutbah
-  html += `
-    ${renderSectionHeader('Closing of First Khutbah')}
-    ${renderArabicBlock(KHUTBA_ARABIC.first_khutbah_closing.arabic, KHUTBA_ARABIC.first_khutbah_closing.transliteration, KHUTBA_ARABIC.first_khutbah_closing.translation)}
-
-    <!-- Sitting Moment -->
-    <div style="text-align: center; padding: 16px 0; margin: 16px 0; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1;">
-      <p style="font-size: 11px; color: #64748b; font-style: italic; margin: 0;">[ KHATEEB SITS BRIEFLY ]</p>
-    </div>
-
-    <!-- Second Khutbah -->
-    <div style="background: #3b82f6; color: white; padding: 10px 16px; border-radius: 8px; text-align: center; margin-bottom: 16px;">
-      <p style="margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 1px;">SECOND KHUTBAH</p>
-    </div>
-
-    ${renderSectionHeader('Opening Praise')}
-    ${renderArabicBlock(KHUTBA_ARABIC.second_opening.arabic, KHUTBA_ARABIC.second_opening.transliteration, KHUTBA_ARABIC.second_opening.translation)}
-  `;
-
-  // Reminder
-  if (khutba.second_khutbah?.reminder) {
-    html += `
-      ${renderSectionHeader('Brief Reminder')}
-      <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-        <p style="font-size: 12px; color: #334155; margin: 0; line-height: 1.6;">${khutba.second_khutbah.reminder}</p>
-      </div>
-    `;
-  }
-
-  // Duas and Salawat
-  html += `
-    ${renderSectionHeader('Dua for the Ummah', '#9333ea')}
-    ${renderArabicBlock(KHUTBA_ARABIC.dua_ummah.arabic, KHUTBA_ARABIC.dua_ummah.transliteration, KHUTBA_ARABIC.dua_ummah.translation, undefined, '#faf5ff')}
-    ${renderArabicBlock(KHUTBA_ARABIC.dua_oppressed.arabic, KHUTBA_ARABIC.dua_oppressed.transliteration, KHUTBA_ARABIC.dua_oppressed.translation, undefined, '#faf5ff')}
-
-    ${renderSectionHeader('Final Salawat', '#10b981')}
-    ${renderArabicBlock(KHUTBA_ARABIC.salawat.arabic, KHUTBA_ARABIC.salawat.transliteration, KHUTBA_ARABIC.salawat.translation, KHUTBA_ARABIC.salawat.reference, '#ecfdf5')}
-
-    <!-- Final Salawat -->
-    <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 8px; margin: 16px 0;">
-      <p style="font-size: 32px; font-family: 'Amiri', 'Traditional Arabic', 'Noto Naskh Arabic', 'Arial', serif; direction: rtl; margin: 0 0 12px 0; color: #1e293b; line-height: 1.8;">
-        ${KHUTBA_ARABIC.final_salawat.arabic}
-      </p>
-      <p style="font-size: 12px; font-style: italic; color: #64748b; margin: 0;">${KHUTBA_ARABIC.final_salawat.translation}</p>
-    </div>
-  `;
-
-  // Sources
-  if (khutba.sources && khutba.sources.length > 0) {
-    html += `
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 20px;">
-        <p style="font-size: 10px; font-weight: 600; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Sources</p>
-        <p style="font-size: 10px; color: #94a3b8; margin: 0; line-height: 1.6;">${khutba.sources.join(' | ')}</p>
-      </div>
-    `;
-  }
-
-  // Footer
-  html += `
-      <div style="text-align: center; padding-top: 20px; margin-top: 20px; border-top: 1px solid #e2e8f0;">
-        <p style="font-size: 9px; color: #94a3b8; margin: 0;">Generated by Talbiyah.ai | www.talbiyah.ai</p>
-      </div>
-    </div>
-  `;
-
-  return html;
 }
 
 export async function downloadKhutbaPDF(khutba: KhutbaContent, filename?: string): Promise<void> {
-  // Create a temporary container for the HTML
-  const container = document.createElement('div');
-  // Sanitize HTML to prevent XSS attacks
-  container.innerHTML = DOMPurify.sanitize(createPrintableHTML(khutba));
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '210mm'; // A4 width
-  document.body.appendChild(container);
+  const generator = new KhutbaPDFGenerator();
+  const pdf = await generator.generate(khutba);
 
-  try {
-    // Wait a moment for fonts to load
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const element = container.querySelector('#khutba-pdf-content') as HTMLElement;
-
-    // Use html2canvas to capture the element
-    const canvas = await html2canvas(element, {
-      scale: 2, // Higher quality
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-    });
-
-    // Calculate dimensions for A4 PDF
-    const imgWidth = 210; // A4 width in mm
-    const pageHeight = 297; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    // Add first page
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // Add additional pages if needed
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    // Save the PDF
-    const safeName = filename || `khutba-${khutba.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${new Date().toISOString().split('T')[0]}.pdf`;
-    pdf.save(safeName);
-  } finally {
-    // Clean up
-    document.body.removeChild(container);
-  }
+  const safeName = filename || `khutba-${khutba.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${new Date().toISOString().split('T')[0]}.pdf`;
+  pdf.save(safeName);
 }
 
-// Keep this for backwards compatibility but mark as async
 export async function generateKhutbaPDF(khutba: KhutbaContent): Promise<jsPDF> {
-  const container = document.createElement('div');
-  // Sanitize HTML to prevent XSS attacks
-  container.innerHTML = DOMPurify.sanitize(createPrintableHTML(khutba));
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '210mm';
-  document.body.appendChild(container);
-
-  try {
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const element = container.querySelector('#khutba-pdf-content') as HTMLElement;
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-    });
-
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    return pdf;
-  } finally {
-    document.body.removeChild(container);
-  }
+  const generator = new KhutbaPDFGenerator();
+  return generator.generate(khutba);
 }

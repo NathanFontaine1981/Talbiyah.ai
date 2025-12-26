@@ -267,7 +267,7 @@ export default function LessonMessaging({
             className="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-cyan-700 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Send className="w-4 h-4" />
-            Send Message
+            Compose Message
           </button>
         ) : (
           <MessageTemplateSelector

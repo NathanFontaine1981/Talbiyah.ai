@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, X, Calendar, User as UserIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'sonner';
 import { calculateAge, calculateSchoolYear, getDateConstraints } from '../../utils/ageCalculations';
 
 interface Child {
@@ -48,7 +49,7 @@ export default function ParentOnboarding() {
 
   function handleAddChild() {
     if (!childName.trim() || !childDob) {
-      alert('Please enter child name and date of birth');
+      toast.error('Please enter child name and date of birth');
       return;
     }
 
@@ -56,7 +57,7 @@ export default function ParentOnboarding() {
 
     // Validate age restriction (0-15 years old)
     if (age >= 16) {
-      alert('This child is 16 or older and can create their own student account instead.');
+      toast.warning('This child is 16 or older and can create their own student account instead.');
       return;
     }
 
@@ -118,7 +119,7 @@ export default function ParentOnboarding() {
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Error saving children:', err);
-      alert('Failed to save children: ' + err.message);
+      toast.error('Failed to save children: ' + err.message);
     } finally {
       setSaving(false);
     }

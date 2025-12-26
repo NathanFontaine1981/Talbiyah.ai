@@ -112,7 +112,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         description: `Group Session: ${session.name} - ${subjectName}`,
-        template_id: '6905fb03033903926e627d60', // Talbiyah.ai template
+        template_id: '694e3cd62f99d9b901d90528', // Talbiyah.ai template
         region: 'eu',
       })
     })

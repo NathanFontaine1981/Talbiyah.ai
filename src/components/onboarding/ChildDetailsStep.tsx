@@ -10,12 +10,8 @@ interface ChildDetailsStepProps {
 }
 
 const LEARNING_GOALS = [
-  { id: 'quran_reading', label: 'Quran Reading (Tajweed)', icon: '📖' },
-  { id: 'quran_memorization', label: 'Quran Memorisation (Hifz)', icon: '🧠' },
-  { id: 'quran_understanding', label: 'Quran with Understanding (Tafsir)', icon: '💡' },
+  { id: 'quran', label: 'Quran', icon: '📖' },
   { id: 'arabic_language', label: 'Arabic Language', icon: '🌍' },
-  { id: 'islamic_studies', label: 'Islamic Studies', icon: '🕌' },
-  { id: 'new_muslim', label: 'New Muslim Guidance', icon: '🌙' }
 ];
 
 export default function ChildDetailsStep({ children, onChange, onBack, onNext }: ChildDetailsStepProps) {

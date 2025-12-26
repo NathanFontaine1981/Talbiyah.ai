@@ -103,11 +103,6 @@ export function useBookingAPI() {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
       
-      console.error(`❌ API Error: ${endpoint}`, {
-        status: response.status,
-        error: errorData
-      });
-      
       // Handle specific error cases with better messages
       if (response.status === 409) {
         throw new Error('This time slot is no longer available. Another student may have just booked it.');
@@ -118,7 +113,6 @@ export function useBookingAPI() {
       } else if (response.status >= 500) {
         // For 500 errors, include the details if available
         const errorMsg = errorData.details || errorData.error || 'Server error. Please try again in a few moments.';
-        console.error('💥 Server error details:', errorData);
         throw new Error(errorMsg);
       }
 

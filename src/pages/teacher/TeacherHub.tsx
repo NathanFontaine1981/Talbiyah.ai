@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
 import WeeklyCalendar from '../../components/teacher/WeeklyCalendar';
+import DiagnosticSessionsCard from '../../components/teacher/DiagnosticSessionsCard';
 
 interface TeacherStats {
   tier: string;
@@ -142,8 +143,7 @@ export default function TeacherHub() {
         };
         setEarnings(summary);
       } else if (earningsError) {
-        console.warn('teacher_earnings table not available yet:', earningsError.message);
-        // Set default earnings to prevent errors
+        // Set default earnings if table not available
         setEarnings({
           total_earnings: 0,
           this_month_earnings: 0,
@@ -192,36 +192,36 @@ export default function TeacherHub() {
       icon: Calendar,
       label: 'My Schedule',
       path: '/teacher/schedule',
-      iconBg: 'bg-cyan-500/20',
-      iconColor: 'text-cyan-400'
+      iconBg: 'bg-emerald-500/20',
+      iconColor: 'text-emerald-600'
     },
     {
       icon: Users,
       label: 'My Students',
       path: '/teacher/my-students',
       iconBg: 'bg-purple-500/20',
-      iconColor: 'text-purple-400'
+      iconColor: 'text-purple-600'
     },
     {
       icon: DollarSign,
       label: 'My Earnings',
       path: '/teacher/earnings',
       iconBg: 'bg-emerald-500/20',
-      iconColor: 'text-emerald-400'
+      iconColor: 'text-emerald-600'
     },
     {
       icon: ClipboardCheck,
       label: 'Homework Review',
       path: '/teacher/homework-review',
-      iconBg: 'bg-teal-500/20',
-      iconColor: 'text-teal-400'
+      iconBg: 'bg-green-500/20',
+      iconColor: 'text-green-600'
     },
     {
       icon: Clock,
       label: 'Availability',
       path: '/teacher/availability',
-      iconBg: 'bg-violet-500/20',
-      iconColor: 'text-violet-400'
+      iconBg: 'bg-purple-500/20',
+      iconColor: 'text-purple-600'
     },
     {
       icon: CreditCard,
@@ -234,26 +234,26 @@ export default function TeacherHub() {
       icon: Settings,
       label: 'Edit Profile',
       path: '/teacher/edit-profile',
-      iconBg: 'bg-slate-500/20',
-      iconColor: 'text-slate-400'
+      iconBg: 'bg-gray-500/20',
+      iconColor: 'text-gray-500'
     },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Back to Dashboard Button */}
         <button
           onClick={() => navigate('/dashboard')}
-          className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition group"
+          className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
           <span>Back to Main Dashboard</span>
@@ -262,24 +262,24 @@ export default function TeacherHub() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Teacher Account</h1>
-          <p className="text-slate-400">Manage your teaching activities and track your performance.</p>
+          <p className="text-gray-500">Manage your teaching activities and track your performance.</p>
         </div>
 
         {/* Current Tier Badge */}
         {stats && (
-          <div className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-cyan-500/30 mb-8">
+          <div className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="text-5xl">{stats.tier_icon}</div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{stats.tier_name} Teacher</h2>
-                  <p className="text-slate-300">£{stats.teacher_hourly_rate.toFixed(2)}/hour</p>
+                  <p className="text-gray-600">£{stats.teacher_hourly_rate.toFixed(2)}/hour</p>
                 </div>
               </div>
               {stats.next_auto_tier && (
                 <button
                   onClick={() => navigate('/teacher/tiers')}
-                  className="px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold transition flex items-center space-x-2"
+                  className="px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-600 font-semibold transition flex items-center space-x-2"
                 >
                   <TrendingUp className="w-5 h-5" />
                   <span>View Progress</span>
@@ -294,72 +294,77 @@ export default function TeacherHub() {
           <PendingLessonsList teacherId={teacherProfileId} />
         )}
 
+        {/* Diagnostic Assessments */}
+        {teacherProfileId && (
+          <DiagnosticSessionsCard teacherId={teacherProfileId} />
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Earnings */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Total Earnings</p>
+                <p className="text-sm text-gray-400">Total Earnings</p>
                 <p className="text-2xl font-bold text-white">
                   £{earnings?.total_earnings.toFixed(2) || '0.00'}
                 </p>
               </div>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-gray-500">
               This month: £{earnings?.this_month_earnings.toFixed(2) || '0.00'}
             </p>
           </div>
 
           {/* Hours Taught */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-cyan-400" />
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Hours Taught</p>
+                <p className="text-sm text-gray-400">Hours Taught</p>
                 <p className="text-2xl font-bold text-white">
                   {stats?.hours_taught.toFixed(1) || '0.0'}h
                 </p>
               </div>
             </div>
-            <p className="text-xs text-slate-500">All time</p>
+            <p className="text-xs text-gray-500">All time</p>
           </div>
 
           {/* Rating */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
                 <Award className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Average Rating</p>
+                <p className="text-sm text-gray-400">Average Rating</p>
                 <p className="text-2xl font-bold text-white">
                   {stats?.average_rating.toFixed(1) || '0.0'} ★
                 </p>
               </div>
             </div>
-            <p className="text-xs text-slate-500">From student reviews</p>
+            <p className="text-xs text-gray-500">From student reviews</p>
           </div>
 
           {/* Students */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
                 <Users className="w-6 h-6 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Total Students</p>
+                <p className="text-sm text-gray-400">Total Students</p>
                 <p className="text-2xl font-bold text-white">
                   {stats?.total_students || 0}
                 </p>
               </div>
             </div>
-            <p className="text-xs text-slate-500">Unique students taught</p>
+            <p className="text-xs text-gray-500">Unique students taught</p>
           </div>
         </div>
 
@@ -371,12 +376,12 @@ export default function TeacherHub() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="group bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-cyan-500/50 transition text-center"
+                className="group bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-emerald-500/50 transition text-center"
               >
                 <div className={`w-12 h-12 mx-auto mb-3 ${item.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition`}>
                   <item.icon className={`w-6 h-6 ${item.iconColor}`} />
                 </div>
-                <p className="text-sm font-semibold text-white group-hover:text-cyan-400 transition">
+                <p className="text-sm font-semibold text-white group-hover:text-emerald-400 transition">
                   {item.label}
                 </p>
               </button>
@@ -388,14 +393,14 @@ export default function TeacherHub() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-cyan-400" />
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-emerald-600" />
               </div>
               Upcoming Lessons
             </h2>
             <button
               onClick={() => navigate('/teacher/schedule')}
-              className="text-cyan-400 hover:text-cyan-300 font-semibold text-sm flex items-center gap-2"
+              className="text-emerald-600 hover:text-blue-400 font-semibold text-sm flex items-center gap-2"
             >
               View Full Calendar
               <ArrowRight className="w-4 h-4" />
@@ -403,12 +408,12 @@ export default function TeacherHub() {
           </div>
 
           {upcomingLessons.length === 0 ? (
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-8 border border-slate-700/50 text-center">
-              <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-400 mb-4">No upcoming lessons scheduled</p>
+            <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm text-center">
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 mb-4">No upcoming lessons scheduled</p>
               <button
                 onClick={() => navigate('/teacher/availability')}
-                className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold transition"
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-semibold transition"
               >
                 Set Your Availability
               </button>
@@ -424,39 +429,39 @@ export default function TeacherHub() {
                   <div
                     key={lesson.id}
                     onClick={() => navigate(`/lesson/${lesson.id}`)}
-                    className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/50 cursor-pointer transition group"
+                    className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-emerald-500 hover:shadow-md cursor-pointer transition group"
                   >
                     {/* Date Badge */}
                     <div className="flex items-center justify-between mb-3">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         isToday
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                           : isTomorrow
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          : 'bg-slate-700/50 text-slate-300 border border-slate-600/30'
+                          ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
                       }`}>
                         {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : lessonDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
                       </span>
-                      <span className="text-lg font-bold text-white">
+                      <span className="text-lg font-bold text-gray-900">
                         {lessonDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
 
                     {/* Student Info */}
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
                         {lesson.student_name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-semibold text-white group-hover:text-cyan-400 transition">
+                        <p className="font-semibold text-gray-900 group-hover:text-emerald-600 transition">
                           {lesson.student_name}
                         </p>
-                        <p className="text-sm text-slate-400">{lesson.subject}</p>
+                        <p className="text-sm text-gray-600">{lesson.subject}</p>
                       </div>
                     </div>
 
                     {/* Duration */}
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Clock className="w-4 h-4" />
                       <span>{lesson.duration_minutes} minutes</span>
                     </div>
@@ -476,17 +481,17 @@ export default function TeacherHub() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
+          <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
             <h3 className="text-xl font-bold text-white mb-3">💰 Earnings Overview</h3>
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Cleared</span>
+                <span className="text-gray-400">Cleared</span>
                 <span className="font-semibold text-emerald-400">
                   £{earnings?.cleared_amount.toFixed(2) || '0.00'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">On Hold</span>
+                <span className="text-gray-400">On Hold</span>
                 <span className="font-semibold text-amber-400">
                   £{earnings?.held_amount.toFixed(2) || '0.00'}
                 </span>
@@ -500,19 +505,19 @@ export default function TeacherHub() {
             </button>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-cyan-500/30">
+          <div className="bg-gradient-to-br from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
             <h3 className="text-xl font-bold text-white mb-3">🎯 Tier Progress</h3>
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Current Tier</span>
-                <span className="font-semibold text-cyan-400">{stats?.tier_name}</span>
+                <span className="text-gray-400">Current Tier</span>
+                <span className="font-semibold text-emerald-400">{stats?.tier_name}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Hours Taught</span>
+                <span className="text-gray-400">Hours Taught</span>
                 <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Student Retention</span>
+                <span className="text-gray-400">Student Retention</span>
                 <span className="font-semibold text-emerald-400">
                   {(stats?.total_unique_students || 0) >= 5
                     ? `${(stats?.retention_rate || 0).toFixed(0)}%`
@@ -522,20 +527,20 @@ export default function TeacherHub() {
               {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-300">Next Tier</span>
+                    <span className="text-gray-400">Next Tier</span>
                     <span className="font-semibold text-blue-400 capitalize">
                       {stats.next_auto_tier}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-300">Hours to Promotion</span>
+                    <span className="text-gray-400">Hours to Promotion</span>
                     <span className="font-semibold text-amber-400">
                       {stats.hours_to_next_tier.toFixed(1)}h remaining
                     </span>
                   </div>
                   {stats.min_retention_for_next && stats.min_retention_for_next > 0 && (
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Retention Required</span>
+                      <span className="text-gray-400">Retention Required</span>
                       <span className="font-semibold text-emerald-400">
                         {stats.min_retention_for_next}% ({stats.min_students_for_next}+ students)
                       </span>
@@ -543,9 +548,9 @@ export default function TeacherHub() {
                   )}
                   {/* Progress bar */}
                   <div className="mt-3">
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
                         style={{
                           width: `${Math.min(100, ((stats.hours_taught || 0) / ((stats.hours_taught || 0) + stats.hours_to_next_tier)) * 100)}%`
                         }}
@@ -557,7 +562,7 @@ export default function TeacherHub() {
             </div>
             <button
               onClick={() => navigate('/teacher/tiers')}
-              className="w-full px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold transition"
+              className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
             >
               View Tier Details
             </button>

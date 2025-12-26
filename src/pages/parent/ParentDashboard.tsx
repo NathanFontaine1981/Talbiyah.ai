@@ -117,7 +117,7 @@ export default function ParentDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your dashboard...</p>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -129,22 +129,22 @@ export default function ParentDashboard() {
       <aside
         className={`${
           sidebarCollapsed ? 'w-20' : 'w-64'
-        } bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 fixed h-full z-40`}
+        } bg-white border-r border-gray-200 flex flex-col transition-all duration-300 fixed h-full z-40`}
       >
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-6 border-b border-gray-200">
           <button
             onClick={() => navigate('/')}
             className="flex items-center space-x-3 group w-full"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
               <BookOpen className="w-6 h-6 text-white" />
             </div>
             {!sidebarCollapsed && (
               <div className="overflow-hidden">
-                <h1 className="text-lg font-bold text-white group-hover:text-cyan-400 transition whitespace-nowrap">
+                <h1 className="text-lg font-bold text-white group-hover:text-emerald-600 transition whitespace-nowrap">
                   Talbiyah.ai
                 </h1>
-                <p className="text-xs text-slate-400 whitespace-nowrap">Islamic Learning</p>
+                <p className="text-xs text-gray-500 whitespace-nowrap">Islamic Learning</p>
               </div>
             )}
           </button>
@@ -157,8 +157,8 @@ export default function ParentDashboard() {
               onClick={() => item.onClick ? item.onClick() : item.path && navigate(item.path)}
               className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition ${
                 item.active
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
               title={sidebarCollapsed ? item.label : undefined}
             >
@@ -168,10 +168,10 @@ export default function ParentDashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleSignOut}
-            className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-slate-300 hover:bg-red-500/10 hover:text-red-400"
+            className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-gray-600 hover:bg-red-500/10 hover:text-red-400"
             title={sidebarCollapsed ? 'Sign Out' : undefined}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -181,7 +181,7 @@ export default function ParentDashboard() {
 
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-24 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition shadow-lg"
+          className="absolute -right-3 top-24 w-6 h-6 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:border-emerald-500/30 transition shadow-lg"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -193,12 +193,12 @@ export default function ParentDashboard() {
 
       <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300`}>
         {/* Header */}
-        <header className="bg-slate-900 border-b border-slate-800 flex-shrink-0">
+        <header className="bg-white border-b border-gray-200 flex-shrink-0">
           <div className="px-6 lg:px-8 py-4 flex items-center justify-between">
             <div></div>
 
             <div className="flex items-center space-x-6">
-              <button className="relative p-2 text-slate-400 hover:text-white transition">
+              <button className="relative p-2 text-gray-500 hover:text-white transition">
                 <Bell className="w-6 h-6" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
@@ -206,7 +206,7 @@ export default function ParentDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <p className="text-sm font-semibold text-white">{userProfile?.full_name || 'Parent'}</p>
-                  <p className="text-xs text-slate-400">Parent</p>
+                  <p className="text-xs text-gray-500">Parent</p>
                 </div>
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600">
                   {userProfile?.avatar_url ? (
@@ -219,7 +219,7 @@ export default function ParentDashboard() {
 
               <button
                 onClick={handleSignOut}
-                className="p-2 text-slate-400 hover:text-red-400 transition"
+                className="p-2 text-gray-500 hover:text-red-400 transition"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -232,8 +232,8 @@ export default function ParentDashboard() {
             <div className="max-w-2xl mx-auto mt-12">
               <div className="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-2xl p-12 text-center">
                 <Users className="w-20 h-20 text-purple-400 mx-auto mb-6" />
-                <h2 className="text-3xl font-bold text-slate-900 mb-3">Welcome to Talbiyah.ai</h2>
-                <p className="text-lg text-slate-600 mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Talbiyah.ai</h2>
+                <p className="text-lg text-gray-600 mb-8">
                   Add your first child to start managing their Islamic learning journey
                 </p>
                 <button
@@ -272,14 +272,14 @@ export default function ParentDashboard() {
                   </div>
 
                   {/* Islamic Source Reference Card - For Parents */}
-                  <div className="mt-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm shadow-xl">
+                  <div className="mt-6 bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
                         <BookOpen className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold text-white mb-2">Need Islamic Guidance?</h3>
-                        <p className="text-slate-300 mb-4">
+                        <p className="text-gray-600 mb-4">
                           Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
                         </p>
                         <div className="flex items-center space-x-3">
@@ -292,7 +292,7 @@ export default function ParentDashboard() {
                           </button>
                           <button
                             onClick={() => navigate('/about/islamic-source-reference')}
-                            className="px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition"
+                            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
                           >
                             Learn More
                           </button>
@@ -355,8 +355,8 @@ export default function ParentDashboard() {
               {activeTab === 'payments' && userId && (
                 <div className="max-w-4xl mx-auto">
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Payment History</h2>
-                    <p className="text-slate-600">View all your credit purchases and transactions</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Payment History</h2>
+                    <p className="text-gray-600">View all your credit purchases and transactions</p>
                   </div>
 
                   <PaymentHistoryWidget parentId={userId} />
@@ -365,8 +365,8 @@ export default function ParentDashboard() {
                   <div className="mt-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">Need More Credits?</h3>
-                        <p className="text-slate-600">Purchase learning credits to book more lessons for your children.</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Need More Credits?</h3>
+                        <p className="text-gray-600">Purchase learning credits to book more lessons for your children.</p>
                       </div>
                       <button
                         onClick={() => navigate('/buy-credits')}
@@ -469,54 +469,54 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full shadow-2xl">
-        <h3 className="text-2xl font-bold text-slate-900 mb-6">Add a Child</h3>
+      <div className="bg-white rounded-2xl border border-gray-200 p-8 max-w-md w-full shadow-2xl">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Add a Child</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Child's Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={childName}
                 onChange={(e) => setChildName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-gray-50 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="e.g., Ahmed, Fatima"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Date of Birth <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={childDob}
                 onChange={(e) => setChildDob(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-gray-50 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 max={today}
                 min={minDateStr}
                 required
               />
               {childDob && (
                 <div className="mt-2 p-2 bg-purple-50 rounded-lg text-sm">
-                  <span className="text-slate-600">Age: </span>
+                  <span className="text-gray-600">Age: </span>
                   <span className="font-semibold text-purple-700">{calculateAge(childDob)} years old</span>
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Gender (optional)
               </label>
               <select
                 value={childGender}
                 onChange={(e) => setChildGender(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-gray-50 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">Prefer not to say</option>
                 <option value="Male">Male</option>
@@ -537,7 +537,7 @@ function AddChildModal({ onClose, onChildAdded }: AddChildModalProps) {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition disabled:opacity-50"
             >
               Cancel
             </button>

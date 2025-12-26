@@ -3,6 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+const LEARNING_GOALS = [
+  { id: 'quran', label: 'Quran', icon: '📖' },
+  { id: 'arabic_language', label: 'Arabic Language', icon: '🌍' },
+];
+
 const TIMEZONES = [
   'UTC',
   'America/New_York',
@@ -67,6 +72,7 @@ export default function Welcome() {
     timezone: '',
     learner_name: ''
   });
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
   useEffect(() => {
     const code = searchParams.get('ref');
@@ -111,6 +117,14 @@ export default function Welcome() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleGoal(goalId: string) {
+    setSelectedGoals(prev =>
+      prev.includes(goalId)
+        ? prev.filter(g => g !== goalId)
+        : [...prev, goalId]
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -161,16 +175,21 @@ export default function Welcome() {
       if (userRole === 'teacher') {
         navigate('/apply-to-teach');
       } else {
-        let referrerLearnerId = null;
+        let referrerUserId = null;
+        let referrerCode = null;
 
         if (referralCode) {
+          // Look up the learner by referral code, get the parent (user) ID
           const { data: referrerLearner } = await supabase
             .from('learners')
-            .select('id')
+            .select('parent_id, referral_code')
             .eq('referral_code', referralCode)
             .maybeSingle();
 
-          referrerLearnerId = referrerLearner?.id || null;
+          if (referrerLearner) {
+            referrerUserId = referrerLearner.parent_id;
+            referrerCode = referrerLearner.referral_code;
+          }
         }
 
         const learnerName = formData.learner_name || formData.full_name;
@@ -180,10 +199,55 @@ export default function Welcome() {
           .insert({
             name: learnerName,
             parent_id: user.id,
-            referred_by: referrerLearnerId
+            referred_by: referrerUserId, // FK references profiles, not learners
+            learning_goals: selectedGoals.length > 0 ? selectedGoals : null
           });
 
         if (learnerError) throw learnerError;
+
+        // If referred, create referrals record and send notification
+        if (referrerUserId && referrerUserId !== user.id) {
+          // Update profile with referrer
+          await supabase
+            .from('profiles')
+            .update({ referred_by: referrerUserId })
+            .eq('id', user.id);
+
+          // Create referrals record
+          await supabase
+            .from('referrals')
+            .upsert({
+              referrer_id: referrerUserId,
+              referred_user_id: user.id,
+              status: 'pending',
+              completed_lessons: 0,
+              total_hours: 0,
+              credits_earned: 0,
+              notification_sent: false,
+              conversion_paid: false
+            }, {
+              onConflict: 'referrer_id,referred_user_id',
+              ignoreDuplicates: true
+            });
+
+          // Send notification to referrer
+          try {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-referral-signup`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                referrer_id: referrerUserId,
+                referred_id: user.id,
+                referral_code: referrerCode || referralCode
+              })
+            });
+          } catch (notifyError) {
+            console.error('Error sending referral notification:', notifyError);
+          }
+        }
 
         navigate('/dashboard');
       }
@@ -306,9 +370,46 @@ export default function Welcome() {
               </select>
             </div>
 
+            {/* Learning Goals - only for non-teachers */}
+            {userRole !== 'teacher' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">
+                  What would you like to learn? <span className="text-red-400">*</span>
+                </label>
+                <div className="space-y-2">
+                  {LEARNING_GOALS.map(goal => (
+                    <label
+                      key={goal.id}
+                      className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all ${
+                        selectedGoals.includes(goal.id)
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-400'
+                          : 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedGoals.includes(goal.id)}
+                        onChange={() => toggleGoal(goal.id)}
+                        className="w-5 h-5 text-emerald-500 rounded border-gray-300 focus:ring-emerald-500"
+                      />
+                      <span className="text-xl">{goal.icon}</span>
+                      <span className={`font-medium ${
+                        selectedGoals.includes(goal.id) ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-700 dark:text-gray-200'
+                      }`}>
+                        {goal.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {selectedGoals.length === 0 && (
+                  <p className="text-sm text-amber-500 mt-2">Please select at least one subject</p>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || (userRole !== 'teacher' && selectedGoals.length === 0)}
               className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20 mt-8"
             >
               {submitting ? (

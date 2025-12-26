@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabaseClient';
 
 export interface StageDetectionResult {
   detected_stage: 'understanding' | 'fluency' | 'memorization';
@@ -79,7 +79,6 @@ export async function detectLessonStage(
 ): Promise<StageDetectionResult | null> {
   try {
     if (!transcript || transcript.trim().length < 50) {
-      console.warn('Transcript too short for stage detection');
       return null;
     }
 
@@ -117,7 +116,6 @@ export async function detectLessonStage(
       }
     }
 
-    console.warn('Invalid stage detection result format');
     return null;
   } catch (error) {
     console.error('Exception in detectLessonStage:', error);

@@ -1,23 +1,14 @@
-// Allowed origins for CORS - environment-based
-const isProduction = Deno.env.get('ENVIRONMENT') === 'production' ||
-                     !Deno.env.get('ENVIRONMENT'); // Default to production for safety
-
-const PRODUCTION_ORIGINS = [
+// Allowed origins for CORS
+// Always allow both production and development origins since functions are API-key protected
+const ALLOWED_ORIGINS = [
   'https://talbiyah.ai',
   'https://www.talbiyah.ai',
-];
-
-const DEVELOPMENT_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
 ];
-
-const ALLOWED_ORIGINS = isProduction
-  ? PRODUCTION_ORIGINS
-  : [...PRODUCTION_ORIGINS, ...DEVELOPMENT_ORIGINS];
 
 // Get CORS headers based on request origin
 export function getCorsHeaders(req: Request): Record<string, string> {

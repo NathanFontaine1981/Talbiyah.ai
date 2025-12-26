@@ -1,24 +1,29 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { Toaster } from 'sonner';
 import { initSentry } from './sentryConfig';
 import ErrorBoundary from './components/ErrorBoundary';
 import CartExpiryNotifications from './components/CartExpiryNotifications';
+import CookieConsent from './components/CookieConsent';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Initialize Sentry error tracking
 initSentry();
 
 // Loading fallback component
 const PageLoader = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-    <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+  <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+    <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 
 // Core pages - loaded immediately
 import Home from './pages/Home';
+import Demo from './pages/Demo';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
 import AuthCallback from './pages/AuthCallback';
+import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy loaded pages - heavy components loaded on demand
@@ -56,12 +61,25 @@ const ReferralLeaderboard = lazy(() => import('./pages/ReferralLeaderboard'));
 const RescheduleLesson = lazy(() => import('./pages/RescheduleLesson'));
 const MyClasses = lazy(() => import('./pages/MyClasses'));
 const MissedLessons = lazy(() => import('./pages/MissedLessons'));
+const DashboardPreview = lazy(() => import('./pages/DashboardPreview'));
+const DashboardPreview2 = lazy(() => import('./pages/DashboardPreview2'));
+const DashboardPreview3 = lazy(() => import('./pages/DashboardPreview3'));
+const DashboardPreview4 = lazy(() => import('./pages/DashboardPreview4'));
+const DashboardPremium = lazy(() => import('./pages/DashboardPremium'));
 const TierDiagnostic = lazy(() => import('./pages/TierDiagnostic'));
 const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceReferenceAbout'));
 const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference'));
 const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
+const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
+const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
+
+// Diagnostic Assessment pages
+const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
+const DiagnosticBooking = lazy(() => import('./pages/diagnostic/DiagnosticBooking'));
+const DiagnosticSuccess = lazy(() => import('./pages/diagnostic/DiagnosticSuccess'));
+const DiagnosticReport = lazy(() => import('./pages/diagnostic/DiagnosticReport'));
 
 // Lesson page - contains heavy HMS SDK (4MB+)
 const Lesson = lazy(() => import('./pages/Lesson'));
@@ -89,6 +107,8 @@ const TeacherTierDashboard = lazy(() => import('./pages/TeacherTierDashboard'));
 const TeacherTierInfo = lazy(() => import('./pages/TeacherTierInfo'));
 const TeacherEarnings = lazy(() => import('./pages/TeacherEarnings'));
 const TeacherPaymentSettings = lazy(() => import('./pages/TeacherPaymentSettings'));
+const TeacherDiagnosticAssessment = lazy(() => import('./pages/teacher/DiagnosticAssessment'));
+const DiagnosticPrepView = lazy(() => import('./components/teacher/DiagnosticPrepView'));
 
 // Admin pages - only loaded for admins
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -108,17 +128,23 @@ const InsightTemplateManager = lazy(() => import('./pages/admin/InsightTemplateM
 const PromoCodeManager = lazy(() => import('./pages/admin/PromoCodeManager'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const TeacherPayouts = lazy(() => import('./pages/admin/TeacherPayouts'));
+const FeedbackManagement = lazy(() => import('./pages/admin/FeedbackManagement'));
+const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessments'));
+const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
 
 function App() {
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/demo" element={<Demo />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
         <Route
@@ -188,6 +214,46 @@ function App() {
           }
         />
         <Route
+          path="/dashboard-preview"
+          element={
+            <ProtectedRoute>
+              <DashboardPreview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-preview-2"
+          element={
+            <ProtectedRoute>
+              <DashboardPreview2 />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-preview-3"
+          element={
+            <ProtectedRoute>
+              <DashboardPreview3 />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-preview-4"
+          element={
+            <ProtectedRoute>
+              <DashboardPreview4 />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-premium"
+          element={
+            <ProtectedRoute>
+              <DashboardPremium />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/reschedule-lesson"
           element={
             <ProtectedRoute>
@@ -243,6 +309,9 @@ function App() {
           <Route path="insight-templates" element={<InsightTemplateManager />} />
           <Route path="promo-codes" element={<PromoCodeManager />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="feedback" element={<FeedbackManagement />} />
+          <Route path="diagnostic-assessments" element={<DiagnosticAssessments />} />
+          <Route path="content-moderation" element={<ContentModeration />} />
         </Route>
         <Route
           path="/apply-to-teach"
@@ -357,6 +426,22 @@ function App() {
           }
         />
         <Route
+          path="/teacher/diagnostic/:lessonId"
+          element={
+            <ProtectedRoute>
+              <TeacherDiagnosticAssessment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/diagnostic-prep/:assessmentId"
+          element={
+            <ProtectedRoute>
+              <DiagnosticPrepView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/progress/quran"
           element={
             <ProtectedRoute>
@@ -397,6 +482,7 @@ function App() {
           }
         />
         <Route path="/teachers" element={<Teachers />} />
+        <Route path="/teachers/vetting-process" element={<VettingProcess />} />
         <Route path="/teacher/:id" element={<TeacherProfile />} />
         <Route
           path="/teacher/:id/book"
@@ -552,6 +638,7 @@ function App() {
           }
         />
         <Route path="/about/islamic-source-reference" element={<IslamicSourceReferenceAbout />} />
+        <Route path="/referral-info" element={<ReferralInfo />} />
         <Route
           path="/khutba-creator"
           element={
@@ -576,11 +663,55 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Diagnostic Assessment Routes */}
+        <Route
+          path="/diagnostic/start"
+          element={
+            <ProtectedRoute>
+              <StartDiagnostic />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/diagnostic/book/:assessmentId"
+          element={
+            <ProtectedRoute>
+              <DiagnosticBooking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/diagnostic/success/:assessmentId"
+          element={
+            <ProtectedRoute>
+              <DiagnosticSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/diagnostic/report/:assessmentId"
+          element={
+            <ProtectedRoute>
+              <DiagnosticReport />
+            </ProtectedRoute>
+          }
+        />
         </Routes>
         </Suspense>
         <CartExpiryNotifications />
-      </BrowserRouter>
-    </ErrorBoundary>
+        <CookieConsent />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            duration: 4000,
+            className: 'font-sans',
+          }}
+        />
+        </BrowserRouter>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

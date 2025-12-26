@@ -33,7 +33,7 @@ export default function AuthCallback() {
 
         // Check user role to determine redirect
         const { data: { user } } = await supabase.auth.getUser();
-        const userRole = user?.user_metadata?.role;
+        const userRole = user?.user_metadata?.selected_role;
 
         // Wait 2 seconds before redirecting
         setTimeout(() => {
