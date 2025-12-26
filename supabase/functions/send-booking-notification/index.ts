@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1"
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +19,7 @@ interface BookingNotification {
   booking_id: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
@@ -56,17 +55,12 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    // Get SMTP configuration from environment
-    const smtpHost = Deno.env.get('SMTP_HOST') || 'smtp.gmail.com'
-    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '587')
-    const smtpUser = Deno.env.get('SMTP_USER')
-    const smtpPassword = Deno.env.get('SMTP_PASSWORD')
-    const fromEmail = Deno.env.get('SMTP_FROM_EMAIL') || 'contact@talbiyah.ai'
-    const fromName = Deno.env.get('SMTP_FROM_NAME') || 'Talbiyah.ai'
 
-    if (!smtpUser || !smtpPassword) {
-      console.error('❌ SMTP credentials not found in environment variables');
-      throw new Error('SMTP credentials not configured')
+    // Get Resend API key
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('❌ RESEND_API_KEY not found in environment variables');
+      throw new Error('RESEND_API_KEY not configured');
     }
 
     const body: BookingNotification = await req.json()
@@ -169,7 +163,7 @@ serve(async (req) => {
               </table>
 
               <p style="margin: 0 0 30px; color: #475569; font-size: 16px; line-height: 1.6;">
-                Please log in to your dashboard to confirm that you have seen this booking and are looking forward to teaching <strong>${student_name}</strong>.
+                Please log in to your dashboard to view this booking and prepare for your lesson with <strong>${student_name}</strong>.
               </p>
 
               <!-- CTA Button -->
@@ -193,7 +187,7 @@ serve(async (req) => {
                 <strong>The Talbiyah.ai Team</strong>
               </p>
               <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                If you have any questions, please contact us at support@talbiyah.ai
+                If you have any questions, please contact us at contact@talbiyah.ai
               </p>
             </td>
           </tr>
@@ -206,64 +200,42 @@ serve(async (req) => {
 </html>
     `;
 
-    // Plain text version for email clients that don't support HTML
-    const emailText = `
-New Class Booking
+    // Send email using Resend
+    console.log('📤 Sending email via Resend...');
 
-Dear ${teacher_name},
-
-You have a new class booking!
-
-Booking Details:
-- Student: ${student_name}
-- Subject: ${subject_name}
-- Date: ${formattedDate}
-- Time: ${scheduled_time}
-- Duration: ${duration_minutes} minutes
-
-Please log in to your dashboard to confirm that you have seen this booking and are looking forward to teaching ${student_name}.
-
-View in Dashboard: https://talbiyah.ai/dashboard
-
-Best regards,
-The Talbiyah.ai Team
-    `;
-
-    // Send email using SMTP (Google Workspace)
-    console.log('📤 Sending email via Google Workspace SMTP...');
-
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: smtpPort,
-        tls: true,
-        auth: {
-          username: smtpUser,
-          password: smtpPassword,
-        },
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${resendApiKey}`,
       },
+      body: JSON.stringify({
+        from: "Talbiyah.ai <lessons@talbiyah.ai>",
+        to: [teacher_email],
+        subject: `📚 New Class Booking - ${subject_name} with ${student_name}`,
+        html: emailHtml,
+      }),
     });
 
-    await client.send({
-      from: `${fromName} <${fromEmail}>`,
-      to: teacher_email,
-      subject: `📚 New Class Booking - ${subject_name} with ${student_name}`,
-      content: emailText,
-      html: emailHtml,
-    });
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error('❌ Resend API error:', errorText);
+      throw new Error(`Failed to send email: ${errorText}`);
+    }
 
-    await client.close();
+    const result = await emailResponse.json();
 
-    console.log('✅ Email sent successfully:', {
+    console.log('✅ Email sent successfully via Resend:', {
       to: teacher_email,
-      from: fromEmail
+      email_id: result.id
     });
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Booking notification sent successfully',
-        to: teacher_email
+        to: teacher_email,
+        email_id: result.id
       }),
       {
         headers: {

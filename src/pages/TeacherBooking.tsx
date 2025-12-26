@@ -47,8 +47,14 @@ export default function TeacherBooking() {
 
   useEffect(() => {
     loadTeacher();
-    loadSubjects();
   }, [id]);
+
+  // Load subjects after we have the preSelectedSubject from URL
+  useEffect(() => {
+    if (preSelectedSubject !== null) {
+      loadSubjects();
+    }
+  }, [id, preSelectedSubject]);
 
   useEffect(() => {
     if (selectedSubject) {
