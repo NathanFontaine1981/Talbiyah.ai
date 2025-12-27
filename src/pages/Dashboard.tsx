@@ -40,6 +40,7 @@ import RecentRecordingsCard from '../components/RecentRecordingsCard';
 import RecentMessagesCard from '../components/RecentMessagesCard';
 import LearningStatsWidget from '../components/LearningStatsWidget';
 import RecommendedActionsCard from '../components/RecommendedActionsCard';
+import DailyPracticeWidget from '../components/DailyPracticeWidget';
 import TalbiyahBot from '../components/TalbiyahBot';
 import FeedbackWidget from '../components/FeedbackWidget';
 import AnnouncementsCard from '../components/AnnouncementsCard';
@@ -1045,6 +1046,7 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <CreditBalanceWidget />
+                    <DailyPracticeWidget />
                     <LearningStatsWidget />
                     <ReferralWidget />
                     <RecommendedActionsCard />

@@ -90,6 +90,8 @@ const MyTeachers = lazy(() => import('./pages/student/MyTeachers'));
 const GroupClasses = lazy(() => import('./pages/student/GroupClasses'));
 const LessonInsights = lazy(() => import('./pages/student/LessonInsights'));
 const RecordingWithInsights = lazy(() => import('./pages/student/RecordingWithInsights'));
+const DailyMaintenancePage = lazy(() => import('./pages/student/DailyMaintenancePage'));
+const SmartHomeworkPage = lazy(() => import('./pages/student/SmartHomeworkPage'));
 
 // Parent pages
 const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
@@ -478,6 +480,22 @@ function App() {
           element={
             <ProtectedRoute>
               <RecordingWithInsights />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/daily-review"
+          element={
+            <ProtectedRoute>
+              <DailyMaintenancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/homework"
+          element={
+            <ProtectedRoute>
+              <SmartHomeworkPage />
             </ProtectedRoute>
           }
         />
