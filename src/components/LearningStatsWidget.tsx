@@ -36,19 +36,33 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // First try to find learner by parent_id (parent viewing child)
         const { data: learner } = await supabase
           .from('learners')
           .select('id, current_streak, total_xp, current_level')
           .eq('parent_id', user.id)
           .maybeSingle();
 
-        if (!learner) {
-          setLoading(false);
-          return;
-        }
+        if (learner) {
+          targetLearnerId = learner.id;
+          learnerData = learner;
+        } else {
+          // Fallback: check if user has completed lessons directly as learner_id
+          // This handles student accounts where user.id is used as learner_id
+          const { data: directLessons } = await supabase
+            .from('lessons')
+            .select('duration_minutes, status')
+            .eq('learner_id', user.id)
+            .eq('status', 'completed');
 
-        targetLearnerId = learner.id;
-        learnerData = learner;
+          if (directLessons && directLessons.length > 0) {
+            targetLearnerId = user.id;
+            learnerData = { current_streak: 0 }; // No learner record, use defaults
+          } else {
+            setLoading(false);
+            return;
+          }
+        }
       } else {
         // Fetch learner data for provided learnerId
         const { data: learner } = await supabase
@@ -57,12 +71,7 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
           .eq('id', targetLearnerId)
           .maybeSingle();
 
-        if (!learner) {
-          setLoading(false);
-          return;
-        }
-
-        learnerData = learner;
+        learnerData = learner || { current_streak: 0 };
       }
 
       const { data: lessons } = await supabase
@@ -74,10 +83,17 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
       const totalMinutes = lessons?.reduce((sum, lesson) => sum + lesson.duration_minutes, 0) || 0;
       const totalHours = Math.floor(totalMinutes / 60);
 
+      // Count quizzes passed from homework_submissions
+      const { count: quizzesCount } = await supabase
+        .from('homework_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('learner_id', targetLearnerId)
+        .not('quiz_score', 'is', null);
+
       setStats({
         totalHours,
-        quizzesPassed: 12,
-        currentStreak: learnerData.current_streak || 0,
+        quizzesPassed: quizzesCount || 0,
+        currentStreak: learnerData?.current_streak || 0,
         totalLessons: lessons?.length || 0
       });
     } catch (error) {
