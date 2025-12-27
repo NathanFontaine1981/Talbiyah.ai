@@ -30,6 +30,7 @@ interface UpcomingSessionsCardProps {
 export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCardProps) {
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<UpcomingLesson[]>([]);
+  const [recentLessons, setRecentLessons] = useState<UpcomingLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState<string>('');
@@ -74,7 +75,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       }
       let targetLearnerIds: string[] = learnerId ? [learnerId] : [];
 
-      // If no learnerId provided, get ALL learners for this parent
+      // If no learnerId provided, get ALL learners for this parent OR the user themselves
       if (!learnerId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -90,18 +91,15 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
         if (learnerError) {
           console.error('Error fetching learners:', learnerError);
-          setLoading(false);
-          return;
         }
 
-        if (!learners || learners.length === 0) {
-          // No learners found - this could be a lightweight child view
-          // In this case, learnerId should be passed as a prop
-          setLoading(false);
-          return;
+        if (learners && learners.length > 0) {
+          targetLearnerIds = learners.map(l => l.id);
+        } else {
+          // No learners found via parent_id - user might BE the learner directly
+          // Check if user has lessons as learner_id (student account)
+          targetLearnerIds = [user.id];
         }
-
-        targetLearnerIds = learners.map(l => l.id);
       }
 
       // Get all booked lessons for ALL the parent's learners
@@ -208,6 +206,76 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
         setLessons(formattedLessons);
       }
+
+      // Also fetch last 3 completed lessons
+      const { data: completedLessonsData } = await supabase
+        .from('lessons')
+        .select(`
+          id,
+          learner_id,
+          scheduled_time,
+          duration_minutes,
+          status,
+          teacher_id,
+          subject_id,
+          "100ms_room_id",
+          confirmation_status,
+          teacher_acknowledgment_message,
+          learners(
+            name
+          ),
+          teacher_profiles(
+            user_id,
+            profiles(
+              full_name,
+              avatar_url
+            )
+          ),
+          subjects(
+            name
+          )
+        `)
+        .in('learner_id', targetLearnerIds)
+        .eq('status', 'completed')
+        .order('scheduled_time', { ascending: false })
+        .limit(3);
+
+      if (completedLessonsData) {
+        // Check which completed lessons have insights
+        const completedLessonIds = completedLessonsData.map((l: any) => l.id);
+        const completedLessonsWithInsights = new Set<string>();
+
+        if (completedLessonIds.length > 0) {
+          const { data: completedInsights } = await supabase
+            .from('lesson_insights')
+            .select('lesson_id')
+            .in('lesson_id', completedLessonIds);
+
+          completedInsights?.forEach((i: any) => completedLessonsWithInsights.add(i.lesson_id));
+        }
+
+        const formattedCompletedLessons: UpcomingLesson[] = completedLessonsData
+          .filter((lesson: any) => lesson.subjects) // Only include lessons with valid subject
+          .map((lesson: any) => ({
+            id: lesson.id,
+            learner_id: lesson.learner_id,
+            learner_name: lesson.learners?.name || 'Student',
+            teacher_id: lesson.teacher_id,
+            teacher_name: lesson.teacher_profiles?.profiles?.full_name || 'Teacher',
+            teacher_avatar: lesson.teacher_profiles?.profiles?.avatar_url || null,
+            subject_id: lesson.subject_id,
+            subject_name: lesson.subjects?.name || 'Subject',
+            scheduled_time: lesson.scheduled_time,
+            duration_minutes: lesson.duration_minutes,
+            '100ms_room_id': lesson['100ms_room_id'],
+            has_insights: completedLessonsWithInsights.has(lesson.id),
+            unread_messages: 0,
+            confirmation_status: lesson.confirmation_status || 'completed',
+            teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
+          }));
+
+        setRecentLessons(formattedCompletedLessons);
+      }
     } catch (error) {
       console.error('Error loading upcoming sessions:', error);
     } finally {
@@ -272,7 +340,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
     );
   }
 
-  if (lessons.length === 0) {
+  if (lessons.length === 0 && recentLessons.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">My Lessons</h3>
@@ -300,6 +368,118 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
             >
               <RefreshCw className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show recent lessons even if no upcoming booked lessons
+  if (lessons.length === 0 && recentLessons.length > 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">My Lessons</h3>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate('/my-classes')}
+              className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 rounded-lg font-semibold transition flex items-center space-x-2 border border-emerald-500/30"
+            >
+              <span>View All</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => loadUpcomingSessions(true)}
+              className="p-2 text-gray-500 hover:text-emerald-600 transition hover:rotate-180 duration-500"
+              title="Refresh lessons"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* No upcoming lessons message */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">No upcoming lessons</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Book your next session to continue your learning journey
+              </p>
+              <button
+                onClick={() => navigate('/teachers')}
+                className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1"
+              >
+                Book a Lesson <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Completed Lessons */}
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <Clock className="w-5 h-5 text-gray-400" />
+            Recent Lessons
+          </h4>
+
+          <div className="space-y-3">
+            {recentLessons.map((lesson) => {
+              const lessonDate = parseISO(lesson.scheduled_time);
+
+              return (
+                <div
+                  key={lesson.id}
+                  className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-800 transition cursor-pointer"
+                  onClick={() => navigate(`/my-classes?lesson=${lesson.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        {lesson.teacher_avatar ? (
+                          <img
+                            src={lesson.teacher_avatar}
+                            alt={lesson.teacher_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+
+                      <div>
+                        <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {lesson.subject_name}
+                        </h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          with {lesson.teacher_name} - {format(lessonDate, 'MMM d')}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {lesson.has_insights ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/lesson/${lesson.id}/insights`);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          View Insights
+                        </button>
+                      ) : (
+                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs">
+                          Completed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -513,6 +693,76 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           );
         })}
       </div>
+
+      {/* Recent Completed Lessons Section */}
+      {recentLessons.length > 0 && (
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-gray-400" />
+              Recent Lessons
+            </h4>
+          </div>
+
+          <div className="space-y-3">
+            {recentLessons.map((lesson) => {
+              const lessonDate = parseISO(lesson.scheduled_time);
+
+              return (
+                <div
+                  key={lesson.id}
+                  className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-800 transition cursor-pointer"
+                  onClick={() => navigate(`/my-classes?lesson=${lesson.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        {lesson.teacher_avatar ? (
+                          <img
+                            src={lesson.teacher_avatar}
+                            alt={lesson.teacher_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+
+                      <div>
+                        <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {lesson.subject_name}
+                        </h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          with {lesson.teacher_name} - {format(lessonDate, 'MMM d')}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {lesson.has_insights ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/lesson/${lesson.id}/insights`);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          View Insights
+                        </button>
+                      ) : (
+                        <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs">
+                          Completed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Message Modal */}
       {viewingMessage && messageContent && (

@@ -916,58 +916,220 @@ function FlipCard({ word }: { word: VocabWord }) {
   );
 }
 
-// Interactive Quiz Component
-function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestion[]; onAnswerUpdate?: (answers: { questionIndex: number; selectedAnswer: number; correct: boolean }[]) => void }) {
+// Quiz attempt data interface
+interface QuizAttemptData {
+  firstAttemptScore: number | null;
+  firstAttemptTotal: number | null;
+  firstAttemptAt: string | null;
+  lastAttemptAt: string | null;
+  totalAttempts: number;
+  bestScore: number | null;
+}
+
+// Interactive Quiz Component with attempt tracking and cooldown
+function InteractiveQuiz({
+  questions,
+  onAnswerUpdate,
+  onQuizComplete,
+  attemptData
+}: {
+  questions: QuizQuestion[];
+  onAnswerUpdate?: (answers: { questionIndex: number; selectedAnswer: number; correct: boolean }[]) => void;
+  onQuizComplete?: (score: number, total: number, isFirstAttempt: boolean) => void;
+  attemptData?: QuizAttemptData;
+}) {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [showResults, setShowResults] = useState<{ [key: number]: boolean }>({});
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+
+  const COOLDOWN_MINUTES = 10;
+
+  // Check cooldown on mount and set up timer
+  useEffect(() => {
+    if (attemptData?.lastAttemptAt) {
+      const lastAttempt = new Date(attemptData.lastAttemptAt);
+      const cooldownEnd = new Date(lastAttempt.getTime() + COOLDOWN_MINUTES * 60 * 1000);
+      const now = new Date();
+
+      if (now < cooldownEnd) {
+        const remaining = Math.ceil((cooldownEnd.getTime() - now.getTime()) / 1000);
+        setCooldownRemaining(remaining);
+        setQuizCompleted(true);
+      }
+    }
+  }, [attemptData?.lastAttemptAt]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (cooldownRemaining > 0) {
+      const timer = setInterval(() => {
+        setCooldownRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [cooldownRemaining]);
 
   const handleAnswerClick = (questionIndex: number, optionIndex: number) => {
+    if (quizCompleted && cooldownRemaining > 0) return;
+
     const newSelectedAnswers = { ...selectedAnswers, [questionIndex]: optionIndex };
     const newShowResults = { ...showResults, [questionIndex]: true };
 
     setSelectedAnswers(newSelectedAnswers);
     setShowResults(newShowResults);
 
+    // Calculate current answers
+    const answers = Object.keys(newShowResults).map(k => {
+      const idx = parseInt(k);
+      return {
+        questionIndex: idx,
+        selectedAnswer: newSelectedAnswers[idx],
+        correct: newSelectedAnswers[idx] === questions[idx]?.correctAnswer
+      };
+    });
+
     // Update parent with all answers
     if (onAnswerUpdate) {
-      const answers = Object.keys(newShowResults).map(k => {
-        const idx = parseInt(k);
-        return {
-          questionIndex: idx,
-          selectedAnswer: newSelectedAnswers[idx],
-          correct: newSelectedAnswers[idx] === questions[idx]?.correctAnswer
-        };
-      });
       onAnswerUpdate(answers);
+    }
+
+    // Check if quiz is complete (all questions answered)
+    if (Object.keys(newShowResults).length === questions.length) {
+      const score = answers.filter(a => a.correct).length;
+      const isFirstAttempt = !attemptData?.firstAttemptAt;
+
+      setQuizCompleted(true);
+      setCooldownRemaining(COOLDOWN_MINUTES * 60);
+
+      if (onQuizComplete) {
+        onQuizComplete(score, questions.length, isFirstAttempt);
+      }
     }
   };
 
-  const resetQuestion = (questionIndex: number) => {
-    setSelectedAnswers(prev => { const n = { ...prev }; delete n[questionIndex]; return n; });
-    setShowResults(prev => { const n = { ...prev }; delete n[questionIndex]; return n; });
+  const startNewAttempt = () => {
+    if (cooldownRemaining > 0) return;
+    setSelectedAnswers({});
+    setShowResults({});
+    setQuizCompleted(false);
   };
 
   const correctCount = Object.keys(showResults).filter(
     (k) => selectedAnswers[parseInt(k)] === questions[parseInt(k)]?.correctAnswer
   ).length;
   const answeredCount = Object.keys(showResults).length;
+  const isComplete = answeredCount === questions.length;
+
+  const formatCooldown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="space-y-6">
+      {/* First attempt score banner (locked) */}
+      {attemptData?.firstAttemptScore !== null && attemptData?.firstAttemptTotal && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+              <Star className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm text-amber-700 font-medium">Your First Attempt Score</p>
+              <p className="text-lg font-bold text-amber-800">
+                {attemptData.firstAttemptScore}/{attemptData.firstAttemptTotal}
+                ({Math.round((attemptData.firstAttemptScore / attemptData.firstAttemptTotal) * 100)}%)
+              </p>
+            </div>
+            {attemptData.totalAttempts > 1 && (
+              <div className="ml-auto text-right">
+                <p className="text-xs text-amber-600">Attempts: {attemptData.totalAttempts}</p>
+                {attemptData.bestScore !== null && attemptData.bestScore > attemptData.firstAttemptScore && (
+                  <p className="text-xs text-emerald-600 font-medium">Best: {attemptData.bestScore}/{attemptData.firstAttemptTotal}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Current attempt progress */}
       {answeredCount > 0 && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-indigo-600" />
-              <span className="text-indigo-800 font-medium">Score: {correctCount}/{answeredCount}</span>
+              <span className="text-indigo-800 font-medium">
+                {isComplete ? 'Final Score' : 'Progress'}: {correctCount}/{answeredCount}
+              </span>
             </div>
-            <span className="text-indigo-600 font-bold text-lg">{Math.round((correctCount / answeredCount) * 100)}%</span>
+            <span className="text-indigo-600 font-bold text-lg">{Math.round((correctCount / Math.max(answeredCount, 1)) * 100)}%</span>
           </div>
           <div className="mt-2 h-2 bg-indigo-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-              style={{ width: `${(correctCount / answeredCount) * 100}%` }}
+              style={{ width: `${(correctCount / Math.max(answeredCount, 1)) * 100}%` }}
             />
+          </div>
+          {!isComplete && (
+            <p className="text-xs text-indigo-600 mt-2">
+              {questions.length - answeredCount} questions remaining
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Quiz completion message with retry option */}
+      {isComplete && (
+        <div className={`rounded-xl p-4 border ${correctCount === questions.length ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'}`}>
+          <div className="flex items-center gap-3">
+            {correctCount === questions.length ? (
+              <>
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-emerald-800">Perfect Score!</p>
+                  <p className="text-sm text-emerald-600">Excellent work - you got all questions correct!</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <RotateCcw className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-800">Quiz Complete!</p>
+                  {cooldownRemaining > 0 ? (
+                    <p className="text-sm text-blue-600">
+                      Try again in <span className="font-mono font-bold">{formatCooldown(cooldownRemaining)}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-blue-600">Ready for another attempt</p>
+                  )}
+                </div>
+                <button
+                  onClick={startNewAttempt}
+                  disabled={cooldownRemaining > 0}
+                  className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
+                    cooldownRemaining > 0
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Try Again
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -976,11 +1138,16 @@ function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestio
         const selectedAnswer = selectedAnswers[qIndex];
         const isAnswered = showResults[qIndex];
         const isCorrect = selectedAnswer === q.correctAnswer;
+        const isDisabled = isComplete && cooldownRemaining > 0;
 
         return (
-          <div key={qIndex} className="bg-white rounded-xl p-4 border border-gray-200">
+          <div key={qIndex} className={`bg-white rounded-xl p-4 border border-gray-200 ${isDisabled ? 'opacity-60' : ''}`}>
             <p className="font-semibold text-gray-900 mb-4">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm mr-2">
+              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm mr-2 ${
+                isAnswered
+                  ? isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                  : 'bg-indigo-100 text-indigo-700'
+              }`}>
                 {qIndex + 1}
               </span>
               {q.question}
@@ -992,8 +1159,10 @@ function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestio
                 const isCorrectOption = oIndex === q.correctAnswer;
 
                 let buttonClasses = "w-full text-left px-4 py-3 rounded-xl border-2 transition-all ";
-                if (!isAnswered) {
+                if (!isAnswered && !isDisabled) {
                   buttonClasses += "border-gray-200 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer";
+                } else if (!isAnswered && isDisabled) {
+                  buttonClasses += "border-gray-200 bg-gray-50 cursor-not-allowed";
                 } else {
                   if (isSelected && isCorrect) buttonClasses += "border-emerald-400 bg-emerald-50";
                   else if (isSelected && !isCorrect) buttonClasses += "border-red-400 bg-red-50";
@@ -1004,8 +1173,8 @@ function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestio
                 return (
                   <button
                     key={oIndex}
-                    onClick={() => !isAnswered && handleAnswerClick(qIndex, oIndex)}
-                    disabled={isAnswered}
+                    onClick={() => !isAnswered && !isDisabled && handleAnswerClick(qIndex, oIndex)}
+                    disabled={isAnswered || isDisabled}
                     className={buttonClasses}
                   >
                     <div className="flex items-center justify-between">
@@ -1026,14 +1195,10 @@ function InteractiveQuiz({ questions, onAnswerUpdate }: { questions: QuizQuestio
             </div>
 
             {isAnswered && (
-              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
+              <div className="pt-3 mt-3 border-t border-gray-100">
                 <p className={`text-sm font-medium ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}>
                   {isCorrect ? '✓ Correct! Well done!' : '✗ Not quite - see the correct answer above'}
                 </p>
-                <button onClick={() => resetQuestion(qIndex)} className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
-                  <RotateCcw className="w-3 h-3" />
-                  Try again
-                </button>
               </div>
             )}
           </div>
@@ -1470,6 +1635,16 @@ export default function LessonInsights() {
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+  // Quiz attempt tracking state
+  const [quizAttemptData, setQuizAttemptData] = useState<QuizAttemptData>({
+    firstAttemptScore: null,
+    firstAttemptTotal: null,
+    firstAttemptAt: null,
+    lastAttemptAt: null,
+    totalAttempts: 0,
+    bestScore: null
+  });
+
   // Download as PDF function - generates actual PDF with proper Uthmani Arabic
   async function downloadAsPDF() {
     setDownloadingPDF(true);
@@ -1866,6 +2041,27 @@ export default function LessonInsights() {
       if (!insightData.viewed_by_student) {
         await supabase.from('lesson_insights').update({ viewed_by_student: true, student_viewed_at: new Date().toISOString() }).eq('id', insightData.id);
       }
+
+      // Load quiz attempt data from homework_submissions
+      if (learnerId) {
+        const { data: submissionData } = await supabase
+          .from('homework_submissions')
+          .select('first_attempt_score, first_attempt_total, first_attempt_at, last_quiz_attempt_at, total_quiz_attempts, best_quiz_score')
+          .eq('lesson_id', lessonId)
+          .eq('learner_id', learnerId)
+          .maybeSingle();
+
+        if (submissionData) {
+          setQuizAttemptData({
+            firstAttemptScore: submissionData.first_attempt_score,
+            firstAttemptTotal: submissionData.first_attempt_total,
+            firstAttemptAt: submissionData.first_attempt_at,
+            lastAttemptAt: submissionData.last_quiz_attempt_at,
+            totalAttempts: submissionData.total_quiz_attempts || 0,
+            bestScore: submissionData.best_quiz_score
+          });
+        }
+      }
     } catch (err: any) {
       console.error('Error loading insights:', err);
       setError(err.message || 'Failed to load insights');
@@ -1961,6 +2157,87 @@ export default function LessonInsights() {
       toast.error('Failed to submit homework. Please try again.');
     } finally {
       setSubmittingHomework(false);
+    }
+  }
+
+  // Handle quiz completion - saves attempt to database
+  async function handleQuizComplete(score: number, total: number, isFirstAttempt: boolean) {
+    if (!insight || !lessonId) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get learner ID
+      const { data: learner } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', user.id)
+        .maybeSingle();
+
+      if (!learner?.id) return;
+
+      // Get teacher ID from lesson
+      const { data: lesson } = await supabase
+        .from('lessons')
+        .select('teacher_id')
+        .eq('id', lessonId)
+        .single();
+
+      const now = new Date().toISOString();
+      const newAttemptCount = quizAttemptData.totalAttempts + 1;
+      const newBestScore = Math.max(score, quizAttemptData.bestScore || 0);
+
+      // Build the update data
+      const updateData: Record<string, any> = {
+        lesson_id: lessonId,
+        insight_id: insight.id,
+        learner_id: learner.id,
+        teacher_id: lesson?.teacher_id,
+        parent_id: user.id,
+        quiz_answers: quizAnswers,
+        quiz_score: score,
+        quiz_total: total,
+        quiz_completed_at: now,
+        last_quiz_attempt_at: now,
+        total_quiz_attempts: newAttemptCount,
+        best_quiz_score: newBestScore
+      };
+
+      // If this is the first attempt, also set the first attempt fields
+      if (isFirstAttempt) {
+        updateData.first_attempt_score = score;
+        updateData.first_attempt_total = total;
+        updateData.first_attempt_at = now;
+        updateData.first_attempt_answers = quizAnswers;
+      }
+
+      const { error } = await supabase
+        .from('homework_submissions')
+        .upsert(updateData, { onConflict: 'lesson_id,learner_id' });
+
+      if (error) throw error;
+
+      // Update local state
+      setQuizAttemptData(prev => ({
+        ...prev,
+        firstAttemptScore: isFirstAttempt ? score : prev.firstAttemptScore,
+        firstAttemptTotal: isFirstAttempt ? total : prev.firstAttemptTotal,
+        firstAttemptAt: isFirstAttempt ? now : prev.firstAttemptAt,
+        lastAttemptAt: now,
+        totalAttempts: newAttemptCount,
+        bestScore: newBestScore
+      }));
+
+      // Show success message
+      if (isFirstAttempt) {
+        toast.success(`Quiz completed! Your score: ${score}/${total}`);
+      } else {
+        toast.success(`Attempt ${newAttemptCount} complete! Score: ${score}/${total}`);
+      }
+    } catch (err: any) {
+      console.error('Error saving quiz attempt:', err);
+      toast.error('Failed to save quiz progress');
     }
   }
 
@@ -2332,7 +2609,12 @@ export default function LessonInsights() {
             {/* Mini Quiz */}
             {quizQuestions.length > 0 && (
               <CollapsibleSection title="Mini Quiz" icon={Target} color="indigo" badge={`${quizQuestions.length} questions`} defaultOpen={true}>
-                <InteractiveQuiz questions={quizQuestions} onAnswerUpdate={setQuizAnswers} />
+                <InteractiveQuiz
+                  questions={quizQuestions}
+                  onAnswerUpdate={setQuizAnswers}
+                  onQuizComplete={handleQuizComplete}
+                  attemptData={quizAttemptData}
+                />
               </CollapsibleSection>
             )}
 
