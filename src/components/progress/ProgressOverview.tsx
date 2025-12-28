@@ -158,7 +158,37 @@ export default function ProgressOverview({ studentId, variant = 'student' }: Pro
       let targetId = studentId;
       if (!targetId) {
         const { data: { user } } = await supabase.auth.getUser();
-        targetId = user?.id;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        // First try to find learner by parent_id (parent viewing child)
+        const { data: learner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id)
+          .maybeSingle();
+
+        if (learner) {
+          targetId = learner.id;
+        } else {
+          // Fallback: check if user has lessons directly as learner_id
+          // This handles student accounts where user.id is used as learner_id
+          const { data: directLessons } = await supabase
+            .from('lessons')
+            .select('id')
+            .eq('learner_id', user.id)
+            .eq('status', 'completed')
+            .limit(1);
+
+          if (directLessons && directLessons.length > 0) {
+            targetId = user.id;
+          } else {
+            setLoading(false);
+            return;
+          }
+        }
       }
       if (!targetId) {
         setLoading(false);

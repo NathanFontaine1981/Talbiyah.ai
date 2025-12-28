@@ -154,18 +154,16 @@ export default function CoursesOverview() {
       let islamicProgress = 0;
 
       if (learner) {
-        const { data: quranData } = await supabase
-          .from('lesson_progress_tracker')
-          .select('understanding_complete, fluency_complete, memorization_complete')
+        // Get Quran progress from surah_retention_tracker (synced with My Memorisation page)
+        const { count: memorisedCount } = await supabase
+          .from('surah_retention_tracker')
+          .select('surah_number', { count: 'exact' })
           .eq('learner_id', learner.id)
-          .like('topic', 'Surah%');
+          .eq('memorization_status', 'memorized');
 
-        if (quranData && quranData.length > 0) {
+        if (memorisedCount && memorisedCount > 0) {
           const totalSurahs = 114;
-          const completedCount = quranData.filter(
-            s => s.understanding_complete && s.fluency_complete && s.memorization_complete
-          ).length;
-          quranProgress = Math.round((completedCount / totalSurahs) * 100);
+          quranProgress = Math.round((memorisedCount / totalSurahs) * 100);
         }
 
         const { data: arabicSubject } = await supabase

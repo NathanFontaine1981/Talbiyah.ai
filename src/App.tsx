@@ -92,6 +92,7 @@ const LessonInsights = lazy(() => import('./pages/student/LessonInsights'));
 const RecordingWithInsights = lazy(() => import('./pages/student/RecordingWithInsights'));
 const DailyMaintenancePage = lazy(() => import('./pages/student/DailyMaintenancePage'));
 const SmartHomeworkPage = lazy(() => import('./pages/student/SmartHomeworkPage'));
+const MemorizationSetupPage = lazy(() => import('./pages/student/MemorizationSetupPage'));
 
 // Parent pages
 const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
@@ -496,6 +497,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SmartHomeworkPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-memorization"
+          element={
+            <ProtectedRoute>
+              <MemorizationSetupPage />
             </ProtectedRoute>
           }
         />

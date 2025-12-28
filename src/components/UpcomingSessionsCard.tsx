@@ -343,7 +343,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   if (lessons.length === 0 && recentLessons.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">My Lessons</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Upcoming Lessons</h3>
 
         <div className="text-center py-12">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -379,7 +379,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">My Lessons</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Lessons</h3>
           <div className="flex items-center space-x-3">
             <button
               onClick={() => navigate('/my-classes')}
@@ -489,7 +489,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">My Lessons</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Lessons</h3>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => navigate('/my-classes')}

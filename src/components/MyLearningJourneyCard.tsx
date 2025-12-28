@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient';
 interface CourseProgress {
   name: string;
   progress: number;
+  subtitle?: string;
   icon: any;
   color: string;
   bgColor: string;
@@ -90,27 +91,37 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
 
           if (children && children.length > 0) {
             targetLearnerId = children[0].child_id;
+          } else {
+            // Fallback: check if user has memorization data directly (student account)
+            const { count: directCount } = await supabase
+              .from('surah_retention_tracker')
+              .select('id', { count: 'exact', head: true })
+              .eq('learner_id', user.id);
+
+            if (directCount && directCount > 0) {
+              targetLearnerId = user.id;
+            }
           }
         }
       }
 
       let quranProgress = 0;
+      let memorizedCount = 0;
       let arabicProgress = 0;
       let islamicProgress = 0;
 
       if (targetLearnerId) {
-        const { data: quranData } = await supabase
-          .from('lesson_progress_tracker')
-          .select('understanding_complete, fluency_complete, memorization_complete')
+        // Get memorized surahs from surah_retention_tracker
+        const { data: memorizedSurahs, count } = await supabase
+          .from('surah_retention_tracker')
+          .select('surah_number', { count: 'exact' })
           .eq('learner_id', targetLearnerId)
-          .like('topic', 'Surah%');
+          .eq('memorization_status', 'memorized');
 
-        if (quranData && quranData.length > 0) {
+        if (count && count > 0) {
           const totalSurahs = 114;
-          const completedCount = quranData.filter(
-            s => s.understanding_complete && s.fluency_complete && s.memorization_complete
-          ).length;
-          quranProgress = Math.round((completedCount / totalSurahs) * 100);
+          memorizedCount = count;
+          quranProgress = Math.round((count / totalSurahs) * 100);
         }
 
         const { data: arabicSubject } = await supabase
@@ -154,13 +165,14 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
 
       const coursesData: CourseProgress[] = [
         {
-          name: "Qur'an with Understanding",
+          name: "Qur'an Memorisation",
           progress: quranProgress,
+          subtitle: memorizedCount > 0 ? `${memorizedCount} of 114 surahs memorised` : 'Start tracking your memorisation',
           icon: BookOpen,
           color: 'text-emerald-400',
           bgColor: 'from-emerald-500/20 to-green-500/20',
-          route: '/progress/quran',
-          action: quranProgress > 0 ? 'Continue' : 'Start Learning'
+          route: '/my-memorization',
+          action: quranProgress > 0 ? 'Manage' : 'Set Up'
         },
         {
           name: 'Arabic Language',
@@ -219,7 +231,9 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900">{course.name}</h4>
-                  <p className={`text-xs ${course.color} font-medium`}>{course.progress}% Complete</p>
+                  <p className={`text-xs ${course.color} font-medium`}>
+                    {course.subtitle || `${course.progress}% Complete`}
+                  </p>
                 </div>
               </div>
 

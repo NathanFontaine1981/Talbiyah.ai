@@ -839,9 +839,42 @@ function LessonContent() {
         <div className={`${showMessaging ? 'w-2/3' : 'w-full'} h-full transition-all duration-300`}>
           <HMSPrebuilt
             roomCode={lesson.room_code}
+            logo="https://talbiyah.ai/images/logo.png"
             options={{
               userName: userRole === 'teacher' ? lesson.teacher_name : lesson.learner_name,
               userId: user?.id || `user_${Date.now()}`,
+            }}
+            screens={{
+              preview: {
+                default: {
+                  elements: {
+                    logo: true,
+                    virtual_background: true,
+                  }
+                }
+              },
+              conferencing: {
+                default: {
+                  elements: {
+                    header: {
+                      title: `Talbiyah - ${lesson.subject_name}`,
+                      description: userRole === 'teacher' ? `Teaching ${lesson.learner_name}` : `With ${lesson.teacher_name}`,
+                    },
+                    brb: true,
+                    chat: true,
+                    participant_list: true,
+                    emoji_reactions: true,
+                    hand_raise: true,
+                  }
+                }
+              },
+              leave: {
+                default: {
+                  elements: {
+                    feedback: true,
+                  }
+                }
+              }
             }}
             onJoinRoom={() => {
               // Successfully joined

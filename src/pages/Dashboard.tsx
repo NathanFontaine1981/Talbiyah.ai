@@ -36,7 +36,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
-import RecentRecordingsCard from '../components/RecentRecordingsCard';
 import RecentMessagesCard from '../components/RecentMessagesCard';
 import LearningStatsWidget from '../components/LearningStatsWidget';
 import RecommendedActionsCard from '../components/RecommendedActionsCard';
@@ -327,7 +326,8 @@ export default function Dashboard() {
         { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
         { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
         { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
-        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'], isNew: true },
+        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent'], isNew: true },
+        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student'] },
       ]
     },
@@ -1039,14 +1039,12 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <MyTeachersSection />
-                    <UpcomingSessionsCard />
                     <RecentMessagesCard />
-                    <RecentRecordingsCard />
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
-                    <CreditBalanceWidget />
                     <DailyPracticeWidget />
+                    <CreditBalanceWidget />
                     <LearningStatsWidget />
                     <ReferralWidget />
                     <RecommendedActionsCard />

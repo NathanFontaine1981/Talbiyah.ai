@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Brain, ChevronRight, Calendar, Target, Sparkles } from 'lucide-react';
+import { Flame, Brain, ChevronRight, Calendar, BookOpen, Sparkles, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface DailyPracticeWidgetProps {
@@ -97,7 +97,7 @@ export default function DailyPracticeWidget({ learnerId }: DailyPracticeWidgetPr
               <div className="text-left">
                 <p className="font-medium text-emerald-900 dark:text-emerald-100">Daily Quran Review</p>
                 <p className="text-sm text-emerald-700 dark:text-emerald-400">
-                  {todayComplete ? 'Completed for today' : 'Maintain your memorization'}
+                  {todayComplete ? 'Completed for today' : 'Maintain your memorisation'}
                 </p>
               </div>
             </div>
@@ -113,11 +113,22 @@ export default function DailyPracticeWidget({ learnerId }: DailyPracticeWidgetPr
                 <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="text-left">
-                <p className="font-medium text-purple-900 dark:text-purple-100">Smart Homework</p>
-                <p className="text-sm text-purple-700 dark:text-purple-400">Practice your weak areas</p>
+                <p className="font-medium text-purple-900 dark:text-purple-100">Vocabulary Builder</p>
+                <p className="text-sm text-purple-700 dark:text-purple-400">Strengthen Quranic words</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </button>
+
+          <button
+            onClick={() => navigate('/my-memorization')}
+            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between transition"
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Manage My Memorisation</span>
+            </div>
+            <Settings className="w-4 h-4 text-gray-400" />
           </button>
         </div>
       </div>

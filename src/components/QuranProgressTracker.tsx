@@ -54,23 +54,46 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
 
   async function loadProgress() {
     try {
-      const { data, error } = await supabase
-        .from('lesson_progress_tracker')
-        .select('*')
-        .eq('learner_id', learnerId)
-        .like('topic', 'Surah%');
+      // Load from surah_retention_tracker (synced with My Memorisation page)
+      // First try with fluency/understanding columns
+      let data: { surah_number: number; fluency_complete?: boolean; understanding_complete?: boolean }[] | null = null;
 
-      if (error) throw error;
+      try {
+        const { data: extendedData, error: extendedError } = await supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, fluency_complete, understanding_complete')
+          .eq('learner_id', learnerId)
+          .eq('memorization_status', 'memorized');
+
+        if (!extendedError) {
+          data = extendedData;
+        }
+      } catch {
+        // Columns may not exist - fall back to basic query
+      }
+
+      // Fall back to basic query if extended failed
+      if (!data) {
+        const { data: basicData, error } = await supabase
+          .from('surah_retention_tracker')
+          .select('surah_number')
+          .eq('learner_id', learnerId)
+          .eq('memorization_status', 'memorized');
+
+        if (error) throw error;
+        data = basicData;
+      }
 
       const surahProgress = SURAHS.map((surahName, index) => {
-        const progressRecord = data?.find(p => p.topic.includes(surahName));
+        const surahNumber = index + 1;
+        const progressRecord = data?.find(p => p.surah_number === surahNumber);
         return {
-          surahNumber: index + 1,
+          surahNumber,
           surahName,
-          understanding: progressRecord?.understanding_complete || false,
-          fluency: progressRecord?.fluency_complete || false,
-          memorization: progressRecord?.memorization_complete || false,
-          teacherNotes: progressRecord?.teacher_notes
+          understanding: progressRecord?.understanding_complete ?? false,
+          fluency: progressRecord?.fluency_complete ?? false,
+          memorization: progressRecord ? true : false,
+          teacherNotes: undefined
         };
       });
 
@@ -96,10 +119,12 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
   }
 
   const totalSurahs = 114;
+  const memorisedSurahs = progress.filter(s => s.memorization).length;
   const completedSurahs = progress.filter(
     s => s.understanding && s.fluency && s.memorization
   ).length;
-  const percentageComplete = Math.round((completedSurahs / totalSurahs) * 100);
+  // Show memorisation percentage as main metric (more commonly used)
+  const percentageComplete = Math.round((memorisedSurahs / totalSurahs) * 100);
 
   const circumference = 2 * Math.PI * 120;
   const strokeDashoffset = circumference - (percentageComplete / 100) * circumference;
@@ -120,7 +145,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
   return (
     <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
-        <Book className="w-5 h-5 text-emerald-600" />
+        <Book className="w-5 h-5 text-orange-500" />
         <span>Qur'an Progress Tracker</span>
       </h3>
 
@@ -145,24 +170,29 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
               fill="transparent"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              className="text-emerald-600 transition-all duration-1000 ease-out"
+              className="text-orange-500 transition-all duration-1000 ease-out"
               strokeLinecap="round"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-5xl font-bold text-emerald-600">{percentageComplete}%</p>
+            <p className="text-5xl font-bold text-orange-500">{percentageComplete}%</p>
             <p className="text-sm text-gray-500 mt-2">Qur'an Mastered</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-center space-x-6 text-sm">
+        <div className="flex items-center justify-center space-x-4 text-sm">
           <div className="text-center">
-            <p className="text-2xl font-bold text-white">{completedSurahs}</p>
-            <p className="text-gray-500">Surahs Complete</p>
+            <p className="text-2xl font-bold text-orange-400">{memorisedSurahs}</p>
+            <p className="text-gray-500">Memorised</p>
           </div>
-          <div className="w-px h-12 bg-gray-200"></div>
+          <div className="w-px h-12 bg-gray-600"></div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-white">{totalSurahs - completedSurahs}</p>
+            <p className="text-2xl font-bold text-emerald-400">{completedSurahs}</p>
+            <p className="text-gray-500">Fully Mastered</p>
+          </div>
+          <div className="w-px h-12 bg-gray-600"></div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-white">{totalSurahs - memorisedSurahs}</p>
             <p className="text-gray-500">Remaining</p>
           </div>
         </div>
@@ -172,14 +202,14 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
         <div className="flex items-center justify-between mb-3 px-2">
           <span className="text-xs font-medium text-gray-500 uppercase">Surah Name</span>
           <div className="flex items-center space-x-4">
-            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
-              Understanding
+            <span className="text-xs font-medium text-orange-400 uppercase w-20 text-center">
+              Memorised
             </span>
-            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
+            <span className="text-xs font-medium text-blue-600 uppercase w-20 text-center">
               Fluency
             </span>
-            <span className="text-xs font-medium text-gray-500 uppercase w-20 text-center">
-              Memorisation
+            <span className="text-xs font-medium text-sky-400 uppercase w-20 text-center">
+              Understanding
             </span>
           </div>
         </div>
@@ -197,33 +227,36 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
               </button>
 
               <div className="flex items-center space-x-4">
-                <div className="w-20 flex justify-center">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    surah.understanding
-                      ? 'bg-emerald-500/20 border-emerald-500'
-                      : 'border-gray-300'
-                  }`}>
-                    {surah.understanding && <Check className="w-4 h-4 text-emerald-600" />}
-                  </div>
-                </div>
-
-                <div className="w-20 flex justify-center">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    surah.fluency
-                      ? 'bg-emerald-500/20 border-emerald-500'
-                      : 'border-gray-300'
-                  }`}>
-                    {surah.fluency && <Check className="w-4 h-4 text-emerald-600" />}
-                  </div>
-                </div>
-
+                {/* Memorised - Orange */}
                 <div className="w-20 flex justify-center">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     surah.memorization
-                      ? 'bg-emerald-500/20 border-emerald-500'
-                      : 'border-gray-300'
+                      ? 'bg-orange-500/20 border-orange-500'
+                      : 'border-orange-300'
                   }`}>
-                    {surah.memorization && <Check className="w-4 h-4 text-emerald-600" />}
+                    {surah.memorization && <Check className="w-4 h-4 text-orange-500" />}
+                  </div>
+                </div>
+
+                {/* Fluency - Dark Blue */}
+                <div className="w-20 flex justify-center">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    surah.fluency
+                      ? 'bg-blue-600/20 border-blue-600'
+                      : 'border-blue-300'
+                  }`}>
+                    {surah.fluency && <Check className="w-4 h-4 text-blue-600" />}
+                  </div>
+                </div>
+
+                {/* Understanding - Light Blue */}
+                <div className="w-20 flex justify-center">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    surah.understanding
+                      ? 'bg-sky-400/20 border-sky-400'
+                      : 'border-sky-300'
+                  }`}>
+                    {surah.understanding && <Check className="w-4 h-4 text-sky-400" />}
                   </div>
                 </div>
 
@@ -257,7 +290,7 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
       {progress.length > 10 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full mt-4 px-4 py-2 bg-gray-100/80 hover:bg-gray-200/80 text-emerald-600 rounded-lg transition flex items-center justify-center space-x-2"
+          className="w-full mt-4 px-4 py-2 bg-gray-100/80 hover:bg-gray-200/80 text-orange-500 rounded-lg transition flex items-center justify-center space-x-2"
         >
           <span className="text-sm font-medium">
             {showAll ? 'Show Less' : `Show All ${totalSurahs} Surahs`}
