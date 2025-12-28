@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
+import { getFirstWordsForAyahs, FirstWordData } from '../../utils/quranApi';
 
 interface SurahReview {
   surah: number;
@@ -308,6 +309,13 @@ export default function DailyMaintenancePage() {
   const [prompterScore, setPrompterScore] = useState<{ correct: number; total: number }>({ correct: 0, total: 0 });
   const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
 
+  // Ayah-level testing state (for testing every fluent ayah in sequence)
+  const [fluencyAyahs, setFluencyAyahs] = useState<number[]>([]); // Ayah numbers that are fluent in selected surah
+  const [ayahFirstWords, setAyahFirstWords] = useState<FirstWordData[]>([]); // First word data from API
+  const [currentAyahIndex, setCurrentAyahIndex] = useState(0); // Current position in sequence
+  const [loadingAyahs, setLoadingAyahs] = useState(false); // Loading state for API call
+  const [testingMode, setTestingMode] = useState<'surah' | 'ayah'>('surah'); // surah = first ayah only, ayah = all fluent ayahs
+
   useEffect(() => {
     loadData();
   }, []);
@@ -444,6 +452,59 @@ export default function DailyMaintenancePage() {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Load fluent ayahs for a surah and fetch their first word data from API
+  async function loadFluencyAyahsForSurah(surahNumber: number) {
+    if (!learnerId) return;
+
+    setLoadingAyahs(true);
+    setAyahFirstWords([]);
+    setCurrentAyahIndex(0);
+
+    try {
+      // Query quran_progress table for fluent ayahs in this surah
+      const { data: progressData, error } = await supabase
+        .from('quran_progress')
+        .select('ayah_number')
+        .eq('student_id', learnerId)
+        .eq('surah_number', surahNumber)
+        .eq('fluency_completed', true)
+        .order('ayah_number', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching fluency progress:', error);
+        // Fall back to testing just the first ayah
+        setFluencyAyahs([1]);
+        setTestingMode('surah');
+        setLoadingAyahs(false);
+        return;
+      }
+
+      if (progressData && progressData.length > 0) {
+        const ayahNumbers = progressData.map(p => p.ayah_number);
+        setFluencyAyahs(ayahNumbers);
+
+        // Fetch first word data from Quran.com API
+        const minAyah = Math.min(...ayahNumbers);
+        const maxAyah = Math.max(...ayahNumbers);
+        const firstWordsData = await getFirstWordsForAyahs(surahNumber, minAyah, maxAyah);
+
+        // Filter to only include ayahs that are marked fluent
+        const filteredFirstWords = firstWordsData.filter(fw => ayahNumbers.includes(fw.ayahNumber));
+        setAyahFirstWords(filteredFirstWords);
+        setTestingMode('ayah');
+      } else {
+        // No fluent ayahs found - use static first ayah data
+        setFluencyAyahs([]);
+        setTestingMode('surah');
+      }
+    } catch (error) {
+      console.error('Error loading fluency ayahs:', error);
+      setTestingMode('surah');
+    } finally {
+      setLoadingAyahs(false);
     }
   }
 
@@ -738,7 +799,7 @@ export default function DailyMaintenancePage() {
                 /* Surah selector */
                 <div>
                   <p className="text-sm text-purple-700 dark:text-purple-300 mb-3 text-center">
-                    Select a surah to test your recall:
+                    Select a surah to test your recall of every fluent ayah:
                   </p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
                     {memorizedSurahs
@@ -750,6 +811,7 @@ export default function DailyMaintenancePage() {
                           onClick={() => {
                             setSelectedPromptSurah(surahNum);
                             setRevealedAnswer(false);
+                            loadFluencyAyahsForSurah(surahNum);
                           }}
                           className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-600 hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-md transition-all text-center"
                         >
@@ -766,9 +828,141 @@ export default function DailyMaintenancePage() {
                     </p>
                   )}
                 </div>
-              ) : (
-                /* Prompt display */
+              ) : loadingAyahs ? (
+                /* Loading state */
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <p className="text-purple-700 dark:text-purple-300">Loading fluent ayahs...</p>
+                </div>
+              ) : testingMode === 'ayah' && ayahFirstWords.length > 0 ? (
+                /* Ayah-level testing - test each fluent ayah in sequence */
                 <div className="text-center">
+                  {/* Progress indicator */}
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 rounded-full text-sm">
+                      Ayah {currentAyahIndex + 1} of {ayahFirstWords.length}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({SURAH_NAMES[selectedPromptSurah]?.english})
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-6 mx-4">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-300"
+                      style={{ width: `${((currentAyahIndex + 1) / ayahFirstWords.length) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* Prompt - which ayah are we testing? */}
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">What is the first word of...</p>
+                    <h4 className="text-xl font-bold text-purple-900 dark:text-purple-100">
+                      Surah {SURAH_NAMES[selectedPromptSurah]?.english}, Ayah {ayahFirstWords[currentAyahIndex]?.ayahNumber}
+                    </h4>
+                  </div>
+
+                  {/* Answer area */}
+                  <div className={`rounded-xl p-6 mb-4 transition-all ${
+                    revealedAnswer
+                      ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-300 dark:border-emerald-600'
+                      : 'bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {revealedAnswer && ayahFirstWords[currentAyahIndex] ? (
+                      <div>
+                        <p className="text-2xl font-arabic text-purple-600 dark:text-purple-400 mb-2" dir="rtl">
+                          First word: <span className="text-3xl font-bold text-gray-900 dark:text-white">{ayahFirstWords[currentAyahIndex].firstWord}</span>
+                        </p>
+                        <p className="text-sm text-purple-700 dark:text-purple-300 italic mb-3">
+                          {ayahFirstWords[currentAyahIndex].transliteration}
+                        </p>
+                        <hr className="border-gray-200 dark:border-gray-600 my-3" />
+                        <p className="text-lg font-arabic text-gray-800 dark:text-gray-200 mb-2" dir="rtl">
+                          {ayahFirstWords[currentAyahIndex].fullVerseUthmani}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          "{ayahFirstWords[currentAyahIndex].fullVerseTranslation}"
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-4">
+                        <p className="text-gray-500 dark:text-gray-400 mb-2">
+                          Think of the first word, then reveal the answer
+                        </p>
+                        <p className="text-4xl font-arabic text-gray-300 dark:text-gray-600">؟</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    {!revealedAnswer ? (
+                      <button
+                        onClick={() => setRevealedAnswer(true)}
+                        className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium"
+                      >
+                        <Eye className="w-5 h-5" />
+                        Reveal Answer
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            setPrompterScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
+                            // Move to next ayah or finish
+                            if (currentAyahIndex < ayahFirstWords.length - 1) {
+                              setCurrentAyahIndex(prev => prev + 1);
+                              setRevealedAnswer(false);
+                            } else {
+                              // Finished all ayahs
+                              setSelectedPromptSurah(null);
+                              setRevealedAnswer(false);
+                              setCurrentAyahIndex(0);
+                              setAyahFirstWords([]);
+                            }
+                          }}
+                          className="px-5 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-5 h-5" />
+                          {currentAyahIndex < ayahFirstWords.length - 1 ? 'Correct - Next' : 'Correct - Finish'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPrompterScore(prev => ({ ...prev, total: prev.total + 1 }));
+                            // Move to next ayah or finish
+                            if (currentAyahIndex < ayahFirstWords.length - 1) {
+                              setCurrentAyahIndex(prev => prev + 1);
+                              setRevealedAnswer(false);
+                            } else {
+                              // Finished all ayahs
+                              setSelectedPromptSurah(null);
+                              setRevealedAnswer(false);
+                              setCurrentAyahIndex(0);
+                              setAyahFirstWords([]);
+                            }
+                          }}
+                          className="px-5 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-5 h-5" />
+                          {currentAyahIndex < ayahFirstWords.length - 1 ? 'Need Practice - Next' : 'Need Practice - Finish'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Fallback: Surah-level testing (first ayah only) - used when no fluent ayahs found */
+                <div className="text-center">
+                  {/* Info message */}
+                  {testingMode === 'surah' && fluencyAyahs.length === 0 && (
+                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        No fluent ayahs tracked for this surah yet. Testing first ayah only.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Surah name - the prompt */}
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">How does this surah begin?</p>
