@@ -240,7 +240,8 @@ export default function WordMatchingQuiz({ words, lessonId, ayahNumber, onComple
         }
       }
     }
-  }, [selectedArabic, selectedEnglish, arabicCards, englishCards, matchedCount, score, attempts, masteredWords, lessonId, ayahNumber, onComplete]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedArabic, selectedEnglish]);
 
   // Handle Arabic card click
   const handleArabicClick = (index: number) => {
