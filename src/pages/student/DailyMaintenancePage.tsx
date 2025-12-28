@@ -8,13 +8,18 @@ import {
   Trophy,
   Calendar,
   ChevronRight,
+  ChevronDown,
   Headphones,
   Mic,
   Star,
   Target,
   ArrowLeft,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  BookOpen,
+  Eye,
+  EyeOff,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -44,6 +49,49 @@ interface LearnerStats {
   totalSessions: number;
   lastMaintenanceDate: string | null;
 }
+
+// First ayah (opening words) of each surah for the First Word Prompter
+const SURAH_FIRST_WORDS: { [key: number]: { arabic: string; transliteration: string; translation: string } } = {
+  1: { arabic: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', transliteration: 'Bismillahir Rahmanir Rahim', translation: 'In the name of Allah, the Most Gracious, the Most Merciful' },
+  2: { arabic: 'الم', transliteration: 'Alif Lam Meem', translation: 'Alif Lam Meem' },
+  78: { arabic: 'عَمَّ يَتَسَاءَلُونَ', transliteration: "'Amma yatasaa'aloon", translation: 'About what are they asking one another?' },
+  79: { arabic: 'وَالنَّازِعَاتِ غَرْقًا', transliteration: "Wan naazi'aati gharqa", translation: 'By those [angels] who extract with violence' },
+  80: { arabic: 'عَبَسَ وَتَوَلَّىٰ', transliteration: "'Abasa wa tawalla", translation: 'He frowned and turned away' },
+  81: { arabic: 'إِذَا الشَّمْسُ كُوِّرَتْ', transliteration: 'Idhash shamsu kuwwirat', translation: 'When the sun is wrapped up [in darkness]' },
+  82: { arabic: 'إِذَا السَّمَاءُ انفَطَرَتْ', transliteration: 'Idhas samaa-unfatarat', translation: 'When the sky breaks apart' },
+  83: { arabic: 'وَيْلٌ لِّلْمُطَفِّفِينَ', transliteration: 'Waylul lil mutaffifeen', translation: 'Woe to those who give less [than due]' },
+  84: { arabic: 'إِذَا السَّمَاءُ انشَقَّتْ', transliteration: 'Idhas samaa-un shaqqat', translation: 'When the sky has split [open]' },
+  85: { arabic: 'وَالسَّمَاءِ ذَاتِ الْبُرُوجِ', transliteration: "Was samaa'i dhaatil burooj", translation: 'By the sky containing great stars' },
+  86: { arabic: 'وَالسَّمَاءِ وَالطَّارِقِ', transliteration: "Was samaa'i wat taariq", translation: 'By the sky and the night comer' },
+  87: { arabic: 'سَبِّحِ اسْمَ رَبِّكَ الْأَعْلَى', transliteration: "Sabbihisma rabbikal a'la", translation: 'Exalt the name of your Lord, the Most High' },
+  88: { arabic: 'هَلْ أَتَاكَ حَدِيثُ الْغَاشِيَةِ', transliteration: 'Hal ataaka hadeethul ghaashiyah', translation: 'Has there reached you the report of the Overwhelming?' },
+  89: { arabic: 'وَالْفَجْرِ', transliteration: 'Wal fajr', translation: 'By the dawn' },
+  90: { arabic: 'لَا أُقْسِمُ بِهَٰذَا الْبَلَدِ', transliteration: 'Laa uqsimu bi haadhal balad', translation: 'I swear by this city' },
+  91: { arabic: 'وَالشَّمْسِ وَضُحَاهَا', transliteration: 'Wash shamsi wa duhaha', translation: 'By the sun and its brightness' },
+  92: { arabic: 'وَاللَّيْلِ إِذَا يَغْشَىٰ', transliteration: 'Wal layli idha yaghsha', translation: 'By the night when it covers' },
+  93: { arabic: 'وَالضُّحَىٰ', transliteration: 'Wad duhaa', translation: 'By the morning brightness' },
+  94: { arabic: 'أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ', transliteration: 'Alam nashrah laka sadrak', translation: 'Did We not expand for you your breast?' },
+  95: { arabic: 'وَالتِّينِ وَالزَّيْتُونِ', transliteration: 'Wat teeni waz zaytoon', translation: 'By the fig and the olive' },
+  96: { arabic: 'اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ', transliteration: "Iqra' bismi rabbikal ladhee khalaq", translation: 'Read in the name of your Lord who created' },
+  97: { arabic: 'إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ', transliteration: 'Innaa anzalnaahu fee laylatil qadr', translation: 'Indeed, We sent it down during the Night of Decree' },
+  98: { arabic: 'لَمْ يَكُنِ الَّذِينَ كَفَرُوا', transliteration: 'Lam yakunil ladheena kafaru', translation: 'Those who disbelieved among the People of the Scripture' },
+  99: { arabic: 'إِذَا زُلْزِلَتِ الْأَرْضُ زِلْزَالَهَا', transliteration: 'Idha zulzilatil ardu zilzaalaha', translation: 'When the earth is shaken with its [final] earthquake' },
+  100: { arabic: 'وَالْعَادِيَاتِ ضَبْحًا', transliteration: "Wal 'aadiyaati dabha", translation: 'By the racers, panting' },
+  101: { arabic: 'الْقَارِعَةُ', transliteration: "Al qaari'ah", translation: 'The Striking Calamity' },
+  102: { arabic: 'أَلْهَاكُمُ التَّكَاثُرُ', transliteration: 'Alhaakumut takaathur', translation: 'Competition in [worldly] increase diverts you' },
+  103: { arabic: 'وَالْعَصْرِ', transliteration: "Wal 'asr", translation: 'By time' },
+  104: { arabic: 'وَيْلٌ لِّكُلِّ هُمَزَةٍ لُّمَزَةٍ', transliteration: 'Waylul likulli humazatil lumazah', translation: 'Woe to every scorner and mocker' },
+  105: { arabic: 'أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ', transliteration: "Alam tara kayfa fa'ala rabbuka bi ashaabil feel", translation: 'Have you not considered how your Lord dealt with the companions of the elephant?' },
+  106: { arabic: 'لِإِيلَافِ قُرَيْشٍ', transliteration: "Li-eelaafi quraysh", translation: 'For the accustomed security of the Quraysh' },
+  107: { arabic: 'أَرَأَيْتَ الَّذِي يُكَذِّبُ بِالدِّينِ', transliteration: "Ara'aytal ladhee yukadhdhibu biddeen", translation: 'Have you seen the one who denies the Recompense?' },
+  108: { arabic: 'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ', transliteration: "Innaa a'taynakal kawthar", translation: 'Indeed, We have granted you Al-Kawthar' },
+  109: { arabic: 'قُلْ يَا أَيُّهَا الْكَافِرُونَ', transliteration: 'Qul yaa ayyuhal kaafiroon', translation: 'Say, "O disbelievers"' },
+  110: { arabic: 'إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ', transliteration: "Idhaa jaa'a nasrullaahi wal fath", translation: 'When the victory of Allah has come and the conquest' },
+  111: { arabic: 'تَبَّتْ يَدَا أَبِي لَهَبٍ وَتَبَّ', transliteration: 'Tabbat yadaa abee lahabinw wa tabb', translation: 'May the hands of Abu Lahab be ruined, and ruined is he' },
+  112: { arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ', transliteration: 'Qul huwallaahu ahad', translation: 'Say, "He is Allah, [who is] One"' },
+  113: { arabic: 'قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ', transliteration: "Qul a'oodhu birabbil falaq", translation: 'Say, "I seek refuge in the Lord of daybreak"' },
+  114: { arabic: 'قُلْ أَعُوذُ بِرَبِّ النَّاسِ', transliteration: "Qul a'oodhu birabbin naas", translation: 'Say, "I seek refuge in the Lord of mankind"' },
+};
 
 // All 114 Surah names
 const SURAH_NAMES: { [key: number]: { english: string; arabic: string } } = {
@@ -178,6 +226,13 @@ export default function DailyMaintenancePage() {
   // Default surahs for daily review (can be customized based on learner's progress)
   const [dailySurahs, setDailySurahs] = useState<number[]>([114, 113, 112, 1]);
 
+  // First Word Prompter state
+  const [showFirstWordPrompter, setShowFirstWordPrompter] = useState(false);
+  const [selectedPromptSurah, setSelectedPromptSurah] = useState<number | null>(null);
+  const [revealedAnswer, setRevealedAnswer] = useState(false);
+  const [prompterScore, setPrompterScore] = useState<{ correct: number; total: number }>({ correct: 0, total: 0 });
+  const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -222,10 +277,14 @@ export default function DailyMaintenancePage() {
       if (trackedSurahs && trackedSurahs.length > 0) {
         // Use memorised surahs for daily review
         const surahNumbers = trackedSurahs.map(s => s.surah_number);
+        setMemorizedSurahs(surahNumbers); // Save all memorized surahs for First Word Prompter
         // Shuffle and pick up to 4 surahs for daily review
         const shuffled = [...surahNumbers].sort(() => Math.random() - 0.5);
         const numToReview = Math.min(4, shuffled.length);
         setDailySurahs(shuffled.slice(0, numToReview));
+      } else {
+        // Default to common short surahs if none memorized
+        setMemorizedSurahs([1, 112, 113, 114]);
       }
 
       // Check for today's session
@@ -569,6 +628,163 @@ export default function DailyMaintenancePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* First Word Prompter */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl border border-purple-200 dark:border-purple-700 overflow-hidden mb-6">
+          <button
+            onClick={() => setShowFirstWordPrompter(!showFirstWordPrompter)}
+            className="w-full p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100">First Word Prompter</h3>
+                <p className="text-sm text-purple-700 dark:text-purple-300">Test your ability to start any surah</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-purple-600 transition-transform ${showFirstWordPrompter ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showFirstWordPrompter && (
+            <div className="p-4 pt-0 border-t border-purple-200 dark:border-purple-700">
+              {/* Score display */}
+              {prompterScore.total > 0 && (
+                <div className="mb-4 flex items-center justify-center gap-2 text-sm">
+                  <span className="px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 rounded-full">
+                    Score: {prompterScore.correct}/{prompterScore.total}
+                  </span>
+                </div>
+              )}
+
+              {!selectedPromptSurah ? (
+                /* Surah selector */
+                <div>
+                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-3 text-center">
+                    Select a surah to test your recall:
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
+                    {memorizedSurahs
+                      .filter(num => SURAH_FIRST_WORDS[num])
+                      .sort((a, b) => b - a) // Show from An-Nas to Al-Fatihah
+                      .map(surahNum => (
+                        <button
+                          key={surahNum}
+                          onClick={() => {
+                            setSelectedPromptSurah(surahNum);
+                            setRevealedAnswer(false);
+                          }}
+                          className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-600 hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-md transition-all text-center"
+                        >
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">{surahNum}</span>
+                          <span className="block text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {SURAH_NAMES[surahNum]?.english}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                  {memorizedSurahs.filter(num => SURAH_FIRST_WORDS[num]).length === 0 && (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                      No surahs with first word data available yet.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Prompt display */
+                <div className="text-center">
+                  {/* Surah name - the prompt */}
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">How does this surah begin?</p>
+                    <h4 className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      {SURAH_NAMES[selectedPromptSurah]?.english}
+                    </h4>
+                    <p className="text-xl font-arabic text-purple-700 dark:text-purple-300" dir="rtl">
+                      {SURAH_NAMES[selectedPromptSurah]?.arabic}
+                    </p>
+                  </div>
+
+                  {/* Answer area */}
+                  <div className={`rounded-xl p-6 mb-4 transition-all ${
+                    revealedAnswer
+                      ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-300 dark:border-emerald-600'
+                      : 'bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {revealedAnswer && SURAH_FIRST_WORDS[selectedPromptSurah] ? (
+                      <div>
+                        <p className="text-3xl font-arabic text-gray-900 dark:text-white mb-3" dir="rtl">
+                          {SURAH_FIRST_WORDS[selectedPromptSurah].arabic}
+                        </p>
+                        <p className="text-lg text-purple-700 dark:text-purple-300 italic mb-2">
+                          {SURAH_FIRST_WORDS[selectedPromptSurah].transliteration}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          "{SURAH_FIRST_WORDS[selectedPromptSurah].translation}"
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-4">
+                        <p className="text-gray-500 dark:text-gray-400 mb-2">
+                          Think of the first words, then reveal the answer
+                        </p>
+                        <p className="text-4xl font-arabic text-gray-300 dark:text-gray-600">؟</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-3 justify-center">
+                    {!revealedAnswer ? (
+                      <button
+                        onClick={() => setRevealedAnswer(true)}
+                        className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium"
+                      >
+                        <Eye className="w-5 h-5" />
+                        Reveal Answer
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            setPrompterScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
+                            setSelectedPromptSurah(null);
+                            setRevealedAnswer(false);
+                          }}
+                          className="px-5 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-5 h-5" />
+                          I knew it!
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPrompterScore(prev => ({ ...prev, total: prev.total + 1 }));
+                            setSelectedPromptSurah(null);
+                            setRevealedAnswer(false);
+                          }}
+                          className="px-5 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-5 h-5" />
+                          Need practice
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Back button */}
+                  <button
+                    onClick={() => {
+                      setSelectedPromptSurah(null);
+                      setRevealedAnswer(false);
+                    }}
+                    className="mt-4 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                  >
+                    ← Choose different surah
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Surah Task Checklist */}
