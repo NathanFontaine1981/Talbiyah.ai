@@ -861,45 +861,63 @@ export default function SmartHomeworkPage() {
     // Shuffle and select words from the cumulative vocabulary pool
     const shuffledVocab = [...vocabularyPool].sort(() => Math.random() - 0.5);
 
-    // Select 10 words for matching game (or all if less than 10)
-    const matchingWords = shuffledVocab.slice(0, Math.min(10, shuffledVocab.length));
-
-    // Select 10 words for flashcards
+    // Select words for different games
+    const matchingWords = shuffledVocab.slice(0, Math.min(6, shuffledVocab.length));
     const flashcardWords = shuffledVocab.slice(0, Math.min(10, shuffledVocab.length));
-
-    // Select 5 words for multiple choice
-    const mcqWords = shuffledVocab.slice(0, Math.min(5, shuffledVocab.length));
+    const arabicToEnglishWords = shuffledVocab.slice(0, Math.min(5, shuffledVocab.length));
+    const englishToArabicWords = shuffledVocab.slice(5, Math.min(10, shuffledVocab.length));
+    const transliterationWords = shuffledVocab.slice(0, Math.min(5, shuffledVocab.length));
 
     const games: HomeworkGame[] = [
       {
         type: 'matching',
         title: 'Word Matching',
-        description: `Match Arabic words with English meanings (${memorizedSurahCount} Surah${memorizedSurahCount > 1 ? 's' : ''} vocabulary)`,
-        questions: matchingWords.slice(0, 6), // WordMatchingQuiz uses 6 words
+        description: `Match Arabic words with English meanings`,
+        questions: matchingWords,
         targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
         completed: false,
         score: 0,
-        maxScore: 6
+        maxScore: matchingWords.length
+      },
+      {
+        type: 'multiple_choice',
+        title: 'Arabic → English',
+        description: 'What does this Arabic word mean?',
+        questions: generateMultipleChoice(arabicToEnglishWords, shuffledVocab),
+        targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
+        completed: false,
+        score: 0,
+        maxScore: arabicToEnglishWords.length
+      },
+      {
+        type: 'english_to_arabic',
+        title: 'English → Arabic',
+        description: 'Select the correct Arabic word',
+        questions: generateEnglishToArabicQuiz(englishToArabicWords.length > 0 ? englishToArabicWords : arabicToEnglishWords, shuffledVocab),
+        targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
+        completed: false,
+        score: 0,
+        maxScore: (englishToArabicWords.length > 0 ? englishToArabicWords : arabicToEnglishWords).length
+      },
+      {
+        type: 'transliteration',
+        title: 'Pronunciation Practice',
+        description: 'Match the transliteration to the Arabic',
+        questions: generateTransliterationQuiz(transliterationWords, shuffledVocab),
+        targetGaps: gaps.filter(g => g.category === 'pronunciation').map(g => g.id),
+        completed: false,
+        score: 0,
+        maxScore: transliterationWords.length
       },
       {
         type: 'flashcard',
-        title: 'Vocabulary Flashcards',
-        description: 'Review vocabulary from all your memorized Surahs',
+        title: 'Vocabulary Review',
+        description: 'Review all vocabulary with flashcards',
         questions: flashcardWords,
         targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
         completed: false,
         score: 0,
         maxScore: flashcardWords.length
-      },
-      {
-        type: 'multiple_choice',
-        title: 'Comprehension Quiz',
-        description: 'Test your understanding of meanings',
-        questions: generateMultipleChoice(mcqWords, shuffledVocab),
-        targetGaps: gaps.filter(g => g.category === 'comprehension').map(g => g.id),
-        completed: false,
-        score: 0,
-        maxScore: mcqWords.length
       }
     ];
 
@@ -942,7 +960,7 @@ export default function SmartHomeworkPage() {
   }
 
   function generateMultipleChoice(vocabulary: VocabularyWord[], fullPool: VocabularyWord[]) {
-    return vocabulary.map((word, index) => {
+    return vocabulary.map((word) => {
       // Get wrong answers from the full vocabulary pool
       const otherWords = fullPool.filter(w => w.english !== word.english);
       const wrongAnswers = otherWords
@@ -956,6 +974,49 @@ export default function SmartHomeworkPage() {
         question: `What does "${word.arabic}" mean?`,
         arabic: word.arabic,
         correctAnswer: word.english,
+        options,
+        surah: word.surah
+      };
+    });
+  }
+
+  function generateEnglishToArabicQuiz(vocabulary: VocabularyWord[], fullPool: VocabularyWord[]) {
+    return vocabulary.map((word) => {
+      // Get wrong Arabic answers from the full vocabulary pool
+      const otherWords = fullPool.filter(w => w.arabic !== word.arabic);
+      const wrongAnswers = otherWords
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(w => w.arabic);
+
+      const options = [word.arabic, ...wrongAnswers].sort(() => Math.random() - 0.5);
+
+      return {
+        question: `Which Arabic word means "${word.english}"?`,
+        english: word.english,
+        correctAnswer: word.arabic,
+        options,
+        surah: word.surah
+      };
+    });
+  }
+
+  function generateTransliterationQuiz(vocabulary: VocabularyWord[], fullPool: VocabularyWord[]) {
+    return vocabulary.map((word) => {
+      // Get wrong transliterations from the full vocabulary pool
+      const otherWords = fullPool.filter(w => w.transliteration !== word.transliteration);
+      const wrongAnswers = otherWords
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(w => w.transliteration);
+
+      const options = [word.transliteration, ...wrongAnswers].sort(() => Math.random() - 0.5);
+
+      return {
+        question: `How is "${word.arabic}" pronounced?`,
+        arabic: word.arabic,
+        english: word.english,
+        correctAnswer: word.transliteration,
         options,
         surah: word.surah
       };
@@ -1272,6 +1333,23 @@ export default function SmartHomeworkPage() {
                 onMasteredWords={saveMasteredWords}
               />
             )}
+
+            {currentGame.type === 'english_to_arabic' && (
+              <MultipleChoiceGame
+                questions={currentGame.questions}
+                onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
+                onMasteredWords={saveMasteredWords}
+                isArabicOptions={true}
+              />
+            )}
+
+            {currentGame.type === 'transliteration' && (
+              <MultipleChoiceGame
+                questions={currentGame.questions}
+                onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
+                onMasteredWords={saveMasteredWords}
+              />
+            )}
           </div>
         )}
 
@@ -1460,11 +1538,13 @@ function FlashcardGame({
 function MultipleChoiceGame({
   questions,
   onComplete,
-  onMasteredWords
+  onMasteredWords,
+  isArabicOptions = false
 }: {
   questions: any[];
   onComplete: (score: number) => void;
   onMasteredWords?: (words: VocabularyWord[]) => void;
+  isArabicOptions?: boolean;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -1484,8 +1564,8 @@ function MultipleChoiceGame({
       setScore(score + 1);
       // Track mastered word
       const masteredWord: VocabularyWord = {
-        arabic: currentQuestion.arabic,
-        english: currentQuestion.correctAnswer,
+        arabic: currentQuestion.arabic || currentQuestion.correctAnswer,
+        english: currentQuestion.english || currentQuestion.correctAnswer,
         transliteration: '',
         surah: currentQuestion.surah
       };
@@ -1517,15 +1597,18 @@ function MultipleChoiceGame({
       </div>
 
       <div className="bg-purple-50 dark:bg-purple-900/30 rounded-xl p-6">
-        <p className="text-4xl font-arabic text-center mb-4" dir="rtl">
-          {currentQuestion.arabic}
-        </p>
-        <p className="text-center text-gray-700 dark:text-gray-300">{currentQuestion.question}</p>
+        {currentQuestion.arabic && (
+          <p className="text-4xl font-arabic text-center mb-4" dir="rtl">
+            {currentQuestion.arabic}
+          </p>
+        )}
+        <p className="text-center text-gray-700 dark:text-gray-300 text-lg">{currentQuestion.question}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         {currentQuestion.options.map((option: string, index: number) => {
-          let buttonClass = 'p-4 rounded-xl border-2 text-left transition font-medium ';
+          let buttonClass = 'p-4 rounded-xl border-2 transition font-medium ';
+          buttonClass += isArabicOptions ? 'text-center text-2xl font-arabic ' : 'text-left ';
 
           if (showResult) {
             if (option === currentQuestion.correctAnswer) {
@@ -1545,6 +1628,7 @@ function MultipleChoiceGame({
               onClick={() => handleAnswer(option)}
               disabled={showResult}
               className={buttonClass}
+              dir={isArabicOptions ? 'rtl' : 'ltr'}
             >
               {option}
             </button>
