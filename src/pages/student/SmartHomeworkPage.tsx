@@ -80,6 +80,53 @@ const SURAH_THEMES: { [key: number]: SurahInfo } = {
   107: { number: 107, name: 'Al-Maun', arabicName: 'الماعون', theme: 'Small Kindnesses - warning against neglecting worship and charity', keyTopics: ['Denying religion', 'Neglecting orphans', 'Showing off in prayer'], verseCount: 7 },
 };
 
+// Complete surah names for all surahs with vocabulary
+const SURAH_NAMES: { [key: number]: { name: string; arabicName: string } } = {
+  1: { name: 'Al-Fatihah', arabicName: 'الفاتحة' },
+  18: { name: 'Al-Kahf', arabicName: 'الكهف' },
+  36: { name: 'Ya-Sin', arabicName: 'يس' },
+  55: { name: 'Ar-Rahman', arabicName: 'الرحمن' },
+  56: { name: "Al-Waqi'ah", arabicName: 'الواقعة' },
+  67: { name: 'Al-Mulk', arabicName: 'الملك' },
+  78: { name: 'An-Naba', arabicName: 'النبأ' },
+  79: { name: "An-Nazi'at", arabicName: 'النازعات' },
+  80: { name: "'Abasa", arabicName: 'عبس' },
+  81: { name: 'At-Takwir', arabicName: 'التكوير' },
+  82: { name: 'Al-Infitar', arabicName: 'الإنفطار' },
+  83: { name: 'Al-Mutaffifin', arabicName: 'المطففين' },
+  84: { name: 'Al-Inshiqaq', arabicName: 'الإنشقاق' },
+  85: { name: 'Al-Buruj', arabicName: 'البروج' },
+  86: { name: 'At-Tariq', arabicName: 'الطارق' },
+  87: { name: "Al-A'la", arabicName: 'الأعلى' },
+  88: { name: 'Al-Ghashiyah', arabicName: 'الغاشية' },
+  89: { name: 'Al-Fajr', arabicName: 'الفجر' },
+  90: { name: 'Al-Balad', arabicName: 'البلد' },
+  91: { name: 'Ash-Shams', arabicName: 'الشمس' },
+  92: { name: 'Al-Layl', arabicName: 'الليل' },
+  93: { name: 'Ad-Duhaa', arabicName: 'الضحى' },
+  94: { name: 'Ash-Sharh', arabicName: 'الشرح' },
+  95: { name: 'At-Tin', arabicName: 'التين' },
+  96: { name: "Al-'Alaq", arabicName: 'العلق' },
+  97: { name: 'Al-Qadr', arabicName: 'القدر' },
+  98: { name: 'Al-Bayyinah', arabicName: 'البينة' },
+  99: { name: 'Az-Zalzalah', arabicName: 'الزلزلة' },
+  100: { name: "Al-'Adiyat", arabicName: 'العاديات' },
+  101: { name: "Al-Qari'ah", arabicName: 'القارعة' },
+  102: { name: 'At-Takathur', arabicName: 'التكاثر' },
+  103: { name: 'Al-Asr', arabicName: 'العصر' },
+  104: { name: 'Al-Humazah', arabicName: 'الهمزة' },
+  105: { name: 'Al-Fil', arabicName: 'الفيل' },
+  106: { name: 'Quraysh', arabicName: 'قريش' },
+  107: { name: "Al-Ma'un", arabicName: 'الماعون' },
+  108: { name: 'Al-Kawthar', arabicName: 'الكوثر' },
+  109: { name: 'Al-Kafirun', arabicName: 'الكافرون' },
+  110: { name: 'An-Nasr', arabicName: 'النصر' },
+  111: { name: 'Al-Masad', arabicName: 'المسد' },
+  112: { name: 'Al-Ikhlas', arabicName: 'الإخلاص' },
+  113: { name: 'Al-Falaq', arabicName: 'الفلق' },
+  114: { name: 'An-Nas', arabicName: 'الناس' },
+};
+
 interface HomeworkSession {
   id: string;
   sessionType: string;
@@ -878,6 +925,8 @@ export default function SmartHomeworkPage() {
         .maybeSingle();
 
       if (existingSession && existingSession.status !== 'completed') {
+        // Resume existing session - skip surah selector
+        setShowSurahSelector(false);
         setSession({
           id: existingSession.id,
           sessionType: existingSession.session_type,
@@ -895,10 +944,8 @@ export default function SmartHomeworkPage() {
         if (existingSession.games?.length > 0) {
           setCurrentGame(existingSession.games[existingSession.current_game_index]);
         }
-      } else {
-        // Generate new homework session with cumulative vocabulary
-        await generateHomework(targetLearnerId, gaps || [], vocabularyPool);
       }
+      // If no existing session, keep showSurahSelector=true so user can select surahs first
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -1009,24 +1056,34 @@ export default function SmartHomeworkPage() {
       maxScore: flashcardWords.length
     });
 
-    const { data: newSession } = await supabase
+    // Only include lesson_id if it exists
+    const insertData: Record<string, unknown> = {
+      learner_id: learnerId,
+      session_type: 'cumulative',
+      games,
+      current_game_index: 0,
+      total_games: games.length,
+      games_completed: 0,
+      total_score: 0,
+      max_possible_score: games.reduce((sum, g) => sum + g.maxScore, 0),
+      weak_areas_targeted: gaps.map(g => g.id),
+      external_practice_tips: EXTERNAL_APPS,
+      status: 'pending'
+    };
+    if (lessonId) {
+      insertData.lesson_id = lessonId;
+    }
+
+    const { data: newSession, error } = await supabase
       .from('homework_sessions')
-      .insert({
-        learner_id: learnerId,
-        lesson_id: lessonId,
-        session_type: 'cumulative',
-        games,
-        current_game_index: 0,
-        total_games: games.length,
-        games_completed: 0,
-        total_score: 0,
-        max_possible_score: games.reduce((sum, g) => sum + g.maxScore, 0),
-        weak_areas_targeted: gaps.map(g => g.id),
-        external_practice_tips: EXTERNAL_APPS,
-        status: 'pending'
-      })
+      .insert(insertData)
       .select()
       .single();
+
+    if (error) {
+      console.error('Error creating homework session:', error);
+      return;
+    }
 
     if (newSession) {
       setSession({
@@ -1391,7 +1448,7 @@ export default function SmartHomeworkPage() {
               <>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {availableSurahs.map(surahNum => {
-                    const surahInfo = SURAH_THEMES[surahNum];
+                    const surahName = SURAH_NAMES[surahNum];
                     const isSelected = selectedSurahs.includes(surahNum);
                     return (
                       <button
@@ -1403,14 +1460,15 @@ export default function SmartHomeworkPage() {
                             setSelectedSurahs([...selectedSurahs, surahNum]);
                           }
                         }}
-                        className={`px-4 py-2 rounded-xl border-2 transition font-medium ${
+                        className={`px-4 py-3 rounded-xl border-2 transition font-medium flex items-center gap-2 ${
                           isSelected
                             ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300'
                             : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-300'
                         }`}
                       >
-                        <span className="text-lg mr-2" dir="rtl">{surahInfo?.arabicName || surahNum}</span>
-                        <span className="text-sm">{surahInfo?.name || `Surah ${surahNum}`}</span>
+                        <span className="text-xl font-arabic" dir="rtl">{surahName?.arabicName || ''}</span>
+                        <span className="text-sm">{surahNum}. {surahName?.name || `Surah ${surahNum}`}</span>
+                        {isSelected && <CheckCircle className="w-4 h-4 text-purple-500" />}
                       </button>
                     );
                   })}
