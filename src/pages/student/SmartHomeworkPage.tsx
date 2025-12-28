@@ -39,7 +39,7 @@ interface VocabularyWord {
 }
 
 interface HomeworkGame {
-  type: 'flashcard' | 'matching' | 'multiple_choice' | 'fill_blank';
+  type: 'flashcard' | 'matching' | 'multiple_choice' | 'fill_blank' | 'english_to_arabic' | 'transliteration' | 'surah_themes';
   title: string;
   description: string;
   questions: any[];
@@ -48,6 +48,37 @@ interface HomeworkGame {
   score: number;
   maxScore: number;
 }
+
+interface SurahInfo {
+  number: number;
+  name: string;
+  arabicName: string;
+  theme: string;
+  keyTopics: string[];
+  verseCount: number;
+}
+
+// Surah themes and information for exam questions
+const SURAH_THEMES: { [key: number]: SurahInfo } = {
+  1: { number: 1, name: 'Al-Fatihah', arabicName: 'الفاتحة', theme: 'The Opening - essence of the Quran, prayer for guidance', keyTopics: ['Praise of Allah', 'Seeking guidance', 'The straight path'], verseCount: 7 },
+  103: { number: 103, name: 'Al-Asr', arabicName: 'العصر', theme: 'Time - mankind is in loss except believers who do good', keyTopics: ['Value of time', 'Faith and good deeds', 'Mutual advice'], verseCount: 3 },
+  108: { number: 108, name: 'Al-Kawthar', arabicName: 'الكوثر', theme: 'Abundance - Allah\'s gift to the Prophet', keyTopics: ['Divine blessings', 'Prayer and sacrifice', 'Enemies cut off'], verseCount: 3 },
+  109: { number: 109, name: 'Al-Kafirun', arabicName: 'الكافرون', theme: 'The Disbelievers - declaration of religious freedom', keyTopics: ['Separation of faiths', 'No compromise in belief', 'To you your religion'], verseCount: 6 },
+  110: { number: 110, name: 'An-Nasr', arabicName: 'النصر', theme: 'Divine Support - victory and seeking forgiveness', keyTopics: ['Victory from Allah', 'People entering Islam', 'Seeking forgiveness'], verseCount: 3 },
+  111: { number: 111, name: 'Al-Masad', arabicName: 'المسد', theme: 'Palm Fiber - warning against opposing truth', keyTopics: ['Abu Lahab\'s fate', 'Wealth cannot save', 'Punishment for enemies of Islam'], verseCount: 5 },
+  112: { number: 112, name: 'Al-Ikhlas', arabicName: 'الإخلاص', theme: 'Sincerity - pure monotheism, Allah\'s oneness', keyTopics: ['Tawheed', 'Allah is One', 'Allah is Eternal'], verseCount: 4 },
+  113: { number: 113, name: 'Al-Falaq', arabicName: 'الفلق', theme: 'The Daybreak - seeking refuge from evil', keyTopics: ['Protection from darkness', 'Protection from envy', 'Protection from magic'], verseCount: 5 },
+  114: { number: 114, name: 'An-Nas', arabicName: 'الناس', theme: 'Mankind - seeking refuge from whispering evil', keyTopics: ['Allah as Lord, King, God', 'Evil whispers', 'Protection from Shaytan'], verseCount: 6 },
+  78: { number: 78, name: 'An-Naba', arabicName: 'النبأ', theme: 'The Great News - Day of Judgment', keyTopics: ['Resurrection', 'Signs in creation', 'Paradise and Hell'], verseCount: 40 },
+  87: { number: 87, name: 'Al-Ala', arabicName: 'الأعلى', theme: 'The Most High - glorifying Allah', keyTopics: ['Allah\'s creation', 'Quran preservation', 'Success through purification'], verseCount: 19 },
+  97: { number: 97, name: 'Al-Qadr', arabicName: 'القدر', theme: 'The Night of Decree - Laylatul Qadr', keyTopics: ['Quran revelation', 'Better than 1000 months', 'Angels descend'], verseCount: 5 },
+  99: { number: 99, name: 'Az-Zalzalah', arabicName: 'الزلزلة', theme: 'The Earthquake - Day of Judgment signs', keyTopics: ['Earth\'s shaking', 'Deeds revealed', 'Atom\'s weight of good/evil'], verseCount: 8 },
+  102: { number: 102, name: 'At-Takathur', arabicName: 'التكاثر', theme: 'Competition for More - warning against materialism', keyTopics: ['Worldly competition', 'Visiting graves', 'Accountability for blessings'], verseCount: 8 },
+  104: { number: 104, name: 'Al-Humazah', arabicName: 'الهمزة', theme: 'The Slanderer - warning against backbiting', keyTopics: ['Backbiting and mockery', 'Hoarding wealth', 'Crushing Fire'], verseCount: 9 },
+  105: { number: 105, name: 'Al-Fil', arabicName: 'الفيل', theme: 'The Elephant - Allah\'s protection of Kaaba', keyTopics: ['Abraha\'s army', 'Birds with stones', 'Divine protection'], verseCount: 5 },
+  106: { number: 106, name: 'Quraysh', arabicName: 'قريش', theme: 'Quraysh - blessings upon the tribe', keyTopics: ['Trade journeys', 'Gratitude to Allah', 'Worship the Lord of Kaaba'], verseCount: 4 },
+  107: { number: 107, name: 'Al-Maun', arabicName: 'الماعون', theme: 'Small Kindnesses - warning against neglecting worship and charity', keyTopics: ['Denying religion', 'Neglecting orphans', 'Showing off in prayer'], verseCount: 7 },
+};
 
 interface HomeworkSession {
   id: string;
@@ -723,6 +754,11 @@ export default function SmartHomeworkPage() {
   const [masteredWordsCount, setMasteredWordsCount] = useState(0);
   const [vocabularyMasteryPercent, setVocabularyMasteryPercent] = useState(0);
 
+  // Surah selection state
+  const [showSurahSelector, setShowSurahSelector] = useState(true);
+  const [availableSurahs, setAvailableSurahs] = useState<number[]>([]);
+  const [selectedSurahs, setSelectedSurahs] = useState<number[]>([]);
+
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -782,6 +818,19 @@ export default function SmartHomeworkPage() {
         .select('surah_number')
         .eq('learner_id', targetLearnerId)
         .eq('memorization_status', 'memorized');
+
+      // Build list of available surahs (that have vocabulary)
+      const surahsWithVocab = memorizedSurahs
+        ?.filter(s => SURAH_VOCABULARY[s.surah_number])
+        .map(s => s.surah_number) || [];
+
+      // Add default surahs if none memorized
+      if (surahsWithVocab.length === 0) {
+        surahsWithVocab.push(1, 112, 113, 114); // Fatihah and last 3 surahs
+      }
+
+      setAvailableSurahs(surahsWithVocab);
+      setSelectedSurahs(surahsWithVocab); // Select all by default
 
       // Build cumulative vocabulary pool from all memorized surahs
       let vocabularyPool: VocabularyWord[] = [];
@@ -857,7 +906,27 @@ export default function SmartHomeworkPage() {
     }
   }
 
-  async function generateHomework(learnerId: string, gaps: any[], vocabularyPool: VocabularyWord[]) {
+  // Start homework with selected surahs
+  async function startWithSelectedSurahs() {
+    if (!learnerId || selectedSurahs.length === 0) return;
+
+    // Build vocabulary pool from selected surahs only
+    let vocabularyPool: VocabularyWord[] = [];
+    selectedSurahs.forEach(surahNum => {
+      const surahVocab = SURAH_VOCABULARY[surahNum];
+      if (surahVocab) {
+        vocabularyPool = vocabularyPool.concat(
+          surahVocab.map(word => ({ ...word, surah: surahNum }))
+        );
+      }
+    });
+
+    setVocabularyPoolSize(vocabularyPool.length);
+    setShowSurahSelector(false);
+    await generateHomework(learnerId, knowledgeGaps, vocabularyPool, selectedSurahs);
+  }
+
+  async function generateHomework(learnerId: string, gaps: any[], vocabularyPool: VocabularyWord[], surahNumbers: number[] = []) {
     // Shuffle and select words from the cumulative vocabulary pool
     const shuffledVocab = [...vocabularyPool].sort(() => Math.random() - 0.5);
 
@@ -867,6 +936,9 @@ export default function SmartHomeworkPage() {
     const arabicToEnglishWords = shuffledVocab.slice(0, Math.min(5, shuffledVocab.length));
     const englishToArabicWords = shuffledVocab.slice(5, Math.min(10, shuffledVocab.length));
     const transliterationWords = shuffledVocab.slice(0, Math.min(5, shuffledVocab.length));
+
+    // Generate surah theme questions from selected surahs
+    const surahThemeQuestions = generateSurahThemeQuiz(surahNumbers);
 
     const games: HomeworkGame[] = [
       {
@@ -909,17 +981,33 @@ export default function SmartHomeworkPage() {
         score: 0,
         maxScore: transliterationWords.length
       },
-      {
-        type: 'flashcard',
-        title: 'Vocabulary Review',
-        description: 'Review all vocabulary with flashcards',
-        questions: flashcardWords,
-        targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
+    ];
+
+    // Add surah themes exam if we have questions
+    if (surahThemeQuestions.length > 0) {
+      games.push({
+        type: 'surah_themes',
+        title: 'Surah Themes Exam',
+        description: 'Test your understanding of what each Surah is about',
+        questions: surahThemeQuestions,
+        targetGaps: [],
         completed: false,
         score: 0,
-        maxScore: flashcardWords.length
-      }
-    ];
+        maxScore: surahThemeQuestions.length
+      });
+    }
+
+    // Add flashcard review at the end
+    games.push({
+      type: 'flashcard',
+      title: 'Vocabulary Review',
+      description: 'Review all vocabulary with flashcards',
+      questions: flashcardWords,
+      targetGaps: gaps.filter(g => g.category === 'vocabulary').map(g => g.id),
+      completed: false,
+      score: 0,
+      maxScore: flashcardWords.length
+    });
 
     const { data: newSession } = await supabase
       .from('homework_sessions')
@@ -1021,6 +1109,81 @@ export default function SmartHomeworkPage() {
         surah: word.surah
       };
     });
+  }
+
+  function generateSurahThemeQuiz(surahNumbers: number[]) {
+    const questions: any[] = [];
+    const allSurahInfos = Object.values(SURAH_THEMES);
+
+    surahNumbers.forEach(surahNum => {
+      const surahInfo = SURAH_THEMES[surahNum];
+      if (!surahInfo) return;
+
+      // Question 1: What is this Surah about?
+      const otherThemes = allSurahInfos
+        .filter(s => s.number !== surahNum)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(s => s.theme.split(' - ')[1] || s.theme);
+
+      const correctTheme = surahInfo.theme.split(' - ')[1] || surahInfo.theme;
+      const themeOptions = [correctTheme, ...otherThemes].sort(() => Math.random() - 0.5);
+
+      questions.push({
+        question: `What is Surah ${surahInfo.name} (${surahInfo.arabicName}) about?`,
+        surahName: surahInfo.name,
+        arabicName: surahInfo.arabicName,
+        correctAnswer: correctTheme,
+        options: themeOptions,
+        surah: surahNum
+      });
+
+      // Question 2: Key topic identification (if surah has key topics)
+      if (surahInfo.keyTopics.length > 0) {
+        const correctTopic = surahInfo.keyTopics[Math.floor(Math.random() * surahInfo.keyTopics.length)];
+        const otherTopics = allSurahInfos
+          .filter(s => s.number !== surahNum)
+          .flatMap(s => s.keyTopics)
+          .filter(t => !surahInfo.keyTopics.includes(t))
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
+
+        if (otherTopics.length >= 3) {
+          const topicOptions = [correctTopic, ...otherTopics].sort(() => Math.random() - 0.5);
+
+          questions.push({
+            question: `Which topic is discussed in Surah ${surahInfo.name}?`,
+            surahName: surahInfo.name,
+            arabicName: surahInfo.arabicName,
+            correctAnswer: correctTopic,
+            options: topicOptions,
+            surah: surahNum
+          });
+        }
+      }
+
+      // Question 3: Verse count (occasionally)
+      if (Math.random() > 0.5) {
+        const otherCounts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 19, 40]
+          .filter(c => c !== surahInfo.verseCount)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
+
+        const countOptions = [surahInfo.verseCount.toString(), ...otherCounts.map(c => c.toString())].sort(() => Math.random() - 0.5);
+
+        questions.push({
+          question: `How many verses are in Surah ${surahInfo.name}?`,
+          surahName: surahInfo.name,
+          arabicName: surahInfo.arabicName,
+          correctAnswer: surahInfo.verseCount.toString(),
+          options: countOptions,
+          surah: surahNum
+        });
+      }
+    });
+
+    // Shuffle and limit questions
+    return questions.sort(() => Math.random() - 0.5).slice(0, 10);
   }
 
   async function startSession() {
@@ -1213,7 +1376,92 @@ export default function SmartHomeworkPage() {
           )}
         </div>
 
+        {/* Surah Selection */}
+        {showSurahSelector && !session && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-purple-500" />
+              Choose Surahs to Practice
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Select which Surahs you want to practice vocabulary from. You can also test your understanding of Surah themes.
+            </p>
+
+            {availableSurahs.length > 0 ? (
+              <>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {availableSurahs.map(surahNum => {
+                    const surahInfo = SURAH_THEMES[surahNum];
+                    const isSelected = selectedSurahs.includes(surahNum);
+                    return (
+                      <button
+                        key={surahNum}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedSurahs(selectedSurahs.filter(s => s !== surahNum));
+                          } else {
+                            setSelectedSurahs([...selectedSurahs, surahNum]);
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-xl border-2 transition font-medium ${
+                          isSelected
+                            ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300'
+                            : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-300'
+                        }`}
+                      >
+                        <span className="text-lg mr-2" dir="rtl">{surahInfo?.arabicName || surahNum}</span>
+                        <span className="text-sm">{surahInfo?.name || `Surah ${surahNum}`}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSelectedSurahs(availableSurahs)}
+                    className="px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={() => setSelectedSurahs([])}
+                    className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <button
+                  onClick={startWithSelectedSurahs}
+                  disabled={selectedSurahs.length === 0}
+                  className={`w-full mt-4 py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 ${
+                    selectedSurahs.length > 0
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Zap className="w-5 h-5" />
+                  Start Vocabulary Exam ({selectedSurahs.length} Surah{selectedSurahs.length !== 1 ? 's' : ''})
+                </button>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  No Surahs available. Mark some Surahs as memorized to practice their vocabulary.
+                </p>
+                <button
+                  onClick={() => navigate('/my-memorization')}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition"
+                >
+                  Go to My Memorisation
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Vocabulary Mastery Progress Card */}
+        {!showSurahSelector && (
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -1239,12 +1487,13 @@ export default function SmartHomeworkPage() {
             />
           </div>
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
-            Goal: Learn 100% of vocabulary from your {memorizedSurahCount} memorised Surah{memorizedSurahCount > 1 ? 's' : ''}
+            Goal: Learn 100% of vocabulary from your {selectedSurahs.length} selected Surah{selectedSurahs.length !== 1 ? 's' : ''}
           </p>
         </div>
+        )}
 
         {/* Cumulative info banner */}
-        {session?.status === 'pending' && (
+        {!showSurahSelector && session?.status === 'pending' && (
           <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-800 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1348,6 +1597,13 @@ export default function SmartHomeworkPage() {
                 questions={currentGame.questions}
                 onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
                 onMasteredWords={saveMasteredWords}
+              />
+            )}
+
+            {currentGame.type === 'surah_themes' && (
+              <MultipleChoiceGame
+                questions={currentGame.questions}
+                onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
               />
             )}
           </div>
