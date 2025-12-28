@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
-import { getFirstWordsForAyahs, FirstWordData } from '../../utils/quranApi';
+import { getFirstWordsForAyahs, getChapterInfo, FirstWordData } from '../../utils/quranApi';
 
 interface SurahReview {
   surah: number;
@@ -455,58 +455,72 @@ export default function DailyMaintenancePage() {
     }
   }
 
-  // Load fluent ayahs for a surah and fetch their first word data from API
+  // Load ayahs for a surah and fetch their first word data from API
+  // First tries fluency-tracked ayahs, then falls back to ALL ayahs in the surah
   async function loadFluencyAyahsForSurah(surahNumber: number) {
-    if (!learnerId) return;
-
     setLoadingAyahs(true);
     setAyahFirstWords([]);
     setCurrentAyahIndex(0);
 
     try {
-      // Query quran_progress table for fluent ayahs in this surah
-      const { data: progressData, error } = await supabase
-        .from('quran_progress')
-        .select('ayah_number')
-        .eq('student_id', learnerId)
-        .eq('surah_number', surahNumber)
-        .eq('fluency_completed', true)
-        .order('ayah_number', { ascending: true });
+      let ayahNumbers: number[] = [];
 
-      if (error) {
-        console.error('Error fetching fluency progress:', error);
-        // Fall back to testing just the first ayah
-        setFluencyAyahs([1]);
-        setTestingMode('surah');
-        setLoadingAyahs(false);
-        return;
+      // Try to get fluency-tracked ayahs from database first (if user is logged in)
+      if (learnerId) {
+        const { data: progressData } = await supabase
+          .from('quran_progress')
+          .select('ayah_number')
+          .eq('student_id', learnerId)
+          .eq('surah_number', surahNumber)
+          .eq('fluency_completed', true)
+          .order('ayah_number', { ascending: true });
+
+        if (progressData && progressData.length > 0) {
+          ayahNumbers = progressData.map(p => p.ayah_number);
+        }
       }
 
-      if (progressData && progressData.length > 0) {
-        const ayahNumbers = progressData.map(p => p.ayah_number);
-        setFluencyAyahs(ayahNumbers);
+      // If no fluency data, get ALL ayahs in the surah
+      if (ayahNumbers.length === 0) {
+        // Get surah info to know how many ayahs it has
+        const chapterInfo = await getChapterInfo(surahNumber);
+        const totalAyahs = chapterInfo?.verses_count || SURAH_AYAH_COUNTS[surahNumber] || 7;
 
-        // Fetch first word data from Quran.com API
-        const minAyah = Math.min(...ayahNumbers);
-        const maxAyah = Math.max(...ayahNumbers);
-        const firstWordsData = await getFirstWordsForAyahs(surahNumber, minAyah, maxAyah);
+        // Create array of all ayah numbers [1, 2, 3, ..., totalAyahs]
+        ayahNumbers = Array.from({ length: totalAyahs }, (_, i) => i + 1);
+      }
 
-        // Filter to only include ayahs that are marked fluent
-        const filteredFirstWords = firstWordsData.filter(fw => ayahNumbers.includes(fw.ayahNumber));
+      setFluencyAyahs(ayahNumbers);
+
+      // Fetch first word data from Quran.com API for all ayahs
+      const firstWordsData = await getFirstWordsForAyahs(surahNumber, 1, Math.max(...ayahNumbers));
+
+      // Filter to only include ayahs we want to test
+      const filteredFirstWords = firstWordsData.filter(fw => ayahNumbers.includes(fw.ayahNumber));
+
+      if (filteredFirstWords.length > 0) {
         setAyahFirstWords(filteredFirstWords);
         setTestingMode('ayah');
       } else {
-        // No fluent ayahs found - use static first ayah data
-        setFluencyAyahs([]);
+        // API failed - fall back to static data
         setTestingMode('surah');
       }
     } catch (error) {
-      console.error('Error loading fluency ayahs:', error);
+      console.error('Error loading ayahs:', error);
       setTestingMode('surah');
     } finally {
       setLoadingAyahs(false);
     }
   }
+
+  // Fallback ayah counts for common surahs (used if API fails)
+  const SURAH_AYAH_COUNTS: { [key: number]: number } = {
+    1: 7, 2: 286, 3: 200, 36: 83, 55: 78, 56: 96, 67: 30, 78: 40, 79: 46, 80: 42,
+    81: 29, 82: 19, 83: 36, 84: 25, 85: 22, 86: 17, 87: 19, 88: 26, 89: 30, 90: 20,
+    91: 15, 92: 21, 93: 11, 94: 8, 95: 8, 96: 19, 97: 5, 98: 8, 99: 8, 100: 11,
+    101: 11, 102: 8, 103: 3, 104: 9, 105: 5, 106: 4, 107: 7, 108: 3, 109: 6, 110: 3,
+    111: 5, 112: 4, 113: 5, 114: 6
+  };
 
   async function toggleTask(surahNumber: number, taskType: 'listening' | 'reciting') {
     if (!todaySession || !learnerId) return;
