@@ -963,10 +963,16 @@ export default function SmartHomeworkPage() {
       const masteredCount = Object.keys(masteredWords).filter(key => masteredWords[key] === true).length;
       setMasteredWordsCount(masteredCount);
 
-      // Calculate mastery percentage
+      // Calculate mastery percentage (only count words that are in current vocabulary pool)
       if (vocabularyPool.length > 0) {
-        const masteryPercent = Math.round((masteredCount / vocabularyPool.length) * 100);
+        // Only count mastered words that exist in current vocabulary pool
+        const poolWords = new Set(vocabularyPool.map(w => w.arabic));
+        const relevantMasteredCount = Object.keys(masteredWords)
+          .filter(key => masteredWords[key] === true && poolWords.has(key))
+          .length;
+        const masteryPercent = Math.min(100, Math.round((relevantMasteredCount / vocabularyPool.length) * 100));
         setVocabularyMasteryPercent(masteryPercent);
+        setMasteredWordsCount(relevantMasteredCount);
       }
 
       // Check for existing session or create new one
