@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Brain,
@@ -16,11 +16,42 @@ import {
   Zap,
   Play,
   Pause,
-  RefreshCw
+  RefreshCw,
+  Flame,
+  Star
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import WordMatchingQuiz from '../../components/WordMatchingQuiz';
+
+// Celebration effects
+function triggerConfetti(intensity: 'small' | 'medium' | 'large' = 'small') {
+  const config = {
+    small: { particleCount: 30, spread: 50, origin: { y: 0.7 } },
+    medium: { particleCount: 80, spread: 70, origin: { y: 0.6 } },
+    large: { particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: ['#8B5CF6', '#6366F1', '#10B981', '#F59E0B'] }
+  };
+  confetti(config[intensity]);
+}
+
+function triggerStreakConfetti() {
+  // Fire confetti from both sides
+  confetti({
+    particleCount: 50,
+    angle: 60,
+    spread: 55,
+    origin: { x: 0 },
+    colors: ['#8B5CF6', '#6366F1', '#F59E0B']
+  });
+  confetti({
+    particleCount: 50,
+    angle: 120,
+    spread: 55,
+    origin: { x: 1 },
+    colors: ['#8B5CF6', '#6366F1', '#F59E0B']
+  });
+}
 
 interface KnowledgeGap {
   id: string;
@@ -58,10 +89,44 @@ interface SurahInfo {
   verseCount: number;
 }
 
-// Surah themes and information for exam questions
+// Surah themes and information for exam questions - covers all 43 vocabulary surahs
 const SURAH_THEMES: { [key: number]: SurahInfo } = {
   1: { number: 1, name: 'Al-Fatihah', arabicName: 'الفاتحة', theme: 'The Opening - essence of the Quran, prayer for guidance', keyTopics: ['Praise of Allah', 'Seeking guidance', 'The straight path'], verseCount: 7 },
+  18: { number: 18, name: 'Al-Kahf', arabicName: 'الكهف', theme: 'The Cave - protection from trials and tests of faith', keyTopics: ['People of the Cave', 'Wealth and knowledge tests', 'Dhul-Qarnayn'], verseCount: 110 },
+  36: { number: 36, name: 'Ya-Sin', arabicName: 'يس', theme: 'Ya-Sin - the heart of the Quran, resurrection proof', keyTopics: ['Messengers rejected', 'Signs in creation', 'Day of Judgment'], verseCount: 83 },
+  55: { number: 55, name: 'Ar-Rahman', arabicName: 'الرحمن', theme: 'The Most Merciful - counting Allah\'s blessings', keyTopics: ['Which favor will you deny?', 'Creation of man and jinn', 'Gardens of Paradise'], verseCount: 78 },
+  56: { number: 56, name: "Al-Waqi'ah", arabicName: 'الواقعة', theme: 'The Event - three groups on Day of Judgment', keyTopics: ['Forerunners to Paradise', 'People of the Right', 'People of the Left'], verseCount: 96 },
+  67: { number: 67, name: 'Al-Mulk', arabicName: 'الملك', theme: 'The Dominion - Allah\'s sovereignty, protection from grave', keyTopics: ['Allah\'s perfect creation', 'Hellfire warnings', 'Trust in Allah alone'], verseCount: 30 },
+  78: { number: 78, name: 'An-Naba', arabicName: 'النبأ', theme: 'The Great News - Day of Judgment certainty', keyTopics: ['Resurrection', 'Signs in creation', 'Paradise and Hell'], verseCount: 40 },
+  79: { number: 79, name: "An-Nazi'at", arabicName: 'النازعات', theme: 'Those Who Pull Out - angels and resurrection', keyTopics: ['Angels taking souls', 'Story of Musa and Firawn', 'The Great Catastrophe'], verseCount: 46 },
+  80: { number: 80, name: "'Abasa", arabicName: 'عبس', theme: 'He Frowned - treating all equally in dawah', keyTopics: ['The blind man incident', 'Quran is a reminder', 'Day of Judgment scenes'], verseCount: 42 },
+  81: { number: 81, name: 'At-Takwir', arabicName: 'التكوير', theme: 'The Folding Up - cosmic events of Qiyamah', keyTopics: ['Sun folded up', 'Stars scattered', 'Quran from noble messenger'], verseCount: 29 },
+  82: { number: 82, name: 'Al-Infitar', arabicName: 'الإنفطار', theme: 'The Cleaving - sky split apart on Judgment Day', keyTopics: ['Sky breaks apart', 'Recording angels', 'Reward and punishment'], verseCount: 19 },
+  83: { number: 83, name: 'Al-Mutaffifin', arabicName: 'المطففين', theme: 'The Defrauders - warning against cheating in trade', keyTopics: ['Cheating in measures', 'Record of the wicked', 'Record of the righteous'], verseCount: 36 },
+  84: { number: 84, name: 'Al-Inshiqaq', arabicName: 'الإنشقاق', theme: 'The Splitting - sky splits and obeys its Lord', keyTopics: ['Earth flattened', 'Books given right or behind', 'Gradual journey to Allah'], verseCount: 25 },
+  85: { number: 85, name: 'Al-Buruj', arabicName: 'البروج', theme: 'The Great Stars - story of the people of the trench', keyTopics: ['Believers burned for faith', 'Allah witnesses all', 'Preserved Tablet'], verseCount: 22 },
+  86: { number: 86, name: 'At-Tariq', arabicName: 'الطارق', theme: 'The Night Star - every soul has a protector', keyTopics: ['The piercing star', 'Creation from water', 'Quran is decisive'], verseCount: 17 },
+  87: { number: 87, name: "Al-A'la", arabicName: 'الأعلى', theme: 'The Most High - glorifying Allah', keyTopics: ['Allah\'s creation', 'Quran preservation', 'Success through purification'], verseCount: 19 },
+  88: { number: 88, name: 'Al-Ghashiyah', arabicName: 'الغاشية', theme: 'The Overwhelming - faces humbled and faces joyful', keyTopics: ['Descriptions of Hell', 'Descriptions of Paradise', 'Allah will judge'], verseCount: 26 },
+  89: { number: 89, name: 'Al-Fajr', arabicName: 'الفجر', theme: 'The Dawn - destroyed nations and love of wealth', keyTopics: ['Ad, Thamud, Firawn', 'Test of wealth', 'Soul at peace'], verseCount: 30 },
+  90: { number: 90, name: 'Al-Balad', arabicName: 'البلد', theme: 'The City - man created in hardship', keyTopics: ['Freeing slaves', 'Feeding the poor', 'Companions of right and left'], verseCount: 20 },
+  91: { number: 91, name: 'Ash-Shams', arabicName: 'الشمس', theme: 'The Sun - success through purifying the soul', keyTopics: ['Oaths by creation', 'Soul purification', 'Thamud destroyed'], verseCount: 15 },
+  92: { number: 92, name: 'Al-Layl', arabicName: 'الليل', theme: 'The Night - paths of ease and difficulty', keyTopics: ['Giving and fearing Allah', 'Withholding and denying', 'Guidance belongs to Allah'], verseCount: 21 },
+  93: { number: 93, name: 'Ad-Duhaa', arabicName: 'الضحى', theme: 'The Morning Hours - Allah has not abandoned you', keyTopics: ['Comfort to Prophet', 'Orphan care', 'Proclaim blessings'], verseCount: 11 },
+  94: { number: 94, name: 'Ash-Sharh', arabicName: 'الشرح', theme: 'The Relief - with hardship comes ease', keyTopics: ['Expanded chest', 'Burden removed', 'Ease after difficulty'], verseCount: 8 },
+  95: { number: 95, name: 'At-Tin', arabicName: 'التين', theme: 'The Fig - man created in best form', keyTopics: ['Sacred places', 'Best of creation', 'Returned to lowest'], verseCount: 8 },
+  96: { number: 96, name: "Al-'Alaq", arabicName: 'العلق', theme: 'The Clot - first revelation, command to read', keyTopics: ['Read in Allah\'s name', 'Man from a clot', 'Taught by the pen'], verseCount: 19 },
+  97: { number: 97, name: 'Al-Qadr', arabicName: 'القدر', theme: 'The Night of Decree - Laylatul Qadr', keyTopics: ['Quran revelation', 'Better than 1000 months', 'Angels descend'], verseCount: 5 },
+  98: { number: 98, name: 'Al-Bayyinah', arabicName: 'البينة', theme: 'The Clear Evidence - truth has come', keyTopics: ['Clear proof sent', 'Best of creation', 'Worst of creation'], verseCount: 8 },
+  99: { number: 99, name: 'Az-Zalzalah', arabicName: 'الزلزلة', theme: 'The Earthquake - Day of Judgment signs', keyTopics: ['Earth\'s shaking', 'Deeds revealed', 'Atom\'s weight of good/evil'], verseCount: 8 },
+  100: { number: 100, name: "Al-'Adiyat", arabicName: 'العاديات', theme: 'The War Horses - man\'s ingratitude to Allah', keyTopics: ['Charging horses', 'Man ungrateful', 'Hearts\' contents exposed'], verseCount: 11 },
+  101: { number: 101, name: "Al-Qari'ah", arabicName: 'القارعة', theme: 'The Striking Hour - Day of Judgment terror', keyTopics: ['The calamity', 'Scales of deeds', 'Bottomless pit'], verseCount: 11 },
+  102: { number: 102, name: 'At-Takathur', arabicName: 'التكاثر', theme: 'Competition for More - warning against materialism', keyTopics: ['Worldly competition', 'Visiting graves', 'Accountability for blessings'], verseCount: 8 },
   103: { number: 103, name: 'Al-Asr', arabicName: 'العصر', theme: 'Time - mankind is in loss except believers who do good', keyTopics: ['Value of time', 'Faith and good deeds', 'Mutual advice'], verseCount: 3 },
+  104: { number: 104, name: 'Al-Humazah', arabicName: 'الهمزة', theme: 'The Slanderer - warning against backbiting', keyTopics: ['Backbiting and mockery', 'Hoarding wealth', 'Crushing Fire'], verseCount: 9 },
+  105: { number: 105, name: 'Al-Fil', arabicName: 'الفيل', theme: 'The Elephant - Allah\'s protection of Kaaba', keyTopics: ['Abraha\'s army', 'Birds with stones', 'Divine protection'], verseCount: 5 },
+  106: { number: 106, name: 'Quraysh', arabicName: 'قريش', theme: 'Quraysh - blessings upon the tribe', keyTopics: ['Trade journeys', 'Gratitude to Allah', 'Worship the Lord of Kaaba'], verseCount: 4 },
+  107: { number: 107, name: "Al-Ma'un", arabicName: 'الماعون', theme: 'Small Kindnesses - warning against neglecting worship and charity', keyTopics: ['Denying religion', 'Neglecting orphans', 'Showing off in prayer'], verseCount: 7 },
   108: { number: 108, name: 'Al-Kawthar', arabicName: 'الكوثر', theme: 'Abundance - Allah\'s gift to the Prophet', keyTopics: ['Divine blessings', 'Prayer and sacrifice', 'Enemies cut off'], verseCount: 3 },
   109: { number: 109, name: 'Al-Kafirun', arabicName: 'الكافرون', theme: 'The Disbelievers - declaration of religious freedom', keyTopics: ['Separation of faiths', 'No compromise in belief', 'To you your religion'], verseCount: 6 },
   110: { number: 110, name: 'An-Nasr', arabicName: 'النصر', theme: 'Divine Support - victory and seeking forgiveness', keyTopics: ['Victory from Allah', 'People entering Islam', 'Seeking forgiveness'], verseCount: 3 },
@@ -69,15 +134,6 @@ const SURAH_THEMES: { [key: number]: SurahInfo } = {
   112: { number: 112, name: 'Al-Ikhlas', arabicName: 'الإخلاص', theme: 'Sincerity - pure monotheism, Allah\'s oneness', keyTopics: ['Tawheed', 'Allah is One', 'Allah is Eternal'], verseCount: 4 },
   113: { number: 113, name: 'Al-Falaq', arabicName: 'الفلق', theme: 'The Daybreak - seeking refuge from evil', keyTopics: ['Protection from darkness', 'Protection from envy', 'Protection from magic'], verseCount: 5 },
   114: { number: 114, name: 'An-Nas', arabicName: 'الناس', theme: 'Mankind - seeking refuge from whispering evil', keyTopics: ['Allah as Lord, King, God', 'Evil whispers', 'Protection from Shaytan'], verseCount: 6 },
-  78: { number: 78, name: 'An-Naba', arabicName: 'النبأ', theme: 'The Great News - Day of Judgment', keyTopics: ['Resurrection', 'Signs in creation', 'Paradise and Hell'], verseCount: 40 },
-  87: { number: 87, name: 'Al-Ala', arabicName: 'الأعلى', theme: 'The Most High - glorifying Allah', keyTopics: ['Allah\'s creation', 'Quran preservation', 'Success through purification'], verseCount: 19 },
-  97: { number: 97, name: 'Al-Qadr', arabicName: 'القدر', theme: 'The Night of Decree - Laylatul Qadr', keyTopics: ['Quran revelation', 'Better than 1000 months', 'Angels descend'], verseCount: 5 },
-  99: { number: 99, name: 'Az-Zalzalah', arabicName: 'الزلزلة', theme: 'The Earthquake - Day of Judgment signs', keyTopics: ['Earth\'s shaking', 'Deeds revealed', 'Atom\'s weight of good/evil'], verseCount: 8 },
-  102: { number: 102, name: 'At-Takathur', arabicName: 'التكاثر', theme: 'Competition for More - warning against materialism', keyTopics: ['Worldly competition', 'Visiting graves', 'Accountability for blessings'], verseCount: 8 },
-  104: { number: 104, name: 'Al-Humazah', arabicName: 'الهمزة', theme: 'The Slanderer - warning against backbiting', keyTopics: ['Backbiting and mockery', 'Hoarding wealth', 'Crushing Fire'], verseCount: 9 },
-  105: { number: 105, name: 'Al-Fil', arabicName: 'الفيل', theme: 'The Elephant - Allah\'s protection of Kaaba', keyTopics: ['Abraha\'s army', 'Birds with stones', 'Divine protection'], verseCount: 5 },
-  106: { number: 106, name: 'Quraysh', arabicName: 'قريش', theme: 'Quraysh - blessings upon the tribe', keyTopics: ['Trade journeys', 'Gratitude to Allah', 'Worship the Lord of Kaaba'], verseCount: 4 },
-  107: { number: 107, name: 'Al-Maun', arabicName: 'الماعون', theme: 'Small Kindnesses - warning against neglecting worship and charity', keyTopics: ['Denying religion', 'Neglecting orphans', 'Showing off in prayer'], verseCount: 7 },
 };
 
 // Complete surah names for all surahs with vocabulary
@@ -1435,18 +1491,46 @@ export default function SmartHomeworkPage() {
 
         {/* Surah Selection */}
         {showSurahSelector && !session && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-purple-500" />
-              Choose Surahs to Practice
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Select which Surahs you want to practice vocabulary from. You can also test your understanding of Surah themes.
-            </p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Choose Surahs to Practice
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Select Surahs to build vocabulary and test comprehension
+                </p>
+              </div>
+            </div>
 
             {availableSurahs.length > 0 ? (
               <>
-                <div className="flex flex-wrap gap-2 mb-6">
+                {/* Selection count badge */}
+                <div className="flex items-center justify-between mb-4 mt-4">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedSurahs.length} of {availableSurahs.length} selected
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedSurahs(availableSurahs)}
+                      className="px-3 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => setSelectedSurahs([])}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                {/* Surah Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
                   {availableSurahs.map(surahNum => {
                     const surahName = SURAH_NAMES[surahNum];
                     const isSelected = selectedSurahs.includes(surahNum);
@@ -1460,56 +1544,60 @@ export default function SmartHomeworkPage() {
                             setSelectedSurahs([...selectedSurahs, surahNum]);
                           }
                         }}
-                        className={`px-4 py-3 rounded-xl border-2 transition font-medium flex items-center gap-2 ${
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
                           isSelected
-                            ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300'
-                            : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-300'
+                            ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-500 shadow-md transform scale-[1.02]'
+                            : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-300 hover:shadow-md hover:scale-[1.02]'
                         }`}
                       >
-                        <span className="text-xl font-arabic" dir="rtl">{surahName?.arabicName || ''}</span>
-                        <span className="text-sm">{surahNum}. {surahName?.name || `Surah ${surahNum}`}</span>
-                        {isSelected && <CheckCircle className="w-4 h-4 text-purple-500" />}
+                        {isSelected && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-md">
+                            <CheckCircle className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                        <span className="text-3xl font-arabic leading-none" dir="rtl">{surahName?.arabicName || ''}</span>
+                        <div className="text-center">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{surahNum}.</span>
+                          <span className={`text-sm font-medium ml-1 ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {surahName?.name || `Surah ${surahNum}`}
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setSelectedSurahs(availableSurahs)}
-                    className="px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    onClick={() => setSelectedSurahs([])}
-                    className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:underline"
-                  >
-                    Clear
-                  </button>
-                </div>
-
+                {/* Start Button */}
                 <button
                   onClick={startWithSelectedSurahs}
                   disabled={selectedSurahs.length === 0}
-                  className={`w-full mt-4 py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 ${
+                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 ${
                     selectedSurahs.length > 0
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700'
+                      ? 'bg-gradient-to-r from-purple-600 via-purple-600 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  <Zap className="w-5 h-5" />
-                  Start Vocabulary Exam ({selectedSurahs.length} Surah{selectedSurahs.length !== 1 ? 's' : ''})
+                  <Zap className={`w-6 h-6 ${selectedSurahs.length > 0 ? 'animate-pulse' : ''}`} />
+                  <span>Start Vocabulary Exam</span>
+                  {selectedSurahs.length > 0 && (
+                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-sm">
+                      {selectedSurahs.length} Surah{selectedSurahs.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </button>
               </>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  No Surahs available. Mark some Surahs as memorized to practice their vocabulary.
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="w-10 h-10 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Surahs Available</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                  Mark some Surahs as memorized to practice their vocabulary and test your understanding.
                 </p>
                 <button
                   onClick={() => navigate('/my-memorization')}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-indigo-700 transition shadow-lg hover:shadow-xl"
                 >
                   Go to My Memorisation
                 </button>
@@ -1776,6 +1864,20 @@ function FlashcardGame({
     setScores(newScores);
     setFlipped(false);
 
+    // Trigger confetti on correct answer
+    if (knew) {
+      triggerConfetti('small');
+
+      // Count consecutive correct answers
+      const consecutiveCorrect = newScores.slice().reverse().findIndex(s => !s);
+      const streak = consecutiveCorrect === -1 ? newScores.length : consecutiveCorrect;
+
+      // Extra celebration for streaks
+      if (streak >= 3 && streak % 3 === 0) {
+        setTimeout(() => triggerStreakConfetti(), 300);
+      }
+    }
+
     // Track mastered words
     let newMastered = masteredInSession;
     if (knew && currentWord) {
@@ -1800,50 +1902,100 @@ function FlashcardGame({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
-        <span>Card {currentIndex + 1} of {vocabulary.length}</span>
-        <span>Score: {scores.filter(Boolean).length}/{scores.length}</span>
+      {/* Progress indicator */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            Card {currentIndex + 1} of {vocabulary.length}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
+            {vocabulary.map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i < currentIndex
+                    ? scores[i]
+                      ? 'bg-emerald-500'
+                      : 'bg-red-400'
+                    : i === currentIndex
+                    ? 'bg-purple-500 w-4'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
+      {/* 3D Flip Card */}
       <div
         onClick={() => setFlipped(!flipped)}
-        className="relative h-64 rounded-2xl cursor-pointer perspective-1000"
+        className="relative h-72 cursor-pointer group"
+        style={{ perspective: '1000px' }}
       >
-        {/* Front - Arabic */}
-        <div className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-8 flex flex-col items-center justify-center text-white backface-hidden transition-transform duration-500 ${
-          flipped ? 'rotate-y-180 invisible' : ''
-        }`}>
-          <p className="text-5xl font-arabic mb-4" dir="rtl">{currentWord.arabic}</p>
-          <p className="text-purple-200 text-sm">Tap to reveal meaning</p>
-        </div>
+        <div
+          className="relative w-full h-full transition-transform duration-700 ease-out"
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+          }}
+        >
+          {/* Front - Arabic */}
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 rounded-2xl p-8 flex flex-col items-center justify-center text-white shadow-2xl"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <div className="absolute inset-0 bg-white/5 rounded-2xl" />
+            <div className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-white/70" />
+            </div>
+            <p className="text-6xl font-arabic mb-6 drop-shadow-lg" dir="rtl">{currentWord.arabic}</p>
+            <p className="text-lg text-purple-200 font-medium">{currentWord.transliteration}</p>
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <p className="text-purple-200/70 text-sm flex items-center justify-center gap-2">
+                <span className="inline-block w-8 h-0.5 bg-purple-300/50 rounded"></span>
+                Tap to reveal
+                <span className="inline-block w-8 h-0.5 bg-purple-300/50 rounded"></span>
+              </p>
+            </div>
+          </div>
 
-        {/* Back - English */}
-        <div className={`absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-8 flex flex-col items-center justify-center text-white backface-hidden transition-transform duration-500 ${
-          !flipped ? 'rotate-y-180 invisible' : ''
-        }`}>
-          <p className="text-3xl font-bold mb-2">{currentWord.english}</p>
-          <p className="text-emerald-200">{currentWord.transliteration}</p>
+          {/* Back - English */}
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 rounded-2xl p-8 flex flex-col items-center justify-center text-white shadow-2xl"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
+            <div className="absolute inset-0 bg-white/5 rounded-2xl" />
+            <div className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+              <Lightbulb className="w-6 h-6 text-white/70" />
+            </div>
+            <p className="text-4xl font-bold mb-4 drop-shadow-lg text-center">{currentWord.english}</p>
+            <div className="px-4 py-2 bg-white/10 rounded-full">
+              <p className="text-emerald-100 text-lg">{currentWord.transliteration}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {flipped && (
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => handleKnew(false)}
-            className="px-6 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition flex items-center gap-2"
-          >
-            <XCircle className="w-5 h-5" />
-            Didn't Know
-          </button>
-          <button
-            onClick={() => handleKnew(true)}
-            className="px-6 py-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition flex items-center gap-2"
-          >
-            <CheckCircle className="w-5 h-5" />
-            Knew It!
-          </button>
-        </div>
-      )}
+      {/* Answer Buttons */}
+      <div className={`flex justify-center gap-4 transition-all duration-300 ${flipped ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+        <button
+          onClick={() => handleKnew(false)}
+          className="px-8 py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-3"
+        >
+          <XCircle className="w-6 h-6" />
+          Didn't Know
+        </button>
+        <button
+          onClick={() => handleKnew(true)}
+          className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-3"
+        >
+          <CheckCircle className="w-6 h-6" />
+          Knew It!
+        </button>
+      </div>
     </div>
   );
 }
@@ -1875,7 +2027,17 @@ function MultipleChoiceGame({
     setShowResult(true);
 
     if (answer === currentQuestion.correctAnswer) {
-      setScore(score + 1);
+      const newScore = score + 1;
+      setScore(newScore);
+
+      // Trigger confetti on correct answer
+      triggerConfetti('small');
+
+      // Extra celebration for streaks (3+ in a row)
+      if (newScore >= 3 && newScore === currentIndex + 1) {
+        setTimeout(() => triggerStreakConfetti(), 300);
+      }
+
       // Track mastered word
       const masteredWord: VocabularyWord = {
         arabic: currentQuestion.arabic || currentQuestion.correctAnswer,
