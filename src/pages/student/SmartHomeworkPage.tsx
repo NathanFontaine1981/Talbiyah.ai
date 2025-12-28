@@ -1115,7 +1115,7 @@ export default function SmartHomeworkPage() {
     // Only include lesson_id if it exists
     const insertData: Record<string, unknown> = {
       learner_id: learnerId,
-      session_type: 'cumulative',
+      session_type: 'adaptive',
       games,
       current_game_index: 0,
       total_games: games.length,
@@ -1130,6 +1130,9 @@ export default function SmartHomeworkPage() {
       insertData.lesson_id = lessonId;
     }
 
+    // Try to save session to database (may fail due to RLS for student accounts)
+    let sessionId = crypto.randomUUID();
+
     const { data: newSession, error } = await supabase
       .from('homework_sessions')
       .insert(insertData)
@@ -1137,27 +1140,28 @@ export default function SmartHomeworkPage() {
       .single();
 
     if (error) {
-      console.error('Error creating homework session:', error);
-      return;
+      console.warn('Could not save homework session to database (running locally):', error.message);
+      // Continue with local session - games still work without persistence
+    } else if (newSession) {
+      sessionId = newSession.id;
     }
 
-    if (newSession) {
-      setSession({
-        id: newSession.id,
-        sessionType: newSession.session_type,
-        games,
-        currentGameIndex: 0,
-        totalScore: 0,
-        maxPossibleScore: games.reduce((sum, g) => sum + g.maxScore, 0),
-        accuracyPercentage: 0,
-        status: 'pending',
-        startedAt: null,
-        completedAt: null,
-        timeSpentSeconds: 0,
-        externalPracticeTips: EXTERNAL_APPS
-      });
-      setCurrentGame(games[0]);
-    }
+    // Set up session (works with or without database persistence)
+    setSession({
+      id: sessionId,
+      sessionType: 'adaptive',
+      games,
+      currentGameIndex: 0,
+      totalScore: 0,
+      maxPossibleScore: games.reduce((sum, g) => sum + g.maxScore, 0),
+      accuracyPercentage: 0,
+      status: 'pending',
+      startedAt: null,
+      completedAt: null,
+      timeSpentSeconds: 0,
+      externalPracticeTips: EXTERNAL_APPS
+    });
+    setCurrentGame(games[0]);
   }
 
   function generateMultipleChoice(vocabulary: VocabularyWord[], fullPool: VocabularyWord[]) {
