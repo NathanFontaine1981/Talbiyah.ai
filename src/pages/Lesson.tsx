@@ -839,93 +839,9 @@ function LessonContent() {
         <div className={`${showMessaging ? 'w-2/3' : 'w-full'} h-full transition-all duration-300`}>
           <HMSPrebuilt
             roomCode={lesson.room_code}
-            logo="https://talbiyah.ai/images/logo.png"
             options={{
               userName: userRole === 'teacher' ? lesson.teacher_name : lesson.learner_name,
               userId: user?.id || `user_${Date.now()}`,
-            }}
-            screens={{
-              preview: {
-                default: {
-                  elements: {
-                    logo: true,
-                    virtual_background: true,
-                    preview_header: true,
-                  }
-                }
-              },
-              conferencing: {
-                default: {
-                  elements: {
-                    header: {
-                      title: `Talbiyah - ${lesson.subject_name}`,
-                      description: userRole === 'teacher' ? `Teaching ${lesson.learner_name}` : `With ${lesson.teacher_name}`,
-                    },
-                    brb: true,
-                    chat: true,
-                    participant_list: true,
-                    emoji_reactions: true,
-                    hand_raise: true,
-                    video_tile_layout: {
-                      grid: {
-                        enable_local_tile_inset: true,
-                        enable_spotlighting_peer: true,
-                      },
-                    },
-                    on_stage_exp: true,
-                    whiteboard: true,
-                    polls: true,
-                    virtual_background: true,
-                    noise_cancellation: true,
-                  }
-                }
-              },
-              leave: {
-                default: {
-                  elements: {
-                    feedback: true,
-                  }
-                }
-              }
-            }}
-            theme={{
-              palette: {
-                mode: 'light',
-                background_default: '#FFFFFF',
-                background_dim: '#F8FAFC',
-                surface_default: '#FFFFFF',
-                surface_brighter: '#F1F5F9',
-                surface_bright: '#E2E8F0',
-                surface_dim: '#CBD5E1',
-                primary_default: '#F97316',
-                primary_bright: '#FB923C',
-                primary_dim: '#EA580C',
-                primary_disabled: '#FDBA74',
-                secondary_default: '#10B981',
-                secondary_bright: '#34D399',
-                secondary_dim: '#059669',
-                secondary_disabled: '#6EE7B7',
-                on_primary_high: '#FFFFFF',
-                on_primary_medium: '#FFFBEB',
-                on_primary_low: '#FEF3C7',
-                on_secondary_high: '#FFFFFF',
-                on_secondary_medium: '#ECFDF5',
-                on_secondary_low: '#D1FAE5',
-                on_surface_high: '#0F172A',
-                on_surface_medium: '#475569',
-                on_surface_low: '#94A3B8',
-                border_default: '#E2E8F0',
-                border_bright: '#CBD5E1',
-                alert_success: '#22C55E',
-                alert_warning: '#F59E0B',
-                alert_error_default: '#EF4444',
-                alert_error_bright: '#FCA5A5',
-                alert_error_brighter: '#FEE2E2',
-                alert_error_dim: '#DC2626',
-              },
-              typography: {
-                font_family: 'Inter, system-ui, sans-serif',
-              },
             }}
             onJoinRoom={() => {
               // Successfully joined
