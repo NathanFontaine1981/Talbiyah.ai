@@ -321,7 +321,7 @@ Generate the insights following the exact format specified in the system prompt.
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 4096,
           temperature: 0.3,
           system: systemPrompt,
@@ -391,7 +391,7 @@ Generate the insights following the exact format specified in the system prompt.
           quran_api_source: 'quran.com/api/v4',
         },
         raw_transcript: transcript, // Preserve transcript for future regeneration
-        ai_model: 'claude-3-5-sonnet-20241022',
+        ai_model: 'claude-sonnet-4-20250514',
         confidence_score: 0.90,
         processing_time_ms: processingTime,
       }, {

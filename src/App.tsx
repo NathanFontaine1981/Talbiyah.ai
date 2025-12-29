@@ -75,6 +75,10 @@ const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
 const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 
+// Explore & New Muslim pages (public)
+const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
+const NewMuslimPage = lazy(() => import('./pages/new-muslim/NewMuslimPage'));
+
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
 const DiagnosticBooking = lazy(() => import('./pages/diagnostic/DiagnosticBooking'));
@@ -148,6 +152,8 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/new-muslim" element={<NewMuslimPage />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
         <Route

@@ -142,7 +142,7 @@ Respond ONLY with valid JSON, no additional text.`;
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 3000,
           temperature: 0.4,
           messages: [
@@ -220,7 +220,7 @@ Respond ONLY with valid JSON, no additional text.`;
         vocabulary_used: insights.vocabulary_used,
         questions_asked: insights.questions_asked,
         teacher_feedback: insights.teacher_feedback,
-        ai_model: "claude-3-5-sonnet-20241022",
+        ai_model: "claude-sonnet-4-20250514",
         confidence_score: 0.85,
         processing_time_ms: processingTime,
       })

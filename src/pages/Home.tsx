@@ -159,8 +159,8 @@ export default function Home() {
 
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => navigate('/teachers')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Find a Teacher</button>
-            <button onClick={() => navigate('/islamic-source-reference')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Islamic Sources</button>
+            <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
+            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">New to Islam</button>
 
             {user ? (
               <>
@@ -223,16 +223,16 @@ export default function Home() {
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
             <div className="px-4 py-4 space-y-2">
               <button
-                onClick={() => { navigate('/teachers'); setMobileMenuOpen(false); }}
+                onClick={() => { navigate('/explore'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
               >
-                Find a Teacher
+                Exploring Islam
               </button>
               <button
-                onClick={() => { navigate('/islamic-source-reference'); setMobileMenuOpen(false); }}
+                onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
               >
-                Islamic Sources
+                New to Islam
               </button>
 
               <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
