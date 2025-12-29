@@ -266,11 +266,18 @@ const categoryIcons: Record<string, React.ReactNode> = {
   human: <Heart className="w-5 h-5" />,
 };
 
-const categoryColors: Record<string, string> = {
-  cosmic: 'blue',
-  biological: 'purple',
-  natural: 'emerald',
-  human: 'rose',
+const categoryStyles: Record<string, { bg: string; border: string; text: string }> = {
+  cosmic: { bg: 'bg-blue-900/50', border: 'border-blue-700/50', text: 'text-blue-400' },
+  biological: { bg: 'bg-purple-900/50', border: 'border-purple-700/50', text: 'text-purple-400' },
+  natural: { bg: 'bg-emerald-900/50', border: 'border-emerald-700/50', text: 'text-emerald-400' },
+  human: { bg: 'bg-rose-900/50', border: 'border-rose-700/50', text: 'text-rose-400' },
+};
+
+const categoryClimaxStyles: Record<string, { bg: string; border: string }> = {
+  cosmic: { bg: 'bg-blue-900/30', border: 'border-blue-700/50' },
+  biological: { bg: 'bg-purple-900/30', border: 'border-purple-700/50' },
+  natural: { bg: 'bg-emerald-900/30', border: 'border-emerald-700/50' },
+  human: { bg: 'bg-rose-900/30', border: 'border-rose-700/50' },
 };
 
 export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps) => {
@@ -414,9 +421,10 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {['cosmic', 'biological', 'natural', 'human'].map(cat => {
                   const catMatches = matchedAxioms.filter(m => m.category === cat);
+                  const styles = categoryClimaxStyles[cat];
                   return catMatches.length > 0 && (
-                    <div key={cat} className={`bg-${categoryColors[cat]}-900/30 rounded-lg p-3 border border-${categoryColors[cat]}-700/50`}>
-                      <div className={`flex items-center gap-2 text-${categoryColors[cat]}-400 text-sm`}>
+                    <div key={cat} className={`${styles.bg} rounded-lg p-3 border ${styles.border}`}>
+                      <div className={`flex items-center gap-2 ${categoryStyles[cat].text} text-sm`}>
                         {categoryIcons[cat]}
                         <span className="capitalize">{cat}</span>
                       </div>
@@ -493,7 +501,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
     );
   }
 
-  const catColor = categoryColors[currentMatch.category];
+  const catStyles = categoryStyles[currentMatch.category];
   const yearsAhead = currentMatch.yearDiscovered > 0
     ? currentMatch.yearDiscovered - currentMatch.yearRevealed
     : 'Always known';
@@ -516,9 +524,9 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             <div className="text-slate-400 text-sm">
               Checking: <span className="text-white font-semibold">{currentIndex + 1}</span> / {matchedAxioms.length}
             </div>
-            <div className={`flex items-center gap-1.5 px-3 py-1 bg-${catColor}-900/50 rounded-full border border-${catColor}-700/50`}>
-              <span className={`text-${catColor}-400`}>{categoryIcons[currentMatch.category]}</span>
-              <span className={`text-${catColor}-300 text-sm capitalize`}>{currentMatch.category}</span>
+            <div className={`flex items-center gap-1.5 px-3 py-1 ${catStyles.bg} rounded-full border ${catStyles.border}`}>
+              <span className={catStyles.text}>{categoryIcons[currentMatch.category]}</span>
+              <span className={`${catStyles.text} text-sm capitalize`}>{currentMatch.category}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -15,7 +15,9 @@ const cheatCodeCategories = [
     id: 'emotional',
     name: 'Mental Health',
     icon: <Heart className="w-6 h-6" />,
-    color: 'rose',
+    bgClass: 'bg-rose-900/30',
+    borderClass: 'border-rose-700/50',
+    textClass: 'text-rose-400',
     description: 'Anxiety, stress, anger, depression',
     codes: ['Remembrance = Peace', 'Patience = Victory', 'Trust = Calm'],
   },
@@ -23,7 +25,9 @@ const cheatCodeCategories = [
     id: 'financial',
     name: 'Wealth & Provision',
     icon: <Coins className="w-6 h-6" />,
-    color: 'amber',
+    bgClass: 'bg-amber-900/30',
+    borderClass: 'border-amber-700/50',
+    textClass: 'text-amber-400',
     description: 'Debt, poverty, career success',
     codes: ['Charity Multiplies', 'Halal Sustains', 'Contentment = Richness'],
   },
@@ -31,7 +35,9 @@ const cheatCodeCategories = [
     id: 'relationships',
     name: 'Relationships',
     icon: <Users className="w-6 h-6" />,
-    color: 'blue',
+    bgClass: 'bg-blue-900/30',
+    borderClass: 'border-blue-700/50',
+    textClass: 'text-blue-400',
     description: 'Family, marriage, community',
     codes: ['Ties = Blessings', 'Forgiveness = Freedom', 'Kindness Returns'],
   },
@@ -39,7 +45,9 @@ const cheatCodeCategories = [
     id: 'spiritual',
     name: 'Purpose & Meaning',
     icon: <Sparkles className="w-6 h-6" />,
-    color: 'purple',
+    bgClass: 'bg-purple-900/30',
+    borderClass: 'border-purple-700/50',
+    textClass: 'text-purple-400',
     description: 'Direction, hope, inner peace',
     codes: ['Prayer = Connection', 'Gratitude = Increase', 'Tests = Growth'],
   },
@@ -104,9 +112,9 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className={`bg-${cat.color}-900/30 rounded-xl p-4 border border-${cat.color}-700/50`}
+                  className={`${cat.bgClass} rounded-xl p-4 border ${cat.borderClass}`}
                 >
-                  <div className={`flex items-center gap-2 text-${cat.color}-400 mb-2`}>
+                  <div className={`flex items-center gap-2 ${cat.textClass} mb-2`}>
                     {cat.icon}
                     <span className="font-medium">{cat.name}</span>
                   </div>

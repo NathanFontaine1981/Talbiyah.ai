@@ -44,9 +44,10 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
       setBlurLevel(prev => Math.max(0, prev - 7));
     }
 
+    // Give user time to read the acknowledgment insight (1.5 seconds)
     setTimeout(() => {
       setCurrentIndex(prev => prev + 1);
-    }, 500);
+    }, 1500);
   };
 
   const handleSkip = () => {

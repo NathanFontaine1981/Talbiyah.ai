@@ -13,28 +13,32 @@ const categories = [
     name: 'The Cosmic Reality',
     subtitle: 'The Stage',
     icon: <Atom className="w-6 h-6" />,
-    color: 'blue',
+    bgClass: 'bg-blue-500/20',
+    textClass: 'text-blue-400',
   },
   {
     id: 'biological',
     name: 'The Biological Reality',
     subtitle: 'The Machine',
     icon: <Sparkles className="w-6 h-6" />,
-    color: 'purple',
+    bgClass: 'bg-purple-500/20',
+    textClass: 'text-purple-400',
   },
   {
     id: 'natural',
     name: 'The Natural Order',
     subtitle: 'The Ecosystem',
     icon: <Leaf className="w-6 h-6" />,
-    color: 'emerald',
+    bgClass: 'bg-emerald-500/20',
+    textClass: 'text-emerald-400',
   },
   {
     id: 'human',
     name: 'The Human Condition',
     subtitle: 'The Soul',
     icon: <Heart className="w-6 h-6" />,
-    color: 'rose',
+    bgClass: 'bg-rose-500/20',
+    textClass: 'text-rose-400',
   },
 ];
 
@@ -372,7 +376,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
           >
             {/* Category Header */}
             <div className="text-center mb-8">
-              <div className={`w-16 h-16 bg-${currentCategory.color}-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-${currentCategory.color}-400`}>
+              <div className={`w-16 h-16 ${currentCategory.bgClass} rounded-full flex items-center justify-center mx-auto mb-4 ${currentCategory.textClass}`}>
                 {currentCategory.icon}
               </div>
               <h2 className="text-2xl font-serif text-white mb-1">
