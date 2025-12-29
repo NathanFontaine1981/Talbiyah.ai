@@ -9,7 +9,7 @@ interface BiasBlurProps {
 const biasStatements = [
   {
     id: 'open-to-truth',
-    statement: 'Are you open to accepting the truth if you are convinced of it by examining the evidence before you?',
+    statement: 'Are you open to accepting the truth if the evidence is undeniable?',
     acknowledgment: 'This is the only question that matters. People once believed talking to someone across the world was impossible—until technology proved otherwise. The impossible became possible. Superior evidence changes everything.',
   },
   {
