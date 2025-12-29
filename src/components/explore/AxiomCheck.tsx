@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock } from 'lucide-react';
+import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play } from 'lucide-react';
 
 interface AxiomCheckProps {
   onComplete: (agreedAxioms: string[]) => void;
@@ -121,12 +121,14 @@ const axioms = [
   },
   {
     id: 'embryo-stages',
-    category: 'cosmic',
+    category: 'biological',
     fact: 'Human formation follows specific stages in the womb',
     detail: 'Drop of fluid → clinging substance → lump → bones → flesh covers bones.',
     discoveredYear: 1940,
     discoveredBy: 'Keith Moore',
     discoveryNote: 'Modern embryology confirmed: zygote → blastocyst → embryo with somites → skeleton → muscles cover bones.',
+    videoUrl: 'https://archive.org/details/EmbryologyInTheQuranByDr.KeithL.MooreYouTube',
+    videoTitle: 'Dr. Keith Moore on Embryology in the Quran',
   },
   {
     id: 'body-heals',
@@ -886,6 +888,21 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                                 </div>
                               </div>
                               <p className="text-slate-300 text-sm">{axiom.discoveryNote}</p>
+
+                              {/* Video link if available */}
+                              {'videoUrl' in axiom && axiom.videoUrl && (
+                                <a
+                                  href={axiom.videoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-red-900/30 hover:bg-red-900/50 border border-red-700/50 rounded-lg text-red-300 hover:text-red-200 text-sm transition"
+                                >
+                                  <Play className="w-4 h-4" />
+                                  Watch: {(axiom as any).videoTitle || 'See the evidence'}
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
                             </div>
 
                             {/* Agree/Disagree buttons */}
