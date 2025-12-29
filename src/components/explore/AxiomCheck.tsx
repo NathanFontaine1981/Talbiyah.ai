@@ -463,18 +463,19 @@ const storyScenes = [
           Right now, you're back at <span className="text-white font-semibold">0% belief</span>. And that's fine.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          We're going to do <span className="text-emerald-400 font-semibold">exactly what we did with the Sports Almanac</span>:
+          We're going to look at a number of <span className="text-emerald-400 font-semibold">undeniable facts about reality</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Then ask yourself: <span className="text-white font-semibold">who could have known these facts 1,400 years ago?</span>
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <p className="text-slate-400 text-sm mb-3">What are the options?</p>
           <div className="space-y-3">
-            <p className="text-slate-300">1. Agree on <span className="text-white font-medium">{axioms.length} undeniable facts</span> about reality</p>
-            <p className="text-slate-300">2. Check if the Book <span className="text-white font-medium">stated them accurately</span></p>
-            <p className="text-slate-300">3. Watch your certainty <span className="text-emerald-400 font-medium">compound with each verification</span></p>
+            <p className="text-slate-300">• A <span className="text-white font-medium">single human</span>?</p>
+            <p className="text-slate-300">• A <span className="text-white font-medium">group of humans</span>?</p>
+            <p className="text-slate-300">• Or <span className="text-amber-400 font-medium">the Creator</span> of it all?</p>
           </div>
         </div>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          And if it's 100% accurate on everything you can verify...
-        </p>
         <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50">
           <p className="text-blue-200">
             Then you'll know for certain: <span className="text-white font-semibold">the One who made you is communicating with you.</span>
