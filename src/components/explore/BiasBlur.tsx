@@ -8,6 +8,16 @@ interface BiasBlurProps {
 
 const biasStatements = [
   {
+    id: 'open-to-truth',
+    statement: 'Are you open to accepting the truth if you are convinced of it by examining the evidence before you?',
+    acknowledgment: 'This is the only question that matters. People once believed talking to someone across the world was impossible—until technology proved otherwise. The impossible became possible. Superior evidence changes everything.',
+  },
+  {
+    id: 'guard-down',
+    statement: 'I am willing to let my guard down and change my stance if I come across evidence superior to what I currently know',
+    acknowledgment: 'We all carry assumptions. The wise person updates their beliefs when better evidence arrives—not when it feels comfortable.',
+  },
+  {
     id: 'truth-seeking',
     statement: 'To find the truth, I must put aside what I want to be true and look at what IS true',
     acknowledgment: 'Honest inquiry requires intellectual honesty. Truth exists independent of our preferences.',
@@ -22,11 +32,6 @@ const biasStatements = [
     statement: "I've never read the Quran or Islamic texts directly",
     acknowledgment: 'Primary sources are always more accurate than secondhand accounts.',
   },
-  {
-    id: 'open-mind',
-    statement: 'I am willing to change my mind if presented with compelling evidence',
-    acknowledgment: 'Intellectual integrity means following evidence wherever it leads.',
-  },
 ];
 
 export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
@@ -40,8 +45,8 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
   const handleAcknowledge = (id: string) => {
     if (!acknowledged.includes(id)) {
       setAcknowledged([...acknowledged, id]);
-      // Reduce blur with each acknowledgment
-      setBlurLevel(prev => Math.max(0, prev - 7));
+      // Reduce blur with each acknowledgment (20 / 5 statements = 4 per step)
+      setBlurLevel(prev => Math.max(0, prev - 4));
     }
 
     // Give user time to read the acknowledgment insight (1.5 seconds)
