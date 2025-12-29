@@ -39,7 +39,7 @@ const introScenes = [
         </p>
       </>
     ),
-    commentary: "These questions haunted me. Everyone has them. Most people just bury them under work, entertainment, distractions. I did too—until I couldn't anymore.",
+    commentary: "I wondered... how come nobody ever told me about this all my life? Where were all the Muslims I grew up around, oblivious to? I don't remember ever being told anything about this treasure. It took 21 years to reach me. Wow.",
   },
   {
     id: 'approach',
