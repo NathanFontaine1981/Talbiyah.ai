@@ -39,7 +39,7 @@ const introScenes = [
         </p>
       </>
     ),
-    commentary: "I wondered... how come nobody ever told me about this all my life? Where were all the Muslims I grew up around, oblivious to? I don't remember ever being told anything about this treasure. It took 21 years to reach me. Wow.",
+    commentary: "21 years. That's how long I lived without knowing. Where were all the Muslims? Why didn't anyone tell me? This treasure was right there the whole time, and I had no idea.",
   },
   {
     id: 'approach',
