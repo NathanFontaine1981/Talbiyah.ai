@@ -5,22 +5,27 @@ import { supabase } from '../../lib/supabaseClient';
 import BiasBlur from '../../components/explore/BiasBlur';
 import AxiomCheck from '../../components/explore/AxiomCheck';
 import AuthorityMatch from '../../components/explore/AuthorityMatch';
+import TheQuestion from '../../components/explore/TheQuestion';
+import TheReconciliation from '../../components/explore/TheReconciliation';
 import CheatCodes from '../../components/explore/CheatCodes';
 
 const STORAGE_KEY = 'talbiyah_explore_progress';
 
 // Stage order for the Explore journey (The Almanac)
 // 1. BiasBlur - Acknowledge biases before exploring
-// 2. AxiomCheck - Present undeniable facts user already accepts (Phase 0: The Data)
-// 3. AuthorityMatch - Show Quran verses matching agreed facts (Phase 1: Past Scores)
-// 4. CheatCodes - Life guidance from the Quran (Phase 2: Cheat Codes)
-type FlowStage = 'bias' | 'axiom-check' | 'authority-match' | 'cheat-codes';
+// 2. AxiomCheck - Present undeniable facts user already accepts (The Data)
+// 3. AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
+// 4. TheQuestion - Ask where they think the knowledge came from
+// 5. TheReconciliation - Explain how all Abrahamic religions are one
+// 6. CheatCodes - Life guidance from the Quran (Cheat Codes)
+type FlowStage = 'bias' | 'axiom-check' | 'authority-match' | 'the-question' | 'reconciliation' | 'cheat-codes';
 
 export default function ExplorePage() {
   const navigate = useNavigate();
   const [flowStage, setFlowStage] = useState<FlowStage>('bias');
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
   const [verifiedCount, setVerifiedCount] = useState(0);
+  const [beliefChoice, setBeliefChoice] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
   // Load progress from localStorage
@@ -34,10 +39,11 @@ export default function ExplorePage() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          const { stage, axioms, verified } = JSON.parse(saved);
+          const { stage, axioms, verified, belief } = JSON.parse(saved);
           if (stage) setFlowStage(stage);
           if (axioms) setAgreedAxioms(axioms);
           if (verified) setVerifiedCount(verified);
+          if (belief) setBeliefChoice(belief);
         } catch (e) {
           console.error('Error loading progress:', e);
         }
@@ -52,10 +58,11 @@ export default function ExplorePage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         stage: flowStage,
         axioms: agreedAxioms,
-        verified: verifiedCount
+        verified: verifiedCount,
+        belief: beliefChoice
       }));
     }
-  }, [flowStage, agreedAxioms, verifiedCount]);
+  }, [flowStage, agreedAxioms, verifiedCount, beliefChoice]);
 
   // Stage handlers
   const handleBiasComplete = () => {
@@ -64,17 +71,28 @@ export default function ExplorePage() {
 
   const handleAxiomCheckComplete = (axioms: string[]) => {
     setAgreedAxioms(axioms);
+    setVerifiedCount(axioms.length);
     setFlowStage('authority-match');
   };
 
   const handleAuthorityMatchComplete = () => {
+    setFlowStage('the-question');
+  };
+
+  const handleQuestionComplete = (belief: string) => {
+    setBeliefChoice(belief);
+    setFlowStage('reconciliation');
+  };
+
+  const handleReconciliationComplete = () => {
     setFlowStage('cheat-codes');
   };
 
   const handleCheatCodesComplete = () => {
-    // Clear progress and redirect to New Muslim page
+    // Clear progress and redirect to dashboard (not new-muslim)
     localStorage.removeItem(STORAGE_KEY);
-    navigate('/new-muslim');
+    markExploreCompleted();
+    navigate('/dashboard');
   };
 
   // Mark explore as completed in profile if user is logged in
@@ -139,7 +157,41 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 4: Cheat Codes - Life guidance from the Quran
+  // Stage 4: The Question - Ask where they think the knowledge came from
+  if (flowStage === 'the-question') {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => navigate('/')}
+          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <TheQuestion
+          verifiedCount={verifiedCount}
+          totalFacts={agreedAxioms.length}
+          onComplete={handleQuestionComplete}
+        />
+      </div>
+    );
+  }
+
+  // Stage 5: The Reconciliation - Explain how all Abrahamic religions are one
+  if (flowStage === 'reconciliation') {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => navigate('/')}
+          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <TheReconciliation onComplete={handleReconciliationComplete} />
+      </div>
+    );
+  }
+
+  // Stage 6: Cheat Codes - Life guidance from the Quran
   if (flowStage === 'cheat-codes') {
     return (
       <div className="relative">
@@ -152,10 +204,7 @@ export default function ExplorePage() {
         <CheatCodes
           verifiedCount={verifiedCount}
           totalFacts={agreedAxioms.length}
-          onComplete={() => {
-            markExploreCompleted();
-            handleCheatCodesComplete();
-          }}
+          onComplete={handleCheatCodesComplete}
         />
       </div>
     );
