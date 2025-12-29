@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight } from 'lucide-react';
+import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock } from 'lucide-react';
 
 interface AxiomCheckProps {
   onComplete: (agreedAxioms: string[]) => void;
@@ -179,10 +179,156 @@ const axioms = [
   },
 ];
 
+// Story scenes for the Almanac intro
+const storyScenes = [
+  {
+    id: 'scene1',
+    title: 'The Sports Almanac',
+    icon: <BookOpen className="w-12 h-12" />,
+    iconBg: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Remember <span className="text-amber-400 font-semibold">Back to the Future II</span>?
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Biff steals a book from the future: <span className="text-amber-400 font-semibold">"Grays Sports Almanac: 1950-2000"</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span>—every score, every winner, every result.
+          <span className="text-slate-500 italic"> Because for the book, it already happened.</span>
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene2',
+    title: 'Checking the Facts',
+    icon: <TrendingUp className="w-12 h-12" />,
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Imagine you found that book. You'd test it, right?
+        </p>
+        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <p className="text-slate-400 text-sm mb-2">You look up events that already happened:</p>
+          <ul className="space-y-2 text-white">
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>1966 World Cup Final → <span className="text-emerald-400">Accurate</span></span>
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>2008 Champions League → <span className="text-emerald-400">Accurate</span></span>
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>2016 Leicester 5000-1 → <span className="text-emerald-400">Accurate</span></span>
+            </li>
+          </ul>
+        </div>
+        <p className="text-lg text-white font-medium">
+          50 events checked. <span className="text-emerald-400">50 facts confirmed. Zero errors.</span>
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene3',
+    title: 'What Biff Realized',
+    icon: <Brain className="w-12 h-12" />,
+    iconBg: 'bg-purple-500/20',
+    iconColor: 'text-purple-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          <span className="text-white font-medium">What went through Biff's mind?</span>
+        </p>
+        <div className="space-y-3 mb-4">
+          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-amber-500">
+            <p className="text-amber-200 italic">"This isn't guessing. These are recorded facts."</p>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-blue-500">
+            <p className="text-blue-200 italic">"50 out of 50 verified. Not one deviation."</p>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-emerald-500">
+            <p className="text-emerald-200 italic">"This book knows the results before they happen TO ME."</p>
+          </div>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          The book wasn't <span className="italic">predicting</span>. It was <span className="text-white font-semibold">stating facts</span> that Biff just hadn't witnessed yet.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene4',
+    title: 'The Rational Response',
+    icon: <DollarSign className="w-12 h-12" />,
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Tomorrow's match: <span className="text-white font-semibold">Manchester United vs Liverpool</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          The book states: <span className="text-emerald-400 font-semibold">United won 3-1</span>.
+          <span className="text-slate-500 text-sm"> (Past tense. It's a recorded result.)</span>
+        </p>
+        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-4">
+          <p className="text-xl text-white font-medium mb-2">
+            Would you bet your house on it?
+          </p>
+          <p className="text-emerald-200">
+            The book has been <span className="font-bold">100% accurate</span> on every fact you've verified.
+            <br />
+            <span className="text-white font-semibold">Not predictions—recorded outcomes. Why would this one be different?</span>
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'scene5',
+    title: 'A Different Almanac',
+    icon: <Zap className="w-12 h-12" />,
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Now imagine a different book. Not about sports.
+          <br />
+          About <span className="text-blue-400 font-semibold">the universe, biology, nature, and human existence</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          A book from <span className="text-amber-400 font-semibold">1,400 years ago</span> that states facts about science
+          that humanity only discovered in the last century—<span className="text-white font-semibold">with absolute certainty</span>.
+        </p>
+        <div className="bg-blue-900/30 rounded-xl p-5 border border-blue-700/50">
+          <p className="text-xl text-white font-medium mb-2">
+            Let's test this Almanac.
+          </p>
+          <p className="text-blue-200">
+            First, we'll agree on <span className="font-bold">{axioms.length} undeniable facts</span> about reality.
+            <br />
+            Then, we'll check if the Book stated them accurately.
+          </p>
+        </div>
+      </>
+    ),
+  },
+];
+
 export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
   const [showIntro, setShowIntro] = useState(true);
+  const [introScene, setIntroScene] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
 
   const currentCategory = categories[currentCategoryIndex];
@@ -206,56 +352,107 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
 
   const progress = ((currentCategoryIndex) / categories.length) * 100;
 
-  // Intro screen with Almanac concept
+  // Intro screen with Almanac story scenes
   if (showIntro) {
+    const currentScene = storyScenes[introScene];
+    const isLastScene = introScene === storyScenes.length - 1;
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-slate-950 flex items-center justify-center p-4"
+        className="min-h-screen bg-slate-950 flex flex-col"
       >
-        <div className="max-w-2xl w-full text-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h1 className="text-4xl sm:text-5xl font-serif text-white mb-6">
-              The Almanac Test
-            </h1>
-
-            <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8 text-left">
-              <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                Imagine you had a book from the future. You flip to 1950, and it correctly
-                predicts the World Cup winner. You flip to 2020, and it predicts a global
-                event perfectly. You check 50 different dates, and it is <span className="text-blue-400 font-semibold">never wrong</span>.
-              </p>
-
-              <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                Now, you flip to the page for <span className="text-amber-400 font-semibold">Tomorrow</span>.
-                It tells you exactly what to do to survive.
-              </p>
-
-              <p className="text-xl text-white font-medium">
-                Would you debate it? Or would you use it?
-              </p>
-            </div>
-
-            <div className="bg-blue-900/30 rounded-xl p-6 border border-blue-700/50 mb-8">
-              <p className="text-blue-200">
-                Before we check the "Almanac," let's agree on the data.
-                Here are <span className="font-bold">{axioms.length} undeniable facts</span> about reality.
-              </p>
-            </div>
-
+        {/* Progress dots */}
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-50">
+          {storyScenes.map((_, i) => (
             <button
-              onClick={() => setShowIntro(false)}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
-            >
-              Let's Establish the Facts
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </motion.div>
+              key={i}
+              onClick={() => setIntroScene(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                i === introScene
+                  ? 'bg-blue-500 w-6'
+                  : i < introScene
+                  ? 'bg-blue-500/50'
+                  : 'bg-slate-700'
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-4 pt-16">
+          <div className="max-w-2xl w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentScene.id}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.3 }}
+                className="text-center"
+              >
+                {/* Scene Icon */}
+                <div className={`w-24 h-24 ${currentScene.iconBg} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                  <div className={currentScene.iconColor}>
+                    {currentScene.icon}
+                  </div>
+                </div>
+
+                {/* Scene Title */}
+                <h1 className="text-3xl sm:text-4xl font-serif text-white mb-2">
+                  {currentScene.title}
+                </h1>
+                <p className="text-slate-500 text-sm mb-8">
+                  Scene {introScene + 1} of {storyScenes.length}
+                </p>
+
+                {/* Scene Content */}
+                <div className="bg-slate-900/70 rounded-2xl p-6 sm:p-8 border border-slate-700 mb-8 text-left">
+                  {currentScene.content}
+                </div>
+
+                {/* Navigation */}
+                <div className="flex items-center justify-center gap-4">
+                  {introScene > 0 && (
+                    <button
+                      onClick={() => setIntroScene(prev => prev - 1)}
+                      className="px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full transition"
+                    >
+                      Back
+                    </button>
+                  )}
+
+                  {isLastScene ? (
+                    <button
+                      onClick={() => setShowIntro(false)}
+                      className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
+                    >
+                      Begin the Test
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIntroScene(prev => prev + 1)}
+                      className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
+                    >
+                      Continue
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Skip option */}
+                {!isLastScene && (
+                  <button
+                    onClick={() => setShowIntro(false)}
+                    className="mt-6 text-slate-500 hover:text-slate-300 text-sm transition"
+                  >
+                    Skip story →
+                  </button>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </motion.div>
     );
