@@ -358,29 +358,128 @@ const storyScenes = [
   },
   {
     id: 'scene6',
-    title: 'The Real Almanac',
+    title: 'The Claim',
     icon: <BookOpen className="w-12 h-12" />,
     iconBg: 'bg-blue-500/20',
     iconColor: 'text-blue-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Now imagine a different book. Not about sports.
-          <br />
-          About <span className="text-blue-400 font-semibold">the universe, biology, nature, and human existence</span>.
+          There is <span className="text-white font-semibold">one book</span> that claims to be <span className="text-amber-400 font-semibold">directly from the One who created everything</span>—including you.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          A book from <span className="text-amber-400 font-semibold">1,400 years ago</span> that states facts about science
-          that humanity only discovered in the last century—<span className="text-white font-semibold">with absolute certainty</span>.
+          It claims to be <span className="text-blue-400 font-semibold">the Manual for human beings</span>.
         </p>
-        <div className="bg-blue-900/30 rounded-xl p-5 border border-blue-700/50">
-          <p className="text-xl text-white font-medium mb-2">
-            Let's test this Almanac.
-          </p>
+        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <p className="text-slate-400 text-sm mb-3">It claims to tell you:</p>
+          <ul className="space-y-2 text-white text-sm">
+            <li>• <span className="text-purple-300">Why</span> you were created</li>
+            <li>• <span className="text-blue-300">How</span> you were created</li>
+            <li>• <span className="text-emerald-300">What</span> exists in the world around you</li>
+            <li>• That every soul <span className="text-rose-300">will taste death</span></li>
+            <li>• What happens <span className="text-amber-300">after</span>—the next stage, the Day of Judgment</li>
+          </ul>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          Your past. Your present. <span className="text-white font-semibold">Your future.</span>
+          <br />
+          <span className="text-slate-400 italic">It's not the end. There's a reason you exist.</span>
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene7',
+    title: 'Back to Zero',
+    icon: <TrendingUp className="w-12 h-12" />,
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Right now, you're back at <span className="text-white font-semibold">0% belief</span>. And that's fine.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          We're going to do <span className="text-emerald-400 font-semibold">exactly what we did with the Sports Almanac</span>:
+        </p>
+        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <div className="space-y-3">
+            <p className="text-slate-300">1. Agree on <span className="text-white font-medium">{axioms.length} undeniable facts</span> about reality</p>
+            <p className="text-slate-300">2. Check if the Book <span className="text-white font-medium">stated them accurately</span></p>
+            <p className="text-slate-300">3. Watch your certainty <span className="text-emerald-400 font-medium">compound with each verification</span></p>
+          </div>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          And if it's 100% accurate on everything you can verify...
+        </p>
+        <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50">
           <p className="text-blue-200">
-            First, we'll agree on <span className="font-bold">{axioms.length} undeniable facts</span> about reality.
-            <br />
-            Then, we'll check if the Book stated them accurately.
+            Then you'll know for certain: <span className="text-white font-semibold">the One who made you is communicating with you.</span>
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'scene8',
+    title: 'The Stakes',
+    icon: <Zap className="w-12 h-12" />,
+    iconBg: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Once you <span className="text-white font-semibold">know</span> it's from your Creator...
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          It doesn't matter what you <span className="italic">think</span> anymore. What matters is <span className="text-amber-400 font-semibold">reality</span>.
+        </p>
+        <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 mb-4">
+          <p className="text-white font-medium mb-3">The reality is:</p>
+          <p className="text-slate-300 mb-2">• You are in a <span className="text-amber-300 font-semibold">test</span></p>
+          <p className="text-slate-300 mb-2">• There are <span className="text-blue-300 font-semibold">rules</span> to pass</p>
+          <p className="text-slate-300">• You have a <span className="text-emerald-300 font-semibold">choice</span></p>
+        </div>
+        <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-4">
+          <p className="text-xl text-white font-medium mb-2">
+            Two options:
+          </p>
+          <p className="text-amber-200 mb-2">
+            <span className="font-bold">Option A:</span> This life <span className="text-emerald-400">+ the next life</span>
+          </p>
+          <p className="text-amber-200">
+            <span className="font-bold">Option B:</span> Just this life
+          </p>
+        </div>
+        <p className="text-lg text-white font-semibold text-center">
+          You choose.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene9',
+    title: 'Let\'s Begin',
+    icon: <ArrowRight className="w-12 h-12" />,
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          We'll start with <span className="text-white font-semibold">{axioms.length} facts</span> about reality that you already accept.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Facts about <span className="text-blue-300">the cosmos</span>, <span className="text-purple-300">biology</span>, <span className="text-emerald-300">nature</span>, and <span className="text-rose-300">the human condition</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-6">
+          Then we'll check the Book's accuracy—just like checking the Sports Almanac.
+        </p>
+        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+          <p className="text-xl text-white font-medium mb-2">
+            Ready to test the Almanac?
+          </p>
+          <p className="text-emerald-200">
+            Let's see if your certainty compounds... or breaks.
           </p>
         </div>
       </>
