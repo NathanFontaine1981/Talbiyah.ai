@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import ExploreIntro from '../../components/explore/ExploreIntro';
 import BiasBlur from '../../components/explore/BiasBlur';
 import AxiomCheck from '../../components/explore/AxiomCheck';
 import AuthorityMatch from '../../components/explore/AuthorityMatch';
@@ -12,17 +13,18 @@ import CheatCodes from '../../components/explore/CheatCodes';
 const STORAGE_KEY = 'talbiyah_explore_progress';
 
 // Stage order for the Explore journey (The Almanac)
+// 0. Intro - Personal introduction, what I discovered
 // 1. BiasBlur - Acknowledge biases before exploring
 // 2. AxiomCheck - Present undeniable facts user already accepts (The Data)
 // 3. AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
 // 4. TheQuestion - Ask where they think the knowledge came from
 // 5. TheReconciliation - Explain how all Abrahamic religions are one
 // 6. CheatCodes - Life guidance from the Quran (Cheat Codes)
-type FlowStage = 'bias' | 'axiom-check' | 'authority-match' | 'the-question' | 'reconciliation' | 'cheat-codes';
+type FlowStage = 'intro' | 'bias' | 'axiom-check' | 'authority-match' | 'the-question' | 'reconciliation' | 'cheat-codes';
 
 export default function ExplorePage() {
   const navigate = useNavigate();
-  const [flowStage, setFlowStage] = useState<FlowStage>('bias');
+  const [flowStage, setFlowStage] = useState<FlowStage>('intro');
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [beliefChoice, setBeliefChoice] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function ExplorePage() {
 
   // Save progress to localStorage
   useEffect(() => {
-    if (flowStage !== 'bias') {
+    if (flowStage !== 'intro') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         stage: flowStage,
         axioms: agreedAxioms,
@@ -65,6 +67,10 @@ export default function ExplorePage() {
   }, [flowStage, agreedAxioms, verifiedCount, beliefChoice]);
 
   // Stage handlers
+  const handleIntroComplete = () => {
+    setFlowStage('bias');
+  };
+
   const handleBiasComplete = () => {
     setFlowStage('axiom-check');
   };
@@ -109,16 +115,51 @@ export default function ExplorePage() {
     }
   };
 
+  // Helper to go back one stage
+  const goBack = () => {
+    const stages: FlowStage[] = ['intro', 'bias', 'axiom-check', 'authority-match', 'the-question', 'reconciliation', 'cheat-codes'];
+    const currentIndex = stages.indexOf(flowStage);
+    if (currentIndex > 0) {
+      setFlowStage(stages[currentIndex - 1]);
+    }
+  };
+
+  // Common nav buttons component
+  const NavButtons = ({ showBack = true }: { showBack?: boolean }) => (
+    <>
+      {showBack && flowStage !== 'intro' && (
+        <button
+          onClick={goBack}
+          className="fixed top-6 left-6 text-slate-400 hover:text-white transition z-50 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+      <button
+        onClick={() => navigate('/')}
+        className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
+      >
+        <X className="w-6 h-6" />
+      </button>
+    </>
+  );
+
+  // Stage 0: Introduction
+  if (flowStage === 'intro') {
+    return (
+      <div className="relative">
+        <NavButtons showBack={false} />
+        <ExploreIntro onComplete={handleIntroComplete} />
+      </div>
+    );
+  }
+
   // Stage 1: Bias Blur
   if (flowStage === 'bias') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <BiasBlur onComplete={handleBiasComplete} />
       </div>
     );
@@ -128,12 +169,7 @@ export default function ExplorePage() {
   if (flowStage === 'axiom-check') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <AxiomCheck onComplete={handleAxiomCheckComplete} />
       </div>
     );
@@ -143,12 +179,7 @@ export default function ExplorePage() {
   if (flowStage === 'authority-match') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <AuthorityMatch
           agreedAxioms={agreedAxioms}
           onComplete={handleAuthorityMatchComplete}
@@ -161,12 +192,7 @@ export default function ExplorePage() {
   if (flowStage === 'the-question') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <TheQuestion
           verifiedCount={verifiedCount}
           totalFacts={agreedAxioms.length}
@@ -180,12 +206,7 @@ export default function ExplorePage() {
   if (flowStage === 'reconciliation') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <TheReconciliation onComplete={handleReconciliationComplete} />
       </div>
     );
@@ -195,12 +216,7 @@ export default function ExplorePage() {
   if (flowStage === 'cheat-codes') {
     return (
       <div className="relative">
-        <button
-          onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <NavButtons />
         <CheatCodes
           verifiedCount={verifiedCount}
           totalFacts={agreedAxioms.length}
