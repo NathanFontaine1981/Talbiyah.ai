@@ -50,36 +50,54 @@ const axioms = [
     category: 'cosmic',
     fact: 'The universe had a beginning',
     detail: 'The Big Bang: Everything emerged from a single point. The universe was not always here.',
+    discoveredYear: 1927,
+    discoveredBy: 'Georges Lemaître',
+    discoveryNote: 'Belgian physicist proposed the "primeval atom" theory, later confirmed by Hubble\'s observations.',
   },
   {
     id: 'universe-expansion',
     category: 'cosmic',
     fact: 'The universe is expanding',
     detail: 'Space itself is stretching. Galaxies are moving apart from each other.',
+    discoveredYear: 1929,
+    discoveredBy: 'Edwin Hubble',
+    discoveryNote: 'Observed redshift in distant galaxies, proving the universe is expanding in all directions.',
   },
   {
     id: 'earth-sphere',
     category: 'cosmic',
     fact: 'The Earth is spherical',
     detail: 'Not flat. Observable from space and through physics.',
+    discoveredYear: -330,
+    discoveredBy: 'Aristotle (confirmed)',
+    discoveryNote: 'Ancient Greeks observed ships disappearing hull-first over the horizon. Confirmed by Magellan\'s voyage (1522).',
   },
   {
     id: 'sun-moon-light',
     category: 'cosmic',
     fact: 'The Sun generates light; the Moon reflects it',
     detail: 'The Sun is a source of heat and light. The Moon has no light of its own.',
+    discoveredYear: -450,
+    discoveredBy: 'Anaxagoras',
+    discoveryNote: 'Greek philosopher first proposed the Moon reflects sunlight. Galileo confirmed via telescope (1609).',
   },
   {
     id: 'day-night',
     category: 'cosmic',
     fact: 'Day and night alternate with precision',
     detail: 'This cycle is predictable and mathematically precise.',
+    discoveredYear: -3000,
+    discoveredBy: 'Ancient civilizations',
+    discoveryNote: 'Egyptians, Babylonians tracked cycles. Earth\'s rotation proven by Foucault pendulum (1851).',
   },
   {
     id: 'water-life',
     category: 'cosmic',
     fact: 'Water is essential for all life',
     detail: 'Every known living thing requires water to survive.',
+    discoveredYear: 1930,
+    discoveredBy: 'Modern biochemistry',
+    discoveryNote: 'NASA\'s "follow the water" strategy. All known life requires liquid water for biochemical reactions.',
   },
 
   // BIOLOGICAL REALITY
@@ -88,36 +106,54 @@ const axioms = [
     category: 'biological',
     fact: 'We are born helpless',
     detail: 'Humans did not create themselves. We arrive completely dependent.',
+    discoveredYear: 1944,
+    discoveredBy: 'Adolf Portmann',
+    discoveryNote: 'Swiss zoologist documented "physiological prematurity" - humans are born 12 months early compared to other primates.',
   },
   {
     id: 'death-certain',
     category: 'biological',
     fact: 'Death is inevitable',
     detail: 'Every living thing dies. No exceptions.',
+    discoveredYear: 1961,
+    discoveredBy: 'Leonard Hayflick',
+    discoveryNote: 'Discovered the "Hayflick limit" - human cells can only divide 40-60 times before death.',
   },
   {
     id: 'embryo-stages',
-    category: 'biological',
+    category: 'cosmic',
     fact: 'Human formation follows specific stages in the womb',
     detail: 'Drop of fluid → clinging substance → lump → bones → flesh covers bones.',
+    discoveredYear: 1940,
+    discoveredBy: 'Keith Moore',
+    discoveryNote: 'Modern embryology confirmed: zygote → blastocyst → embryo with somites → skeleton → muscles cover bones.',
   },
   {
     id: 'body-heals',
     category: 'biological',
     fact: 'The body heals itself',
     detail: 'Cuts clot, bones knit, cells regenerate—without conscious command.',
+    discoveredYear: 1882,
+    discoveredBy: 'Élie Metchnikoff',
+    discoveryNote: 'Discovered phagocytosis - immune cells automatically engulf pathogens. Won Nobel Prize 1908.',
   },
   {
     id: 'fingerprints',
     category: 'biological',
     fact: 'Every human has unique fingerprints',
     detail: 'No two people share the same fingerprint pattern.',
+    discoveredYear: 1892,
+    discoveredBy: 'Sir Francis Galton',
+    discoveryNote: 'Proved fingerprint uniqueness statistically. Even identical twins have different fingerprints.',
   },
   {
     id: 'skin-pain',
     category: 'biological',
     fact: 'Pain receptors are located in the skin',
     detail: 'When skin is destroyed (3rd-degree burns), we feel no pain there.',
+    discoveredYear: 1906,
+    discoveredBy: 'Charles Sherrington',
+    discoveryNote: 'Mapped nociceptors (pain receptors) in skin. Deep burns destroy these receptors, causing numbness.',
   },
 
   // NATURAL ORDER
@@ -126,30 +162,45 @@ const axioms = [
     category: 'natural',
     fact: 'Reproduction requires male and female',
     detail: 'The human race continues through this duality.',
+    discoveredYear: 1677,
+    discoveredBy: 'Antonie van Leeuwenhoek',
+    discoveryNote: 'First observed sperm cells under microscope. Egg cell discovered by Karl Ernst von Baer (1827).',
   },
   {
     id: 'baby-instinct',
     category: 'natural',
     fact: 'Babies instinctively know how to nurse',
     detail: 'No one teaches them—they know immediately after birth.',
+    discoveredYear: 1952,
+    discoveredBy: 'Konrad Lorenz',
+    discoveryNote: 'Documented innate behaviors in newborns. Rooting and sucking reflexes are hardwired at birth.',
   },
   {
     id: 'parent-protection',
     category: 'natural',
     fact: 'Parents have an innate drive to protect their young',
     detail: 'This is hormonal and instinctive, seen across all mammals.',
+    discoveredYear: 1979,
+    discoveredBy: 'C. Sue Carter',
+    discoveryNote: 'Discovered oxytocin\'s role in parent-child bonding and protective instincts.',
   },
   {
     id: 'seasons-cycle',
     category: 'natural',
     fact: 'Nature follows cycles of life, death, and resurrection',
     detail: 'Spring → Summer → Autumn → Winter → Spring again.',
+    discoveredYear: 1543,
+    discoveredBy: 'Copernicus',
+    discoveryNote: 'Earth\'s axial tilt (23.5°) causes seasons. Plants die and regenerate annually.',
   },
   {
     id: 'animal-intelligence',
     category: 'natural',
     fact: 'Animals have complex intelligence',
     detail: 'Ants build colonies. Bees communicate through dance. Many exceed human senses.',
+    discoveredYear: 1973,
+    discoveredBy: 'Karl von Frisch',
+    discoveryNote: 'Won Nobel Prize for decoding bee "waggle dance" communication. Ants farm fungi, wage wars.',
   },
 
   // HUMAN CONDITION
@@ -158,24 +209,36 @@ const axioms = [
     category: 'human',
     fact: 'We have an innate sense of fairness',
     detail: 'Even children feel anger at injustice. We know right from wrong.',
+    discoveredYear: 2007,
+    discoveredBy: 'Yale Infant Cognition Center',
+    discoveryNote: 'Babies as young as 3 months prefer "helper" puppets over "hinderers" - morality is innate.',
   },
   {
     id: 'emotions-real',
     category: 'human',
     fact: 'Emotions are real but not physical',
     detail: 'Love, anger, jealousy, mercy—states of the soul, not objects.',
+    discoveredYear: 1884,
+    discoveredBy: 'William James',
+    discoveryNote: 'Proposed emotions are subjective experiences. Neuroscience confirms emotions aren\'t locatable in one brain region.',
   },
   {
     id: 'organs-purpose',
     category: 'human',
     fact: 'Every organ has a purpose',
     detail: 'Eyes to see, ears to hear. If parts have purpose, the whole must too.',
+    discoveredYear: 1859,
+    discoveredBy: 'Charles Darwin',
+    discoveryNote: 'Natural selection explains organ function. Even "vestigial" organs (appendix) now known to have immune function.',
   },
   {
     id: 'conscious-will',
     category: 'human',
     fact: 'We can choose to defy our instincts',
     detail: 'Unlike animals, we can fast when hungry, stay awake when tired.',
+    discoveredYear: 1983,
+    discoveredBy: 'Benjamin Libet',
+    discoveryNote: 'Experiments showed humans can "veto" unconscious urges. Free will operates in the conscious override.',
   },
 ];
 
@@ -493,24 +556,34 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
   const [showIntro, setShowIntro] = useState(true);
   const [introScene, setIntroScene] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [expandedAxiom, setExpandedAxiom] = useState<string | null>(null);
 
   const currentCategory = categories[currentCategoryIndex];
   const categoryAxioms = axioms.filter(a => a.category === currentCategory?.id);
 
-  // Check if all axioms in current category are processed
-  const allCategoryAxiomsProcessed = categoryAxioms.every(
+  // Check if all axioms in current category are agreed
+  const allCategoryAxiomsAgreed = categoryAxioms.every(
     a => agreedAxioms.includes(a.id)
   );
 
-  const handleAgreeToAll = () => {
-    const categoryAxiomIds = categoryAxioms.map(a => a.id);
-    setAgreedAxioms(prev => [...new Set([...prev, ...categoryAxiomIds])]);
+  const handleAgreeAxiom = (axiomId: string) => {
+    if (!agreedAxioms.includes(axiomId)) {
+      setAgreedAxioms(prev => [...prev, axiomId]);
+    }
+  };
 
+  const handleMoveToNext = () => {
     if (currentCategoryIndex < categories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
+      setExpandedAxiom(null);
     } else {
       setIsComplete(true);
     }
+  };
+
+  const formatYear = (year: number) => {
+    if (year < 0) return `${Math.abs(year)} BC`;
+    return `${year} AD`;
   };
 
   const progress = ((currentCategoryIndex) / categories.length) * 100;
@@ -746,42 +819,143 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
             </div>
 
             {/* Axioms List */}
-            <div className="bg-slate-900/70 rounded-2xl border border-slate-700 overflow-hidden mb-6">
-              {categoryAxioms.map((axiom, index) => (
-                <motion.div
-                  key={axiom.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`p-4 ${
-                    index < categoryAxioms.length - 1 ? 'border-b border-slate-700' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs text-slate-400">{index + 1}</span>
+            <div className="space-y-3 mb-6">
+              {categoryAxioms.map((axiom, index) => {
+                const isExpanded = expandedAxiom === axiom.id;
+                const isAgreed = agreedAxioms.includes(axiom.id);
+
+                return (
+                  <motion.div
+                    key={axiom.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`bg-slate-900/70 rounded-xl border transition-colors ${
+                      isAgreed ? 'border-emerald-700/50' : 'border-slate-700'
+                    }`}
+                  >
+                    {/* Main axiom row */}
+                    <div
+                      onClick={() => setExpandedAxiom(isExpanded ? null : axiom.id)}
+                      className="p-4 cursor-pointer hover:bg-slate-800/50 transition"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          isAgreed ? 'bg-emerald-500' : 'bg-slate-800'
+                        }`}>
+                          {isAgreed ? (
+                            <Check className="w-3 h-3 text-white" />
+                          ) : (
+                            <span className="text-xs text-slate-400">{index + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-medium mb-1">{axiom.fact}</p>
+                          <p className="text-slate-400 text-sm">{axiom.detail}</p>
+                        </div>
+                        <ChevronRight className={`w-5 h-5 text-slate-500 transition-transform ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`} />
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-medium mb-1">{axiom.fact}</p>
-                      <p className="text-slate-400 text-sm">{axiom.detail}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+
+                    {/* Expanded discovery info */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 border-t border-slate-700 pt-4">
+                            {/* Discovery info */}
+                            <div className="bg-blue-900/20 rounded-lg p-3 border border-blue-700/30 mb-4">
+                              <p className="text-blue-300 text-xs font-medium mb-2">
+                                📚 When was this discovered?
+                              </p>
+                              <div className="flex items-center gap-4 mb-2">
+                                <div>
+                                  <p className="text-white font-semibold">{formatYear(axiom.discoveredYear)}</p>
+                                  <p className="text-slate-400 text-xs">Year discovered</p>
+                                </div>
+                                <div>
+                                  <p className="text-white font-semibold">{axiom.discoveredBy}</p>
+                                  <p className="text-slate-400 text-xs">Discovered by</p>
+                                </div>
+                              </div>
+                              <p className="text-slate-300 text-sm">{axiom.discoveryNote}</p>
+                            </div>
+
+                            {/* Agree/Disagree buttons */}
+                            {!isAgreed && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAgreeAxiom(axiom.id);
+                                  }}
+                                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+                                >
+                                  <Check className="w-4 h-4" />
+                                  Yes, this is fact
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Just collapse - they can't disagree with undeniable facts
+                                    setExpandedAxiom(null);
+                                  }}
+                                  className="px-4 py-2 border border-slate-600 text-slate-400 hover:bg-slate-800 rounded-lg font-medium transition text-sm"
+                                >
+                                  I need more info
+                                </button>
+                              </div>
+                            )}
+                            {isAgreed && (
+                              <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                                <Check className="w-4 h-4" />
+                                You agreed this is an undeniable fact
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
             </div>
 
-            {/* Agree button */}
+            {/* Continue button - only shows when all agreed */}
             <div className="text-center">
-              <p className="text-slate-400 text-sm mb-4">
-                Do you agree these are undeniable facts?
-              </p>
-              <button
-                onClick={handleAgreeToAll}
-                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
-              >
-                <Check className="w-5 h-5" />
-                Yes, I Agree to All {categoryAxioms.length}
-              </button>
+              {allCategoryAxiomsAgreed ? (
+                <button
+                  onClick={handleMoveToNext}
+                  className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+                >
+                  {currentCategoryIndex < categories.length - 1 ? (
+                    <>
+                      Continue to {categories[currentCategoryIndex + 1].subtitle}
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  ) : (
+                    <>
+                      All Facts Agreed - Verify the Almanac
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div>
+                  <p className="text-slate-400 text-sm mb-2">
+                    Click each fact to learn when it was discovered
+                  </p>
+                  <p className="text-slate-500 text-xs">
+                    {agreedAxioms.filter(id => categoryAxioms.some(a => a.id === id)).length} of {categoryAxioms.length} facts agreed
+                  </p>
+                </div>
+              )}
               <p className="text-slate-500 text-xs mt-4">
                 {currentCategoryIndex + 1} of {categories.length} categories
               </p>
