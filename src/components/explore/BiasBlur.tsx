@@ -9,7 +9,7 @@ interface BiasBlurProps {
 const biasStatements = [
   {
     id: 'truth-seeking',
-    statement: 'To find the truth, I must put aside what I want to be true and look at what is true',
+    statement: 'To find the truth, I must put aside what I want to be true and look at what IS true',
     acknowledgment: 'Honest inquiry requires intellectual honesty. Truth exists independent of our preferences.',
   },
   {
