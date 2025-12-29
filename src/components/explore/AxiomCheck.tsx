@@ -204,98 +204,162 @@ const storyScenes = [
   },
   {
     id: 'scene2',
-    title: 'Checking the Facts',
+    title: 'Building Belief',
     icon: <TrendingUp className="w-12 h-12" />,
     iconBg: 'bg-blue-500/20',
     iconColor: 'text-blue-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Imagine you found that book. You'd test it, right?
+          You find the book. At first, <span className="text-white font-semibold">you have 0% belief</span>. Why would you?
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          But then you test it...
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <p className="text-slate-400 text-sm mb-2">You look up events that already happened:</p>
-          <ul className="space-y-2 text-white">
-            <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span>1966 World Cup Final → <span className="text-emerald-400">Accurate</span></span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span>2008 Champions League → <span className="text-emerald-400">Accurate</span></span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span>2016 Leicester 5000-1 → <span className="text-emerald-400">Accurate</span></span>
-            </li>
-          </ul>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Result 1 correct</span>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="w-[10%] h-full bg-emerald-500"></div>
+                </div>
+                <span className="text-emerald-400 text-sm">10%</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Result 5 correct</span>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="w-[40%] h-full bg-emerald-500"></div>
+                </div>
+                <span className="text-emerald-400 text-sm">40%</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Result 20 correct</span>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="w-[75%] h-full bg-emerald-500"></div>
+                </div>
+                <span className="text-emerald-400 text-sm">75%</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-white font-medium">Result 50 correct</span>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="w-full h-full bg-emerald-500"></div>
+                </div>
+                <span className="text-emerald-400 text-sm font-bold">99%</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="text-lg text-white font-medium">
-          50 events checked. <span className="text-emerald-400">50 facts confirmed. Zero errors.</span>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          Each correct result <span className="text-emerald-400 font-semibold">compounds your certainty</span>.
+          The only thing that would break it? <span className="text-rose-400">A single wrong result.</span>
         </p>
       </>
     ),
   },
   {
     id: 'scene3',
-    title: 'What Biff Realized',
+    title: 'The Point of Certainty',
     icon: <Brain className="w-12 h-12" />,
     iconBg: 'bg-purple-500/20',
     iconColor: 'text-purple-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          <span className="text-white font-medium">What went through Biff's mind?</span>
+          After 50 verified results with <span className="text-white font-semibold">zero errors</span>, something shifts in your mind.
         </p>
         <div className="space-y-3 mb-4">
           <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-amber-500">
-            <p className="text-amber-200 italic">"This isn't guessing. These are recorded facts."</p>
+            <p className="text-amber-200 italic">"This isn't luck. This isn't coincidence."</p>
           </div>
           <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-blue-500">
-            <p className="text-blue-200 italic">"50 out of 50 verified. Not one deviation."</p>
+            <p className="text-blue-200 italic">"These aren't predictions—they're recorded facts."</p>
           </div>
           <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-emerald-500">
-            <p className="text-emerald-200 italic">"This book knows the results before they happen TO ME."</p>
+            <p className="text-emerald-200 italic">"The book knows what happens before I witness it."</p>
           </div>
         </div>
         <p className="text-lg text-slate-300 leading-relaxed">
-          The book wasn't <span className="italic">predicting</span>. It was <span className="text-white font-semibold">stating facts</span> that Biff just hadn't witnessed yet.
+          You've reached <span className="text-purple-400 font-semibold">the point of certainty</span>—not blind faith, but
+          <span className="text-white font-semibold"> earned conviction</span> built on verified evidence.
         </p>
       </>
     ),
   },
   {
     id: 'scene4',
-    title: 'The Rational Response',
-    icon: <DollarSign className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
+    title: 'Munich, 1958',
+    icon: <Clock className="w-12 h-12" />,
+    iconBg: 'bg-rose-500/20',
+    iconColor: 'text-rose-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Tomorrow's match: <span className="text-white font-semibold">Manchester United vs Liverpool</span>.
+          You turn to February 6th, 1958. <span className="text-white font-semibold">Manchester United's Busby Babes</span>.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          The book states: <span className="text-emerald-400 font-semibold">United won 3-1</span>.
-          <span className="text-slate-500 text-sm"> (Past tense. It's a recorded result.)</span>
+          The book records: <span className="text-slate-400 italic">"Match result: Drew 3-3 in Belgrade. United through 5-4 on aggregate."</span>
         </p>
-        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-4">
-          <p className="text-xl text-white font-medium mb-2">
-            Would you bet your house on it?
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Then you see the next entry: <span className="text-rose-400 font-semibold">"Flight 609 crashed on takeoff from Munich. 23 dead."</span>
+        </p>
+        <div className="bg-rose-900/30 rounded-xl p-5 border border-rose-700/50 mb-4">
+          <p className="text-xl text-white font-medium mb-3">
+            Now ask yourself honestly:
           </p>
-          <p className="text-emerald-200">
-            The book has been <span className="font-bold">100% accurate</span> on every fact you've verified.
-            <br />
-            <span className="text-white font-semibold">Not predictions—recorded outcomes. Why would this one be different?</span>
+          <p className="text-rose-200 text-lg">
+            If you were there—and this book had been <span className="font-bold">100% accurate</span> on everything—
+            <br /><br />
+            <span className="text-white font-semibold">Would you get on that plane?</span>
           </p>
         </div>
+        <p className="text-slate-400 text-sm italic">
+          The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
+        </p>
       </>
     ),
   },
   {
     id: 'scene5',
-    title: 'A Different Almanac',
+    title: 'The Logic of Belief',
     icon: <Zap className="w-12 h-12" />,
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          This is the logic: If a source is <span className="text-emerald-400 font-semibold">100% accurate about everything you can verify</span>...
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          ...what rational reason do you have to doubt what it says about things <span className="text-white font-semibold">you haven't witnessed yet?</span>
+        </p>
+        <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 mb-4">
+          <p className="text-slate-300 mb-3">
+            <span className="text-emerald-400">✓</span> Correct about the past → <span className="text-white">Verified</span>
+          </p>
+          <p className="text-slate-300 mb-3">
+            <span className="text-emerald-400">✓</span> Correct about the present (which becomes past) → <span className="text-white">Verified</span>
+          </p>
+          <p className="text-slate-300">
+            <span className="text-blue-400">?</span> What it says about the future → <span className="text-white font-semibold">Why would you doubt it?</span>
+          </p>
+        </div>
+        <p className="text-lg text-blue-200 leading-relaxed">
+          This is <span className="text-white font-semibold">belief in the unseen</span>—not blind faith, but certainty built on a foundation of verified truth.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene6',
+    title: 'The Real Almanac',
+    icon: <BookOpen className="w-12 h-12" />,
     iconBg: 'bg-blue-500/20',
     iconColor: 'text-blue-400',
     content: (
