@@ -28,13 +28,13 @@ const introScenes = [
     content: (
       <>
         <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          Imagine finding a <span className="text-amber-400 font-semibold">treasure map</span> that actually works.
+          Imagine having <span className="text-amber-400 font-semibold">tangible evidence</span> for life's most important questions.
         </p>
         <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          Not a fairy tale. Not wishful thinking.
+          Not blind faith. Not wishful thinking. Not "just believe."
         </p>
         <p className="text-lg text-slate-300 leading-relaxed">
-          Something that answers the biggest questions:
+          Actual evidence that answers:
           <span className="text-white font-medium"> Why are we here? What happens when we die? Is there more to this?</span>
         </p>
       </>
