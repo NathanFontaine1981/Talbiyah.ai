@@ -11,14 +11,19 @@ import {
   Anchor,
   X,
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  Play,
 } from 'lucide-react';
 import { tajPrinciples, calculateCompoundProbability, getFormattedProbability } from '../../data/certaintyData';
 import { supabase } from '../../lib/supabaseClient';
 import FaithTower from '../../components/anchor/FaithTower';
 import LifeManual from '../../components/explore/LifeManual';
+import CurriculumDashboard from '../../components/new-muslim/CurriculumDashboard';
+import ModuleViewer from '../../components/new-muslim/ModuleViewer';
+import { CurriculumModule } from '../../data/curriculumData';
 
 const STORAGE_KEY = 'talbiyah_anchor_progress';
+const CURRICULUM_STORAGE_KEY = 'talbiyah_curriculum_progress';
 
 // Category icons mapping
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -38,6 +43,11 @@ export default function NewMuslimPage() {
   const [showLifeManual, setShowLifeManual] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // Curriculum state
+  const [showCurriculum, setShowCurriculum] = useState(false);
+  const [currentModule, setCurrentModule] = useState<CurriculumModule | null>(null);
+  const [completedModules, setCompletedModules] = useState<string[]>([]);
+
   // Load progress from localStorage or database
   useEffect(() => {
     const loadProgress = async () => {
@@ -45,7 +55,7 @@ export default function NewMuslimPage() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // Try to load from localStorage first
+      // Try to load anchor progress from localStorage
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
@@ -57,9 +67,29 @@ export default function NewMuslimPage() {
           console.error('Error loading progress:', e);
         }
       }
+
+      // Load curriculum progress
+      const curriculumSaved = localStorage.getItem(CURRICULUM_STORAGE_KEY);
+      if (curriculumSaved) {
+        try {
+          const { completed } = JSON.parse(curriculumSaved);
+          setCompletedModules(completed || []);
+        } catch (e) {
+          console.error('Error loading curriculum progress:', e);
+        }
+      }
     };
     loadProgress();
   }, []);
+
+  // Save curriculum progress
+  useEffect(() => {
+    if (completedModules.length > 0) {
+      localStorage.setItem(CURRICULUM_STORAGE_KEY, JSON.stringify({
+        completed: completedModules,
+      }));
+    }
+  }, [completedModules]);
 
   // Save progress to localStorage
   useEffect(() => {
@@ -110,6 +140,70 @@ export default function NewMuslimPage() {
     localStorage.removeItem(STORAGE_KEY);
     navigate('/signup');
   };
+
+  // Curriculum handlers
+  const handleSelectModule = (module: CurriculumModule) => {
+    setCurrentModule(module);
+  };
+
+  const handleCompleteModule = (moduleId: string) => {
+    if (!completedModules.includes(moduleId)) {
+      setCompletedModules([...completedModules, moduleId]);
+    }
+  };
+
+  const handleBackToCurriculum = () => {
+    setCurrentModule(null);
+  };
+
+  const handleNavigateModule = (module: CurriculumModule) => {
+    setCurrentModule(module);
+  };
+
+  // Module Viewer
+  if (currentModule) {
+    return (
+      <ModuleViewer
+        module={currentModule}
+        completedModules={completedModules}
+        onComplete={handleCompleteModule}
+        onBack={handleBackToCurriculum}
+        onNavigate={handleNavigateModule}
+        isCompleted={completedModules.includes(currentModule.id)}
+      />
+    );
+  }
+
+  // Curriculum Dashboard
+  if (showCurriculum) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-8">
+        {/* Header */}
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => setShowCurriculum(false)}
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="text-slate-400 hover:text-white transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <CurriculumDashboard
+            completedModules={completedModules}
+            onSelectModule={handleSelectModule}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Life Manual Modal
   if (showLifeManual) {
@@ -170,8 +264,21 @@ export default function NewMuslimPage() {
             </div>
           </div>
 
-          {/* Two paths */}
-          <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {/* Three paths */}
+          <div className="grid sm:grid-cols-3 gap-4 mb-6">
+            <button
+              onClick={() => setShowCurriculum(true)}
+              className="p-6 bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl transition flex flex-col items-center gap-3 relative overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 bg-amber-500 text-xs px-2 py-0.5 rounded-full font-medium">
+                Start Here
+              </div>
+              <Play className="w-8 h-8" />
+              <span className="font-semibold text-lg">Learn the Basics</span>
+              <span className="text-purple-200 text-sm">
+                6 foundational chapters
+              </span>
+            </button>
             <button
               onClick={handleStartJourney}
               className="p-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl transition flex flex-col items-center gap-3"
@@ -179,7 +286,7 @@ export default function NewMuslimPage() {
               <Anchor className="w-8 h-8" />
               <span className="font-semibold text-lg">Build Your Anchor</span>
               <span className="text-emerald-200 text-sm">
-                Strengthen faith with evidence
+                Evidence-based certainty
               </span>
             </button>
             <button
@@ -189,7 +296,7 @@ export default function NewMuslimPage() {
               <BookOpen className="w-8 h-8 text-emerald-400" />
               <span className="font-semibold text-lg">Life Manual</span>
               <span className="text-slate-400 text-sm">
-                Quranic guidance for life challenges
+                Quranic solutions
               </span>
             </button>
           </div>

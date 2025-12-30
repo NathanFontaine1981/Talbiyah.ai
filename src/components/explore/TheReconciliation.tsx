@@ -237,6 +237,39 @@ const scenes = [
     iconColor: 'text-blue-400',
   },
   {
+    id: 'same-team',
+    title: 'The Same Team',
+    subtitle: 'One chain, one mission',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Here's what many people don't realise:
+        </p>
+        <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/50 mb-4">
+          <p className="text-xl text-white font-medium mb-3">
+            Muhammad, Jesus, and Moses are on the <span className="text-amber-400">same team</span>.
+          </p>
+          <p className="text-amber-200">
+            They all came with the same message. They all worshipped the same God. They all taught submission to the Creator.
+          </p>
+        </div>
+        <div className="bg-rose-900/20 rounded-xl p-4 border border-rose-700/50">
+          <p className="text-rose-200 text-sm mb-2">
+            <span className="font-semibold">This means:</span>
+          </p>
+          <p className="text-white">
+            Rejecting Muhammad is rejecting Jesus. Rejecting Jesus is rejecting Moses.
+            <br />
+            <span className="text-slate-400 text-sm">You can't accept one and reject the others—they're all messengers of the same God.</span>
+          </p>
+        </div>
+      </>
+    ),
+    icon: <Users className="w-12 h-12" />,
+    iconBg: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+  },
+  {
     id: 'the-invitation',
     title: 'The Invitation',
     subtitle: 'Return to the source',

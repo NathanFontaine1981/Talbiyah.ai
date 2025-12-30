@@ -7,7 +7,7 @@ interface AuthorityMatchProps {
   onComplete: () => void;
 }
 
-// Mapping of all 21 axiom IDs to their Quranic revelations
+// Mapping of all axiom IDs to their Quranic revelations
 const axiomToQuran: Record<string, {
   verse: string;
   surah: string;
@@ -167,6 +167,72 @@ const axiomToQuran: Record<string, {
     yearDiscovered: 0,
     category: 'natural',
   },
+  'plants-male-female': {
+    verse: '36:36',
+    surah: 'Ya-Sin',
+    ayah: '36',
+    arabicText: 'سُبْحَانَ الَّذِي خَلَقَ الْأَزْوَاجَ كُلَّهَا مِمَّا تُنبِتُ الْأَرْضُ وَمِنْ أَنفُسِهِمْ وَمِمَّا لَا يَعْلَمُونَ',
+    translation: 'Exalted is He who created all pairs - from what the earth grows and from themselves and from that which they do not know.',
+    factStatement: 'Plants have male and female parts',
+    yearRevealed: 610,
+    yearDiscovered: 1694,
+    category: 'natural',
+  },
+  'mountains-pegs': {
+    verse: '78:7',
+    surah: 'An-Naba',
+    ayah: '7',
+    arabicText: 'وَالْجِبَالَ أَوْتَادًا',
+    translation: 'And the mountains as stakes.',
+    factStatement: 'Mountains have deep roots extending into the Earth',
+    yearRevealed: 610,
+    yearDiscovered: 1855,
+    category: 'natural',
+  },
+  'lowest-land': {
+    verse: '30:2-3',
+    surah: 'Ar-Rum',
+    ayah: '2-3',
+    arabicText: 'غُلِبَتِ الرُّومُ فِي أَدْنَى الْأَرْضِ',
+    translation: 'The Romans have been defeated in the lowest land.',
+    factStatement: 'The Dead Sea area is the lowest point on Earth',
+    yearRevealed: 610,
+    yearDiscovered: 1837,
+    category: 'natural',
+  },
+  'female-bees': {
+    verse: '16:68-69',
+    surah: 'An-Nahl',
+    ayah: '68-69',
+    arabicText: 'وَأَوْحَىٰ رَبُّكَ إِلَى النَّحْلِ أَنِ اتَّخِذِي مِنَ الْجِبَالِ بُيُوتًا',
+    translation: 'And your Lord inspired the bee, saying: "Take for yourself among the mountains, houses."',
+    factStatement: 'Only female bees make honey',
+    yearRevealed: 610,
+    yearDiscovered: 1609,
+    category: 'natural',
+  },
+  'two-seas': {
+    verse: '55:19-20',
+    surah: 'Ar-Rahman',
+    ayah: '19-20',
+    arabicText: 'مَرَجَ الْبَحْرَيْنِ يَلْتَقِيَانِ بَيْنَهُمَا بَرْزَخٌ لَّا يَبْغِيَانِ',
+    translation: 'He released the two seas, meeting [side by side]. Between them is a barrier [so] neither of them transgresses.',
+    factStatement: 'Fresh and salt water meet but don\'t mix',
+    yearRevealed: 610,
+    yearDiscovered: 1942,
+    category: 'natural',
+  },
+  'iron-sent-down': {
+    verse: '57:25',
+    surah: 'Al-Hadid',
+    ayah: '25',
+    arabicText: 'وَأَنزَلْنَا الْحَدِيدَ فِيهِ بَأْسٌ شَدِيدٌ وَمَنَافِعُ لِلنَّاسِ',
+    translation: 'And We sent down iron, wherein is great military might and benefits for the people.',
+    factStatement: 'Iron came from outer space',
+    yearRevealed: 610,
+    yearDiscovered: 1920,
+    category: 'cosmic',
+  },
   'baby-instinct': {
     verse: '28:7',
     surah: 'Al-Qasas',
@@ -213,6 +279,17 @@ const axiomToQuran: Record<string, {
   },
 
   // HUMAN CONDITION
+  'pharaoh-preserved': {
+    verse: '10:92',
+    surah: 'Yunus',
+    ayah: '92',
+    arabicText: 'فَالْيَوْمَ نُنَجِّيكَ بِبَدَنِكَ لِتَكُونَ لِمَنْ خَلْفَكَ آيَةً',
+    translation: 'Today We will preserve your body so that you may become a sign for those who come after you.',
+    factStatement: 'Pharaoh\'s body was preserved against all odds',
+    yearRevealed: 610,
+    yearDiscovered: 1881,
+    category: 'human',
+  },
   'moral-compass': {
     verse: '91:8',
     surah: 'Ash-Shams',
@@ -296,7 +373,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
   const currentMatch = matchedAxioms[currentIndex];
   const progress = ((currentIndex + 1) / matchedAxioms.length) * 100;
   const accuracyRate = matchedAxioms.length > 0
-    ? Math.round((verifiedCount / (currentIndex + (showClimax ? 0 : 1))) * 100)
+    ? Math.min(100, Math.round((verifiedCount / (currentIndex + (showClimax ? 0 : 1))) * 100))
     : 0;
 
   const handleVerified = () => {
@@ -350,12 +427,12 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
               </p>
 
               <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                Now let's check: <span className="text-amber-400">Did the Almanac get these right?</span>
+                Now let's check: <span className="text-amber-400">Did the Quran get these right?</span>
               </p>
 
               <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50">
                 <p className="text-blue-200 text-center">
-                  For each fact, we'll show you what a 1,400-year-old book says.
+                  For each fact, we'll show you what the Quran says.
                   <br />
                   <span className="font-semibold">You decide: Match or Miss?</span>
                 </p>
@@ -406,7 +483,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             <div className="bg-slate-900/80 rounded-2xl p-8 border border-emerald-500/30 mb-8">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <TrendingUp className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-xl text-slate-300">Predictive Accuracy Report</h2>
+                <h2 className="text-xl text-slate-300">Accuracy Report</h2>
               </div>
 
               <div className="text-7xl font-bold text-emerald-400 mb-2">
@@ -437,28 +514,44 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
               </div>
             </div>
 
-            {/* The Revelation */}
+            {/* The Revelation - Fiction vs Reality */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="bg-emerald-900/30 rounded-2xl p-8 border border-emerald-500/50 mb-8"
+              className="mb-8"
             >
-              <h3 className="text-3xl font-serif text-white mb-4">
-                The Almanac is Real
-              </h3>
-
-              <p className="text-xl text-emerald-200 leading-relaxed mb-4">
-                A book from 1,400 years ago knew what humanity only discovered centuries later.
-              </p>
-
-              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700">
-                <p className="text-amber-300 text-lg font-medium">
-                  If it got the past right...
+              {/* The Fiction */}
+              <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-600 mb-4">
+                <p className="text-slate-400 text-sm uppercase tracking-wider mb-2">The Fiction</p>
+                <h3 className="text-2xl font-serif text-white mb-3">
+                  Grays Sports Almanac
+                </h3>
+                <p className="text-slate-300">
+                  A made-up book from a movie. It recorded sports scores.
+                  <br />
+                  <span className="text-slate-500 italic">Biff used it to get rich.</span>
                 </p>
-                <p className="text-white text-xl font-serif mt-2">
-                  Why not trust it for the future?
+              </div>
+
+              {/* The Reality */}
+              <div className="bg-emerald-900/30 rounded-2xl p-6 border border-emerald-500/50">
+                <p className="text-emerald-400 text-sm uppercase tracking-wider mb-2">The Reality</p>
+                <h3 className="text-3xl font-serif text-white mb-3">
+                  The Quran
+                </h3>
+                <p className="text-emerald-200 text-lg leading-relaxed mb-4">
+                  A <span className="text-white font-semibold">real book</span> from 1,400 years ago that recorded facts about the universe, biology, nature, and humanity—
+                  <span className="text-amber-300"> centuries before science discovered them</span>.
                 </p>
+                <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700">
+                  <p className="text-amber-300 text-lg font-medium">
+                    The Almanac was fiction.
+                  </p>
+                  <p className="text-white text-xl font-serif mt-2">
+                    The Quran is real. And you just verified it.
+                  </p>
+                </div>
               </div>
             </motion.div>
 
@@ -469,13 +562,13 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
               transition={{ delay: 0.9 }}
             >
               <p className="text-slate-400 mb-4">
-                Ready to use the Almanac's cheat codes for life?
+                If the Quran was right about all of this... what else does it say?
               </p>
               <button
                 onClick={onComplete}
                 className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
               >
-                Show Me the Cheat Codes
+                Continue
                 <ArrowRight className="w-5 h-5" />
               </button>
             </motion.div>

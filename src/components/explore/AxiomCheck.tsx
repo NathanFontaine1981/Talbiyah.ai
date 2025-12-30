@@ -42,7 +42,7 @@ const categories = [
   },
 ];
 
-// The Axioms - Undeniable facts organized by category
+// The Axioms - Undeniable facts organised by category
 const axioms = [
   // COSMIC REALITY
   {
@@ -76,7 +76,7 @@ const axioms = [
     id: 'sun-moon-light',
     category: 'cosmic',
     fact: 'The Sun generates light; the Moon reflects it',
-    detail: 'The Sun is a source of heat and light. The Moon has no light of its own.',
+    detail: 'For years people thought the moon had its own light. The Sun is a source of heat and light. The Moon has no light of its own—it only reflects sunlight.',
     discoveredYear: -450,
     discoveredBy: 'Anaxagoras',
     discoveryNote: 'Greek philosopher first proposed the Moon reflects sunlight. Galileo confirmed via telescope (1609).',
@@ -87,7 +87,7 @@ const axioms = [
     fact: 'Day and night alternate with precision',
     detail: 'This cycle is predictable and mathematically precise.',
     discoveredYear: -3000,
-    discoveredBy: 'Ancient civilizations',
+    discoveredBy: 'Ancient civilisations',
     discoveryNote: 'Egyptians, Babylonians tracked cycles. Earth\'s rotation proven by Foucault pendulum (1851).',
   },
   {
@@ -169,13 +169,40 @@ const axioms = [
     discoveryNote: 'First observed sperm cells under microscope. Egg cell discovered by Karl Ernst von Baer (1827).',
   },
   {
+    id: 'plants-male-female',
+    category: 'natural',
+    fact: 'Plants have male and female parts',
+    detail: 'Even flowers have male (stamens) and female (pistils) parts. Bees carry pollen from male to female parts to enable reproduction.',
+    discoveredYear: 1694,
+    discoveredBy: 'Rudolf Camerarius',
+    discoveryNote: 'German botanist provided first scientific proof of plant sexuality. Cross-pollination by insects documented by Sprengel (1793).',
+  },
+  {
+    id: 'mountains-pegs',
+    category: 'natural',
+    fact: 'Mountains have deep roots extending into the Earth',
+    detail: 'Mountains are not just sitting on the surface—they have deep foundations like pegs or stakes anchoring them.',
+    discoveredYear: 1855,
+    discoveredBy: 'George Airy',
+    discoveryNote: 'Proposed the theory of isostasy—mountains have deep "roots" extending into the mantle. Confirmed by seismology in the 20th century.',
+  },
+  {
+    id: 'lowest-land',
+    category: 'natural',
+    fact: 'The Dead Sea area is the lowest point on Earth',
+    detail: 'At 430 meters below sea level, this is where the Romans were defeated by the Persians—"in the lowest land."',
+    discoveredYear: 1837,
+    discoveredBy: 'Modern surveying',
+    discoveryNote: 'Accurate altitude measurement became possible with barometric and trigonometric surveying. The Dead Sea was confirmed as Earth\'s lowest point on land.',
+  },
+  {
     id: 'baby-instinct',
     category: 'natural',
     fact: 'Babies instinctively know how to nurse',
     detail: 'No one teaches them—they know immediately after birth.',
     discoveredYear: 1952,
     discoveredBy: 'Konrad Lorenz',
-    discoveryNote: 'Documented innate behaviors in newborns. Rooting and sucking reflexes are hardwired at birth.',
+    discoveryNote: 'Documented innate behaviours in newborns. Rooting and sucking reflexes are hardwired at birth.',
   },
   {
     id: 'parent-protection',
@@ -204,8 +231,46 @@ const axioms = [
     discoveredBy: 'Karl von Frisch',
     discoveryNote: 'Won Nobel Prize for decoding bee "waggle dance" communication. Ants farm fungi, wage wars.',
   },
+  {
+    id: 'female-bees',
+    category: 'natural',
+    fact: 'Only female bees make honey',
+    detail: 'Male bees (drones) do not produce honey or collect nectar. Only female worker bees do.',
+    discoveredYear: 1609,
+    discoveredBy: 'Charles Butler',
+    discoveryNote: 'Discovered the queen bee is female. Jan Swammerdam (1673) confirmed only female workers make honey.',
+  },
+  {
+    id: 'two-seas',
+    category: 'natural',
+    fact: 'Fresh and salt water meet but don\'t mix',
+    detail: 'Where rivers meet the ocean, there is an invisible barrier. The waters stay separate.',
+    discoveredYear: 1942,
+    discoveredBy: 'Modern oceanography',
+    discoveryNote: 'Haloclines—density barriers between fresh and salt water—were discovered through oceanographic research.',
+  },
+  {
+    id: 'iron-sent-down',
+    category: 'cosmic',
+    fact: 'Iron came from outer space',
+    detail: 'Iron is not native to Earth. It was "sent down" via meteorites and formed in dying stars.',
+    discoveredYear: 1920,
+    discoveredBy: 'Cecilia Payne-Gaposchkin',
+    discoveryNote: 'Stellar nucleosynthesis proved iron forms in supernova explosions and arrives on Earth via meteorites.',
+  },
 
   // HUMAN CONDITION
+  {
+    id: 'pharaoh-preserved',
+    category: 'human',
+    fact: 'Pharaoh\'s body was preserved against all odds',
+    detail: 'Bodies decay rapidly—especially in water, where they decompose within days. Yet the Pharaoh who drowned chasing Moses still has his hair, skin, and features intact thousands of years later.',
+    discoveredYear: 1881,
+    discoveredBy: 'Gaston Maspero',
+    discoveryNote: 'Mummy now displayed in Cairo\'s Egyptian Museum. Despite drowning in the sea, the body is remarkably preserved—a phenomenon that defies normal decomposition. Salt water typically accelerates decay.',
+    videoUrl: 'https://www.youtube.com/watch?v=06OP7Xq493w',
+    videoTitle: 'Pharaoh\'s Body in the Egyptian Museum',
+  },
   {
     id: 'moral-compass',
     category: 'human',
@@ -247,22 +312,102 @@ const axioms = [
 // Story scenes for the Almanac intro
 const storyScenes = [
   {
+    id: 'scene0',
+    title: 'Picture the Scene',
+    icon: <Clock className="w-12 h-12" />,
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          In the 1989 movie <span className="text-blue-400 font-semibold">Back to the Future Part II</span>, Marty McFly travels to the year 2015.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          While there, he buys a book: <span className="text-amber-400 font-semibold">"Grays Sports Almanac"</span>—a book that records every sports result from 1950 to 2000.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          The villain, <span className="text-white font-semibold">Biff Tannen</span>, steals the book and takes it back in time to 1955.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'scene1',
-    title: 'The Sports Almanac',
+    title: 'The Handoff',
     icon: <BookOpen className="w-12 h-12" />,
     iconBg: 'bg-amber-500/20',
     iconColor: 'text-amber-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Remember <span className="text-amber-400 font-semibold">Back to the Future II</span>?
+          Old Biff finds his <span className="text-white font-semibold">younger self</span> in 1955 and hands him the book.
         </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Biff steals a book from the future: <span className="text-amber-400 font-semibold">"Grays Sports Almanac: 1950-2000"</span>.
-        </p>
+        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <p className="text-amber-300 text-lg italic mb-2">
+            "This book tells you the outcome of every sports event until the year 2000."
+          </p>
+          <p className="text-white font-medium">
+            "All you have to do is bet on the winner."
+          </p>
+        </div>
         <p className="text-lg text-slate-300 leading-relaxed">
-          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span>—every score, every winner, every result.
-          <span className="text-slate-500 italic"> Because for the book, it already happened.</span>
+          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span> about the future.
+          <span className="text-slate-500 italic"> Every result. Every winner. Every score.</span>
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene1b',
+    title: 'Every Bet Wins',
+    icon: <DollarSign className="w-12 h-12" />,
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Young Biff starts betting. <span className="text-emerald-400 font-semibold">Every single result comes in exactly as the book says.</span>
+        </p>
+        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+          <p className="text-slate-400 text-sm mb-3">The logic was simple:</p>
+          <p className="text-white mb-2">1. Check the almanac for the result</p>
+          <p className="text-white mb-2">2. Place the bet</p>
+          <p className="text-emerald-400 font-semibold">3. Win. Every. Time.</p>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          Not luck. Not gambling. <span className="text-amber-400 font-semibold">Certainty.</span>
+          <br />
+          <span className="text-slate-400">Because the book contains facts, not predictions.</span>
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'scene1c',
+    title: 'Fast Forward',
+    icon: <TrendingUp className="w-12 h-12" />,
+    iconBg: 'bg-purple-500/20',
+    iconColor: 'text-purple-400',
+    content: (
+      <>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Fast forward years into the future...
+        </p>
+        <div className="bg-purple-900/30 rounded-xl p-4 mb-4 border border-purple-700/50">
+          <p className="text-purple-200 text-lg mb-2">
+            Biff is now a <span className="text-white font-bold">billionaire</span>.
+          </p>
+          <p className="text-purple-200 mb-2">
+            He owns almost all the real estate in town.
+          </p>
+          <p className="text-purple-200">
+            Lives in a <span className="text-white font-semibold">mansion</span>.
+          </p>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          And the book? <span className="text-amber-400 font-semibold">Safely locked away in his vault</span>—behind sliding doors and a combination lock.
+          <br />
+          <span className="text-slate-400 italic">His most prized possession.</span>
         </p>
       </>
     ),
@@ -525,7 +670,7 @@ const storyScenes = [
   },
   {
     id: 'scene9',
-    title: 'Let\'s Begin',
+    title: 'Ready to Test the Quran?',
     icon: <ArrowRight className="w-12 h-12" />,
     iconBg: 'bg-emerald-500/20',
     iconColor: 'text-emerald-400',
@@ -542,7 +687,7 @@ const storyScenes = [
         </p>
         <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
           <p className="text-xl text-white font-medium mb-2">
-            Ready to test the Almanac?
+            Ready to test the Quran?
           </p>
           <p className="text-emerald-200">
             Let's see if your certainty compounds... or breaks.
@@ -715,7 +860,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
             </div>
 
             <h2 className="text-3xl font-serif text-white mb-4">
-              We Agree on {agreedAxioms.length} Facts
+              We All Stand on {agreedAxioms.length} Facts
             </h2>
 
             <p className="text-slate-300 text-lg mb-6">
@@ -746,10 +891,10 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
 
             <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
               <p className="text-amber-200 text-lg">
-                Now, let's check the "Almanac."
+                Now, let's verify <span className="text-white font-semibold">the Quran</span>.
                 <br />
-                <span className="text-white font-semibold">
-                  A 1,400-year-old book claims to know all of this.
+                <span className="text-slate-300">
+                  A 1,400-year-old book that claims to know all of this.
                 </span>
               </p>
             </div>
@@ -758,7 +903,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
               onClick={() => onComplete(agreedAxioms)}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
             >
-              Verify the Almanac
+              Verify the Quran
               <ArrowRight className="w-5 h-5" />
             </button>
           </motion.div>
@@ -959,7 +1104,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                     </>
                   ) : (
                     <>
-                      All Facts Agreed - Verify the Almanac
+                      All Facts Agreed - Verify the Quran
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}

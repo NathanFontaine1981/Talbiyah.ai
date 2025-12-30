@@ -14,12 +14,12 @@ const biasStatements = [
   },
   {
     id: 'guard-down',
-    statement: 'I am willing to let my guard down and change my stance if I come across evidence superior to what I currently know',
+    statement: "Are you willing to be honest with yourself? If I come across superior evidence, I'm willing to change.",
     acknowledgment: 'We all carry assumptions. The wise person updates their beliefs when better evidence arrives—not when it feels comfortable.',
   },
   {
     id: 'truth-seeking',
-    statement: 'To find the truth, I must put aside what I want to be true and look at what IS true',
+    statement: 'To find the truth, I must put aside what I want to be true and look at what is actually true',
     acknowledgment: 'Honest inquiry requires intellectual honesty. Truth exists independent of our preferences.',
   },
   {
@@ -48,11 +48,11 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
       // Reduce blur with each acknowledgment (20 / 5 statements = 4 per step)
       setBlurLevel(prev => Math.max(0, prev - 4));
     }
+    // Don't auto-advance - wait for user to click Continue
+  };
 
-    // Give user time to read the acknowledgment insight (5 seconds)
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-    }, 5000);
+  const handleContinue = () => {
+    setCurrentIndex(prev => prev + 1);
   };
 
   const handleSkip = () => {
@@ -195,9 +195,16 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50"
               >
-                <p className="text-emerald-200 text-sm">
+                <p className="text-emerald-200 text-sm mb-4">
                   {currentBias.acknowledgment}
                 </p>
+                <button
+                  onClick={handleContinue}
+                  className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition flex items-center justify-center gap-2"
+                >
+                  Continue
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

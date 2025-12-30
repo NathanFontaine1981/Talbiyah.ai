@@ -54,11 +54,87 @@ const cheatCodeCategories = [
 ];
 
 export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodesProps) => {
-  const [showIntro, setShowIntro] = useState(true);
-  const [showManual, setShowManual] = useState(false);
+  const [stage, setStage] = useState<'why-obey' | 'intro' | 'manual'>('why-obey');
+
+  // "Why Obey?" - The Manufacturer Logic
+  if (stage === 'why-obey') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4"
+      >
+        <div className="max-w-2xl w-full text-center">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Shield className="w-10 h-10 text-blue-400" />
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl font-serif text-white mb-4">
+              Why Follow the Rules?
+            </h1>
+
+            <p className="text-xl text-blue-200 mb-8">
+              A fair question
+            </p>
+
+            <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8 text-left">
+              <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                Some people say: <span className="text-slate-400 italic">"I believe in God, but why do I have to follow rules? Why can't I just be a good person?"</span>
+              </p>
+
+              <div className="bg-blue-900/30 rounded-xl p-5 border border-blue-700/50 mb-6">
+                <p className="text-blue-200 font-medium mb-3">Think about it this way:</p>
+                <p className="text-white text-lg mb-3">
+                  Who knows a machine better—<span className="text-amber-400">you</span> or <span className="text-emerald-400">the manufacturer</span>?
+                </p>
+                <p className="text-slate-300">
+                  When your car manual says "use premium fuel"—you might think regular is fine.
+                  But the engineers who built it <span className="text-white font-semibold">know what damages the engine</span>.
+                </p>
+              </div>
+
+              <div className="bg-amber-900/20 rounded-xl p-4 border border-amber-700/50 mb-6">
+                <p className="text-amber-200 text-sm mb-2">
+                  <span className="font-semibold">Example: Alcohol & Gambling</span>
+                </p>
+                <p className="text-slate-300 mb-2">
+                  Society says they're harmless fun. The Quran says avoid them.
+                </p>
+                <p className="text-white">
+                  Result? <span className="text-rose-300">Broken families</span>, <span className="text-rose-300">addiction</span>, <span className="text-rose-300">debt</span>, <span className="text-rose-300">domestic abuse</span>.
+                </p>
+                <p className="text-slate-400 text-sm mt-2 italic">
+                  The Manufacturer knew what would damage the machine.
+                </p>
+              </div>
+
+              <p className="text-lg text-slate-300 leading-relaxed">
+                The rules aren't restrictions—they're <span className="text-emerald-400 font-semibold">protection</span>.
+                <br />
+                <span className="text-slate-400 text-sm">The Creator knows what breaks us better than we do.</span>
+              </p>
+            </div>
+
+            <button
+              onClick={() => setStage('intro')}
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+            >
+              Continue
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
+  }
 
   // Intro screen - "The Cheat Codes"
-  if (showIntro) {
+  if (stage === 'intro') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -80,18 +156,18 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
             </h1>
 
             <p className="text-xl text-purple-200 mb-8">
-              Phase 2 of the Almanac
+              Life guidance from the Quran
             </p>
 
             <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8 text-left">
               <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                The Almanac didn't just predict the past—it gave <span className="text-purple-400 font-semibold">cheat codes</span> for winning at life.
+                The Quran doesn't just state facts about the past—it gives <span className="text-purple-400 font-semibold">cheat codes</span> for winning at life.
               </p>
 
               <div className="bg-purple-900/30 rounded-xl p-4 border border-purple-700/50 mb-6">
                 <div className="flex items-center gap-2 text-purple-300 mb-2">
                   <Zap className="w-5 h-5" />
-                  <span className="font-semibold">The Almanac says:</span>
+                  <span className="font-semibold">The Quran says:</span>
                 </div>
                 <p className="text-slate-300 italic">
                   "We have not neglected anything in the Book."
@@ -125,10 +201,7 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => {
-                  setShowIntro(false);
-                  setShowManual(true);
-                }}
+                onClick={() => setStage('manual')}
                 className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
               >
                 <BookOpen className="w-5 h-5" />
@@ -148,7 +221,7 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
   }
 
   // Life Manual with Almanac framing
-  if (showManual) {
+  if (stage === 'manual') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -166,7 +239,7 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
               What challenge are you facing?
             </h2>
             <p className="text-slate-400">
-              The Almanac has a solution for every life problem
+              The Quran has a solution for every life problem
             </p>
           </div>
 

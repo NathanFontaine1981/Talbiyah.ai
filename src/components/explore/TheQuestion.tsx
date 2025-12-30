@@ -42,6 +42,7 @@ const sourceOptions = [
 export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuestionProps) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showReflection, setShowReflection] = useState(false);
+  const [showSpecialistLogic, setShowSpecialistLogic] = useState(false);
 
   const handleSelect = (optionId: string) => {
     setSelectedOption(optionId);
@@ -98,7 +99,49 @@ export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuesti
               A book written <span className="text-amber-400 font-semibold">1,400 years ago</span> stated all of them accurately—
               long before modern science discovered them.
             </p>
-            <p className="text-xl text-white font-medium">
+
+            {!showSpecialistLogic ? (
+              <button
+                onClick={() => setShowSpecialistLogic(true)}
+                className="text-blue-400 hover:text-blue-300 text-sm underline transition"
+              >
+                Think about this...
+              </button>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-4"
+              >
+                <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50 mb-4">
+                  <p className="text-blue-200 text-sm mb-3">
+                    To fully understand the human body alone, you need <span className="text-white font-semibold">10+ specialists</span>:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {['Optician', 'Cardiologist', 'Neurologist', 'Osteopath', 'Dermatologist', 'Gastroenterologist'].map(spec => (
+                      <span key={spec} className="px-2 py-1 bg-slate-800 rounded text-slate-300 text-xs">{spec}</span>
+                    ))}
+                    <span className="px-2 py-1 bg-slate-700 rounded text-slate-400 text-xs">+ more...</span>
+                  </div>
+                  <p className="text-blue-200 text-sm mb-3">
+                    It takes a <span className="text-white font-semibold">lifetime</span> to become a specialist in just <span className="text-white">one</span> field.
+                    People study for <span className="text-white">7-15 years</span> just to become a doctor in a single specialisation.
+                  </p>
+                  <p className="text-blue-200 text-sm mb-3">
+                    To master astronomy, embryology, oceanography, geology, and biology would take <span className="text-amber-300 font-semibold">many lifetimes</span>. It's literally impossible for one person.
+                  </p>
+                  <p className="text-white font-medium">
+                    Yet one book—revealed to one illiterate man who couldn't read or write—accurately covers all of these fields
+                    <span className="text-amber-300"> with zero errors.</span>
+                  </p>
+                  <p className="text-slate-400 text-sm mt-3 italic">
+                    How do you reconcile this knowledge source?
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            <p className="text-xl text-white font-medium mt-4">
               Where do you think this knowledge came from?
             </p>
           </div>
