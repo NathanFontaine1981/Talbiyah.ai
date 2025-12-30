@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Lightbulb, MessageCircle, Sparkles, Compass, Film, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, Sparkles, Compass, Film, User } from 'lucide-react';
 
 interface ExploreIntroProps {
   onComplete: () => void;
@@ -32,18 +32,17 @@ const introScenes = [
     content: (
       <>
         <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          I'm excited to share with you <span className="text-amber-400 font-semibold">my thought process</span>.
+          I wasn't raised Muslim. I didn't know <span className="text-amber-400 font-semibold">anything</span> about Islam.
         </p>
         <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          I'll show you exactly what I was thinking when I examined the evidence.
-          The questions I asked. The doubts I had. The moment it clicked.
+          I was completely oblivious to the Muslims around me. Probably too young to process religion when I was growing up.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed">
-          You'll see Islam through the eyes of someone who once knew nothing about it.
+          But once I became an adult, I knew I could <span className="text-white font-medium">work it out for myself</span>.
         </p>
       </>
     ),
-    commentary: "I wasn't raised Muslim. I had the same stereotypes, the same misconceptions. That's why I can explain it differently.",
+    commentary: "No one told me what to believe. I examined everything with fresh eyes. That's why I can explain it differently—I had to figure it all out from scratch.",
   },
   {
     id: 'discovery',
@@ -144,6 +143,7 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
   const [currentScene, setCurrentScene] = useState(0);
   const scene = introScenes[currentScene];
   const isLastScene = currentScene === introScenes.length - 1;
+  const isFirstScene = currentScene === 0;
 
   const handleNext = () => {
     if (isLastScene) {
@@ -153,22 +153,39 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     }
   };
 
+  const handleBack = () => {
+    if (!isFirstScene) {
+      setCurrentScene(prev => prev - 1);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative"
     >
-      {/* Progress dots */}
-      <div className="fixed top-6 left-6 flex items-center gap-2 z-50">
-        {introScenes.map((_, i) => (
-          <div
-            key={i}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              i <= currentScene ? 'bg-amber-500' : 'bg-slate-700'
-            }`}
-          />
-        ))}
+      {/* Back button and Progress dots */}
+      <div className="fixed top-6 left-6 flex items-center gap-4 z-50">
+        {!isFirstScene && (
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1 text-slate-400 hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back</span>
+          </button>
+        )}
+        <div className="flex items-center gap-2">
+          {introScenes.map((_, i) => (
+            <div
+              key={i}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i <= currentScene ? 'bg-amber-500' : 'bg-slate-700'
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Main content */}
