@@ -95,21 +95,34 @@ const introScenes = [
     icon: 'user',
     content: (
       <>
-        <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          If you found an iPhone in the desert, you'd never say it made itself from nature. <span className="text-white">Someone must have made it.</span>
-        </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Now consider: the human eye is <span className="text-amber-400 font-semibold">superior to the latest iPhone camera</span>.
+          I remember someone telling me: if you found an <span className="text-white font-medium">iPhone in the desert</span>, you would never think it's a product of nature that just came together on its own.
         </p>
-        <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          Nothing cannot create something.
+
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 mb-4">
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Calendars. Messages. A camera with great clarity. <span className="text-white">Sophistication doesn't happen by accident.</span>
+          </p>
+        </div>
+
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          So why is it that we look at the <span className="text-amber-400 font-semibold">human body</span> and think it came together without something having created it with thought and design?
         </p>
-        <p className="text-lg text-white leading-relaxed">
-          Something <span className="text-emerald-400 font-semibold">superior</span> must have created us—with a reason.
-        </p>
+
+        <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+          <p className="text-emerald-200 leading-relaxed">
+            <span className="text-white font-medium">Eyes</span> superior to any camera ever made.
+          </p>
+          <p className="text-emerald-200 leading-relaxed mt-1">
+            A <span className="text-white font-medium">body</span> that repairs itself when damaged.
+          </p>
+          <p className="text-emerald-200 leading-relaxed mt-1">
+            A <span className="text-white font-medium">brain</span> that can think, process, and create.
+          </p>
+        </div>
       </>
     ),
-    commentary: "An iPhone needs a maker. But a human doesn't? That never made sense to me.",
+    commentary: "An iPhone needs a maker. But a human—infinitely more complex—doesn't? That never made sense to me.",
   },
   {
     id: 'court-session',
