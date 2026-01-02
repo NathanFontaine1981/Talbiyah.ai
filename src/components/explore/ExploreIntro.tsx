@@ -164,7 +164,7 @@ const introScenes = [
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            Have you ever seen <span className="text-white font-medium">Back to the Future</span>?
+            Have you ever seen <span className="text-white font-medium">Back to the Future 2</span>?
           </p>
 
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
