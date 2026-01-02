@@ -87,7 +87,7 @@ const introScenes = [
         </div>
       </>
     ),
-    commentary: "If every part exists to serve the whole... then the whole must have a purpose too. That answer always escaped me.",
+    commentary: "If every part exists to serve the whole... then the whole logically must have a purpose too. Otherwise, it's useless?",
   },
   {
     id: 'my-story',
