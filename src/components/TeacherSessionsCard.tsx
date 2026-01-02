@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, differenceInMinutes, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInMinutes, differenceInDays, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
 interface TeacherSession {
   id: string;
@@ -29,6 +29,52 @@ export default function TeacherSessionsCard() {
   const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set(['This Week']));
+
+  // Group sessions by week
+  function groupSessionsByWeek(sessionsToGroup: TeacherSession[]): { weekLabel: string; weekStart: Date; sessions: TeacherSession[] }[] {
+    if (sessionsToGroup.length === 0) return [];
+
+    const groups: Map<string, { weekLabel: string; weekStart: Date; sessions: TeacherSession[] }> = new Map();
+    const now = new Date();
+
+    sessionsToGroup.forEach(session => {
+      const sessionDate = parseISO(session.scheduled_time);
+      const weekStart = startOfWeek(sessionDate, { weekStartsOn: 1 }); // Monday start
+      const weekEnd = endOfWeek(sessionDate, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+
+      // Create a readable week label
+      let weekLabel: string;
+      if (isSameWeek(sessionDate, now, { weekStartsOn: 1 })) {
+        weekLabel = 'This Week';
+      } else if (isSameWeek(sessionDate, addWeeks(now, 1), { weekStartsOn: 1 })) {
+        weekLabel = 'Next Week';
+      } else if (isSameWeek(sessionDate, subWeeks(now, 1), { weekStartsOn: 1 })) {
+        weekLabel = 'Last Week';
+      } else {
+        weekLabel = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+      }
+
+      if (!groups.has(weekKey)) {
+        groups.set(weekKey, { weekLabel, weekStart, sessions: [] });
+      }
+      groups.get(weekKey)!.sessions.push(session);
+    });
+
+    // Sort groups by week start date
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+      // For upcoming, sort ascending (soonest first)
+      // For past, sort descending (most recent first)
+      if (activeTab === 'upcoming') {
+        return a.weekStart.getTime() - b.weekStart.getTime();
+      } else {
+        return b.weekStart.getTime() - a.weekStart.getTime();
+      }
+    });
+
+    return sortedGroups;
+  }
 
   useEffect(() => {
     loadUpcomingSessions();
@@ -320,6 +366,19 @@ export default function TeacherSessionsCard() {
   }
 
   const currentSessions = activeTab === 'upcoming' ? sessions : pastSessions;
+  const groupedSessions = groupSessionsByWeek(currentSessions);
+
+  const toggleWeek = (weekLabel: string) => {
+    setExpandedWeeks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(weekLabel)) {
+        newSet.delete(weekLabel);
+      } else {
+        newSet.add(weekLabel);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
@@ -380,8 +439,43 @@ export default function TeacherSessionsCard() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {currentSessions.map((session) => {
+        <div className="space-y-6">
+          {groupedSessions.map((group) => {
+            const isExpanded = expandedWeeks.has(group.weekLabel);
+
+            return (
+              <div key={group.weekLabel} className="space-y-3">
+                {/* Week Header - Clickable */}
+                <button
+                  onClick={() => toggleWeek(group.weekLabel)}
+                  className="w-full flex items-center space-x-3 group cursor-pointer"
+                >
+                  <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg font-bold text-sm transition ${
+                    group.weekLabel === 'This Week'
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 group-hover:bg-emerald-100'
+                      : group.weekLabel === 'Next Week'
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200 group-hover:bg-blue-100'
+                      : group.weekLabel === 'Last Week'
+                      ? 'bg-amber-50 text-amber-600 border border-amber-200 group-hover:bg-amber-100'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 group-hover:bg-gray-200'
+                  }`}>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                    <span>{group.weekLabel}</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <span className="text-sm text-gray-500">
+                    {group.sessions.length} lesson{group.sessions.length !== 1 ? 's' : ''}
+                  </span>
+                </button>
+
+                {/* Sessions in this week - Only show when expanded */}
+                {isExpanded && (
+                  <div className="space-y-3 pl-2">
+                    {group.sessions.map((session) => {
           const sessionDate = parseISO(session.scheduled_time);
           const isToday = format(sessionDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
           const minutesUntilStart = differenceInMinutes(sessionDate, new Date());
@@ -541,8 +635,13 @@ export default function TeacherSessionsCard() {
                 </div>
               </div>
             </div>
-          );
-        })}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

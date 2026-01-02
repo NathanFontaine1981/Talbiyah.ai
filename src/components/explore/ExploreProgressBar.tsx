@@ -2,15 +2,19 @@ import { motion } from 'framer-motion';
 import {
   Compass,
   Brain,
+  FileSearch,
   CheckSquare,
   BookOpen,
+  Target,
   Flag,
   HelpCircle,
   Link,
+  Users,
   Sparkles,
+  Heart,
 } from 'lucide-react';
 
-type FlowStage = 'intro' | 'bias' | 'axiom-check' | 'authority-match' | 'checkpoint' | 'the-question' | 'reconciliation' | 'cheat-codes';
+type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
 
 interface StageInfo {
   id: FlowStage;
@@ -22,12 +26,16 @@ interface StageInfo {
 const stages: StageInfo[] = [
   { id: 'intro', label: 'Introduction', shortLabel: 'Intro', icon: <Compass className="w-4 h-4" /> },
   { id: 'bias', label: 'Bias Check', shortLabel: 'Bias', icon: <Brain className="w-4 h-4" /> },
+  { id: 'chain-of-custody', label: 'Chain of Custody', shortLabel: 'Source', icon: <FileSearch className="w-4 h-4" /> },
   { id: 'axiom-check', label: 'The Facts', shortLabel: 'Facts', icon: <CheckSquare className="w-4 h-4" /> },
   { id: 'authority-match', label: 'The Quran', shortLabel: 'Quran', icon: <BookOpen className="w-4 h-4" /> },
+  { id: 'probability-moment', label: 'The Odds', shortLabel: 'Odds', icon: <Target className="w-4 h-4" /> },
   { id: 'checkpoint', label: 'Checkpoint', shortLabel: 'Check', icon: <Flag className="w-4 h-4" /> },
   { id: 'the-question', label: 'The Question', shortLabel: 'Question', icon: <HelpCircle className="w-4 h-4" /> },
   { id: 'reconciliation', label: 'The Connection', shortLabel: 'Connect', icon: <Link className="w-4 h-4" /> },
+  { id: 'prophet-timeline', label: 'The Prophets', shortLabel: 'Prophets', icon: <Users className="w-4 h-4" /> },
   { id: 'cheat-codes', label: 'Life Guidance', shortLabel: 'Guide', icon: <Sparkles className="w-4 h-4" /> },
+  { id: 'first-step', label: 'The First Step', shortLabel: 'Step', icon: <Heart className="w-4 h-4" /> },
 ];
 
 interface ExploreProgressBarProps {

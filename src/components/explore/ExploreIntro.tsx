@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, User, Scale, Gavel, HelpCircle, Heart } from 'lucide-react';
 
 interface ExploreIntroProps {
   onComplete: () => void;
@@ -9,53 +9,142 @@ interface ExploreIntroProps {
 const introScenes = [
   {
     id: 'welcome',
-    title: 'Welcome to My Journey',
+    title: "A Message From The Founder",
+    icon: 'founder-image',
+    content: (
+      <>
+        {/* Founder Image */}
+        <div className="flex justify-center mb-6 -mt-2">
+          <img
+            src="/founder-nathan.jpg"
+            alt="Nathan Ellington - Founder of Talbiyah"
+            className="w-full max-w-sm rounded-xl shadow-lg"
+          />
+        </div>
+        <div className="space-y-4">
+          <p className="text-xl text-white font-medium leading-relaxed">
+            My duty is to convey the message that I found.
+          </p>
+
+          {/* Ayah */}
+          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+            <p className="text-emerald-200 text-center font-arabic text-lg mb-2">
+              مَّا عَلَى الرَّسُولِ إِلَّا الْبَلَاغُ
+            </p>
+            <p className="text-emerald-300 text-center text-sm italic">
+              "The duty of the Messenger is only to convey the message."
+            </p>
+            <p className="text-emerald-400/70 text-center text-xs mt-1">
+              — Quran 5:99
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            I want to share what I found—in full detail—and take you through <span className="text-amber-400 font-medium">my journey, from my lenses</span>.
+          </p>
+          <p className="text-slate-400 leading-relaxed">
+            Take your time. There's no rush. Digest each point before moving on.
+          </p>
+        </div>
+      </>
+    ),
+    commentary: "I'm not here to convince you. I'm here to share what I discovered. The rest is between you and your Creator.",
+  },
+  {
+    id: 'hook',
+    title: "The Missing Answer",
+    icon: 'question',
+    content: (
+      <>
+        <div className="space-y-4 mb-6">
+          <p className="text-xl text-slate-300 leading-relaxed">
+            Your eyes are for seeing. Your heart is for pumping blood. Your lungs are for breathing.
+          </p>
+          <p className="text-xl text-white leading-relaxed">
+            Every part of you has a <span className="text-amber-400 font-semibold">purpose</span>.
+          </p>
+          <p className="text-xl text-slate-300 leading-relaxed">
+            But the whole human? No purpose?
+          </p>
+          <p className="text-lg text-slate-400 italic">
+            That doesn't make sense.
+          </p>
+        </div>
+        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+          <p className="text-lg text-emerald-200 leading-relaxed mb-2">
+            Design implies a <span className="text-white font-semibold">Designer</span>.
+          </p>
+          <p className="text-lg text-emerald-200 leading-relaxed mb-2">
+            Intelligence must come from <span className="text-white font-semibold">superior intelligence</span>.
+          </p>
+          <p className="text-emerald-300">
+            There's a book that claims to be from Him—with answers. And it can prove it.
+          </p>
+        </div>
+      </>
+    ),
+    commentary: "Every part has a purpose, but the whole thing doesn't? I couldn't accept that.",
+  },
+  {
+    id: 'my-story',
+    title: 'My Discovery',
+    icon: 'user',
     content: (
       <>
         <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          I'm <span className="text-amber-400 font-semibold">Nathan Ellington Fontaine</span>. Former professional footballer. Now a Muslim.
+          If you found an iPhone in the desert, you'd never say it made itself from nature. <span className="text-white">Someone must have made it.</span>
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          Now consider: the human eye is <span className="text-amber-400 font-semibold">superior to the latest iPhone camera</span>.
         </p>
         <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          I wasn't raised Muslim. I didn't know anything about Islam. I was completely oblivious to the Muslims around me.
+          Nothing cannot create something.
         </p>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          But once I became an adult, I knew I could <span className="text-white font-medium">work it out for myself</span>.
+        <p className="text-lg text-white leading-relaxed">
+          Something <span className="text-emerald-400 font-semibold">superior</span> must have created us—with a reason.
         </p>
       </>
     ),
-    commentary: "I never thought I'd be the one sharing this. But after what I discovered, staying quiet felt wrong.",
+    commentary: "An iPhone needs a maker. But a human doesn't? That never made sense to me.",
   },
   {
-    id: 'discovery',
-    title: 'What I Found',
+    id: 'court-session',
+    title: 'Court Is Now In Session',
+    icon: 'gavel',
     content: (
       <>
-        <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          I discovered <span className="text-emerald-400 font-semibold">evidence</span> I could verify myself.
+        <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50 mb-6 text-center">
+          <p className="text-amber-200 font-serif text-lg">
+            THE CASE OF
+          </p>
+          <p className="text-2xl text-white font-bold mt-1">
+            The Quran vs. Reasonable Doubt
+          </p>
+        </div>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          You are the <span className="text-amber-400 font-semibold">judge and jury</span>. I will present evidence. You will decide.
         </p>
-        <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          Not blind faith. Not someone preaching at me. Not emotions.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          Actual evidence that answers: <span className="text-white font-medium">Why am I here? What happens when I die? Is there more to this life?</span>
+        <p className="text-slate-400 leading-relaxed">
+          The claim: This book contains knowledge that could only come from the Creator. The burden of proof is on the Quran.
         </p>
       </>
     ),
-    commentary: "21 years I lived without knowing. This treasure was right there the whole time.",
+    commentary: "Every person should examine the evidence for themselves. Today, you're the jury.",
   },
   {
-    id: 'ready',
-    title: 'Ready?',
+    id: 'rules',
+    title: 'The Process',
+    icon: 'scale',
     content: (
       <>
         <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          I'll show you <span className="text-emerald-400 font-semibold">facts you already accept as true</span>. Then something that made me think: <span className="text-white font-medium italic">"Wait... how did they know that?"</span>
+          I will present <span className="text-emerald-400 font-semibold">exhibits</span>—facts most people accept as true. Then the Quran's statements on each.
         </p>
         <p className="text-lg text-slate-400 leading-relaxed mb-4">
-          All I ask is that you come with an <span className="text-blue-400 font-semibold">open mind</span>.
+          Your duty: examine each piece of evidence with an <span className="text-blue-400 font-semibold">open mind</span>. Accept what convinces you. Question what doesn't.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed">
-          If it doesn't convince you, that's fine. But if it does... <span className="text-amber-400 font-medium">it might change your life like it changed mine.</span>
+          At the end, you will deliver your verdict. <span className="text-amber-400 font-medium">Is this book from the Creator—or isn't it?</span>
         </p>
       </>
     ),
@@ -122,14 +211,18 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Icon */}
-            <div className="flex justify-center mb-8">
-              <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
-                {currentScene === 0 && <User className="w-10 h-10 text-amber-400" />}
-                {currentScene === 1 && <Lightbulb className="w-10 h-10 text-emerald-400" />}
-                {currentScene === 2 && <ArrowRight className="w-10 h-10 text-blue-400" />}
+            {/* Icon - hide for founder-image since image is in content */}
+            {scene.icon !== 'founder-image' && (
+              <div className="flex justify-center mb-8">
+                <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  {scene.icon === 'welcome' && <Heart className="w-10 h-10 text-emerald-400" />}
+                  {scene.icon === 'question' && <HelpCircle className="w-10 h-10 text-purple-400" />}
+                  {scene.icon === 'user' && <User className="w-10 h-10 text-emerald-400" />}
+                  {scene.icon === 'gavel' && <Gavel className="w-10 h-10 text-amber-400" />}
+                  {scene.icon === 'scale' && <Scale className="w-10 h-10 text-blue-400" />}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Title */}
             <h1 className="text-3xl sm:text-4xl font-serif text-white text-center mb-8">

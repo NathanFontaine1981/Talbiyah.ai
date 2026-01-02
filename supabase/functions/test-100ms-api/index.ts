@@ -12,7 +12,7 @@ serve(async (req) => {
     return new Response(null, { status: 200, headers: corsHeaders })
   }
 
-  const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID') || '694e3cd62f99d9b901d90528'
+  const HMS_TEMPLATE_ID = Deno.env.get('HMS_TEMPLATE_ID') || '695721684f8717ae22337997'
 
   let HMS_MANAGEMENT_TOKEN: string
   try {

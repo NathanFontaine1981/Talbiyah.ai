@@ -4,12 +4,16 @@ import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import ExploreIntro from '../../components/explore/ExploreIntro';
 import BiasBlur from '../../components/explore/BiasBlur';
+import ChainOfCustody from '../../components/explore/ChainOfCustody';
 import AxiomCheck from '../../components/explore/AxiomCheck';
 import AuthorityMatch from '../../components/explore/AuthorityMatch';
+import ProbabilityMoment from '../../components/explore/ProbabilityMoment';
 import ConvictionCheckpoint from '../../components/explore/ConvictionCheckpoint';
 import TheQuestion from '../../components/explore/TheQuestion';
 import TheReconciliation from '../../components/explore/TheReconciliation';
+import ProphetTimeline from '../../components/explore/ProphetTimeline';
 import CheatCodes from '../../components/explore/CheatCodes';
+import TheFirstStep from '../../components/explore/TheFirstStep';
 import ExploreProgressBar from '../../components/explore/ExploreProgressBar';
 
 const STORAGE_KEY = 'talbiyah_explore_progress';
@@ -17,16 +21,20 @@ const STORAGE_KEY = 'talbiyah_explore_progress';
 // Stage order for the Explore journey (The Almanac)
 // 0. Intro - Personal introduction, what I discovered
 // 1. BiasBlur - Acknowledge biases before exploring
-// 2. AxiomCheck - Present undeniable facts user already accepts (The Data)
-// 3. AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
-// 4. Checkpoint - Ask if convinced, offer to show more evidence
-// 5. TheQuestion - Ask where they think the knowledge came from
-// 6. TheReconciliation - Explain how all Abrahamic religions are one
-// 7. CheatCodes - Life guidance from the Quran (Cheat Codes)
-type FlowStage = 'intro' | 'bias' | 'axiom-check' | 'authority-match' | 'checkpoint' | 'the-question' | 'reconciliation' | 'cheat-codes';
+// 2. ChainOfCustody - Document analysis: Bible vs Quran preservation (NEW)
+// 3. AxiomCheck - Present undeniable facts user already accepts (The Data)
+// 4. AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
+// 5. ProbabilityMoment - Visual probability dropping, forced pause
+// 6. Checkpoint - Ask if convinced, offer to show more evidence
+// 7. TheQuestion - Ask where they think the knowledge came from
+// 8. TheReconciliation - Explain how all Abrahamic religions are one
+// 9. ProphetTimeline - Visual timeline of prophets and their eras
+// 10. CheatCodes - Life guidance from the Quran (Cheat Codes)
+// 11. TheFirstStep - Soft shahada (Tawhid) and next steps
+type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
 
 // Order of stages for navigation
-const STAGE_ORDER: FlowStage[] = ['intro', 'bias', 'axiom-check', 'authority-match', 'checkpoint', 'the-question', 'reconciliation', 'cheat-codes'];
+const STAGE_ORDER: FlowStage[] = ['intro', 'bias', 'chain-of-custody', 'axiom-check', 'authority-match', 'probability-moment', 'checkpoint', 'the-question', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'];
 
 export default function ExplorePage() {
   const navigate = useNavigate();
@@ -97,6 +105,10 @@ export default function ExplorePage() {
   };
 
   const handleBiasComplete = () => {
+    advanceToStage('chain-of-custody');
+  };
+
+  const handleChainOfCustodyComplete = () => {
     advanceToStage('axiom-check');
   };
 
@@ -107,6 +119,10 @@ export default function ExplorePage() {
   };
 
   const handleAuthorityMatchComplete = () => {
+    advanceToStage('probability-moment');
+  };
+
+  const handleProbabilityMomentComplete = () => {
     advanceToStage('checkpoint');
   };
 
@@ -126,14 +142,34 @@ export default function ExplorePage() {
   };
 
   const handleReconciliationComplete = () => {
+    advanceToStage('prophet-timeline');
+  };
+
+  const handleProphetTimelineComplete = () => {
     advanceToStage('cheat-codes');
   };
 
   const handleCheatCodesComplete = () => {
-    // Clear progress and redirect to dashboard (not new-muslim)
+    advanceToStage('first-step');
+  };
+
+  const handleFirstStepTakeStep = () => {
+    // Return to dashboard
     localStorage.removeItem(STORAGE_KEY);
     markExploreCompleted();
     navigate('/dashboard');
+  };
+
+  const handleFirstStepNeedMoreTime = () => {
+    // Go to practical guidance (cheat codes)
+    setFlowStage('cheat-codes');
+  };
+
+  const handleFirstStepLearnMore = () => {
+    // Go to new-muslim curriculum
+    localStorage.removeItem(STORAGE_KEY);
+    markExploreCompleted();
+    navigate('/new-muslim');
   };
 
   // Mark explore as completed in profile if user is logged in
@@ -191,7 +227,19 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 2: Axiom Check - Present undeniable facts (The Data)
+  // Stage 2: Chain of Custody - Document analysis (Bible vs Quran preservation)
+  if (flowStage === 'chain-of-custody') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <div className="pt-16 md:pt-14">
+          <ChainOfCustody onComplete={handleChainOfCustodyComplete} />
+        </div>
+      </div>
+    );
+  }
+
+  // Stage 3: Axiom Check - Present undeniable facts (The Data)
   if (flowStage === 'axiom-check') {
     return (
       <div className="relative">
@@ -218,7 +266,22 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 4: Checkpoint - Ask if convinced, offer to show more
+  // Stage 4: Probability Moment - Visual probability dropping, forced pause
+  if (flowStage === 'probability-moment') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <div className="pt-16 md:pt-14">
+          <ProbabilityMoment
+            verifiedCount={verifiedCount}
+            onComplete={handleProbabilityMomentComplete}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Stage 5: Checkpoint - Ask if convinced, offer to show more evidence
   if (flowStage === 'checkpoint') {
     return (
       <div className="relative">
@@ -234,7 +297,7 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 5: The Question - Ask where they think the knowledge came from
+  // Stage 6: The Question - Ask where they think the knowledge came from
   if (flowStage === 'the-question') {
     return (
       <div className="relative">
@@ -250,7 +313,7 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 6: The Reconciliation - Explain how all Abrahamic religions are one
+  // Stage 7: The Reconciliation - Explain how all Abrahamic religions are one
   if (flowStage === 'reconciliation') {
     return (
       <div className="relative">
@@ -262,7 +325,22 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 7: Cheat Codes - Life guidance from the Quran
+  // Stage 8: Prophet Timeline - Visual timeline of prophets and their eras
+  if (flowStage === 'prophet-timeline') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <div className="pt-16 md:pt-14">
+          <ProphetTimeline
+            onComplete={handleProphetTimelineComplete}
+            onBack={() => setFlowStage('reconciliation')}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Stage 9: Cheat Codes - Life guidance from the Quran
   if (flowStage === 'cheat-codes') {
     return (
       <div className="relative">
@@ -272,6 +350,22 @@ export default function ExplorePage() {
             verifiedCount={verifiedCount}
             totalFacts={agreedAxioms.length}
             onComplete={handleCheatCodesComplete}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Stage 9: The First Step - Soft shahada (Tawhid) and next steps
+  if (flowStage === 'first-step') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <div className="pt-16 md:pt-14">
+          <TheFirstStep
+            onTakeStep={handleFirstStepTakeStep}
+            onNeedMoreTime={handleFirstStepNeedMoreTime}
+            onLearnMore={handleFirstStepLearnMore}
           />
         </div>
       </div>

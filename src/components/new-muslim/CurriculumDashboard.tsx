@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
-  Lock,
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -14,12 +14,14 @@ import {
   BookOpen,
   Leaf,
   Scale,
+  UserPlus,
 } from 'lucide-react';
 import { curriculumModules, CurriculumModule } from '../../data/curriculumData';
 
 interface CurriculumDashboardProps {
   completedModules?: string[];
   onSelectModule: (module: CurriculumModule) => void;
+  isLoggedIn?: boolean;
 }
 
 // Thumbnail backgrounds based on type
@@ -53,24 +55,17 @@ const thumbnailStyles: Record<string, { bg: string; icon: React.ReactNode }> = {
 export const CurriculumDashboard = ({
   completedModules = [],
   onSelectModule,
+  isLoggedIn = false,
 }: CurriculumDashboardProps) => {
+  const navigate = useNavigate();
   const [selectedModule, setSelectedModule] = useState<CurriculumModule | null>(null);
-
-  const isModuleUnlocked = (module: CurriculumModule): boolean => {
-    if (module.moduleNumber === 0) return true;
-    // Unlock if previous module is completed
-    const prevModule = curriculumModules.find(m => m.moduleNumber === module.moduleNumber - 1);
-    return prevModule ? completedModules.includes(prevModule.id) : false;
-  };
 
   const isModuleCompleted = (moduleId: string): boolean => {
     return completedModules.includes(moduleId);
   };
 
   const handleModuleClick = (module: CurriculumModule) => {
-    if (isModuleUnlocked(module) || isModuleCompleted(module.id)) {
-      setSelectedModule(module);
-    }
+    setSelectedModule(module);
   };
 
   const handleStartModule = () => {
@@ -81,6 +76,34 @@ export const CurriculumDashboard = ({
 
   return (
     <div className="w-full">
+      {/* Sign up CTA Banner - only show if not logged in */}
+      {!isLoggedIn && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-gradient-to-r from-emerald-900/50 to-teal-900/50 rounded-xl p-4 border border-emerald-700/50"
+        >
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Sign up free to save your progress</p>
+                <p className="text-slate-400 text-sm">Pick up where you left off on any device</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/signup')}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-medium transition flex items-center gap-2 whitespace-nowrap"
+            >
+              <UserPlus className="w-4 h-4" />
+              Sign Up Free
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl sm:text-3xl font-serif text-white mb-2">
@@ -88,6 +111,9 @@ export const CurriculumDashboard = ({
         </h2>
         <p className="text-slate-400">
           {completedModules.length} of {curriculumModules.length} chapters completed
+          {!isLoggedIn && completedModules.length > 0 && (
+            <span className="text-amber-400 ml-2">• Progress saved locally</span>
+          )}
         </p>
       </div>
 
@@ -106,7 +132,6 @@ export const CurriculumDashboard = ({
       {/* Netflix-style module grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {curriculumModules.map((module) => {
-          const unlocked = isModuleUnlocked(module);
           const completed = isModuleCompleted(module.id);
           const style = thumbnailStyles[module.thumbnailType];
 
@@ -116,7 +141,7 @@ export const CurriculumDashboard = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: module.moduleNumber * 0.1 }}
-              className={`relative group cursor-pointer ${!unlocked && !completed ? 'opacity-60' : ''}`}
+              className="relative group cursor-pointer"
               onClick={() => handleModuleClick(module)}
             >
               {/* Thumbnail */}
@@ -136,34 +161,21 @@ export const CurriculumDashboard = ({
                   Episode {module.moduleNumber}
                 </div>
 
-                {/* Status badge */}
-                <div className="absolute top-3 right-3">
-                  {completed ? (
+                {/* Status badge - only show if completed */}
+                {completed && (
+                  <div className="absolute top-3 right-3">
                     <div className="bg-emerald-500 p-1.5 rounded-full">
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </div>
-                  ) : !unlocked ? (
-                    <div className="bg-slate-700 p-1.5 rounded-full">
-                      <Lock className="w-4 h-4 text-slate-400" />
-                    </div>
-                  ) : null}
-                </div>
+                  </div>
+                )}
 
                 {/* Hover overlay */}
-                {(unlocked || completed) && (
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center">
-                      <Play className="w-6 h-6 text-slate-900 ml-1" />
-                    </div>
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center">
+                    <Play className="w-6 h-6 text-slate-900 ml-1" />
                   </div>
-                )}
-
-                {/* Lock overlay */}
-                {!unlocked && !completed && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <Lock className="w-8 h-8 text-slate-400" />
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Title and meta */}

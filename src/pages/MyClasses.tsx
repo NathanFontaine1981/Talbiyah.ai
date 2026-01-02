@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLeft, Play, Download, BookOpen, XCircle, Loader2, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format, parseISO, differenceInMinutes, isPast, differenceInDays, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
@@ -601,26 +601,46 @@ export default function MyClasses() {
                           </button>
                         )}
 
-                        {lessonIsPast && (
-                          lesson.has_insights ? (
-                            <button
-                              onClick={handleViewInsights}
-                              className={`px-4 py-2 text-white rounded-lg font-medium transition flex items-center space-x-2 ${
-                                lesson.subject_name?.toLowerCase().includes('quran')
-                                  ? 'bg-emerald-500 hover:bg-emerald-600'
-                                  : 'bg-blue-500 hover:bg-blue-600'
-                              }`}
-                            >
-                              <BookOpen className="w-4 h-4" />
-                              <span>Insights</span>
-                            </button>
-                          ) : (
-                            <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium flex items-center space-x-2 cursor-default">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Processing...</span>
-                            </div>
-                          )
-                        )}
+                        {lessonIsPast && (() => {
+                          // Calculate minutes since lesson ended
+                          const lessonEndTime = new Date(parseISO(lesson.scheduled_time).getTime() + (lesson.duration_minutes || 30) * 60000);
+                          const minutesSinceEnd = differenceInMinutes(new Date(), lessonEndTime);
+
+                          if (lesson.has_insights) {
+                            // Insights available - show button
+                            return (
+                              <button
+                                onClick={handleViewInsights}
+                                className={`px-4 py-2 text-white rounded-lg font-medium transition flex items-center space-x-2 ${
+                                  lesson.subject_name?.toLowerCase().includes('quran')
+                                    ? 'bg-emerald-500 hover:bg-emerald-600'
+                                    : 'bg-blue-500 hover:bg-blue-600'
+                                }`}
+                              >
+                                <BookOpen className="w-4 h-4" />
+                                <span>Insights</span>
+                              </button>
+                            );
+                          } else if (lesson.has_recording && minutesSinceEnd < 15) {
+                            // Recording exists, less than 15 mins - still processing
+                            return (
+                              <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium flex items-center space-x-2 cursor-default">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing...</span>
+                              </div>
+                            );
+                          } else if (lesson.has_recording && minutesSinceEnd >= 15) {
+                            // Recording exists but insights failed after 15 mins
+                            return (
+                              <div className="px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-sm flex items-center space-x-2 border border-amber-200">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span>Insights unavailable</span>
+                              </div>
+                            );
+                          }
+                          // No recording - lesson didn't happen, show nothing
+                          return null;
+                        })()}
 
                         {/* Recording buttons for past lessons */}
                         {lessonIsPast && lesson.has_recording && lesson.recording_url && (

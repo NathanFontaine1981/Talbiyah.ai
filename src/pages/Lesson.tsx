@@ -842,6 +842,82 @@ function LessonContent() {
             options={{
               userName: userRole === 'teacher' ? lesson.teacher_name : lesson.learner_name,
               userId: user?.id || `user_${Date.now()}`,
+              endpoints: {
+                roomLayout: 'https://api.100ms.live/v2/layouts/ui'
+              },
+              theme: {
+                palette: {
+                  mode: 'light',
+                  primary_default: '#10B981', // Talbiyah emerald
+                  primary_bright: '#34D399',
+                  primary_dim: '#059669',
+                  primary_disabled: '#A7F3D0',
+                  secondary_default: '#6B7280',
+                  secondary_bright: '#9CA3AF',
+                  secondary_dim: '#4B5563',
+                  secondary_disabled: '#D1D5DB',
+                  background_default: '#FFFFFF', // White background
+                  background_dim: '#F9FAFB',
+                  surface_default: '#F3F4F6',
+                  surface_bright: '#FFFFFF',
+                  surface_brighter: '#FFFFFF',
+                  surface_dim: '#E5E7EB',
+                  on_primary_high: '#FFFFFF',
+                  on_primary_medium: '#E6FFFA',
+                  on_primary_low: '#D1FAE5',
+                  on_secondary_high: '#FFFFFF',
+                  on_secondary_medium: '#F3F4F6',
+                  on_secondary_low: '#E5E7EB',
+                  on_surface_high: '#111827',
+                  on_surface_medium: '#374151',
+                  on_surface_low: '#6B7280',
+                  border_default: '#E5E7EB',
+                  border_bright: '#D1D5DB'
+                }
+              }
+            }}
+            screens={{
+              preview: {
+                elements: {
+                  virtual_background: true,
+                  noise_cancellation: true
+                }
+              },
+              conferencing: {
+                default: {
+                  elements: {
+                    video_tile_layout: {
+                      grid: {
+                        enable_local_tile_inset: true,
+                        prominent_roles: ['teacher'],
+                        enable_spotlighting_peer: true
+                      }
+                    },
+                    participant_list: {
+                      off_stage_roles: []
+                    },
+                    emoji_reactions: true,
+                    hand_raise: true,
+                    chat: true,
+                    virtual_background: true,
+                    noise_cancellation: true,
+                    whiteboard: true,
+                    on_stage_exp: {
+                      enabled: true,
+                      off_stage_roles: ['student'],
+                      on_stage_role: 'teacher'
+                    },
+                    brb: true
+                  }
+                },
+                hls_live_streaming: {
+                  elements: {
+                    chat: true,
+                    emoji_reactions: true,
+                    hand_raise: true
+                  }
+                }
+              }
             }}
             onJoinRoom={() => {
               // Successfully joined

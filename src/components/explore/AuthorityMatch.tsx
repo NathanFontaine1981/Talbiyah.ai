@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, CheckCircle2, BookOpen, Sparkles, TrendingUp, Check, Atom, Heart, Leaf, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, BookOpen, Sparkles, TrendingUp, Check, Atom, Heart, Leaf, Clock, Lightbulb, Gavel, Scale } from 'lucide-react';
 
 interface AuthorityMatchProps {
   agreedAxioms: string[];
@@ -18,6 +18,7 @@ const axiomToQuran: Record<string, {
   yearRevealed: number;
   yearDiscovered: number;
   category: 'cosmic' | 'biological' | 'natural' | 'human';
+  contemplation: string; // A thought-provoking question to pause and reflect
 }> = {
   // COSMIC REALITY
   'big-bang': {
@@ -30,6 +31,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1927,
     category: 'cosmic',
+    contemplation: 'No human witnessed this. Yet the author states it with absolute confidence—boldly, as fact. Over 1,400 years ago, making such a claim risked being proven wrong. A human would hedge. The Creator would not.',
   },
   'universe-expansion': {
     verse: '51:47',
@@ -41,6 +43,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1929,
     category: 'cosmic',
+    contemplation: 'Edwin Hubble needed a telescope to discover this in 1929. What telescope was available in 610 CE?',
   },
   'earth-sphere': {
     verse: '39:5',
@@ -52,6 +55,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1522,
     category: 'cosmic',
+    contemplation: 'The Arabic word "yukawwir" means to coil or wrap around a sphere. You can only wrap day over night on a ball. Why use this word?',
   },
   'sun-moon-light': {
     verse: '10:5',
@@ -63,6 +67,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1609,
     category: 'cosmic',
+    contemplation: 'Arabic uses "diya" (self-generating light) for the sun and "noor" (reflected light) for the moon. This distinction predates Galileo by 1,000 years.',
   },
   'day-night': {
     verse: '36:40',
@@ -74,6 +79,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1543,
     category: 'cosmic',
+    contemplation: 'This verse describes celestial bodies moving in precise orbits—never colliding, never overtaking. How would an illiterate merchant know orbital mechanics?',
   },
   'water-life': {
     verse: '21:30',
@@ -85,6 +91,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1930,
     category: 'cosmic',
+    contemplation: 'Today we search for water on other planets to find life. This verse makes an absolute claim: ALL living things are from water. Biology confirms this.',
   },
 
   // BIOLOGICAL REALITY
@@ -98,6 +105,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1800,
     category: 'biological',
+    contemplation: 'Many animals walk within hours of birth. Humans are uniquely helpless for years. This verse highlights human exceptionalism—designed for learning.',
   },
   'death-certain': {
     verse: '3:185',
@@ -109,6 +117,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 0,
     category: 'biological',
+    contemplation: 'If death is certain, why do we live as if it will never come? What would change if you truly believed this applied to you?',
   },
   'embryo-stages': {
     verse: '23:14',
@@ -120,6 +129,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1940,
     category: 'biological',
+    contemplation: 'Professor Keith Moore, a leading embryologist, was so convinced by the Quran\'s accuracy that he added Islamic references to his textbook. He stated: "It is clear to me that these statements must have come to Muhammad from God, because almost all of this knowledge was not discovered until many centuries later."',
   },
   'body-heals': {
     verse: '26:80',
@@ -131,6 +141,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1858,
     category: 'biological',
+    contemplation: 'Your body right now is fighting bacteria, repairing cells, and healing wounds—without any conscious effort from you. Who programmed this?',
   },
   'fingerprints': {
     verse: '75:4',
@@ -142,6 +153,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1892,
     category: 'biological',
+    contemplation: 'Of all body parts to mention for resurrection, why fingertips? In 610 CE, nobody knew fingerprints were unique. But the Creator did.',
   },
   'skin-pain': {
     verse: '4:56',
@@ -153,6 +165,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1880,
     category: 'biological',
+    contemplation: 'This verse implies that once skin is destroyed, pain stops—unless skin is replaced. Modern medicine confirms pain receptors are in the skin, not deeper tissue.',
   },
 
   // NATURAL ORDER
@@ -166,6 +179,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 0,
     category: 'natural',
+    contemplation: 'The Quran presents male and female as a deliberate design, not random chance. Two complementary halves that create new life. Design implies a Designer.',
   },
   'plants-male-female': {
     verse: '36:36',
@@ -177,6 +191,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1694,
     category: 'natural',
+    contemplation: 'Plant sexuality wasn\'t scientifically established until 1694. This verse claims even plants exist in pairs—and "things you do not know." What else remains undiscovered?',
   },
   'mountains-pegs': {
     verse: '78:7',
@@ -188,6 +203,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1855,
     category: 'natural',
+    contemplation: 'Like tent pegs, mountains have roots far deeper than what\'s visible. This stabilizes tectonic plates. How would a 7th-century person know what\'s underground?',
   },
   'lowest-land': {
     verse: '30:2-3',
@@ -199,17 +215,19 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1837,
     category: 'natural',
+    contemplation: 'The battle occurred near the Dead Sea—the lowest point on Earth at 430m below sea level. "Adna" in Arabic means both "lowest" and "nearest." Both are correct.',
   },
   'female-bees': {
     verse: '16:68-69',
     surah: 'An-Nahl',
     ayah: '68-69',
-    arabicText: 'وَأَوْحَىٰ رَبُّكَ إِلَى النَّحْلِ أَنِ اتَّخِذِي مِنَ الْجِبَالِ بُيُوتًا',
-    translation: 'And your Lord inspired the bee, saying: "Take for yourself among the mountains, houses."',
+    arabicText: 'وَأَوْحَىٰ رَبُّكَ إِلَى النَّحْلِ أَنِ اتَّخِذِي مِنَ الْجِبَالِ بُيُوتًا وَمِنَ الشَّجَرِ وَمِمَّا يَعْرِشُونَ ثُمَّ كُلِي مِن كُلِّ الثَّمَرَاتِ فَاسْلُكِي',
+    translation: 'And your Lord inspired the bee: "Build (اتَّخِذِي - feminine) homes in the mountains... then eat (كُلِي - feminine) from fruits and follow (فَاسْلُكِي - feminine) the ways of your Lord." All verbs are feminine—addressing female bees.',
     factStatement: 'Only female bees make honey',
     yearRevealed: 610,
     yearDiscovered: 1609,
     category: 'natural',
+    contemplation: 'Arabic distinguishes masculine and feminine verb forms. The word "bee" (نحل) is grammatically masculine. Yet every verb here is feminine. A grammatical "error"—unless you know only female bees do this work.',
   },
   'two-seas': {
     verse: '55:19-20',
@@ -221,6 +239,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1942,
     category: 'natural',
+    contemplation: 'At river estuaries, fresh and salt water meet but don\'t mix due to density differences. An invisible barrier keeps them separate. Who could see this underwater phenomenon in 610 CE?',
   },
   'iron-sent-down': {
     verse: '57:25',
@@ -232,6 +251,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1920,
     category: 'cosmic',
+    contemplation: 'Iron requires supernova-level energy to form—impossible on Earth. All iron on Earth came from meteorites. "Sent down" is scientifically accurate. How would they know?',
   },
   'baby-instinct': {
     verse: '28:7',
@@ -243,6 +263,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1950,
     category: 'natural',
+    contemplation: 'Newborns automatically root and latch without being taught. This "inspiration" is built-in. Who installed these instincts in every human baby?',
   },
   'parent-protection': {
     verse: '31:14',
@@ -254,6 +275,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1870,
     category: 'natural',
+    contemplation: 'A mother\'s body literally weakens to nurture her child. This sacrifice is built into our biology. Random evolution, or intentional design?',
   },
   'seasons-cycle': {
     verse: '30:19',
@@ -265,6 +287,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 0,
     category: 'natural',
+    contemplation: 'Seeds "die" in winter and "resurrect" in spring. The Earth demonstrates this pattern constantly. If nature can be resurrected, why not humans?',
   },
   'animal-intelligence': {
     verse: '27:18',
@@ -276,6 +299,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1870,
     category: 'natural',
+    contemplation: 'This verse shows ants communicating, recognizing danger, and warning others. Science now confirms ants use pheromones for complex communication. How would a desert dweller know this?',
   },
 
   // HUMAN CONDITION
@@ -289,6 +313,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1881,
     category: 'human',
+    contemplation: 'The Pharaoh who chased Moses drowned. This verse promises his body will be preserved as a sign. In 1881, his mummy was found. You can see it today in Cairo Museum.',
   },
   'moral-compass': {
     verse: '91:8',
@@ -300,6 +325,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1970,
     category: 'human',
+    contemplation: 'Even children who\'ve never been taught know when something is unfair. This moral compass is pre-installed. Who programmed our conscience?',
   },
   'emotions-real': {
     verse: '3:134',
@@ -311,6 +337,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1890,
     category: 'human',
+    contemplation: 'You can\'t weigh anger on a scale or see forgiveness under a microscope. Yet they\'re undeniably real. The Quran addresses the unseen reality within us.',
   },
   'organs-purpose': {
     verse: '32:9',
@@ -322,6 +349,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1628,
     category: 'human',
+    contemplation: 'Each organ—eyes, ears, heart—is specifically designed for a function. Purpose implies a Purpose-giver. Random chance doesn\'t create cameras with auto-focus.',
   },
   'conscious-will': {
     verse: '76:3',
@@ -333,6 +361,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1960,
     category: 'human',
+    contemplation: 'Unlike animals driven purely by instinct, humans can choose gratitude or ingratitude, obedience or rebellion. This free will is what makes the test meaningful.',
   },
 };
 
@@ -399,7 +428,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
     }
   };
 
-  // Intro screen - "Let's audit the track record"
+  // Intro screen - Cross-examination begins
   if (showIntro) {
     return (
       <motion.div
@@ -413,28 +442,28 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <TrendingUp className="w-10 h-10 text-blue-400" />
+            <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Gavel className="w-10 h-10 text-amber-400" />
             </div>
 
             <h1 className="text-4xl sm:text-5xl font-serif text-white mb-6">
-              Checking the Past Scores
+              Cross-Examination
             </h1>
 
             <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8 text-left">
               <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                You've agreed to <span className="text-emerald-400 font-semibold">{agreedAxioms.length} undeniable facts</span> about reality.
+                The court has admitted <span className="text-emerald-400 font-semibold">{agreedAxioms.length} exhibits</span> as undeniable facts.
               </p>
 
               <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                Now let's check: <span className="text-amber-400">Did the Quran get these right?</span>
+                Now we cross-examine: <span className="text-amber-400">Does the Quran match the evidence?</span>
               </p>
 
-              <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50">
-                <p className="text-blue-200 text-center">
-                  For each fact, we'll show you what the Quran says.
+              <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
+                <p className="text-amber-200 text-center">
+                  For each exhibit, the Quran will testify.
                   <br />
-                  <span className="font-semibold">You decide: Match or Miss?</span>
+                  <span className="font-semibold">You decide: Sustained or Overruled?</span>
                 </p>
               </div>
             </div>
@@ -442,8 +471,8 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             {/* Preview dashboard */}
             <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700 mb-8">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Predictive Accuracy</span>
-                <span className="text-slate-500">Starting audit...</span>
+                <span className="text-slate-400">Cross-Examination Progress</span>
+                <span className="text-slate-500">Awaiting testimony...</span>
               </div>
               <div className="h-2 bg-slate-800 rounded-full mt-2">
                 <div className="h-full w-0 bg-emerald-500 rounded-full" />
@@ -452,9 +481,9 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
 
             <button
               onClick={() => setShowIntro(false)}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+              className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
             >
-              Begin Verification
+              Call the First Witness
               <ArrowRight className="w-5 h-5" />
             </button>
           </motion.div>
@@ -463,9 +492,9 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
     );
   }
 
-  // Climax screen
+  // Climax screen - Verdict
   if (showClimax) {
-    const finalAccuracy = Math.round((verifiedCount / matchedAxioms.length) * 100);
+    const finalAccuracy = Math.min(100, Math.round((verifiedCount / matchedAxioms.length) * 100));
 
     return (
       <motion.div
@@ -479,11 +508,11 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            {/* Accuracy Dashboard */}
+            {/* Verdict Dashboard */}
             <div className="bg-slate-900/80 rounded-2xl p-8 border border-emerald-500/30 mb-8">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-xl text-slate-300">Accuracy Report</h2>
+                <Scale className="w-6 h-6 text-emerald-400" />
+                <h2 className="text-xl text-slate-300">Cross-Examination Results</h2>
               </div>
 
               <div className="text-7xl font-bold text-emerald-400 mb-2">
@@ -491,7 +520,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
               </div>
 
               <p className="text-slate-400 mb-6">
-                {verifiedCount} of {matchedAxioms.length} facts verified
+                {verifiedCount} of {matchedAxioms.length} testimonies sustained
               </p>
 
               {/* Category breakdown */}
@@ -541,7 +570,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                   The Quran
                 </h3>
                 <p className="text-emerald-200 text-lg leading-relaxed mb-4">
-                  A <span className="text-white font-semibold">real book</span> from 1,400 years ago that recorded facts about the universe, biology, nature, and humanity—
+                  A <span className="text-white font-semibold">real book</span> from over 1,400 years ago that recorded facts about the universe, biology, nature, and humanity—
                   <span className="text-amber-300"> centuries before science discovered them</span>.
                 </p>
                 <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700">
@@ -615,7 +644,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
         <div className="max-w-3xl mx-auto bg-slate-900/90 backdrop-blur rounded-xl p-3 border border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="text-slate-400 text-sm">
-              Checking: <span className="text-white font-semibold">{currentIndex + 1}</span> / {matchedAxioms.length}
+              Exhibit: <span className="text-white font-semibold">{currentIndex + 1}</span> / {matchedAxioms.length}
             </div>
             <div className={`flex items-center gap-1.5 px-3 py-1 ${catStyles.bg} rounded-full border ${catStyles.border}`}>
               <span className={catStyles.text}>{categoryIcons[currentMatch.category]}</span>
@@ -623,9 +652,9 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <Gavel className="w-4 h-4 text-emerald-400" />
             <span className="text-emerald-400 font-semibold">{verifiedCount}</span>
-            <span className="text-slate-500 text-sm">verified</span>
+            <span className="text-slate-500 text-sm">sustained</span>
           </div>
         </div>
       </div>
@@ -655,7 +684,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
 
               {/* Row 2: The Comparison - Three Columns */}
               <div className="grid grid-cols-3 divide-x divide-slate-700">
-                {/* The Book (1400 years ago) */}
+                {/* The Book (over 1,400 years ago) */}
                 <div className="p-4 text-center">
                   <div className="flex items-center justify-center gap-2 text-amber-400 text-sm mb-3">
                     <BookOpen className="w-4 h-4" />
@@ -684,9 +713,9 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                 {/* Status */}
                 <div className="p-4 text-center flex flex-col items-center justify-center">
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mb-2">
-                    <Check className="w-6 h-6 text-emerald-400" />
+                    <Gavel className="w-6 h-6 text-emerald-400" />
                   </div>
-                  <span className="text-emerald-400 font-semibold">MATCH</span>
+                  <span className="text-emerald-400 font-semibold">CORROBORATES</span>
                 </div>
               </div>
 
@@ -712,12 +741,31 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                   "{currentMatch.translation}"
                 </p>
               </div>
+
+              {/* Row 4: Contemplation Point */}
+              {currentMatch.contemplation && (
+                <div className="p-5 bg-amber-900/20 border-t border-amber-700/30">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Lightbulb className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-amber-400 text-xs font-medium uppercase tracking-wide mb-1">
+                        Pause & Reflect
+                      </p>
+                      <p className="text-amber-100 leading-relaxed">
+                        {currentMatch.contemplation}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* The Question */}
             <div className="text-center mb-6">
               <p className="text-xl text-slate-300">
-                Does this count as a match?
+                Does the testimony match the evidence?
               </p>
             </div>
 
@@ -727,14 +775,14 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                 onClick={handleVerified}
                 className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
               >
-                <CheckCircle2 className="w-5 h-5" />
-                Yes, That's a Match
+                <Gavel className="w-5 h-5" />
+                Sustained
               </button>
               <button
                 onClick={handleSkip}
                 className="px-8 py-4 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full text-lg font-medium transition"
               >
-                Not Sure / Skip
+                Objection / Not Sure
               </button>
             </div>
 

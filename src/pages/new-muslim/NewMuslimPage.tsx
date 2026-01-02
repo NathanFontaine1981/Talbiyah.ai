@@ -8,7 +8,6 @@ import {
   BookOpen,
   Shield,
   Star,
-  Anchor,
   X,
   Sparkles,
   HelpCircle,
@@ -199,6 +198,7 @@ export default function NewMuslimPage() {
           <CurriculumDashboard
             completedModules={completedModules}
             onSelectModule={handleSelectModule}
+            isLoggedIn={!!user}
           />
         </div>
       </div>
@@ -241,27 +241,26 @@ export default function NewMuslimPage() {
 
           <div className="mb-8">
             <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Anchor className="w-10 h-10 text-emerald-400" />
+              <Shield className="w-10 h-10 text-emerald-400" />
             </div>
             <h1 className="text-4xl sm:text-5xl font-serif text-white mb-4">
-              New to Islam
+              Exploring Islam
             </h1>
             <p className="text-xl text-emerald-200 mb-2">
-              The Anchor Journey
+              Straight From The Source
             </p>
           </div>
 
           <div className="bg-slate-900/50 rounded-2xl p-8 border border-slate-700 mb-8">
-            <p className="text-lg text-slate-300 leading-relaxed mb-6">
-              Welcome to Islam. This journey will help you build unshakeable faith
-              through verifiable facts and evidence—each one strengthening your certainty.
+            <p className="text-lg text-slate-300 leading-relaxed mb-4">
+              You might be curious. You might be skeptical. You might have questions no one has answered honestly.
             </p>
-            <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-              <p className="text-emerald-200 text-sm">
-                As you verify each fact, your certainty compounds. By the end,
-                you'll see why this faith is built on solid foundations.
-              </p>
-            </div>
+            <p className="text-white font-medium text-lg mb-4">
+              That's okay—this space is for you.
+            </p>
+            <p className="text-slate-400 leading-relaxed">
+              Here, you'll explore Islam through its authentic sources, at your own pace, with no pressure. Just truth.
+            </p>
           </div>
 
           {/* Three paths */}
@@ -283,8 +282,8 @@ export default function NewMuslimPage() {
               onClick={handleStartJourney}
               className="p-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl transition flex flex-col items-center gap-3"
             >
-              <Anchor className="w-8 h-8" />
-              <span className="font-semibold text-lg">Build Your Anchor</span>
+              <Shield className="w-8 h-8" />
+              <span className="font-semibold text-lg">Build Your Foundation</span>
               <span className="text-emerald-200 text-sm">
                 Evidence-based certainty
               </span>
@@ -341,10 +340,10 @@ export default function NewMuslimPage() {
             <div className="text-center lg:text-left">
               <div className="mb-8">
                 <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto lg:mx-0 mb-6">
-                  <Anchor className="w-12 h-12 text-emerald-400" />
+                  <Shield className="w-12 h-12 text-emerald-400" />
                 </div>
                 <h1 className="text-4xl font-serif text-white mb-4">
-                  Your Anchor is Set
+                  Foundation Complete
                 </h1>
               </div>
 
@@ -372,7 +371,7 @@ export default function NewMuslimPage() {
 
               <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50 mb-6">
                 <p className="text-emerald-200 leading-relaxed">
-                  Your faith now has an anchor built on evidence, not just emotion.
+                  Your faith now has an unshakeable foundation built on evidence, not just emotion.
                 </p>
               </div>
 
@@ -418,6 +417,15 @@ export default function NewMuslimPage() {
         />
       </div>
 
+      {/* Back to Menu button */}
+      <button
+        onClick={() => setShowIntro(true)}
+        className="fixed top-6 left-6 text-slate-400 hover:text-white transition z-50 flex items-center gap-2"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="hidden sm:inline">Menu</span>
+      </button>
+
       {/* Close button */}
       <button
         onClick={() => navigate('/')}
@@ -436,7 +444,7 @@ export default function NewMuslimPage() {
       </button>
 
       {/* Step counter and probability */}
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-4">
+      <div className="fixed top-16 left-6 z-50 flex items-center gap-4">
         <div className="text-slate-400">
           <span className="text-emerald-400 font-semibold">{currentStep + 1}</span>
           <span> / {tajPrinciples.length}</span>

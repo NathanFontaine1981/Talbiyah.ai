@@ -1,44 +1,48 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play } from 'lucide-react';
+import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play, FileText, Gavel } from 'lucide-react';
 
 interface AxiomCheckProps {
   onComplete: (agreedAxioms: string[]) => void;
 }
 
-// Categories of undeniable knowledge
+// Categories of undeniable knowledge - presented as court exhibits
 const categories = [
   {
     id: 'cosmic',
-    name: 'The Cosmic Reality',
-    subtitle: 'The Stage',
+    name: 'Exhibit A: Cosmic Evidence',
+    subtitle: 'The Universe',
     icon: <Atom className="w-6 h-6" />,
     bgClass: 'bg-blue-500/20',
     textClass: 'text-blue-400',
+    exhibitLabel: 'Exhibit A',
   },
   {
     id: 'biological',
-    name: 'The Biological Reality',
-    subtitle: 'The Machine',
+    name: 'Exhibit B: Biological Evidence',
+    subtitle: 'The Human Body',
     icon: <Sparkles className="w-6 h-6" />,
     bgClass: 'bg-purple-500/20',
     textClass: 'text-purple-400',
+    exhibitLabel: 'Exhibit B',
   },
   {
     id: 'natural',
-    name: 'The Natural Order',
+    name: 'Exhibit C: Natural Evidence',
     subtitle: 'The Ecosystem',
     icon: <Leaf className="w-6 h-6" />,
     bgClass: 'bg-emerald-500/20',
     textClass: 'text-emerald-400',
+    exhibitLabel: 'Exhibit C',
   },
   {
     id: 'human',
-    name: 'The Human Condition',
+    name: 'Exhibit D: Human Evidence',
     subtitle: 'The Soul',
     icon: <Heart className="w-6 h-6" />,
     bgClass: 'bg-rose-500/20',
     textClass: 'text-rose-400',
+    exhibitLabel: 'Exhibit D',
   },
 ];
 
@@ -53,6 +57,8 @@ const axioms = [
     discoveredYear: 1927,
     discoveredBy: 'Georges Lemaître',
     discoveryNote: 'Belgian physicist proposed the "primeval atom" theory, later confirmed by Hubble\'s observations.',
+    videoUrl: 'https://www.youtube.com/watch?v=dr6nNvw55C4',
+    videoTitle: 'TED: What Was There Before the Big Bang?',
   },
   {
     id: 'universe-expansion',
@@ -62,6 +68,8 @@ const axioms = [
     discoveredYear: 1929,
     discoveredBy: 'Edwin Hubble',
     discoveryNote: 'Observed redshift in distant galaxies, proving the universe is expanding in all directions.',
+    videoUrl: 'https://www.youtube.com/watch?v=dr6nNvw55C4',
+    videoTitle: 'TED: What Was There Before the Big Bang? (first 1 min)',
   },
   {
     id: 'earth-sphere',
@@ -71,6 +79,8 @@ const axioms = [
     discoveredYear: -330,
     discoveredBy: 'Aristotle (confirmed)',
     discoveryNote: 'Ancient Greeks observed ships disappearing hull-first over the horizon. Confirmed by Magellan\'s voyage (1522).',
+    videoUrl: 'https://www.youtube.com/watch?v=VNqNnUJVcVs',
+    videoTitle: 'Vsauce: Is Earth Actually Flat?',
   },
   {
     id: 'sun-moon-light',
@@ -109,6 +119,8 @@ const axioms = [
     discoveredYear: 1944,
     discoveredBy: 'Adolf Portmann',
     discoveryNote: 'Swiss zoologist documented "physiological prematurity" - humans are born 12 months early compared to other primates.',
+    videoUrl: 'https://www.youtube.com/watch?v=fKyljukBE70',
+    videoTitle: 'TED: Conception to Birth - Visualised',
   },
   {
     id: 'death-certain',
@@ -138,6 +150,8 @@ const axioms = [
     discoveredYear: 1882,
     discoveredBy: 'Élie Metchnikoff',
     discoveryNote: 'Discovered phagocytosis - immune cells automatically engulf pathogens. Won Nobel Prize 1908.',
+    videoUrl: 'https://www.youtube.com/watch?v=lXfEK8G8CUI',
+    videoTitle: 'Kurzgesagt: How Your Immune System Works',
   },
   {
     id: 'fingerprints',
@@ -147,6 +161,8 @@ const axioms = [
     discoveredYear: 1892,
     discoveredBy: 'Sir Francis Galton',
     discoveryNote: 'Proved fingerprint uniqueness statistically. Even identical twins have different fingerprints.',
+    videoUrl: 'https://www.youtube.com/watch?v=6Yc7SbKqpj4',
+    videoTitle: 'TED-Ed: Why Are Fingerprints Unique?',
   },
   {
     id: 'skin-pain',
@@ -156,6 +172,8 @@ const axioms = [
     discoveredYear: 1906,
     discoveredBy: 'Charles Sherrington',
     discoveryNote: 'Mapped nociceptors (pain receptors) in skin. Deep burns destroy these receptors, causing numbness.',
+    videoUrl: 'https://www.youtube.com/watch?v=HN6hP0QQ_K8',
+    videoTitle: 'TED-Ed: How Does Your Body Sense Pain?',
   },
 
   // NATURAL ORDER
@@ -194,6 +212,8 @@ const axioms = [
     discoveredYear: 1837,
     discoveredBy: 'Modern surveying',
     discoveryNote: 'Accurate altitude measurement became possible with barometric and trigonometric surveying. The Dead Sea was confirmed as Earth\'s lowest point on land.',
+    videoUrl: 'https://www.youtube.com/watch?v=6EfRHTJ0TzU',
+    videoTitle: 'Rick Steves: The Dead Sea - Lowest Place on Earth',
   },
   {
     id: 'baby-instinct',
@@ -230,6 +250,8 @@ const axioms = [
     discoveredYear: 1973,
     discoveredBy: 'Karl von Frisch',
     discoveryNote: 'Won Nobel Prize for decoding bee "waggle dance" communication. Ants farm fungi, wage wars.',
+    videoUrl: 'https://www.youtube.com/watch?v=H6u0VBqNBQ8',
+    videoTitle: 'Kurzgesagt: Are Animals Conscious?',
   },
   {
     id: 'female-bees',
@@ -248,6 +270,8 @@ const axioms = [
     discoveredYear: 1942,
     discoveredBy: 'Modern oceanography',
     discoveryNote: 'Haloclines—density barriers between fresh and salt water—were discovered through oceanographic research.',
+    videoUrl: 'https://www.youtube.com/watch?v=CmxgRg9Xauw',
+    videoTitle: 'NOAA: What is an Estuary?',
   },
   {
     id: 'iron-sent-down',
@@ -257,6 +281,8 @@ const axioms = [
     discoveredYear: 1920,
     discoveredBy: 'Cecilia Payne-Gaposchkin',
     discoveryNote: 'Stellar nucleosynthesis proved iron forms in supernova explosions and arrives on Earth via meteorites.',
+    videoUrl: 'https://www.youtube.com/watch?v=2GBq0ClRKoA',
+    videoTitle: 'Smithsonian: Meteorites - Rocks from Space',
   },
 
   // HUMAN CONDITION
@@ -309,223 +335,85 @@ const axioms = [
   },
 ];
 
-// Story scenes for the Almanac intro
+// Story scenes for the Almanac intro - TRIMMED to 5 essential scenes
 const storyScenes = [
   {
-    id: 'scene0',
-    title: 'Picture the Scene',
-    icon: <Clock className="w-12 h-12" />,
-    iconBg: 'bg-blue-500/20',
-    iconColor: 'text-blue-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          In the 1989 movie <span className="text-blue-400 font-semibold">Back to the Future Part II</span>, Marty McFly travels to the year 2015.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          While there, he buys a book: <span className="text-amber-400 font-semibold">"Grays Sports Almanac"</span>—a book that records every sports result from 1950 to 2000.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          The villain, <span className="text-white font-semibold">Biff Tannen</span>, steals the book and takes it back in time to 1955.
-        </p>
-      </>
-    ),
-  },
-  {
     id: 'scene1',
-    title: 'The Handoff',
+    title: 'Exhibit Alpha: The Analogy',
     icon: <BookOpen className="w-12 h-12" />,
     iconBg: 'bg-amber-500/20',
     iconColor: 'text-amber-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Old Biff finds his <span className="text-white font-semibold">younger self</span> in 1955 and hands him the book.
+          In <span className="text-blue-400 font-semibold">Back to the Future Part II</span>, a character gets hold of a Sports Almanac from the future.
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
           <p className="text-amber-300 text-lg italic mb-2">
-            "This book tells you the outcome of every sports event until the year 2000."
+            "This book records every sports result from 1950 to 2000."
           </p>
           <p className="text-white font-medium">
-            "All you have to do is bet on the winner."
+            He takes it back in time. Every bet wins. He becomes a billionaire.
           </p>
         </div>
         <p className="text-lg text-slate-300 leading-relaxed">
-          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span> about the future.
-          <span className="text-slate-500 italic"> Every result. Every winner. Every score.</span>
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene1b',
-    title: 'Every Bet Wins',
-    icon: <DollarSign className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Young Biff starts betting. <span className="text-emerald-400 font-semibold">Every single result comes in exactly as the book says.</span>
-        </p>
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <p className="text-slate-400 text-sm mb-3">The logic was simple:</p>
-          <p className="text-white mb-2">1. Check the almanac for the result</p>
-          <p className="text-white mb-2">2. Place the bet</p>
-          <p className="text-emerald-400 font-semibold">3. Win. Every. Time.</p>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          Not luck. Not gambling. <span className="text-amber-400 font-semibold">Certainty.</span>
-          <br />
-          <span className="text-slate-400">Because the book contains facts, not predictions.</span>
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene1c',
-    title: 'Fast Forward',
-    icon: <TrendingUp className="w-12 h-12" />,
-    iconBg: 'bg-purple-500/20',
-    iconColor: 'text-purple-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Fast forward years into the future...
-        </p>
-        <div className="bg-purple-900/30 rounded-xl p-4 mb-4 border border-purple-700/50">
-          <p className="text-purple-200 text-lg mb-2">
-            Biff is now a <span className="text-white font-bold">billionaire</span>.
-          </p>
-          <p className="text-purple-200 mb-2">
-            He owns almost all the real estate in town.
-          </p>
-          <p className="text-purple-200">
-            Lives in a <span className="text-white font-semibold">mansion</span>.
-          </p>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          And the book? <span className="text-amber-400 font-semibold">Safely locked away in his vault</span>—behind sliding doors and a combination lock.
-          <br />
-          <span className="text-slate-400 italic">His most prized possession.</span>
+          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span> about events that haven't happened yet.
         </p>
       </>
     ),
   },
   {
     id: 'scene2',
-    title: 'Building Belief',
+    title: 'The Burden of Proof',
     icon: <TrendingUp className="w-12 h-12" />,
-    iconBg: 'bg-blue-500/20',
-    iconColor: 'text-blue-400',
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          You find the book. At first, <span className="text-white font-semibold">you have 0% belief</span>. Why would you?
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          But then you test it...
+          Imagine you find this book. At first, <span className="text-white font-semibold">0% belief</span>. Why would you trust it?
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-300">Result 1 correct</span>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="w-[10%] h-full bg-emerald-500"></div>
-                </div>
-                <span className="text-emerald-400 text-sm">10%</span>
-              </div>
+              <span className="text-slate-300">Evidence 1 verified</span>
+              <span className="text-emerald-400 text-sm">Interesting...</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-300">Result 5 correct</span>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="w-[40%] h-full bg-emerald-500"></div>
-                </div>
-                <span className="text-emerald-400 text-sm">40%</span>
-              </div>
+              <span className="text-slate-300">Evidence 10 verified</span>
+              <span className="text-emerald-400 text-sm">Wait...</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-300">Result 20 correct</span>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="w-[75%] h-full bg-emerald-500"></div>
-                </div>
-                <span className="text-emerald-400 text-sm">75%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white font-medium">Result 50 correct</span>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="w-full h-full bg-emerald-500"></div>
-                </div>
-                <span className="text-emerald-400 text-sm font-bold">99%</span>
-              </div>
+              <span className="text-white font-medium">Evidence 50 verified, 0 false</span>
+              <span className="text-emerald-400 text-sm font-bold">This is real.</span>
             </div>
           </div>
         </div>
         <p className="text-lg text-slate-300 leading-relaxed">
-          Each correct result <span className="text-emerald-400 font-semibold">compounds your certainty</span>.
-          The only thing that would break it? <span className="text-rose-400">A single wrong result.</span>
+          Each verified piece of evidence <span className="text-emerald-400 font-semibold">strengthens the case</span>. The only thing that would overturn it? <span className="text-rose-400">A single false claim.</span>
         </p>
       </>
     ),
   },
   {
     id: 'scene3',
-    title: 'The Point of Certainty',
-    icon: <Brain className="w-12 h-12" />,
-    iconBg: 'bg-purple-500/20',
-    iconColor: 'text-purple-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          After 50 verified results with <span className="text-white font-semibold">zero errors</span>, something shifts in your mind.
-        </p>
-        <div className="space-y-3 mb-4">
-          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-amber-500">
-            <p className="text-amber-200 italic">"This isn't luck. This isn't coincidence."</p>
-          </div>
-          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-blue-500">
-            <p className="text-blue-200 italic">"These aren't predictions—they're recorded facts."</p>
-          </div>
-          <div className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-emerald-500">
-            <p className="text-emerald-200 italic">"The book knows what happens before I witness it."</p>
-          </div>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          You've reached <span className="text-purple-400 font-semibold">the point of certainty</span>—not blind faith, but
-          <span className="text-white font-semibold"> earned conviction</span> built on verified evidence.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene4',
-    title: 'Munich, 1958',
+    title: 'A Hypothetical for the Jury',
     icon: <Clock className="w-12 h-12" />,
     iconBg: 'bg-rose-500/20',
     iconColor: 'text-rose-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          You turn to February 6th, 1958. <span className="text-white font-semibold">Manchester United's Busby Babes</span>.
+          You check the book for February 6th, 1958. It says:
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          The book records: <span className="text-slate-400 italic">"Match result: Drew 3-3 in Belgrade. United through 5-4 on aggregate."</span>
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Then you see the next entry: <span className="text-rose-400 font-semibold">"Flight 609 crashed on takeoff from Munich. 23 dead."</span>
+          <span className="text-rose-400 font-semibold">"Flight 609 crashed on takeoff from Munich. 23 dead."</span>
         </p>
         <div className="bg-rose-900/30 rounded-xl p-5 border border-rose-700/50 mb-4">
           <p className="text-xl text-white font-medium mb-3">
-            Now ask yourself honestly:
+            If this source has been 100% accurate on everything...
           </p>
           <p className="text-rose-200 text-lg">
-            If you were there—and this book had been <span className="font-bold">100% accurate</span> on everything—
-            <br /><br />
             <span className="text-white font-semibold">Would you get on that plane?</span>
           </p>
         </div>
@@ -536,161 +424,56 @@ const storyScenes = [
     ),
   },
   {
-    id: 'scene5',
-    title: 'The Logic of Belief',
-    icon: <Zap className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          This is the logic: If a source is <span className="text-emerald-400 font-semibold">100% accurate about everything you can verify</span>...
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          ...what rational reason do you have to doubt what it says about things <span className="text-white font-semibold">you haven't witnessed yet?</span>
-        </p>
-        <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 mb-4">
-          <p className="text-slate-300 mb-3">
-            <span className="text-emerald-400">✓</span> Correct about the past → <span className="text-white">Verified</span>
-          </p>
-          <p className="text-slate-300 mb-3">
-            <span className="text-emerald-400">✓</span> Correct about the present (which becomes past) → <span className="text-white">Verified</span>
-          </p>
-          <p className="text-slate-300">
-            <span className="text-blue-400">?</span> What it says about the future → <span className="text-white font-semibold">Why would you doubt it?</span>
-          </p>
-        </div>
-        <p className="text-lg text-blue-200 leading-relaxed">
-          This is <span className="text-white font-semibold">belief in the unseen</span>—not blind faith, but certainty built on a foundation of verified truth.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene6',
-    title: 'The Claim',
-    icon: <BookOpen className="w-12 h-12" />,
+    id: 'scene4',
+    title: 'The Logical Conclusion',
+    icon: <Gavel className="w-12 h-12" />,
     iconBg: 'bg-blue-500/20',
     iconColor: 'text-blue-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          There is <span className="text-white font-semibold">one book</span> that claims to be <span className="text-amber-400 font-semibold">directly from the One who created everything</span>—including you.
+          If a source is <span className="text-emerald-400 font-semibold">100% accurate about everything you can verify</span>...
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          It claims to be <span className="text-blue-400 font-semibold">the Manual for human beings</span>.
+          ...what rational reason do you have to doubt what it says about things <span className="text-white font-semibold">you haven't witnessed yet?</span>
         </p>
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <p className="text-slate-400 text-sm mb-3">It claims to tell you:</p>
-          <ul className="space-y-2 text-white text-sm">
-            <li>• <span className="text-purple-300">Why</span> you were created</li>
-            <li>• <span className="text-blue-300">How</span> you were created</li>
-            <li>• <span className="text-emerald-300">What</span> exists in the world around you</li>
-            <li>• That every soul <span className="text-rose-300">will taste death</span></li>
-            <li>• What happens <span className="text-amber-300">after</span>—the next stage, the Day of Judgment</li>
-          </ul>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          Your past. Your present. <span className="text-white font-semibold">Your future.</span>
-          <br />
-          <span className="text-slate-400 italic">It's not the end. There's a reason you exist.</span>
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene7',
-    title: 'Back to Zero',
-    icon: <TrendingUp className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Right now, you're back at <span className="text-white font-semibold">0% belief</span>. And that's fine.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          We're going to look at a number of <span className="text-emerald-400 font-semibold">undeniable facts about reality</span>.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Then ask yourself: <span className="text-white font-semibold">who could have known these facts 1,400 years ago?</span>
-        </p>
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <p className="text-slate-400 text-sm mb-3">What are the options?</p>
-          <div className="space-y-3">
-            <p className="text-slate-300">• A <span className="text-white font-medium">single human</span>?</p>
-            <p className="text-slate-300">• A <span className="text-white font-medium">group of humans</span>?</p>
-            <p className="text-slate-300">• Or <span className="text-amber-400 font-medium">the Creator</span> of it all?</p>
-          </div>
-        </div>
-        <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-700/50">
-          <p className="text-blue-200">
-            Then you'll know for certain: <span className="text-white font-semibold">the One who made you is communicating with you.</span>
+        <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 mb-4">
+          <p className="text-slate-300 mb-2">
+            <span className="text-emerald-400">✓</span> Evidence of the past → <span className="text-white">Verified</span>
+          </p>
+          <p className="text-slate-300 mb-2">
+            <span className="text-emerald-400">✓</span> Evidence of the present → <span className="text-white">Verified</span>
+          </p>
+          <p className="text-slate-300">
+            <span className="text-blue-400">?</span> Claims about the unseen → <span className="text-white font-semibold">What's the reasonable verdict?</span>
           </p>
         </div>
+        <p className="text-lg text-blue-200 leading-relaxed">
+          This is <span className="text-white font-semibold">belief in the unseen</span>—not blind faith, but conviction built on verified evidence.
+        </p>
       </>
     ),
   },
   {
-    id: 'scene8',
-    title: 'The Stakes',
-    icon: <Zap className="w-12 h-12" />,
+    id: 'scene5',
+    title: "The Evidence Will Be Presented",
+    icon: <FileText className="w-12 h-12" />,
     iconBg: 'bg-amber-500/20',
     iconColor: 'text-amber-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Once you <span className="text-white font-semibold">know</span> it's from your Creator...
+          There's an over 1,400-year-old book that claims to be <span className="text-amber-400 font-semibold">directly from the Creator</span>.
         </p>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          It doesn't matter what you <span className="italic">think</span> anymore. What matters is <span className="text-amber-400 font-semibold">reality</span>.
+          The prosecution will present <span className="text-white font-semibold">undeniable facts about reality</span> that you already accept. Then we'll cross-examine: <span className="text-emerald-400">does the Quran match?</span>
         </p>
-        <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 mb-4">
-          <p className="text-white font-medium mb-3">The reality is:</p>
-          <p className="text-slate-300 mb-2">• You are in a <span className="text-amber-300 font-semibold">test</span></p>
-          <p className="text-slate-300 mb-2">• There are <span className="text-blue-300 font-semibold">rules</span> to pass</p>
-          <p className="text-slate-300">• You have a <span className="text-emerald-300 font-semibold">choice</span></p>
-        </div>
-        <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-4">
+        <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
           <p className="text-xl text-white font-medium mb-2">
-            Two options:
-          </p>
-          <p className="text-amber-200 mb-2">
-            <span className="font-bold">Option A:</span> This life <span className="text-emerald-400">+ the next life</span>
+            Same standard of evidence as the Sports Almanac.
           </p>
           <p className="text-amber-200">
-            <span className="font-bold">Option B:</span> Just this life
-          </p>
-        </div>
-        <p className="text-lg text-white font-semibold text-center">
-          You choose.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene9',
-    title: 'Ready to Test the Quran?',
-    icon: <ArrowRight className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          We'll start with <span className="text-white font-semibold">{axioms.length} facts</span> about reality that you already accept.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Facts about <span className="text-blue-300">the cosmos</span>, <span className="text-purple-300">biology</span>, <span className="text-emerald-300">nature</span>, and <span className="text-rose-300">the human condition</span>.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-6">
-          Then we'll check the Book's accuracy—just like checking the Sports Almanac.
-        </p>
-        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-          <p className="text-xl text-white font-medium mb-2">
-            Ready to test the Quran?
-          </p>
-          <p className="text-emerald-200">
-            Let's see if your certainty compounds... or breaks.
+            Let's see if the case holds... or falls apart.
           </p>
         </div>
       </>
@@ -701,27 +484,53 @@ const storyScenes = [
 export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
+  const [reviewedAxioms, setReviewedAxioms] = useState<string[]>([]); // Tracks axioms user has interacted with (agree OR need more info)
   const [showIntro, setShowIntro] = useState(true);
+  const [showCategorySelect, setShowCategorySelect] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [introScene, setIntroScene] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [expandedAxiom, setExpandedAxiom] = useState<string | null>(null);
 
-  const currentCategory = categories[currentCategoryIndex];
+  // Get the active categories (only the ones user selected)
+  const activeCategories = selectedCategories.length > 0
+    ? categories.filter(c => selectedCategories.includes(c.id))
+    : categories;
+
+  const currentCategory = activeCategories[currentCategoryIndex];
   const categoryAxioms = axioms.filter(a => a.category === currentCategory?.id);
 
-  // Check if all axioms in current category are agreed
-  const allCategoryAxiomsAgreed = categoryAxioms.every(
-    a => agreedAxioms.includes(a.id)
+  // Check if all axioms in current category have been reviewed (agreed OR marked as need more info)
+  const allCategoryAxiomsReviewed = categoryAxioms.every(
+    a => reviewedAxioms.includes(a.id)
   );
 
   const handleAgreeAxiom = (axiomId: string) => {
+    // Add to agreed if not already
     if (!agreedAxioms.includes(axiomId)) {
       setAgreedAxioms(prev => [...prev, axiomId]);
     }
+    // Mark as reviewed
+    if (!reviewedAxioms.includes(axiomId)) {
+      setReviewedAxioms(prev => [...prev, axiomId]);
+    }
+    setExpandedAxiom(null);
+  };
+
+  const handleNeedMoreInfo = (axiomId: string) => {
+    // Remove from agreed if it was previously agreed (user changed their mind)
+    if (agreedAxioms.includes(axiomId)) {
+      setAgreedAxioms(prev => prev.filter(id => id !== axiomId));
+    }
+    // Mark as reviewed
+    if (!reviewedAxioms.includes(axiomId)) {
+      setReviewedAxioms(prev => [...prev, axiomId]);
+    }
+    setExpandedAxiom(null);
   };
 
   const handleMoveToNext = () => {
-    if (currentCategoryIndex < categories.length - 1) {
+    if (currentCategoryIndex < activeCategories.length - 1) {
       setCurrentCategoryIndex(prev => prev + 1);
       setExpandedAxiom(null);
     } else {
@@ -729,12 +538,24 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
     }
   };
 
+  const toggleCategorySelection = (categoryId: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const handleStartWithCategories = () => {
+    setShowCategorySelect(false);
+  };
+
   const formatYear = (year: number) => {
     if (year < 0) return `${Math.abs(year)} BC`;
     return `${year} AD`;
   };
 
-  const progress = ((currentCategoryIndex) / categories.length) * 100;
+  const progress = ((currentCategoryIndex) / activeCategories.length) * 100;
 
   // Intro screen with Almanac story scenes
   if (showIntro) {
@@ -808,10 +629,13 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
 
                   {isLastScene ? (
                     <button
-                      onClick={() => setShowIntro(false)}
+                      onClick={() => {
+                        setShowIntro(false);
+                        setShowCategorySelect(true);
+                      }}
                       className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
                     >
-                      Begin the Test
+                      Choose Your Categories
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   ) : (
@@ -828,7 +652,10 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                 {/* Skip option */}
                 {!isLastScene && (
                   <button
-                    onClick={() => setShowIntro(false)}
+                    onClick={() => {
+                      setShowIntro(false);
+                      setShowCategorySelect(true);
+                    }}
                     className="mt-6 text-slate-500 hover:text-slate-300 text-sm transition"
                   >
                     Skip story →
@@ -842,8 +669,100 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
     );
   }
 
+  // Category selection screen
+  if (showCategorySelect) {
+    const minCategories = 2;
+    const canProceed = selectedCategories.length >= minCategories;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-slate-950 flex items-center justify-center p-4"
+      >
+        <div className="max-w-2xl w-full">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-serif text-white mb-3">
+              Select Your Exhibits
+            </h2>
+            <p className="text-slate-400">
+              Choose at least {minCategories} categories of evidence. Each contains facts you already accept as true.
+            </p>
+          </div>
+
+          {/* Category cards */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {categories.map((cat) => {
+              const isSelected = selectedCategories.includes(cat.id);
+              const catAxioms = axioms.filter(a => a.category === cat.id);
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => toggleCategorySelection(cat.id)}
+                  className={`p-6 rounded-2xl border-2 transition-all text-left ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-900/20'
+                      : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
+                  }`}
+                >
+                  <div className={`w-12 h-12 ${cat.bgClass} rounded-xl flex items-center justify-center mb-3 ${cat.textClass}`}>
+                    {cat.icon}
+                  </div>
+                  <h3 className="text-white font-semibold mb-1">{cat.name}</h3>
+                  <p className="text-slate-400 text-sm mb-2">{cat.subtitle}</p>
+                  <p className="text-slate-500 text-xs">{catAxioms.length} pieces of evidence</p>
+
+                  {isSelected && (
+                    <div className="mt-3 flex items-center gap-2 text-emerald-400 text-sm">
+                      <Check className="w-4 h-4" />
+                      Selected
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selection count and proceed button */}
+          <div className="text-center">
+            <p className="text-slate-400 mb-4">
+              {selectedCategories.length} of {minCategories} minimum selected
+            </p>
+
+            {canProceed ? (
+              <button
+                onClick={handleStartWithCategories}
+                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+              >
+                Start with {selectedCategories.length} Categories
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <p className="text-amber-400 text-sm">
+                Select {minCategories - selectedCategories.length} more to continue
+              </p>
+            )}
+
+            {/* Select all option */}
+            <button
+              onClick={() => setSelectedCategories(categories.map(c => c.id))}
+              className="mt-4 text-slate-500 hover:text-slate-300 text-sm transition"
+            >
+              Select all categories
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   // Completion - transition to Almanac verification
   if (isComplete) {
+    const totalReviewed = reviewedAxioms.length;
+    const totalAgreed = agreedAxioms.length;
+    const needMoreInfo = totalReviewed - totalAgreed;
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -860,18 +779,29 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
             </div>
 
             <h2 className="text-3xl font-serif text-white mb-4">
-              We All Stand on {agreedAxioms.length} Facts
+              {totalAgreed === totalReviewed ? (
+                <>Evidence Accepted: All {totalAgreed} Exhibits</>
+              ) : (
+                <>Evidence Accepted: {totalAgreed} of {totalReviewed} Exhibits</>
+              )}
             </h2>
 
             <p className="text-slate-300 text-lg mb-6">
-              These are undeniable truths about reality—the <span className="text-blue-400">stable floor</span> we both stand on.
+              {needMoreInfo > 0 ? (
+                <>
+                  <span className="text-amber-400">{needMoreInfo} exhibit{needMoreInfo > 1 ? 's' : ''}</span> marked for further review. The court will proceed with the <span className="text-emerald-400">{totalAgreed}</span> you accept.
+                </>
+              ) : (
+                <>These are undeniable truths about reality—the <span className="text-blue-400">foundation</span> upon which the case will be built.</>
+              )}
             </p>
 
             {/* Category summary */}
             <div className="grid grid-cols-2 gap-3 mb-8">
-              {categories.map(cat => {
+              {activeCategories.map(cat => {
                 const catAxioms = axioms.filter(a => a.category === cat.id);
                 const agreedCount = catAxioms.filter(a => agreedAxioms.includes(a.id)).length;
+                const reviewedCount = catAxioms.filter(a => reviewedAxioms.includes(a.id)).length;
                 return (
                   <div
                     key={cat.id}
@@ -882,7 +812,11 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                       <span className="text-sm">{cat.subtitle}</span>
                     </div>
                     <p className="text-white font-semibold">
-                      {agreedCount}/{catAxioms.length} agreed
+                      <span className="text-emerald-400">{agreedCount}</span>
+                      {agreedCount < reviewedCount && (
+                        <span className="text-amber-400"> + {reviewedCount - agreedCount}?</span>
+                      )}
+                      <span className="text-slate-400 text-sm"> / {catAxioms.length}</span>
                     </p>
                   </div>
                 );
@@ -890,11 +824,15 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
             </div>
 
             <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Gavel className="w-5 h-5 text-amber-400" />
+                <p className="text-amber-300 font-medium">Cross-Examination</p>
+              </div>
               <p className="text-amber-200 text-lg">
-                Now, let's verify <span className="text-white font-semibold">the Quran</span>.
+                The court will now cross-examine <span className="text-white font-semibold">the Quran</span>.
                 <br />
                 <span className="text-slate-300">
-                  A 1,400-year-old book that claims to know all of this.
+                  An over 1,400-year-old book that claims to know {totalAgreed === totalReviewed ? 'all of this' : 'these facts'}.
                 </span>
               </p>
             </div>
@@ -903,7 +841,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
               onClick={() => onComplete(agreedAxioms)}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
             >
-              Verify the Quran
+              Begin Cross-Examination
               <ArrowRight className="w-5 h-5" />
             </button>
           </motion.div>
@@ -927,7 +865,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
       {/* Category tabs */}
       <div className="pt-8 px-4">
         <div className="flex justify-center gap-2 mb-4">
-          {categories.map((cat, index) => (
+          {activeCategories.map((cat, index) => (
             <button
               key={cat.id}
               onClick={() => index <= currentCategoryIndex && setCurrentCategoryIndex(index)}
@@ -979,7 +917,11 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                     className={`bg-slate-900/70 rounded-xl border transition-colors ${
-                      isAgreed ? 'border-emerald-700/50' : 'border-slate-700'
+                      isAgreed
+                        ? 'border-emerald-700/50'
+                        : reviewedAxioms.includes(axiom.id)
+                        ? 'border-amber-700/50'
+                        : 'border-slate-700'
                     }`}
                   >
                     {/* Main axiom row */}
@@ -989,10 +931,16 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                     >
                       <div className="flex items-start gap-3">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          isAgreed ? 'bg-emerald-500' : 'bg-slate-800'
+                          isAgreed
+                            ? 'bg-emerald-500'
+                            : reviewedAxioms.includes(axiom.id)
+                            ? 'bg-amber-500'
+                            : 'bg-slate-800'
                         }`}>
                           {isAgreed ? (
                             <Check className="w-3 h-3 text-white" />
+                          ) : reviewedAxioms.includes(axiom.id) ? (
+                            <span className="text-xs text-white font-bold">?</span>
                           ) : (
                             <span className="text-xs text-slate-400">{index + 1}</span>
                           )}
@@ -1050,37 +998,36 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                               )}
                             </div>
 
-                            {/* Agree/Disagree buttons */}
-                            {!isAgreed && (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAgreeAxiom(axiom.id);
-                                  }}
-                                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
-                                >
-                                  <Check className="w-4 h-4" />
-                                  Yes, this is fact
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Just collapse - they can't disagree with undeniable facts
-                                    setExpandedAxiom(null);
-                                  }}
-                                  className="px-4 py-2 border border-slate-600 text-slate-400 hover:bg-slate-800 rounded-lg font-medium transition text-sm"
-                                >
-                                  I need more info
-                                </button>
-                              </div>
-                            )}
-                            {isAgreed && (
-                              <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                            {/* Agree/Need More Info buttons - always show so user can change answer */}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAgreeAxiom(axiom.id);
+                                }}
+                                className={`flex-1 px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2 ${
+                                  isAgreed
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-700'
+                                }`}
+                              >
                                 <Check className="w-4 h-4" />
-                                You agreed this is an undeniable fact
-                              </div>
-                            )}
+                                {isAgreed ? 'Agreed ✓' : 'Yes, this is fact'}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNeedMoreInfo(axiom.id);
+                                }}
+                                className={`px-4 py-2 rounded-lg font-medium transition text-sm ${
+                                  !isAgreed && reviewedAxioms.includes(axiom.id)
+                                    ? 'bg-amber-600 text-white'
+                                    : 'border border-slate-600 text-slate-400 hover:bg-slate-800'
+                                }`}
+                              >
+                                {!isAgreed && reviewedAxioms.includes(axiom.id) ? 'Need more info ?' : 'I need more info'}
+                              </button>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -1090,21 +1037,21 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
               })}
             </div>
 
-            {/* Continue button - only shows when all agreed */}
+            {/* Continue button - shows when all reviewed (agreed or need more info) */}
             <div className="text-center">
-              {allCategoryAxiomsAgreed ? (
+              {allCategoryAxiomsReviewed ? (
                 <button
                   onClick={handleMoveToNext}
                   className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
                 >
-                  {currentCategoryIndex < categories.length - 1 ? (
+                  {currentCategoryIndex < activeCategories.length - 1 ? (
                     <>
-                      Continue to {categories[currentCategoryIndex + 1].subtitle}
+                      Proceed to {activeCategories[currentCategoryIndex + 1].exhibitLabel}
                       <ArrowRight className="w-5 h-5" />
                     </>
                   ) : (
                     <>
-                      All Facts Agreed - Verify the Quran
+                      Begin Cross-Examination
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}
@@ -1112,15 +1059,15 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
               ) : (
                 <div>
                   <p className="text-slate-400 text-sm mb-2">
-                    Click each fact to learn when it was discovered
+                    Click each piece of evidence to review it
                   </p>
                   <p className="text-slate-500 text-xs">
-                    {agreedAxioms.filter(id => categoryAxioms.some(a => a.id === id)).length} of {categoryAxioms.length} facts agreed
+                    {reviewedAxioms.filter(id => categoryAxioms.some(a => a.id === id)).length} of {categoryAxioms.length} reviewed
                   </p>
                 </div>
               )}
               <p className="text-slate-500 text-xs mt-4">
-                {currentCategoryIndex + 1} of {categories.length} categories
+                Exhibit {currentCategoryIndex + 1} of {activeCategories.length}
               </p>
             </div>
           </motion.div>

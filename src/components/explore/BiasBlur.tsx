@@ -1,61 +1,65 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Eye, EyeOff, Brain, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Brain, CheckCircle2, Scale, Gavel } from 'lucide-react';
 
 interface BiasBlurProps {
   onComplete: () => void;
 }
 
+// Jury oath - declare biases before serving
 const biasStatements = [
   {
-    id: 'open-to-truth',
-    statement: 'Are you open to accepting the truth if the evidence is undeniable?',
-    acknowledgment: 'This is the only question that matters. People once believed talking to someone across the world was impossible—until technology proved otherwise. The impossible became possible. Superior evidence changes everything.',
+    id: 'good-person',
+    statement: "I assumed being a good person was enough.",
+    insight: "Follow your conscience, do more good than bad, and you'll be okay. That was my assumption before examining the evidence. A jury must set aside assumptions.",
   },
   {
-    id: 'guard-down',
-    statement: "Are you willing to be honest with yourself? If I come across superior evidence, I'm willing to change.",
-    acknowledgment: 'We all carry assumptions. The wise person updates their beliefs when better evidence arrives—not when it feels comfortable.',
+    id: 'pick-religion',
+    statement: "I assumed all religions were equally valid personal choices.",
+    insight: "Like shopping. Pick whatever feels right. I didn't know any religion claimed to have verifiable proof of its divine origin. The evidence will speak for itself.",
   },
   {
-    id: 'truth-seeking',
-    statement: 'To find the truth, I must put aside what I want to be true and look at what is actually true',
-    acknowledgment: 'Honest inquiry requires intellectual honesty. Truth exists independent of our preferences.',
-  },
-  {
-    id: 'media',
-    statement: 'Most of what I know about Islam comes from news media, not primary sources',
-    acknowledgment: 'Media often focuses on negative events. Direct sources give a fuller picture.',
-  },
-  {
-    id: 'never-read',
-    statement: "I've never read the Quran or Islamic texts directly",
-    acknowledgment: 'Primary sources are always more accurate than secondhand accounts.',
+    id: 'unaware',
+    statement: "I was unaware of the Quran's existence as a serious document.",
+    insight: "21 years. I didn't know there was a book claiming to be directly from the Creator with evidence to support it. A court cannot rule on what it hasn't examined.",
   },
 ];
 
 export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [acknowledged, setAcknowledged] = useState<string[]>([]);
+  const [relatedTo, setRelatedTo] = useState<string[]>([]); // Biases user related to
+  const [reviewed, setReviewed] = useState<string[]>([]); // All biases user has seen
   const [blurLevel, setBlurLevel] = useState(20); // Start very blurry
+  const [showInsight, setShowInsight] = useState(false);
 
   const currentBias = biasStatements[currentIndex];
   const isComplete = currentIndex >= biasStatements.length;
 
-  const handleAcknowledge = (id: string) => {
-    if (!acknowledged.includes(id)) {
-      setAcknowledged([...acknowledged, id]);
-      // Reduce blur with each acknowledgment (20 / 5 statements = 4 per step)
-      setBlurLevel(prev => Math.max(0, prev - 4));
+  const handleRelate = (id: string) => {
+    // User relates to this statement
+    if (!relatedTo.includes(id)) {
+      setRelatedTo([...relatedTo, id]);
     }
-    // Don't auto-advance - wait for user to click Continue
+    if (!reviewed.includes(id)) {
+      setReviewed([...reviewed, id]);
+    }
+    // Reduce blur with each statement (20 / 3 statements ≈ 7 per step)
+    setBlurLevel(prev => Math.max(0, prev - 7));
+    setShowInsight(true);
+  };
+
+  const handleNotMe = (id: string) => {
+    // User doesn't relate, but still reviewed
+    if (!reviewed.includes(id)) {
+      setReviewed([...reviewed, id]);
+    }
+    // Still reduce blur
+    setBlurLevel(prev => Math.max(0, prev - 5));
+    setShowInsight(true);
   };
 
   const handleContinue = () => {
-    setCurrentIndex(prev => prev + 1);
-  };
-
-  const handleSkip = () => {
+    setShowInsight(false);
     setCurrentIndex(prev => prev + 1);
   };
 
@@ -72,30 +76,34 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
           className="max-w-xl w-full text-center"
         >
           <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Eye className="w-10 h-10 text-emerald-400" />
+            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
 
           <h2 className="text-3xl font-serif text-white mb-4">
-            Vision Cleared
+            Jury Oath Complete
           </h2>
 
           <p className="text-slate-300 text-lg mb-8">
-            You've acknowledged {acknowledged.length} potential bias{acknowledged.length !== 1 ? 'es' : ''}.
+            You have acknowledged your starting position.
             <br />
-            <span className="text-emerald-300">Now you're ready to see clearly.</span>
+            <span className="text-emerald-300">The court may now present the evidence.</span>
           </p>
 
-          <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700 mb-8">
-            <p className="text-slate-400 italic">
-              "The truth does not fear examination. Let's examine together."
+          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Gavel className="w-5 h-5 text-amber-400" />
+              <p className="text-amber-300 font-medium">Witness Statement</p>
+            </div>
+            <p className="text-slate-300 italic">
+              "I was in the same position. Unaware. Not looking for anything. Then the evidence changed everything."
             </p>
           </div>
 
           <button
             onClick={onComplete}
-            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
           >
-            Continue Journey
+            Present the Evidence
             <ArrowRight className="w-5 h-5" />
           </button>
         </motion.div>
@@ -122,9 +130,9 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
             key={i}
             className={`w-3 h-3 rounded-full transition-colors ${
               i < currentIndex
-                ? acknowledged.includes(biasStatements[i].id)
-                  ? 'bg-emerald-500'
-                  : 'bg-slate-600'
+                ? relatedTo.includes(biasStatements[i].id)
+                  ? 'bg-emerald-500'  // Related to this bias
+                  : 'bg-amber-500'     // Reviewed but didn't relate
                 : i === currentIndex
                 ? 'bg-blue-500'
                 : 'bg-slate-700'
@@ -142,67 +150,71 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
           className="relative z-10 max-w-xl w-full"
         >
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Brain className="w-8 h-8 text-blue-400" />
+            <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Scale className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-serif text-white mb-2">
-              Before We Begin...
+              Jury Selection: Acknowledge Your Biases
             </h2>
             <p className="text-slate-400">
-              Honest exploration requires acknowledging our starting point
+              Statement {currentIndex + 1} of {biasStatements.length}
             </p>
           </div>
 
-          {/* Bias Card */}
+          {/* Nathan's Perspective Card */}
           <div className="bg-slate-900/80 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-6">
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <EyeOff className="w-5 h-5 text-amber-400" />
+              <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+                <EyeOff className="w-5 h-5 text-slate-400" />
               </div>
               <div>
-                <p className="text-xl text-white font-medium mb-2">
-                  "{currentBias.statement}"
+                <p className="text-xs text-amber-400 font-medium mb-1 uppercase tracking-wide">
+                  What I used to think:
                 </p>
-                <p className="text-slate-400">
-                  Does this apply to you?
+                <p className="text-xl text-white font-medium">
+                  "{currentBias.statement}"
                 </p>
               </div>
             </div>
 
-            {/* Response buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => handleAcknowledge(currentBias.id)}
-                className="flex-1 px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                Yes, I acknowledge this
-              </button>
-              <button
-                onClick={handleSkip}
-                className="flex-1 px-6 py-4 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-xl font-medium transition"
-              >
-                This doesn't apply to me
-              </button>
-            </div>
+            {/* Two buttons - user can relate or not */}
+            {!showInsight && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleRelate(currentBias.id)}
+                  className="flex-1 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition"
+                >
+                  That was me too
+                </button>
+                <button
+                  onClick={() => handleNotMe(currentBias.id)}
+                  className="flex-1 px-6 py-4 border border-slate-600 text-slate-300 hover:bg-slate-700 rounded-xl font-medium transition"
+                >
+                  Not really me
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Insight that appears after acknowledgment */}
+          {/* Nathan's insight appears after clicking either button */}
           <AnimatePresence>
-            {acknowledged.includes(currentBias.id) && (
+            {showInsight && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50"
+                className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/50"
               >
-                <p className="text-emerald-200 text-sm mb-4">
-                  {currentBias.acknowledgment}
+                <p className="text-xs text-amber-400 font-medium mb-2 uppercase tracking-wide">
+                  Looking back now:
+                </p>
+                <p className="text-amber-100 mb-4">
+                  "{currentBias.insight}"
                 </p>
                 <button
                   onClick={handleContinue}
-                  className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition flex items-center justify-center gap-2"
                 >
-                  Continue
+                  Next
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </motion.div>

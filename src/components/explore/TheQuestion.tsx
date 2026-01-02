@@ -96,7 +96,7 @@ export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuesti
               You've agreed that <span className="text-emerald-400 font-semibold">{verifiedCount} facts</span> are undeniably true.
             </p>
             <p className="text-lg text-slate-300 leading-relaxed mb-4">
-              A book written <span className="text-amber-400 font-semibold">1,400 years ago</span> stated all of them accurately—
+              A book written <span className="text-amber-400 font-semibold">over 1,400 years ago</span> stated all of them accurately—
               long before modern science discovered them.
             </p>
 
@@ -227,7 +227,7 @@ export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuesti
                   <p className="text-slate-300">
                     With <span className="text-white font-semibold">100% accuracy</span>?
                     <br />
-                    <span className="text-slate-400 text-sm">Not a single error in 1,400 years.</span>
+                    <span className="text-slate-400 text-sm">Not a single error in over 1,400 years.</span>
                   </p>
                 </div>
               )}

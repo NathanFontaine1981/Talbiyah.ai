@@ -349,6 +349,134 @@ export const curriculumModules: CurriculumModule[] = [
       'After seeing the evidence, "unaware" is no longer an option',
     ],
   },
+  {
+    id: 'creator-creation',
+    moduleNumber: 6,
+    title: 'Creator vs Creation',
+    subtitle: 'The Fundamental Distinction',
+    description: '"Who created the Creator?" - Why this question reveals a misunderstanding of what creation means.',
+    videoUrl: '',
+    thumbnailType: 'space',
+    readTime: 10,
+    isLocked: false,
+    content: `
+      **The Question That Isn't Really a Question**
+
+      "Who created the Creator?"
+
+      This question comes up constantly. But here's the thing - it's not actually a valid question.
+      It's like asking "What's north of the North Pole?" The question itself contains a misunderstanding.
+
+      **The Fundamental Difference**
+
+      The Creator and the creation are completely different categories. You cannot apply the rules of one to the other.
+
+      **Creation:**
+      - Has a beginning
+      - Needs a cause
+      - Is dependent
+      - Exists within time
+
+      **The Creator:**
+      - Has no beginning (eternal)
+      - Needs no cause (self-sufficient)
+      - Depends on nothing
+      - Created time itself
+
+      **The iPhone Analogy**
+
+      Imagine you made an iPhone. You would say: "Don't put it in water, it will break."
+
+      Does that rule apply to you? Of course not. You're not the iPhone. You made the iPhone.
+      You exist completely separately from your creation.
+
+      In the same way, whatever rules apply to creation - needing a beginning, needing a cause -
+      these simply don't apply to the One who made the rules in the first place.
+
+      **The Creator of Time**
+
+      Here's something profound: Allah created time itself.
+
+      This means He is not bound by time. He exists outside of it.
+
+      When He speaks in the Quran, He describes events as if they've already happened -
+      because for Him, past, present, and future are all the same. He sees it all simultaneously.
+
+      He knows what came before you, what's happening now, what will happen,
+      and even what *would have* happened if circumstances were different.
+
+      **The Quran Speaks From Beyond Time**
+
+      When God describes the Day of Judgement in vivid detail - what will happen,
+      who will say what, where people will go - He's not guessing.
+
+      He's telling you what already exists from His perspective.
+
+      When He tells stories of people in the past - their mistakes, their redemption -
+      it's so you can learn without having to make those mistakes yourself.
+
+      **The Appointed Time**
+
+      Here's a sobering reality: You don't know when you will die.
+
+      The angel will come to take your soul. You don't know when.
+      You don't know how. You don't get advance notice.
+
+      God gives us examples in the Quran:
+      - People who lived righteously their whole lives, then fell away just before death - and died as disbelievers
+      - People who lived wrongly their whole lives, then turned back to God sincerely before death - and died as believers
+
+      Neither knew when their death was coming. Both made their final choice without knowing it was final.
+
+      The message? Be ready. Always. "Do not die except as a Muslim."
+
+      **The Choice**
+
+      Everything in creation submits to God's laws automatically - the sun, the moon, the atoms.
+      They have no choice.
+
+      But humans and jinn? We were given the choice.
+
+      You can follow the path God intended for you.
+      Or you can follow your own desires.
+
+      **Why Free Will Matters**
+
+      Think about it: If God made everyone automatically good, what would be the point?
+      If no one could do wrong, how could God be "The Most Merciful" - merciful to whom?
+      If no one needed forgiving, how could He be "The Oft-Forgiving"?
+
+      His names and attributes would be meaningless if there was no one who needed mercy,
+      no one who needed forgiveness, no one who needed guidance.
+
+      Free will is what makes this test meaningful.
+      It's what makes Paradise earned, not just given.
+
+      **The Clarity**
+
+      God has made things clear:
+      - Stories of the past so we can learn from them
+      - What Paradise looks like and how to get there
+      - What Hellfire looks like and how to avoid it
+
+      But He didn't make the test easy.
+
+      Paradise is surrounded by hardship. Nothing worth having comes free.
+      We know this even in worldly life - anything valuable requires effort.
+
+      And Hellfire? It's surrounded by temptations. Things that look good, feel good, seem harmless.
+
+      The test is real. The choice is yours.
+    `,
+    keyPoints: [
+      '"Who created the Creator?" is a category error - Creator and creation follow different rules',
+      'Creation needs a beginning and cause; the Creator is eternal and self-sufficient',
+      'Allah created time - He exists outside of it, seeing past, present, and future simultaneously',
+      'You don\'t know when you will die - be ready always',
+      'Free will makes the test meaningful and God\'s mercy necessary',
+      'Paradise is surrounded by hardship; Hellfire by temptations',
+    ],
+  },
 ];
 
 // Helper functions

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const TEMPLATE_ID = "694e3cd62f99d9b901d90528";
+const TEMPLATE_ID = "695721684f8717ae22337997"; // EU template with auto transcription
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

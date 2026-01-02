@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Search, Sparkles, BookOpen, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Search, Sparkles, BookOpen, MapPin } from 'lucide-react';
 
 interface ConvictionCheckpointProps {
   verifiedCount: number;
@@ -47,6 +47,15 @@ export const ConvictionCheckpoint = ({ verifiedCount, onConvinced, onShowMore }:
         animate={{ opacity: 1 }}
         className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 flex items-center justify-center p-4"
       >
+        {/* Back button */}
+        <button
+          onClick={() => setShowMore(false)}
+          className="fixed top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition z-50"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4">

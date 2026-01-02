@@ -628,6 +628,41 @@ Deno.serve(async (req: Request) => {
 
       if (insightError) {
         console.error("Error creating basic insight:", insightError);
+
+        // Send admin alert for failed insight generation
+        try {
+          const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+          if (RESEND_API_KEY) {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Talbiyah <alerts@talbiyah.ai>",
+                to: ["contact@talbiyah.ai"],
+                subject: `⚠️ Lesson Insights Failed - ${learnerName}`,
+                html: `
+                  <h2>Lesson Insights Generation Failed</h2>
+                  <p>A lesson recording was received but insights could not be generated.</p>
+                  <ul>
+                    <li><strong>Student:</strong> ${learnerName}</li>
+                    <li><strong>Teacher:</strong> ${teacherName}</li>
+                    <li><strong>Subject:</strong> ${subjectName}</li>
+                    <li><strong>Lesson ID:</strong> ${lesson.id}</li>
+                    <li><strong>Scheduled:</strong> ${new Date(lesson.scheduled_time).toLocaleString('en-GB')}</li>
+                    <li><strong>Error:</strong> ${insightError.message}</li>
+                  </ul>
+                  <p>Please check the lesson manually in the admin panel.</p>
+                `,
+              }),
+            });
+            console.log("Admin alert sent for failed insight generation");
+          }
+        } catch (alertError) {
+          console.error("Failed to send admin alert:", alertError);
+        }
       } else {
         console.log("Basic insight created for lesson:", lesson.id);
       }
