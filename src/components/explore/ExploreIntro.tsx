@@ -56,34 +56,38 @@ const introScenes = [
     icon: 'question',
     content: (
       <>
-        <div className="space-y-4 mb-6">
-          <p className="text-xl text-slate-300 leading-relaxed">
-            Your eyes are for seeing. Your heart is for pumping blood. Your lungs are for breathing.
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            The funny thing is—we don't think twice when asked about the <span className="text-white font-medium">purpose of every part of our body</span>.
           </p>
+
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <p className="text-slate-400 text-sm leading-relaxed">
+              <span className="text-white">Eyes?</span> For seeing. <span className="text-white">Heart?</span> Pumps blood. <span className="text-white">Lungs?</span> Breathing. <span className="text-white">Brain?</span> Thinking.
+            </p>
+            <p className="text-slate-500 text-sm mt-2 italic">Easy answers. No hesitation.</p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            But when we're asked about the <span className="text-amber-400 font-semibold">whole human</span>—what are we here for?
+          </p>
+
           <p className="text-xl text-white leading-relaxed">
-            Every part of you has a <span className="text-amber-400 font-semibold">purpose</span>.
+            We're unsure. We can't answer easily.
           </p>
-          <p className="text-xl text-slate-300 leading-relaxed">
-            But the whole human? No purpose?
-          </p>
-          <p className="text-lg text-slate-400 italic">
-            That doesn't make sense.
-          </p>
-        </div>
-        <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-          <p className="text-lg text-emerald-200 leading-relaxed mb-2">
-            Design implies a <span className="text-white font-semibold">Designer</span>.
-          </p>
-          <p className="text-lg text-emerald-200 leading-relaxed mb-2">
-            Intelligence must come from <span className="text-white font-semibold">superior intelligence</span>.
-          </p>
-          <p className="text-emerald-300">
-            There's a book that claims to be from Him—with answers. And it can prove it.
-          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mt-4">
+            <p className="text-lg text-emerald-200 leading-relaxed">
+              Well, I found something <span className="text-white font-semibold">very interesting</span> and <span className="text-white font-semibold">very compelling</span>.
+            </p>
+            <p className="text-emerald-300 mt-2">
+              And I'd like to share it with you.
+            </p>
+          </div>
         </div>
       </>
     ),
-    commentary: "Every part has a purpose, but the whole thing doesn't? I couldn't accept that.",
+    commentary: "Every part has a clear purpose. But the whole thing? That question haunted me.",
   },
   {
     id: 'my-story',
