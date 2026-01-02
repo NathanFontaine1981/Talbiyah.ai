@@ -69,7 +69,7 @@ const introScenes = [
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            But when we're asked about the <span className="text-amber-400 font-semibold">whole human</span>—what are we here for?
+            But when we're asked about the purpose of the <span className="text-amber-400 font-semibold">human being as a whole</span>—what are we here for?
           </p>
 
           <p className="text-xl text-white leading-relaxed">
