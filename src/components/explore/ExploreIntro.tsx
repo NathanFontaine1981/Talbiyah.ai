@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, User, Scale, Gavel, HelpCircle, Heart, Compass, BookOpen, TrendingUp, Users } from 'lucide-react';
+import AlmanacGame from './AlmanacGame';
 
 interface ExploreIntroProps {
   onComplete: () => void;
@@ -160,37 +161,8 @@ const introScenes = [
     id: 'almanac',
     title: 'The Almanac Moment',
     icon: 'book',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Have you ever seen <span className="text-white font-medium">Back to the Future 2</span>?
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <p className="text-slate-300 text-sm leading-relaxed">
-              In the movie, Biff gets a <span className="text-amber-400 font-medium">Sports Almanac</span> from the future. It has all the results of every game—before they happen.
-            </p>
-            <p className="text-slate-400 text-sm mt-2 italic">
-              He knows who wins before the game is even played.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            When I started examining the Quran, I had a <span className="text-amber-400 font-semibold">lightbulb moment</span>.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              This book read like an <span className="text-white font-semibold">Almanac</span>.
-            </p>
-            <p className="text-emerald-300 mt-2">
-              It contained information that couldn't have been known 1,400 years ago—but we've since discovered to be true.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
+    isInteractive: true,
+    content: null, // Will be rendered separately as interactive
     commentary: "It felt like reading tomorrow's sports results. How could someone know this before it was discovered?",
   },
   {
@@ -336,6 +308,25 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
       setCurrentScene(prev => prev - 1);
     }
   };
+
+  // Handle interactive almanac scene
+  if (scene.isInteractive && scene.id === 'almanac') {
+    return (
+      <div className="relative">
+        {/* Back button for returning from interactive */}
+        <div className="fixed top-6 left-6 z-50">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1 text-slate-400 hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back</span>
+          </button>
+        </div>
+        <AlmanacGame onComplete={handleNext} />
+      </div>
+    );
+  }
 
   return (
     <motion.div
