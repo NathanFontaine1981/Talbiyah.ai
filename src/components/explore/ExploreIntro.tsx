@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, User, Scale, Gavel, HelpCircle, Heart } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, MessageCircle, User, Scale, Gavel, HelpCircle, Heart, Compass, BookOpen, TrendingUp, Users } from 'lucide-react';
 
 interface ExploreIntroProps {
   onComplete: () => void;
@@ -125,6 +125,154 @@ const introScenes = [
     commentary: "An iPhone needs a maker. But a human—infinitely more complex—doesn't? That never made sense to me.",
   },
   {
+    id: 'invitation',
+    title: 'The Invitation',
+    icon: 'compass',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            What I'm about to share is <span className="text-white font-medium">my journey</span>, through <span className="text-amber-400 font-medium">my lenses</span>.
+          </p>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            I'm not here to preach at you. I just want to take you through what I discovered—and let you see if you'd think the same way.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed">
+              I treated it like a <span className="text-white font-semibold">court case</span>.
+            </p>
+            <p className="text-emerald-300 mt-2">
+              Evidence. Logic. No blind faith. Just honest examination.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-400 leading-relaxed">
+            Come with me. See if the evidence leads you where it led me.
+          </p>
+        </div>
+      </>
+    ),
+    commentary: "I'm not trying to convert you. I'm just sharing what I found. You decide what to do with it.",
+  },
+  {
+    id: 'almanac',
+    title: 'The Almanac Moment',
+    icon: 'book',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Have you ever seen <span className="text-white font-medium">Back to the Future</span>?
+          </p>
+
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <p className="text-slate-300 text-sm leading-relaxed">
+              In the movie, Biff gets a <span className="text-amber-400 font-medium">Sports Almanac</span> from the future. It has all the results of every game—before they happen.
+            </p>
+            <p className="text-slate-400 text-sm mt-2 italic">
+              He knows who wins before the game is even played.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            When I started examining the Quran, I had a <span className="text-amber-400 font-semibold">lightbulb moment</span>.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed">
+              This book read like an <span className="text-white font-semibold">Almanac</span>.
+            </p>
+            <p className="text-emerald-300 mt-2">
+              It contained information that couldn't have been known 1,400 years ago—but we've since discovered to be true.
+            </p>
+          </div>
+        </div>
+      </>
+    ),
+    commentary: "It felt like reading tomorrow's sports results. How could someone know this before it was discovered?",
+  },
+  {
+    id: 'beliefs-change',
+    title: 'Beliefs Change With Evidence',
+    icon: 'trending',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Think about it—<span className="text-white font-medium">we update our beliefs all the time</span> when new evidence comes in.
+          </p>
+
+          <div className="space-y-3">
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+              <p className="text-slate-400 text-sm">
+                <span className="text-white">Before telephones:</span> "Talk to someone miles away? Impossible."
+              </p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+              <p className="text-slate-400 text-sm">
+                <span className="text-white">Before planes:</span> "Humans flying through the sky? Ridiculous."
+              </p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+              <p className="text-slate-400 text-sm">
+                <span className="text-white">Before Concorde:</span> "London to New York in 3 hours? Unbelievable."
+              </p>
+            </div>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            The <span className="text-amber-400 font-medium">impossible</span> became <span className="text-emerald-400 font-medium">possible</span>. Then it became <span className="text-white">normal</span>.
+          </p>
+
+          <p className="text-slate-400 leading-relaxed">
+            We all carry beliefs right now. The question is—are we willing to examine them when evidence is presented?
+          </p>
+        </div>
+      </>
+    ),
+    commentary: "What we believe today might change tomorrow—if we're honest enough to look at the evidence.",
+  },
+  {
+    id: 'common-ground',
+    title: 'Common Ground',
+    icon: 'users',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Before we dive in, let's <span className="text-white font-medium">establish what we both agree on</span>.
+          </p>
+
+          <p className="text-slate-400 leading-relaxed">
+            I'm not going to bore you with everything. But I think there are certain facts about this world that everyone would have no problem agreeing with.
+          </p>
+
+          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
+            <p className="text-amber-200 leading-relaxed">
+              Until we establish <span className="text-white font-semibold">common ground</span>, we can't really get anywhere.
+            </p>
+            <p className="text-amber-300 mt-2">
+              Let's see if you agree with me on the points I'm about to make.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Then—and only then—can we examine what the Quran says about those very things.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+            <p className="text-emerald-300 text-sm">
+              <span className="text-white font-medium">One truth:</span> Either one religion is true and others are false—or none are true. Let's find out which.
+            </p>
+          </div>
+        </div>
+      </>
+    ),
+    commentary: "The truth reveals itself when you examine it. Falsehood crumbles. That's its nature.",
+  },
+  {
     id: 'court-session',
     title: 'Court Is Now In Session',
     icon: 'gavel',
@@ -235,6 +383,10 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
                   {scene.icon === 'welcome' && <Heart className="w-10 h-10 text-emerald-400" />}
                   {scene.icon === 'question' && <HelpCircle className="w-10 h-10 text-purple-400" />}
                   {scene.icon === 'user' && <User className="w-10 h-10 text-emerald-400" />}
+                  {scene.icon === 'compass' && <Compass className="w-10 h-10 text-blue-400" />}
+                  {scene.icon === 'book' && <BookOpen className="w-10 h-10 text-amber-400" />}
+                  {scene.icon === 'trending' && <TrendingUp className="w-10 h-10 text-emerald-400" />}
+                  {scene.icon === 'users' && <Users className="w-10 h-10 text-cyan-400" />}
                   {scene.icon === 'gavel' && <Gavel className="w-10 h-10 text-amber-400" />}
                   {scene.icon === 'scale' && <Scale className="w-10 h-10 text-blue-400" />}
                 </div>
