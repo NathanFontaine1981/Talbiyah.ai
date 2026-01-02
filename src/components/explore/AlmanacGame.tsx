@@ -27,10 +27,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
       setBeliefLevel(level);
       if (level >= 5) {
         clearInterval(interval);
-        setTimeout(() => {
-          setShowingResults(false);
-          advancePhase('plane-question');
-        }, 1500);
+        // Don't auto-advance - wait for user click
       }
     }, 800);
   };
@@ -285,7 +282,13 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                   <ArrowRight className="w-5 h-5" />
                 </button>
               ) : beliefLevel >= 5 ? (
-                <p className="text-slate-400 animate-pulse">Loading next question...</p>
+                <button
+                  onClick={() => advancePhase('plane-question')}
+                  className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                >
+                  Continue
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               ) : (
                 <p className="text-slate-400">Results coming in...</p>
               )}
