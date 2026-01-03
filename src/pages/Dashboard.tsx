@@ -56,7 +56,6 @@ import MyTeachersSection from '../components/student/MyTeachersSection';
 import { DiagnosticCTACard } from '../components/diagnostic';
 import {
   ProgressOverview,
-  AreasToFocusCard,
   MilestoneVerification,
 } from '../components/progress';
 import ThemeToggle from '../components/ThemeToggle';
@@ -715,51 +714,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* PRIORITY 0: Book a Class - Most important action for students */}
-            {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6">
-                <div className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 rounded-2xl p-6 shadow-xl border border-emerald-400/30 relative overflow-hidden">
-                  {/* Background pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                  </div>
-
-                  <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-8 h-8 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Book a Class</h2>
-                        <p className="text-emerald-100 text-sm md:text-base">
-                          Find a qualified teacher and schedule your next lesson
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                      <button
-                        onClick={() => navigate('/teachers')}
-                        className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-emerald-50 text-emerald-600 rounded-xl font-bold text-lg transition shadow-lg flex items-center justify-center gap-2 group"
-                      >
-                        <Search className="w-5 h-5" />
-                        <span>Find a Teacher</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                      <button
-                        onClick={() => navigate('/my-teachers')}
-                        className="w-full sm:w-auto px-6 py-4 bg-white/20 hover:bg-white/30 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2 backdrop-blur-sm"
-                      >
-                        <Users className="w-5 h-5" />
-                        <span>My Teachers</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* PRIORITY 1: Your Progress - Students want to see immediate stats */}
             {(selectedViewRole === 'Student' || isParent) && (
               <div className="mb-6">
@@ -767,14 +721,14 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* PRIORITY 2: Areas to Focus - Actionable teacher feedback */}
+            {/* PRIORITY 2: Credits & Booking */}
             {(selectedViewRole === 'Student' || isParent) && (
               <div className="mb-6">
-                <AreasToFocusCard />
+                <CreditBalanceWidget />
               </div>
             )}
 
-            {/* PRIORITY 3: Upcoming Sessions - What's coming next */}
+            {/* PRIORITY 2: Upcoming Sessions - What's coming next */}
             {(selectedViewRole === 'Student' || isParent) && (
               <div className="mb-6">
                 <UpcomingSessionsCard />
@@ -1089,7 +1043,6 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <DailyPracticeWidget />
-                    <CreditBalanceWidget />
                     <LearningStatsWidget />
                     <ReferralWidget />
                     <RecommendedActionsCard />
