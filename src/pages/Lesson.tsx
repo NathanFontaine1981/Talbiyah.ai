@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   RefreshCw,
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Smartphone,
   Laptop,
@@ -17,7 +18,9 @@ import {
   QrCode,
   ExternalLink,
   Book,
-  Clock
+  Clock,
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabaseClient';
@@ -37,6 +40,131 @@ interface LessonData {
   duration_minutes: number;
   '100ms_room_id': string;
   room_code: string;
+}
+
+// PDF Materials Sidebar Component with Al-Arabi textbooks
+function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+
+  const textbooks = [
+    {
+      id: 'arabi-1a',
+      title: 'العربية بين يديك - الجزء الأول (أ)',
+      subtitle: 'Al-Arabi Bayna Yadayk - Book 1A',
+      path: '/materials/Al-Arabi-bin-Yadik-1-A_compressed.pdf',
+      color: 'emerald'
+    },
+    {
+      id: 'arabi-1b',
+      title: 'العربية بين يديك - الجزء الأول (ب)',
+      subtitle: 'Al-Arabi Bayna Yadayk - Book 1B',
+      path: '/materials/Al-Arabi-bin-Yadik-1-B_compressed.pdf',
+      color: 'blue'
+    }
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col h-full">
+      {/* PDF Materials Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-white">
+          <FileText className="w-5 h-5" />
+          <span className="font-semibold">Arabic Textbooks</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {selectedPdf && (
+            <button
+              onClick={() => setSelectedPdf(null)}
+              className="px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded transition-colors text-white"
+            >
+              ← Back
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-white/20 rounded transition-colors text-white"
+            title="Close sidebar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      {selectedPdf ? (
+        // PDF Viewer
+        <div className="flex-1 bg-gray-100">
+          <iframe
+            src={selectedPdf}
+            className="w-full h-full border-0"
+            title="PDF Viewer"
+          />
+        </div>
+      ) : (
+        // Book Selection
+        <div className="flex-1 bg-white p-4 overflow-y-auto">
+          <p className="text-gray-600 text-sm mb-4">
+            Select a textbook to view during the lesson. Share your screen to show pages to the student.
+          </p>
+
+          <div className="space-y-3">
+            {textbooks.map((book) => (
+              <button
+                key={book.id}
+                onClick={() => setSelectedPdf(book.path)}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:shadow-md ${
+                  book.color === 'emerald'
+                    ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/50'
+                    : 'border-blue-200 hover:border-blue-400 bg-blue-50/50'
+                }`}
+              >
+                <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${
+                  book.color === 'emerald' ? 'bg-emerald-500' : 'bg-blue-500'
+                }`}>
+                  <BookOpen className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-arabic text-lg text-gray-900 mb-1">{book.title}</p>
+                  <p className="text-sm text-gray-600">{book.subtitle}</p>
+                </div>
+                <ArrowRight className={`w-5 h-5 ${
+                  book.color === 'emerald' ? 'text-emerald-500' : 'text-blue-500'
+                }`} />
+              </button>
+            ))}
+          </div>
+
+          {/* Open in new tab buttons */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 mb-3">Or open in a new tab:</p>
+            <div className="flex gap-2">
+              {textbooks.map((book) => (
+                <a
+                  key={book.id}
+                  href={book.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    book.color === 'emerald'
+                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Book 1{book.id.includes('1a') ? 'A' : 'B'}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tips */}
+      <div className="bg-blue-50 px-4 py-2 text-xs text-blue-800 border-t border-blue-100">
+        <p><strong>Tip:</strong> Share your screen to show the textbook pages to your student!</p>
+      </div>
+    </div>
+  );
 }
 
 // Wrapper component that provides HMS context
@@ -69,7 +197,7 @@ function LessonContent() {
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
   const [showPostLessonForm, setShowPostLessonForm] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran'>('messages');
+  const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran' | 'pdf'>('messages');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [lessonStarted, setLessonStarted] = useState(false);
@@ -80,19 +208,21 @@ function LessonContent() {
   const hmsActions = useHMSActions();
   const [recordingStarted, setRecordingStarted] = useState(false);
 
-  // Start timer immediately when user joins the room
+  // Start timer when BOTH teacher and student are in the room
   useEffect(() => {
     if (!isConnectedToRoom || !lesson || lessonStarted) return;
 
-    // Start timer immediately when user joins the video room
-    setLessonStarted(true);
-    setSessionStartTime(new Date());
+    // Wait for at least 2 participants (teacher + student) before starting timer
+    if (peerCount >= 2) {
+      setLessonStarted(true);
+      setSessionStartTime(new Date());
 
-    // Start recording when user joins (only if teacher/host)
-    if (userRole === 'teacher' && !recordingStarted) {
-      startBrowserRecording();
+      // Start recording when both join (only if teacher/host)
+      if (userRole === 'teacher' && !recordingStarted) {
+        startBrowserRecording();
+      }
     }
-  }, [isConnectedToRoom, lesson, lessonStarted, userRole, recordingStarted]);
+  }, [isConnectedToRoom, lesson, lessonStarted, userRole, recordingStarted, peerCount]);
 
   // Start browser recording
   const startBrowserRecording = async () => {
@@ -820,15 +950,52 @@ function LessonContent() {
               </button>
             )}
 
-            {/* End Session Button - Available to both teachers and students */}
-            <button
-              onClick={() => setShowEndSessionConfirm(true)}
-              className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
-              title="End session for all participants"
-            >
-              <PhoneOff className="w-4 h-4" />
-              <span className="hidden sm:inline">End Session</span>
-            </button>
+            {/* PDF Viewer Toggle Button - Show for Arabic language subjects */}
+            {lesson.subject_name.toLowerCase().includes('arabic') && (
+              <button
+                onClick={() => {
+                  if (sidebarMode === 'pdf') {
+                    setSidebarMode('messages');
+                  } else {
+                    setSidebarMode('pdf');
+                    setShowMessaging(true);
+                  }
+                }}
+                className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+                  sidebarMode === 'pdf'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-300'
+                }`}
+                title="Open PDF materials"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Materials</span>
+              </button>
+            )}
+
+            {/* Teacher: End Class Button - ends for everyone */}
+            {userRole === 'teacher' && (
+              <button
+                onClick={() => setShowEndSessionConfirm(true)}
+                className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
+                title="End class for all participants"
+              >
+                <PhoneOff className="w-4 h-4" />
+                <span className="hidden sm:inline">End Class</span>
+              </button>
+            )}
+
+            {/* Student: Leave Room Button - only leaves for themselves */}
+            {userRole === 'student' && (
+              <button
+                onClick={handleLeave}
+                className="px-3 py-2 sm:px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
+                title="Leave the room"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Leave Room</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -932,11 +1099,11 @@ function LessonContent() {
           />
         </div>
 
-        {/* Sidebar - Messages or QuranWBW */}
+        {/* Sidebar - Messages, QuranWBW, or PDF */}
         {showMessaging && (
           <div className="w-1/3 h-full bg-gray-50 border-l border-gray-200 overflow-hidden flex flex-col">
-            {/* Sidebar Tab Switcher - only show if Quran subject */}
-            {lesson.subject_name.toLowerCase().includes('quran') && (
+            {/* Sidebar Tab Switcher - show if Quran or Arabic subject */}
+            {(lesson.subject_name.toLowerCase().includes('quran') || lesson.subject_name.toLowerCase().includes('arabic')) && (
               <div className="flex border-b border-gray-200 bg-white">
                 <button
                   onClick={() => setSidebarMode('messages')}
@@ -949,17 +1116,32 @@ function LessonContent() {
                   <MessageCircle className="w-4 h-4" />
                   Messages
                 </button>
-                <button
-                  onClick={() => setSidebarMode('quran')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                    sidebarMode === 'quran'
-                      ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Book className="w-4 h-4" />
-                  Quran WBW
-                </button>
+                {lesson.subject_name.toLowerCase().includes('quran') && (
+                  <button
+                    onClick={() => setSidebarMode('quran')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                      sidebarMode === 'quran'
+                        ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Book className="w-4 h-4" />
+                    Quran WBW
+                  </button>
+                )}
+                {lesson.subject_name.toLowerCase().includes('arabic') && (
+                  <button
+                    onClick={() => setSidebarMode('pdf')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                      sidebarMode === 'pdf'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    PDF Materials
+                  </button>
+                )}
               </div>
             )}
 
@@ -971,7 +1153,7 @@ function LessonContent() {
                 userRole={userRole}
                 onClose={() => setShowMessaging(false)}
               />
-            ) : (
+            ) : sidebarMode === 'quran' ? (
               <div className="flex-1 flex flex-col">
                 {/* QuranWBW Header */}
                 <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 flex items-center justify-between">
@@ -1015,7 +1197,9 @@ function LessonContent() {
                   <p><strong>Tip:</strong> Use the search to find any Surah/Ayah. Share your screen to show students!</p>
                 </div>
               </div>
-            )}
+            ) : sidebarMode === 'pdf' ? (
+              <PdfMaterialsSidebar onClose={() => setShowMessaging(false)} />
+            ) : null}
           </div>
         )}
 
@@ -1044,6 +1228,19 @@ function LessonContent() {
               >
                 <Book className="w-6 h-6" />
                 <span className="font-medium hidden sm:inline">Quran</span>
+              </button>
+            )}
+            {lesson.subject_name.toLowerCase().includes('arabic') && (
+              <button
+                onClick={() => {
+                  setShowMessaging(true);
+                  setSidebarMode('pdf');
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
+                title="Open PDF Materials"
+              >
+                <FileText className="w-6 h-6" />
+                <span className="font-medium hidden sm:inline">Materials</span>
               </button>
             )}
           </div>
