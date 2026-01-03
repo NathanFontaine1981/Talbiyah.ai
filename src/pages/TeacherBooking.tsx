@@ -138,12 +138,20 @@ export default function TeacherBooking() {
         }
       }
 
-      setSubjects(subjectsData);
+      // Only show Quran and Arabic subjects for now
+      const allowedSubjects = ['quran', 'arabic'];
+      const filteredSubjects = subjectsData.filter(subject =>
+        allowedSubjects.some(allowed =>
+          subject.name.toLowerCase().includes(allowed)
+        )
+      );
+
+      setSubjects(filteredSubjects);
 
       // If a subject was pre-selected from URL, use that
-      if (preSelectedSubject && subjectsData.length > 0) {
+      if (preSelectedSubject && filteredSubjects.length > 0) {
         // Check if it's a UUID (direct subject ID)
-        const subjectById = subjectsData.find(s => s.id === preSelectedSubject);
+        const subjectById = filteredSubjects.find(s => s.id === preSelectedSubject);
         if (subjectById) {
           setSelectedSubject(subjectById);
           return;
@@ -152,13 +160,12 @@ export default function TeacherBooking() {
         // Fall back to legacy subject filter names
         const subjectMap: Record<string, string> = {
           'quran': 'Quran with Understanding',
-          'arabic': 'Arabic Language',
-          'islamic': 'Islamic Studies'
+          'arabic': 'Arabic Language'
         };
 
         const subjectName = subjectMap[preSelectedSubject.toLowerCase()];
         if (subjectName) {
-          const subject = subjectsData.find(s => s.name.toLowerCase().includes(subjectName.toLowerCase()));
+          const subject = filteredSubjects.find(s => s.name.toLowerCase().includes(subjectName.toLowerCase()));
           if (subject) {
             setSelectedSubject(subject);
             return;
@@ -167,8 +174,8 @@ export default function TeacherBooking() {
       }
 
       // Default to first subject if no pre-selection
-      if (subjectsData.length > 0) {
-        setSelectedSubject(subjectsData[0]);
+      if (filteredSubjects.length > 0) {
+        setSelectedSubject(filteredSubjects[0]);
       }
     } catch (error) {
       console.error('Error loading subjects:', error);

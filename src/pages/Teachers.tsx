@@ -296,7 +296,15 @@ export default function Teachers() {
 
       if (error) throw error;
 
-      setSubjects(data || []);
+      // Only show Quran and Arabic subjects for now
+      const allowedSubjects = ['quran', 'arabic'];
+      const filteredSubjects = (data || []).filter(subject =>
+        allowedSubjects.some(allowed =>
+          subject.name.toLowerCase().includes(allowed)
+        )
+      );
+
+      setSubjects(filteredSubjects);
     } catch (error) {
       console.error('Error fetching subjects:', error);
     }
