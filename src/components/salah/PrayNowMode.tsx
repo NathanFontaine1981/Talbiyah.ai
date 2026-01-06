@@ -165,6 +165,7 @@ const PositionSilhouette = ({ type }: { type: string }) => {
 
 // Audio URLs for recitations (using everyayah.com API - Mishary Rashid Alafasy)
 const AUDIO_BASE = 'https://everyayah.com/data/Alafasy_128kbps';
+const AUDIO_BASE_HUSARY = 'https://everyayah.com/data/Husary_128kbps';
 
 // Map recitation IDs to audio files
 const audioMap: Record<string, string> = {
@@ -176,6 +177,33 @@ const audioMap: Record<string, string> = {
   'fatiha-5': `${AUDIO_BASE}/001006.mp3`,
   'fatiha-6': `${AUDIO_BASE}/001007.mp3`,
   'fatiha-7': `${AUDIO_BASE}/001007.mp3`, // Part of same verse
+};
+
+// Duration in ms for recitations without audio - gives time to read and recite
+const recitationDurations: Record<string, number> = {
+  'takbir': 3000,           // Allahu Akbar - short
+  'istiftah': 12000,        // Opening supplication - long
+  'taawwudh': 5000,         // A'udhu billah - medium
+  'ameen': 3000,            // Ameen - short
+  'ruku-dhikr': 8000,       // Subhana Rabbiyal Adheem x3
+  'sami-allah': 4000,       // Sami'Allahu liman hamidah
+  'rabbana-lakal-hamd': 4000, // Rabbana wa lakal hamd
+  'sujood-dhikr': 8000,     // Subhana Rabbiyal A'la x3
+  'between-sujood': 5000,   // Rabbighfirli
+  'tashahhud': 15000,       // Long recitation
+  'shahada': 8000,          // Testimony of faith
+  'durood-ibrahim': 18000,  // Longest recitation
+  'salam-right': 4000,      // Assalamu alaikum
+};
+
+// Get duration for a recitation (default 8 seconds if not specified)
+const getRecitationDuration = (id: string, timesToRepeat?: number): number => {
+  const baseDuration = recitationDurations[id] || 8000;
+  // Add extra time for repeated recitations
+  if (timesToRepeat && timesToRepeat > 1) {
+    return baseDuration * 1.5;
+  }
+  return baseDuration;
 };
 
 // Check if a recitation is part of Fatiha sequence
@@ -308,10 +336,8 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         currentAudioIndexRef.current = 0;
         playNextInQueue();
       } else {
-        // No audio available, use timer-based advance
-        const delay = recitation.timesToRepeat && recitation.timesToRepeat > 1
-          ? 6000 // Longer for repeated recitations
-          : 4000; // Default delay
+        // No audio available, use timer-based advance with appropriate duration
+        const delay = getRecitationDuration(recitation.id, recitation.timesToRepeat);
 
         timerRef.current = setTimeout(() => {
           if (currentStepIndex < prayerSteps.length - 1) {
