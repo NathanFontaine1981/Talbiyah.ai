@@ -474,7 +474,11 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
 
           {/* Arabic Text */}
           <div className="text-center mb-6">
-            <p className="font-arabic text-3xl md:text-4xl text-emerald-200 leading-loose" dir="rtl">
+            <p
+              className="font-arabic text-3xl md:text-4xl text-emerald-200"
+              dir="rtl"
+              style={{ lineHeight: '2.2' }}
+            >
               {recitation.arabic}
             </p>
           </div>

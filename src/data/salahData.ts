@@ -90,24 +90,23 @@ export const salahPositions: SalahPosition[] = [
     recitations: [
       {
         id: 'istiftah',
-        arabic: 'وَجَّهْتُ وَجْهِيَ لِلَّذِي فَطَرَ السَّمَاوَاتِ وَالْأَرْضَ حَنِيفًا وَمَا أَنَا مِنَ الْمُشْرِكِينَ',
-        transliteration: "Wajjahtu wajhiya lillathee fataras-samawati wal-arda haneefan wa ma ana minal-mushrikeen",
-        translation: 'I have turned my face to the One who created the heavens and the earth, as a true believer, and I am not of those who associate partners with Allah',
-        reference: 'Sahih Muslim 771, based on Quran 6:79',
+        arabic: 'سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ وَتَبَارَكَ اسْمُكَ وَتَعَالَى جَدُّكَ وَلَا إِلَٰهَ غَيْرُكَ',
+        transliteration: "Subhanaka Allahumma wa bihamdika, wa tabarakasmuka, wa ta'ala jadduka, wa la ilaha ghayruk",
+        translation: 'Glory be to You, O Allah, and praise be to You. Blessed is Your name, exalted is Your majesty, and there is no god but You.',
+        reference: 'Sunan Abu Dawud 775, Sunan an-Nasa\'i 900',
         words: [
-          { arabic: 'وَجَّهْتُ', transliteration: 'Wajjahtu', meaning: 'I have turned' },
-          { arabic: 'وَجْهِيَ', transliteration: 'wajhiya', meaning: 'my face' },
-          { arabic: 'لِلَّذِي', transliteration: 'lillathee', meaning: 'to the One who' },
-          { arabic: 'فَطَرَ', transliteration: 'fatara', meaning: 'created/originated' },
-          { arabic: 'السَّمَاوَاتِ', transliteration: 'as-samawati', meaning: 'the heavens' },
-          { arabic: 'وَالْأَرْضَ', transliteration: "wal-arda", meaning: 'and the earth' },
-          { arabic: 'حَنِيفًا', transliteration: 'haneefan', meaning: 'as a true believer' },
-          { arabic: 'وَمَا', transliteration: 'wa ma', meaning: 'and not' },
-          { arabic: 'أَنَا', transliteration: 'ana', meaning: 'I am' },
-          { arabic: 'مِنَ', transliteration: 'mina', meaning: 'of/from' },
-          { arabic: 'الْمُشْرِكِينَ', transliteration: 'al-mushrikeen', meaning: 'those who associate partners' }
+          { arabic: 'سُبْحَانَكَ', transliteration: 'Subhanaka', meaning: 'Glory be to You' },
+          { arabic: 'اللَّهُمَّ', transliteration: 'Allahumma', meaning: 'O Allah' },
+          { arabic: 'وَبِحَمْدِكَ', transliteration: 'wa bihamdika', meaning: 'and with Your praise' },
+          { arabic: 'وَتَبَارَكَ', transliteration: 'wa tabaraka', meaning: 'and blessed is' },
+          { arabic: 'اسْمُكَ', transliteration: 'ismuka', meaning: 'Your name' },
+          { arabic: 'وَتَعَالَى', transliteration: "wa ta'ala", meaning: 'and exalted is' },
+          { arabic: 'جَدُّكَ', transliteration: 'jadduka', meaning: 'Your majesty' },
+          { arabic: 'وَلَا', transliteration: 'wa la', meaning: 'and there is no' },
+          { arabic: 'إِلَٰهَ', transliteration: 'ilaha', meaning: 'god' },
+          { arabic: 'غَيْرُكَ', transliteration: 'ghayruka', meaning: 'other than You' }
         ],
-        spiritualContext: 'You begin by declaring your complete devotion to Allah alone - the Creator of everything. You are affirming tawheed (monotheism) from the very start of your prayer.'
+        spiritualContext: 'You begin by glorifying Allah and praising Him. You acknowledge that His name is blessed, His majesty is exalted, and there is no deity worthy of worship except Him. This prepares your heart for the sacred conversation ahead.'
       }
     ]
   },

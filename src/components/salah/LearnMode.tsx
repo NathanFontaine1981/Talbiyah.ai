@@ -406,7 +406,11 @@ function RecitationCard({
       <div className="p-6">
         {/* Arabic Text */}
         <div className="text-center mb-4">
-          <p className="font-arabic text-3xl md:text-4xl text-emerald-200 leading-loose" dir="rtl">
+          <p
+            className="font-arabic text-3xl md:text-4xl text-emerald-200"
+            dir="rtl"
+            style={{ lineHeight: '2.2' }}
+          >
             {recitation.arabic}
           </p>
         </div>
