@@ -17,7 +17,7 @@ interface PrayNowModeProps {
   onBack: () => void;
 }
 
-type ViewState = 'select' | 'praying';
+type ViewState = 'select' | 'intention' | 'praying';
 
 // Prayer Position Sprite - CSS positions for each prayer position in the sprite image
 const positionSprites: Record<string, { x: number; y: number; width: number; height: number }> = {
@@ -363,6 +363,10 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     setIsPlayingAudio(false);
     audioQueueRef.current = [];
     currentAudioIndexRef.current = 0;
+    setViewState('intention');
+  };
+
+  const handleConfirmIntention = () => {
     setViewState('praying');
   };
 
@@ -471,7 +475,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               <p className="text-sm text-slate-500 font-arabic">
                 {prayer.arabicName}
               </p>
-              <div className="mt-2 text-xs text-slate-600">
+              <div className="mt-2 text-xs text-slate-400">
                 {prayer.rakahs} rakahs
               </div>
             </motion.button>
@@ -606,7 +610,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
             {/* Reference - Only show for non-Quran recitations (dhikr, etc.) */}
             {recitation.reference && !isFatihaRecitation(recitation.id) && (
-              <p className="text-slate-600 text-xs mt-4">
+              <p className="text-slate-400 text-xs mt-4">
                 {recitation.reference}
               </p>
             )}
@@ -647,7 +651,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                   Previous
                 </button>
 
-                <div className="text-slate-600 text-sm">
+                <div className="text-slate-400 text-sm">
                   {currentStepIndex + 1} / {prayerSteps.length}
                 </div>
 
@@ -684,12 +688,87 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                 )}
               </button>
 
-              <div className="text-slate-500 text-sm">
+              <div className="text-slate-400 text-sm">
                 {currentStepIndex + 1} / {prayerSteps.length}
               </div>
             </div>
           )}
         </div>
+      </motion.div>
+    );
+  };
+
+  // Intention Screen - Make niyyah before starting prayer
+  const renderIntentionScreen = () => {
+    if (!selectedPrayer) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="min-h-screen bg-slate-950 flex items-center justify-center px-4"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="max-w-lg w-full text-center"
+        >
+          {/* Prayer Icon */}
+          <div className="text-6xl mb-6">{selectedPrayer.icon}</div>
+
+          {/* Prayer Name */}
+          <h2 className="text-3xl font-bold text-white mb-2">
+            {selectedPrayer.name}
+          </h2>
+          <p
+            className="text-emerald-300 font-arabic text-2xl mb-4"
+            style={{ lineHeight: '1.8' }}
+          >
+            {selectedPrayer.arabicName}
+          </p>
+
+          {/* Rakah Count */}
+          <div className="inline-block px-4 py-2 bg-slate-800/50 rounded-full text-slate-300 text-sm mb-8">
+            {selectedPrayer.rakahs} Rakahs
+          </div>
+
+          {/* Intention Reminder */}
+          <div className="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-800/30 mb-8">
+            <h3 className="text-emerald-300 font-semibold text-lg mb-3">
+              Make Your Intention
+            </h3>
+            <p className="text-slate-300 leading-relaxed mb-4">
+              Before starting, make the intention in your heart that you are
+              praying <span className="text-emerald-400 font-medium">{selectedPrayer.rakahs} rakahs</span> of{' '}
+              <span className="text-emerald-400 font-medium">{selectedPrayer.name}</span> for the sake of Allah.
+            </p>
+            <p className="text-slate-400 text-sm italic">
+              The intention (niyyah) is made in the heart, not spoken aloud.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={handleConfirmIntention}
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-semibold text-lg transition-colors"
+            >
+              <Play className="w-6 h-6" />
+              Begin Prayer
+            </button>
+            <button
+              onClick={() => {
+                setViewState('select');
+                setSelectedPrayer(null);
+              }}
+              className="w-full px-6 py-3 text-slate-400 hover:text-white transition-colors"
+            >
+              Choose Different Prayer
+            </button>
+          </div>
+        </motion.div>
       </motion.div>
     );
   };
@@ -763,6 +842,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
   return (
     <AnimatePresence mode="wait">
       {viewState === 'select' && renderPrayerSelection()}
+      {viewState === 'intention' && renderIntentionScreen()}
       {viewState === 'praying' && !isComplete && renderPrayerWalkthrough()}
       {viewState === 'praying' && isComplete && renderCompletion()}
     </AnimatePresence>
