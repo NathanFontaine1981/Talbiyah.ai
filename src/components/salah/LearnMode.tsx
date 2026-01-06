@@ -162,13 +162,13 @@ export default function LearnMode({
                 <div className="text-3xl mb-3">
                   {positionIcons[position.iconType] || '🕌'}
                 </div>
-                <div className="text-sm text-slate-500 mb-1">
+                <div className="text-sm text-slate-400 mb-1">
                   {position.order}. {position.transliteration}
                 </div>
                 <h3 className="text-white font-semibold mb-1 group-hover:text-emerald-300 transition-colors">
                   {position.name}
                 </h3>
-                <p className="text-xs text-slate-500 line-clamp-2">
+                <p className="text-xs text-slate-400 line-clamp-2">
                   {position.description}
                 </p>
                 {position.id === 'standing-fatiha' && (
@@ -421,13 +421,13 @@ function RecitationCard({
         </p>
 
         {/* Translation */}
-        <p className="text-center text-white">
+        <p className="text-center text-amber-100">
           {recitation.translation}
         </p>
 
         {/* Reference */}
         {recitation.reference && (
-          <p className="text-center text-slate-500 text-xs mt-2">
+          <p className="text-center text-slate-400 text-xs mt-2">
             {recitation.reference}
           </p>
         )}
@@ -489,12 +489,12 @@ function RecitationCard({
                           <div className="text-xs text-slate-400 italic mb-0.5">
                             {word.transliteration}
                           </div>
-                          <div className="text-sm text-white font-medium">
+                          <div className="text-sm text-amber-100 font-medium">
                             {word.meaning}
                           </div>
                         </>
                       ) : (
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-400">
                           Tap reveal
                         </div>
                       )}
@@ -628,7 +628,7 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
               <p className="font-arabic text-2xl text-emerald-200 mb-2 text-right" dir="rtl">
                 {current.arabic}
               </p>
-              <p className="text-white text-sm">
+              <p className="text-amber-100 text-sm">
                 "{current.translation}"
               </p>
             </div>

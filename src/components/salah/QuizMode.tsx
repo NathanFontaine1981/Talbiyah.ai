@@ -203,7 +203,7 @@ export default function QuizMode({
             </p>
             <div className="flex items-center gap-2 text-amber-400 text-sm">
               <span>10 questions</span>
-              <span className="text-slate-600">•</span>
+              <span className="text-amber-600">•</span>
               <span>100 XP each</span>
             </div>
           </button>
@@ -223,7 +223,7 @@ export default function QuizMode({
             </p>
             <div className="flex items-center gap-2 text-emerald-400 text-sm">
               <span>10 questions</span>
-              <span className="text-slate-600">•</span>
+              <span className="text-emerald-600">•</span>
               <span>100 XP each</span>
             </div>
           </button>
@@ -231,7 +231,7 @@ export default function QuizMode({
 
         {/* Tip */}
         <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-400 text-sm">
             Tip: Build a streak of correct answers for bonus XP!
           </p>
         </div>
@@ -304,7 +304,7 @@ export default function QuizMode({
             className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-6"
           >
             <div className="text-center mb-6">
-              <p className="text-slate-400 text-sm mb-4">
+              <p className="text-slate-300 text-sm mb-4">
                 {isMatchMeaning ? 'What does this word mean?' : 'Complete the phrase:'}
               </p>
               <p className="font-arabic text-4xl md:text-5xl text-white leading-loose" dir="rtl">
@@ -314,7 +314,7 @@ export default function QuizMode({
                 {question.transliteration}
               </p>
               {question.context && (
-                <p className="text-slate-500 text-sm mt-2">
+                <p className="text-amber-200 text-sm mt-2">
                   "{question.context}"
                 </p>
               )}
@@ -438,10 +438,10 @@ export default function QuizMode({
               <div className="text-5xl font-bold text-amber-400 mb-2">
                 {score}
               </div>
-              <div className="text-slate-400">
+              <div className="text-slate-300">
                 XP Earned
               </div>
-              <div className="mt-4 text-sm text-slate-500">
+              <div className="mt-4 text-sm text-slate-400">
                 {percentage}% accuracy
               </div>
             </div>

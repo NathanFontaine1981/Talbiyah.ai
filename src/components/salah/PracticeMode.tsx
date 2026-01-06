@@ -556,14 +556,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
         {/* Auto-play indicator */}
         {isPlaying && (
           <div className="text-center">
-            <p className="text-slate-500 text-sm">
+            <p className="text-slate-400 text-sm">
               Auto-advancing in {autoAdvanceDelay / 1000}s...
             </p>
           </div>
         )}
 
         {/* Step Counter */}
-        <div className="text-center text-slate-500 text-sm">
+        <div className="text-center text-slate-400 text-sm">
           Step {currentStepIndex + 1} of {practiceSteps.length}
         </div>
       </div>
