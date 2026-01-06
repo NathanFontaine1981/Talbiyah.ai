@@ -51,7 +51,8 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </div>
               </div>
 
-              <h1 className="text-3xl font-serif text-white mb-8">The Almanac Moment</h1>
+              <h1 className="text-3xl font-serif text-white mb-2">The Almanac Moment</h1>
+              <p className="text-slate-400 text-sm mb-8">(A book containing knowledge of future events)</p>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
