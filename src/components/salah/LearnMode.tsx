@@ -10,7 +10,8 @@ import {
   MessageCircle,
   Sparkles,
   Eye,
-  X
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { salahPositions, getPositionsByOrder, type SalahPosition, type SalahRecitation, type ArabicWord } from '../../data/salahData';
 
@@ -376,7 +377,11 @@ function RecitationCard({
   onToggleExpand,
   onRevealAll
 }: RecitationCardProps) {
-  const allRevealed = revealedCount >= recitation.words.length;
+  const [verseRevealed, setVerseRevealed] = useState(false);
+  const allWordsRevealed = revealedCount >= recitation.words.length;
+
+  // Get first word for the prompt
+  const firstWord = recitation.words[0];
 
   return (
     <motion.div
@@ -385,59 +390,106 @@ function RecitationCard({
       transition={{ delay: index * 0.1 }}
       className="bg-slate-900/70 rounded-2xl border border-slate-700 overflow-hidden"
     >
-      {/* Main Content - Always Visible */}
+      {/* Main Content */}
       <div className="p-6">
-        {/* Arabic Text */}
-        <div className="text-center mb-4">
-          <p
-            className="font-arabic text-3xl md:text-4xl text-emerald-200"
-            dir="rtl"
-            style={{ lineHeight: '2.2' }}
+        {!verseRevealed ? (
+          /* First Word Prompt Mode - Tap to reveal full verse */
+          <button
+            onClick={() => setVerseRevealed(true)}
+            className="w-full text-center"
           >
-            {recitation.arabic}
-          </p>
-        </div>
+            {/* First Word Only */}
+            <div className="mb-4">
+              <p className="text-slate-400 text-sm mb-2">First word prompt:</p>
+              <p
+                className="font-arabic text-4xl md:text-5xl text-emerald-300"
+                dir="rtl"
+                style={{ lineHeight: '2' }}
+              >
+                {firstWord?.arabic || recitation.arabic.split(' ')[0]}
+              </p>
+            </div>
 
-        {/* Transliteration */}
-        <p className="text-center text-slate-400 italic mb-2">
-          {recitation.transliteration}
-        </p>
+            {/* Prompt to recall */}
+            <div className="py-4 border-t border-b border-slate-700/50 my-4">
+              <p className="text-slate-300 text-lg italic">
+                Can you recall the rest?
+              </p>
+            </div>
 
-        {/* Translation */}
-        <p className="text-center text-amber-100">
-          {recitation.translation}
-        </p>
+            {/* Tap to reveal hint */}
+            <div className="flex items-center justify-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors">
+              <Eye className="w-5 h-5" />
+              <span className="font-medium">Tap to reveal full verse</span>
+            </div>
+          </button>
+        ) : (
+          /* Revealed Mode - Full verse visible */
+          <>
+            {/* Arabic Text */}
+            <div className="text-center mb-4">
+              <p
+                className="font-arabic text-3xl md:text-4xl text-emerald-200"
+                dir="rtl"
+                style={{ lineHeight: '2.2' }}
+              >
+                {recitation.arabic}
+              </p>
+            </div>
 
-        {/* Reference */}
-        {recitation.reference && (
-          <p className="text-center text-slate-400 text-xs mt-2">
-            {recitation.reference}
-          </p>
+            {/* Transliteration */}
+            <p className="text-center text-slate-400 italic mb-2">
+              {recitation.transliteration}
+            </p>
+
+            {/* Translation */}
+            <p className="text-center text-amber-100">
+              {recitation.translation}
+            </p>
+
+            {/* Reference */}
+            {recitation.reference && (
+              <p className="text-center text-slate-400 text-xs mt-2">
+                {recitation.reference}
+              </p>
+            )}
+
+            {/* Repeat indicator */}
+            {recitation.timesToRepeat && recitation.timesToRepeat > 1 && (
+              <div className="text-center mt-3">
+                <span className="text-xs text-amber-400 bg-amber-900/30 px-2 py-1 rounded-full">
+                  Repeat {recitation.timesToRepeat} times
+                </span>
+              </div>
+            )}
+
+            {/* Hide/Reset Button */}
+            <button
+              onClick={() => setVerseRevealed(false)}
+              className="w-full mt-4 flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Test again
+            </button>
+          </>
         )}
 
-        {/* Repeat indicator */}
-        {recitation.timesToRepeat && recitation.timesToRepeat > 1 && (
-          <div className="text-center mt-3">
-            <span className="text-xs text-amber-400 bg-amber-900/30 px-2 py-1 rounded-full">
-              Repeat {recitation.timesToRepeat} times
-            </span>
-          </div>
+        {/* Word-by-Word Expand Button - Only show when verse is revealed */}
+        {verseRevealed && (
+          <button
+            onClick={onToggleExpand}
+            className="w-full mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            {isExpanded ? 'Hide' : 'Show'} Word-by-Word Breakdown
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
         )}
-
-        {/* Expand Button */}
-        <button
-          onClick={onToggleExpand}
-          className="w-full mt-4 flex items-center justify-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-          {isExpanded ? 'Hide' : 'Show'} Word-by-Word
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
       </div>
 
-      {/* Expanded Content */}
+      {/* Expanded Word-by-Word Content */}
       <AnimatePresence>
-        {isExpanded && (
+        {isExpanded && verseRevealed && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -446,10 +498,10 @@ function RecitationCard({
             className="overflow-hidden"
           >
             <div className="px-6 pb-6 border-t border-slate-700/50 pt-4">
-              {/* Word-by-Word Grid - Tap to reveal all */}
+              {/* Word-by-Word Grid - Tap to reveal meanings */}
               <button
                 onClick={onRevealAll}
-                disabled={allRevealed}
+                disabled={allWordsRevealed}
                 className="w-full"
               >
                 <div className="flex flex-wrap justify-center gap-3 mb-4" dir="rtl">
@@ -495,9 +547,9 @@ function RecitationCard({
 
               {/* Reveal prompt or completion indicator */}
               <div className="flex justify-center">
-                {!allRevealed ? (
+                {!allWordsRevealed ? (
                   <p className="text-slate-400 text-sm">
-                    Tap the verse to reveal all words
+                    Tap to reveal word meanings
                   </p>
                 ) : (
                   <div className="flex items-center gap-2 text-emerald-400 text-sm">
@@ -508,7 +560,7 @@ function RecitationCard({
               </div>
 
               {/* Spiritual Context */}
-              {recitation.spiritualContext && allRevealed && (
+              {recitation.spiritualContext && allWordsRevealed && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
