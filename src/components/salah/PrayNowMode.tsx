@@ -19,6 +19,150 @@ interface PrayNowModeProps {
 
 type ViewState = 'select' | 'praying';
 
+// Prayer Position Sprite - CSS positions for each prayer position in the sprite image
+const positionSprites: Record<string, { x: number; y: number; width: number; height: number }> = {
+  'prostrating': { x: 0, y: 0, width: 33, height: 25 },
+  'sitting': { x: 0, y: 50, width: 33, height: 25 },
+  'hands-raised': { x: 33, y: 50, width: 33, height: 25 },
+  'standing': { x: 66, y: 0, width: 33, height: 25 },
+  'bowing': { x: 66, y: 50, width: 33, height: 25 },
+};
+
+// Position Image Component using CSS sprite
+const PositionImage = ({ type }: { type: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const sprite = positionSprites[type];
+
+  if (!imageError && sprite) {
+    return (
+      <div
+        className="w-full h-full relative overflow-hidden rounded-xl"
+        style={{
+          backgroundImage: 'url(/images/salah/prayer-positions.png)',
+          backgroundSize: '300% 400%',
+          backgroundPosition: `${sprite.x}% ${sprite.y}%`,
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <img
+          src="/images/salah/prayer-positions.png"
+          alt=""
+          className="hidden"
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to SVG silhouette
+  return <PositionSilhouette type={type} />;
+};
+
+// SVG Silhouette Components for Prayer Positions (Fallback)
+const PositionSilhouette = ({ type }: { type: string }) => {
+  const silhouettes: Record<string, JSX.Element> = {
+    'hands-raised': (
+      <svg viewBox="0 0 100 150" className="w-full h-full">
+        <defs>
+          <linearGradient id="pnGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="20" r="12" fill="url(#pnGrad1)" />
+        <path d="M50 32 L50 80" stroke="url(#pnGrad1)" strokeWidth="8" strokeLinecap="round" />
+        <path d="M50 45 L25 20" stroke="url(#pnGrad1)" strokeWidth="6" strokeLinecap="round" />
+        <path d="M50 45 L75 20" stroke="url(#pnGrad1)" strokeWidth="6" strokeLinecap="round" />
+        <circle cx="25" cy="18" r="5" fill="url(#pnGrad1)" />
+        <circle cx="75" cy="18" r="5" fill="url(#pnGrad1)" />
+        <path d="M50 80 L35 130" stroke="url(#pnGrad1)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M50 80 L65 130" stroke="url(#pnGrad1)" strokeWidth="7" strokeLinecap="round" />
+        <ellipse cx="35" cy="135" rx="8" ry="4" fill="url(#pnGrad1)" />
+        <ellipse cx="65" cy="135" rx="8" ry="4" fill="url(#pnGrad1)" />
+      </svg>
+    ),
+    'standing': (
+      <svg viewBox="0 0 100 150" className="w-full h-full">
+        <defs>
+          <linearGradient id="pnGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="20" r="12" fill="url(#pnGrad2)" />
+        <path d="M50 32 L50 80" stroke="url(#pnGrad2)" strokeWidth="8" strokeLinecap="round" />
+        <path d="M50 50 L35 55 L45 60" stroke="url(#pnGrad2)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M50 50 L65 55 L55 60" stroke="url(#pnGrad2)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M50 80 L40 130" stroke="url(#pnGrad2)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M50 80 L60 130" stroke="url(#pnGrad2)" strokeWidth="7" strokeLinecap="round" />
+        <ellipse cx="40" cy="135" rx="8" ry="4" fill="url(#pnGrad2)" />
+        <ellipse cx="60" cy="135" rx="8" ry="4" fill="url(#pnGrad2)" />
+      </svg>
+    ),
+    'bowing': (
+      <svg viewBox="0 0 120 100" className="w-full h-full">
+        <defs>
+          <linearGradient id="pnGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <circle cx="30" cy="35" r="10" fill="url(#pnGrad3)" />
+        <path d="M38 38 L80 38" stroke="url(#pnGrad3)" strokeWidth="8" strokeLinecap="round" />
+        <path d="M55 38 L55 60" stroke="url(#pnGrad3)" strokeWidth="5" strokeLinecap="round" />
+        <path d="M65 38 L65 60" stroke="url(#pnGrad3)" strokeWidth="5" strokeLinecap="round" />
+        <path d="M80 38 L85 85" stroke="url(#pnGrad3)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M80 38 L95 85" stroke="url(#pnGrad3)" strokeWidth="7" strokeLinecap="round" />
+        <ellipse cx="85" cy="90" rx="7" ry="4" fill="url(#pnGrad3)" />
+        <ellipse cx="95" cy="90" rx="7" ry="4" fill="url(#pnGrad3)" />
+      </svg>
+    ),
+    'prostrating': (
+      <svg viewBox="0 0 140 80" className="w-full h-full">
+        <defs>
+          <linearGradient id="pnGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <line x1="10" y1="70" x2="130" y2="70" stroke="#334155" strokeWidth="2" />
+        <circle cx="25" cy="62" r="9" fill="url(#pnGrad4)" />
+        <path d="M32 58 Q60 30 90 45" stroke="url(#pnGrad4)" strokeWidth="8" strokeLinecap="round" fill="none" />
+        <path d="M35 58 L15 65" stroke="url(#pnGrad4)" strokeWidth="5" strokeLinecap="round" />
+        <path d="M35 58 L45 68" stroke="url(#pnGrad4)" strokeWidth="5" strokeLinecap="round" />
+        <circle cx="13" cy="67" r="4" fill="url(#pnGrad4)" />
+        <circle cx="47" cy="68" r="4" fill="url(#pnGrad4)" />
+        <path d="M90 45 L110 65" stroke="url(#pnGrad4)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M110 65 L95 68" stroke="url(#pnGrad4)" strokeWidth="6" strokeLinecap="round" />
+        <ellipse cx="93" cy="68" rx="5" ry="3" fill="url(#pnGrad4)" />
+      </svg>
+    ),
+    'sitting': (
+      <svg viewBox="0 0 100 120" className="w-full h-full">
+        <defs>
+          <linearGradient id="pnGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <line x1="10" y1="110" x2="90" y2="110" stroke="#334155" strokeWidth="2" />
+        <circle cx="50" cy="25" r="11" fill="url(#pnGrad5)" />
+        <path d="M50 36 L50 75" stroke="url(#pnGrad5)" strokeWidth="8" strokeLinecap="round" />
+        <path d="M50 55 L35 75" stroke="url(#pnGrad5)" strokeWidth="5" strokeLinecap="round" />
+        <path d="M50 55 L65 75" stroke="url(#pnGrad5)" strokeWidth="5" strokeLinecap="round" />
+        <circle cx="33" cy="77" r="4" fill="url(#pnGrad5)" />
+        <circle cx="67" cy="77" r="4" fill="url(#pnGrad5)" />
+        <path d="M50 75 L30 90 L25 105" stroke="url(#pnGrad5)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M50 75 L70 90 L80 105" stroke="url(#pnGrad5)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <ellipse cx="25" cy="108" rx="8" ry="4" fill="url(#pnGrad5)" />
+        <ellipse cx="82" cy="108" rx="6" ry="4" fill="url(#pnGrad5)" />
+      </svg>
+    ),
+  };
+
+  return silhouettes[type] || silhouettes['standing'];
+};
+
 // Audio URLs for recitations (using everyayah.com API - Mishary Rashid Alafasy)
 const AUDIO_BASE = 'https://everyayah.com/data/Alafasy_128kbps';
 
@@ -410,16 +554,27 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         </div>
 
         {/* Main Content - Optimized for readability from floor */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-2 overflow-y-auto">
+          {/* Position Image - Always Visible */}
+          <motion.div
+            key={`position-${currentStep.position.iconType}`}
+            initial={{ opacity: 0, scale: 0.8, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            className="w-28 h-28 md:w-36 md:h-36 mb-4 bg-slate-900/50 rounded-2xl border border-emerald-800/30 p-2 flex-shrink-0"
+          >
+            <PositionImage type={currentStep.position.iconType} />
+          </motion.div>
+
           <motion.div
             key={currentStepIndex}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-2xl text-center"
           >
-            {/* Position Name - Small */}
-            <div className="mb-4">
-              <span className="text-xs text-emerald-400/60 uppercase tracking-wider">
+            {/* Position Name */}
+            <div className="mb-3">
+              <span className="text-sm text-emerald-400 font-medium">
                 {currentStep.position.name}
               </span>
             </div>
