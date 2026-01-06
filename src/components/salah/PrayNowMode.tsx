@@ -602,7 +602,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
             {/* Translation - Clear and readable */}
             <p
-              className="text-white/90 text-xl md:text-2xl leading-relaxed mb-4"
+              className="text-amber-100 text-xl md:text-2xl leading-relaxed mb-4"
               style={{ lineHeight: '1.6' }}
             >
               {recitation.translation}
