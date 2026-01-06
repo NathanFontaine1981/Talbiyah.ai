@@ -869,42 +869,47 @@ export default function DailyMaintenancePage() {
                     />
                   </div>
 
-                  {/* Prompt - which ayah are we testing? */}
+                  {/* Prompt - show first word, user tries to finish */}
                   <div className="mb-6">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">What is the first word of...</p>
-                    <h4 className="text-xl font-bold text-purple-900 dark:text-purple-100">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                       Surah {SURAH_NAMES[selectedPromptSurah]?.english}, Ayah {ayahFirstWords[currentAyahIndex]?.ayahNumber}
+                    </p>
+                    <h4 className="text-lg font-medium text-purple-700 dark:text-purple-300">
+                      Test your ability to finish the ayah
                     </h4>
                   </div>
 
-                  {/* Answer area */}
+                  {/* First word prompt area */}
                   <div className={`rounded-xl p-6 mb-4 transition-all ${
                     revealedAnswer
                       ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-300 dark:border-emerald-600'
-                      : 'bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600'
+                      : 'bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-700'
                   }`}>
-                    {revealedAnswer && ayahFirstWords[currentAyahIndex] ? (
-                      <div>
-                        <p className="text-2xl font-arabic text-purple-600 dark:text-purple-400 mb-2" dir="rtl">
-                          First word: <span className="text-3xl font-bold text-gray-900 dark:text-white">{ayahFirstWords[currentAyahIndex].firstWord}</span>
+                    {!revealedAnswer && ayahFirstWords[currentAyahIndex] ? (
+                      /* Show first word as prompt */
+                      <div className="py-4">
+                        <p className="text-sm text-purple-600 dark:text-purple-400 mb-3">First word:</p>
+                        <p className="text-4xl md:text-5xl font-arabic text-purple-900 dark:text-purple-100 mb-3" dir="rtl" style={{ lineHeight: '1.8' }}>
+                          {ayahFirstWords[currentAyahIndex].firstWord}
                         </p>
-                        <p className="text-sm text-purple-700 dark:text-purple-300 italic mb-3">
+                        <p className="text-sm text-purple-700 dark:text-purple-300 italic">
                           {ayahFirstWords[currentAyahIndex].transliteration}
                         </p>
-                        <hr className="border-gray-200 dark:border-gray-600 my-3" />
-                        <p className="text-lg font-arabic text-gray-800 dark:text-gray-200 mb-2" dir="rtl">
+                      </div>
+                    ) : revealedAnswer && ayahFirstWords[currentAyahIndex] ? (
+                      /* Show full verse */
+                      <div>
+                        <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-3">Full ayah:</p>
+                        <p className="text-2xl md:text-3xl font-arabic text-gray-900 dark:text-white mb-4" dir="rtl" style={{ lineHeight: '2' }}>
                           {ayahFirstWords[currentAyahIndex].fullVerseUthmani}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-base text-amber-700 dark:text-amber-200">
                           "{ayahFirstWords[currentAyahIndex].fullVerseTranslation}"
                         </p>
                       </div>
                     ) : (
                       <div className="py-4">
-                        <p className="text-gray-500 dark:text-gray-400 mb-2">
-                          Think of the first word, then reveal the answer
-                        </p>
-                        <p className="text-4xl font-arabic text-gray-300 dark:text-gray-600">؟</p>
+                        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
                       </div>
                     )}
                   </div>
@@ -917,7 +922,7 @@ export default function DailyMaintenancePage() {
                         className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium"
                       >
                         <Eye className="w-5 h-5" />
-                        Reveal Answer
+                        Reveal Full Ayah
                       </button>
                     ) : (
                       <>
@@ -977,41 +982,50 @@ export default function DailyMaintenancePage() {
                     </div>
                   )}
 
-                  {/* Surah name - the prompt */}
+                  {/* Surah name and prompt */}
                   <div className="mb-6">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">How does this surah begin?</p>
-                    <h4 className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                      {SURAH_NAMES[selectedPromptSurah]?.english}
-                    </h4>
-                    <p className="text-xl font-arabic text-purple-700 dark:text-purple-300" dir="rtl">
-                      {SURAH_NAMES[selectedPromptSurah]?.arabic}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                      {SURAH_NAMES[selectedPromptSurah]?.english} - {SURAH_NAMES[selectedPromptSurah]?.arabic}
                     </p>
+                    <h4 className="text-lg font-medium text-purple-700 dark:text-purple-300">
+                      Test your ability to finish the surah
+                    </h4>
                   </div>
 
-                  {/* Answer area */}
+                  {/* First word prompt area */}
                   <div className={`rounded-xl p-6 mb-4 transition-all ${
                     revealedAnswer
                       ? 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-300 dark:border-emerald-600'
-                      : 'bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600'
+                      : 'bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-700'
                   }`}>
-                    {revealedAnswer && SURAH_FIRST_WORDS[selectedPromptSurah] ? (
+                    {!revealedAnswer && SURAH_FIRST_WORDS[selectedPromptSurah] ? (
+                      /* Show first word as prompt */
+                      <div className="py-4">
+                        <p className="text-sm text-purple-600 dark:text-purple-400 mb-3">First word:</p>
+                        <p className="text-4xl md:text-5xl font-arabic text-purple-900 dark:text-purple-100 mb-3" dir="rtl" style={{ lineHeight: '1.8' }}>
+                          {SURAH_FIRST_WORDS[selectedPromptSurah].arabic.split(' ')[0]}
+                        </p>
+                        <p className="text-sm text-purple-700 dark:text-purple-300 italic">
+                          {SURAH_FIRST_WORDS[selectedPromptSurah].transliteration.split(' ')[0]}
+                        </p>
+                      </div>
+                    ) : revealedAnswer && SURAH_FIRST_WORDS[selectedPromptSurah] ? (
+                      /* Show full opening verse */
                       <div>
-                        <p className="text-3xl font-arabic text-gray-900 dark:text-white mb-3" dir="rtl">
+                        <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-3">Full opening:</p>
+                        <p className="text-2xl md:text-3xl font-arabic text-gray-900 dark:text-white mb-4" dir="rtl" style={{ lineHeight: '2' }}>
                           {SURAH_FIRST_WORDS[selectedPromptSurah].arabic}
                         </p>
                         <p className="text-lg text-purple-700 dark:text-purple-300 italic mb-2">
                           {SURAH_FIRST_WORDS[selectedPromptSurah].transliteration}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-base text-amber-700 dark:text-amber-200">
                           "{SURAH_FIRST_WORDS[selectedPromptSurah].translation}"
                         </p>
                       </div>
                     ) : (
                       <div className="py-4">
-                        <p className="text-gray-500 dark:text-gray-400 mb-2">
-                          Think of the first words, then reveal the answer
-                        </p>
-                        <p className="text-4xl font-arabic text-gray-300 dark:text-gray-600">؟</p>
+                        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
                       </div>
                     )}
                   </div>
@@ -1024,7 +1038,7 @@ export default function DailyMaintenancePage() {
                         className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium"
                       >
                         <Eye className="w-5 h-5" />
-                        Reveal Answer
+                        Reveal Full Verse
                       </button>
                     ) : (
                       <>
