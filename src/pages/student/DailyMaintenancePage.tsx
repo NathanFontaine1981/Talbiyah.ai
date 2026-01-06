@@ -915,7 +915,8 @@ export default function DailyMaintenancePage() {
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex gap-3 justify-center flex-wrap">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex gap-3 justify-center flex-wrap">
                     {!revealedAnswer ? (
                       <button
                         onClick={() => setRevealedAnswer(true)}
@@ -968,6 +969,19 @@ export default function DailyMaintenancePage() {
                         </button>
                       </>
                     )}
+                    </div>
+                    {/* Back to surah selection */}
+                    <button
+                      onClick={() => {
+                        setSelectedPromptSurah(null);
+                        setRevealedAnswer(false);
+                        setCurrentAyahIndex(0);
+                        setAyahFirstWords([]);
+                      }}
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition"
+                    >
+                      ← Choose different surah
+                    </button>
                   </div>
                 </div>
               ) : (
