@@ -413,7 +413,7 @@ function RecitationCard({
             {/* Prompt to recall */}
             <div className="py-4 border-t border-b border-slate-700/50 my-4">
               <p className="text-slate-300 text-lg italic">
-                Can you recall the rest?
+                Test your ability to finish the surah
               </p>
             </div>
 
