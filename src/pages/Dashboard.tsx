@@ -322,6 +322,7 @@ export default function Dashboard() {
       title: 'Learn',
       items: [
         { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student', 'Parent'] },
+        { icon: BookOpen, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent'], isNew: true },
         { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
         { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
         { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
@@ -761,6 +762,33 @@ export default function Dashboard() {
                       >
                         <GraduationCap className="w-5 h-5" />
                         <span>Browse Courses</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Learn Salah - Interactive Prayer Tutorial */}
+            {(selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 shadow-lg">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <span className="text-3xl">🕌</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">Learn Salah</h3>
+                    <p className="text-emerald-50 mb-4">
+                      Understand what you're saying to Allah. Learn the meaning of every word in your prayer.
+                    </p>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => navigate('/salah')}
+                        className="px-6 py-3 bg-white hover:bg-emerald-50 text-emerald-700 rounded-full font-bold transition shadow-lg flex items-center space-x-2"
+                      >
+                        <BookOpen className="w-5 h-5" />
+                        <span>Start Learning</span>
                         <ArrowRight className="w-5 h-5" />
                       </button>
                     </div>

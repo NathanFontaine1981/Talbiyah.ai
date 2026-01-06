@@ -78,6 +78,7 @@ const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 // Explore & New Muslim pages (public)
 const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
 const NewMuslimPage = lazy(() => import('./pages/new-muslim/NewMuslimPage'));
+const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
 
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
@@ -154,6 +155,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/new-muslim" element={<NewMuslimPage />} />
+        <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
         <Route
