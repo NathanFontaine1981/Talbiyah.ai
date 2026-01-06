@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -19,21 +19,34 @@ interface PrayNowModeProps {
 
 type ViewState = 'select' | 'praying';
 
-// Audio URLs for recitations (using everyayah.com API for Quran, placeholder for others)
-const getAudioUrl = (recitationId: string): string | null => {
-  // For Fatiha verses, use everyayah.com (Mishary Rashid Alafasy)
-  const fatihaVerseMap: Record<string, string> = {
-    'fatiha-1': 'https://everyayah.com/data/Alafasy_128kbps/001002.mp3',
-    'fatiha-2': 'https://everyayah.com/data/Alafasy_128kbps/001003.mp3',
-    'fatiha-3': 'https://everyayah.com/data/Alafasy_128kbps/001004.mp3',
-    'fatiha-4': 'https://everyayah.com/data/Alafasy_128kbps/001005.mp3',
-    'fatiha-5': 'https://everyayah.com/data/Alafasy_128kbps/001006.mp3',
-    'fatiha-6': 'https://everyayah.com/data/Alafasy_128kbps/001007.mp3',
-    'fatiha-7': 'https://everyayah.com/data/Alafasy_128kbps/001007.mp3', // Same verse continues
-    'basmala': 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3',
-  };
+// Audio URLs for recitations (using everyayah.com API - Mishary Rashid Alafasy)
+const AUDIO_BASE = 'https://everyayah.com/data/Alafasy_128kbps';
 
-  return fatihaVerseMap[recitationId] || null;
+// Map recitation IDs to audio files
+const audioMap: Record<string, string> = {
+  'basmala': `${AUDIO_BASE}/001001.mp3`,
+  'fatiha-1': `${AUDIO_BASE}/001002.mp3`,
+  'fatiha-2': `${AUDIO_BASE}/001003.mp3`,
+  'fatiha-3': `${AUDIO_BASE}/001004.mp3`,
+  'fatiha-4': `${AUDIO_BASE}/001005.mp3`,
+  'fatiha-5': `${AUDIO_BASE}/001006.mp3`,
+  'fatiha-6': `${AUDIO_BASE}/001007.mp3`,
+  'fatiha-7': `${AUDIO_BASE}/001007.mp3`, // Part of same verse
+};
+
+// Check if a recitation is part of Fatiha sequence
+const isFatihaRecitation = (id: string): boolean => {
+  return id === 'basmala' || id.startsWith('fatiha-');
+};
+
+// Get the next Fatiha recitation ID in sequence
+const getNextFatihaId = (currentId: string): string | null => {
+  const sequence = ['basmala', 'fatiha-1', 'fatiha-2', 'fatiha-3', 'fatiha-4', 'fatiha-5', 'fatiha-6', 'fatiha-7'];
+  const currentIndex = sequence.indexOf(currentId);
+  if (currentIndex >= 0 && currentIndex < sequence.length - 1) {
+    return sequence[currentIndex + 1];
+  }
+  return null;
 };
 
 export default function PrayNowMode({ onBack }: PrayNowModeProps) {
@@ -44,9 +57,11 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [autoAdvanceDelay, setAutoAdvanceDelay] = useState(4000); // 4 seconds default
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioQueueRef = useRef<string[]>([]);
+  const currentAudioIndexRef = useRef(0);
 
   // Generate steps for selected prayer
   const prayerSteps = useMemo(() => {
@@ -59,36 +74,110 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     ? Math.round(((currentStepIndex + 1) / prayerSteps.length) * 100)
     : 0;
 
-  // Auto-advance effect
+  // Build audio queue for current position (for Fatiha, queue all verses)
+  const buildAudioQueue = useCallback((step: PrayerStep): string[] => {
+    const recitation = step.position.recitations[step.recitationIndex];
+    const queue: string[] = [];
+
+    // If this is basmala (start of Fatiha), queue the entire surah
+    if (recitation.id === 'basmala') {
+      const fatihaSequence = ['basmala', 'fatiha-1', 'fatiha-2', 'fatiha-3', 'fatiha-4', 'fatiha-5', 'fatiha-6', 'fatiha-7'];
+      fatihaSequence.forEach(id => {
+        if (audioMap[id]) {
+          queue.push(audioMap[id]);
+        }
+      });
+    } else if (audioMap[recitation.id]) {
+      // For other recitations, just queue that one
+      queue.push(audioMap[recitation.id]);
+    }
+
+    return queue;
+  }, []);
+
+  // Play next audio in queue
+  const playNextInQueue = useCallback(() => {
+    if (!audioRef.current || !audioEnabled) return;
+
+    if (currentAudioIndexRef.current < audioQueueRef.current.length) {
+      const nextUrl = audioQueueRef.current[currentAudioIndexRef.current];
+      audioRef.current.src = nextUrl;
+      audioRef.current.play().catch(() => {
+        // Audio play failed, continue anyway
+        setIsPlayingAudio(false);
+      });
+      currentAudioIndexRef.current++;
+      setIsPlayingAudio(true);
+    } else {
+      setIsPlayingAudio(false);
+    }
+  }, [audioEnabled]);
+
+  // Handle audio ended - play next in queue or advance
+  const handleAudioEnded = useCallback(() => {
+    if (currentAudioIndexRef.current < audioQueueRef.current.length) {
+      // More audio in queue, play next
+      playNextInQueue();
+    } else {
+      // Queue finished
+      setIsPlayingAudio(false);
+
+      // If in auto mode, advance to next step after a brief pause
+      if (isAutoMode && !isPaused) {
+        timerRef.current = setTimeout(() => {
+          if (currentStepIndex < prayerSteps.length - 1) {
+            setCurrentStepIndex(prev => prev + 1);
+          } else {
+            setIsComplete(true);
+            setIsAutoMode(false);
+          }
+        }, 500); // Brief pause between recitations
+      }
+    }
+  }, [isAutoMode, isPaused, currentStepIndex, prayerSteps.length, playNextInQueue]);
+
+  // Set up audio event listeners
   useEffect(() => {
-    if (isAutoMode && !isPaused && viewState === 'praying' && !isComplete) {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.addEventListener('ended', handleAudioEnded);
+      return () => {
+        audio.removeEventListener('ended', handleAudioEnded);
+      };
+    }
+  }, [handleAudioEnded]);
+
+  // Handle step changes in auto mode
+  useEffect(() => {
+    if (isAutoMode && !isPaused && viewState === 'praying' && !isComplete && currentStep) {
       // Clear any existing timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
 
-      // Play audio if available
-      if (audioEnabled && currentStep) {
-        const recitation = currentStep.position.recitations[currentStep.recitationIndex];
-        const audioUrl = getAudioUrl(recitation.id);
+      const recitation = currentStep.position.recitations[currentStep.recitationIndex];
 
-        if (audioUrl && audioRef.current) {
-          audioRef.current.src = audioUrl;
-          audioRef.current.play().catch(() => {
-            // Audio play failed, continue anyway
-          });
-        }
+      // Check if this recitation has audio
+      if (audioEnabled && audioMap[recitation.id]) {
+        // Build and start audio queue
+        audioQueueRef.current = buildAudioQueue(currentStep);
+        currentAudioIndexRef.current = 0;
+        playNextInQueue();
+      } else {
+        // No audio available, use timer-based advance
+        const delay = recitation.timesToRepeat && recitation.timesToRepeat > 1
+          ? 6000 // Longer for repeated recitations
+          : 4000; // Default delay
+
+        timerRef.current = setTimeout(() => {
+          if (currentStepIndex < prayerSteps.length - 1) {
+            setCurrentStepIndex(prev => prev + 1);
+          } else {
+            setIsComplete(true);
+            setIsAutoMode(false);
+          }
+        }, delay);
       }
-
-      // Set timer for auto-advance
-      timerRef.current = setTimeout(() => {
-        if (currentStepIndex < prayerSteps.length - 1) {
-          setCurrentStepIndex(prev => prev + 1);
-        } else {
-          setIsComplete(true);
-          setIsAutoMode(false);
-        }
-      }, autoAdvanceDelay);
 
       return () => {
         if (timerRef.current) {
@@ -96,7 +185,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         }
       };
     }
-  }, [isAutoMode, isPaused, currentStepIndex, prayerSteps.length, autoAdvanceDelay, audioEnabled, currentStep, viewState, isComplete]);
+  }, [isAutoMode, isPaused, currentStepIndex, viewState, isComplete, currentStep, audioEnabled, buildAudioQueue, playNextInQueue, prayerSteps.length]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -110,12 +199,26 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     };
   }, []);
 
+  // Handle pause/resume
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPaused) {
+        audioRef.current.pause();
+      } else if (isAutoMode && isPlayingAudio) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [isPaused, isAutoMode, isPlayingAudio]);
+
   const handleSelectPrayer = (prayer: DailyPrayer) => {
     setSelectedPrayer(prayer);
     setCurrentStepIndex(0);
     setIsComplete(false);
     setIsAutoMode(false);
     setIsPaused(false);
+    setIsPlayingAudio(false);
+    audioQueueRef.current = [];
+    currentAudioIndexRef.current = 0;
     setViewState('praying');
   };
 
@@ -126,16 +229,17 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
   const handleTogglePause = () => {
     setIsPaused(!isPaused);
-    if (audioRef.current) {
-      if (isPaused) {
-        audioRef.current.play().catch(() => {});
-      } else {
-        audioRef.current.pause();
-      }
-    }
   };
 
   const handleNext = () => {
+    // Stop current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    audioQueueRef.current = [];
+    currentAudioIndexRef.current = 0;
+    setIsPlayingAudio(false);
+
     if (currentStepIndex < prayerSteps.length - 1) {
       setCurrentStepIndex(prev => prev + 1);
     } else {
@@ -145,20 +249,34 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
   };
 
   const handlePrevious = () => {
+    // Stop current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    audioQueueRef.current = [];
+    currentAudioIndexRef.current = 0;
+    setIsPlayingAudio(false);
+
     if (currentStepIndex > 0) {
       setCurrentStepIndex(prev => prev - 1);
     }
   };
 
   const handleExitPrayer = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     setViewState('select');
     setSelectedPrayer(null);
     setCurrentStepIndex(0);
     setIsComplete(false);
     setIsAutoMode(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    setIsPlayingAudio(false);
+    audioQueueRef.current = [];
+    currentAudioIndexRef.current = 0;
   };
 
   // Prayer Selection Screen
@@ -228,7 +346,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             <p className="text-emerald-300 font-medium text-sm">Floor Mode Tip</p>
             <p className="text-emerald-400/70 text-sm">
               Press "Start" after selecting your prayer. Place your phone at sutra distance
-              and follow along as it auto-advances through each recitation.
+              and follow along as it auto-advances through each recitation with continuous audio.
             </p>
           </div>
         </motion.div>
@@ -250,7 +368,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         className="min-h-screen bg-black flex flex-col"
       >
         {/* Hidden Audio Element */}
-        <audio ref={audioRef} />
+        <audio ref={audioRef} preload="auto" />
 
         {/* Minimal Top Bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80">
@@ -308,7 +426,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
             {/* Arabic Text - Large with proper line-height for harakat */}
             <p
-              className="font-arabic text-4xl md:text-5xl lg:text-6xl text-emerald-100 mb-8"
+              className="font-arabic text-4xl md:text-5xl lg:text-6xl text-emerald-100 mb-6"
               dir="rtl"
               style={{
                 lineHeight: '2.2',
@@ -316,6 +434,11 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               }}
             >
               {recitation.arabic}
+            </p>
+
+            {/* Transliteration */}
+            <p className="text-slate-400 italic text-lg md:text-xl mb-4">
+              {recitation.transliteration}
             </p>
 
             {/* Translation - Clear and readable */}
@@ -326,8 +449,8 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               {recitation.translation}
             </p>
 
-            {/* Reference - Very subtle */}
-            {recitation.reference && (
+            {/* Reference - Only show for non-Quran recitations (dhikr, etc.) */}
+            {recitation.reference && !isFatihaRecitation(recitation.id) && (
               <p className="text-slate-600 text-xs mt-4">
                 {recitation.reference}
               </p>
@@ -456,6 +579,9 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                 setCurrentStepIndex(0);
                 setIsComplete(false);
                 setIsAutoMode(false);
+                setIsPlayingAudio(false);
+                audioQueueRef.current = [];
+                currentAudioIndexRef.current = 0;
               }}
               className="w-full px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-medium transition-colors"
             >
