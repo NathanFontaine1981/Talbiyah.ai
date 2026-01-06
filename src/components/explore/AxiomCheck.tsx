@@ -340,13 +340,16 @@ const storyScenes = [
   {
     id: 'scene1',
     title: 'Exhibit Alpha: The Analogy',
-    icon: <BookOpen className="w-12 h-12" />,
+    icon: <Zap className="w-12 h-12" />,
     iconBg: 'bg-amber-500/20',
     iconColor: 'text-amber-400',
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          In <span className="text-blue-400 font-semibold">Back to the Future Part II</span>, a character gets hold of a Sports Almanac from the future.
+          When I started examining the Quran, I had a <span className="text-amber-400 font-semibold">lightbulb moment</span>. I remembered one of my childhood favourite films — <span className="text-blue-400 font-semibold">Back to the Future Part II</span>.
+        </p>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          In that film, a character gets hold of a Sports Almanac from the future.
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
           <p className="text-amber-300 text-lg italic mb-2">
@@ -371,7 +374,7 @@ const storyScenes = [
     content: (
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Imagine you find this book. At first, <span className="text-white font-semibold">0% belief</span>. Why would you trust it?
+          Imagine you were given this book and told it has all the correct answers in it. At first, <span className="text-white font-semibold">0% belief</span>. There is no reason to trust it. <span className="text-amber-400 font-medium">Prove it.</span>
         </p>
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
           <div className="space-y-3">
@@ -401,27 +404,7 @@ const storyScenes = [
     icon: <Clock className="w-12 h-12" />,
     iconBg: 'bg-rose-500/20',
     iconColor: 'text-rose-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          You check the book for February 6th, 1958. It says:
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          <span className="text-rose-400 font-semibold">"Flight 609 crashed on takeoff from Munich. 23 dead."</span>
-        </p>
-        <div className="bg-rose-900/30 rounded-xl p-5 border border-rose-700/50 mb-4">
-          <p className="text-xl text-white font-medium mb-3">
-            If this source has been 100% accurate on everything...
-          </p>
-          <p className="text-rose-200 text-lg">
-            <span className="text-white font-semibold">Would you get on that plane?</span>
-          </p>
-        </div>
-        <p className="text-slate-400 text-sm italic">
-          The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
-        </p>
-      </>
-    ),
+    content: 'interactive-hypothetical', // Special marker for interactive content
   },
   {
     id: 'scene4',
@@ -491,6 +474,7 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
   const [introScene, setIntroScene] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [expandedAxiom, setExpandedAxiom] = useState<string | null>(null);
+  const [hypotheticalAnswer, setHypotheticalAnswer] = useState<'yes' | 'no' | null>(null);
 
   // Get the active categories (only the ones user selected)
   const activeCategories = selectedCategories.length > 0
@@ -613,14 +597,95 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
 
                 {/* Scene Content */}
                 <div className="bg-slate-900/70 rounded-2xl p-6 sm:p-8 border border-slate-700 mb-8 text-left">
-                  {currentScene.content}
+                  {currentScene.content === 'interactive-hypothetical' ? (
+                    <>
+                      <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                        You're about to board a flight. Out of curiosity, you check the book for today's date.
+                      </p>
+                      <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
+                        <p className="text-rose-400 text-lg font-semibold mb-2">
+                          "Flight 609 crashed on takeoff. 23 dead."
+                        </p>
+                        <p className="text-white font-medium">
+                          You look at your boarding pass. <span className="text-rose-400">Flight 609.</span>
+                        </p>
+                      </div>
+
+                      {hypotheticalAnswer === null ? (
+                        <>
+                          <p className="text-lg text-white font-medium mb-4">
+                            If this source has been <span className="text-emerald-400">100% accurate</span> on everything you've verified...
+                          </p>
+                          <p className="text-xl text-white font-semibold mb-4">
+                            Would you get on that plane?
+                          </p>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => setHypotheticalAnswer('yes')}
+                              className="flex-1 px-6 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
+                            >
+                              Yes, I'd still board
+                            </button>
+                            <button
+                              onClick={() => setHypotheticalAnswer('no')}
+                              className="flex-1 px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-medium transition"
+                            >
+                              No way
+                            </button>
+                          </div>
+                        </>
+                      ) : hypotheticalAnswer === 'no' ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50"
+                        >
+                          <p className="text-2xl text-white font-medium mb-3">
+                            Exactly.
+                          </p>
+                          <p className="text-emerald-200 text-lg mb-3">
+                            If a source has been <span className="text-white font-semibold">100% accurate</span> about everything you can verify, you'd be foolish to ignore what it says about things you <span className="text-white font-semibold">haven't witnessed yet</span>.
+                          </p>
+                          <p className="text-slate-400 text-sm italic">
+                            The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50"
+                        >
+                          <p className="text-xl text-white font-medium mb-3">
+                            Think about that for a moment.
+                          </p>
+                          <p className="text-amber-200 text-lg mb-3">
+                            This book has been <span className="text-white font-semibold">100% accurate</span> on everything you've checked. Not 99%. Not "mostly right." <span className="text-white font-semibold">Every single time.</span>
+                          </p>
+                          <p className="text-amber-200 text-lg mb-3">
+                            And now it's telling you something about <span className="text-white font-semibold">your flight</span>. Would you really bet your life that <span className="italic">this</span> is the one time it's wrong?
+                          </p>
+                          <p className="text-slate-400 text-sm italic">
+                            The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
+                          </p>
+                        </motion.div>
+                      )}
+                    </>
+                  ) : (
+                    currentScene.content
+                  )}
                 </div>
 
                 {/* Navigation */}
                 <div className="flex items-center justify-center gap-4">
                   {introScene > 0 && (
                     <button
-                      onClick={() => setIntroScene(prev => prev - 1)}
+                      onClick={() => {
+                        setIntroScene(prev => prev - 1);
+                        if (currentScene.content === 'interactive-hypothetical') {
+                          setHypotheticalAnswer(null);
+                        }
+                      }}
                       className="px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full transition"
                     >
                       Back
@@ -638,6 +703,8 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                       Choose Your Categories
                       <ArrowRight className="w-5 h-5" />
                     </button>
+                  ) : currentScene.content === 'interactive-hypothetical' && hypotheticalAnswer === null ? (
+                    <p className="text-slate-500 text-sm">Answer the question to continue</p>
                   ) : (
                     <button
                       onClick={() => setIntroScene(prev => prev + 1)}
@@ -828,12 +895,15 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
                 <Gavel className="w-5 h-5 text-amber-400" />
                 <p className="text-amber-300 font-medium">Cross-Examination</p>
               </div>
-              <p className="text-amber-200 text-lg">
+              <p className="text-amber-200 text-lg mb-4">
                 The court will now cross-examine <span className="text-white font-semibold">the Quran</span>.
                 <br />
                 <span className="text-slate-300">
                   An over 1,400-year-old book that claims to know {totalAgreed === totalReviewed ? 'all of this' : 'these facts'}.
                 </span>
+              </p>
+              <p className="text-slate-400 text-sm">
+                For each piece of evidence, you'll decide: <span className="text-emerald-400">Sustained</span> <span className="text-slate-500">(I accept the testimony matches)</span> or <span className="text-rose-400">Overruled</span> <span className="text-slate-500">(I'm not convinced)</span>
               </p>
             </div>
 

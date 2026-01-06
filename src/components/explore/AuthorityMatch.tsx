@@ -165,7 +165,7 @@ const axiomToQuran: Record<string, {
     yearRevealed: 610,
     yearDiscovered: 1880,
     category: 'biological',
-    contemplation: 'This verse implies that once skin is destroyed, pain stops—unless skin is replaced. Modern medicine confirms pain receptors are in the skin, not deeper tissue.',
+    contemplation: 'The people hearing this verse in the 7th century had no idea how powerful this statement was. They knew nothing about pain receptors. It was only in 1906 that science discovered pain receptors are in the skin—not deeper tissue. The verse implies that once skin is destroyed, pain stops—unless skin is replaced. How would the author know this?',
   },
 
   // NATURAL ORDER
@@ -463,7 +463,7 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                 <p className="text-amber-200 text-center">
                   For each exhibit, the Quran will testify.
                   <br />
-                  <span className="font-semibold">You decide: Sustained or Overruled?</span>
+                  <span className="font-semibold">You decide: Sustained <span className="text-amber-300/70 font-normal">(I accept this)</span> or Overruled <span className="text-amber-300/70 font-normal">(I reject this)</span>?</span>
                 </p>
               </div>
             </div>
@@ -776,13 +776,13 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
                 className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
               >
                 <Gavel className="w-5 h-5" />
-                Sustained
+                Sustained <span className="text-emerald-200 font-normal text-sm">(I accept)</span>
               </button>
               <button
                 onClick={handleSkip}
                 className="px-8 py-4 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full text-lg font-medium transition"
               >
-                Objection / Not Sure
+                Overruled <span className="text-slate-400 font-normal text-sm">(Not sure)</span>
               </button>
             </div>
 

@@ -18,12 +18,16 @@ import {
   Pause,
   RefreshCw,
   Flame,
-  Star
+  Star,
+  Eye,
+  EyeOff,
+  SkipForward
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import WordMatchingQuiz from '../../components/WordMatchingQuiz';
+import { getFirstWordsForAyahs, FirstWordData } from '../../utils/quranApi';
 
 // Celebration effects
 function triggerConfetti(intensity: 'small' | 'medium' | 'large' = 'small') {
@@ -70,7 +74,7 @@ interface VocabularyWord {
 }
 
 interface HomeworkGame {
-  type: 'flashcard' | 'matching' | 'multiple_choice' | 'fill_blank' | 'english_to_arabic' | 'transliteration' | 'surah_themes';
+  type: 'flashcard' | 'matching' | 'multiple_choice' | 'fill_blank' | 'english_to_arabic' | 'transliteration' | 'surah_themes' | 'first_word_prompter';
   title: string;
   description: string;
   questions: any[];
@@ -1106,6 +1110,29 @@ export default function SmartHomeworkPage() {
       });
     }
 
+    // Add First Word Prompter for memorization practice
+    // Select a short surah (under 20 verses) for the first word prompter
+    const shortSurahs = surahNumbers.filter(num => {
+      const info = SURAH_THEMES[num];
+      return info && info.verseCount <= 15;
+    });
+
+    if (shortSurahs.length > 0) {
+      const selectedSurah = shortSurahs[Math.floor(Math.random() * shortSurahs.length)];
+      const surahInfo = SURAH_THEMES[selectedSurah];
+
+      games.push({
+        type: 'first_word_prompter',
+        title: `First Word Prompter - ${surahInfo.name}`,
+        description: 'See the first word, recall the complete verse',
+        questions: [{ surahNumber: selectedSurah, surahName: surahInfo.name, arabicName: surahInfo.arabicName, verseCount: surahInfo.verseCount }],
+        targetGaps: [],
+        completed: false,
+        score: 0,
+        maxScore: surahInfo.verseCount
+      });
+    }
+
     // Add flashcard review at the end
     games.push({
       type: 'flashcard',
@@ -1354,7 +1381,8 @@ export default function SmartHomeworkPage() {
     if (isComplete) {
       updateData.status = 'completed';
       updateData.completed_at = new Date().toISOString();
-      updateData.accuracy_percentage = Math.round((newTotalScore / session.maxPossibleScore) * 100);
+      // Cap accuracy at 100% to prevent display issues
+      updateData.accuracy_percentage = Math.min(100, Math.round((newTotalScore / session.maxPossibleScore) * 100));
     }
 
     await supabase
@@ -1369,7 +1397,8 @@ export default function SmartHomeworkPage() {
       totalScore: newTotalScore,
       status: isComplete ? 'completed' : 'in_progress',
       completedAt: isComplete ? new Date().toISOString() : null,
-      accuracyPercentage: isComplete ? Math.round((newTotalScore / session.maxPossibleScore) * 100) : session.accuracyPercentage,
+      // Cap accuracy at 100% to prevent display issues
+      accuracyPercentage: isComplete ? Math.min(100, Math.round((newTotalScore / session.maxPossibleScore) * 100)) : session.accuracyPercentage,
       timeSpentSeconds: timer
     });
 
@@ -1703,6 +1732,19 @@ export default function SmartHomeworkPage() {
         {/* Game in progress */}
         {session?.status === 'in_progress' && currentGame && !isPaused && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            {/* Back to Surah Selection button */}
+            <button
+              onClick={() => {
+                setSession(null);
+                setShowSurahSelector(true);
+                setSelectedSurahs([]);
+              }}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm">Change Surahs</span>
+            </button>
+
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">{currentGame.title}</h2>
@@ -1760,6 +1802,18 @@ export default function SmartHomeworkPage() {
               <MultipleChoiceGame
                 questions={currentGame.questions}
                 onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
+              />
+            )}
+
+            {currentGame.type === 'first_word_prompter' && (
+              <FirstWordPrompterGame
+                surahInfo={currentGame.questions[0]}
+                onComplete={(score) => handleGameComplete(score, currentGame.maxScore)}
+                onBack={() => {
+                  setSession(null);
+                  setShowSurahSelector(true);
+                  setSelectedSurahs([]);
+                }}
               />
             )}
           </div>
@@ -2133,6 +2187,293 @@ function MultipleChoiceGame({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// First Word Prompter Game Component
+// Sequential test: how far can you get from ayah 1 before needing help?
+function FirstWordPrompterGame({
+  surahInfo,
+  onComplete,
+  onBack
+}: {
+  surahInfo: { surahNumber: number; surahName: string; arabicName: string; verseCount: number };
+  onComplete: (score: number) => void;
+  onBack?: () => void;
+}) {
+  const [verses, setVerses] = useState<FirstWordData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showFullVerse, setShowFullVerse] = useState(false);
+  const [strengthScore, setStrengthScore] = useState<number | null>(null); // First ayah they struggled with
+  const [finished, setFinished] = useState(false);
+  const [previousBest, setPreviousBest] = useState<number | null>(null);
+
+  // Load verses and previous best score
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const data = await getFirstWordsForAyahs(surahInfo.surahNumber, 1, surahInfo.verseCount);
+        setVerses(data);
+
+        // Load previous best from localStorage
+        const saved = localStorage.getItem(`firstword_strength_${surahInfo.surahNumber}`);
+        if (saved) {
+          setPreviousBest(parseInt(saved));
+        }
+      } catch (err) {
+        setError('Failed to load verses');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [surahInfo.surahNumber, surahInfo.verseCount]);
+
+  const currentVerse = verses[currentIndex];
+
+  function handleKnowIt() {
+    triggerConfetti('small');
+
+    // Check for streaks
+    if ((currentIndex + 1) % 5 === 0) {
+      triggerStreakConfetti();
+    }
+
+    if (currentIndex + 1 >= verses.length) {
+      // Completed entire surah!
+      const finalStrength = verses.length;
+      setStrengthScore(finalStrength);
+      setFinished(true);
+
+      // Save to localStorage
+      const prev = previousBest || 0;
+      if (finalStrength > prev) {
+        localStorage.setItem(`firstword_strength_${surahInfo.surahNumber}`, finalStrength.toString());
+      }
+
+      triggerConfetti('large');
+      setTimeout(() => onComplete(finalStrength), 1500);
+    } else {
+      setCurrentIndex(currentIndex + 1);
+      setShowFullVerse(false);
+    }
+  }
+
+  function handleNeedPractice() {
+    // This is where they stopped - strength is up to previous ayah
+    const strength = currentIndex; // 0-indexed, so ayah 1 = index 0 means strength 0
+    setStrengthScore(strength);
+    setFinished(true);
+
+    // Save to localStorage if it's a new best
+    const prev = previousBest || 0;
+    if (strength > prev) {
+      localStorage.setItem(`firstword_strength_${surahInfo.surahNumber}`, strength.toString());
+    }
+
+    setTimeout(() => onComplete(strength), 1500);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">Loading {surahInfo.surahName}...</p>
+      </div>
+    );
+  }
+
+  if (error || verses.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-red-500 mb-4">{error || 'No verses found'}</p>
+        <button onClick={() => onComplete(0)} className="px-6 py-3 bg-gray-600 text-white rounded-xl">
+          Skip Game
+        </button>
+      </div>
+    );
+  }
+
+  // Finished state - show results
+  if (finished && strengthScore !== null) {
+    const isNewBest = !previousBest || strengthScore > previousBest;
+    const isPerfect = strengthScore === verses.length;
+
+    return (
+      <div className="space-y-6">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Change Surah</span>
+          </button>
+        )}
+
+        <div className="text-center py-8">
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            isPerfect
+              ? 'bg-gradient-to-br from-amber-400 to-yellow-500'
+              : 'bg-gradient-to-br from-emerald-400 to-teal-500'
+          }`}>
+            {isPerfect ? (
+              <Star className="w-12 h-12 text-white" />
+            ) : (
+              <Trophy className="w-12 h-12 text-white" />
+            )}
+          </div>
+
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {isPerfect ? 'Perfect! Full Surah!' : 'Good Progress!'}
+          </h3>
+
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-2xl p-6 border border-emerald-200 dark:border-emerald-700 mb-4">
+            <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-2">Your Strength</p>
+            <p className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
+              {strengthScore === 0 ? 'Start from 1' : `Ayah 1-${strengthScore}`}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              {isPerfect
+                ? `You know all ${verses.length} verses!`
+                : `You can recite ${strengthScore} verse${strengthScore !== 1 ? 's' : ''} from memory`
+              }
+            </p>
+          </div>
+
+          {isNewBest && previousBest !== null && previousBest > 0 && (
+            <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 border border-amber-200 dark:border-amber-700 mb-4">
+              <p className="text-amber-700 dark:text-amber-300 font-medium">
+                🎉 New Personal Best! (was {previousBest})
+              </p>
+            </div>
+          )}
+
+          {!isPerfect && (
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700 mb-4">
+              <p className="text-blue-700 dark:text-blue-300 text-sm">
+                <strong>Next Goal:</strong> Get past Ayah {strengthScore + 1} next time!
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={onBack}
+            className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition"
+          >
+            Try Another Surah
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Change Surah</span>
+        </button>
+      )}
+
+      {/* Header */}
+      <div className="text-center">
+        <h3 className="text-3xl font-arabic text-gray-900 dark:text-white mb-1">{surahInfo.arabicName}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Surah {surahInfo.surahName}
+        </p>
+        {previousBest !== null && previousBest > 0 && (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+            Previous best: Ayah 1-{previousBest}
+          </p>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+          <span>Ayah {currentIndex + 1} of {verses.length}</span>
+          <span className="text-emerald-600 dark:text-emerald-400">{currentIndex} strong</span>
+        </div>
+        <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
+            style={{ width: `${(currentIndex / verses.length) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Current verse card */}
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-2xl p-6 border border-amber-200 dark:border-amber-700/50">
+        <div className="text-center">
+          {/* Verse number */}
+          <div className="w-12 h-12 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-4">
+            {currentVerse.ayahNumber}
+          </div>
+
+          {/* First word */}
+          <p className="text-5xl font-arabic text-gray-900 dark:text-white mb-2" dir="rtl">
+            {currentVerse.firstWord}
+          </p>
+          <p className="text-lg text-amber-600 dark:text-amber-400 italic mb-6">
+            {currentVerse.transliteration}
+          </p>
+
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Can you recite the rest of this verse?
+          </p>
+
+          {/* Show full verse button */}
+          {!showFullVerse ? (
+            <button
+              onClick={() => setShowFullVerse(true)}
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition mb-4 flex items-center gap-2 mx-auto"
+            >
+              <Eye className="w-5 h-5" />
+              Show Full Verse
+            </button>
+          ) : (
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 border border-amber-300 dark:border-amber-600 mb-6">
+              <p className="text-xl font-arabic text-gray-900 dark:text-white leading-loose" dir="rtl">
+                {currentVerse.fullVerseUthmani}
+              </p>
+              {currentVerse.fullVerseTranslation && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  {currentVerse.fullVerseTranslation}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={handleNeedPractice}
+              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <XCircle className="w-5 h-5" />
+              Need Practice
+            </button>
+            <button
+              onClick={handleKnowIt}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" />
+              I Know This
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

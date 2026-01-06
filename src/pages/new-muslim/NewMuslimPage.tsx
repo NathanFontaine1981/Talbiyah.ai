@@ -47,14 +47,36 @@ export default function NewMuslimPage() {
   const [currentModule, setCurrentModule] = useState<CurriculumModule | null>(null);
   const [completedModules, setCompletedModules] = useState<string[]>([]);
 
-  // Load progress from localStorage or database
+  // Load progress from database (if logged in) or localStorage
   useEffect(() => {
     const loadProgress = async () => {
       // Check for user session
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // Try to load anchor progress from localStorage
+      // If logged in, try to load from database first
+      if (session?.user) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('new_muslim_progress')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.new_muslim_progress && Object.keys(profile.new_muslim_progress).length > 0) {
+            const { step, verified, introSeen, completedModules: savedModules } = profile.new_muslim_progress;
+            setCurrentStep(step || 0);
+            setFactsVerified(verified || []);
+            if (introSeen) setShowIntro(false);
+            if (savedModules) setCompletedModules(savedModules);
+            return; // Don't fall through to localStorage
+          }
+        } catch (e) {
+          console.error('Error loading progress from database:', e);
+        }
+      }
+
+      // Fallback: load anchor progress from localStorage
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
@@ -67,7 +89,7 @@ export default function NewMuslimPage() {
         }
       }
 
-      // Load curriculum progress
+      // Load curriculum progress from localStorage
       const curriculumSaved = localStorage.getItem(CURRICULUM_STORAGE_KEY);
       if (curriculumSaved) {
         try {
@@ -81,25 +103,40 @@ export default function NewMuslimPage() {
     loadProgress();
   }, []);
 
-  // Save curriculum progress
+  // Save all progress to localStorage and database (if logged in)
   useEffect(() => {
-    if (completedModules.length > 0) {
-      localStorage.setItem(CURRICULUM_STORAGE_KEY, JSON.stringify({
-        completed: completedModules,
-      }));
-    }
-  }, [completedModules]);
+    if (!showIntro || completedModules.length > 0) {
+      const progressData = {
+        step: currentStep,
+        verified: factsVerified,
+        introSeen: !showIntro,
+        completedModules: completedModules,
+      };
 
-  // Save progress to localStorage
-  useEffect(() => {
-    if (!showIntro) {
+      // Always save to localStorage as backup
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         step: currentStep,
         verified: factsVerified,
-        introSeen: true
+        introSeen: !showIntro
       }));
+      if (completedModules.length > 0) {
+        localStorage.setItem(CURRICULUM_STORAGE_KEY, JSON.stringify({
+          completed: completedModules,
+        }));
+      }
+
+      // If logged in, also save to database
+      if (user) {
+        supabase
+          .from('profiles')
+          .update({ new_muslim_progress: progressData })
+          .eq('id', user.id)
+          .then(({ error }) => {
+            if (error) console.error('Error saving progress to database:', error);
+          });
+      }
     }
-  }, [currentStep, factsVerified, showIntro]);
+  }, [currentStep, factsVerified, showIntro, completedModules, user]);
 
   const currentFact = tajPrinciples[currentStep];
   const progress = ((currentStep) / tajPrinciples.length) * 100;

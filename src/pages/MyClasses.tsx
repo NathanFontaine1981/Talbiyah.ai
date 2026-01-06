@@ -24,6 +24,10 @@ interface Lesson {
   has_recording?: boolean;
   recording_url?: string;
   recording_expires_at?: string;
+  // Insight details for lesson summary
+  insight_title?: string;
+  insight_summary?: string;
+  key_topics?: string[];
 }
 
 // Raw lesson data from Supabase query
@@ -170,13 +174,20 @@ export default function MyClasses() {
         // Check which lessons have insights
         const lessonIds = (lessonsData as RawLessonData[]).map((l) => l.id);
 
-        let lessonsWithInsights = new Set();
+        // Fetch insight details (title, summary, key_topics) for lessons
+        const insightsMap = new Map<string, { title: string; summary: string; key_topics: string[] | null }>();
         if (lessonIds.length > 0) {
           const { data: insightsData } = await supabase
             .from('lesson_insights')
-            .select('lesson_id')
+            .select('lesson_id, title, summary, key_topics')
             .in('lesson_id', lessonIds);
-          lessonsWithInsights = new Set(insightsData?.map(i => i.lesson_id) || []);
+          insightsData?.forEach(insight => {
+            insightsMap.set(insight.lesson_id, {
+              title: insight.title,
+              summary: insight.summary,
+              key_topics: insight.key_topics
+            });
+          });
         }
 
         // Build recording map from lessons data (recording_url is now on lessons table)
@@ -197,6 +208,7 @@ export default function MyClasses() {
 
         const formattedLessons: Lesson[] = (lessonsData as RawLessonData[]).map((lesson) => {
           const recording = recordingsMap.get(lesson.id);
+          const insight = insightsMap.get(lesson.id);
           return {
             id: lesson.id,
             learner_id: lesson.learner_id,
@@ -210,12 +222,15 @@ export default function MyClasses() {
             duration_minutes: lesson.duration_minutes,
             status: lesson.status,
             '100ms_room_id': lesson['100ms_room_id'],
-            has_insights: lessonsWithInsights.has(lesson.id),
+            has_insights: !!insight,
             unread_messages: unreadMessageCounts.get(lesson.id) || 0,
             confirmation_status: lesson.confirmation_status,
             has_recording: !!recording,
             recording_url: recording?.url,
-            recording_expires_at: recording?.expires_at
+            recording_expires_at: recording?.expires_at,
+            insight_title: insight?.title,
+            insight_summary: insight?.summary,
+            key_topics: insight?.key_topics || undefined
           };
         });
         setLessons(formattedLessons);
@@ -551,6 +566,52 @@ export default function MyClasses() {
                             <>with {lesson.teacher_name}</>
                           )}
                         </p>
+
+                        {/* Lesson topic/summary from insights */}
+                        {lessonIsPast && lesson.has_insights && lesson.insight_title && (
+                          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {lesson.insight_title}
+                            </p>
+                            {lesson.key_topics && lesson.key_topics.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {lesson.key_topics.map((topic, idx) => {
+                                  // Special styling for Tafsir badge
+                                  if (topic.toLowerCase() === 'tafsir') {
+                                    return (
+                                      <span
+                                        key={idx}
+                                        className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full border border-purple-200 dark:border-purple-700"
+                                      >
+                                        📖 Tafsir
+                                      </span>
+                                    );
+                                  }
+                                  // Special styling for Memorization badge
+                                  if (topic.toLowerCase() === 'memorization') {
+                                    return (
+                                      <span
+                                        key={idx}
+                                        className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium rounded-full"
+                                      >
+                                        🧠 Memorization
+                                      </span>
+                                    );
+                                  }
+                                  // Default styling for other topics
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full"
+                                    >
+                                      {topic}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 

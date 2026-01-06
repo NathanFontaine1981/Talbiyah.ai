@@ -55,9 +55,99 @@ interface LifeGuidance {
     narrator: string;
     source: string;
   }>;
+  halfWidth?: boolean;
 }
 
 const lifeGuidanceTopics: LifeGuidance[] = [
+  {
+    id: 'tawheed',
+    title: 'Tawheed - The Foundation',
+    icon: <Sparkles className="w-6 h-6" />,
+    bgClass: 'bg-emerald-900/40',
+    borderClass: 'border-emerald-500/70',
+    textClass: 'text-emerald-400',
+    description: 'Oneness of Allah - the KEY',
+    halfWidth: true,
+    conceptExplanation: {
+      whatYouMightThink: 'Believing in one God is simple enough—most religions claim to do this.',
+      whatItActuallyMeans: 'Tawheed means knowing Allah\'s Names and Attributes—understanding WHO He is, what He does, and what only HE deserves. This knowledge protects you from Shirk. When you know what Allah IS, you know what He is NOT. You won\'t accidentally give His rights to anyone else.',
+      keyInsight: 'Tawheed is the opposite of Shirk. By learning Allah\'s 99 Names and Attributes, you understand His uniqueness. He alone creates, sustains, gives life, takes life, answers prayers, and controls all affairs. Knowing this deeply means you will never turn to creation for what only the Creator can provide.',
+    },
+    quranVerses: [
+      {
+        arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ',
+        text: 'Say: He is Allah, the One. Allah, the Eternal Refuge. He neither begets nor is born. Nor is there any equivalent to Him.',
+        reference: 'Quran 112:1-4 (Surah Al-Ikhlas)',
+      },
+      {
+        text: 'There is nothing like unto Him, and He is the All-Hearing, the All-Seeing.',
+        reference: 'Quran 42:11',
+      },
+      {
+        text: 'And to Allah belong the most beautiful Names, so invoke Him by them.',
+        reference: 'Quran 7:180',
+      },
+    ],
+    hadith: [
+      {
+        text: 'Allah has ninety-nine Names. Whoever memorizes and understands them will enter Paradise.',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'The best words are: "La ilaha illallah" (There is no god but Allah).',
+        narrator: 'Jabir ibn Abdullah',
+        source: 'Sunan Ibn Majah',
+      },
+    ],
+  },
+  {
+    id: 'shirk',
+    title: 'Shirk - The ONLY Unforgivable Sin',
+    icon: <AlertTriangle className="w-6 h-6" />,
+    bgClass: 'bg-rose-900/40',
+    borderClass: 'border-rose-500/70',
+    textClass: 'text-rose-400',
+    description: 'The sin Allah will NOT forgive',
+    halfWidth: true,
+    conceptExplanation: {
+      whatYouMightThink: 'All sins are equal, or surely God will forgive everything eventually.',
+      whatItActuallyMeans: 'Shirk is giving the rights of your CREATOR to the creation. If you die believing this, Allah has made it HARAM upon Himself to forgive you. Every other sin—murder, adultery, theft—can be forgiven. But not Shirk. On that Day, you will be told: "Go to what you worshipped." But the gods you created or worshipped will have NO power, NO might.',
+      keyInsight: 'This is why we say "La hawla wa la quwwata illa billah" (There is no power or might except with Allah). You are being looked after by ONE—yet thanking something that has nothing to do with you? Everything goes back to the Creator. Even if creation deserves thanks, remember it all came from the One who created that person in the first place. Worship Allah FIRST, then thank others.',
+    },
+    quranVerses: [
+      {
+        arabic: 'إِنَّ اللَّهَ لَا يَغْفِرُ أَن يُشْرَكَ بِهِ وَيَغْفِرُ مَا دُونَ ذَٰلِكَ لِمَن يَشَاءُ',
+        text: 'Indeed, Allah does not forgive association with Him, but He forgives what is less than that for whom He wills.',
+        reference: 'Quran 4:48',
+      },
+      {
+        text: 'And it was already revealed to you and to those before you that if you associate others with Allah, your deeds will surely become worthless, and you will surely be among the losers.',
+        reference: 'Quran 39:65',
+      },
+      {
+        text: 'And on the Day of Resurrection, He will disgrace them and say: "Where are My partners for whom you used to oppose the believers?" Those who were given knowledge will say: "Indeed, disgrace this Day and evil are upon the disbelievers."',
+        reference: 'Quran 16:27',
+      },
+    ],
+    hadith: [
+      {
+        text: 'Whoever dies while calling upon a rival to Allah will enter the Fire.',
+        narrator: 'Abdullah ibn Mas\'ud',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'The greatest sin is that you set up a rival to Allah while He created you.',
+        narrator: 'Abdullah ibn Mas\'ud',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'Whoever meets Allah without associating anything with Him will enter Paradise, and whoever meets Him having associated something with Him will enter the Fire.',
+        narrator: 'Jabir ibn Abdullah',
+        source: 'Sahih Muslim',
+      },
+    ],
+  },
   {
     id: 'purpose',
     title: 'Why Are We Here?',
@@ -69,7 +159,7 @@ const lifeGuidanceTopics: LifeGuidance[] = [
     conceptExplanation: {
       whatYouMightThink: '"Worship" means sitting in a church singing hymns, or monks praying all day in isolation.',
       whatItActuallyMeans: 'In Islam, "worship" (ibadah) means to OBEY and FOLLOW. Everything you do the way the Prophet ﷺ taught carries reward—from how you eat (say Bismillah, eat with your right hand), to how you greet people (say Salam), to how you sleep (on your right side, make dua), even going to the toilet. Your entire life becomes worship when you follow the prophetic example.',
-      keyInsight: 'A Muslim businessman being honest is worshipping. A mother raising children with Islamic values is worshipping. You don\'t have to be in a mosque—your whole life is the mosque.',
+      keyInsight: 'A Muslim businessman being honest is worshipping. A mother raising children with Islamic values is worshipping. Worship isn\'t confined to a building—it\'s woven into every moment of your daily life.',
     },
     quranVerses: [
       {
@@ -106,7 +196,7 @@ const lifeGuidanceTopics: LifeGuidance[] = [
     conceptExplanation: {
       whatYouMightThink: 'Prayer is something you do when you need something, or on Sundays, or when you feel spiritual.',
       whatItActuallyMeans: 'Salah is 5 daily appointments with your Creator at specific times (dawn, noon, afternoon, sunset, night). It involves physical movements (standing, bowing, prostrating) while reciting Quran in Arabic. It takes about 5-10 minutes each. You\'re literally putting your face on the ground before God—the ultimate humility.',
-      keyInsight: 'It\'s not optional. It\'s the second pillar of Islam. The Prophet ﷺ said it\'s the first thing you\'ll be asked about on Judgment Day. It keeps you connected to your purpose throughout the day.',
+      keyInsight: 'Think of it like renewing your ticket to Paradise before it expires—the next prayer time is your deadline. You never know when your soul will be taken, so you need to make sure your ticket is always valid. The Prophet ﷺ said "The covenant between us and them is prayer—whoever abandons it has disbelieved." If the first question on Judgment Day goes badly, everything else will too.',
     },
     quranVerses: [
       {
@@ -117,11 +207,21 @@ const lifeGuidanceTopics: LifeGuidance[] = [
         text: 'And establish prayer. Indeed, prayer has been decreed upon the believers at specified times.',
         reference: 'Quran 4:103',
       },
+      {
+        arabic: 'يَا أَيُّهَا الَّذِينَ آمَنُوا اتَّقُوا اللَّهَ حَقَّ تُقَاتِهِ وَلَا تَمُوتُنَّ إِلَّا وَأَنتُم مُّسْلِمُونَ',
+        text: 'O you who believe, fear Allah as He should be feared and do not die except as Muslims.',
+        reference: 'Quran 3:102',
+      },
     ],
     hadith: [
       {
-        text: 'The first matter that the slave will be brought to account for on the Day of Judgment is the prayer.',
+        text: 'The first matter that the slave will be brought to account for on the Day of Judgment is the prayer. If it is sound, then the rest of his deeds will be sound. And if it is corrupt, then the rest of his deeds will be corrupt.',
         narrator: 'Abu Hurairah',
+        source: 'At-Tabarani',
+      },
+      {
+        text: 'The covenant that distinguishes between us and them is prayer. Whoever abandons it has disbelieved.',
+        narrator: 'Buraydah',
         source: 'Sunan an-Nasa\'i',
       },
       {
@@ -299,6 +399,11 @@ const lifeGuidanceTopics: LifeGuidance[] = [
     description: 'Honest trade is blessed',
     quranVerses: [
       {
+        arabic: 'وَيْلٌ لِّلْمُطَفِّفِينَ ۝ الَّذِينَ إِذَا اكْتَالُوا عَلَى النَّاسِ يَسْتَوْفُونَ ۝ وَإِذَا كَالُوهُمْ أَو وَّزَنُوهُمْ يُخْسِرُونَ',
+        text: 'Woe to those who give less than due—who, when they take a measure from people, take in full. But if they give by measure or weight to them, they cause loss.',
+        reference: 'Quran 83:1-3 (Al-Mutaffifin)',
+      },
+      {
         text: 'O you who believe, do not consume one another\'s wealth unjustly but only in lawful business by mutual consent.',
         reference: 'Quran 4:29',
       },
@@ -475,7 +580,7 @@ const lifeGuidanceTopics: LifeGuidance[] = [
         source: 'Sahih al-Bukhari',
       },
       {
-        text: 'Do not face the Qiblah when relieving yourselves, nor turn your backs to it.',
+        text: 'Do not face the Qiblah (the direction of the Kaaba in Mecca, which Muslims face during prayer) when relieving yourselves, nor turn your backs to it.',
         narrator: 'Abu Ayyub al-Ansari',
         source: 'Sahih al-Bukhari',
       },
@@ -483,6 +588,16 @@ const lifeGuidanceTopics: LifeGuidance[] = [
         text: 'When one of you goes to relieve himself, let him take three stones to clean himself, for that will suffice.',
         narrator: 'Aisha',
         source: 'Sunan Abu Dawud',
+      },
+      {
+        text: 'The Prophet ﷺ would use water to cleanse himself after relieving himself.',
+        narrator: 'Anas ibn Malik',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'When the verse "In it are men who love to purify themselves" (9:108) was revealed praising the people of Quba, the Prophet ﷺ asked them about their purification. They said: "We use water after using stones."',
+        narrator: 'Abu Hurairah',
+        source: 'Sunan Ibn Majah',
       },
     ],
   },
@@ -509,6 +624,192 @@ const lifeGuidanceTopics: LifeGuidance[] = [
         text: 'You will certainly be questioned about your youth and how you spent it, your life and how you used it, your wealth and how you earned it and spent it, and your body and how you utilized it.',
         narrator: 'Ibn Mas\'ud',
         source: 'Jami\' at-Tirmidhi',
+      },
+    ],
+  },
+  {
+    id: 'book-of-deeds',
+    title: 'The Book of Deeds',
+    icon: <BookOpen className="w-6 h-6" />,
+    bgClass: 'bg-amber-900/30',
+    borderClass: 'border-amber-700/50',
+    textClass: 'text-amber-400',
+    description: 'Your record, right hand or left',
+    conceptExplanation: {
+      whatYouMightThink: 'God will judge arbitrarily, or maybe there\'s no real accountability after death.',
+      whatItActuallyMeans: 'Every deed is recorded. On the Day of Judgment, you will receive your book of deeds. If given in your RIGHT hand—you will rejoice saying "Here, read my book!" If given in your LEFT hand or behind your back—your face will be downcast with regret. These are the "People of the Right" and the "People of the Left."',
+      keyInsight: 'But here\'s the mercy: Allah MULTIPLIES your good deeds (10x, 700x, or more) while only recording bad deeds ONCE. And sincere repentance WIPES OUT sins entirely. He makes it hard for you to fail. The goal isn\'t your test result—Allah judges you on your EFFORT. Everyone has a different test of varying difficulty.',
+    },
+    quranVerses: [
+      {
+        arabic: 'فَأَمَّا مَنْ أُوتِيَ كِتَابَهُ بِيَمِينِهِ فَيَقُولُ هَاؤُمُ اقْرَءُوا كِتَابِيَهْ',
+        text: 'As for he who is given his record in his right hand, he will say, "Here, read my record!"',
+        reference: 'Quran 69:19',
+      },
+      {
+        arabic: 'وَأَمَّا مَنْ أُوتِيَ كِتَابَهُ بِشِمَالِهِ فَيَقُولُ يَا لَيْتَنِي لَمْ أُوتَ كِتَابِيَهْ',
+        text: 'But as for he who is given his record in his left hand, he will say, "I wish I had not been given my record."',
+        reference: 'Quran 69:25',
+      },
+      {
+        text: 'Whoever comes with a good deed will have ten times the like thereof, and whoever comes with an evil deed will not be recompensed except the like thereof.',
+        reference: 'Quran 6:160',
+      },
+      {
+        text: 'Say, "O My servants who have transgressed against themselves, do not despair of the mercy of Allah. Indeed, Allah forgives all sins. Indeed, it is He who is the Forgiving, the Merciful."',
+        reference: 'Quran 39:53',
+      },
+    ],
+    hadith: [
+      {
+        text: 'A man will be brought and his scrolls of bad deeds will be spread out. He will think he is doomed. Then a small card will be brought with "La ilaha illallah" (There is no god but Allah) written on it. He will say, "What is this card compared to all these scrolls?" But the card will outweigh them all.',
+        narrator: 'Abdullah ibn Amr',
+        source: 'Jami\' at-Tirmidhi',
+      },
+      {
+        text: 'Allah will bring the believer close and cover him, asking "Do you recognize this sin? Do you recognize that sin?" He will say yes. When he thinks he is doomed, Allah will say: "I concealed it for you in the world, and today I forgive you for it."',
+        narrator: 'Ibn Umar',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'No one who has an atom\'s weight of faith in their heart will remain in the Fire forever.',
+        narrator: 'Abu Sa\'id al-Khudri',
+        source: 'Sahih Muslim',
+      },
+    ],
+  },
+  {
+    id: 'fear-and-hope',
+    title: 'Fear & Hope',
+    icon: <Heart className="w-6 h-6" />,
+    bgClass: 'bg-violet-900/30',
+    borderClass: 'border-violet-700/50',
+    textClass: 'text-violet-400',
+    description: 'The two wings of faith',
+    conceptExplanation: {
+      whatYouMightThink: 'Either God is scary and I should be terrified, or God is merciful so I can do whatever I want.',
+      whatItActuallyMeans: 'A believer needs BOTH fear and hope—like two wings of a bird. Too much fear leads to despair. Too much hope leads to carelessness. The balance keeps you striving without losing hope in Allah\'s mercy.',
+      keyInsight: 'Remember: Allah doesn\'t judge your test RESULTS—He judges your EFFORT. Everyone has a different test of varying difficulty. A person struggling with one sin while trying hard is better than someone with an easy test who doesn\'t try. Keep pushing, keep repenting, and never lose hope.',
+    },
+    quranVerses: [
+      {
+        text: 'Call upon Him with fear and hope. Indeed, the mercy of Allah is near to the doers of good.',
+        reference: 'Quran 7:56',
+      },
+      {
+        text: 'Indeed, those who believed and those who emigrated and strived in the cause of Allah—those expect the mercy of Allah. And Allah is Forgiving and Merciful.',
+        reference: 'Quran 2:218',
+      },
+    ],
+    hadith: [
+      {
+        text: 'If the believer knew what punishment Allah has, he would never hope for Paradise. And if the disbeliever knew what mercy Allah has, he would never despair of Paradise.',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih Muslim',
+      },
+      {
+        text: 'Allah says: "I am as My servant thinks of Me. So let him think of Me as he wishes."',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+    ],
+  },
+  {
+    id: 'fasting',
+    title: 'Fasting (Sawm)',
+    icon: <Clock className="w-6 h-6" />,
+    bgClass: 'bg-orange-900/30',
+    borderClass: 'border-orange-700/50',
+    textClass: 'text-orange-400',
+    description: 'Training the soul',
+    conceptExplanation: {
+      whatYouMightThink: 'Fasting is just starving yourself for religious tradition, or a way to lose weight.',
+      whatItActuallyMeans: 'Fasting in Ramadan (the 9th month of the Islamic calendar) means no food, drink, or intimacy from dawn to sunset. But more importantly, it\'s training for your soul—learning to say NO to your desires. If you can control yourself from what is normally halal (permitted), you can control yourself from what is haram (forbidden).',
+      keyInsight: 'The reward is unique: Allah says "Fasting is for Me, and I will reward it." Unlike other deeds with set rewards, fasting\'s reward is limitless because it\'s done purely between you and Allah—no one else knows if you secretly ate. It builds taqwa (God-consciousness) and empathy for the poor.',
+    },
+    quranVerses: [
+      {
+        arabic: 'يَا أَيُّهَا الَّذِينَ آمَنُوا كُتِبَ عَلَيْكُمُ الصِّيَامُ كَمَا كُتِبَ عَلَى الَّذِينَ مِن قَبْلِكُمْ لَعَلَّكُمْ تَتَّقُونَ',
+        text: 'O you who believe, fasting is prescribed for you as it was prescribed for those before you, that you may become righteous (develop taqwa).',
+        reference: 'Quran 2:183',
+      },
+      {
+        text: 'The month of Ramadan in which the Quran was revealed as guidance for the people and clear proofs of guidance and criterion.',
+        reference: 'Quran 2:185',
+      },
+    ],
+    hadith: [
+      {
+        text: 'Allah said: "Every deed of the son of Adam is for him except fasting—it is for Me, and I shall reward it."',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'Fasting is a shield. When one of you is fasting, let him not speak obscenely or act ignorantly. If someone insults him, let him say: "I am fasting."',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'The fasting person has two joys: joy when he breaks his fast, and joy when he meets his Lord.',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'The smell of the fasting person\'s mouth is more pleasant to Allah than the fragrance of musk.',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+    ],
+  },
+  {
+    id: 'modesty',
+    title: 'Modesty & Hijab',
+    icon: <Shield className="w-6 h-6" />,
+    bgClass: 'bg-pink-900/30',
+    borderClass: 'border-pink-700/50',
+    textClass: 'text-pink-400',
+    description: 'For men AND women',
+    conceptExplanation: {
+      whatYouMightThink: 'Hijab is just for women, and it\'s oppressive. Men can do whatever they want.',
+      whatItActuallyMeans: 'Modesty applies to BOTH genders. Men are commanded FIRST in the Quran to lower their gaze and guard their chastity. Women are then commanded similarly, plus to cover their adornment. The hijab (covering) protects society from objectification—valuing people for their character, not their appearance.',
+      keyInsight: 'Men must: lower their gaze, dress modestly (cover navel to knee minimum), not display their bodies to attract attention. Women must: lower their gaze, cover everything except face and hands, not display their beauty to non-mahram (non-family) men. Both are protecting themselves AND each other. It\'s mutual respect, not oppression.',
+    },
+    quranVerses: [
+      {
+        arabic: 'قُل لِّلْمُؤْمِنِينَ يَغُضُّوا مِنْ أَبْصَارِهِمْ وَيَحْفَظُوا فُرُوجَهُمْ',
+        text: 'Tell the believing MEN to lower their gaze and guard their chastity. That is purer for them.',
+        reference: 'Quran 24:30',
+      },
+      {
+        arabic: 'وَقُل لِّلْمُؤْمِنَاتِ يَغْضُضْنَ مِنْ أَبْصَارِهِنَّ وَيَحْفَظْنَ فُرُوجَهُنَّ وَلَا يُبْدِينَ زِينَتَهُنَّ إِلَّا مَا ظَهَرَ مِنْهَا',
+        text: 'And tell the believing WOMEN to lower their gaze and guard their chastity and not display their adornment except what is apparent.',
+        reference: 'Quran 24:31',
+      },
+      {
+        text: 'O Prophet, tell your wives and your daughters and the women of the believers to bring down over themselves their outer garments. That is more suitable that they will be known (as respectable women) and not be abused.',
+        reference: 'Quran 33:59',
+      },
+    ],
+    hadith: [
+      {
+        text: 'Modesty (haya) is part of faith.',
+        narrator: 'Abu Hurairah',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'Modesty does not bring anything except good.',
+        narrator: 'Imran ibn Husayn',
+        source: 'Sahih al-Bukhari',
+      },
+      {
+        text: 'Every religion has a distinct characteristic, and the characteristic of Islam is modesty.',
+        narrator: 'Anas ibn Malik',
+        source: 'Sunan Ibn Majah',
+      },
+      {
+        text: 'O Ali, do not let a (second) look follow the first. The first is for you (unintentional) but the second is not.',
+        narrator: 'Ali ibn Abi Talib',
+        source: 'Sunan Abu Dawud',
       },
     ],
   },
@@ -673,7 +974,7 @@ const faqs: FAQ[] = [
   },
   {
     question: 'How did Mary have a child without a man?',
-    answer: 'Allah simply said "Be" and it was. The One who created Adam from dust without ANY parents can certainly create Jesus from a mother alone. If you believe God created the entire universe, why would creating one human without a father be difficult for Him? Muslims honor Mary (Maryam) as one of the best women ever created.',
+    answer: 'Allah simply said "Be" and it was. The One who created Adam from dust without ANY parents can certainly create Jesus from a mother alone. If you believe God created the entire universe, why would creating one human without a father be difficult for Him? Muslims honour Mary (Maryam) as one of the best women ever created.',
     sources: [
       { text: 'She said, "My Lord, how will I have a child when no man has touched me?" He said, "Such is Allah; He creates what He wills. When He decrees a matter, He only says to it, \'Be,\' and it is."', reference: 'Quran 3:47', type: 'quran' },
       { text: 'Indeed, the example of Jesus to Allah is like that of Adam. He created him from dust; then He said to him, "Be," and he was.', reference: 'Quran 3:59', type: 'quran' },
@@ -689,7 +990,7 @@ const faqs: FAQ[] = [
   },
   {
     question: 'Why don\'t men have to cover like women?',
-    answer: 'Men DO have covering requirements—from navel to knee at minimum, and modest clothing generally. The difference exists because men and women are biologically different in what attracts attention. Islam acknowledges natural differences while honoring both genders. Men also have restrictions women don\'t have (gold, silk forbidden). Different doesn\'t mean unequal.',
+    answer: 'Men DO have covering requirements—from navel to knee at minimum, and modest clothing generally. The difference exists because men and women are biologically different in what attracts attention. Islam acknowledges natural differences while honouring both genders. Men also have restrictions women don\'t have (gold, silk forbidden). Different doesn\'t mean unequal.',
     sources: [
       { text: 'Tell the believing men to lower their gaze and guard their private parts. That is purer for them.', reference: 'Quran 24:30', type: 'quran' },
       { text: 'The Prophet ﷺ said about a man\'s awrah (what must be covered): "What is between the navel and the knee."', reference: 'Sunan Abu Dawud', type: 'hadith' },
@@ -697,10 +998,21 @@ const faqs: FAQ[] = [
   },
   {
     question: 'Why can a man marry up to 4 wives?',
-    answer: 'This permission came with strict conditions: you MUST treat all wives equally in time, money, and treatment. If you can\'t be just, then only one. It was revealed after a battle that left many widows and orphans needing protection. Most Muslim men have one wife. The Quran actually LIMITS polygamy (Arabs previously had unlimited wives) while providing a solution for specific situations.',
+    answer: 'In Islam, a man may marry up to 4 wives with strict conditions: you MUST treat all wives equally in time, money, and treatment. If you can\'t be just, then only one. It was revealed after a battle that left many widows and orphans needing protection. Most Muslim men have one wife. Allah knows His creation—in His wisdom, the rules accommodate what either spouse may desire. Some women prefer to be in a polygamous marriage rather than remain unmarried, and some men have the capacity for it. In some parts of the world (like parts of Africa), having multiple wives is normal; in Europe, it\'s the opposite. Islam provides a universal rule that works everywhere. Now here\'s the key point: previous scriptures did NOT limit the number of wives at all. In the Bible, Solomon had 700 wives and 300 concubines, David had multiple wives, Abraham had Sarah and Hagar. Islam actually came to LIMIT this and bring an achievable rule—just like alcohol was not prohibited until the final revelation.',
     sources: [
       { text: 'And if you fear that you will not deal justly with the orphan girls, then marry those that please you of other women, two or three or four. But if you fear that you will not be just, then marry only one.', reference: 'Quran 4:3', type: 'quran' },
       { text: 'You will never be able to be equal between wives, even if you should strive to do so.', reference: 'Quran 4:129', type: 'quran' },
+      { text: 'King Solomon had 700 wives of royal birth and 300 concubines.', reference: '1 Kings 11:3 (Bible)', type: 'quran' },
+    ],
+  },
+  {
+    question: 'Why is alcohol prohibited in Islam but not in other religions?',
+    answer: 'Alcohol was NOT prohibited in previous scriptures—this rule came with the final revelation. The Bible contains stories mentioning wine positively, but here\'s the thing: we cannot verify what is true or false in those scriptures since they have been altered over time. We can only confirm what the Quran confirms. What we DO know is that the previous scriptures, as they exist today, did not forbid alcohol. Islam came to complete and perfect the guidance. Allah prohibited alcohol because He knows the harm it causes: broken families, addiction, violence, impaired judgment, health problems, and wasted wealth. The prohibition was revealed gradually—first discouraging it, then prohibiting prayer while intoxicated, and finally a complete ban. This gradual approach shows Allah\'s mercy in helping people overcome addiction. Today, science confirms what Islam taught 1400 years ago: alcohol is harmful. Many non-Muslims now choose sobriety. The Creator knew best all along.',
+    sources: [
+      { text: 'O you who believe, indeed intoxicants, gambling, stone altars, and divining arrows are but defilement from the work of Satan, so avoid it that you may be successful.', reference: 'Quran 5:90', type: 'quran' },
+      { text: 'Satan only wants to cause between you animosity and hatred through intoxicants and gambling and to avert you from the remembrance of Allah and from prayer. So will you not desist?', reference: 'Quran 5:91', type: 'quran' },
+      { text: 'Every intoxicant is khamr (alcohol), and every intoxicant is forbidden.', reference: 'Sahih Muslim', type: 'hadith' },
+      { text: 'Whatever intoxicates in large quantities, a small quantity of it is also forbidden.', reference: 'Sunan Abu Dawud', type: 'hadith' },
     ],
   },
 ];
@@ -760,9 +1072,67 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
                 <p className="text-slate-500 text-sm mt-2">— Quran 6:38</p>
               </div>
 
-              <p className="text-slate-300 leading-relaxed">
-                Every verse is <span className="text-white font-medium">directly from God</span>. Every hadith is guidance from the Prophet ﷺ on how to apply it.
+              <p className="text-slate-300 leading-relaxed mb-6">
+                But here's the thing: the Quran <span className="text-white font-medium">always came with a human example</span> of how to implement its teachings.
               </p>
+
+              {/* The Prophet's example */}
+              <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-6">
+                <p className="text-amber-200 leading-relaxed mb-3">
+                  We have preserved <span className="text-white font-semibold">narrations and sayings</span> of the Prophet Muhammad ﷺ using a rigorous <span className="text-white font-semibold">science of chain of narration</span> (Isnad)—tracing every quote back through verified witnesses.
+                </p>
+                <p className="text-amber-200 leading-relaxed">
+                  So we don't just have the Quran telling us <span className="text-white">what</span> to do—we have the human example showing us <span className="text-white">how</span> to actually implement each and every action.
+                </p>
+              </div>
+
+              {/* Terminology */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <p className="text-purple-300 font-semibold mb-1">Hadith</p>
+                  <p className="text-slate-400 text-sm">The narrations—what the Prophet said or approved</p>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                  <p className="text-purple-300 font-semibold mb-1">Sunnah</p>
+                  <p className="text-slate-400 text-sm">The way of the Prophet—what he did and how he lived</p>
+                </div>
+              </div>
+
+              {/* Obey Allah and the Prophet */}
+              <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-6">
+                <p className="text-emerald-300 font-arabic text-center text-lg mb-2" dir="rtl">
+                  يَا أَيُّهَا الَّذِينَ آمَنُوا أَطِيعُوا اللَّهَ وَأَطِيعُوا الرَّسُولَ
+                </p>
+                <p className="text-white italic text-center text-sm mb-2">
+                  "O you who believe, obey Allah and obey the Messenger."
+                </p>
+                <p className="text-slate-500 text-xs text-center">— Surah An-Nisa, 4:59</p>
+              </div>
+
+              <p className="text-slate-300 leading-relaxed mb-6">
+                We follow <span className="text-white font-medium">Allah and the Prophet Muhammad ﷺ</span> since he is in our era. We don't make up our own interpretations of verses—we look to how the Prophet understood and applied them.
+              </p>
+
+              <p className="text-slate-300 leading-relaxed mb-6">
+                We must hold onto <span className="text-purple-400 font-semibold">both the Quran and the Sunnah</span> to avoid falling into the same mistakes as the nations of past prophets.
+              </p>
+
+              {/* Warning about sects */}
+              <div className="bg-rose-900/30 rounded-xl p-5 border border-rose-700/50">
+                <p className="text-rose-200 leading-relaxed mb-3">
+                  Even with this clear guidance, the Prophet ﷺ warned us:
+                </p>
+                <p className="text-white italic text-center mb-2">
+                  "My ummah will split into 73 sects—all of them in the Fire except one."
+                </p>
+                <p className="text-rose-200 leading-relaxed text-center mb-2">
+                  They asked: "Which one, O Messenger of Allah?"
+                </p>
+                <p className="text-white italic text-center">
+                  "The one that follows what I and my companions are upon today."
+                </p>
+                <p className="text-slate-500 text-xs text-center mt-2">— Hadith (Tirmidhi)</p>
+              </div>
             </div>
 
             <button
@@ -1063,11 +1433,13 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.03 }}
               onClick={() => setSelectedTopic(topic)}
-              className={`${topic.bgClass} rounded-xl p-4 border ${topic.borderClass} text-left hover:scale-105 transition-transform`}
+              className={`${topic.bgClass} rounded-xl p-4 border ${topic.borderClass} text-left hover:scale-105 transition-transform ${
+                topic.halfWidth ? 'col-span-1 sm:col-span-1 lg:col-span-2' : ''
+              }`}
             >
               <div className={`${topic.textClass} mb-2`}>{topic.icon}</div>
-              <h3 className="text-white font-medium text-sm mb-1">{topic.title}</h3>
-              <p className="text-slate-500 text-xs">{topic.description}</p>
+              <h3 className={`text-white font-medium mb-1 ${topic.halfWidth ? 'text-base' : 'text-sm'}`}>{topic.title}</h3>
+              <p className={`text-slate-500 ${topic.halfWidth ? 'text-sm' : 'text-xs'}`}>{topic.description}</p>
             </motion.button>
           ))}
         </div>

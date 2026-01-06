@@ -13,48 +13,62 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
   const [canContinue, setCanContinue] = useState(false);
 
   // Calculate probability stages based on verified count
-  // Each verified fact halves the probability of coincidence
-  const probabilitySteps = [];
-  let prob = 50; // Start at 50%
+  // Each verified fact has roughly a 1 in 10 chance of being correct by coincidence
+  // (being generous - most scientific facts would be 1 in 100 or less)
+  // Cumulative probability = (1/10)^n
+  const probabilitySteps: { count: number; probability: number; label: string; explanation: string }[] = [];
+
   for (let i = 0; i < Math.min(verifiedCount, 20); i++) {
+    // Calculate 1 in 10^(i+1) - each fact multiplies by 10
+    const oneIn = Math.pow(10, i + 1);
+    const prob = 100 / oneIn; // As a percentage
+
+    // Convert to human-readable format
+    let label: string;
+    let explanation: string;
+
+    if (oneIn >= 1000000000) {
+      label = `1 in ${(oneIn / 1000000000).toFixed(0)} billion`;
+      explanation = `Virtually impossible by chance`;
+    } else if (oneIn >= 1000000) {
+      label = `1 in ${(oneIn / 1000000).toFixed(0)} million`;
+      explanation = `Virtually impossible by chance`;
+    } else if (oneIn >= 1000) {
+      label = `1 in ${(oneIn / 1000).toFixed(0)},000`;
+      explanation = `Extremely unlikely by chance`;
+    } else if (oneIn >= 100) {
+      label = `1 in ${oneIn}`;
+      explanation = `Very unlikely by chance`;
+    } else {
+      label = `1 in ${oneIn}`;
+      explanation = `${oneIn} in ${oneIn * 10} chance`;
+    }
+
     probabilitySteps.push({
       count: i + 1,
       probability: prob,
-      label: prob >= 1 ? `${prob.toFixed(1)}%` : prob >= 0.01 ? `${prob.toFixed(2)}%` : `${prob.toExponential(2)}`,
+      label,
+      explanation,
     });
-    prob = prob / 2;
   }
 
-  // Auto-advance through counting steps
+  // Auto-advance through counting steps (but stop at the end)
   useEffect(() => {
     if (stage === 'counting' && currentStep < probabilitySteps.length) {
       const timer = setTimeout(() => {
         setCurrentStep(prev => prev + 1);
       }, 300); // 300ms per step
       return () => clearTimeout(timer);
-    } else if (stage === 'counting' && currentStep >= probabilitySteps.length) {
-      // Move to pause stage
-      setTimeout(() => setStage('pause'), 500);
     }
+    // No auto-advance to pause - user must click button
   }, [stage, currentStep, probabilitySteps.length]);
 
-  // Force pause for 8 seconds
-  useEffect(() => {
-    if (stage === 'pause') {
-      const timer = setTimeout(() => {
-        setStage('nathan');
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [stage]);
+  const countingComplete = stage === 'counting' && currentStep >= probabilitySteps.length;
 
-  // Allow continue after Nathan's message
+  // Allow continue immediately when reaching Nathan's message
   useEffect(() => {
     if (stage === 'nathan') {
-      const timer = setTimeout(() => {
-        setCanContinue(true);
-      }, 3000);
-      return () => clearTimeout(timer);
+      setCanContinue(true);
     }
   }, [stage]);
 
@@ -90,14 +104,18 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
 
               {/* Probability display */}
               <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-6">
+                <p className="text-slate-400 text-sm mb-2">Chance of coincidence:</p>
                 <motion.div
                   key={currentStep}
                   initial={{ scale: 1.2, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="text-6xl font-bold text-blue-400 mb-4"
+                  className="text-5xl sm:text-6xl font-bold text-blue-400 mb-2"
                 >
                   {currentProb ? currentProb.label : '50%'}
                 </motion.div>
+                <p className="text-slate-500 text-xs mb-4">
+                  {currentProb?.explanation || '50 in 100'}
+                </p>
 
                 {/* Progress bar */}
                 <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden mb-4">
@@ -114,6 +132,23 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
                   {currentStep} of {verifiedCount} testimonies sustained
                 </p>
               </div>
+
+              {/* Button appears when counting is complete */}
+              {countingComplete && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <button
+                    onClick={() => setStage('pause')}
+                    className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+                  >
+                    See the Verdict
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -130,14 +165,17 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
                   initial={{ scale: 0.8 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 200 }}
-                  className="text-7xl font-bold text-emerald-400 mb-4"
+                  className="text-5xl sm:text-6xl font-bold text-emerald-400 mb-4"
                 >
-                  {finalProb?.label || '0.00001%'}
+                  {finalProb?.label || '1 in 1 million'}
                 </motion.div>
 
-                <h2 className="text-2xl font-serif text-white mb-4">
-                  Probability of reasonable doubt
+                <h2 className="text-2xl font-serif text-white mb-2">
+                  Chance of all this being coincidence
                 </h2>
+                <p className="text-slate-400 text-sm">
+                  {finalProb?.explanation || 'Virtually impossible by chance'}
+                </p>
               </div>
 
               <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8">
@@ -147,7 +185,7 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
                 </p>
               </div>
 
-              <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50">
+              <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Gavel className="w-5 h-5 text-amber-400" />
                   <p className="text-amber-300 font-medium">Court Adjourned</p>
@@ -157,10 +195,13 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
                 </p>
               </div>
 
-              {/* Subtle countdown */}
-              <p className="text-slate-600 text-sm mt-6 italic">
-                Deliberating...
-              </p>
+              <button
+                onClick={() => setStage('nathan')}
+                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto"
+              >
+                Continue
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </motion.div>
           )}
 

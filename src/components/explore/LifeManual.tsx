@@ -111,7 +111,7 @@ const solutions: Solution[] = [
     verse: '14:7',
     surah: 'Ibrahim',
     arabicText: 'لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ',
-    translation: 'If you are grateful, I will surely increase you [in favor].',
+    translation: 'If you are grateful, I will surely increase you [in favour].',
     practicalAdvice: 'Start a gratitude journal. Say "Alhamdulillah" for 3 specific things each morning. Look at those with less, not more.'
   },
   {

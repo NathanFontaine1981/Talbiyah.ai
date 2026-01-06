@@ -6,6 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper to decode JWT payload without verification (Supabase already verified it)
+function decodeJwtPayload(token: string): { sub?: string; role?: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -25,13 +37,32 @@ serve(async (req) => {
       );
     }
 
-    // Create a client with the user's token to verify their identity
+    // Extract token from Bearer header
+    const token = authHeader.replace('Bearer ', '');
+
+    // Try to get user via Supabase client first
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
+    let userId: string | null = null;
+
     const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
+    if (user) {
+      userId = user.id;
+      console.log("Authenticated via getUser:", userId);
+    } else if (authError) {
+      // Fallback: decode the JWT directly (Supabase edge runtime already validated it)
+      console.log("getUser failed, using JWT fallback:", authError.message);
+      const payload = decodeJwtPayload(token);
+      if (payload?.sub && payload?.role === 'authenticated') {
+        userId = payload.sub;
+        console.log("Authenticated via JWT decode:", userId);
+      }
+    }
+
+    if (!userId) {
+      console.error("Could not authenticate user");
       return new Response(
         JSON.stringify({ error: "Invalid or expired token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }

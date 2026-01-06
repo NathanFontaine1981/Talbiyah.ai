@@ -16,12 +16,17 @@ const biasStatements = [
   {
     id: 'pick-religion',
     statement: "I assumed all religions were equally valid personal choices.",
-    insight: "Like shopping. Pick whatever feels right. I didn't know any religion claimed to have verifiable proof of its divine origin. The evidence will speak for itself.",
+    insight: "I thought maybe there are many ways to reach paradise — if there even is one. Maybe there isn't just one way to God. I didn't know any religion claimed to have verifiable proof of its divine origin. The evidence will speak for itself.",
+  },
+  {
+    id: 'one-life',
+    statement: "I assumed you only get one life, so live the way you want — do what makes you happy.",
+    insight: "YOLO. Maximise pleasure, avoid pain, make the most of your time here. But what if that assumption was wrong? What if there was more? A fair trial examines all possibilities.",
   },
   {
     id: 'unaware',
     statement: "I was unaware of the Quran's existence as a serious document.",
-    insight: "21 years. I didn't know there was a book claiming to be directly from the Creator with evidence to support it. A court cannot rule on what it hasn't examined.",
+    insight: "21 years. I didn't know there was a book claiming to be directly from the Creator with evidence to support it. When I finally looked, I was certain I'd find an error or inconsistency. I expected to close the case quickly. The evidence said otherwise.",
   },
 ];
 
@@ -43,8 +48,8 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
     if (!reviewed.includes(id)) {
       setReviewed([...reviewed, id]);
     }
-    // Reduce blur with each statement (20 / 3 statements ≈ 7 per step)
-    setBlurLevel(prev => Math.max(0, prev - 7));
+    // Reduce blur with each statement (20 / 4 statements = 5 per step)
+    setBlurLevel(prev => Math.max(0, prev - 5));
     setShowInsight(true);
   };
 
@@ -54,7 +59,7 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
       setReviewed([...reviewed, id]);
     }
     // Still reduce blur
-    setBlurLevel(prev => Math.max(0, prev - 5));
+    setBlurLevel(prev => Math.max(0, prev - 4));
     setShowInsight(true);
   };
 
@@ -83,20 +88,30 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
             Jury Oath Complete
           </h2>
 
-          <p className="text-slate-300 text-lg mb-8">
-            You have acknowledged your starting position.
-            <br />
-            <span className="text-emerald-300">The court may now present the evidence.</span>
+          <p className="text-slate-300 text-lg mb-6">
+            Whatever reason brought you here does not matter. What matters is you are about to see the evidence <span className="text-emerald-300 font-medium">firsthand, from the source</span>.
           </p>
 
-          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Gavel className="w-5 h-5 text-amber-400" />
-              <p className="text-amber-300 font-medium">Witness Statement</p>
-            </div>
-            <p className="text-slate-300 italic">
-              "I was in the same position. Unaware. Not looking for anything. Then the evidence changed everything."
+          <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600 mb-6">
+            <p className="text-slate-300 leading-relaxed">
+              I came to realise there is actually <span className="text-white font-medium">only one book in the world</span> that claims to be our Creator communicating with us directly. That makes things simple — I don't have dozens of claims to examine.
             </p>
+          </div>
+
+          <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600 mb-6">
+            <p className="text-slate-300 leading-relaxed">
+              <span className="text-amber-300 font-medium">Is the Quran really from the Creator, or are we looking at something man-made?</span>
+            </p>
+            <p className="text-slate-400 mt-3 text-sm">
+              It should not take long to find a mistake, an error, an inconsistency — something that sounds like human stories or narrations.
+            </p>
+          </div>
+
+          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-8">
+            <div className="flex items-center justify-center gap-2">
+              <Gavel className="w-5 h-5 text-amber-400" />
+              <p className="text-amber-300 font-medium">Let's see what's in this book.</p>
+            </div>
           </div>
 
           <button

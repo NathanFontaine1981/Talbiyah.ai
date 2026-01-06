@@ -59,7 +59,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore }: TheFir
             </motion.div>
           )}
 
-          {/* Stage 2: The Acknowledgment */}
+          {/* Stage 2: The Acknowledgment - Articles of Faith */}
           {stage === 'acknowledgment' && (
             <motion.div
               key="acknowledgment"
@@ -72,25 +72,68 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore }: TheFir
                 <Heart className="w-10 h-10 text-emerald-400" />
               </div>
 
-              <h2 className="text-3xl font-serif text-white mb-6">
-                The Foundation
+              <h2 className="text-3xl font-serif text-white mb-2">
+                The Articles of Faith
               </h2>
+              <p className="text-slate-400 text-sm mb-6">
+                What a Muslim believes
+              </p>
 
-              <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-6">
-                <p className="text-slate-400 text-sm mb-4 uppercase tracking-wide">
-                  If you're ready to acknowledge this truth:
-                </p>
+              <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-700 mb-6">
+                <div className="space-y-3 text-left">
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">1.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in Allah</p>
+                      <p className="text-slate-300 text-sm">One God—the Creator, with no partners</p>
+                    </div>
+                  </div>
 
-                <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 mb-6">
-                  <p className="text-xl text-white font-medium leading-relaxed">
-                    "I believe there is <span className="text-amber-400">one God</span>—the Creator of everything—and He alone is worthy of my <span className="text-amber-400">worship</span>."
-                  </p>
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">2.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in the Angels</p>
+                      <p className="text-slate-300 text-sm">Beings of light who carry out Allah's commands</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">3.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in the Books</p>
+                      <p className="text-slate-300 text-sm">The Quran, Torah, Gospel, Psalms—all originally from Allah</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">4.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in the Prophets</p>
+                      <p className="text-slate-300 text-sm">From Adam to Muhammad ﷺ—all sent with the same message</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">5.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in the Day of Judgment</p>
+                      <p className="text-slate-300 text-sm">We will all be held accountable for our choices</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
+                    <span className="text-amber-400 font-bold text-lg">6.</span>
+                    <div>
+                      <p className="text-white font-semibold">Belief in Divine Decree</p>
+                      <p className="text-slate-300 text-sm">Allah's knowledge encompasses all—past, present, and future</p>
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <p className="text-slate-300 text-sm">
-                  This is <span className="text-white font-medium">Tawhid</span>—the foundation of faith.
-                  <br />
-                  It's the first part of the shahada. The starting point.
+              <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50 mb-6">
+                <p className="text-amber-200 text-sm">
+                  If you believe these, you already have <span className="text-white font-semibold">Iman</span> (faith) in your heart. The shahada is simply the <span className="text-white font-semibold">declaration</span> of what you already believe.
                 </p>
               </div>
 
@@ -102,7 +145,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore }: TheFir
                   }}
                   className="w-full px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-lg font-semibold transition"
                 >
-                  Yes, I acknowledge this
+                  Yes, I believe this
                 </button>
 
                 <button

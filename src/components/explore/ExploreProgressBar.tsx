@@ -8,13 +8,14 @@ import {
   Target,
   Flag,
   HelpCircle,
+  MessageSquare,
   Link,
   Users,
   Sparkles,
   Heart,
 } from 'lucide-react';
 
-type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
+type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'the-voice' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
 
 interface StageInfo {
   id: FlowStage;
@@ -32,6 +33,7 @@ const stages: StageInfo[] = [
   { id: 'probability-moment', label: 'The Odds', shortLabel: 'Odds', icon: <Target className="w-4 h-4" /> },
   { id: 'checkpoint', label: 'Checkpoint', shortLabel: 'Check', icon: <Flag className="w-4 h-4" /> },
   { id: 'the-question', label: 'The Question', shortLabel: 'Question', icon: <HelpCircle className="w-4 h-4" /> },
+  { id: 'the-voice', label: 'The Voice', shortLabel: 'Voice', icon: <MessageSquare className="w-4 h-4" /> },
   { id: 'reconciliation', label: 'The Connection', shortLabel: 'Connect', icon: <Link className="w-4 h-4" /> },
   { id: 'prophet-timeline', label: 'The Prophets', shortLabel: 'Prophets', icon: <Users className="w-4 h-4" /> },
   { id: 'cheat-codes', label: 'Life Guidance', shortLabel: 'Guide', icon: <Sparkles className="w-4 h-4" /> },
@@ -105,51 +107,18 @@ export const ExploreProgressBar = ({
         })}
       </div>
 
-      {/* Mobile view - dots with current label */}
+      {/* Mobile view - simple progress indicator */}
       <div className="md:hidden px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-emerald-400 text-sm font-medium">
-            {stages[currentIndex].label}
-          </span>
-          <span className="text-slate-500 text-xs">
-            {currentIndex + 1} / {stages.length}
-          </span>
-        </div>
-        <div className="flex items-center justify-center gap-2">
-          {stages.map((stage, index) => {
-            const accessible = isStageAccessible(index);
-            const complete = isStageComplete(index);
-            const current = isStageCurrent(stage.id);
-
-            return (
-              <button
-                key={stage.id}
-                onClick={() => accessible && onStageClick(stage.id)}
-                disabled={!accessible}
-                className={`relative group`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    current
-                      ? 'bg-emerald-500 scale-125'
-                      : complete
-                      ? 'bg-emerald-600'
-                      : accessible
-                      ? 'bg-slate-600 hover:bg-slate-500'
-                      : 'bg-slate-800'
-                  }`}
-                />
-                {/* Tooltip on hover */}
-                {accessible && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                      {stage.label}
-                    </div>
-                  </div>
-                )}
-              </button>
-            );
-          })}
+        {/* Leave space for Episodes button on left, X button on right */}
+        <div className="flex items-center justify-center px-12">
+          <div className="text-center">
+            <span className="text-emerald-400 text-sm font-medium">
+              {stages[currentIndex].label}
+            </span>
+            <span className="text-slate-500 text-xs ml-2">
+              ({currentIndex + 1}/{stages.length})
+            </span>
+          </div>
         </div>
       </div>
     </div>

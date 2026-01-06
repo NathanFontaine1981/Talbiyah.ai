@@ -1,32 +1,45 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, FileSearch, Book, BookOpen, CheckCircle, XCircle, AlertTriangle, Link, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSearch, Book, BookOpen, CheckCircle, XCircle, AlertTriangle, Link, MessageCircle, Coffee, RefreshCw } from 'lucide-react';
 
 interface ChainOfCustodyProps {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
 const scenes = [
   {
     id: 'intro',
-    title: 'The Chain of Custody',
+    title: 'Examining the Sources',
     icon: 'file-search',
     content: null, // Custom content
     commentary: "In a court of law, if the evidence has been tampered with, the case is thrown out. I applied that same rule to God's Word.",
+    section: 1,
   },
   {
     id: 'exhibit-a',
-    title: 'Exhibit A: The Library',
+    title: 'Exhibit A: The Bible',
     icon: 'books',
     content: null, // Custom animated content
-    commentary: "I found it wasn't one book; it was a library of 66 (or 72) books with multiple authors, versions, and no original manuscript.",
+    commentary: "initial-findings", // Special marker for custom label
+    section: 1,
   },
   {
     id: 'exhibit-b',
-    title: 'Exhibit B: The Transmission',
+    title: 'Exhibit B: The Quran',
     icon: 'quran',
     content: null, // Custom animated content
-    commentary: "I expected the same chaos, but found a single, unchanged text. I tried to find a 'rival version' and couldn't.",
+    commentary: "I wanted to verify there was only one version, so I searched the internet for anyone claiming to have a different version or reciting something different. No evidence anywhere. I did find different dialects which were approved and carried the exact same meaning — I counted this as the same. I accepted it has not been changed until proven otherwise.",
+    section: 1,
+  },
+  {
+    id: 'section-1-recap',
+    title: 'Section 1 Complete',
+    icon: 'pause',
+    content: null, // Custom recap content
+    commentary: null,
+    section: 1,
+    isRecap: true,
   },
   {
     id: 'transition',
@@ -34,10 +47,11 @@ const scenes = [
     icon: 'alert',
     content: null, // Custom content
     commentary: "Just because it's preserved doesn't mean it's from God. I could write a book and preserve it myself. So I looked at the content.",
+    section: 2,
   },
 ];
 
-export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
+export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyProps) {
   const [currentScene, setCurrentScene] = useState(0);
   const [animationPhase, setAnimationPhase] = useState(0);
   const scene = scenes[currentScene];
@@ -70,7 +84,9 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
   };
 
   const handleBack = () => {
-    if (!isFirstScene) {
+    if (isFirstScene && onBack) {
+      onBack();
+    } else if (!isFirstScene) {
       setCurrentScene(prev => prev - 1);
     }
   };
@@ -81,19 +97,24 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
       case 'intro':
         return (
           <div className="space-y-6">
-            <p className="text-xl text-slate-300 leading-relaxed">
-              Before I read what the books said, I had to check <span className="text-amber-400 font-semibold">where they came from</span>.
+            <p className="text-lg text-slate-300 leading-relaxed">
+              I wanted to examine the religion I was already following — or should I say, the one <span className="text-amber-400 font-semibold">my family brought me up on</span>.
             </p>
-            <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-              <p className="text-lg text-amber-200 leading-relaxed">
-                In a court of law, if the evidence has been <span className="text-white font-semibold">tampered with</span>, the case is thrown out.
+            <p className="text-lg text-slate-300 leading-relaxed">
+              It was only fair to examine the <span className="text-amber-400 font-semibold">largest religion</span> alongside the <span className="text-emerald-400 font-semibold">most practiced religion in the world</span> — Islam.
+            </p>
+            <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
+              <p className="text-slate-300 leading-relaxed">
+                I said to myself: <span className="text-white font-medium">"I'm an adult now. Surely I can work out if these books are man-made to control the masses, or if there is some truth to one of these religions' claims."</span>
               </p>
             </div>
-            <p className="text-lg text-slate-300 leading-relaxed">
-              I applied that same rule to <span className="text-emerald-400 font-semibold">God's Word</span>.
-            </p>
+            <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
+              <p className="text-lg text-amber-200 leading-relaxed">
+                My goal: gather <span className="text-white font-semibold">conclusive proof</span> of either one being true — or both being false.
+              </p>
+            </div>
             <p className="text-slate-400 leading-relaxed">
-              This is the "Sherlock Holmes" moment. Moving from general curiosity to <span className="text-white">forensic analysis</span>.
+              But before I read what the books said, I had to check <span className="text-white">where they came from</span>.
             </p>
           </div>
         );
@@ -103,8 +124,8 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
           <div className="space-y-6">
             {/* The Bookshelf Animation */}
             <div className="relative bg-gradient-to-b from-amber-950/50 to-slate-900/50 rounded-xl p-6 border border-amber-800/30 min-h-[200px] overflow-hidden">
-              {/* Shelf */}
-              <div className="absolute bottom-8 left-4 right-4 h-2 bg-amber-900/60 rounded" />
+              {/* Shelf - positioned below books */}
+              <div className="absolute bottom-20 left-4 right-4 h-2 bg-amber-900/60 rounded" />
 
               {/* Books appearing and changing */}
               <div className="flex justify-center items-end gap-1 h-40 relative">
@@ -154,7 +175,8 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 animate={{ opacity: animationPhase >= 1 ? 1 : 0 }}
                 className="text-center mt-4"
               >
-                <span className="text-amber-400 font-medium text-sm">THE ANTHOLOGY</span>
+                <span className="text-amber-400 font-medium text-sm">THE BIBLE</span>
+                <span className="text-slate-500 text-xs block mt-1">(from Greek "biblia" meaning "books" — a collection, not a single book)</span>
               </motion.div>
             </div>
 
@@ -166,7 +188,7 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 className="flex items-center gap-3 text-slate-300"
               >
                 <Book className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">66 books</span> (or 72, depending on who you ask)</span>
+                <span><span className="text-white font-semibold">66 or 72 books</span> — Catholics and Protestants can't agree</span>
               </motion.div>
 
               <motion.div
@@ -175,7 +197,17 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 className="flex items-center gap-3 text-slate-300"
               >
                 <Book className="w-5 h-5 text-amber-500" />
-                <span>Multiple authors who <span className="text-white font-semibold">never met Jesus</span></span>
+                <span><span className="text-white font-semibold">Multiple authors</span> wrote different chapters over centuries</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: animationPhase >= 2 ? 1 : 0, x: animationPhase >= 2 ? 0 : -20 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center gap-3 text-slate-300"
+              >
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <span>Jesus spoke <span className="text-white font-semibold">Aramaic</span>, but oldest manuscripts are in <span className="text-white font-semibold">Greek</span></span>
               </motion.div>
 
               <motion.div
@@ -184,9 +216,35 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 className="flex items-center gap-3 text-slate-300"
               >
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">No original manuscript</span> exists</span>
+                <span><span className="text-white font-semibold">Different versions</span> have different verse counts in the same chapter</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: animationPhase >= 3 ? 1 : 0, x: animationPhase >= 3 ? 0 : -20 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center gap-3 text-slate-300"
+              >
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <span><span className="text-white font-semibold">No original manuscript</span> exists today</span>
               </motion.div>
             </div>
+
+            {/* Source link */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: animationPhase >= 2 ? 1 : 0 }}
+              className="text-center"
+            >
+              <a
+                href="https://www.youtube.com/watch?v=jowQond7_UE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-slate-500 hover:text-amber-400 transition underline"
+              >
+                Source: "Who Wrote the Bible?" — Dr Robert Beckford (Channel 4)
+              </a>
+            </motion.div>
 
             {/* Verdict */}
             <motion.div
@@ -256,15 +314,15 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 </motion.div>
               </motion.div>
 
-              {/* Match indicator */}
+              {/* Match indicator - positioned at bottom */}
               {animationPhase >= 3 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute inset-0 flex items-center justify-center"
+                  className="absolute bottom-2 left-0 right-0 flex justify-center"
                 >
-                  <div className="bg-emerald-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-lg shadow-emerald-500/50 flex items-center gap-2">
-                    <CheckCircle className="w-6 h-6" />
+                  <div className="bg-emerald-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg shadow-emerald-500/50 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5" />
                     100% MATCH
                   </div>
                 </motion.div>
@@ -297,9 +355,25 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 className="flex items-center gap-3 text-slate-300"
               >
                 <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <span><span className="text-white font-semibold">Letter-for-letter identical</span> for 1,400 years</span>
+                <span><span className="text-white font-semibold">Letter-for-letter identical</span> for over 1,400 years</span>
               </motion.div>
             </div>
+
+            {/* Source link */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: animationPhase >= 2 ? 1 : 0 }}
+              className="text-center"
+            >
+              <a
+                href="https://www.youtube.com/watch?v=jowQond7_UE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-slate-500 hover:text-emerald-400 transition underline"
+              >
+                Source: "'Oldest' Koran found in Birmingham" — BBC News
+              </a>
+            </motion.div>
 
             {/* Verdict */}
             <motion.div
@@ -318,6 +392,65 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 </div>
               </div>
             </motion.div>
+          </div>
+        );
+
+      case 'section-1-recap':
+        return (
+          <div className="space-y-6">
+            {/* Break recommendation */}
+            <div className="bg-gradient-to-br from-blue-900/40 to-purple-900/40 rounded-2xl p-6 border border-blue-700/50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <Coffee className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Take a Break</h3>
+                  <p className="text-blue-300 text-sm">10 minutes recommended</p>
+                </div>
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                There's no rush. You need a <span className="text-white font-medium">clear head</span> to process this information.
+                Step away, grab a drink, and come back refreshed.
+              </p>
+            </div>
+
+            {/* Recap */}
+            <div className="bg-slate-800/60 rounded-xl p-6 border border-slate-600">
+              <div className="flex items-center gap-2 mb-4">
+                <RefreshCw className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-lg font-semibold text-white">What We've Covered</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-amber-400 text-xs font-bold">1</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">The Bible</p>
+                    <p className="text-slate-400 text-sm">66-72 books, multiple authors, written in Greek (not Jesus's language), no original manuscript exists. Verdict: Inconclusive.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-emerald-400 text-xs font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">The Quran</p>
+                    <p className="text-slate-400 text-sm">Single text, unchanged for over 1,400 years, manuscripts from the Prophet's time still exist. Verdict: Preserved.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Key insight */}
+            <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/40">
+              <p className="text-amber-200 leading-relaxed text-center">
+                <span className="text-white font-medium">Key insight:</span> Preservation doesn't prove divine origin — but it means we can at least examine the <span className="text-emerald-400 font-medium">original text</span>.
+              </p>
+            </div>
           </div>
         );
 
@@ -371,6 +504,8 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
         return <BookOpen className="w-10 h-10 text-emerald-400" />;
       case 'alert':
         return <AlertTriangle className="w-10 h-10 text-amber-400" />;
+      case 'pause':
+        return <Coffee className="w-10 h-10 text-blue-400" />;
       default:
         return null;
     }
@@ -384,15 +519,13 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
     >
       {/* Back button and Progress dots */}
       <div className="fixed top-20 md:top-4 left-6 flex items-center gap-4 z-40">
-        {!isFirstScene && (
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1 text-slate-400 hover:text-white transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
-          </button>
-        )}
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1 text-slate-400 hover:text-white transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
         <div className="flex items-center gap-2">
           {scenes.map((_, i) => (
             <div
@@ -440,23 +573,74 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                 className={`px-8 py-4 rounded-full text-lg font-semibold transition flex items-center gap-2 ${
                   (scene.id === 'exhibit-a' || scene.id === 'exhibit-b') && animationPhase < 3
                     ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : scene.id === 'section-1-recap'
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
                     : 'bg-amber-600 hover:bg-amber-500 text-white'
                 }`}
               >
-                {isLastScene ? "Examine the Content" : 'Continue'}
+                {isLastScene ? "Examine the Content" : scene.id === 'section-1-recap' ? "I'm Ready to Continue" : 'Continue'}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Commentary - inline on mobile */}
-            <motion.div
-              key={scene.id + '-commentary-mobile'}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="md:hidden"
-            >
-              <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600">
+            {scene.commentary && (
+              <motion.div
+                key={scene.id + '-commentary-mobile'}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className="md:hidden"
+              >
+                {scene.commentary !== 'initial-findings' && (
+                  <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <MessageCircle className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
+                        <p className="text-slate-300 text-sm leading-relaxed italic">
+                          "{scene.commentary}"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {scene.commentary === 'initial-findings' && (
+                  <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <MessageCircle className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
+                        <p className="text-slate-300 text-sm leading-relaxed italic">
+                          "I can't rely on something where there's no way to determine the original message in full. Let's see if the same goes for the Quran. Most likely will be the same."
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Commentary corner - desktop only */}
+      {scene.commentary && (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={scene.id + '-commentary'}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="hidden md:block fixed bottom-6 right-6 max-w-sm"
+          >
+            {scene.commentary !== 'initial-findings' && (
+              <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600 shadow-xl">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                     <MessageCircle className="w-4 h-4 text-amber-400" />
@@ -469,36 +653,25 @@ export default function ChainOfCustody({ onComplete }: ChainOfCustodyProps) {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            )}
+            {scene.commentary === 'initial-findings' && (
+              <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600 shadow-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
+                    <p className="text-slate-300 text-sm leading-relaxed italic">
+                      "I can't rely on something where there's no way to determine the original message in full. Let's see if the same goes for the Quran. Most likely will be the same."
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* Commentary corner - desktop only */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={scene.id + '-commentary'}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="hidden md:block fixed bottom-6 right-6 max-w-sm"
-        >
-          <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600 shadow-xl">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
-                <p className="text-slate-300 text-sm leading-relaxed italic">
-                  "{scene.commentary}"
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      )}
     </motion.div>
   );
 }

@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Play, CheckCircle2, ChevronRight, BookOpen } from 'lucide-react';
+import {
+  X, Play, CheckCircle2, ChevronRight, BookOpen,
+  Sparkles, Eye, ScrollText, Microscope, BarChart3,
+  Dices, PauseCircle, HelpCircle, MessageSquare,
+  Handshake, Clock, Lightbulb, Footprints
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import ExploreIntro from '../../components/explore/ExploreIntro';
@@ -47,23 +52,24 @@ interface Episode {
   title: string;
   description: string;
   duration: string;
-  icon: string;
+  icon: React.ReactNode;
+  color: string;
 }
 
 const EPISODES: Episode[] = [
-  { id: 'intro', episode: 1, title: 'The Beginning', description: 'A personal journey of discovery', duration: '3 min', icon: '🌟' },
-  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Acknowledge biases before exploring truth', duration: '2 min', icon: '👁️' },
-  { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: '📜' },
-  { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: '🔬' },
-  { id: 'authority-match', episode: 5, title: 'Past Scores', description: 'Ancient texts meet modern knowledge', duration: '5 min', icon: '📊' },
-  { id: 'probability-moment', episode: 6, title: 'The Odds', description: 'What are the chances?', duration: '3 min', icon: '🎲' },
-  { id: 'checkpoint', episode: 7, title: 'Checkpoint', description: 'A moment to reflect', duration: '2 min', icon: '⏸️' },
-  { id: 'the-question', episode: 8, title: 'The Question', description: 'Where did this knowledge come from?', duration: '3 min', icon: '❓' },
-  { id: 'the-voice', episode: 9, title: 'The Voice', description: 'Who is speaking in the Quran?', duration: '4 min', icon: '🗣️' },
-  { id: 'reconciliation', episode: 10, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: '🤝' },
-  { id: 'prophet-timeline', episode: 11, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: '📅' },
-  { id: 'cheat-codes', episode: 12, title: 'Life Guidance', description: 'Practical wisdom for daily life', duration: '5 min', icon: '💡' },
-  { id: 'first-step', episode: 13, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: '🚶' },
+  { id: 'intro', episode: 1, title: 'The Beginning', description: 'A personal journey of discovery', duration: '3 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
+  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Acknowledge biases before exploring truth', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'purple' },
+  { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'orange' },
+  { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: <Microscope className="w-6 h-6" />, color: 'cyan' },
+  { id: 'authority-match', episode: 5, title: 'Past Scores', description: 'Ancient texts meet modern knowledge', duration: '5 min', icon: <BarChart3 className="w-6 h-6" />, color: 'emerald' },
+  { id: 'probability-moment', episode: 6, title: 'The Odds', description: 'What are the chances?', duration: '3 min', icon: <Dices className="w-6 h-6" />, color: 'pink' },
+  { id: 'checkpoint', episode: 7, title: 'Checkpoint', description: 'A moment to reflect', duration: '2 min', icon: <PauseCircle className="w-6 h-6" />, color: 'slate' },
+  { id: 'the-question', episode: 8, title: 'The Question', description: 'Where did this knowledge come from?', duration: '3 min', icon: <HelpCircle className="w-6 h-6" />, color: 'violet' },
+  { id: 'the-voice', episode: 9, title: 'The Voice', description: 'Who is speaking in the Quran?', duration: '4 min', icon: <MessageSquare className="w-6 h-6" />, color: 'sky' },
+  { id: 'reconciliation', episode: 10, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'teal' },
+  { id: 'prophet-timeline', episode: 11, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'indigo' },
+  { id: 'cheat-codes', episode: 12, title: 'Life Guidance', description: 'Practical wisdom for daily life', duration: '5 min', icon: <Lightbulb className="w-6 h-6" />, color: 'yellow' },
+  { id: 'first-step', episode: 13, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'emerald' },
 ];
 
 export default function ExplorePage() {
@@ -75,19 +81,41 @@ export default function ExplorePage() {
   const [beliefChoice, setBeliefChoice] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-  // Load progress from localStorage
+  // Load progress from database (if logged in) or localStorage
   useEffect(() => {
     const loadProgress = async () => {
       // Check for user session
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // Try to load from localStorage first
+      // If logged in, try to load from database first
+      if (session?.user) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('explore_progress')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.explore_progress && Object.keys(profile.explore_progress).length > 0) {
+            const { highestStage, axioms, verified, belief } = profile.explore_progress;
+            if (highestStage) setHighestStageReached(highestStage);
+            if (axioms) setAgreedAxioms(axioms);
+            if (verified) setVerifiedCount(verified);
+            if (belief) setBeliefChoice(belief);
+            return; // Don't fall through to localStorage
+          }
+        } catch (e) {
+          console.error('Error loading progress from database:', e);
+        }
+      }
+
+      // Fallback: load from localStorage (for anonymous users or if DB load failed)
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          const { stage, highestStage, axioms, verified, belief } = JSON.parse(saved);
-          if (stage) setFlowStage(stage);
+          const { highestStage, axioms, verified, belief } = JSON.parse(saved);
+          // Always start at menu - let user choose where to go
           if (highestStage) setHighestStageReached(highestStage);
           if (axioms) setAgreedAxioms(axioms);
           if (verified) setVerifiedCount(verified);
@@ -100,18 +128,32 @@ export default function ExplorePage() {
     loadProgress();
   }, []);
 
-  // Save progress to localStorage
+  // Save progress to localStorage and database (if logged in)
   useEffect(() => {
     if (flowStage !== 'menu' && flowStage !== 'intro') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const progressData = {
         stage: flowStage,
         highestStage: highestStageReached,
         axioms: agreedAxioms,
         verified: verifiedCount,
         belief: beliefChoice
-      }));
+      };
+
+      // Always save to localStorage as backup
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+
+      // If logged in, also save to database
+      if (user) {
+        supabase
+          .from('profiles')
+          .update({ explore_progress: progressData })
+          .eq('id', user.id)
+          .then(({ error }) => {
+            if (error) console.error('Error saving progress to database:', error);
+          });
+      }
     }
-  }, [flowStage, highestStageReached, agreedAxioms, verifiedCount, beliefChoice]);
+  }, [flowStage, highestStageReached, agreedAxioms, verifiedCount, beliefChoice, user]);
 
   // Helper to advance to a stage (updates highest if needed)
   const advanceToStage = (newStage: FlowStage) => {
@@ -274,7 +316,7 @@ export default function ExplorePage() {
     const completedCount = EPISODES.filter(ep => isEpisodeCompleted(ep.id)).length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950/30 to-slate-950">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950">
         {/* Close button */}
         <button
           onClick={() => navigate('/')}
@@ -288,20 +330,34 @@ export default function ExplorePage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
+            className="text-center mb-12"
           >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-900/50 border border-indigo-700/50 flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-indigo-400" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+              className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-1 shadow-lg shadow-emerald-900/30"
+            >
+              <img
+                src="/qurancourse.jpg"
+                alt="Quran"
+                className="w-full h-full object-cover rounded-xl"
+              />
+            </motion.div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
               Exploring Islam
             </h1>
-            <p className="text-slate-400 text-lg">
+            <p className="text-slate-300 text-lg mb-2">
               A journey of discovery in {EPISODES.length} episodes
             </p>
-            <p className="text-slate-500 text-sm mt-2">
-              ~{totalDuration} minutes total • Take breaks anytime
-            </p>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Clock className="w-4 h-4" />
+                ~{totalDuration} min
+              </span>
+              <span className="text-slate-500">•</span>
+              <span className="text-slate-300">Take breaks anytime</span>
+            </div>
           </motion.div>
 
           {/* Progress summary */}
@@ -334,22 +390,77 @@ export default function ExplorePage() {
             >
               <button
                 onClick={() => setFlowStage(getNextEpisode())}
-                className="w-full flex items-center justify-between p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition group"
+                className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl transition-all group shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50"
               >
-                <div className="flex items-center gap-3">
-                  <Play className="w-5 h-5" />
-                  <span className="font-medium">Continue where you left off</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Play className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-lg block">Continue Journey</span>
+                    <span className="text-amber-100/80 text-sm">Pick up where you left off</span>
+                  </div>
                 </div>
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
           )}
+
+          {/* Episodes heading */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mb-6 mt-4"
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Episodes</h2>
+          </motion.div>
 
           {/* Episode list */}
           <div className="space-y-3">
             {EPISODES.map((episode, index) => {
               const isCompleted = isEpisodeCompleted(episode.id);
               const isCurrent = episode.id === highestStageReached;
+
+              // Dynamic color classes based on episode color
+              const getIconColorClass = () => {
+                if (isCompleted) return 'text-emerald-400';
+                const colorMap: Record<string, string> = {
+                  amber: 'text-amber-400',
+                  purple: 'text-purple-400',
+                  orange: 'text-orange-400',
+                  cyan: 'text-cyan-400',
+                  emerald: 'text-emerald-400',
+                  pink: 'text-pink-400',
+                  slate: 'text-slate-400',
+                  violet: 'text-violet-400',
+                  sky: 'text-sky-400',
+                  teal: 'text-teal-400',
+                  indigo: 'text-indigo-400',
+                  yellow: 'text-yellow-400',
+                };
+                return colorMap[episode.color] || 'text-slate-400';
+              };
+
+              const getIconBgClass = () => {
+                if (isCompleted) return 'bg-emerald-900/50 border-emerald-700/30';
+                if (isCurrent) return 'bg-amber-900/50 border-amber-600/30';
+                const colorMap: Record<string, string> = {
+                  amber: 'bg-amber-900/30 border-amber-700/20',
+                  purple: 'bg-purple-900/30 border-purple-700/20',
+                  orange: 'bg-orange-900/30 border-orange-700/20',
+                  cyan: 'bg-cyan-900/30 border-cyan-700/20',
+                  emerald: 'bg-emerald-900/30 border-emerald-700/20',
+                  pink: 'bg-pink-900/30 border-pink-700/20',
+                  slate: 'bg-slate-800/50 border-slate-700/20',
+                  violet: 'bg-violet-900/30 border-violet-700/20',
+                  sky: 'bg-sky-900/30 border-sky-700/20',
+                  teal: 'bg-teal-900/30 border-teal-700/20',
+                  indigo: 'bg-indigo-900/30 border-indigo-700/20',
+                  yellow: 'bg-yellow-900/30 border-yellow-700/20',
+                };
+                return colorMap[episode.color] || 'bg-slate-800/50 border-slate-700/20';
+              };
 
               return (
                 <motion.button
@@ -358,52 +469,56 @@ export default function ExplorePage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
                   onClick={() => setFlowStage(episode.id)}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border transition text-left ${
+                  className={`group w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left hover:scale-[1.01] ${
                     isCompleted
-                      ? 'bg-emerald-900/20 border-emerald-700/30 hover:border-emerald-600/50'
+                      ? 'bg-emerald-900/20 border-emerald-700/30 hover:border-emerald-600/50 hover:bg-emerald-900/30'
                       : isCurrent
-                        ? 'bg-indigo-900/30 border-indigo-600/50 hover:border-indigo-500'
-                        : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'
+                        ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/20 border-amber-600/50 hover:border-amber-500 shadow-lg shadow-amber-900/20'
+                        : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600 hover:bg-slate-800/50'
                   }`}
                 >
-                  {/* Episode icon/number */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    isCompleted
-                      ? 'bg-emerald-800/50'
-                      : isCurrent
-                        ? 'bg-indigo-800/50'
-                        : 'bg-slate-800/50'
-                  }`}>
+                  {/* Episode icon */}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-110 ${getIconBgClass()}`}>
                     {isCompleted ? (
-                      <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                      <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                     ) : (
-                      <span className="text-2xl">{episode.icon}</span>
+                      <div className={getIconColorClass()}>
+                        {episode.icon}
+                      </div>
                     )}
                   </div>
 
                   {/* Episode info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-medium ${
-                        isCompleted ? 'text-emerald-400' : isCurrent ? 'text-indigo-400' : 'text-slate-500'
+                      <span className={`text-xs font-semibold uppercase tracking-wide ${
+                        isCompleted ? 'text-emerald-400' : isCurrent ? 'text-amber-400' : 'text-slate-500'
                       }`}>
                         Episode {episode.episode}
                       </span>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-xs text-slate-500">{episode.duration}</span>
+                      <span className="text-slate-500">•</span>
+                      <span className="text-xs text-slate-400">{episode.duration}</span>
                     </div>
-                    <h3 className="font-medium text-white">
+                    <h3 className="font-semibold text-white text-lg mb-0.5">
                       {episode.title}
                     </h3>
-                    <p className="text-sm truncate text-slate-400">
+                    <p className="text-sm text-slate-300">
                       {episode.description}
                     </p>
                   </div>
 
                   {/* Action indicator */}
-                  <ChevronRight className={`w-5 h-5 flex-shrink-0 ${
-                    isCompleted ? 'text-emerald-500' : isCurrent ? 'text-indigo-400' : 'text-slate-500'
-                  }`} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all group-hover:translate-x-1 ${
+                    isCompleted
+                      ? 'bg-emerald-800/30'
+                      : isCurrent
+                        ? 'bg-amber-800/30'
+                        : 'bg-slate-800/50'
+                  }`}>
+                    <ChevronRight className={`w-5 h-5 ${
+                      isCompleted ? 'text-emerald-400' : isCurrent ? 'text-amber-400' : 'text-slate-500'
+                    }`} />
+                  </div>
                 </motion.button>
               );
             })}
@@ -412,17 +527,18 @@ export default function ExplorePage() {
           {/* Start button if no progress */}
           {highestStageReached === 'intro' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="mt-8 text-center"
+              className="mt-10 text-center"
             >
               <button
                 onClick={() => setFlowStage('intro')}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-medium transition"
+                className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50 hover:scale-105"
               >
-                <Play className="w-5 h-5" />
+                <Play className="w-6 h-6" />
                 Start the Journey
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
           )}
@@ -439,13 +555,13 @@ export default function ExplorePage() {
                 <h3 className="text-lg font-semibold text-amber-200 mb-2">
                   Save Your Progress
                 </h3>
-                <p className="text-slate-400 text-sm mb-4">
+                <p className="text-slate-300 text-sm mb-4">
                   Create a free account to save your progress and continue your journey anytime.
                   Your progress is currently only saved on this device.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
-                    onClick={() => navigate('/register?type=explorer')}
+                    onClick={() => navigate('/signup?type=explorer')}
                     className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition"
                   >
                     Create Free Account
@@ -466,10 +582,10 @@ export default function ExplorePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="mt-8 text-center text-slate-500 text-sm"
+            className="mt-8 text-center text-slate-400 text-sm"
           >
             <p>
-              Explore at your own pace. Choose any episode that interests you.
+              Best experienced in order. Take your time with each episode.
             </p>
             <p className="mt-1">
               No commitment required - just curiosity.

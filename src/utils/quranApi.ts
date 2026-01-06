@@ -151,17 +151,23 @@ export async function getFirstWordsForAyahs(
     // Find the first actual word (not end marker)
     const firstWord = verse.words.find(w => w.char_type_name === 'word' && w.position === 1);
 
+    // Build full verse from words (API doesn't always return text_uthmani directly)
+    const fullVerseFromWords = verse.words
+      .filter(w => w.char_type_name === 'word')
+      .map(w => w.text_uthmani)
+      .join(' ');
+
     // Get translation if available
     const translation = verse.translations?.[0]?.text || '';
 
     return {
       ayahNumber: verse.verse_number,
       verseKey: verse.verse_key,
-      firstWord: firstWord?.text_uthmani || verse.text_uthmani.split(' ')[0] || '',
-      firstWordSimple: firstWord?.text_simple || verse.text_simple.split(' ')[0] || '',
+      firstWord: firstWord?.text_uthmani || '',
+      firstWordSimple: firstWord?.text_simple || '',
       transliteration: firstWord?.transliteration?.text || '',
       translation: firstWord?.translation?.text || '',
-      fullVerseUthmani: verse.text_uthmani,
+      fullVerseUthmani: fullVerseFromWords || verse.text_uthmani || '',
       fullVerseTranslation: translation,
     };
   });

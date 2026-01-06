@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CheckCircle2, Search, Sparkles, BookOpen, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Search, Sparkles, BookOpen } from 'lucide-react';
 
 interface ConvictionCheckpointProps {
   verifiedCount: number;
@@ -10,14 +10,6 @@ interface ConvictionCheckpointProps {
 
 // Secondary miracles to show if they want more
 const secondaryMiracles = [
-  {
-    id: 'lowest-land',
-    title: 'The Lowest Land',
-    category: 'Historical',
-    icon: <MapPin className="w-5 h-5" />,
-    description: 'The Quran says the Romans were defeated "in the lowest land" (Surah Ar-Rum). The Dead Sea area—where the battle happened—is the lowest point on Earth. How could a 7th century man know this?',
-    verse: '30:2-3',
-  },
   {
     id: 'word-symmetry',
     title: 'Word Count Symmetry',

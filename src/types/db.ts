@@ -1,6 +1,6 @@
 // Types for Explore & Anchor Onboarding Flows
 
-export type UserRole = 'non_muslim' | 'new_muslim' | 'student' | 'teacher' | 'admin';
+export type UserRole = 'non_muslim' | 'new_muslim' | 'student' | 'teacher' | 'admin' | 'explorer';
 
 // User profile with explore/anchor fields
 export interface UserProfile {

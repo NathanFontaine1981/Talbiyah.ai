@@ -133,11 +133,11 @@ const introScenes = [
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            What I'm about to share is <span className="text-white font-medium">my journey</span>, through <span className="text-amber-400 font-medium">my lenses</span>.
+            All I ask is that you approach this with an <span className="text-amber-400 font-medium">open mind</span>.
           </p>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            I'm not here to preach at you. I just want to take you through what I discovered—and let you see if you'd think the same way.
+            Not blind acceptance. Not stubborn rejection. Just honest consideration of the evidence.
           </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
@@ -149,13 +149,17 @@ const introScenes = [
             </p>
           </div>
 
+          <p className="text-lg text-slate-300 leading-relaxed">
+            If the Quran is truly from the Creator, the evidence should speak for itself. If it's not, you'll see through it.
+          </p>
+
           <p className="text-lg text-slate-400 leading-relaxed">
-            Come with me. See if the evidence leads you where it led me.
+            Come with me. Let's examine the evidence together.
           </p>
         </div>
       </>
     ),
-    commentary: "I'm not trying to convert you. I'm just sharing what I found. You decide what to do with it.",
+    commentary: "Truth doesn't need force. It just needs fair examination.",
   },
   {
     id: 'almanac',

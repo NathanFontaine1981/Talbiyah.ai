@@ -601,6 +601,53 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
 
     console.log("Insights generated successfully, saving to database...");
 
+    // Extract key topics from the generated content
+    const extractKeyTopics = (content: string, isQuran: boolean): string[] => {
+      const topics: string[] = [];
+
+      if (isQuran) {
+        // Check for tafsir content
+        if (content.toLowerCase().includes('tafsīr') || content.toLowerCase().includes('tafsir') || content.includes('Flow of Meaning')) {
+          topics.push('Tafsir');
+        }
+        // Check for tadabbur/reflection content
+        if (content.toLowerCase().includes('tadabbur') || content.includes('Reflection')) {
+          topics.push('Tadabbur');
+        }
+        // Check for memorization content
+        if (content.toLowerCase().includes('memoriz') || content.includes('First Word Prompter') || content.toLowerCase().includes('hifz')) {
+          topics.push('Memorization');
+        }
+        // Check for vocabulary
+        if (content.includes('Arabic Vocabulary') || content.includes('Key Arabic')) {
+          topics.push('Vocabulary');
+        }
+        // Check for quiz
+        if (content.includes('Mini Quiz') || content.includes('Comprehension Check')) {
+          topics.push('Quiz');
+        }
+      } else {
+        // Arabic lessons
+        if (content.includes('Grammar Focus') || content.toLowerCase().includes('grammar')) {
+          topics.push('Grammar');
+        }
+        if (content.includes('Vocabulary List') || content.toLowerCase().includes('vocabulary')) {
+          topics.push('Vocabulary');
+        }
+        if (content.includes('Conversation Practice') || content.toLowerCase().includes('dialogue')) {
+          topics.push('Conversation');
+        }
+        if (content.includes('Pronunciation') || content.toLowerCase().includes('pronunciation')) {
+          topics.push('Pronunciation');
+        }
+      }
+
+      return topics;
+    };
+
+    const keyTopics = extractKeyTopics(generatedText, isQuranLesson);
+    console.log("Extracted key topics:", keyTopics);
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -660,6 +707,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
+          key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,
@@ -682,6 +730,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           insight_type: insightType,
           title: title,
           summary: generatedText.substring(0, 500),
+          key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,

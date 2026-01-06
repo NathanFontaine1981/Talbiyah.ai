@@ -79,6 +79,7 @@ const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
 const NewMuslimPage = lazy(() => import('./pages/new-muslim/NewMuslimPage'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
+const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
@@ -156,6 +157,14 @@ function App() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/new-muslim" element={<NewMuslimPage />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
+        <Route
+          path="/explorer"
+          element={
+            <ProtectedRoute>
+              <ExplorerDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/choose-course" element={<ChooseCourse />} />
         <Route

@@ -13,69 +13,65 @@ serve(async (req) => {
   }
 
   try {
-    const { audio, user_id } = await req.json();
+    const { audio, user_id, media_type, lesson_type } = await req.json();
 
     if (!audio) {
       throw new Error('Audio data is required');
     }
 
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
-    if (!anthropicApiKey) {
-      throw new Error('Anthropic API key not configured');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
-    // Claude can process audio through its multimodal capabilities
-    // We send the audio as base64 encoded data
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Determine file extension from media type
+    const audioMediaType = media_type || 'audio/mp3';
+    let fileExtension = 'mp3';
+    if (audioMediaType.includes('webm')) fileExtension = 'webm';
+    else if (audioMediaType.includes('wav')) fileExtension = 'wav';
+    else if (audioMediaType.includes('m4a')) fileExtension = 'm4a';
+    else if (audioMediaType.includes('mpeg')) fileExtension = 'mp3';
+    else if (audioMediaType.includes('ogg')) fileExtension = 'ogg';
+
+    console.log(`Transcribing audio with media type: ${audioMediaType}, extension: ${fileExtension}, lesson type: ${lesson_type || 'general'}`);
+
+    // Decode base64 audio
+    const binaryString = atob(audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Create form data for Whisper API
+    const formData = new FormData();
+    const audioBlob = new Blob([bytes], { type: audioMediaType });
+    formData.append('file', audioBlob, `audio.${fileExtension}`);
+    formData.append('model', 'whisper-1');
+    formData.append('response_format', 'text');
+
+    // Add language hint for Arabic content
+    if (lesson_type === 'quran') {
+      // Don't set language - let Whisper auto-detect since lessons may be mixed Arabic/English
+      formData.append('prompt', 'This is a Quran lesson with Arabic recitation and English explanations. Transcribe Arabic verses in Arabic script.');
+    }
+
+    // Call OpenAI Whisper API
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${openaiApiKey}`,
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 8192,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'audio/webm',
-                  data: audio
-                }
-              },
-              {
-                type: 'text',
-                text: `Please transcribe this audio recording of an Islamic khutba (Friday sermon).
-
-Instructions:
-- Transcribe the speech accurately word for word
-- If Arabic phrases are spoken, transcribe them in Arabic script
-- Preserve any Quran verses or hadith citations as spoken
-- If the speaker says "peace be upon him" or similar, you can write ﷺ
-- Format paragraphs naturally based on topic changes or pauses
-- Do not add any commentary, just provide the transcription
-
-Transcribe the audio now:`
-              }
-            ]
-          }
-        ]
-      })
+      body: formData
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Claude API error:', errorText);
-      throw new Error(`Transcription failed: ${response.status}`);
+      console.error('Whisper API error:', response.status, errorText);
+      throw new Error(`Transcription failed: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
-    const transcription = result.content[0].text;
+    const transcription = await response.text();
+    console.log(`Transcription complete: ${transcription.length} characters`);
 
     return new Response(
       JSON.stringify({

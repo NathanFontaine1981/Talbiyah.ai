@@ -741,8 +741,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             </h3>
             <p className="text-slate-300 leading-relaxed mb-4">
               Before starting, make the intention in your heart that you are
-              praying <span className="text-emerald-400 font-medium">{selectedPrayer.rakahs} rakahs</span> of{' '}
-              <span className="text-emerald-400 font-medium">{selectedPrayer.name}</span> for the sake of Allah.
+              praying <span className="text-emerald-400 font-medium">{selectedPrayer.name}</span>.
             </p>
             <p className="text-slate-400 text-sm italic">
               The intention (niyyah) is made in the heart, not spoken aloud.

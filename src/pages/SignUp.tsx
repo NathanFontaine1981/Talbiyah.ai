@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle, Compass } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { validateEmail } from '../utils/emailValidation';
@@ -12,9 +12,14 @@ export default function SignUp() {
   const [searchParams] = useSearchParams();
   const autoRole = (location.state as any)?.autoRole;
   const referralCodeFromUrl = searchParams.get('ref');
+  const typeFromUrl = searchParams.get('type'); // Check for ?type=explorer
 
-  const [step, setStep] = useState<'role' | 'form'>(autoRole ? 'form' : 'role');
-  const [selectedRole, setSelectedRole] = useState<'student' | 'parent' | 'teacher'>(autoRole || 'student');
+  // If type=explorer is in URL, auto-select explorer role and skip to form
+  const isExplorerSignup = typeFromUrl === 'explorer';
+  const [step, setStep] = useState<'role' | 'form'>(autoRole || isExplorerSignup ? 'form' : 'role');
+  const [selectedRole, setSelectedRole] = useState<'student' | 'parent' | 'teacher' | 'explorer'>(
+    isExplorerSignup ? 'explorer' : (autoRole || 'student')
+  );
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authForm, setAuthForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
@@ -185,8 +190,12 @@ export default function SignUp() {
         const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
         const newReferralCode = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 
-        // Parents are students with parent capabilities
-        const roles = selectedRole === 'parent' ? ['student', 'parent'] : [selectedRole];
+        // Parents are students with parent capabilities, explorers just get explorer role
+        const roles = selectedRole === 'parent'
+          ? ['student', 'parent']
+          : selectedRole === 'explorer'
+            ? ['explorer']
+            : [selectedRole];
 
         const { error: profileError } = await supabase
           .from('profiles')
@@ -195,7 +204,7 @@ export default function SignUp() {
             full_name: authForm.fullName.trim(),
             role: selectedRole,  // Set the singular role field
             roles: roles,
-            referral_code: newReferralCode,
+            referral_code: selectedRole === 'explorer' ? null : newReferralCode, // No referral for explorers
             onboarding_completed: selectedRole !== 'parent'  // Only parents need onboarding
           }, {
             onConflict: 'id'
@@ -311,7 +320,10 @@ export default function SignUp() {
             duration: 5000
           });
           // Redirect to email verification page with email in state
-          navigate('/verify-email', { state: { email: authForm.email } });
+          navigate('/verify-email', { state: { email: authForm.email, returnTo: selectedRole === 'explorer' ? '/explore' : undefined } });
+        } else if (selectedRole === 'explorer') {
+          // Explorers go directly to Exploring Islam
+          navigate('/explore');
         } else if (selectedRole === 'parent') {
           // Parents go through onboarding wizard to add children
           navigate('/onboarding');
@@ -403,6 +415,21 @@ export default function SignUp() {
               </div>
             </button>
           </div>
+
+          {/* Explorer option - for those just exploring */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-500 mb-4">Just curious about Islam?</p>
+            <button
+              onClick={() => {
+                setSelectedRole('explorer');
+                setStep('form');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-xl font-medium transition"
+            >
+              <Compass className="w-5 h-5" />
+              I'm just exploring
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -412,7 +439,7 @@ export default function SignUp() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <button
-          onClick={() => autoRole ? navigate('/') : setStep('role')}
+          onClick={() => (autoRole || isExplorerSignup) ? navigate(isExplorerSignup ? '/explore' : '/') : setStep('role')}
           className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -432,6 +459,7 @@ export default function SignUp() {
             <p className="text-gray-500">
               {selectedRole === 'student' ? 'Start your learning journey' :
                selectedRole === 'parent' ? 'Manage your children\'s learning' :
+               selectedRole === 'explorer' ? 'Save your progress and explore at your own pace' :
                'Apply to become a teacher'}
             </p>
           </div>
@@ -561,8 +589,8 @@ export default function SignUp() {
               />
             </div>
 
-            {/* Referral Code Field - Only for students and parents (not teachers) */}
-            {selectedRole !== 'teacher' && (
+            {/* Referral Code Field - Only for students and parents (not teachers or explorers) */}
+            {selectedRole !== 'teacher' && selectedRole !== 'explorer' && (
             <>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

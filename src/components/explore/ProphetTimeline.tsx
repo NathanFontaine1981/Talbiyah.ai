@@ -612,7 +612,7 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
                 Islam — "Submission to God"
               </p>
               <p className="text-slate-400 text-sm text-center mt-3 italic">
-                "This day I have perfected your religion for you, completed My favor upon you, and have chosen for you Islam as your way of life." — Quran 5:3
+                "This day I have perfected your religion for you, completed My favour upon you, and have chosen for you Islam as your way of life." — Quran 5:3
               </p>
             </div>
           </div>
@@ -758,25 +758,51 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
               </p>
             </div>
 
-            {/* The complete belief */}
-            <div className="bg-emerald-900/30 rounded-xl p-6 border border-emerald-700/50">
-              <p className="text-emerald-300 text-sm font-medium mb-3">To be a Muslim today, you must believe:</p>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
+            {/* The 6 Articles of Faith */}
+            <div className="bg-slate-900/70 rounded-xl p-6 border border-slate-600">
+              <p className="text-emerald-400 font-semibold mb-4">The 6 Articles of Faith — What a Muslim believes:</p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
                   <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-white">There is no god but God (Allah)</p>
+                  <div>
+                    <p className="text-white font-medium">Belief in Allah</p>
+                    <p className="text-slate-300 text-sm">One God—the Creator, with no partners</p>
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
                   <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-white">Muhammad is His final messenger</p>
+                  <div>
+                    <p className="text-white font-medium">Belief in the Angels</p>
+                    <p className="text-slate-300 text-sm">Beings of light who carry out Allah's commands</p>
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
                   <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-white">All prophets before him were true messengers</p>
+                  <div>
+                    <p className="text-white font-medium">Belief in the Books</p>
+                    <p className="text-slate-300 text-sm">The Quran, Torah, Gospel, Psalms—all originally from Allah</p>
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
                   <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-white">The Quran is the final, preserved revelation</p>
+                  <div>
+                    <p className="text-white font-medium">Belief in the Prophets</p>
+                    <p className="text-slate-300 text-sm">From Adam to Muhammad ﷺ—all sent with the same message</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
+                  <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-white font-medium">Belief in the Day of Judgment</p>
+                    <p className="text-slate-300 text-sm">We will all be held accountable for our choices</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-2 bg-slate-800/50 rounded-lg">
+                  <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-white font-medium">Belief in Divine Decree</p>
+                    <p className="text-slate-300 text-sm">Allah's knowledge encompasses all—past, present, and future</p>
+                  </div>
                 </div>
               </div>
             </div>
