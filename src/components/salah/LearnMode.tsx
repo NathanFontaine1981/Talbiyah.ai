@@ -66,21 +66,7 @@ export default function LearnMode({
       setExpandedRecitation(null);
     } else {
       setExpandedRecitation(recitationId);
-      // Auto-reveal first word when expanding
-      if (!revealedWords[recitationId]) {
-        setRevealedWords(prev => ({ ...prev, [recitationId]: 1 }));
-      }
     }
-  };
-
-  const handleRevealNextWord = (recitationId: string, totalWords: number) => {
-    setRevealedWords(prev => {
-      const current = prev[recitationId] || 0;
-      if (current < totalWords) {
-        return { ...prev, [recitationId]: current + 1 };
-      }
-      return prev;
-    });
   };
 
   const handleRevealAll = (recitationId: string, totalWords: number) => {
@@ -307,7 +293,6 @@ export default function LearnMode({
                 isExpanded={expandedRecitation === recitation.id}
                 revealedCount={revealedWords[recitation.id] || 0}
                 onToggleExpand={() => handleToggleExpand(recitation.id)}
-                onRevealNext={() => handleRevealNextWord(recitation.id, recitation.words.length)}
                 onRevealAll={() => handleRevealAll(recitation.id, recitation.words.length)}
               />
             ))}
@@ -380,7 +365,6 @@ interface RecitationCardProps {
   isExpanded: boolean;
   revealedCount: number;
   onToggleExpand: () => void;
-  onRevealNext: () => void;
   onRevealAll: () => void;
 }
 
@@ -390,7 +374,6 @@ function RecitationCard({
   isExpanded,
   revealedCount,
   onToggleExpand,
-  onRevealNext,
   onRevealAll
 }: RecitationCardProps) {
   const allRevealed = revealedCount >= recitation.words.length;
@@ -463,65 +446,60 @@ function RecitationCard({
             className="overflow-hidden"
           >
             <div className="px-6 pb-6 border-t border-slate-700/50 pt-4">
-              {/* Word-by-Word Grid */}
-              <div className="flex flex-wrap justify-center gap-3 mb-4" dir="rtl">
-                {recitation.words.map((word, wordIndex) => {
-                  const isRevealed = wordIndex < revealedCount;
-                  return (
-                    <motion.div
-                      key={wordIndex}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{
-                        scale: isRevealed ? 1 : 0.95,
-                        opacity: isRevealed ? 1 : 0.5
-                      }}
-                      className={`text-center p-3 rounded-xl transition-all ${
-                        isRevealed
-                          ? 'bg-emerald-900/40 border border-emerald-700/50'
-                          : 'bg-slate-800/50 border border-slate-700/30'
-                      }`}
-                    >
-                      <div className="font-arabic text-xl text-emerald-200 mb-1">
-                        {word.arabic}
-                      </div>
-                      {isRevealed ? (
-                        <>
-                          <div className="text-xs text-slate-400 italic mb-0.5">
-                            {word.transliteration}
-                          </div>
-                          <div className="text-sm text-amber-100 font-medium">
-                            {word.meaning}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-xs text-slate-400">
-                          Tap reveal
+              {/* Word-by-Word Grid - Tap to reveal all */}
+              <button
+                onClick={onRevealAll}
+                disabled={allRevealed}
+                className="w-full"
+              >
+                <div className="flex flex-wrap justify-center gap-3 mb-4" dir="rtl">
+                  {recitation.words.map((word, wordIndex) => {
+                    // First word is always revealed, others depend on revealedCount
+                    const isRevealed = wordIndex === 0 || wordIndex < revealedCount;
+                    return (
+                      <motion.div
+                        key={wordIndex}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{
+                          scale: isRevealed ? 1 : 0.95,
+                          opacity: isRevealed ? 1 : 0.5
+                        }}
+                        className={`text-center p-3 rounded-xl transition-all ${
+                          isRevealed
+                            ? 'bg-emerald-900/40 border border-emerald-700/50'
+                            : 'bg-slate-800/50 border border-slate-700/30 hover:bg-slate-700/50'
+                        }`}
+                      >
+                        <div className="font-arabic text-xl text-emerald-200 mb-1">
+                          {word.arabic}
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+                        {isRevealed ? (
+                          <>
+                            <div className="text-xs text-slate-400 italic mb-0.5">
+                              {word.transliteration}
+                            </div>
+                            <div className="text-sm text-amber-100 font-medium">
+                              {word.meaning}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-slate-400">
+                            ?
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </button>
 
-              {/* Reveal Buttons */}
-              <div className="flex justify-center gap-3">
-                {!allRevealed && (
-                  <>
-                    <button
-                      onClick={onRevealNext}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-sm font-medium transition-colors"
-                    >
-                      Reveal Next Word
-                    </button>
-                    <button
-                      onClick={onRevealAll}
-                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-full text-sm font-medium transition-colors"
-                    >
-                      Reveal All
-                    </button>
-                  </>
-                )}
-                {allRevealed && (
+              {/* Reveal prompt or completion indicator */}
+              <div className="flex justify-center">
+                {!allRevealed ? (
+                  <p className="text-slate-400 text-sm">
+                    Tap the verse to reveal all words
+                  </p>
+                ) : (
                   <div className="flex items-center gap-2 text-emerald-400 text-sm">
                     <CheckCircle2 className="w-4 h-4" />
                     All words revealed
