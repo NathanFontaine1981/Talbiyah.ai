@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Play, CheckCircle2, Lock, ChevronRight, BookOpen } from 'lucide-react';
+import { X, Play, CheckCircle2, ChevronRight, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import ExploreIntro from '../../components/explore/ExploreIntro';
@@ -251,11 +251,9 @@ export default function ExplorePage() {
     </>
   );
 
-  // Helper to check if an episode is accessible
-  const isEpisodeAccessible = (episodeId: FlowStage) => {
-    const episodeIndex = STAGE_ORDER.indexOf(episodeId);
-    const highestIndex = STAGE_ORDER.indexOf(highestStageReached);
-    return episodeIndex <= highestIndex;
+  // All episodes are accessible - users can explore freely
+  const isEpisodeAccessible = (_episodeId: FlowStage) => {
+    return true; // All episodes unlocked for free exploration
   };
 
   // Helper to check if an episode is completed
@@ -350,7 +348,6 @@ export default function ExplorePage() {
           {/* Episode list */}
           <div className="space-y-3">
             {EPISODES.map((episode, index) => {
-              const isAccessible = isEpisodeAccessible(episode.id);
               const isCompleted = isEpisodeCompleted(episode.id);
               const isCurrent = episode.id === highestStageReached;
 
@@ -360,16 +357,13 @@ export default function ExplorePage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
-                  onClick={() => isAccessible && setFlowStage(episode.id)}
-                  disabled={!isAccessible}
+                  onClick={() => setFlowStage(episode.id)}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border transition text-left ${
-                    isAccessible
-                      ? isCompleted
-                        ? 'bg-emerald-900/20 border-emerald-700/30 hover:border-emerald-600/50'
-                        : isCurrent
-                          ? 'bg-indigo-900/30 border-indigo-600/50 hover:border-indigo-500'
-                          : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'
-                      : 'bg-slate-900/30 border-slate-800/50 opacity-50 cursor-not-allowed'
+                    isCompleted
+                      ? 'bg-emerald-900/20 border-emerald-700/30 hover:border-emerald-600/50'
+                      : isCurrent
+                        ? 'bg-indigo-900/30 border-indigo-600/50 hover:border-indigo-500'
+                        : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'
                   }`}
                 >
                   {/* Episode icon/number */}
@@ -378,16 +372,12 @@ export default function ExplorePage() {
                       ? 'bg-emerald-800/50'
                       : isCurrent
                         ? 'bg-indigo-800/50'
-                        : isAccessible
-                          ? 'bg-slate-800/50'
-                          : 'bg-slate-800/30'
+                        : 'bg-slate-800/50'
                   }`}>
                     {isCompleted ? (
                       <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                    ) : isAccessible ? (
-                      <span className="text-2xl">{episode.icon}</span>
                     ) : (
-                      <Lock className="w-5 h-5 text-slate-600" />
+                      <span className="text-2xl">{episode.icon}</span>
                     )}
                   </div>
 
@@ -402,24 +392,18 @@ export default function ExplorePage() {
                       <span className="text-slate-600">•</span>
                       <span className="text-xs text-slate-500">{episode.duration}</span>
                     </div>
-                    <h3 className={`font-medium ${
-                      isAccessible ? 'text-white' : 'text-slate-500'
-                    }`}>
+                    <h3 className="font-medium text-white">
                       {episode.title}
                     </h3>
-                    <p className={`text-sm truncate ${
-                      isAccessible ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
+                    <p className="text-sm truncate text-slate-400">
                       {episode.description}
                     </p>
                   </div>
 
                   {/* Action indicator */}
-                  {isAccessible && (
-                    <ChevronRight className={`w-5 h-5 flex-shrink-0 ${
-                      isCompleted ? 'text-emerald-500' : isCurrent ? 'text-indigo-400' : 'text-slate-500'
-                    }`} />
-                  )}
+                  <ChevronRight className={`w-5 h-5 flex-shrink-0 ${
+                    isCompleted ? 'text-emerald-500' : isCurrent ? 'text-indigo-400' : 'text-slate-500'
+                  }`} />
                 </motion.button>
               );
             })}
@@ -442,6 +426,55 @@ export default function ExplorePage() {
               </button>
             </motion.div>
           )}
+
+          {/* Sign up prompt - only show if not logged in */}
+          {!user && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="mt-10 p-6 bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-700/30 rounded-2xl"
+            >
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-amber-200 mb-2">
+                  Save Your Progress
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Create a free account to save your progress and continue your journey anytime.
+                  Your progress is currently only saved on this device.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => navigate('/register?type=explorer')}
+                    className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition"
+                  >
+                    Create Free Account
+                  </button>
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
+                  >
+                    Already have an account?
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Info about what this journey is */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-8 text-center text-slate-500 text-sm"
+          >
+            <p>
+              Explore at your own pace. Choose any episode that interests you.
+            </p>
+            <p className="mt-1">
+              No commitment required - just curiosity.
+            </p>
+          </motion.div>
         </div>
       </div>
     );
