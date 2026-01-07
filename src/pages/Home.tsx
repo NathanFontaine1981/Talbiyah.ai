@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Users, Heart, CheckCircle2, Star, Shield, LogIn, LogOut, ArrowRight, Sparkles, Target, Mail, Lock, Loader2, Menu, X, Clock, MessageSquare, BookMarked } from 'lucide-react';
+import { BookOpen, Users, Heart, CheckCircle2, Star, Shield, LogIn, LogOut, ArrowRight, Sparkles, Target, Mail, Lock, Loader2, Menu, X, Clock, MessageSquare, BookMarked, ChevronDown, Compass, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { getDashboardRoute } from '../lib/authHelpers';
@@ -72,6 +72,7 @@ export default function Home() {
   const [authError, setAuthError] = useState('');
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -159,8 +160,45 @@ export default function Home() {
 
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
-            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">New to Islam</button>
+            {/* Resources Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setResourcesOpen(!resourcesOpen)}
+                onBlur={() => setTimeout(() => setResourcesOpen(false), 150)}
+                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium"
+              >
+                Resources
+                <ChevronDown className={`w-4 h-4 transition-transform ${resourcesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {resourcesOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50">
+                  <button
+                    onClick={() => { navigate('/explore'); setResourcesOpen(false); }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-3"
+                  >
+                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
+                      <Compass className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">Exploring Islam</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">A journey of discovery</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { navigate('/new-muslim'); setResourcesOpen(false); }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-3"
+                  >
+                    <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+                      <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">New to Islam</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Guidance for new Muslims</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {user ? (
               <>
@@ -222,18 +260,34 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
             <div className="px-4 py-4 space-y-2">
-              <button
-                onClick={() => { navigate('/explore'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
-              >
-                Exploring Islam
-              </button>
-              <button
-                onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
-              >
-                New to Islam
-              </button>
+              {/* Resources Section */}
+              <div className="mb-2">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Resources</p>
+                <button
+                  onClick={() => { navigate('/explore'); setMobileMenuOpen(false); }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
+                    <Compass className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">Exploring Islam</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">A journey of discovery</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+                    <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">New to Islam</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Guidance for new Muslims</div>
+                  </div>
+                </button>
+              </div>
 
               <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
                 {user ? (

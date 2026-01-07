@@ -347,16 +347,16 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
           </motion.div>
         )}
 
-        {/* Back button for non-standalone */}
-        {!standalone && onBack && (
+        {/* Back button - always show when onBack is provided */}
+        {onBack && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed top-4 left-4"
+            className="fixed top-4 left-4 z-50"
           >
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-300 hover:text-white transition-colors backdrop-blur-sm"
             >
               <ArrowLeft className="w-5 h-5" />
               Back

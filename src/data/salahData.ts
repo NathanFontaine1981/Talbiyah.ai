@@ -339,6 +339,33 @@ export const salahPositions: SalahPosition[] = [
   },
 
   // ---------------------------------------------------------------------------
+  // 6b. TAKBIR TRANSITION (Going to Ruku)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'takbir-to-ruku',
+    name: 'Takbir',
+    arabicName: 'تكبير',
+    transliteration: 'Takbir',
+    iconType: 'standing',
+    description: 'Say Allahu Akbar while going down to bowing position',
+    physicalDescription: 'Raise hands to ears, then lower while saying takbir and going into ruku',
+    order: 6.5,
+    recitations: [
+      {
+        id: 'takbir',
+        arabic: 'اللهُ أَكْبَرُ',
+        transliteration: 'Allahu Akbar',
+        translation: 'Allah is the Greatest',
+        words: [
+          { arabic: 'اللهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'أَكْبَرُ', transliteration: 'Akbar', meaning: 'is Greater / the Greatest' }
+        ],
+        spiritualContext: 'This takbir marks your transition into ruku. Each takbir reminds you that Allah is greater than anything on your mind.'
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
   // 7. RUKU (BOWING)
   // ---------------------------------------------------------------------------
   {
@@ -413,6 +440,33 @@ export const salahPositions: SalahPosition[] = [
   },
 
   // ---------------------------------------------------------------------------
+  // 8b. TAKBIR (Going to First Sujood)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'takbir-to-first-sujood',
+    name: 'Takbir',
+    arabicName: 'تكبير',
+    transliteration: 'Takbir',
+    iconType: 'standing',
+    description: 'Say Allahu Akbar while going down to prostration',
+    physicalDescription: 'Go down to prostration while saying takbir',
+    order: 8.5,
+    recitations: [
+      {
+        id: 'takbir',
+        arabic: 'اللهُ أَكْبَرُ',
+        transliteration: 'Allahu Akbar',
+        translation: 'Allah is the Greatest',
+        words: [
+          { arabic: 'اللهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'أَكْبَرُ', transliteration: 'Akbar', meaning: 'is Greater / the Greatest' }
+        ],
+        spiritualContext: 'This takbir accompanies your descent into the closest position to Allah.'
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
   // 9. SUJOOD (PROSTRATION)
   // ---------------------------------------------------------------------------
   {
@@ -424,7 +478,6 @@ export const salahPositions: SalahPosition[] = [
     description: 'The closest position to Allah',
     physicalDescription: 'Prostrate with seven body parts touching the ground: forehead with nose, both palms, both knees, and toes of both feet. Elbows raised, not touching the ground.',
     order: 9,
-    transitionSaying: 'Allahu Akbar',
     recitations: [
       {
         id: 'sujood-dhikr',
@@ -444,6 +497,33 @@ export const salahPositions: SalahPosition[] = [
   },
 
   // ---------------------------------------------------------------------------
+  // 9b. TAKBIR (Rising from Sujood)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'takbir-from-sujood',
+    name: 'Takbir',
+    arabicName: 'تكبير',
+    transliteration: 'Takbir',
+    iconType: 'prostrating',
+    description: 'Say Allahu Akbar while rising from prostration',
+    physicalDescription: 'Rise while saying takbir',
+    order: 9.5,
+    recitations: [
+      {
+        id: 'takbir',
+        arabic: 'اللهُ أَكْبَرُ',
+        transliteration: 'Allahu Akbar',
+        translation: 'Allah is the Greatest',
+        words: [
+          { arabic: 'اللهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'أَكْبَرُ', transliteration: 'Akbar', meaning: 'is Greater / the Greatest' }
+        ],
+        spiritualContext: 'This takbir accompanies your rise from the closest position to Allah.'
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
   // 10. SITTING BETWEEN PROSTRATIONS
   // ---------------------------------------------------------------------------
   {
@@ -455,7 +535,6 @@ export const salahPositions: SalahPosition[] = [
     description: 'A brief sitting between the two prostrations',
     physicalDescription: 'Sit upright on your left foot, with your right foot upright and toes pointing toward the Qibla',
     order: 10,
-    transitionSaying: 'Allahu Akbar',
     recitations: [
       {
         id: 'between-sujood',
@@ -470,6 +549,33 @@ export const salahPositions: SalahPosition[] = [
           { arabic: 'لِي', transliteration: 'lee', meaning: 'me' }
         ],
         spiritualContext: 'Between prostrations, you ask for the most important thing: forgiveness. This simple dua is profound - you acknowledge your shortcomings and turn to the One who loves to forgive.'
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // 10b. TAKBIR (Going to Second Sujood)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'takbir-to-sujood',
+    name: 'Takbir',
+    arabicName: 'تكبير',
+    transliteration: 'Takbir',
+    iconType: 'sitting',
+    description: 'Say Allahu Akbar while going to prostration',
+    physicalDescription: 'Go down to prostration while saying takbir',
+    order: 10.5,
+    recitations: [
+      {
+        id: 'takbir',
+        arabic: 'اللهُ أَكْبَرُ',
+        transliteration: 'Allahu Akbar',
+        translation: 'Allah is the Greatest',
+        words: [
+          { arabic: 'اللهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'أَكْبَرُ', transliteration: 'Akbar', meaning: 'is Greater / the Greatest' }
+        ],
+        spiritualContext: 'This takbir accompanies your descent back into prostration.'
       }
     ]
   },
@@ -763,11 +869,16 @@ const firstRakahPositions = [
   'standing-basmala',
   'standing-fatiha',
   'standing-ameen',
+  'takbir-to-ruku',           // Takbir before ruku
   'ruku',
   'rising-from-ruku',
+  'takbir-to-first-sujood',   // Takbir before first sujood
   'sujood',
+  'takbir-from-sujood',       // Takbir rising from first sujood
   'sitting-between-sujood',
-  'sujood', // Second sujood
+  'takbir-to-sujood',         // Takbir before second sujood
+  'sujood',                   // Second sujood
+  'takbir-from-sujood',       // Takbir rising from second sujood (to stand or sit)
 ];
 
 // Standard rakah (no opening, with Fatiha)
@@ -775,11 +886,16 @@ const standardRakahPositions = [
   'standing-basmala',
   'standing-fatiha',
   'standing-ameen',
+  'takbir-to-ruku',           // Takbir before ruku
   'ruku',
   'rising-from-ruku',
+  'takbir-to-first-sujood',   // Takbir before first sujood
   'sujood',
+  'takbir-from-sujood',       // Takbir rising from first sujood
   'sitting-between-sujood',
-  'sujood', // Second sujood
+  'takbir-to-sujood',         // Takbir before second sujood
+  'sujood',                   // Second sujood
+  'takbir-from-sujood',       // Takbir rising from second sujood (to stand or sit)
 ];
 
 // Tashahhud positions
