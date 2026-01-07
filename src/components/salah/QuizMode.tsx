@@ -166,7 +166,7 @@ export default function QuizMode({
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
@@ -181,7 +181,7 @@ export default function QuizMode({
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Test Your Knowledge
           </h1>
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-300 text-lg">
             Choose a quiz type to challenge yourself
           </p>
         </div>
@@ -198,7 +198,7 @@ export default function QuizMode({
             <h3 className="text-xl font-semibold text-white mb-2">
               Match the Meaning
             </h3>
-            <p className="text-slate-400 text-sm mb-4">
+            <p className="text-slate-300 text-sm mb-4">
               See an Arabic word and select its correct English meaning
             </p>
             <div className="flex items-center gap-2 text-amber-400 text-sm">
@@ -218,7 +218,7 @@ export default function QuizMode({
             <h3 className="text-xl font-semibold text-white mb-2">
               Complete the Phrase
             </h3>
-            <p className="text-slate-400 text-sm mb-4">
+            <p className="text-slate-300 text-sm mb-4">
               Fill in the missing Arabic word to complete the recitation
             </p>
             <div className="flex items-center gap-2 text-emerald-400 text-sm">
@@ -231,7 +231,7 @@ export default function QuizMode({
 
         {/* Tip */}
         <div className="mt-8 text-center">
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-300 text-sm">
             Tip: Build a streak of correct answers for bonus XP!
           </p>
         </div>
@@ -263,7 +263,7 @@ export default function QuizMode({
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => setQuizType('select')}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               Exit Quiz
@@ -283,7 +283,7 @@ export default function QuizMode({
 
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="flex justify-between text-sm text-slate-400 mb-2">
+            <div className="flex justify-between text-sm text-slate-300 mb-2">
               <span>Question {currentIndex + 1} of {questions.length}</span>
               <span>{Math.round(((currentIndex + 1) / questions.length) * 100)}%</span>
             </div>
@@ -310,7 +310,7 @@ export default function QuizMode({
               <p className="font-arabic text-4xl md:text-5xl text-white leading-loose" dir="rtl">
                 {question.arabic}
               </p>
-              <p className="text-slate-400 italic mt-2">
+              <p className="text-slate-300 italic mt-2">
                 {question.transliteration}
               </p>
               {question.context && (
@@ -430,7 +430,7 @@ export default function QuizMode({
               {grade}
             </h2>
 
-            <p className="text-slate-400 mb-6">
+            <p className="text-slate-300 mb-6">
               Quiz Complete
             </p>
 
@@ -441,7 +441,7 @@ export default function QuizMode({
               <div className="text-slate-300">
                 XP Earned
               </div>
-              <div className="mt-4 text-sm text-slate-400">
+              <div className="mt-4 text-sm text-slate-300">
                 {percentage}% accuracy
               </div>
             </div>

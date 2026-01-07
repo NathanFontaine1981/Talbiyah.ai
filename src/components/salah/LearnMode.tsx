@@ -95,14 +95,14 @@ export default function LearnMode({
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
           </button>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-sm text-slate-400">Progress</div>
+              <div className="text-sm text-slate-300">Progress</div>
               <div className="text-emerald-400 font-semibold">{progress}%</div>
             </div>
             <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -119,7 +119,7 @@ export default function LearnMode({
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Positions of Prayer
           </h1>
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-300 text-lg">
             Tap on any position to learn what you recite and what it means
           </p>
         </div>
@@ -149,13 +149,13 @@ export default function LearnMode({
                 <div className="text-3xl mb-3">
                   {positionIcons[position.iconType] || '🕌'}
                 </div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-slate-300 mb-1">
                   {position.order}. {position.transliteration}
                 </div>
                 <h3 className="text-white font-semibold mb-1 group-hover:text-emerald-300 transition-colors">
                   {position.name}
                 </h3>
-                <p className="text-xs text-slate-400 line-clamp-2">
+                <p className="text-xs text-slate-300 line-clamp-2">
                   {position.description}
                 </p>
                 {position.id === 'standing-fatiha' && (
@@ -204,7 +204,7 @@ export default function LearnMode({
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={handleBackToGrid}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               All Positions
@@ -238,7 +238,7 @@ export default function LearnMode({
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
                   {selectedPosition.name}
                 </h1>
-                <div className="text-lg text-slate-400 font-arabic">
+                <div className="text-lg text-slate-300 font-arabic">
                   {selectedPosition.arabicName}
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function LearnMode({
               {selectedPosition.description}
             </p>
             {selectedPosition.physicalDescription && (
-              <p className="text-slate-500 text-sm mt-2 italic">
+              <p className="text-slate-400 text-sm mt-2 italic">
                 {selectedPosition.physicalDescription}
               </p>
             )}
@@ -307,7 +307,7 @@ export default function LearnMode({
                   const prev = positions.find(p => p.order === selectedPosition.order - 1);
                   if (prev) handlePositionSelect(prev);
                 }}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Previous
@@ -400,7 +400,7 @@ function RecitationCard({
           >
             {/* First Word Only */}
             <div className="mb-4">
-              <p className="text-slate-400 text-sm mb-2">First word prompt:</p>
+              <p className="text-slate-300 text-sm mb-2">First word prompt:</p>
               <p
                 className="font-arabic text-4xl md:text-5xl text-emerald-300"
                 dir="rtl"
@@ -438,7 +438,7 @@ function RecitationCard({
             </div>
 
             {/* Transliteration */}
-            <p className="text-center text-slate-400 italic mb-2">
+            <p className="text-center text-slate-300 italic mb-2">
               {recitation.transliteration}
             </p>
 
@@ -449,7 +449,7 @@ function RecitationCard({
 
             {/* Reference */}
             {recitation.reference && (
-              <p className="text-center text-slate-400 text-xs mt-2">
+              <p className="text-center text-slate-300 text-xs mt-2">
                 {recitation.reference}
               </p>
             )}
@@ -466,7 +466,7 @@ function RecitationCard({
             {/* Hide/Reset Button */}
             <button
               onClick={() => setVerseRevealed(false)}
-              className="w-full mt-4 flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
+              className="w-full mt-4 flex items-center justify-center gap-2 text-slate-300 hover:text-white transition-colors text-sm"
             >
               <RotateCcw className="w-4 h-4" />
               Test again
@@ -527,7 +527,7 @@ function RecitationCard({
                         </div>
                         {isRevealed ? (
                           <>
-                            <div className="text-xs text-slate-400 italic mb-0.5">
+                            <div className="text-xs text-slate-300 italic mb-0.5">
                               {word.transliteration}
                             </div>
                             <div className="text-sm text-amber-100 font-medium">
@@ -535,7 +535,7 @@ function RecitationCard({
                             </div>
                           </>
                         ) : (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-slate-300">
                             ?
                           </div>
                         )}
@@ -548,7 +548,7 @@ function RecitationCard({
               {/* Reveal prompt or completion indicator */}
               <div className="flex justify-center">
                 {!allWordsRevealed ? (
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-slate-300 text-sm">
                     Tap to reveal word meanings
                   </p>
                 ) : (
@@ -615,7 +615,7 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
         <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Conversation with Allah</h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-300">
               Based on Sahih Muslim 395
             </p>
           </div>
@@ -623,7 +623,7 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
             onClick={onClose}
             className="p-2 hover:bg-slate-800 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-slate-300" />
           </button>
         </div>
 
@@ -706,7 +706,7 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
           <button
             onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0}
-            className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Previous

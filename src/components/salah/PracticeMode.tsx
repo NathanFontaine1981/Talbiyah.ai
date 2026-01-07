@@ -300,7 +300,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             Prayer Complete!
           </h2>
 
-          <p className="text-slate-400 mb-6">
+          <p className="text-slate-300 mb-6">
             You've completed a full 2-rakah prayer practice.
             May Allah accept your prayers.
           </p>
@@ -344,7 +344,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Exit Practice
@@ -354,14 +354,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 hover:bg-slate-800 rounded-full transition-colors"
             >
-              <Settings className="w-5 h-5 text-slate-400" />
+              <Settings className="w-5 h-5 text-slate-300" />
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-6">
-          <div className="flex justify-between text-sm text-slate-400 mb-2">
+          <div className="flex justify-between text-sm text-slate-300 mb-2">
             <span>Rakah {currentStep.rakah} of 2</span>
             <span>{progress}% complete</span>
           </div>
@@ -391,7 +391,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
                     onClick={() => setShowSettings(false)}
                     className="p-1 hover:bg-slate-700 rounded-full"
                   >
-                    <X className="w-4 h-4 text-slate-400" />
+                    <X className="w-4 h-4 text-slate-300" />
                   </button>
                 </div>
                 <div className="space-y-4">
@@ -450,7 +450,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             <div className="text-2xl font-bold text-white">
               {currentStep.position.name}
             </div>
-            <div className="text-slate-400 font-arabic text-lg">
+            <div className="text-slate-300 font-arabic text-lg">
               {currentStep.position.arabicName}
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
           </div>
 
           {/* Transliteration */}
-          <p className="text-center text-slate-400 italic text-lg mb-4">
+          <p className="text-center text-slate-300 italic text-lg mb-4">
             {recitation.transliteration}
           </p>
 
@@ -556,14 +556,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
         {/* Auto-play indicator */}
         {isPlaying && (
           <div className="text-center">
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-300 text-sm">
               Auto-advancing in {autoAdvanceDelay / 1000}s...
             </p>
           </div>
         )}
 
         {/* Step Counter */}
-        <div className="text-center text-slate-400 text-sm">
+        <div className="text-center text-slate-300 text-sm">
           Step {currentStepIndex + 1} of {practiceSteps.length}
         </div>
       </div>

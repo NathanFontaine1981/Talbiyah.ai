@@ -466,7 +466,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
@@ -478,7 +478,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Pray Now
           </h1>
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-300 text-lg">
             Select your prayer to begin
           </p>
         </div>
@@ -498,10 +498,10 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-emerald-300 transition-colors">
                 {prayer.name}
               </h3>
-              <p className="text-sm text-slate-500 font-arabic">
+              <p className="text-sm text-slate-400 font-arabic">
                 {prayer.arabicName}
               </p>
-              <div className="mt-2 text-xs text-slate-400">
+              <div className="mt-2 text-xs text-slate-300">
                 {prayer.rakahs} rakahs
               </div>
             </motion.button>
@@ -550,7 +550,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             onClick={handleExitPrayer}
             className="p-2 hover:bg-slate-800 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-slate-300" />
           </button>
 
           <div className="text-center">
@@ -567,7 +567,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               {audioEnabled ? (
                 <Volume2 className="w-5 h-5 text-emerald-400" />
               ) : (
-                <VolumeX className="w-5 h-5 text-slate-500" />
+                <VolumeX className="w-5 h-5 text-slate-400" />
               )}
             </button>
           </div>
@@ -622,7 +622,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             </p>
 
             {/* Transliteration */}
-            <p className="text-slate-400 italic text-lg md:text-xl mb-4">
+            <p className="text-slate-300 italic text-lg md:text-xl mb-4">
               {recitation.transliteration}
             </p>
 
@@ -636,7 +636,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
             {/* Reference - Only show for non-Quran recitations (dhikr, etc.) */}
             {recitation.reference && !isFatihaRecitation(recitation.id) && (
-              <p className="text-slate-400 text-xs mt-4">
+              <p className="text-slate-300 text-xs mt-4">
                 {recitation.reference}
               </p>
             )}
@@ -671,13 +671,13 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                 <button
                   onClick={handlePrevious}
                   disabled={currentStepIndex === 0}
-                  className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   Previous
                 </button>
 
-                <div className="text-slate-400 text-sm">
+                <div className="text-slate-300 text-sm">
                   {currentStepIndex + 1} / {prayerSteps.length}
                 </div>
 
@@ -714,7 +714,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                 )}
               </button>
 
-              <div className="text-slate-400 text-sm">
+              <div className="text-slate-300 text-sm">
                 {currentStepIndex + 1} / {prayerSteps.length}
               </div>
             </div>
@@ -769,7 +769,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               Before starting, make the intention in your heart that you are
               praying <span className="text-emerald-400 font-medium">{selectedPrayer.name}</span>.
             </p>
-            <p className="text-slate-400 text-sm italic">
+            <p className="text-slate-300 text-sm italic">
               The intention (niyyah) is made in the heart, not spoken aloud.
             </p>
           </div>
@@ -788,7 +788,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
                 setViewState('select');
                 setSelectedPrayer(null);
               }}
-              className="w-full px-6 py-3 text-slate-400 hover:text-white transition-colors"
+              className="w-full px-6 py-3 text-slate-300 hover:text-white transition-colors"
             >
               Choose Different Prayer
             </button>
@@ -828,7 +828,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
           >
             تَقَبَّلَ اللهُ
           </p>
-          <p className="text-slate-400 mb-8">
+          <p className="text-slate-300 mb-8">
             May Allah accept your prayer
           </p>
 
@@ -854,7 +854,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             </button>
             <button
               onClick={onBack}
-              className="w-full px-6 py-4 text-slate-400 hover:text-white transition-colors"
+              className="w-full px-6 py-4 text-slate-300 hover:text-white transition-colors"
             >
               Back to Menu
             </button>

@@ -172,7 +172,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">Word-by-Word Meanings</h3>
-                <p className="text-slate-400 text-sm">Every Arabic word explained so you understand exactly what you're saying</p>
+                <p className="text-slate-300 text-sm">Every Arabic word explained so you understand exactly what you're saying</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -181,7 +181,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">Conversation with Allah</h3>
-                <p className="text-slate-400 text-sm">Discover how Al-Fatiha is a direct dialogue between you and your Lord</p>
+                <p className="text-slate-300 text-sm">Discover how Al-Fatiha is a direct dialogue between you and your Lord</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -190,7 +190,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">Spiritual Context</h3>
-                <p className="text-slate-400 text-sm">Understand WHY we say each phrase and what it means for your connection</p>
+                <p className="text-slate-300 text-sm">Understand WHY we say each phrase and what it means for your connection</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -199,7 +199,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">Test Your Knowledge</h3>
-                <p className="text-slate-400 text-sm">Interactive quizzes to cement your understanding</p>
+                <p className="text-slate-300 text-sm">Interactive quizzes to cement your understanding</p>
               </div>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               <BookOpen className="w-6 h-6 text-emerald-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Learn</h3>
-            <p className="text-slate-400 text-sm mb-3">
+            <p className="text-slate-300 text-sm mb-3">
               Explore each position and understand every word
             </p>
             {learnProgress > 0 && (
@@ -268,7 +268,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               <Brain className="w-6 h-6 text-amber-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Quiz</h3>
-            <p className="text-slate-400 text-sm mb-3">
+            <p className="text-slate-300 text-sm mb-3">
               Test your understanding with interactive challenges
             </p>
             {Object.keys(quizScores).length > 0 && (
@@ -287,7 +287,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               <Play className="w-6 h-6 text-blue-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Practice</h3>
-            <p className="text-slate-400 text-sm mb-3">
+            <p className="text-slate-300 text-sm mb-3">
               Follow along with a complete guided prayer
             </p>
             {practiceCompleted && (
@@ -339,7 +339,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
           >
             <button
               onClick={resetProgress}
-              className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-300 text-sm transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Reset Progress
