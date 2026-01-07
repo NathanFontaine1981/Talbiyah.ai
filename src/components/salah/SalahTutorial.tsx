@@ -214,18 +214,18 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
         >
           <button
             onClick={() => setMode('pray')}
-            className="w-full group bg-gradient-to-r from-emerald-900/50 to-teal-900/50 hover:from-emerald-800/50 hover:to-teal-800/50 rounded-2xl p-6 border border-emerald-600/30 hover:border-emerald-500/50 transition-all text-left flex items-center gap-6"
+            className="w-full group bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-600 hover:to-teal-500 rounded-2xl p-6 border-2 border-emerald-400/50 hover:border-emerald-300 transition-all text-left flex items-center gap-6 shadow-lg shadow-emerald-900/50"
           >
-            <div className="w-16 h-16 rounded-2xl bg-emerald-800/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Moon className="w-8 h-8 text-emerald-300" />
+            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Moon className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
               <h3 className="text-2xl font-semibold text-white mb-1">Pray Now</h3>
-              <p className="text-emerald-300/70">
+              <p className="text-emerald-100">
                 Follow along with your daily prayers - Fajr, Dhuhr, Asr, Maghrib, Isha
               </p>
             </div>
-            <ArrowRight className="w-6 h-6 text-emerald-400 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-6 h-6 text-white group-hover:translate-x-1 transition-transform" />
           </button>
         </motion.div>
 
