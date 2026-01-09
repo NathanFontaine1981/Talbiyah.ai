@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
-import { HMSRoomProvider, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom } from '@100mslive/react-sdk';
+import { HMSRoomProvider, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectLocalMediaSettings, selectConnectionQuality, selectRoom } from '@100mslive/react-sdk';
 import {
   AlertTriangle,
   RefreshCw,
@@ -20,9 +20,17 @@ import {
   Book,
   Clock,
   FileText,
-  LogOut
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Document, Page, pdfjs } from 'react-pdf';
+
+// Set up PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 import { supabase } from '../lib/supabaseClient';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
@@ -43,8 +51,14 @@ interface LessonData {
 }
 
 // PDF Materials Sidebar Component with Al-Arabi textbooks
-function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
+function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; onPageChange?: (page: number, book: string) => void }) {
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<string>('');
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1.0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pageInput, setPageInput] = useState<string>('1');
 
   const textbooks = [
     {
@@ -63,6 +77,47 @@ function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
     }
   ];
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setLoading(false);
+  };
+
+  const goToPage = (page: number) => {
+    const newPage = Math.min(Math.max(1, page), numPages);
+    setPageNumber(newPage);
+    setPageInput(String(newPage));
+    if (onPageChange) {
+      onPageChange(newPage, selectedBook);
+    }
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputBlur = () => {
+    const page = parseInt(pageInput, 10);
+    if (!isNaN(page)) {
+      goToPage(page);
+    } else {
+      setPageInput(String(pageNumber));
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePageInputBlur();
+    }
+  };
+
+  const selectBook = (book: typeof textbooks[0]) => {
+    setSelectedPdf(book.path);
+    setSelectedBook(book.id);
+    setPageNumber(1);
+    setPageInput('1');
+    setLoading(true);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* PDF Materials Header */}
@@ -74,7 +129,12 @@ function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2">
           {selectedPdf && (
             <button
-              onClick={() => setSelectedPdf(null)}
+              onClick={() => {
+                setSelectedPdf(null);
+                setSelectedBook('');
+                setNumPages(0);
+                setPageNumber(1);
+              }}
               className="px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded transition-colors text-white"
             >
               ← Back
@@ -92,13 +152,90 @@ function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
 
       {/* Content */}
       {selectedPdf ? (
-        // PDF Viewer
-        <div className="flex-1 bg-gray-100">
-          <iframe
-            src={selectedPdf}
-            className="w-full h-full border-0"
-            title="PDF Viewer"
-          />
+        // PDF Viewer with react-pdf
+        <div className="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+          {/* Page Controls */}
+          <div className="bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between gap-2">
+            {/* Page Navigation */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => goToPage(pageNumber - 1)}
+                disabled={pageNumber <= 1}
+                className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
+              </button>
+
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-gray-500">Page</span>
+                <input
+                  type="text"
+                  value={pageInput}
+                  onChange={handlePageInputChange}
+                  onBlur={handlePageInputBlur}
+                  onKeyDown={handlePageInputKeyDown}
+                  className="w-12 px-2 py-1 text-center border border-gray-300 rounded text-sm font-medium"
+                />
+                <span className="text-gray-500">of {numPages}</span>
+              </div>
+
+              <button
+                onClick={() => goToPage(pageNumber + 1)}
+                disabled={pageNumber >= numPages}
+                className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next page"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setScale(s => Math.max(0.5, s - 0.25))}
+                className="p-1.5 rounded hover:bg-gray-100"
+                title="Zoom out"
+              >
+                <ZoomOut className="w-4 h-4 text-gray-600" />
+              </button>
+              <span className="text-xs text-gray-500 w-12 text-center">{Math.round(scale * 100)}%</span>
+              <button
+                onClick={() => setScale(s => Math.min(2, s + 0.25))}
+                className="p-1.5 rounded hover:bg-gray-100"
+                title="Zoom in"
+              >
+                <ZoomIn className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* PDF Display */}
+          <div className="flex-1 overflow-auto p-4 flex justify-center">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            <Document
+              file={selectedPdf}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(error) => console.error('PDF load error:', error)}
+              loading={
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="shadow-lg"
+              />
+            </Document>
+          </div>
         </div>
       ) : (
         // Book Selection
@@ -111,7 +248,7 @@ function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
             {textbooks.map((book) => (
               <button
                 key={book.id}
-                onClick={() => setSelectedPdf(book.path)}
+                onClick={() => selectBook(book)}
                 className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:shadow-md ${
                   book.color === 'emerald'
                     ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/50'
@@ -156,6 +293,15 @@ function PdfMaterialsSidebar({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Current Page Indicator */}
+      {selectedPdf && numPages > 0 && (
+        <div className="bg-blue-600 px-4 py-2 text-white text-center">
+          <p className="text-sm font-medium">
+            📖 Currently on Page {pageNumber} of {numPages}
+          </p>
         </div>
       )}
 
@@ -205,8 +351,44 @@ function LessonContent() {
   // Use 100ms SDK to track peer count and recording
   const peerCount = useHMSStore(selectPeerCount);
   const isConnectedToRoom = useHMSStore(selectIsConnectedToRoom);
+  const room = useHMSStore(selectRoom);
   const hmsActions = useHMSActions();
   const [recordingStarted, setRecordingStarted] = useState(false);
+  const [connectionWarning, setConnectionWarning] = useState<string | null>(null);
+  const [lastConnectionCheck, setLastConnectionCheck] = useState<number>(Date.now());
+
+  // Monitor connection quality and detect issues
+  useEffect(() => {
+    if (!isConnectedToRoom) return;
+
+    const checkConnection = setInterval(() => {
+      setLastConnectionCheck(Date.now());
+
+      // If we haven't received updates in a while, show warning
+      if (room?.isConnected === false) {
+        setConnectionWarning('Connection lost. Attempting to reconnect...');
+      } else {
+        setConnectionWarning(null);
+      }
+    }, 5000);
+
+    return () => clearInterval(checkConnection);
+  }, [isConnectedToRoom, room]);
+
+  // Refresh camera/media function
+  const refreshMedia = async () => {
+    try {
+      setConnectionWarning('Refreshing camera and microphone...');
+      // Toggle video off and on to refresh
+      await hmsActions.setLocalVideoEnabled(false);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await hmsActions.setLocalVideoEnabled(true);
+      setConnectionWarning(null);
+    } catch (error) {
+      console.error('Failed to refresh media:', error);
+      setConnectionWarning('Failed to refresh. Try leaving and rejoining the room.');
+    }
+  };
 
   // Start timer when BOTH teacher and student are in the room
   useEffect(() => {
@@ -846,8 +1028,33 @@ function LessonContent() {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
+      {/* Connection Warning Banner */}
+      {connectionWarning && (
+        <div className="absolute top-0 left-0 right-0 z-[60] bg-amber-500 text-white px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-medium">{connectionWarning}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={refreshMedia}
+              className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Camera
+            </button>
+            <button
+              onClick={() => setConnectionWarning(null)}
+              className="p-1 hover:bg-white/20 rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Talbiyah Branded Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-r from-emerald-900/95 via-teal-900/95 to-emerald-900/95 backdrop-blur-sm border-b border-emerald-700/50 shadow-lg">
+      <div className={`absolute ${connectionWarning ? 'top-10' : 'top-0'} left-0 right-0 z-50 bg-gradient-to-r from-emerald-900/95 via-teal-900/95 to-emerald-900/95 backdrop-blur-sm border-b border-emerald-700/50 shadow-lg transition-all`}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
             <button
@@ -927,6 +1134,16 @@ function LessonContent() {
               </p>
             </div>
 
+            {/* Refresh Camera Button - for troubleshooting */}
+            <button
+              onClick={refreshMedia}
+              className="px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 bg-gray-600/50 hover:bg-gray-500/50 text-gray-200"
+              title="Refresh camera if it stops working"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span className="hidden sm:inline">Refresh Camera</span>
+            </button>
+
             {/* QuranWBW Toggle Button - Show for Quran-related subjects */}
             {lesson.subject_name.toLowerCase().includes('quran') && (
               <button
@@ -1001,7 +1218,7 @@ function LessonContent() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex h-full pt-20">
+      <div className={`flex h-full ${connectionWarning ? 'pt-[7.5rem]' : 'pt-20'} transition-all`}>
         {/* HMSPrebuilt Component */}
         <div className={`${showMessaging ? 'w-2/3' : 'w-full'} h-full transition-all duration-300`}>
           <HMSPrebuilt
