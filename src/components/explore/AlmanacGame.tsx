@@ -473,9 +473,18 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                   And just like with Biff's Almanac...
                 </p>
 
-                <p className="text-xl text-white leading-relaxed">
-                  The more results that checked out, the harder it became to dismiss.
+                <p className="text-xl text-white leading-relaxed mb-4">
+                  The Quran became <span className="text-amber-400 font-semibold">difficult to dismiss</span>.
                 </p>
+
+                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
+                  <p className="text-amber-200 leading-relaxed">
+                    Every result that checked out <span className="text-white font-semibold">compounded</span> my strength of belief in the book.
+                  </p>
+                  <p className="text-amber-300 mt-2">
+                    One after another. Each one making it harder to walk away.
+                  </p>
+                </div>
               </div>
 
               <button
