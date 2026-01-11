@@ -491,12 +491,6 @@ const introScenes = [
           <p className="text-lg text-slate-300 leading-relaxed">
             Then—and only then—can we examine what the Quran says about those very things.
           </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-300 text-sm">
-              <span className="text-white font-medium">One truth:</span> Either one religion is true and others are false—or none are true. Let's find out which.
-            </p>
-          </div>
         </div>
       </>
     ),
