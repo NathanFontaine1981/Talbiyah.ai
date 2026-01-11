@@ -138,49 +138,6 @@ const introScenes = [
     ),
   },
   {
-    id: 'picture-on-wall',
-    title: 'The Picture on the Wall',
-    icon: 'frame',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Imagine you need to hang a <span className="text-white font-medium">picture on the wall</span>, but you can't do it alone.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-3">
-            <p className="text-slate-300 leading-relaxed">
-              You ask <span className="text-amber-400">Person A</span> for help. They say: "I can help, but only if someone helps me first."
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              So you ask <span className="text-amber-400">Person B</span>. Same answer: "I can help, but only if someone helps me first."
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              And <span className="text-amber-400">Person C</span>... and <span className="text-amber-400">Person D</span>... all the same.
-            </p>
-          </div>
-
-          <p className="text-lg text-white font-medium leading-relaxed">
-            If this chain goes on forever, the picture would never get on the wall.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed mb-3">
-              But the picture <span className="text-white font-bold">is</span> on the wall. The universe <span className="text-white font-bold">does</span> exist.
-            </p>
-            <p className="text-emerald-300 leading-relaxed">
-              That means at some point, there must be someone who <span className="text-white font-medium">doesn't need help</span>—someone self-sufficient who can act without depending on another.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            That is the <span className="text-emerald-400 font-semibold">Creator</span>. Otherwise, you're forever relying on creation—and the picture never goes up.
-          </p>
-        </div>
-      </>
-    ),
-  },
-  {
     id: 'the-question-redundant',
     title: 'Who Created the Creator?',
     icon: 'question',
@@ -226,6 +183,49 @@ const introScenes = [
 
           <p className="text-lg text-slate-300 leading-relaxed">
             The question "who created the Creator" is really asking about <span className="text-amber-400 font-medium">creation</span>—not the Creator.
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'picture-on-wall',
+    title: 'The Picture on the Wall',
+    icon: 'frame',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Imagine you need to hang a <span className="text-white font-medium">picture on the wall</span>, but you can't do it alone.
+          </p>
+
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-3">
+            <p className="text-slate-300 leading-relaxed">
+              You ask <span className="text-amber-400">Person A</span> for help. They say: "I can help, but only if someone helps me first."
+            </p>
+            <p className="text-slate-300 leading-relaxed">
+              So you ask <span className="text-amber-400">Person B</span>. Same answer: "I can help, but only if someone helps me first."
+            </p>
+            <p className="text-slate-300 leading-relaxed">
+              And <span className="text-amber-400">Person C</span>... and <span className="text-amber-400">Person D</span>... all the same.
+            </p>
+          </div>
+
+          <p className="text-lg text-white font-medium leading-relaxed">
+            If this chain goes on forever, the picture would never get on the wall.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed mb-3">
+              But the picture <span className="text-white font-bold">is</span> on the wall. The universe <span className="text-white font-bold">does</span> exist.
+            </p>
+            <p className="text-emerald-300 leading-relaxed">
+              That means at some point, there must be someone who <span className="text-white font-medium">doesn't need help</span>—someone self-sufficient who can act without depending on another.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            That is the <span className="text-emerald-400 font-semibold">Creator</span>. Otherwise, you're forever relying on creation—and the picture never goes up.
           </p>
         </div>
       </>
