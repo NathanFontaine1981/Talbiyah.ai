@@ -104,43 +104,34 @@ const introScenes = [
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            Before we go further, let's define two important words:
+            Science tells us the universe had a <span className="text-amber-400 font-medium">beginning</span>.
           </p>
 
-          <div className="grid gap-4">
-            <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-              <h3 className="text-amber-300 font-bold text-lg mb-2">Creation</h3>
-              <p className="text-slate-300 leading-relaxed mb-2">
-                Anything that was <span className="text-white font-medium">brought into existence</span>.
-              </p>
-              <ul className="text-slate-400 text-sm space-y-1">
-                <li>• Has a <span className="text-amber-400">beginning</span></li>
-                <li>• Is <span className="text-amber-400">in need</span> of something else to exist</li>
-                <li>• Cannot bring itself into existence</li>
-              </ul>
-            </div>
-
-            <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-              <h3 className="text-emerald-300 font-bold text-lg mb-2">Creator</h3>
-              <p className="text-slate-300 leading-relaxed mb-2">
-                The one who <span className="text-white font-medium">brings things into existence</span>.
-              </p>
-              <ul className="text-slate-400 text-sm space-y-1">
-                <li>• Has <span className="text-emerald-400">no beginning</span>—always existed</li>
-                <li>• Is <span className="text-emerald-400">self-sufficient</span>—not in need of anything</li>
-                <li>• Must have always been present</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
             <p className="text-slate-300 leading-relaxed">
-              If the Creator had a beginning, the Creator would also be a creation—and would need <span className="text-white font-medium">its own</span> creator. But by definition, the Creator is <span className="text-emerald-400 font-medium">uncreated</span>.
+              The Big Bang. A moment when space, time, and matter came into existence. Before that—<span className="text-white font-medium">nothing</span>.
             </p>
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            Science tells us the universe had a <span className="text-amber-400 font-medium">beginning</span>. It was brought into existence. That means it must have been created by something that was <span className="text-white">already there</span>.
+            If the universe was <span className="text-amber-400 font-medium">brought into existence</span>, then it is a <span className="text-white font-medium">creation</span>.
+          </p>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            And every creation needs something to create it—something that was <span className="text-emerald-400 font-medium">already there</span>.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed">
+              The universe didn't create itself. It couldn't have—because it didn't exist yet.
+            </p>
+            <p className="text-emerald-300 mt-3">
+              Something <span className="text-white font-semibold">outside</span> the universe must have brought it into being.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            That something is what we call the <span className="text-emerald-400 font-semibold">Creator</span>.
           </p>
         </div>
       </>
@@ -201,33 +192,40 @@ const introScenes = [
           </p>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            But this question misunderstands what "Creator" means.
+            But this question misunderstands what "Creator" means. Let me define two words:
           </p>
+
+          <div className="grid gap-4">
+            <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
+              <h3 className="text-amber-300 font-bold mb-1">Creation</h3>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>• Has a <span className="text-amber-400">beginning</span></li>
+                <li>• Is <span className="text-amber-400">in need</span> of something else to exist</li>
+                <li>• Cannot bring itself into existence</li>
+              </ul>
+            </div>
+
+            <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+              <h3 className="text-emerald-300 font-bold mb-1">Creator</h3>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>• Has <span className="text-emerald-400">no beginning</span>—always existed</li>
+                <li>• Is <span className="text-emerald-400">self-sufficient</span>—not in need of anything</li>
+                <li>• By definition, is <span className="text-emerald-400">uncreated</span></li>
+              </ul>
+            </div>
+          </div>
 
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
             <p className="text-slate-300 leading-relaxed mb-3">
-              It's like asking a man: <span className="text-white font-medium">"When did you give birth to your child?"</span>
+              Asking "who created the Creator" is like asking a man: <span className="text-white font-medium">"When did you give birth to your child?"</span>
             </p>
             <p className="text-slate-400 text-sm">
-              The question doesn't apply. Men don't give birth.
+              The question doesn't apply. Men don't give birth. Creators aren't created.
             </p>
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            Similarly, the Creator <span className="text-white font-medium">by definition</span> is not created. The Creator has no beginning—that's what makes the Creator different from creation.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              <span className="text-white font-medium">Creation</span> is in need. <span className="text-white font-medium">The Creator</span> is self-sufficient.
-            </p>
-            <p className="text-emerald-300 mt-2">
-              The question "who created the Creator" is asking about creation—not the Creator.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            The very existence of the universe—something that began—is proof that something <span className="text-amber-400 font-medium">without a beginning</span> must exist.
+            The question "who created the Creator" is really asking about <span className="text-amber-400 font-medium">creation</span>—not the Creator.
           </p>
         </div>
       </>
