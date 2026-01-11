@@ -510,11 +510,8 @@ const introScenes = [
             The Quran vs. Reasonable Doubt
           </p>
         </div>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+        <p className="text-lg text-slate-300 leading-relaxed">
           You are the <span className="text-amber-400 font-semibold">judge and jury</span>. I will present evidence. You will decide.
-        </p>
-        <p className="text-slate-400 leading-relaxed">
-          The claim: This book contains knowledge that could only come from the Creator. The burden of proof is on the Quran.
         </p>
       </>
     ),
