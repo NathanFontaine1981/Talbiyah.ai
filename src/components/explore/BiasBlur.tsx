@@ -24,6 +24,9 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
 
         <div className="space-y-4">
           <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
+            <p className="text-slate-300 leading-relaxed mb-4">
+              I was brought up with <span className="text-white font-medium">Christian values</span>. I went to Saturday school, Sunday school, and was part of the <span className="text-white font-medium">70th London Boys' Brigade</span> in Tooting, London. I learned a lot of good manners, respect, and values.
+            </p>
             <p className="text-slate-300 leading-relaxed">
               I came to realise there is actually <span className="text-white font-medium">only one book in the world</span> that claims to be our Creator communicating with us directly. That makes things simple.
             </p>
