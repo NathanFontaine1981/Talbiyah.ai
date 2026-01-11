@@ -98,7 +98,7 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
         return (
           <div className="space-y-6">
             <p className="text-lg text-slate-300 leading-relaxed">
-              I wanted to examine the religion I was already following — or should I say, the one <span className="text-amber-400 font-semibold">my family brought me up on</span>.
+              On examining the sources, I wanted to examine the religion I was already following — <span className="text-amber-400 font-semibold">Christianity</span>.
             </p>
             <p className="text-lg text-slate-300 leading-relaxed">
               It was only fair to examine the <span className="text-amber-400 font-semibold">largest religion</span> alongside the <span className="text-emerald-400 font-semibold">most practiced religion in the world</span> — Islam.
