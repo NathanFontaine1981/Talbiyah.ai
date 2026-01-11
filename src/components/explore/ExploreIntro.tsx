@@ -524,7 +524,7 @@ const introScenes = [
     content: (
       <>
         <p className="text-xl text-slate-300 leading-relaxed mb-4">
-          I will present <span className="text-emerald-400 font-semibold">exhibits</span>—facts most people accept as true. Then the Quran's statements on each.
+          I will present <span className="text-emerald-400 font-semibold">exhibits</span>—facts that I believe everyone should agree on. Then the Quran's statements on each.
         </p>
         <p className="text-lg text-slate-400 leading-relaxed mb-4">
           Your duty: examine each piece of evidence with an <span className="text-blue-400 font-semibold">open mind</span>. Accept what convinces you. Question what doesn't.
