@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Scale, Gavel } from 'lucide-react';
+import { ArrowRight, Scale } from 'lucide-react';
 
 interface BiasBlurProps {
   onComplete: () => void;
@@ -27,16 +27,18 @@ export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
             <p className="text-slate-300 leading-relaxed mb-4">
               I was brought up with <span className="text-white font-medium">Christian values</span>. I went to Saturday school, Sunday school, and was part of the <span className="text-white font-medium">70th London Boys' Brigade</span> in Tooting, London. I learned a lot of good manners, respect, and values.
             </p>
+            <p className="text-slate-300 leading-relaxed mb-4">
+              At the age of <span className="text-white font-medium">23</span>, I was told that I actually held certain beliefs that were in line with Islam — and went against my own religion. This prompted me to research both.
+            </p>
             <p className="text-slate-300 leading-relaxed">
-              I came to realise there is actually <span className="text-white font-medium">only one book in the world</span> that claims to be our Creator communicating with us directly. That makes things simple.
+              I decided: <span className="text-white font-medium">"I'm an adult now. Surely I can work out for myself if Christianity is true, if Islam is true, or if religion is man-made after all."</span>
             </p>
           </div>
 
           <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
-            <div className="flex items-center justify-center gap-2">
-              <Gavel className="w-5 h-5 text-amber-400" />
-              <p className="text-amber-300 font-medium">Let's see what's in this book.</p>
-            </div>
+            <p className="text-amber-300 leading-relaxed text-center">
+              I took on the challenge. I didn't know how or what method I was going to use — but I got there in the end. When you keep probing, you will find evidence. <span className="text-white font-medium">Truth stands up in the face of falsehood</span>, because that's the nature of falsehood — it perishes when hurled at truth.
+            </p>
           </div>
         </div>
 
