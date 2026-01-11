@@ -6,7 +6,6 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import CartDrawer from '../components/CartDrawer';
-import TalbiyahBot from '../components/TalbiyahBot';
 import { TeacherProfileModal, GentlenessBadge } from '../components/teachers';
 
 interface Teacher {
@@ -934,8 +933,6 @@ export default function Teachers() {
           }}
         />
       )}
-
-      <TalbiyahBot />
     </div>
   );
 }

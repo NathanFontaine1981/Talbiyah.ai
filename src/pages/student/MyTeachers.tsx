@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Search, MessageSquare, Star, Calendar, ChevronLeft, BookOpen, Clock, Video, UserPlus } from 'lucide-react';
+import { Users, Search, MessageSquare, Star, Calendar, ChevronLeft, BookOpen, Clock, Video, UserPlus, Bookmark, Filter } from 'lucide-react';
 
 interface TeacherRelationship {
   teacher_id: string;
@@ -14,6 +14,7 @@ interface TeacherRelationship {
   average_rating: number | null;
   total_ratings: number;
   is_new_relationship: boolean; // Indicates if this is a pre-lesson relationship
+  is_bookmarked: boolean; // Favorite teacher flag
 }
 
 export default function MyTeachers() {
@@ -21,6 +22,8 @@ export default function MyTeachers() {
   const [teachers, setTeachers] = useState<TeacherRelationship[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+  const [studentId, setStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMyTeachers();
@@ -35,7 +38,7 @@ export default function MyTeachers() {
       }
 
       // Get student profile ID - use learner ID since that's what student_teacher_relationships references
-      let studentId: string | null = null;
+      let learnerId: string | null = null;
 
       // Get learner ID (student_teacher_relationships uses learner_id as student_id)
       const { data: learnerData } = await supabase
@@ -45,13 +48,15 @@ export default function MyTeachers() {
         .maybeSingle();
 
       if (learnerData) {
-        studentId = learnerData.id;
+        learnerId = learnerData.id;
       }
 
-      if (!studentId) {
+      if (!learnerId) {
         setLoading(false);
         return;
       }
+
+      setStudentId(learnerId);
 
       // Get all teacher relationships for this student (including those with 0 lessons)
       const { data: relationships, error } = await supabase
@@ -64,9 +69,10 @@ export default function MyTeachers() {
           last_lesson_date,
           status,
           created_at,
+          is_bookmarked,
           subjects(name)
         `)
-        .eq('student_id', studentId)
+        .eq('student_id', learnerId)
         .eq('status', 'active');
 
       if (error) {
@@ -88,6 +94,7 @@ export default function MyTeachers() {
         total_lessons: number;
         last_lesson_date: string | null;
         created_at: string | null;
+        is_bookmarked: boolean;
       }>();
 
       for (const rel of relationships) {
@@ -106,13 +113,18 @@ export default function MyTeachers() {
           if (rel.created_at && (!existing.created_at || rel.created_at < existing.created_at)) {
             existing.created_at = rel.created_at;
           }
+          // If any relationship is bookmarked, mark teacher as bookmarked
+          if (rel.is_bookmarked) {
+            existing.is_bookmarked = true;
+          }
         } else {
           teacherMap.set(rel.teacher_id, {
             teacher_id: rel.teacher_id,
             subjects: [subjectName],
             total_lessons: rel.total_lessons || 0,
             last_lesson_date: rel.last_lesson_date,
-            created_at: rel.created_at || null
+            created_at: rel.created_at || null,
+            is_bookmarked: rel.is_bookmarked || false
           });
         }
       }
@@ -157,13 +169,18 @@ export default function MyTeachers() {
           last_lesson_date: data.last_lesson_date,
           average_rating: rating?.average_rating || null,
           total_ratings: rating?.total_ratings || 0,
-          is_new_relationship: data.total_lessons === 0
+          is_new_relationship: data.total_lessons === 0,
+          is_bookmarked: data.is_bookmarked
         });
       }
 
-      // Sort: New relationships first (to encourage messaging), then by most recent lesson
+      // Sort: Bookmarked first, then new relationships, then by most recent lesson
       teachersList.sort((a, b) => {
-        // New relationships (no lessons yet) come first
+        // Bookmarked teachers come first
+        if (a.is_bookmarked && !b.is_bookmarked) return -1;
+        if (!a.is_bookmarked && b.is_bookmarked) return 1;
+
+        // New relationships (no lessons yet) come next
         if (a.is_new_relationship && !b.is_new_relationship) return -1;
         if (!a.is_new_relationship && b.is_new_relationship) return 1;
 
@@ -182,10 +199,53 @@ export default function MyTeachers() {
     }
   };
 
-  const filteredTeachers = teachers.filter(t =>
-    t.teacher_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.subjects.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const toggleBookmark = async (teacherId: string) => {
+    if (!studentId) return;
+
+    const teacher = teachers.find(t => t.teacher_id === teacherId);
+    if (!teacher) return;
+
+    const newBookmarkState = !teacher.is_bookmarked;
+
+    // Optimistically update UI
+    setTeachers(prev => prev.map(t =>
+      t.teacher_id === teacherId ? { ...t, is_bookmarked: newBookmarkState } : t
+    ));
+
+    try {
+      // Update all relationships for this teacher
+      const { error } = await supabase
+        .from('student_teacher_relationships')
+        .update({ is_bookmarked: newBookmarkState })
+        .eq('student_id', studentId)
+        .eq('teacher_id', teacherId);
+
+      if (error) {
+        // Revert on error
+        setTeachers(prev => prev.map(t =>
+          t.teacher_id === teacherId ? { ...t, is_bookmarked: !newBookmarkState } : t
+        ));
+        console.error('Error toggling bookmark:', error);
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      // Revert on error
+      setTeachers(prev => prev.map(t =>
+        t.teacher_id === teacherId ? { ...t, is_bookmarked: !newBookmarkState } : t
+      ));
+    }
+  };
+
+  const filteredTeachers = teachers.filter(t => {
+    // Filter by bookmark status if enabled
+    if (showBookmarkedOnly && !t.is_bookmarked) return false;
+
+    // Search filter
+    return t.teacher_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.subjects.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+  });
+
+  const bookmarkedCount = teachers.filter(t => t.is_bookmarked).length;
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'No lessons yet';
@@ -246,10 +306,10 @@ export default function MyTeachers() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
-        {/* Search */}
+        {/* Search and Filter */}
         {teachers.length > 0 && (
-          <div className="mb-6">
-            <div className="relative max-w-md">
+          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="text"
@@ -259,6 +319,19 @@ export default function MyTeachers() {
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
+
+            {/* Bookmark Filter */}
+            <button
+              onClick={() => setShowBookmarkedOnly(!showBookmarkedOnly)}
+              className={`flex items-center space-x-2 px-4 py-3 rounded-xl border transition ${
+                showBookmarkedOnly
+                  ? 'bg-amber-50 border-amber-300 text-amber-700'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Bookmark className={`w-5 h-5 ${showBookmarkedOnly ? 'fill-current' : ''}`} />
+              <span className="font-medium">Favorites{bookmarkedCount > 0 ? ` (${bookmarkedCount})` : ''}</span>
+            </button>
           </div>
         )}
 
@@ -305,7 +378,7 @@ export default function MyTeachers() {
                 <div className="p-6">
                   <div className="flex items-start space-x-4">
                     {/* Avatar */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 relative">
                       {teacher.teacher_avatar ? (
                         <img
                           src={teacher.teacher_avatar}
@@ -321,9 +394,26 @@ export default function MyTeachers() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
-                        {teacher.teacher_name}
-                      </h3>
+                      <div className="flex items-start justify-between">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">
+                          {teacher.teacher_name}
+                        </h3>
+                        {/* Bookmark Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBookmark(teacher.teacher_id);
+                          }}
+                          className={`p-2 rounded-lg transition ${
+                            teacher.is_bookmarked
+                              ? 'text-amber-500 hover:bg-amber-50'
+                              : 'text-gray-400 hover:text-amber-500 hover:bg-gray-50'
+                          }`}
+                          title={teacher.is_bookmarked ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <Bookmark className={`w-5 h-5 ${teacher.is_bookmarked ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
 
                       {/* Rating */}
                       {teacher.total_ratings > 0 && (

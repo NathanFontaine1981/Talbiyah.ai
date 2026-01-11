@@ -161,7 +161,7 @@ export default function Home() {
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
-            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">New to Islam</button>
+            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Unshakable Foundations</button>
 
             {user ? (
               <>
@@ -233,7 +233,7 @@ export default function Home() {
                 onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
               >
-                New to Islam
+                Unshakable Foundations
               </button>
 
               <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">

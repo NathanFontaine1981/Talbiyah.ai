@@ -87,10 +87,10 @@ export async function getVerses(
   endAyah: number,
   options: {
     includeTranslation?: boolean;
-    translationId?: number; // Default: 131 (Sahih International)
+    translationId?: number; // Default: 85 (Abdul Haleem - commonly available)
   } = {}
 ): Promise<QuranVerse[]> {
-  const { includeTranslation = true, translationId = 131 } = options;
+  const { includeTranslation = true, translationId = 85 } = options;
 
   try {
     const verses: QuranVerse[] = [];
@@ -98,6 +98,7 @@ export async function getVerses(
     const totalAyahs = endAyah - startAyah + 1;
     const pages = Math.ceil(totalAyahs / perPage);
 
+    // Fetch verses with word-by-word data
     for (let page = 1; page <= pages; page++) {
       const params = new URLSearchParams({
         language: 'en',
@@ -107,11 +108,6 @@ export async function getVerses(
         page: page.toString(),
       });
 
-      if (includeTranslation) {
-        params.append('translations', translationId.toString());
-      }
-
-      // Fetch by chapter and filter by ayah range
       const url = `${QURAN_API_BASE}/verses/by_chapter/${surahNumber}?${params}`;
       const response = await fetch(url);
 
@@ -130,7 +126,39 @@ export async function getVerses(
       verses.push(...filteredVerses);
     }
 
-    return verses.sort((a, b) => a.verse_number - b.verse_number);
+    // Sort verses
+    verses.sort((a, b) => a.verse_number - b.verse_number);
+
+    // Fetch translations separately (API v4 requires separate endpoint)
+    if (includeTranslation && verses.length > 0) {
+      try {
+        const translationResponse = await fetch(
+          `${QURAN_API_BASE}/quran/translations/${translationId}?chapter_number=${surahNumber}`
+        );
+
+        if (translationResponse.ok) {
+          const translationData = await translationResponse.json();
+          const translations = translationData.translations || [];
+
+          // Map translations to verses by index (translations are in verse order)
+          verses.forEach((verse, index) => {
+            // Find the matching translation by verse number (1-indexed)
+            const translationIndex = verse.verse_number - 1;
+            if (translations[translationIndex]) {
+              verse.translations = [{
+                text: translations[translationIndex].text,
+                resource_name: 'Abdul Haleem'
+              }];
+            }
+          });
+        }
+      } catch (translationError) {
+        console.error('Error fetching translations:', translationError);
+        // Continue without translations
+      }
+    }
+
+    return verses;
   } catch (error) {
     console.error('Error fetching verses:', error);
     return [];

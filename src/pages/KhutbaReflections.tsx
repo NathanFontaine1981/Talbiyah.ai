@@ -965,15 +965,15 @@ export default function KhutbaReflections() {
 
         {/* Generated Study Notes */}
         {studyNotes && (
-          <div ref={studyNotesRef} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-amber-500/30 rounded-2xl overflow-hidden mb-8">
+          <div ref={studyNotesRef} className="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-8 shadow-sm">
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 px-8 py-6 border-b border-amber-500/20">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-8 py-6 border-b border-amber-200">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-amber-400 text-sm font-medium mb-1">Talbiyah Insights</p>
+                  <p className="text-amber-600 text-sm font-medium mb-1">Talbiyah Insights</p>
                   <h3 className="text-2xl font-bold text-gray-900">{studyNotes.title}</h3>
                   {studyNotes.speaker && (
-                    <p className="text-emerald-600 text-sm mt-1">By {studyNotes.speaker}</p>
+                    <p className="text-emerald-700 text-sm mt-1">By {studyNotes.speaker}</p>
                   )}
                   <p className="text-gray-500 text-sm mt-1">
                     {studyNotes.timestamp.toLocaleDateString('en-US', {
@@ -1084,7 +1084,7 @@ export default function KhutbaReflections() {
                     <button
                       onClick={() => playTTS(studyNotes.cleaned_transcript, 'transcript')}
                       disabled={ttsLoading && ttsSection === 'transcript'}
-                      className="flex items-center space-x-2 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 rounded-lg transition text-sm disabled:opacity-50"
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition text-sm disabled:opacity-50"
                     >
                       {ttsLoading && ttsSection === 'transcript' ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1098,8 +1098,8 @@ export default function KhutbaReflections() {
                   </div>
 
                   {transcriptExpanded && (
-                    <div className="bg-gradient-to-br from-emerald-500/5 to-teal-500/5 border border-emerald-500/20 rounded-xl p-6">
-                      <div className="prose prose-invert prose-emerald max-w-none">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+                      <div className="prose prose-emerald max-w-none">
                         {studyNotes.cleaned_transcript.split('\n\n').map((paragraph, idx) => (
                           <p key={idx} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
                             {paragraph}
@@ -1111,9 +1111,9 @@ export default function KhutbaReflections() {
 
                   {/* Divider */}
                   <div className="flex items-center my-8">
-                    <div className="flex-1 border-t border-gray-200"></div>
-                    <span className="px-4 text-gray-500 text-sm font-medium">STUDY NOTES</span>
-                    <div className="flex-1 border-t border-gray-200"></div>
+                    <div className="flex-1 border-t border-gray-300"></div>
+                    <span className="px-4 text-gray-600 text-sm font-medium">STUDY NOTES</span>
+                    <div className="flex-1 border-t border-gray-300"></div>
                   </div>
                 </div>
               )}
@@ -1122,14 +1122,14 @@ export default function KhutbaReflections() {
               {studyNotes.main_points && studyNotes.main_points.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Bookmark className="w-5 h-5 mr-2 text-amber-400" />
+                    <Bookmark className="w-5 h-5 mr-2 text-amber-600" />
                     Main Points to Reflect Upon
                   </h4>
                   <div className="space-y-3">
                     {studyNotes.main_points.map((item, idx) => (
-                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                        <h5 className="text-amber-400 font-semibold mb-2 flex items-center">
-                          <span className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
+                      <div key={idx} className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <h5 className="text-amber-700 font-semibold mb-2 flex items-center">
+                          <span className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
                             {idx + 1}
                           </span>
                           {item.point}
@@ -1145,24 +1145,24 @@ export default function KhutbaReflections() {
               {studyNotes.quranic_words_phrases && studyNotes.quranic_words_phrases.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <BookOpen className="w-5 h-5 mr-2 text-emerald-400" />
+                    <BookOpen className="w-5 h-5 mr-2 text-emerald-600" />
                     Key Quranic Words & Phrases
                   </h4>
                   <div className="space-y-4">
                     {studyNotes.quranic_words_phrases.map((item, idx) => (
-                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                      <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
                           <p className="text-2xl md:text-3xl text-gray-900 font-arabic leading-relaxed" dir="rtl">
                             {item.arabic}
                           </p>
-                          <span className="text-emerald-400 font-medium text-sm mt-2 md:mt-0">{item.transliteration}</span>
+                          <span className="text-emerald-700 font-medium text-sm mt-2 md:mt-0">{item.transliteration}</span>
                         </div>
                         <p className="text-gray-700 font-medium mb-2">{item.meaning}</p>
-                        <p className="text-gray-500 text-sm mb-2">
+                        <p className="text-gray-600 text-sm mb-2">
                           <span className="text-gray-500">Context:</span> {item.context}
                         </p>
                         {item.quran_reference && (
-                          <p className="text-emerald-400 text-sm font-medium">{item.quran_reference}</p>
+                          <p className="text-emerald-700 text-sm font-medium">{item.quran_reference}</p>
                         )}
                       </div>
                     ))}
@@ -1174,14 +1174,14 @@ export default function KhutbaReflections() {
               {studyNotes.key_vocabulary && studyNotes.key_vocabulary.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Key className="w-5 h-5 mr-2 text-purple-400" />
+                    <Key className="w-5 h-5 mr-2 text-purple-600" />
                     Arabic Vocabulary
                   </h4>
                   <div className="grid md:grid-cols-2 gap-3">
                     {studyNotes.key_vocabulary.map((vocab, idx) => (
-                      <div key={idx} className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                      <div key={idx} className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-purple-400 font-semibold">{vocab.term}</span>
+                          <span className="text-purple-700 font-semibold">{vocab.term}</span>
                           {vocab.arabic && (
                             <span className="text-xl text-gray-900 font-arabic">{vocab.arabic}</span>
                           )}
@@ -1197,13 +1197,13 @@ export default function KhutbaReflections() {
               {studyNotes.key_themes && studyNotes.key_themes.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Lightbulb className="w-5 h-5 mr-2 text-yellow-400" />
+                    <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
                     Key Themes
                   </h4>
                   <div className="grid gap-3">
                     {studyNotes.key_themes.map((theme, idx) => (
-                      <div key={idx} className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                        <h5 className="text-yellow-400 font-semibold mb-1">{theme.theme}</h5>
+                      <div key={idx} className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                        <h5 className="text-yellow-700 font-semibold mb-1">{theme.theme}</h5>
                         <p className="text-gray-600 text-sm">{theme.explanation}</p>
                       </div>
                     ))}
@@ -1214,23 +1214,23 @@ export default function KhutbaReflections() {
               {/* Quran References */}
               {studyNotes.quran_references && studyNotes.quran_references.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-emerald-400 mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-emerald-700 mb-4 flex items-center">
                     <BookOpen className="w-5 h-5 mr-2" />
                     Quran to Reflect Upon
                   </h4>
                   <div className="space-y-4">
                     {studyNotes.quran_references.map((ref, idx) => (
-                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
+                      <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
                         {ref.arabic && (
                           <p className="text-2xl md:text-3xl text-gray-900 font-arabic text-right mb-4 leading-relaxed" dir="rtl">
                             {ref.arabic}
                           </p>
                         )}
                         <p className="text-gray-700 italic mb-3">"{ref.translation}"</p>
-                        <p className="text-emerald-400 font-medium text-sm mb-3">{ref.reference}</p>
-                        <div className="bg-emerald-500/10 rounded-lg p-3">
+                        <p className="text-emerald-700 font-medium text-sm mb-3">{ref.reference}</p>
+                        <div className="bg-emerald-100 rounded-lg p-3">
                           <p className="text-gray-600 text-sm">
-                            <span className="text-emerald-400 font-medium">Reflection:</span> {ref.reflection}
+                            <span className="text-emerald-700 font-medium">Reflection:</span> {ref.reflection}
                           </p>
                         </div>
                       </div>
@@ -1242,23 +1242,23 @@ export default function KhutbaReflections() {
               {/* Hadith References */}
               {studyNotes.hadith_references && studyNotes.hadith_references.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-amber-400 mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-amber-700 mb-4 flex items-center">
                     <BookOpen className="w-5 h-5 mr-2" />
                     Hadith to Reflect Upon
                   </h4>
                   <div className="space-y-4">
                     {studyNotes.hadith_references.map((ref, idx) => (
-                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+                      <div key={idx} className="bg-amber-50 border border-amber-200 rounded-xl p-5">
                         {ref.arabic && (
                           <p className="text-2xl md:text-3xl text-gray-900 font-arabic text-right mb-4 leading-relaxed" dir="rtl">
                             {ref.arabic}
                           </p>
                         )}
                         <p className="text-gray-700 italic mb-3">"{ref.translation}"</p>
-                        <p className="text-amber-400 font-medium text-sm mb-3">{ref.reference}</p>
-                        <div className="bg-amber-500/10 rounded-lg p-3">
+                        <p className="text-amber-700 font-medium text-sm mb-3">{ref.reference}</p>
+                        <div className="bg-amber-100 rounded-lg p-3">
                           <p className="text-gray-600 text-sm">
-                            <span className="text-amber-400 font-medium">Reflection:</span> {ref.reflection}
+                            <span className="text-amber-700 font-medium">Reflection:</span> {ref.reflection}
                           </p>
                         </div>
                       </div>
@@ -1271,14 +1271,14 @@ export default function KhutbaReflections() {
               {studyNotes.action_items && studyNotes.action_items.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-red-400" />
+                    <Target className="w-5 h-5 mr-2 text-red-600" />
                     Action Items
                   </h4>
                   <div className="space-y-3">
                     {studyNotes.action_items.map((item, idx) => (
-                      <div key={idx} className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                        <h5 className="text-red-400 font-semibold mb-2 flex items-center">
-                          <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
+                      <div key={idx} className="bg-red-50 border border-red-200 rounded-xl p-4">
+                        <h5 className="text-red-700 font-semibold mb-2 flex items-center">
+                          <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
                             {idx + 1}
                           </span>
                           {item.action}
@@ -1296,13 +1296,13 @@ export default function KhutbaReflections() {
               {studyNotes.memory_aids && studyNotes.memory_aids.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Brain className="w-5 h-5 mr-2 text-pink-400" />
+                    <Brain className="w-5 h-5 mr-2 text-pink-600" />
                     Memory Aids
                   </h4>
                   <div className="grid md:grid-cols-2 gap-3">
                     {studyNotes.memory_aids.map((aid, idx) => (
-                      <div key={idx} className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4">
-                        <h5 className="text-pink-400 font-semibold mb-1">{aid.concept}</h5>
+                      <div key={idx} className="bg-pink-50 border border-pink-200 rounded-xl p-4">
+                        <h5 className="text-pink-700 font-semibold mb-1">{aid.concept}</h5>
                         <p className="text-gray-600 text-sm">{aid.memory_tip}</p>
                       </div>
                     ))}
@@ -1315,12 +1315,12 @@ export default function KhutbaReflections() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <GraduationCap className="w-5 h-5 mr-2 text-blue-400" />
+                      <GraduationCap className="w-5 h-5 mr-2 text-blue-600" />
                       Comprehensive Quiz
                     </h4>
                     <button
                       onClick={() => setShowQuizAnswers(!showQuizAnswers)}
-                      className="flex items-center space-x-2 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition text-sm"
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition text-sm"
                     >
                       {showQuizAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       <span>{showQuizAnswers ? 'Hide Answers' : 'Show Answers'}</span>
@@ -1330,16 +1330,16 @@ export default function KhutbaReflections() {
                   <div className="space-y-6">
                     {/* Multiple Choice */}
                     {studyNotes.quiz.multiple_choice && studyNotes.quiz.multiple_choice.length > 0 && (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-                        <h5 className="text-blue-400 font-semibold mb-4 flex items-center">
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <h5 className="text-blue-700 font-semibold mb-4 flex items-center">
                           <HelpCircle className="w-4 h-4 mr-2" />
                           Multiple Choice
                         </h5>
                         <div className="space-y-6">
                           {studyNotes.quiz.multiple_choice.map((q, idx) => (
-                            <div key={idx} className="pb-4 border-b border-blue-500/20 last:border-0 last:pb-0">
+                            <div key={idx} className="pb-4 border-b border-blue-200 last:border-0 last:pb-0">
                               <p className="text-gray-700 font-medium mb-3">
-                                <span className="text-blue-400 mr-2">{idx + 1}.</span>
+                                <span className="text-blue-600 mr-2">{idx + 1}.</span>
                                 {q.question}
                               </p>
                               <div className="space-y-2 ml-6">
@@ -1354,12 +1354,12 @@ export default function KhutbaReflections() {
                                       className={`w-full text-left px-4 py-2 rounded-lg transition flex items-center ${
                                         showQuizAnswers
                                           ? isCorrect
-                                            ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300'
+                                            ? 'bg-emerald-100 border border-emerald-300 text-emerald-700'
                                             : isSelected && !isCorrect
-                                            ? 'bg-red-500/20 border border-red-500/50 text-red-300'
+                                            ? 'bg-red-100 border border-red-300 text-red-700'
                                             : 'bg-gray-50 text-gray-500'
                                           : isSelected
-                                          ? 'bg-blue-500/30 border border-blue-500/50 text-blue-300'
+                                          ? 'bg-blue-100 border border-blue-300 text-blue-700'
                                           : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
                                       }`}
                                     >
@@ -1371,8 +1371,8 @@ export default function KhutbaReflections() {
                                 })}
                               </div>
                               {showQuizAnswers && q.explanation && (
-                                <div className="mt-3 ml-6 p-3 bg-emerald-500/10 rounded-lg">
-                                  <p className="text-emerald-300 text-sm">
+                                <div className="mt-3 ml-6 p-3 bg-emerald-100 rounded-lg">
+                                  <p className="text-emerald-700 text-sm">
                                     <span className="font-medium">Explanation:</span> {q.explanation}
                                   </p>
                                 </div>
@@ -1385,28 +1385,28 @@ export default function KhutbaReflections() {
 
                     {/* Short Answer */}
                     {studyNotes.quiz.short_answer && studyNotes.quiz.short_answer.length > 0 && (
-                      <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-6">
-                        <h5 className="text-violet-400 font-semibold mb-4 flex items-center">
+                      <div className="bg-violet-50 border border-violet-200 rounded-xl p-6">
+                        <h5 className="text-violet-700 font-semibold mb-4 flex items-center">
                           <PenLine className="w-4 h-4 mr-2" />
                           Short Answer Questions
                         </h5>
                         <div className="space-y-4">
                           {studyNotes.quiz.short_answer.map((q, idx) => (
-                            <div key={idx} className="pb-4 border-b border-violet-500/20 last:border-0 last:pb-0">
+                            <div key={idx} className="pb-4 border-b border-violet-200 last:border-0 last:pb-0">
                               <p className="text-gray-700 font-medium mb-2">
-                                <span className="text-violet-400 mr-2">{idx + 1}.</span>
+                                <span className="text-violet-600 mr-2">{idx + 1}.</span>
                                 {q.question}
                               </p>
                               <button
                                 onClick={() => setShowShortAnswers({...showShortAnswers, [idx]: !showShortAnswers[idx]})}
-                                className="text-violet-400 text-sm hover:text-violet-300 transition flex items-center"
+                                className="text-violet-600 text-sm hover:text-violet-700 transition flex items-center"
                               >
                                 {showShortAnswers[idx] ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
                                 {showShortAnswers[idx] ? 'Hide suggested answer' : 'Show suggested answer'}
                               </button>
                               {showShortAnswers[idx] && (
-                                <div className="mt-2 p-3 bg-violet-500/10 rounded-lg">
-                                  <p className="text-violet-300 text-sm">{q.suggested_answer}</p>
+                                <div className="mt-2 p-3 bg-violet-100 rounded-lg">
+                                  <p className="text-violet-700 text-sm">{q.suggested_answer}</p>
                                 </div>
                               )}
                             </div>
@@ -1417,15 +1417,15 @@ export default function KhutbaReflections() {
 
                     {/* Reflection Questions */}
                     {studyNotes.quiz.reflection && studyNotes.quiz.reflection.length > 0 && (
-                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
-                        <h5 className="text-emerald-600 font-semibold mb-4 flex items-center">
+                      <div className="bg-teal-50 border border-teal-200 rounded-xl p-6">
+                        <h5 className="text-teal-700 font-semibold mb-4 flex items-center">
                           <MessageCircle className="w-4 h-4 mr-2" />
                           Deep Reflection Questions
                         </h5>
                         <ol className="space-y-3">
                           {studyNotes.quiz.reflection.map((q, idx) => (
                             <li key={idx} className="text-gray-700">
-                              <span className="text-emerald-600 font-medium mr-2">{idx + 1}.</span>
+                              <span className="text-teal-700 font-medium mr-2">{idx + 1}.</span>
                               {q}
                             </li>
                           ))}
@@ -1440,20 +1440,20 @@ export default function KhutbaReflections() {
               {studyNotes.homework && studyNotes.homework.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <ClipboardList className="w-5 h-5 mr-2 text-orange-400" />
+                    <ClipboardList className="w-5 h-5 mr-2 text-orange-600" />
                     Homework Assignments
                   </h4>
                   <div className="space-y-4">
                     {studyNotes.homework.map((hw, idx) => (
-                      <div key={idx} className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-5">
+                      <div key={idx} className="bg-orange-50 border border-orange-200 rounded-xl p-5">
                         <div className="flex items-start justify-between mb-2">
-                          <h5 className="text-orange-400 font-semibold flex items-center">
-                            <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2 text-gray-900 text-sm">
+                          <h5 className="text-orange-700 font-semibold flex items-center">
+                            <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-2 text-white text-sm">
                               {idx + 1}
                             </span>
                             {hw.task}
                           </h5>
-                          <span className="text-orange-300/70 text-xs bg-orange-500/20 px-2 py-1 rounded">
+                          <span className="text-orange-700 text-xs bg-orange-100 px-2 py-1 rounded">
                             {hw.duration}
                           </span>
                         </div>
@@ -1467,14 +1467,14 @@ export default function KhutbaReflections() {
               {/* Age-Appropriate Summaries */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-lg font-semibold text-emerald-600 mb-4">For Children (5-10)</h4>
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                  <h4 className="text-lg font-semibold text-emerald-700 mb-4">For Children (5-10)</h4>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                     <p className="text-gray-700">{studyNotes.summary_for_children}</p>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-violet-400 mb-4">For Teens (11-17)</h4>
-                  <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
+                  <h4 className="text-lg font-semibold text-violet-700 mb-4">For Teens (11-17)</h4>
+                  <div className="bg-violet-50 border border-violet-200 rounded-xl p-4">
                     <p className="text-gray-700">{studyNotes.summary_for_teens}</p>
                   </div>
                 </div>
@@ -1484,14 +1484,14 @@ export default function KhutbaReflections() {
               {studyNotes.family_discussion_guide && studyNotes.family_discussion_guide.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Clock className="w-5 h-5 mr-2 text-teal-400" />
+                    <Clock className="w-5 h-5 mr-2 text-teal-600" />
                     Family Hour Discussion Guide
                   </h4>
-                  <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-6">
+                  <div className="bg-teal-50 border border-teal-200 rounded-xl p-6">
                     <ol className="space-y-3">
                       {studyNotes.family_discussion_guide.map((item, idx) => (
                         <li key={idx} className="flex items-start">
-                          <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 mr-3 text-gray-900 text-sm font-bold">
+                          <span className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 mr-3 text-white text-sm font-bold">
                             {idx + 1}
                           </span>
                           <span className="text-gray-700">{item}</span>
@@ -1513,11 +1513,11 @@ export default function KhutbaReflections() {
         )}
 
         {/* Link to Khutba Creator */}
-        <div className="bg-white border border-emerald-500/30 rounded-2xl p-6 text-center">
+        <div className="bg-white border border-emerald-200 rounded-2xl p-6 text-center">
           <p className="text-gray-500 mb-3">Need to create a khutbah from scratch?</p>
           <button
             onClick={() => navigate('/khutba-creator')}
-            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-gray-900 rounded-lg font-semibold transition"
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
           >
             Go to Khutbah Creator
           </button>

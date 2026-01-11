@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import TalbiyahBot from '../components/TalbiyahBot';
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 
 interface Teacher {
@@ -691,7 +690,6 @@ export default function BookSession() {
           </div>
         </div>
       </div>
-      <TalbiyahBot />
     </div>
   );
 }

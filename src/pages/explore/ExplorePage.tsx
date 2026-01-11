@@ -266,6 +266,26 @@ export default function ExplorePage() {
     }
   };
 
+  // Reset journey to the beginning
+  const handleResetJourney = () => {
+    setHighestStageReached('intro');
+    setAgreedAxioms([]);
+    setVerifiedCount(0);
+    setBeliefChoice(null);
+    localStorage.removeItem(STORAGE_KEY);
+
+    // Clear from database if logged in
+    if (user) {
+      supabase
+        .from('profiles')
+        .update({ explore_progress: null })
+        .eq('id', user.id)
+        .then(({ error }) => {
+          if (error) console.error('Error resetting progress:', error);
+        });
+    }
+  };
+
   // Common nav component with progress bar
   const NavWithProgress = ({ showProgress = true }: { showProgress?: boolean }) => (
     <>
@@ -276,19 +296,19 @@ export default function ExplorePage() {
           onStageClick={handleProgressBarClick}
         />
       )}
-      {/* Back to episodes button */}
+      {/* Back to episodes button - positioned just below progress bar on stages, at top when no progress bar */}
       <button
         onClick={() => setFlowStage('menu')}
-        className={`fixed ${showProgress ? 'top-20 md:top-4' : 'top-6'} left-6 text-slate-400 hover:text-white transition z-50 flex items-center gap-2 text-sm`}
+        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} left-6 text-slate-400 hover:text-white transition z-40 flex items-center gap-2 text-sm bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50`}
       >
-        <BookOpen className="w-5 h-5" />
+        <BookOpen className="w-4 h-4" />
         <span className="hidden md:inline">Episodes</span>
       </button>
       <button
         onClick={() => navigate('/')}
-        className={`fixed ${showProgress ? 'top-20 md:top-4' : 'top-6'} right-6 text-slate-400 hover:text-white transition z-50`}
+        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} right-6 text-slate-400 hover:text-white transition z-40 bg-slate-900/80 backdrop-blur-sm p-1.5 rounded-lg border border-slate-700/50`}
       >
-        <X className="w-6 h-6" />
+        <X className="w-5 h-5" />
       </button>
     </>
   );
@@ -380,13 +400,13 @@ export default function ExplorePage() {
             </motion.div>
           )}
 
-          {/* Continue button if progress exists */}
+          {/* Continue and Reset buttons if progress exists */}
           {highestStageReached !== 'intro' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mb-8"
+              className="mb-8 space-y-3"
             >
               <button
                 onClick={() => setFlowStage(getNextEpisode())}
@@ -402,6 +422,15 @@ export default function ExplorePage() {
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={handleResetJourney}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white rounded-xl transition-all border border-slate-700/50"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="text-sm font-medium">Start From Beginning</span>
               </button>
             </motion.div>
           )}

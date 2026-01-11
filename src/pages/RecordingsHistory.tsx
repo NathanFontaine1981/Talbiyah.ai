@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Video, FileText, Clock, Calendar, Loader2 } from 'lucide-react';
+import { ChevronLeft, Video, FileText, Clock, Calendar, Loader2, Search, Filter, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO } from 'date-fns';
 
@@ -19,6 +19,44 @@ export default function RecordingsHistory() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
   const [isTeacher, setIsTeacher] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState<string>('all');
+  const [insightsFilter, setInsightsFilter] = useState<'all' | 'with' | 'without'>('all');
+
+  // Get unique subjects for filter
+  const subjects = useMemo(() => {
+    const uniqueSubjects = [...new Set(recordings.map(r => r.subject_name))];
+    return uniqueSubjects.sort();
+  }, [recordings]);
+
+  // Filter recordings based on search and filters
+  const filteredRecordings = useMemo(() => {
+    return recordings.filter(recording => {
+      // Search filter
+      const matchesSearch = searchQuery === '' ||
+        recording.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recording.teacher_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        format(parseISO(recording.scheduled_time), 'MMMM d, yyyy').toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Subject filter
+      const matchesSubject = subjectFilter === 'all' || recording.subject_name === subjectFilter;
+
+      // Insights filter
+      const matchesInsights = insightsFilter === 'all' ||
+        (insightsFilter === 'with' && recording.has_insights) ||
+        (insightsFilter === 'without' && !recording.has_insights);
+
+      return matchesSearch && matchesSubject && matchesInsights;
+    });
+  }, [recordings, searchQuery, subjectFilter, insightsFilter]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSubjectFilter('all');
+    setInsightsFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery !== '' || subjectFilter !== 'all' || insightsFilter !== 'all';
 
   useEffect(() => {
     loadRecordings();
@@ -174,9 +212,65 @@ export default function RecordingsHistory() {
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl p-4 mb-6 border border-gray-200 shadow-sm">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by subject, teacher, or date..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+              />
+            </div>
+
+            {/* Subject Filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="pl-10 pr-8 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white cursor-pointer min-w-[160px]"
+              >
+                <option value="all">All Subjects</option>
+                {subjects.map(subject => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Insights Filter */}
+            <select
+              value={insightsFilter}
+              onChange={(e) => setInsightsFilter(e.target.value as 'all' | 'with' | 'without')}
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white cursor-pointer min-w-[160px]"
+            >
+              <option value="all">All Recordings</option>
+              <option value="with">With AI Notes</option>
+              <option value="without">Without AI Notes</option>
+            </select>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition flex items-center space-x-2"
+              >
+                <X className="w-4 h-4" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Results Count */}
         <div className="mb-6">
           <p className="text-gray-600">
-            {recordings.length} {recordings.length === 1 ? 'recording' : 'recordings'} available
+            {filteredRecordings.length} of {recordings.length} {recordings.length === 1 ? 'recording' : 'recordings'}
+            {hasActiveFilters && ' (filtered)'}
           </p>
         </div>
 
@@ -199,9 +293,23 @@ export default function RecordingsHistory() {
               </button>
             )}
           </div>
+        ) : filteredRecordings.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-200">
+            <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No recordings found</h3>
+            <p className="text-gray-600 mb-6">
+              Try adjusting your search or filters
+            </p>
+            <button
+              onClick={clearFilters}
+              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
+            >
+              Clear Filters
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
-            {recordings.map((recording) => (
+            {filteredRecordings.map((recording) => (
               <div
                 key={recording.id}
                 className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition shadow-sm hover:shadow-md"

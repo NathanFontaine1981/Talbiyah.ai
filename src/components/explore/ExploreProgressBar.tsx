@@ -107,10 +107,9 @@ export const ExploreProgressBar = ({
         })}
       </div>
 
-      {/* Mobile view - simple progress indicator */}
-      <div className="md:hidden px-4 py-3">
-        {/* Leave space for Episodes button on left, X button on right */}
-        <div className="flex items-center justify-center px-12">
+      {/* Mobile view - simple progress indicator with more vertical space */}
+      <div className="md:hidden px-4 py-4">
+        <div className="flex items-center justify-center">
           <div className="text-center">
             <span className="text-emerald-400 text-sm font-medium">
               {stages[currentIndex].label}

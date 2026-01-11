@@ -36,56 +36,51 @@ Deno.serve(async (req: Request) => {
     const template = await getResponse.json();
     console.log("Current template:", template.name);
 
-    // Update template with proper browser recording configuration
-    // Browser recording captures all participants in a composite view
+    // Update template to match working old template settings
+    // Key changes: Enable summary, add autoStart for recording
     const updatedDestinations = {
       ...template.destinations,
       browserRecordings: {
-        "composite-recording": {
-          name: "composite-recording",
-          width: 1920,
-          height: 1080,
-          maxDuration: 7200, // 2 hours max
-          presignDuration: 604800, // 7 days
+        "lesson-recording": {
+          name: "lesson-recording",
           role: "__internal_recorder",
-          autoStopTimeout: 300, // Stop 5 minutes after last peer leaves
-          recording: {
-            upload: {
-              type: "gs",
-              location: "talbiyah-lesson-recordings",
-              prefix: "recordings/",
-              credentials: {
-                key: Deno.env.get("GCS_ACCESS_KEY") || "",
-                secretKey: Deno.env.get("GCS_SECRET_KEY") || ""
-              },
-              options: {
-                region: "europe-west2"
-              }
-            },
-            thumbnails: {
-              enabled: true,
-              width: 1280,
-              height: 720,
-              offsets: [2, 30, 60]
-            }
-          }
+          width: 1280,
+          height: 720,
+          maxDuration: 14400, // 4 hours max (like old template)
+          thumbnails: {
+            width: 0,
+            height: 0
+          },
+          presignDuration: 259200, // 3 days (like old template)
+          autoStart: true, // CRITICAL: Auto-start recording when room starts
+          autoStopTimeout: 0
         }
       },
-      // Update transcription to be active and triggered
+      rtmpDestinations: {},
+      hlsDestinations: {},
       transcriptions: {
         "lesson-transcription": {
           name: "lesson-transcription",
           role: "__internal_recorder",
-          modes: ["recorded"], // Transcribe the recording
+          modes: ["recorded", "live", "caption"],
           outputModes: ["txt", "json", "srt"],
           language: "en",
+          customVocabulary: [
+            "Quran", "Surah", "Ayah", "Ayaat", "Tajweed", "Tafseer", "Tafsir",
+            "Arabic", "Bismillah", "Alhamdulillah", "SubhanAllah", "MashaAllah",
+            "InshaAllah", "JazakAllah", "Talbiyah", "Salah", "Wudu", "Dua",
+            "Fatiha", "Baqarah", "Imran", "Nisa", "Maida", "Anam", "Araf",
+            "Makharij", "Ghunnah", "Idgham", "Ikhfa", "Iqlab", "Izhar",
+            "Madd", "Qalqalah", "Tafkheem", "Tarqeeq", "Tanween", "Sukoon"
+          ],
           summary: {
-            enabled: true,
-            context: "This is an Islamic education lesson covering Quran, Arabic language, or Islamic studies. Focus on religious terminology, Arabic vocabulary, and educational content.",
+            enabled: true, // CRITICAL: Enable summary generation
+            context: "This is an Islamic education lesson covering Quran recitation, Arabic language learning, or Islamic studies. Focus on religious terminology, Arabic vocabulary, Quranic verses, and educational content. Transcribe both teacher and student speech.",
             sections: [
               { title: "Topics Covered", format: "bullets" },
-              { title: "Key Vocabulary", format: "bullets" },
-              { title: "Main Takeaways", format: "bullets" },
+              { title: "Key Quranic Verses", format: "bullets" },
+              { title: "Arabic Vocabulary", format: "bullets" },
+              { title: "Questions and Answers", format: "bullets" },
               { title: "Summary", format: "paragraph" }
             ],
             temperature: 0.5

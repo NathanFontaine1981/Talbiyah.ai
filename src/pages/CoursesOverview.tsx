@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, TrendingUp, Award, Image as ImageIcon, User } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import TalbiyahBot from '../components/TalbiyahBot';
 
 interface CourseProgress {
   courseId: string;
@@ -484,7 +483,6 @@ export default function CoursesOverview() {
           </div>
         </div>
       </main>
-      <TalbiyahBot />
     </div>
   );
 }

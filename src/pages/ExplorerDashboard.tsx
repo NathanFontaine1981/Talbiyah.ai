@@ -177,7 +177,7 @@ export default function ExplorerDashboard() {
             )}
           </motion.button>
 
-          {/* New to Islam */}
+          {/* Unshakable Foundations */}
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -190,9 +190,9 @@ export default function ExplorerDashboard() {
                 <User className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-1">New to Islam</h3>
+                <h3 className="text-xl font-semibold text-white mb-1">Unshakable Foundations</h3>
                 <p className="text-slate-300">
-                  Practical guidance for your new journey
+                  Build your Islamic knowledge from the ground up
                 </p>
               </div>
               <ChevronRight className="w-6 h-6 text-emerald-400 group-hover:translate-x-1 transition-transform" />

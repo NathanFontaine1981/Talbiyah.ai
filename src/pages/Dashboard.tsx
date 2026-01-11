@@ -34,7 +34,11 @@ import {
   Menu,
   X,
   Compass,
-  UserPlus
+  UserPlus,
+  Receipt,
+  Moon,
+  Lightbulb,
+  FileText
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -42,8 +46,6 @@ import RecentMessagesCard from '../components/RecentMessagesCard';
 import LearningStatsWidget from '../components/LearningStatsWidget';
 import RecommendedActionsCard from '../components/RecommendedActionsCard';
 import DailyPracticeWidget from '../components/DailyPracticeWidget';
-import TalbiyahBot from '../components/TalbiyahBot';
-import FeedbackWidget from '../components/FeedbackWidget';
 import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
@@ -98,6 +100,7 @@ interface MenuItem {
   unreadCount?: number;
   isNew?: boolean;
   comingSoon?: boolean;
+  external?: boolean;
 }
 
 export default function Dashboard() {
@@ -343,6 +346,8 @@ export default function Dashboard() {
         { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
+        { icon: FileText, label: 'Bayna Yadak 1A', path: '/materials/Al-Arabi-bin-Yadik-1-A_compressed.pdf', active: false, roles: ['Teacher'], external: true },
+        { icon: FileText, label: 'Bayna Yadak 1B', path: '/materials/Al-Arabi-bin-Yadik-1-B_compressed.pdf', active: false, roles: ['Teacher'], external: true },
       ]
     },
     {
@@ -355,6 +360,7 @@ export default function Dashboard() {
       title: 'Credits',
       items: [
         { icon: CreditCard, label: 'Buy Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
+        { icon: Receipt, label: 'Payment History', path: '/payment-history', active: false, roles: ['Student', 'Parent'] },
         { icon: Gift, label: 'Referrals', path: '/my-referrals', active: false, roles: ['Student'] },
       ]
     },
@@ -362,13 +368,15 @@ export default function Dashboard() {
       title: 'Resources',
       items: [
         { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: UserPlus, label: 'New to Islam', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: UserPlus, label: 'Unshakable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
         { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
         { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
         { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
         { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
+        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
       ]
     },
     {
@@ -379,6 +387,7 @@ export default function Dashboard() {
         { icon: Users, label: 'Manage Users', path: '/admin/users', active: false, roles: ['Admin'] },
         { icon: GraduationCap, label: 'Manage Teachers', path: '/admin/teachers', active: false, roles: ['Admin'] },
         { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator', active: false, roles: ['Admin'] },
+        { icon: Lightbulb, label: 'User Suggestions', path: '/admin/suggestions', active: false, roles: ['Admin'] },
       ]
     },
     {
@@ -500,7 +509,11 @@ export default function Dashboard() {
                     key={`${section.title}-${item.path}-${item.label}`}
                     onClick={() => {
                       if (!item.comingSoon) {
-                        navigate(item.path);
+                        if (item.external) {
+                          window.open(item.path, '_blank');
+                        } else {
+                          navigate(item.path);
+                        }
                         setMobileMenuOpen(false);
                       }
                     }}
@@ -1086,8 +1099,6 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-      <TalbiyahBot />
-      <FeedbackWidget />
     </div>
   );
 }

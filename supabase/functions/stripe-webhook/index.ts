@@ -230,6 +230,26 @@ serve(async (req) => {
             console.error('Failed to send credit purchase email:', emailErr.message)
           }
 
+          // Generate and send invoice
+          try {
+            await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-invoice`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+              },
+              body: JSON.stringify({
+                purchase_id: purchase.id,
+                user_id: userId,
+                stripe_payment_intent_id: session.payment_intent
+              })
+            })
+            console.log('Invoice generated for purchase:', purchase.id)
+          } catch (invoiceErr) {
+            // Don't fail the webhook if invoice generation fails
+            console.error('Failed to generate invoice:', invoiceErr.message)
+          }
+
           break
         }
 

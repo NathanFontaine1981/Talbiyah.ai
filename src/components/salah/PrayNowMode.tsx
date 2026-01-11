@@ -17,7 +17,16 @@ interface PrayNowModeProps {
   onBack: () => void;
 }
 
-type ViewState = 'select' | 'intention' | 'praying';
+type ViewState = 'select' | 'intention' | 'praying' | 'video';
+
+// YouTube video URLs for prayers that have video guides
+const prayerVideoMap: Record<string, string> = {
+  'fajr': 'YhgSe6DFK-0', // Fajr with Surah Al-Kawthar (1st) and Al-Ikhlas (2nd)
+  'dhuhr': 'zXjFF35J9PE', // Dhuhr with same surahs
+  'asr': 'DcoNzaTl5ms', // Asr
+  'maghrib': '-7bw8v_MPmY', // Maghrib
+  'isha': 'b0B2TWuqgos', // Isha
+};
 
 // Prayer Position Sprite - CSS positions for each prayer position in the sprite image
 const positionSprites: Record<string, { x: number; y: number; width: number; height: number }> = {
@@ -246,26 +255,28 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     ? Math.round(((currentStepIndex + 1) / prayerSteps.length) * 100)
     : 0;
 
-  // Build audio queue for current position (for Fatiha, queue all verses)
+  // Build audio queue for current step (one recitation at a time)
   const buildAudioQueue = useCallback((step: PrayerStep): string[] => {
     const recitation = step.position.recitations[step.recitationIndex];
     const queue: string[] = [];
 
-    // If this is basmala (start of Fatiha), queue the entire surah
-    if (recitation.id === 'basmala') {
-      const fatihaSequence = ['basmala', 'fatiha-1', 'fatiha-2', 'fatiha-3', 'fatiha-4', 'fatiha-5', 'fatiha-6', 'fatiha-7'];
-      fatihaSequence.forEach(id => {
-        if (audioMap[id]) {
-          queue.push(audioMap[id]);
-        }
-      });
-    } else if (audioMap[recitation.id]) {
-      // For other recitations, just queue that one
+    // Queue only the current recitation's audio if available
+    if (audioMap[recitation.id]) {
       queue.push(audioMap[recitation.id]);
     }
 
     return queue;
   }, []);
+
+  // Advance to next step helper
+  const advanceToNextStep = useCallback(() => {
+    if (currentStepIndex < prayerSteps.length - 1) {
+      setCurrentStepIndex(prev => prev + 1);
+    } else {
+      setIsComplete(true);
+      setIsAutoMode(false);
+    }
+  }, [currentStepIndex, prayerSteps.length]);
 
   // Play next audio in queue
   const playNextInQueue = useCallback(() => {
@@ -275,15 +286,20 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
       const nextUrl = audioQueueRef.current[currentAudioIndexRef.current];
       audioRef.current.src = nextUrl;
       audioRef.current.play().catch(() => {
-        // Audio play failed, continue anyway
+        // Audio play failed, use timer fallback for this step
         setIsPlayingAudio(false);
+        if (isAutoMode && !isPaused) {
+          const recitation = currentStep?.position.recitations[currentStep?.recitationIndex || 0];
+          const delay = recitation ? getRecitationDuration(recitation.id, recitation.timesToRepeat) : 5000;
+          timerRef.current = setTimeout(advanceToNextStep, delay);
+        }
       });
       currentAudioIndexRef.current++;
       setIsPlayingAudio(true);
     } else {
       setIsPlayingAudio(false);
     }
-  }, [audioEnabled]);
+  }, [audioEnabled, isAutoMode, isPaused, currentStep, advanceToNextStep]);
 
   // Handle audio ended - play next in queue or advance
   const handleAudioEnded = useCallback(() => {
@@ -296,28 +312,33 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
 
       // If in auto mode, advance to next step after a brief pause
       if (isAutoMode && !isPaused) {
-        timerRef.current = setTimeout(() => {
-          if (currentStepIndex < prayerSteps.length - 1) {
-            setCurrentStepIndex(prev => prev + 1);
-          } else {
-            setIsComplete(true);
-            setIsAutoMode(false);
-          }
-        }, 500); // Brief pause between recitations
+        timerRef.current = setTimeout(advanceToNextStep, 500);
       }
     }
-  }, [isAutoMode, isPaused, currentStepIndex, prayerSteps.length, playNextInQueue]);
+  }, [isAutoMode, isPaused, advanceToNextStep, playNextInQueue]);
+
+  // Handle audio error - fall back to timer
+  const handleAudioError = useCallback(() => {
+    setIsPlayingAudio(false);
+    if (isAutoMode && !isPaused && currentStep) {
+      const recitation = currentStep.position.recitations[currentStep.recitationIndex];
+      const delay = getRecitationDuration(recitation.id, recitation.timesToRepeat);
+      timerRef.current = setTimeout(advanceToNextStep, delay);
+    }
+  }, [isAutoMode, isPaused, currentStep, advanceToNextStep]);
 
   // Set up audio event listeners
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
       audio.addEventListener('ended', handleAudioEnded);
+      audio.addEventListener('error', handleAudioError);
       return () => {
         audio.removeEventListener('ended', handleAudioEnded);
+        audio.removeEventListener('error', handleAudioError);
       };
     }
-  }, [handleAudioEnded]);
+  }, [handleAudioEnded, handleAudioError]);
 
   // Handle step changes in auto mode
   useEffect(() => {
@@ -338,15 +359,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
       } else {
         // No audio available, use timer-based advance with appropriate duration
         const delay = getRecitationDuration(recitation.id, recitation.timesToRepeat);
-
-        timerRef.current = setTimeout(() => {
-          if (currentStepIndex < prayerSteps.length - 1) {
-            setCurrentStepIndex(prev => prev + 1);
-          } else {
-            setIsComplete(true);
-            setIsAutoMode(false);
-          }
-        }, delay);
+        timerRef.current = setTimeout(advanceToNextStep, delay);
       }
 
       return () => {
@@ -355,7 +368,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         }
       };
     }
-  }, [isAutoMode, isPaused, currentStepIndex, viewState, isComplete, currentStep, audioEnabled, buildAudioQueue, playNextInQueue, prayerSteps.length]);
+  }, [isAutoMode, isPaused, currentStepIndex, viewState, isComplete, currentStep, audioEnabled, buildAudioQueue, playNextInQueue, advanceToNextStep]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -389,11 +402,20 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     setIsPlayingAudio(false);
     audioQueueRef.current = [];
     currentAudioIndexRef.current = 0;
-    setViewState('intention');
+
+    // Check if this prayer has a video guide
+    if (prayerVideoMap[prayer.id]) {
+      setViewState('video');
+    } else {
+      setViewState('intention');
+    }
   };
 
   const handleConfirmIntention = () => {
     setViewState('praying');
+    // Auto-start prayer mode immediately
+    setIsAutoMode(true);
+    setIsPaused(false);
   };
 
   const handleStartAutoMode = () => {
@@ -864,10 +886,93 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
     );
   };
 
+  // Video Player Screen - for prayers with YouTube video guides
+  const renderVideoPlayer = () => {
+    if (!selectedPrayer) return null;
+
+    const videoId = prayerVideoMap[selectedPrayer.id];
+    if (!videoId) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="min-h-screen bg-black flex flex-col"
+      >
+        {/* Top Bar */}
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80">
+          <button
+            onClick={() => {
+              setViewState('select');
+              setSelectedPrayer(null);
+            }}
+            className="p-2 hover:bg-slate-800 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-300" />
+          </button>
+
+          <div className="text-center">
+            <div className="text-white font-medium text-sm">
+              {selectedPrayer.name} Prayer Guide
+            </div>
+          </div>
+
+          <div className="w-9" /> {/* Spacer for alignment */}
+        </div>
+
+        {/* Video Container */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-6">
+          <div className="w-full max-w-4xl aspect-video bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+              title={`${selectedPrayer.name} Prayer Guide`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+
+          {/* Info Card */}
+          <div className="mt-6 max-w-2xl w-full bg-slate-900/50 rounded-xl p-4 border border-emerald-800/30">
+            <p className="text-emerald-300 text-sm text-center mb-2">
+              <span className="font-semibold">{selectedPrayer.name}</span> • {selectedPrayer.rakahs} Rakahs
+            </p>
+            <p className="text-slate-400 text-xs text-center">
+              Follow along with the video. Surah Al-Kawthar in the 1st rakah, Surah Al-Ikhlas in the 2nd.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="px-4 py-4 bg-slate-950/80">
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <button
+              onClick={() => {
+                setViewState('select');
+                setSelectedPrayer(null);
+              }}
+              className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors"
+            >
+              Choose Another Prayer
+            </button>
+            <button
+              onClick={onBack}
+              className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <AnimatePresence mode="wait">
       {viewState === 'select' && renderPrayerSelection()}
       {viewState === 'intention' && renderIntentionScreen()}
+      {viewState === 'video' && renderVideoPlayer()}
       {viewState === 'praying' && !isComplete && renderPrayerWalkthrough()}
       {viewState === 'praying' && isComplete && renderCompletion()}
     </AnimatePresence>

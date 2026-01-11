@@ -118,32 +118,35 @@ serve(async (req) => {
     let discount_amount = 0
     if (discount_code) {
       const { data: discount, error: discountError } = await supabaseClient
-        .from('discount_codes')
+        .from('promo_codes')
         .select('*')
         .eq('code', discount_code.toUpperCase())
-        .eq('active', true)
+        .eq('is_active', true)
         .single()
 
       if (discount && !discountError) {
         // Check if discount is still valid
         const now = new Date()
-        const expiresAt = discount.expires_at ? new Date(discount.expires_at) : null
+        const validUntil = discount.valid_until ? new Date(discount.valid_until) : null
 
-        if (!expiresAt || expiresAt > now) {
+        if (!validUntil || validUntil > now) {
           // Check usage limits
           if (!discount.max_uses || discount.current_uses < discount.max_uses) {
-            // Apply discount
+            // Apply discount based on type
             if (discount.discount_type === 'percentage') {
               discount_amount = totalAmount * (discount.discount_value / 100)
-            } else {
+            } else if (discount.discount_type === 'fixed') {
               discount_amount = Math.min(discount.discount_value, totalAmount)
+            } else if (discount.discount_type === 'free_lesson') {
+              // Free lesson - full discount up to the lesson price
+              discount_amount = totalAmount
             }
 
             totalAmount -= discount_amount
 
-            // Update discount code usage
+            // Update promo code usage count
             await supabaseClient
-              .from('discount_codes')
+              .from('promo_codes')
               .update({ current_uses: discount.current_uses + 1 })
               .eq('id', discount.id)
           }

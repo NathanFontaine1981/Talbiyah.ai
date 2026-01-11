@@ -2443,15 +2443,21 @@ function FirstWordPrompterGame({
               Show Full Verse
             </button>
           ) : (
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 border border-amber-300 dark:border-amber-600 mb-6">
-              <p className="text-xl font-arabic text-gray-900 dark:text-white leading-loose" dir="rtl">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-5 border-2 border-amber-300 dark:border-amber-600 mb-6 space-y-4">
+              {/* Arabic verse */}
+              <p className="text-2xl font-arabic text-gray-900 dark:text-white leading-loose" dir="rtl">
                 {currentVerse.fullVerseUthmani}
               </p>
-              {currentVerse.fullVerseTranslation && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  {currentVerse.fullVerseTranslation}
+
+              {/* English translation - always visible */}
+              <div className="pt-4 border-t-2 border-amber-200 dark:border-amber-700">
+                <p className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold mb-2">
+                  Translation
                 </p>
-              )}
+                <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed italic">
+                  {currentVerse.fullVerseTranslation || 'Loading translation...'}
+                </p>
+              </div>
             </div>
           )}
 

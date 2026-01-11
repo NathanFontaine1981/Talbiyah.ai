@@ -1,11 +1,23 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { initSentry } from './sentryConfig';
 import ErrorBoundary from './components/ErrorBoundary';
 import CartExpiryNotifications from './components/CartExpiryNotifications';
 import CookieConsent from './components/CookieConsent';
+import FeedbackButton from './components/FeedbackButton';
 import { ThemeProvider } from './contexts/ThemeContext';
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 // Initialize Sentry error tracking
 initSentry();
@@ -42,6 +54,8 @@ const BookSession = lazy(() => import('./pages/BookSession'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
 const BuyCredits = lazy(() => import('./pages/BuyCredits'));
+const TransferCredits = lazy(() => import('./pages/TransferCredits'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const CreditPurchaseSuccess = lazy(() => import('./pages/CreditPurchaseSuccess'));
 const BookingOptions = lazy(() => import('./pages/BookingOptions'));
 const QuranProgress = lazy(() => import('./pages/QuranProgress'));
@@ -77,9 +91,10 @@ const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 
 // Explore & New Muslim pages (public)
 const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
-const NewMuslimPage = lazy(() => import('./pages/new-muslim/NewMuslimPage'));
+const UnshakableFoundations = lazy(() => import('./pages/UnshakableFoundations'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
 const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
+const Suggestions = lazy(() => import('./pages/Suggestions'));
 
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
@@ -138,6 +153,7 @@ const PromoCodeManager = lazy(() => import('./pages/admin/PromoCodeManager'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const TeacherPayouts = lazy(() => import('./pages/admin/TeacherPayouts'));
 const FeedbackManagement = lazy(() => import('./pages/admin/FeedbackManagement'));
+const AdminSuggestions = lazy(() => import('./pages/admin/AdminSuggestions'));
 const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessments'));
 const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
 
@@ -146,6 +162,7 @@ function App() {
     <ThemeProvider>
       <ErrorBoundary>
         <BrowserRouter>
+        <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<Home />} />
@@ -155,8 +172,9 @@ function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/new-muslim" element={<NewMuslimPage />} />
+        <Route path="/new-muslim" element={<UnshakableFoundations />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
+        <Route path="/suggestions" element={<Suggestions />} />
         <Route
           path="/explorer"
           element={
@@ -330,6 +348,7 @@ function App() {
           <Route path="promo-codes" element={<PromoCodeManager />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="feedback" element={<FeedbackManagement />} />
+          <Route path="suggestions" element={<AdminSuggestions />} />
           <Route path="diagnostic-assessments" element={<DiagnosticAssessments />} />
           <Route path="content-moderation" element={<ContentModeration />} />
         </Route>
@@ -586,6 +605,22 @@ function App() {
           }
         />
         <Route
+          path="/transfer-credits"
+          element={
+            <ProtectedRoute>
+              <TransferCredits />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment-history"
+          element={
+            <ProtectedRoute>
+              <PaymentHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/credit-purchase-success"
           element={
             <ProtectedRoute>
@@ -742,6 +777,7 @@ function App() {
         />
         </Routes>
         </Suspense>
+        <FeedbackButton />
         <CartExpiryNotifications />
         <CookieConsent />
         <Toaster

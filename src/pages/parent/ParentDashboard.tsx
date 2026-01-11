@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import StudentDashboardContent from '../../components/StudentDashboardContent';
-import TalbiyahBot from '../../components/TalbiyahBot';
 import { calculateAge } from '../../utils/ageCalculations';
 import ChildrenOverviewWidget from '../../components/parent/ChildrenOverviewWidget';
 import PaymentHistoryWidget from '../../components/parent/PaymentHistoryWidget';
@@ -394,8 +393,6 @@ export default function ParentDashboard() {
           }}
         />
       )}
-
-      <TalbiyahBot />
     </div>
   );
 }

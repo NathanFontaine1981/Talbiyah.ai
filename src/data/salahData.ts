@@ -716,6 +716,133 @@ export const salahPositions: SalahPosition[] = [
         spiritualContext: 'You end the prayer by spreading peace. When you turn right, you greet the angel recording your good deeds. When you turn left, you greet the angel recording your other deeds. You also greet any believers praying beside you. The prayer that began with "Allahu Akbar" (Allah is Greatest) ends with "As-salamu alaykum" (Peace be upon you) - you entered focusing on Allah\'s greatness, you leave spreading His peace.'
       }
     ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // SURAH AL-KAWTHAR (The Abundance) - Perfect for beginners
+  // ---------------------------------------------------------------------------
+  {
+    id: 'standing-kawthar',
+    name: 'Al-Kawthar',
+    arabicName: 'سورة الكوثر',
+    transliteration: 'Surah Al-Kawthar',
+    iconType: 'standing',
+    description: 'The Abundance - The shortest surah, a gift of endless blessings',
+    physicalDescription: 'Recite standing after Al-Fatiha in any rakah',
+    order: 14,
+    recitations: [
+      {
+        id: 'kawthar-1',
+        arabic: 'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ',
+        transliteration: 'Inna a\'taynaka al-kawthar',
+        translation: 'Indeed, We have granted you Al-Kawthar (abundance)',
+        reference: 'Quran 108:1',
+        words: [
+          { arabic: 'إِنَّا', transliteration: 'Inna', meaning: 'Indeed, We' },
+          { arabic: 'أَعْطَيْنَاكَ', transliteration: 'a\'taynaka', meaning: 'have granted you' },
+          { arabic: 'الْكَوْثَرَ', transliteration: 'al-kawthar', meaning: 'the abundance' }
+        ],
+        spiritualContext: 'Al-Kawthar is a river in Paradise promised to the Prophet ﷺ. It also means abundant good - in this life and the next. Allah begins with emphasis ("Indeed") to assure the Prophet ﷺ of this tremendous gift.'
+      },
+      {
+        id: 'kawthar-2',
+        arabic: 'فَصَلِّ لِرَبِّكَ وَانْحَرْ',
+        transliteration: 'Fasalli li rabbika wanhar',
+        translation: 'So pray to your Lord and sacrifice',
+        reference: 'Quran 108:2',
+        words: [
+          { arabic: 'فَصَلِّ', transliteration: 'Fasalli', meaning: 'So pray' },
+          { arabic: 'لِرَبِّكَ', transliteration: 'li rabbika', meaning: 'to your Lord' },
+          { arabic: 'وَانْحَرْ', transliteration: 'wanhar', meaning: 'and sacrifice' }
+        ],
+        spiritualContext: 'In gratitude for such blessings, the response is worship and sacrifice. Prayer connects your soul to Allah; sacrifice (like on Eid) connects your wealth to His cause. Both are acts of devotion.'
+      },
+      {
+        id: 'kawthar-3',
+        arabic: 'إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
+        transliteration: 'Inna shani\'aka huwa al-abtar',
+        translation: 'Indeed, your enemy is the one cut off',
+        reference: 'Quran 108:3',
+        words: [
+          { arabic: 'إِنَّ', transliteration: 'Inna', meaning: 'Indeed' },
+          { arabic: 'شَانِئَكَ', transliteration: 'shani\'aka', meaning: 'your enemy/hater' },
+          { arabic: 'هُوَ', transliteration: 'huwa', meaning: 'he is' },
+          { arabic: 'الْأَبْتَرُ', transliteration: 'al-abtar', meaning: 'the one cut off' }
+        ],
+        spiritualContext: 'This was revealed when enemies mocked the Prophet ﷺ for having no surviving sons. Allah declares the opposite: it is they who will be forgotten, while the Prophet\'s legacy will endure forever. Billions send blessings upon him daily.'
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // SURAH AL-IKHLAS (The Sincerity) - The essence of Tawheed
+  // ---------------------------------------------------------------------------
+  {
+    id: 'standing-ikhlas',
+    name: 'Al-Ikhlas',
+    arabicName: 'سورة الإخلاص',
+    transliteration: 'Surah Al-Ikhlas',
+    iconType: 'standing',
+    description: 'The Sincerity - Equal to one-third of the Quran in meaning',
+    physicalDescription: 'Recite standing after Al-Fatiha in any rakah',
+    order: 15,
+    recitations: [
+      {
+        id: 'ikhlas-1',
+        arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ',
+        transliteration: 'Qul huwa Allahu ahad',
+        translation: 'Say: He is Allah, the One',
+        reference: 'Quran 112:1',
+        words: [
+          { arabic: 'قُلْ', transliteration: 'Qul', meaning: 'Say' },
+          { arabic: 'هُوَ', transliteration: 'huwa', meaning: 'He is' },
+          { arabic: 'اللَّهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'أَحَدٌ', transliteration: 'ahad', meaning: 'the One/Unique' }
+        ],
+        spiritualContext: 'Ahad means absolutely unique - not just "one" in number, but one in essence, attributes, and actions. There is nothing comparable to Him in any way. This is the foundation of Islamic belief.'
+      },
+      {
+        id: 'ikhlas-2',
+        arabic: 'اللَّهُ الصَّمَدُ',
+        transliteration: 'Allahu as-samad',
+        translation: 'Allah, the Eternal Refuge',
+        reference: 'Quran 112:2',
+        words: [
+          { arabic: 'اللَّهُ', transliteration: 'Allahu', meaning: 'Allah' },
+          { arabic: 'الصَّمَدُ', transliteration: 'as-samad', meaning: 'the Eternal Refuge' }
+        ],
+        spiritualContext: 'As-Samad means the One upon whom all creation depends, while He depends on nothing. He is self-sufficient, eternal, and the ultimate source of all needs being met. Everything turns to Him.'
+      },
+      {
+        id: 'ikhlas-3',
+        arabic: 'لَمْ يَلِدْ وَلَمْ يُولَدْ',
+        transliteration: 'Lam yalid wa lam yulad',
+        translation: 'He neither begets nor is born',
+        reference: 'Quran 112:3',
+        words: [
+          { arabic: 'لَمْ', transliteration: 'Lam', meaning: 'Not' },
+          { arabic: 'يَلِدْ', transliteration: 'yalid', meaning: 'does He beget' },
+          { arabic: 'وَلَمْ', transliteration: 'wa lam', meaning: 'and not' },
+          { arabic: 'يُولَدْ', transliteration: 'yulad', meaning: 'was He born' }
+        ],
+        spiritualContext: 'Allah is beyond the cycle of birth and reproduction. He has no children, no parents, no family. This distinguishes Islam from beliefs that attribute offspring or origin to God.'
+      },
+      {
+        id: 'ikhlas-4',
+        arabic: 'وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ',
+        transliteration: 'Wa lam yakun lahu kufuwan ahad',
+        translation: 'And there is none comparable to Him',
+        reference: 'Quran 112:4',
+        words: [
+          { arabic: 'وَلَمْ', transliteration: 'Wa lam', meaning: 'And not' },
+          { arabic: 'يَكُن', transliteration: 'yakun', meaning: 'is there' },
+          { arabic: 'لَّهُ', transliteration: 'lahu', meaning: 'to Him' },
+          { arabic: 'كُفُوًا', transliteration: 'kufuwan', meaning: 'equivalent/comparable' },
+          { arabic: 'أَحَدٌ', transliteration: 'ahad', meaning: 'anyone' }
+        ],
+        spiritualContext: 'The surah ends by emphasizing Allah\'s absolute uniqueness. No one equals Him in any aspect - not in power, knowledge, mercy, or existence. The Prophet ﷺ said this surah equals one-third of the Quran because it captures the essence of who Allah is.'
+      }
+    ]
   }
 ];
 

@@ -7,7 +7,6 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
-import TalbiyahBot from '../components/TalbiyahBot';
 import Breadcrumbs from '../components/Breadcrumbs';
 
 // Juz (Para) mapping - which surahs are in each Juz
@@ -726,7 +725,6 @@ export default function QuranProgress() {
           </div>
         </div>
       </main>
-      <TalbiyahBot />
     </div>
   );
 }

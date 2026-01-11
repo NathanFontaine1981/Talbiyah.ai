@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronLeft, Languages, ArrowRight, Sparkles, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import TalbiyahBot from '../components/TalbiyahBot';
 
 export default function SubjectSelection() {
   const navigate = useNavigate();
@@ -212,8 +211,6 @@ export default function SubjectSelection() {
           </div>
         </div>
       </div>
-
-      <TalbiyahBot />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CreditCard, Check, Loader2, AlertCircle } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { CreditCard, Check, Loader2, AlertCircle, Send } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface CreditPack {
@@ -257,13 +257,20 @@ export default function BuyCredits() {
             </div>
 
             <div>
-              <h4 className="text-emerald-600 font-semibold mb-2">Refund Policy</h4>
+              <h4 className="text-emerald-600 font-semibold mb-2">Refund & Transfer Policy</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>• 7-day refund for unused credits</li>
+                <li>• After 7 days, transfer credits to others</li>
                 <li>• Partial refunds for unused portions</li>
-                <li>• Contact support for refund requests</li>
                 <li>• Refunds processed within 5-7 days</li>
               </ul>
+              <Link
+                to="/transfer-credits"
+                className="mt-4 inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                Transfer credits to someone
+              </Link>
             </div>
           </div>
         </div>

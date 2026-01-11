@@ -583,95 +583,9 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
               </button>
             </div>
 
-            {/* Commentary - inline on mobile */}
-            {scene.commentary && (
-              <motion.div
-                key={scene.id + '-commentary-mobile'}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="md:hidden"
-              >
-                {scene.commentary !== 'initial-findings' && (
-                  <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                        <MessageCircle className="w-4 h-4 text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
-                        <p className="text-slate-300 text-sm leading-relaxed italic">
-                          "{scene.commentary}"
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {scene.commentary === 'initial-findings' && (
-                  <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                        <MessageCircle className="w-4 h-4 text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
-                        <p className="text-slate-300 text-sm leading-relaxed italic">
-                          "I can't rely on something where there's no way to determine the original message in full. Let's see if the same goes for the Quran. Most likely will be the same."
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* Commentary corner - desktop only */}
-      {scene.commentary && (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={scene.id + '-commentary'}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="hidden md:block fixed bottom-6 right-6 max-w-sm"
-          >
-            {scene.commentary !== 'initial-findings' && (
-              <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600 shadow-xl">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MessageCircle className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
-                    <p className="text-slate-300 text-sm leading-relaxed italic">
-                      "{scene.commentary}"
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {scene.commentary === 'initial-findings' && (
-              <div className="bg-slate-800/90 backdrop-blur rounded-xl p-4 border border-slate-600 shadow-xl">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MessageCircle className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-amber-400 text-xs font-medium mb-1">What I was thinking...</p>
-                    <p className="text-slate-300 text-sm leading-relaxed italic">
-                      "I can't rely on something where there's no way to determine the original message in full. Let's see if the same goes for the Quran. Most likely will be the same."
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      )}
     </motion.div>
   );
 }
