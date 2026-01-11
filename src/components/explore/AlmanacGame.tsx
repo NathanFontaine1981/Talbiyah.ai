@@ -59,12 +59,18 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                   Have you ever seen <span className="text-white font-medium">Back to the Future 2</span>?
                 </p>
 
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-3">
                   <p className="text-slate-300 leading-relaxed">
-                    In the movie, Biff gets a <span className="text-amber-400 font-medium">Sports Almanac</span> from his future self.
+                    In the movie, old Biff travels to the future—<span className="text-amber-400 font-medium">the year 2015</span>—and finds a <span className="text-white font-medium">Sports Almanac</span>.
                   </p>
-                  <p className="text-slate-400 mt-2">
-                    It contains all the results of every sporting event—before they happen.
+                  <p className="text-slate-300 leading-relaxed">
+                    This book contains all the results of every sporting event from 1950-2000.
+                  </p>
+                  <p className="text-slate-300 leading-relaxed">
+                    He then takes the almanac <span className="text-amber-400 font-medium">back in time</span> and gives it to his <span className="text-white font-medium">younger self</span> in 1955.
+                  </p>
+                  <p className="text-slate-400 leading-relaxed">
+                    Young Biff now knows the results of every game—<span className="text-white">before they happen</span>.
                   </p>
                 </div>
               </div>
