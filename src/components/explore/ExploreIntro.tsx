@@ -110,22 +110,32 @@ const introScenes = [
           <div className="grid gap-4">
             <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
               <h3 className="text-amber-300 font-bold text-lg mb-2">Creation</h3>
-              <p className="text-slate-300 leading-relaxed">
-                Anything that was <span className="text-white font-medium">brought into existence</span>. It has a beginning. It is <span className="text-amber-400">in need</span> of something else to exist.
+              <p className="text-slate-300 leading-relaxed mb-2">
+                Anything that was <span className="text-white font-medium">brought into existence</span>.
               </p>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>• Has a <span className="text-amber-400">beginning</span></li>
+                <li>• Is <span className="text-amber-400">in need</span> of something else to exist</li>
+                <li>• Cannot bring itself into existence</li>
+              </ul>
             </div>
 
             <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
               <h3 className="text-emerald-300 font-bold text-lg mb-2">Creator</h3>
-              <p className="text-slate-300 leading-relaxed">
-                The one who <span className="text-white font-medium">brings things into existence</span>. Has no beginning. Is <span className="text-emerald-400">self-sufficient</span> and not in need of anything.
+              <p className="text-slate-300 leading-relaxed mb-2">
+                The one who <span className="text-white font-medium">brings things into existence</span>.
               </p>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>• Has <span className="text-emerald-400">no beginning</span>—always existed</li>
+                <li>• Is <span className="text-emerald-400">self-sufficient</span>—not in need of anything</li>
+                <li>• Must have always been present</li>
+              </ul>
             </div>
           </div>
 
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
             <p className="text-slate-300 leading-relaxed">
-              The Creator <span className="text-white font-medium">must have always been present</span>—because if the Creator had a beginning, the Creator would also be a creation.
+              If the Creator had a beginning, the Creator would also be a creation—and would need <span className="text-white font-medium">its own</span> creator. But by definition, the Creator is <span className="text-emerald-400 font-medium">uncreated</span>.
             </p>
           </div>
 
