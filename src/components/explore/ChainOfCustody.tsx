@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, FileSearch, Book, BookOpen, CheckCircle, XCircle, AlertTriangle, Link, MessageCircle, Coffee, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSearch, BookOpen, CheckCircle, Link, AlertTriangle } from 'lucide-react';
 
 interface ChainOfCustodyProps {
   onComplete: () => void;
@@ -17,29 +17,12 @@ const scenes = [
     section: 1,
   },
   {
-    id: 'exhibit-a',
-    title: 'Exhibit A: The Bible',
-    icon: 'books',
-    content: null, // Custom animated content
-    commentary: "initial-findings", // Special marker for custom label
-    section: 1,
-  },
-  {
     id: 'exhibit-b',
-    title: 'Exhibit B: The Quran',
+    title: 'The Quran',
     icon: 'quran',
     content: null, // Custom animated content
     commentary: "I wanted to verify there was only one version, so I searched the internet for anyone claiming to have a different version or reciting something different. No evidence anywhere. I did find different dialects which were approved and carried the exact same meaning — I counted this as the same. I accepted it has not been changed until proven otherwise.",
     section: 1,
-  },
-  {
-    id: 'section-1-recap',
-    title: 'Section 1 Complete',
-    icon: 'pause',
-    content: null, // Custom recap content
-    commentary: null,
-    section: 1,
-    isRecap: true,
   },
   {
     id: 'transition',
@@ -63,7 +46,7 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
     setAnimationPhase(0);
 
     // Auto-advance animation phases for exhibit scenes
-    if (scene.id === 'exhibit-a' || scene.id === 'exhibit-b') {
+    if (scene.id === 'exhibit-b') {
       const timer1 = setTimeout(() => setAnimationPhase(1), 1000);
       const timer2 = setTimeout(() => setAnimationPhase(2), 2500);
       const timer3 = setTimeout(() => setAnimationPhase(3), 4000);
@@ -111,153 +94,6 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
                 Upon doing some more digging, <span className="text-white font-semibold">these were my findings</span>.
               </p>
             </div>
-          </div>
-        );
-
-      case 'exhibit-a':
-        return (
-          <div className="space-y-6">
-            {/* The Bookshelf Animation */}
-            <div className="relative bg-gradient-to-b from-amber-950/50 to-slate-900/50 rounded-xl p-6 border border-amber-800/30 min-h-[200px] overflow-hidden">
-              {/* Shelf - positioned below books */}
-              <div className="absolute bottom-20 left-4 right-4 h-2 bg-amber-900/60 rounded" />
-
-              {/* Books appearing and changing */}
-              <div className="flex justify-center items-end gap-1 h-40 relative">
-                {/* Animated books */}
-                {[...Array(12)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{
-                      opacity: animationPhase >= 1 ? [0.3, 1, 0.5, 1][i % 4] : 0,
-                      y: animationPhase >= 1 ? 0 : 20,
-                      scale: animationPhase >= 2 ? [1, 0.9, 1.1, 0.95][i % 4] : 1,
-                    }}
-                    transition={{
-                      delay: i * 0.1,
-                      duration: 0.5,
-                      scale: { duration: 1, repeat: animationPhase >= 2 ? Infinity : 0, repeatType: 'reverse' }
-                    }}
-                    className={`rounded-t ${
-                      ['bg-red-800', 'bg-blue-800', 'bg-green-800', 'bg-purple-800', 'bg-orange-800', 'bg-teal-800'][i % 6]
-                    }`}
-                    style={{
-                      width: `${20 + (i % 3) * 5}px`,
-                      height: `${80 + (i % 4) * 20}px`,
-                    }}
-                  />
-                ))}
-
-                {/* Version labels appearing */}
-                {animationPhase >= 2 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute -top-2 left-0 right-0 flex justify-around text-[10px] text-slate-400"
-                  >
-                    <span>KJV</span>
-                    <span>NIV</span>
-                    <span>ESV</span>
-                    <span>NKJV</span>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Label */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: animationPhase >= 1 ? 1 : 0 }}
-                className="text-center mt-4"
-              >
-                <span className="text-amber-400 font-medium text-sm">THE BIBLE</span>
-                <span className="text-slate-500 text-xs block mt-1">(from Greek "biblia" meaning "books" — a collection, not a single book)</span>
-              </motion.div>
-            </div>
-
-            {/* Facts revealed progressively */}
-            <div className="space-y-3">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: animationPhase >= 1 ? 1 : 0, x: animationPhase >= 1 ? 0 : -20 }}
-                className="flex items-center gap-3 text-slate-300"
-              >
-                <Book className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">66 or 72 books</span> — Catholics and Protestants can't agree</span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: animationPhase >= 2 ? 1 : 0, x: animationPhase >= 2 ? 0 : -20 }}
-                className="flex items-center gap-3 text-slate-300"
-              >
-                <Book className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">Multiple authors</span> wrote different chapters over centuries</span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: animationPhase >= 2 ? 1 : 0, x: animationPhase >= 2 ? 0 : -20 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-3 text-slate-300"
-              >
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span>Jesus spoke <span className="text-white font-semibold">Aramaic</span>, but oldest manuscripts are in <span className="text-white font-semibold">Greek</span></span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: animationPhase >= 3 ? 1 : 0, x: animationPhase >= 3 ? 0 : -20 }}
-                className="flex items-center gap-3 text-slate-300"
-              >
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">Different versions</span> have different verse counts in the same chapter</span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: animationPhase >= 3 ? 1 : 0, x: animationPhase >= 3 ? 0 : -20 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-3 text-slate-300"
-              >
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span><span className="text-white font-semibold">No original manuscript</span> exists today</span>
-              </motion.div>
-            </div>
-
-            {/* Source link */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: animationPhase >= 2 ? 1 : 0 }}
-              className="text-center"
-            >
-              <a
-                href="https://www.youtube.com/watch?v=jowQond7_UE"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-slate-500 hover:text-amber-400 transition underline"
-              >
-                Source: "Who Wrote the Bible?" — Dr Robert Beckford (Channel 4)
-              </a>
-            </motion.div>
-
-            {/* Verdict */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: animationPhase >= 3 ? 1 : 0, y: animationPhase >= 3 ? 0 : 20 }}
-              className="bg-slate-800/80 rounded-xl p-4 border border-slate-600"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-amber-400 font-semibold text-sm uppercase tracking-wider">Verdict</p>
-                  <p className="text-white font-medium">Inconclusive</p>
-                  <p className="text-slate-400 text-sm">If there is no original, I cannot verify the Author's intent.</p>
-                </div>
-              </div>
-            </motion.div>
           </div>
         );
 
@@ -390,65 +226,6 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
           </div>
         );
 
-      case 'section-1-recap':
-        return (
-          <div className="space-y-6">
-            {/* Break recommendation */}
-            <div className="bg-gradient-to-br from-blue-900/40 to-purple-900/40 rounded-2xl p-6 border border-blue-700/50">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                  <Coffee className="w-6 h-6 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">Take a Break</h3>
-                  <p className="text-blue-300 text-sm">10 minutes recommended</p>
-                </div>
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                There's no rush. You need a <span className="text-white font-medium">clear head</span> to process this information.
-                Step away, grab a drink, and come back refreshed.
-              </p>
-            </div>
-
-            {/* Recap */}
-            <div className="bg-slate-800/60 rounded-xl p-6 border border-slate-600">
-              <div className="flex items-center gap-2 mb-4">
-                <RefreshCw className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-semibold text-white">What We've Covered</h3>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-amber-400 text-xs font-bold">1</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">The Bible</p>
-                    <p className="text-slate-400 text-sm">66-72 books, multiple authors, written in Greek (not Jesus's language), no original manuscript exists. Verdict: Inconclusive.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-emerald-400 text-xs font-bold">2</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">The Quran</p>
-                    <p className="text-slate-400 text-sm">Single text, unchanged for over 1,400 years, manuscripts from the Prophet's time still exist. Verdict: Preserved.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Key insight */}
-            <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/40">
-              <p className="text-amber-200 leading-relaxed text-center">
-                <span className="text-white font-medium">Key insight:</span> Preservation doesn't prove divine origin — but it means we can at least examine the <span className="text-emerald-400 font-medium">original text</span>.
-              </p>
-            </div>
-          </div>
-        );
-
       case 'transition':
         return (
           <div className="space-y-6">
@@ -493,14 +270,10 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
     switch (scene.icon) {
       case 'file-search':
         return <FileSearch className="w-10 h-10 text-amber-400" />;
-      case 'books':
-        return <Book className="w-10 h-10 text-amber-400" />;
       case 'quran':
         return <BookOpen className="w-10 h-10 text-emerald-400" />;
       case 'alert':
         return <AlertTriangle className="w-10 h-10 text-amber-400" />;
-      case 'pause':
-        return <Coffee className="w-10 h-10 text-blue-400" />;
       default:
         return null;
     }
