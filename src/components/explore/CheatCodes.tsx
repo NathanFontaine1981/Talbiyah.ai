@@ -30,6 +30,7 @@ interface CheatCodesProps {
   verifiedCount: number;
   totalFacts: number;
   onComplete: () => void;
+  onBack?: () => void;
 }
 
 interface LifeGuidance {
@@ -1017,7 +1018,7 @@ const faqs: FAQ[] = [
   },
 ];
 
-export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodesProps) => {
+export const CheatCodes = ({ verifiedCount, totalFacts, onComplete, onBack }: CheatCodesProps) => {
   const [stage, setStage] = useState<'intro' | 'topics' | 'faqs'>('intro');
   const [selectedTopic, setSelectedTopic] = useState<LifeGuidance | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -1411,8 +1412,19 @@ export const CheatCodes = ({ verifiedCount, totalFacts, onComplete }: CheatCodes
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 p-4"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

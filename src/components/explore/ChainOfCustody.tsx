@@ -103,14 +103,14 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
             <p className="text-lg text-slate-300 leading-relaxed">
               It was only fair to examine the <span className="text-amber-400 font-semibold">largest religion</span> alongside the <span className="text-emerald-400 font-semibold">most practiced religion in the world</span> — Islam.
             </p>
+            <p className="text-lg text-slate-300 leading-relaxed">
+              I watched an interesting documentary called <span className="text-white font-medium">"Who Wrote the Bible"</span> by Christian historian <span className="text-amber-400 font-semibold">Robert Beckford</span>, produced on Channel 4.
+            </p>
             <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
               <p className="text-lg text-amber-200 leading-relaxed">
-                My goal: gather <span className="text-white font-semibold">conclusive proof</span> of either one being true — or both being false.
+                Upon doing some more digging, <span className="text-white font-semibold">these were my findings</span>.
               </p>
             </div>
-            <p className="text-slate-400 leading-relaxed">
-              But before I read what the books said, I had to check <span className="text-white">where they came from</span>.
-            </p>
           </div>
         );
 

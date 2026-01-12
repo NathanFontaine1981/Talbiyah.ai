@@ -184,8 +184,44 @@ export default function ExplorePage() {
     advanceToStage('axiom-check');
   };
 
+  const handleBiasBack = () => {
+    setFlowStage('intro');
+  };
+
   const handleChainOfCustodyBack = () => {
     setFlowStage('bias');
+  };
+
+  const handleAxiomCheckBack = () => {
+    setFlowStage('chain-of-custody');
+  };
+
+  const handleAuthorityMatchBack = () => {
+    setFlowStage('axiom-check');
+  };
+
+  const handleProbabilityMomentBack = () => {
+    setFlowStage('authority-match');
+  };
+
+  const handleCheckpointBack = () => {
+    setFlowStage('probability-moment');
+  };
+
+  const handleQuestionBack = () => {
+    setFlowStage('checkpoint');
+  };
+
+  const handleReconciliationBack = () => {
+    setFlowStage('the-voice');
+  };
+
+  const handleCheatCodesBack = () => {
+    setFlowStage('prophet-timeline');
+  };
+
+  const handleFirstStepBack = () => {
+    setFlowStage('cheat-codes');
   };
 
   const handleAxiomCheckComplete = (axioms: string[]) => {
@@ -641,7 +677,7 @@ export default function ExplorePage() {
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <BiasBlur onComplete={handleBiasComplete} />
+          <BiasBlur onComplete={handleBiasComplete} onBack={handleBiasBack} />
         </div>
       </div>
     );
@@ -668,7 +704,7 @@ export default function ExplorePage() {
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <AxiomCheck onComplete={handleAxiomCheckComplete} />
+          <AxiomCheck onComplete={handleAxiomCheckComplete} onBack={handleAxiomCheckBack} />
         </div>
       </div>
     );
@@ -683,6 +719,7 @@ export default function ExplorePage() {
           <AuthorityMatch
             agreedAxioms={agreedAxioms}
             onComplete={handleAuthorityMatchComplete}
+            onBack={handleAuthorityMatchBack}
           />
         </div>
       </div>
@@ -698,6 +735,7 @@ export default function ExplorePage() {
           <ProbabilityMoment
             verifiedCount={verifiedCount}
             onComplete={handleProbabilityMomentComplete}
+            onBack={handleProbabilityMomentBack}
           />
         </div>
       </div>
@@ -714,6 +752,7 @@ export default function ExplorePage() {
             verifiedCount={verifiedCount}
             onConvinced={handleCheckpointConvinced}
             onShowMore={handleCheckpointShowMore}
+            onBack={handleCheckpointBack}
           />
         </div>
       </div>
@@ -730,6 +769,7 @@ export default function ExplorePage() {
             verifiedCount={verifiedCount}
             totalFacts={agreedAxioms.length}
             onComplete={handleQuestionComplete}
+            onBack={handleQuestionBack}
           />
         </div>
       </div>
@@ -757,7 +797,7 @@ export default function ExplorePage() {
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <TheReconciliation onComplete={handleReconciliationComplete} />
+          <TheReconciliation onComplete={handleReconciliationComplete} onBack={handleReconciliationBack} />
         </div>
       </div>
     );
@@ -788,6 +828,7 @@ export default function ExplorePage() {
             verifiedCount={verifiedCount}
             totalFacts={agreedAxioms.length}
             onComplete={handleCheatCodesComplete}
+            onBack={handleCheatCodesBack}
           />
         </div>
       </div>
@@ -804,6 +845,7 @@ export default function ExplorePage() {
             onTakeStep={handleFirstStepTakeStep}
             onNeedMoreTime={handleFirstStepNeedMoreTime}
             onLearnMore={handleFirstStepLearnMore}
+            onBack={handleFirstStepBack}
           />
         </div>
       </div>

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, TrendingDown, MessageCircle, Scale, Gavel } from 'lucide-react';
+import { ArrowRight, ArrowLeft, TrendingDown, MessageCircle, Scale, Gavel } from 'lucide-react';
 
 interface ProbabilityMomentProps {
   verifiedCount: number;
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMomentProps) => {
+export const ProbabilityMoment = ({ verifiedCount, onComplete, onBack }: ProbabilityMomentProps) => {
   const [stage, setStage] = useState<'counting' | 'pause' | 'nathan'>('counting');
   const [currentStep, setCurrentStep] = useState(0);
   const [canContinue, setCanContinue] = useState(false);
@@ -79,8 +80,19 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete }: ProbabilityMome
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-xl w-full text-center">
         <AnimatePresence mode="wait">
           {/* Stage 1: Counting animation */}

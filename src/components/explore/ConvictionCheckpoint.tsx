@@ -6,6 +6,7 @@ interface ConvictionCheckpointProps {
   verifiedCount: number;
   onConvinced: () => void;
   onShowMore: () => void;
+  onBack?: () => void;
 }
 
 // Secondary miracles to show if they want more
@@ -28,7 +29,7 @@ const secondaryMiracles = [
   },
 ];
 
-export const ConvictionCheckpoint = ({ verifiedCount, onConvinced, onShowMore }: ConvictionCheckpointProps) => {
+export const ConvictionCheckpoint = ({ verifiedCount, onConvinced, onShowMore, onBack }: ConvictionCheckpointProps) => {
   const [showMore, setShowMore] = useState(false);
   const [expandedMiracle, setExpandedMiracle] = useState<string | null>(null);
 
@@ -133,8 +134,19 @@ export const ConvictionCheckpoint = ({ verifiedCount, onConvinced, onShowMore }:
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-2xl w-full text-center">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}

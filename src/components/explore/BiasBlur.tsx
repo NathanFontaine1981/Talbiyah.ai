@@ -1,17 +1,29 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Scale } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Scale } from 'lucide-react';
 
 interface BiasBlurProps {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-export const BiasBlur = ({ onComplete }: BiasBlurProps) => {
+export const BiasBlur = ({ onComplete, onBack }: BiasBlurProps) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-xl w-full">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">

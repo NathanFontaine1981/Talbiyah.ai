@@ -1,48 +1,49 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play, FileText, Gavel } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play, FileText, Gavel } from 'lucide-react';
 
 interface AxiomCheckProps {
   onComplete: (agreedAxioms: string[]) => void;
+  onBack?: () => void;
 }
 
-// Categories of undeniable knowledge - presented as court exhibits
+// Categories of undeniable knowledge
 const categories = [
   {
     id: 'cosmic',
-    name: 'Exhibit A: Cosmic Evidence',
+    name: 'First up: Cosmic Evidence',
     subtitle: 'The Universe',
     icon: <Atom className="w-6 h-6" />,
     bgClass: 'bg-blue-500/20',
     textClass: 'text-blue-400',
-    exhibitLabel: 'Exhibit A',
+    exhibitLabel: 'First up',
   },
   {
     id: 'biological',
-    name: 'Exhibit B: Biological Evidence',
+    name: 'Next: Biological Evidence',
     subtitle: 'The Human Body',
     icon: <Sparkles className="w-6 h-6" />,
     bgClass: 'bg-purple-500/20',
     textClass: 'text-purple-400',
-    exhibitLabel: 'Exhibit B',
+    exhibitLabel: 'Next',
   },
   {
     id: 'natural',
-    name: 'Exhibit C: Natural Evidence',
+    name: 'Then: Natural Evidence',
     subtitle: 'The Ecosystem',
     icon: <Leaf className="w-6 h-6" />,
     bgClass: 'bg-emerald-500/20',
     textClass: 'text-emerald-400',
-    exhibitLabel: 'Exhibit C',
+    exhibitLabel: 'Then',
   },
   {
     id: 'human',
-    name: 'Exhibit D: Human Evidence',
+    name: 'Finally: Human Evidence',
     subtitle: 'The Soul',
     icon: <Heart className="w-6 h-6" />,
     bgClass: 'bg-rose-500/20',
     textClass: 'text-rose-400',
-    exhibitLabel: 'Exhibit D',
+    exhibitLabel: 'Finally',
   },
 ];
 
@@ -464,7 +465,7 @@ const storyScenes = [
   },
 ];
 
-export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
+export const AxiomCheck = ({ onComplete, onBack }: AxiomCheckProps) => {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
   const [reviewedAxioms, setReviewedAxioms] = useState<string[]>([]); // Tracks axioms user has interacted with (agree OR need more info)
@@ -922,7 +923,18 @@ export const AxiomCheck = ({ onComplete }: AxiomCheckProps) => {
 
   // Category view with all axioms
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-slate-950 flex flex-col relative">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-slate-800 z-50">
         <motion.div

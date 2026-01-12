@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, HelpCircle, User, Users, Sparkles, Check, Brain } from 'lucide-react';
+import { ArrowRight, ArrowLeft, HelpCircle, User, Users, Sparkles, Check, Brain } from 'lucide-react';
 
 interface TheQuestionProps {
   verifiedCount: number;
   totalFacts: number;
   onComplete: (belief: string) => void;
+  onBack?: () => void;
 }
 
 const sourceOptions = [
@@ -39,7 +40,7 @@ const sourceOptions = [
   },
 ];
 
-export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuestionProps) => {
+export const TheQuestion = ({ verifiedCount, totalFacts, onComplete, onBack }: TheQuestionProps) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showReflection, setShowReflection] = useState(false);
   const [showSpecialistLogic, setShowSpecialistLogic] = useState(false);
@@ -74,8 +75,19 @@ export const TheQuestion = ({ verifiedCount, totalFacts, onComplete }: TheQuesti
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-2xl w-full">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}

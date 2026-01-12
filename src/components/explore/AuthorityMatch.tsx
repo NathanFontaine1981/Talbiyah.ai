@@ -5,6 +5,7 @@ import { ArrowRight, ArrowLeft, CheckCircle2, BookOpen, Sparkles, TrendingUp, Ch
 interface AuthorityMatchProps {
   agreedAxioms: string[];
   onComplete: () => void;
+  onBack?: () => void;
 }
 
 // Mapping of all axiom IDs to their Quranic revelations
@@ -386,7 +387,7 @@ const categoryClimaxStyles: Record<string, { bg: string; border: string }> = {
   human: { bg: 'bg-rose-900/30', border: 'border-rose-700/50' },
 };
 
-export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps) => {
+export const AuthorityMatch = ({ agreedAxioms, onComplete, onBack }: AuthorityMatchProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [showIntro, setShowIntro] = useState(true);
@@ -629,7 +630,18 @@ export const AuthorityMatch = ({ agreedAxioms, onComplete }: AuthorityMatchProps
     : 'Always known';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 relative">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-slate-800 z-50">
         <motion.div

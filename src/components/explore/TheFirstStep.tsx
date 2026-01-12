@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Heart, BookOpen, Users, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Heart, BookOpen, Users, Sparkles } from 'lucide-react';
 
 interface TheFirstStepProps {
   onTakeStep: () => void;
   onNeedMoreTime: () => void;
   onLearnMore: () => void;
+  onBack?: () => void;
 }
 
-export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore }: TheFirstStepProps) => {
+export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }: TheFirstStepProps) => {
   const [stage, setStage] = useState<'intro' | 'acknowledgment' | 'paths'>('intro');
   const [acknowledged, setAcknowledged] = useState(false);
 
@@ -16,8 +17,19 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore }: TheFir
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-xl w-full">
         <AnimatePresence mode="wait">
           {/* Stage 1: Intro - What you've seen */}

@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeft, BookOpen, Users, MessageCircle, Link2, CheckCirc
 
 interface TheReconciliationProps {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
 // The reconciliation scenes - TRIMMED to 4 essential scenes
@@ -124,7 +125,7 @@ const scenes = [
   },
 ];
 
-export const TheReconciliation = ({ onComplete }: TheReconciliationProps) => {
+export const TheReconciliation = ({ onComplete, onBack }: TheReconciliationProps) => {
   const [currentScene, setCurrentScene] = useState(0);
   const scene = scenes[currentScene];
   const isLastScene = currentScene === scenes.length - 1;
@@ -147,8 +148,19 @@ export const TheReconciliation = ({ onComplete }: TheReconciliationProps) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-4 relative"
     >
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="fixed top-20 md:top-4 left-6 flex items-center gap-1 text-slate-400 hover:text-white transition z-40"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       <div className="max-w-2xl w-full">
         {/* Progress bar */}
         <div className="mb-8">
