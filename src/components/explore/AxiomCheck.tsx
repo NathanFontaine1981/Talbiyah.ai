@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, TrendingUp, DollarSign, Brain, Zap, Clock, ExternalLink, Play, FileText, Gavel } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Atom, Heart, Leaf, Sparkles, ChevronRight, BookOpen, DollarSign, Brain, ExternalLink, Play, FileText, Gavel } from 'lucide-react';
 
 interface AxiomCheckProps {
   onComplete: (agreedAxioms: string[]) => void;
@@ -336,79 +336,10 @@ const axioms = [
   },
 ];
 
-// Story scenes for the Almanac intro - TRIMMED to 5 essential scenes
+// Story scenes for the Almanac intro - TRIMMED to 2 essential scenes
 const storyScenes = [
   {
     id: 'scene1',
-    title: 'Exhibit Alpha: The Analogy',
-    icon: <Zap className="w-12 h-12" />,
-    iconBg: 'bg-amber-500/20',
-    iconColor: 'text-amber-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          When I started examining the Quran, I had a <span className="text-amber-400 font-semibold">lightbulb moment</span>. I remembered one of my childhood favourite films — <span className="text-blue-400 font-semibold">Back to the Future Part II</span>.
-        </p>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          In that film, a character gets hold of a Sports Almanac from the future.
-        </p>
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <p className="text-amber-300 text-lg italic mb-2">
-            "This book records every sports result from 1950 to 2000."
-          </p>
-          <p className="text-white font-medium">
-            He takes it back in time. Every bet wins. He becomes a billionaire.
-          </p>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          It doesn't <span className="italic">predict</span> anything. It simply <span className="text-white font-semibold">records facts</span> about events that haven't happened yet.
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene2',
-    title: 'The Burden of Proof',
-    icon: <TrendingUp className="w-12 h-12" />,
-    iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-400',
-    content: (
-      <>
-        <p className="text-lg text-slate-300 leading-relaxed mb-4">
-          Imagine you were given this book and told it has all the correct answers in it. At first, <span className="text-white font-semibold">0% belief</span>. There is no reason to trust it. <span className="text-amber-400 font-medium">Prove it.</span>
-        </p>
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300">Evidence 1 verified</span>
-              <span className="text-emerald-400 text-sm">Interesting...</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300">Evidence 10 verified</span>
-              <span className="text-emerald-400 text-sm">Wait...</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white font-medium">Evidence 50 verified, 0 false</span>
-              <span className="text-emerald-400 text-sm font-bold">This is real.</span>
-            </div>
-          </div>
-        </div>
-        <p className="text-lg text-slate-300 leading-relaxed">
-          Each verified piece of evidence <span className="text-emerald-400 font-semibold">strengthens the case</span>. The only thing that would overturn it? <span className="text-rose-400">A single false claim.</span>
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'scene3',
-    title: 'A Hypothetical for the Jury',
-    icon: <Clock className="w-12 h-12" />,
-    iconBg: 'bg-rose-500/20',
-    iconColor: 'text-rose-400',
-    content: 'interactive-hypothetical', // Special marker for interactive content
-  },
-  {
-    id: 'scene4',
     title: 'The Logical Conclusion',
     icon: <Gavel className="w-12 h-12" />,
     iconBg: 'bg-blue-500/20',
@@ -439,7 +370,7 @@ const storyScenes = [
     ),
   },
   {
-    id: 'scene5',
+    id: 'scene2',
     title: "The Evidence Will Be Presented",
     icon: <FileText className="w-12 h-12" />,
     iconBg: 'bg-amber-500/20',
@@ -475,7 +406,6 @@ export const AxiomCheck = ({ onComplete, onBack }: AxiomCheckProps) => {
   const [introScene, setIntroScene] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [expandedAxiom, setExpandedAxiom] = useState<string | null>(null);
-  const [hypotheticalAnswer, setHypotheticalAnswer] = useState<'yes' | 'no' | null>(null);
 
   // Get the active categories (only the ones user selected)
   const activeCategories = selectedCategories.length > 0
@@ -598,95 +528,14 @@ export const AxiomCheck = ({ onComplete, onBack }: AxiomCheckProps) => {
 
                 {/* Scene Content */}
                 <div className="bg-slate-900/70 rounded-2xl p-6 sm:p-8 border border-slate-700 mb-8 text-left">
-                  {currentScene.content === 'interactive-hypothetical' ? (
-                    <>
-                      <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                        You're about to board a flight. Out of curiosity, you check the book for today's date.
-                      </p>
-                      <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700">
-                        <p className="text-rose-400 text-lg font-semibold mb-2">
-                          "Flight 609 crashed on takeoff. 23 dead."
-                        </p>
-                        <p className="text-white font-medium">
-                          You look at your boarding pass. <span className="text-rose-400">Flight 609.</span>
-                        </p>
-                      </div>
-
-                      {hypotheticalAnswer === null ? (
-                        <>
-                          <p className="text-lg text-white font-medium mb-4">
-                            If this source has been <span className="text-emerald-400">100% accurate</span> on everything you've verified...
-                          </p>
-                          <p className="text-xl text-white font-semibold mb-4">
-                            Would you get on that plane?
-                          </p>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => setHypotheticalAnswer('yes')}
-                              className="flex-1 px-6 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
-                            >
-                              Yes, I'd still board
-                            </button>
-                            <button
-                              onClick={() => setHypotheticalAnswer('no')}
-                              className="flex-1 px-6 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-medium transition"
-                            >
-                              No way
-                            </button>
-                          </div>
-                        </>
-                      ) : hypotheticalAnswer === 'no' ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50"
-                        >
-                          <p className="text-2xl text-white font-medium mb-3">
-                            Exactly.
-                          </p>
-                          <p className="text-emerald-200 text-lg mb-3">
-                            If a source has been <span className="text-white font-semibold">100% accurate</span> about everything you can verify, you'd be foolish to ignore what it says about things you <span className="text-white font-semibold">haven't witnessed yet</span>.
-                          </p>
-                          <p className="text-slate-400 text-sm italic">
-                            The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
-                          </p>
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50"
-                        >
-                          <p className="text-xl text-white font-medium mb-3">
-                            Think about that for a moment.
-                          </p>
-                          <p className="text-amber-200 text-lg mb-3">
-                            This book has been <span className="text-white font-semibold">100% accurate</span> on everything you've checked. Not 99%. Not "mostly right." <span className="text-white font-semibold">Every single time.</span>
-                          </p>
-                          <p className="text-amber-200 text-lg mb-3">
-                            And now it's telling you something about <span className="text-white font-semibold">your flight</span>. Would you really bet your life that <span className="italic">this</span> is the one time it's wrong?
-                          </p>
-                          <p className="text-slate-400 text-sm italic">
-                            The book isn't predicting. It's stating what already happened—you just haven't witnessed it yet.
-                          </p>
-                        </motion.div>
-                      )}
-                    </>
-                  ) : (
-                    currentScene.content
-                  )}
+                  {currentScene.content}
                 </div>
 
                 {/* Navigation */}
                 <div className="flex items-center justify-center gap-4">
                   {introScene > 0 && (
                     <button
-                      onClick={() => {
-                        setIntroScene(prev => prev - 1);
-                        if (currentScene.content === 'interactive-hypothetical') {
-                          setHypotheticalAnswer(null);
-                        }
-                      }}
+                      onClick={() => setIntroScene(prev => prev - 1)}
                       className="px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full transition"
                     >
                       Back
@@ -704,8 +553,6 @@ export const AxiomCheck = ({ onComplete, onBack }: AxiomCheckProps) => {
                       Choose Your Categories
                       <ArrowRight className="w-5 h-5" />
                     </button>
-                  ) : currentScene.content === 'interactive-hypothetical' && hypotheticalAnswer === null ? (
-                    <p className="text-slate-500 text-sm">Answer the question to continue</p>
                   ) : (
                     <button
                       onClick={() => setIntroScene(prev => prev + 1)}
