@@ -129,15 +129,17 @@ export default function FeedbackButton() {
           )}
         </AnimatePresence>
 
-        <motion.button
-          onClick={handleClick}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="relative w-14 h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all group"
-        >
-          <MessageSquarePlus className="w-6 h-6" />
+        <div className="relative group">
+          <motion.button
+            onClick={handleClick}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-14 h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          >
+            <MessageSquarePlus className="w-6 h-6" />
+          </motion.button>
 
           {/* Dismiss button */}
           <button
@@ -149,7 +151,7 @@ export default function FeedbackButton() {
           >
             <X className="w-3 h-3 text-white" />
           </button>
-        </motion.button>
+        </div>
       </div>
 
       {/* Modal */}

@@ -441,13 +441,22 @@ export default function AdminHome() {
               <Award className="w-6 h-6 text-amber-400" />
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Teacher Tier Structure</h2>
             </div>
-            <button
-              onClick={() => navigate('/admin/teacher-tiers')}
-              className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition flex items-center space-x-2"
-            >
-              <span>Manage Tiers</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/admin/group-lesson-teachers')}
+                className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 rounded-lg transition flex items-center space-x-2"
+              >
+                <Users className="w-4 h-4" />
+                <span>Group Teachers</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/teacher-tiers')}
+                className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition flex items-center space-x-2"
+              >
+                <span>Manage Tiers</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

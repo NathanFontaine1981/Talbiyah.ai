@@ -922,14 +922,14 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
         </div>
 
         {/* Video Container */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-6">
-          <div className="w-full max-w-4xl aspect-video bg-slate-900 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex-1 flex flex-col items-center justify-start px-2 sm:px-4 py-4 sm:py-6 overflow-y-auto">
+          <div className="w-full max-w-4xl relative" style={{ paddingBottom: '56.25%', minHeight: '200px' }}>
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
               title={`${selectedPrayer.name} Prayer Guide`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              className="w-full h-full"
+              className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl"
             />
           </div>
 

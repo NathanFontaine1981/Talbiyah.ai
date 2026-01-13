@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Clock, BookOpen, MessageCircle, TrendingUp, ChevronDown, ChevronUp, Maximize2, Languages } from 'lucide-react';
+import { Calendar, Clock, BookOpen, MessageCircle, TrendingUp, ChevronDown, ChevronUp, Maximize2, Languages, ClipboardCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StudentProgressPanel from './StudentProgressPanel';
 import StudentQuranTracker from './StudentQuranTracker';
@@ -25,6 +25,7 @@ interface StudentCardProps {
   firstLessonDate: string;
   lastLessonDate: string | null;
   nextLessonTime: string | null;
+  pendingHomeworkCount?: number;
 }
 
 export default function StudentCard({
@@ -37,6 +38,7 @@ export default function StudentCard({
   firstLessonDate,
   lastLessonDate,
   nextLessonTime,
+  pendingHomeworkCount = 0,
 }: StudentCardProps) {
   const navigate = useNavigate();
   const [showProgress, setShowProgress] = useState(false);
@@ -108,13 +110,26 @@ export default function StudentCard({
           </div>
         </div>
 
-        {/* Next Lesson Badge */}
-        {nextLessonFormatted && (
-          <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Next: {nextLessonFormatted}
-          </div>
-        )}
+        {/* Badges */}
+        <div className="flex flex-col items-end gap-2">
+          {/* Pending Homework Badge */}
+          {pendingHomeworkCount > 0 && (
+            <button
+              onClick={() => navigate('/teacher/homework-review')}
+              className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-amber-200 transition"
+            >
+              <ClipboardCheck className="w-3 h-3" />
+              {pendingHomeworkCount} homework to review
+            </button>
+          )}
+          {/* Next Lesson Badge */}
+          {nextLessonFormatted && (
+            <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Next: {nextLessonFormatted}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Subject Tabs */}

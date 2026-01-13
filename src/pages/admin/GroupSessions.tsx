@@ -544,15 +544,16 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
     name: '',
     subject_id: '',
     teacher_id: '',
+    teacher_hourly_rate: 0,
     level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-    max_participants: 6,
+    max_participants: 10,
     schedule_day: 'Monday',
     schedule_time: '17:00',
     duration_minutes: 60,
     start_date: '',
     end_date: '',
-    is_free: true,
-    price_per_session: 0,
+    is_free: false,
+    price_per_session: 600, // £6 per student
     description: '',
   });
 
@@ -561,10 +562,12 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
   }, []);
 
   async function fetchTeachers() {
+    // Only fetch teachers who are approved AND enabled for group lessons
     const { data } = await supabase
       .from('teacher_profiles')
-      .select('id, user_id, profiles!inner(full_name)')
-      .eq('status', 'approved');
+      .select('id, user_id, group_lesson_tier, group_lesson_hourly_rate, profiles!inner(full_name, country, city)')
+      .eq('status', 'approved')
+      .eq('group_lesson_enabled', true);
     setTeachers(data || []);
   }
 
@@ -633,20 +636,42 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Teacher</label>
-              <select
-                required
-                value={formData.teacher_id}
-                onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
-              >
-                <option value="">Select Teacher</option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.user_id}>
-                    {(teacher.profiles as any).full_name}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                Teacher <span className="text-xs text-emerald-500">(Group-enabled only)</span>
+              </label>
+              {teachers.length === 0 ? (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-amber-400 text-sm">No group-enabled teachers available.</p>
+                  <p className="text-gray-500 text-xs mt-1">Enable teachers for group lessons in the Group Lesson Teachers page first.</p>
+                </div>
+              ) : (
+                <select
+                  required
+                  value={formData.teacher_id}
+                  onChange={(e) => {
+                    const teacher = teachers.find(t => t.user_id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      teacher_id: e.target.value,
+                      teacher_hourly_rate: teacher?.group_lesson_hourly_rate || 0
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="">Select Teacher</option>
+                  {teachers.map((teacher) => {
+                    const tierIcon = teacher.group_lesson_tier === 'master' ? '👑' : teacher.group_lesson_tier === 'senior' ? '🎓' : '📚';
+                    return (
+                      <option key={teacher.id} value={teacher.user_id}>
+                        {tierIcon} {(teacher.profiles as any).full_name} - £{teacher.group_lesson_hourly_rate}/hr ({(teacher.profiles as any).city || 'UK'})
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
+              {formData.teacher_hourly_rate > 0 && (
+                <p className="text-xs text-emerald-400 mt-1">Teacher rate: £{formData.teacher_hourly_rate}/hr</p>
+              )}
             </div>
           </div>
 
@@ -762,22 +787,48 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
                 <input
                   type="radio"
                   checked={!formData.is_free}
-                  onChange={() => setFormData({ ...formData, is_free: false })}
+                  onChange={() => setFormData({ ...formData, is_free: false, price_per_session: 600 })}
                   className="w-4 h-4 text-emerald-500"
                 />
                 <span className="text-gray-900 dark:text-white">Paid</span>
               </label>
               {!formData.is_free && (
-                <div className="ml-6">
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Price per session (£)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price_per_session / 100}
-                    onChange={(e) => setFormData({ ...formData, price_per_session: Math.round(parseFloat(e.target.value) * 100) })}
-                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                  />
+                <div className="ml-6 space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Price per student (£)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.price_per_session / 100}
+                      onChange={(e) => setFormData({ ...formData, price_per_session: Math.round(parseFloat(e.target.value) * 100) })}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  {/* Pricing Breakdown */}
+                  {formData.teacher_hourly_rate > 0 && (
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Revenue breakdown (per session):</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Student price:</span>
+                          <span className="text-white font-semibold">£{(formData.price_per_session / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Max revenue ({formData.max_participants} students):</span>
+                          <span className="text-emerald-400 font-semibold">£{((formData.price_per_session / 100) * formData.max_participants).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Teacher cost:</span>
+                          <span className="text-amber-400">-£{formData.teacher_hourly_rate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+                          <span className="text-gray-600 dark:text-gray-400">Platform profit (max):</span>
+                          <span className="text-emerald-400 font-bold">£{(((formData.price_per_session / 100) * formData.max_participants) - formData.teacher_hourly_rate).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

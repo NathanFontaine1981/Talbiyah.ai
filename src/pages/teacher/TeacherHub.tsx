@@ -203,6 +203,13 @@ export default function TeacherHub() {
       iconColor: 'text-purple-600'
     },
     {
+      icon: Users,
+      label: 'Group Lessons',
+      path: '/teacher/group-lessons',
+      iconBg: 'bg-blue-500/20',
+      iconColor: 'text-blue-600'
+    },
+    {
       icon: DollarSign,
       label: 'My Earnings',
       path: '/teacher/earnings',

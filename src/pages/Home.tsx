@@ -173,23 +173,15 @@ export default function Home() {
                     Go to Dashboard
                   </button>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => navigate('/apply-to-teach')}
-                      className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium"
-                    >
-                      Apply to Teach
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const dashboardRoute = await getDashboardRoute();
-                        navigate(dashboardRoute);
-                      }}
-                      className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition"
-                    >
-                      Dashboard
-                    </button>
-                  </>
+                  <button
+                    onClick={async () => {
+                      const dashboardRoute = await getDashboardRoute();
+                      navigate(dashboardRoute);
+                    }}
+                    className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition"
+                  >
+                    Dashboard
+                  </button>
                 )}
                 <button
                   onClick={handleSignOut}
@@ -249,14 +241,6 @@ export default function Home() {
                     >
                       Go to Dashboard
                     </button>
-                    {!isTeacher && (
-                      <button
-                        onClick={() => { navigate('/apply-to-teach'); setMobileMenuOpen(false); }}
-                        className="block w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full font-semibold transition text-center mb-3"
-                      >
-                        Apply to Teach
-                      </button>
-                    )}
                     <button
                       onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
                       className="block w-full px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition font-medium text-center"

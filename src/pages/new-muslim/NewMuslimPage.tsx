@@ -300,40 +300,112 @@ export default function NewMuslimPage() {
             </p>
           </div>
 
-          {/* Three paths */}
-          <div className="grid sm:grid-cols-3 gap-4 mb-6">
-            <button
-              onClick={() => setShowCurriculum(true)}
-              className="p-6 bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl transition flex flex-col items-center gap-3 relative overflow-hidden"
-            >
-              <div className="absolute top-2 right-2 bg-amber-500 text-xs px-2 py-0.5 rounded-full font-medium">
-                Start Here
-              </div>
-              <Play className="w-8 h-8" />
-              <span className="font-semibold text-lg">Learn the Basics</span>
-              <span className="text-purple-200 text-sm">
-                6 foundational chapters
-              </span>
-            </button>
+          {/* Unshakeable Foundations - 6 Foundations */}
+          <div className="mb-6">
+            <h2 className="text-lg text-emerald-300 font-medium mb-4">Unshakeable Foundations</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Pillar 1: Allah */}
+              <button
+                onClick={() => setShowCurriculum(true)}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-blue-500 to-blue-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-blue-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <Star className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">Allah</h3>
+                  <p className="text-blue-200 text-xs">Names & Attributes</p>
+                </div>
+              </button>
+
+              {/* Pillar 2: Prophet Muhammad ﷺ */}
+              <button
+                onClick={() => setShowCurriculum(true)}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-amber-500 to-amber-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-amber-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <BookOpen className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">Prophet ﷺ</h3>
+                  <p className="text-amber-200 text-xs">Meccan & Medinan Era</p>
+                </div>
+              </button>
+
+              {/* Pillar 3: The Prophets */}
+              <button
+                onClick={() => setShowCurriculum(true)}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-purple-500 to-purple-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-purple-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <Sparkles className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">The Prophets</h3>
+                  <p className="text-purple-200 text-xs">Lives & Lessons</p>
+                </div>
+              </button>
+
+              {/* Pillar 4: Angels */}
+              <button
+                onClick={() => setShowCurriculum(true)}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-slate-500 to-slate-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-slate-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <Shield className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">Angels</h3>
+                  <p className="text-slate-200 text-xs">The Unseen Realm</p>
+                </div>
+              </button>
+
+              {/* Pillar 5: Salah */}
+              <button
+                onClick={() => navigate('/salah')}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-teal-500 to-teal-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-teal-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <Play className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">Salah</h3>
+                  <p className="text-teal-200 text-xs">How to Pray</p>
+                </div>
+              </button>
+
+              {/* Pillar 6: The Hereafter */}
+              <button
+                onClick={() => setShowCurriculum(true)}
+                className="group relative"
+              >
+                <div className="bg-gradient-to-b from-rose-500 to-rose-700 rounded-xl p-4 text-center transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg min-h-[120px] flex flex-col justify-between">
+                  <div className="absolute -top-1 left-1 right-1 h-2 bg-rose-400 rounded-t-lg" style={{ clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}></div>
+                  <Star className="w-6 h-6 text-white/90 mx-auto mb-1 mt-2" />
+                  <h3 className="text-white font-semibold text-sm">The Hereafter</h3>
+                  <p className="text-rose-200 text-xs">Your Eternal Journey</p>
+                </div>
+              </button>
+            </div>
+            <p className="text-slate-500 text-xs mt-3">Complete all 6 foundations → Stand on Unshakeable Ground</p>
+          </div>
+
+          {/* Additional tools */}
+          <div className="grid sm:grid-cols-2 gap-3 mb-6">
             <button
               onClick={handleStartJourney}
-              className="p-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl transition flex flex-col items-center gap-3"
+              className="p-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition flex items-center gap-3"
             >
-              <Shield className="w-8 h-8" />
-              <span className="font-semibold text-lg">Build Your Foundation</span>
-              <span className="text-emerald-200 text-sm">
-                Evidence-based certainty
-              </span>
+              <Shield className="w-6 h-6" />
+              <div className="text-left">
+                <span className="font-semibold block">Build Your Foundation</span>
+                <span className="text-emerald-200 text-xs">Evidence-based certainty</span>
+              </div>
             </button>
             <button
               onClick={() => setShowLifeManual(true)}
-              className="p-6 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-600 transition flex flex-col items-center gap-3"
+              className="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-600 transition flex items-center gap-3"
             >
-              <BookOpen className="w-8 h-8 text-emerald-400" />
-              <span className="font-semibold text-lg">Life Manual</span>
-              <span className="text-slate-400 text-sm">
-                Quranic solutions
-              </span>
+              <BookOpen className="w-6 h-6 text-emerald-400" />
+              <div className="text-left">
+                <span className="font-semibold block">Life Manual</span>
+                <span className="text-slate-400 text-xs">Quranic solutions</span>
+              </div>
             </button>
           </div>
 

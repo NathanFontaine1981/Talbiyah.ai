@@ -341,8 +341,6 @@ export default function DashboardPremium() {
         { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
-        { icon: FileText, label: 'Bayna Yadak 1A', path: '/materials/Al-Arabi-bin-Yadik-1-A_compressed.pdf', active: false, roles: ['Teacher'], external: true },
-        { icon: FileText, label: 'Bayna Yadak 1B', path: '/materials/Al-Arabi-bin-Yadik-1-B_compressed.pdf', active: false, roles: ['Teacher'], external: true },
       ]
     },
     {

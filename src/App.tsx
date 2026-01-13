@@ -31,6 +31,7 @@ const PageLoader = () => (
 
 // Core pages - loaded immediately
 import Home from './pages/Home';
+import HomeLandingV2 from './pages/HomeLandingV2';
 import Demo from './pages/Demo';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
@@ -84,6 +85,7 @@ const TierDiagnostic = lazy(() => import('./pages/TierDiagnostic'));
 const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceReferenceAbout'));
 const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference'));
 const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
+const DuaBuilder = lazy(() => import('./pages/DuaBuilder'));
 const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
@@ -126,6 +128,8 @@ const TeacherEditProfile = lazy(() => import('./pages/teacher/EditProfile'));
 const TeacherHub = lazy(() => import('./pages/teacher/TeacherHub'));
 const MyStudents = lazy(() => import('./pages/teacher/MyStudents'));
 const HomeworkReview = lazy(() => import('./pages/teacher/HomeworkReview'));
+const TeacherGroupLessons = lazy(() => import('./pages/teacher/GroupLessons'));
+const TeacherGroupHomework = lazy(() => import('./pages/teacher/GroupHomework'));
 const MySchedule = lazy(() => import('./pages/teacher/MySchedule'));
 const TeacherTierDashboard = lazy(() => import('./pages/TeacherTierDashboard'));
 const TeacherTierInfo = lazy(() => import('./pages/TeacherTierInfo'));
@@ -133,6 +137,7 @@ const TeacherEarnings = lazy(() => import('./pages/TeacherEarnings'));
 const TeacherPaymentSettings = lazy(() => import('./pages/TeacherPaymentSettings'));
 const TeacherDiagnosticAssessment = lazy(() => import('./pages/teacher/DiagnosticAssessment'));
 const DiagnosticPrepView = lazy(() => import('./components/teacher/DiagnosticPrepView'));
+const BookWithStudent = lazy(() => import('./pages/teacher/BookWithStudent'));
 
 // Admin pages - only loaded for admins
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -140,6 +145,7 @@ const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
 const TeacherManagement = lazy(() => import('./pages/admin/TeacherManagement'));
 const TeacherReview = lazy(() => import('./pages/admin/TeacherReview'));
 const TeacherTiers = lazy(() => import('./pages/admin/TeacherTiers'));
+const GroupLessonTeachers = lazy(() => import('./pages/admin/GroupLessonTeachers'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const Sessions = lazy(() => import('./pages/admin/Sessions'));
 const GroupSessions = lazy(() => import('./pages/admin/GroupSessions'));
@@ -165,7 +171,8 @@ function App() {
         <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
         <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeLandingV2 />} />
+        <Route path="/landing-old" element={<Home />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -336,6 +343,7 @@ function App() {
           <Route path="teachers" element={<TeacherManagement />} />
           <Route path="teachers/:teacherId/review" element={<TeacherReview />} />
           <Route path="teacher-tiers" element={<TeacherTiers />} />
+          <Route path="group-lesson-teachers" element={<GroupLessonTeachers />} />
           <Route path="teacher-payouts" element={<TeacherPayouts />} />
           <Route path="sessions" element={<Sessions />} />
           <Route path="group-sessions" element={<GroupSessions />} />
@@ -397,6 +405,22 @@ function App() {
           element={
             <ProtectedRoute>
               <HomeworkReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/group-lessons"
+          element={
+            <ProtectedRoute>
+              <TeacherGroupLessons />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/group-homework/:sessionId"
+          element={
+            <ProtectedRoute>
+              <TeacherGroupHomework />
             </ProtectedRoute>
           }
         />
@@ -477,6 +501,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DiagnosticPrepView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/book-with-student/:studentId"
+          element={
+            <ProtectedRoute>
+              <BookWithStudent />
             </ProtectedRoute>
           }
         />
@@ -726,6 +758,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/dua-builder" element={<DuaBuilder />} />
         <Route
           path="/khutba-reflections"
           element={

@@ -24,6 +24,7 @@ interface StudentData {
   first_lesson_date: string;
   last_lesson_date: string | null;
   next_lesson_time: string | null;
+  pending_homework_count: number;
 }
 
 export default function MyStudents() {
@@ -168,6 +169,30 @@ export default function MyStudents() {
         .in('status', ['booked', 'confirmed', 'scheduled', 'pending'])
         .order('scheduled_time', { ascending: true });
 
+      // Fetch pending homework submissions count for each student
+      const { data: pendingHomework } = await supabase
+        .from('homework_submissions')
+        .select('learner_id')
+        .in('learner_id', uniqueStudentIds)
+        .eq('status', 'submitted');
+
+      const { data: pendingArabicHomework } = await supabase
+        .from('arabic_homework_submissions')
+        .select('learner_id')
+        .in('learner_id', uniqueStudentIds)
+        .eq('status', 'submitted');
+
+      // Count pending homework per student
+      const homeworkCountMap = new Map<string, number>();
+      pendingHomework?.forEach((hw: any) => {
+        const count = homeworkCountMap.get(hw.learner_id) || 0;
+        homeworkCountMap.set(hw.learner_id, count + 1);
+      });
+      pendingArabicHomework?.forEach((hw: any) => {
+        const count = homeworkCountMap.get(hw.learner_id) || 0;
+        homeworkCountMap.set(hw.learner_id, count + 1);
+      });
+
       // Group relationships by student
       const studentMap = new Map<string, {
         relationships: any[];
@@ -225,7 +250,8 @@ export default function MyStudents() {
           total_hours: totalHours,
           first_lesson_date: data.firstDate,
           last_lesson_date: data.lastDate,
-          next_lesson_time: nextLesson?.scheduled_time || null
+          next_lesson_time: nextLesson?.scheduled_time || null,
+          pending_homework_count: homeworkCountMap.get(studentId) || 0
         };
       });
 
@@ -379,6 +405,7 @@ export default function MyStudents() {
                   firstLessonDate={student.first_lesson_date}
                   lastLessonDate={student.last_lesson_date}
                   nextLessonTime={student.next_lesson_time}
+                  pendingHomeworkCount={student.pending_homework_count}
                 />
               ))}
             </div>

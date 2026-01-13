@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2, Clock, AlertCircle, ArrowRight, Globe, Languages, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { COUNTRIES, UK_CITIES, LANGUAGES, isUKCountry, getCitiesForCountry } from '../data/locationConstants';
 
 export default function TeacherProfileSetup() {
   const navigate = useNavigate();
@@ -15,6 +16,9 @@ export default function TeacherProfileSetup() {
     gender: '',
     date_of_birth: '',
     location: '',
+    country: '',
+    city: '',
+    languages: ['English'] as string[],
     timezone: 'UTC',
     bio: '',
     education_level: '',
@@ -37,7 +41,7 @@ export default function TeacherProfileSetup() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, gender, date_of_birth, location, timezone')
+        .select('full_name, gender, date_of_birth, location, country, city, languages, timezone')
         .eq('id', user.id)
         .single();
 
@@ -48,6 +52,9 @@ export default function TeacherProfileSetup() {
           gender: profile.gender || '',
           date_of_birth: profile.date_of_birth || '',
           location: profile.location || '',
+          country: profile.country || '',
+          city: profile.city || '',
+          languages: profile.languages || ['English'],
           timezone: profile.timezone || 'UTC',
         }));
       }
@@ -95,8 +102,15 @@ export default function TeacherProfileSetup() {
     setError('');
     setSaving(true);
 
-    if (!formData.full_name || !formData.gender || !formData.timezone) {
-      setError('Please fill in all required fields');
+    if (!formData.full_name || !formData.gender || !formData.timezone || !formData.country || formData.languages.length === 0) {
+      setError('Please fill in all required fields (name, gender, country, languages, timezone)');
+      setSaving(false);
+      return;
+    }
+
+    // UK teachers must select a city
+    if (isUKCountry(formData.country) && !formData.city) {
+      setError('Please select your city (required for UK teachers)');
       setSaving(false);
       return;
     }
@@ -112,6 +126,9 @@ export default function TeacherProfileSetup() {
           gender: formData.gender,
           date_of_birth: formData.date_of_birth || null,
           location: formData.location || null,
+          country: formData.country || null,
+          city: formData.city || null,
+          languages: formData.languages.length > 0 ? formData.languages : ['English'],
           timezone: formData.timezone,
         })
         .eq('id', user.id);
@@ -250,32 +267,130 @@ export default function TeacherProfileSetup() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Country and City */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-600 mb-2">
-                      <Calendar className="w-4 h-4 inline mr-1" />
-                      Date of Birth
+                      <Globe className="w-4 h-4 inline mr-1" />
+                      Country <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="date"
-                      value={formData.date_of_birth}
-                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    <select
+                      required
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value, city: '' })}
                       className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    />
+                    >
+                      <option value="">Select your country</option>
+                      {COUNTRIES.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.flag} {country.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-600 mb-2">
                       <MapPin className="w-4 h-4 inline mr-1" />
-                      Location
+                      City {isUKCountry(formData.country) && <span className="text-red-400">*</span>}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="e.g., London, UK"
-                    />
+                    {isUKCountry(formData.country) ? (
+                      <select
+                        required
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="">Select your city</option>
+                        {UK_CITIES.map((city) => (
+                          <option key={city.name} value={city.name}>
+                            {city.name} {city.region && `(${city.region})`}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="Enter your city"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* UK Teacher Group Lesson Eligibility Note */}
+                {isUKCountry(formData.country) && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <p className="text-sm text-emerald-800">
+                      <span className="font-semibold">UK Teacher Benefits:</span> As a UK-based teacher, you may be eligible
+                      to conduct group lessons (Islamic Studies, Quran Tadabbur, Seerah) earning £16-20/hour.
+                      This is subject to admin approval.
+                    </p>
+                  </div>
+                )}
+
+                {/* Languages Multi-Select */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
+                    <Languages className="w-4 h-4 inline mr-1" />
+                    Languages Spoken <span className="text-red-400">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <select
+                      onChange={(e) => {
+                        const lang = e.target.value;
+                        if (lang && !formData.languages.includes(lang)) {
+                          setFormData({ ...formData, languages: [...formData.languages, lang] });
+                        }
+                        e.target.value = '';
+                      }}
+                      className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    >
+                      <option value="">Add a language...</option>
+                      {LANGUAGES.filter(lang => !formData.languages.includes(lang)).map((lang) => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </select>
+                    {formData.languages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.languages.map((lang) => (
+                          <span
+                            key={lang}
+                            className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm"
+                          >
+                            {lang}
+                            <button
+                              type="button"
+                              onClick={() => setFormData({
+                                ...formData,
+                                languages: formData.languages.filter(l => l !== lang)
+                              })}
+                              className="ml-2 hover:text-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {formData.languages.length === 0 && (
+                      <p className="text-xs text-amber-600">Please add at least one language</p>
+                    )}
                   </div>
                 </div>
 

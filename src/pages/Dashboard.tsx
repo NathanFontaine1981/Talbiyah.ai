@@ -346,8 +346,6 @@ export default function Dashboard() {
         { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
-        { icon: FileText, label: 'Bayna Yadak 1A', path: '/materials/Al-Arabi-bin-Yadik-1-A_compressed.pdf', active: false, roles: ['Teacher'], external: true },
-        { icon: FileText, label: 'Bayna Yadak 1B', path: '/materials/Al-Arabi-bin-Yadik-1-B_compressed.pdf', active: false, roles: ['Teacher'], external: true },
       ]
     },
     {
@@ -371,6 +369,7 @@ export default function Dashboard() {
         { icon: UserPlus, label: 'Unshakable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
+        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
         { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
@@ -964,6 +963,28 @@ export default function Dashboard() {
                     >
                       <Mic className="w-4 h-4" />
                       <span>Create Khutbah</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dua Builder */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-200">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Dua Builder</h3>
+                    <p className="text-gray-500 text-sm mb-4">
+                      Learn duas, create personalized supplications with proper structure, and practice calling on Allah by His beautiful Names.
+                    </p>
+                    <button
+                      onClick={() => navigate('/dua-builder')}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-md flex items-center space-x-2 text-sm"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Open Dua Builder</span>
                     </button>
                   </div>
                 </div>
