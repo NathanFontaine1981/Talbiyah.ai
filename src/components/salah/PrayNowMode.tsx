@@ -921,20 +921,27 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
           <div className="w-9" /> {/* Spacer for alignment */}
         </div>
 
-        {/* Video Container */}
-        <div className="flex-1 flex flex-col items-center justify-start px-2 sm:px-4 py-4 sm:py-6 overflow-y-auto">
-          <div className="w-full max-w-4xl relative" style={{ paddingBottom: '56.25%', minHeight: '200px' }}>
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-              title={`${selectedPrayer.name} Prayer Guide`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl"
-            />
+        {/* Video Container - Mobile First */}
+        <div className="flex-1 flex flex-col px-2 sm:px-4 py-4 overflow-y-auto">
+          {/* Video wrapper with fixed aspect ratio */}
+          <div className="w-full max-w-4xl mx-auto">
+            <div
+              className="relative w-full bg-slate-900 rounded-xl sm:rounded-2xl overflow-hidden"
+              style={{ paddingTop: '56.25%' }}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`}
+                title={`${selectedPrayer.name} Prayer Guide`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute top-0 left-0 w-full h-full border-0"
+                style={{ minHeight: '200px' }}
+              />
+            </div>
           </div>
 
           {/* Info Card */}
-          <div className="mt-6 max-w-2xl w-full bg-slate-900/50 rounded-xl p-4 border border-emerald-800/30">
+          <div className="mt-4 sm:mt-6 max-w-2xl w-full mx-auto bg-slate-900/50 rounded-xl p-4 border border-emerald-800/30">
             <p className="text-emerald-300 text-sm text-center mb-2">
               <span className="font-semibold">{selectedPrayer.name}</span> • {selectedPrayer.rakahs} Rakahs
             </p>
