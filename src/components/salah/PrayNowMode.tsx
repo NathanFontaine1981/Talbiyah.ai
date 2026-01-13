@@ -921,51 +921,46 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
           <div className="w-9" /> {/* Spacer for alignment */}
         </div>
 
-        {/* Video Container - Mobile First */}
-        <div className="flex-1 flex flex-col px-2 sm:px-4 py-4 overflow-y-auto">
-          {/* Video wrapper */}
-          <div className="w-full max-w-4xl mx-auto">
-            {/* YouTube Thumbnail with Play Button - works on all devices */}
+        {/* Video Container */}
+        <div className="flex-1 flex flex-col px-4 py-4 overflow-y-auto">
+          <div className="w-full max-w-3xl mx-auto">
+            {/* Video Embed Container */}
+            <div
+              className="relative w-full bg-black rounded-2xl overflow-hidden"
+              style={{ paddingBottom: '56.25%', height: 0 }}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`}
+                title={`${selectedPrayer.name} Prayer Guide`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%'
+                }}
+              />
+            </div>
+
+            {/* Direct YouTube Link as backup */}
             <a
               href={`https://www.youtube.com/watch?v=${videoId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="block relative w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 group"
-              style={{ aspectRatio: '16/9' }}
+              className="flex items-center justify-center gap-2 mt-4 py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors"
             >
-              {/* Thumbnail */}
-              <img
-                src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                alt={`${selectedPrayer.name} Prayer Guide`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to medium quality if maxres doesn't exist
-                  (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                }}
-              />
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <Play className="w-8 h-8 sm:w-10 sm:h-10 text-white ml-1" fill="white" />
-                </div>
-              </div>
-              {/* YouTube Badge */}
-              <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-                Watch on YouTube
-              </div>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              Open in YouTube App
             </a>
-
-            {/* Tap to watch hint */}
-            <p className="text-center text-slate-400 text-sm mt-3">
-              Tap to watch on YouTube
-            </p>
           </div>
 
           {/* Info Card */}
-          <div className="mt-4 sm:mt-6 max-w-2xl w-full mx-auto bg-slate-900/50 rounded-xl p-4 border border-emerald-800/30">
+          <div className="mt-4 max-w-2xl w-full mx-auto bg-slate-900/50 rounded-xl p-4 border border-emerald-800/30">
             <p className="text-emerald-300 text-sm text-center mb-2">
               <span className="font-semibold">{selectedPrayer.name}</span> • {selectedPrayer.rakahs} Rakahs
             </p>
