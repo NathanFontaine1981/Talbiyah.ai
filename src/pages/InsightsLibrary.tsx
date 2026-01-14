@@ -264,19 +264,39 @@ export default function InsightsLibrary() {
 
       audio.onended = () => {
         setTtsPlaying(false);
+        setTtsSection(null);
       };
 
       audio.onerror = () => {
         setTtsPlaying(false);
+        setTtsSection(null);
         toast.error('Error playing audio');
       };
 
-      await audio.play();
-      setTtsPlaying(true);
+      audio.onplay = () => {
+        setTtsPlaying(true);
+        setTtsLoading(false);
+      };
+
+      audio.onpause = () => {
+        setTtsPlaying(false);
+      };
+
+      try {
+        await audio.play();
+      } catch (playError: any) {
+        // Ignore AbortError - it's not a real error, just interrupted playback
+        if (playError.name !== 'AbortError') {
+          throw playError;
+        }
+      }
 
     } catch (error: any) {
       console.error('Error generating TTS:', error);
-      toast.error(`Error: ${error.message}`);
+      // Don't show error toast for AbortError
+      if (error.name !== 'AbortError') {
+        toast.error(`Error: ${error.message}`);
+      }
       setTtsSection(null);
     } finally {
       setTtsLoading(false);
