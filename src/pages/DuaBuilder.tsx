@@ -216,8 +216,7 @@ export default function DuaBuilder() {
           },
           body: JSON.stringify({
             text,
-            language,
-            voice: language === 'arabic' ? 'onyx' : 'nova'
+            language
           }),
         }
       );

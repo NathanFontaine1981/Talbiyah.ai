@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen, Award,
-  MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Home
+  ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen,
+  MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Edit3, Loader
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -69,8 +69,9 @@ export default function QuranProgress() {
   const [savingAyah, setSavingAyah] = useState<string | null>(null);
   const [teacherNotes, setTeacherNotes] = useState<string | null>(null);
   const [teacherName, setTeacherName] = useState<string | null>(null);
-  const [selectedJuz, setSelectedJuz] = useState(30); // Start with Juz Amma (most common starting point)
+  const [selectedJuz, setSelectedJuz] = useState(30);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     loadProgress();
@@ -304,6 +305,62 @@ export default function QuranProgress() {
     }
   }
 
+  async function toggleAllAyahsInSurah(
+    surahNumber: number,
+    field: 'understanding' | 'fluency' | 'memorization'
+  ) {
+    if (!learnerId) return;
+
+    const surah = surahs.find(s => s.number === surahNumber);
+    if (!surah) return;
+
+    // Check if all ayahs already have this field set - if so, unset all
+    const allSet = surah.ayahs.every(a => a[field]);
+    const newValue = !allSet;
+
+    setSavingAyah(`all-${surahNumber}-${field}`);
+
+    try {
+      // Update local state first
+      setSurahs(prev => prev.map(s => {
+        if (s.number === surahNumber) {
+          return {
+            ...s,
+            ayahs: s.ayahs.map(a => ({ ...a, [field]: newValue }))
+          };
+        }
+        return s;
+      }));
+
+      // Batch upsert all ayahs
+      const upsertData = surah.ayahs.map(ayah => ({
+        learner_id: learnerId,
+        surah_number: surahNumber,
+        ayah_number: ayah.ayahNumber,
+        understanding_complete: field === 'understanding' ? newValue : ayah.understanding,
+        fluency_complete: field === 'fluency' ? newValue : ayah.fluency,
+        memorization_complete: field === 'memorization' ? newValue : ayah.memorization,
+        teacher_notes: ayah.teacherNotes || null
+      }));
+
+      const { error } = await supabase
+        .from('ayah_progress')
+        .upsert(upsertData, {
+          onConflict: 'learner_id,surah_number,ayah_number'
+        });
+
+      if (error) throw error;
+
+      toast.success(`${newValue ? 'Marked' : 'Unmarked'} all ayahs as ${field}`);
+    } catch (error) {
+      console.error('Error updating all ayahs:', error);
+      toast.error('Failed to update. Please try again.');
+      await loadProgress();
+    } finally {
+      setSavingAyah(null);
+    }
+  }
+
   function toggleSurahExpansion(surahNumber: number) {
     setSurahs(prev => prev.map(s =>
       s.number === surahNumber ? { ...s, expanded: !s.expanded } : s
@@ -341,13 +398,17 @@ export default function QuranProgress() {
 
   const overallProgress = calculateOverallProgress(totalAyahsMemorized);
 
+  // Circular progress calculation
+  const circumference = 2 * Math.PI * 120;
+  const strokeDashoffset = circumference - (overallProgress / 100) * circumference;
+
   // Get surahs for current Juz
   const currentJuz = JUZ_RANGES.find(j => j.juz === selectedJuz);
   const surahsInJuz = currentJuz
     ? surahs.filter(s => currentJuz.surahs.includes(s.number))
     : [];
 
-  // Filter surahs by search
+  // Filter surahs by search or show all
   const filteredSurahs = searchQuery
     ? surahs.filter(
         s =>
@@ -355,14 +416,18 @@ export default function QuranProgress() {
           s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.number.toString().includes(searchQuery)
       )
+    : showAll
+    ? surahs
     : surahsInJuz;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading Quran Progress...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl m-6">
+          <div className="animate-pulse flex flex-col items-center justify-center py-12">
+            <div className="w-32 h-32 bg-gray-700 rounded-full mb-4"></div>
+            <div className="h-4 bg-gray-700 rounded w-32"></div>
+          </div>
         </div>
       </div>
     );
@@ -371,351 +436,442 @@ export default function QuranProgress() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50 sticky top-0 z-40">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col gap-3">
-            <Breadcrumbs
-              items={[
-                { label: 'Dashboard', path: '/dashboard' },
-                { label: 'Quran Progress' }
-              ]}
-              homePath="/dashboard"
-              darkMode
-            />
-            <div className="flex items-center justify-between">
-              <h1 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
-                <Book className="w-5 sm:w-6 h-5 sm:h-6 text-emerald-400" />
-                <span className="hidden sm:inline">Qur'an Progress Tracker</span>
-                <span className="sm:hidden">Quran Progress</span>
-              </h1>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white rounded-lg text-sm transition flex items-center space-x-1 border border-gray-600/50"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <Breadcrumbs
+            items={[
+              { label: 'Dashboard', path: '/dashboard' },
+              { label: 'Quran Progress' }
+            ]}
+            homePath="/dashboard"
+            darkMode
+          />
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Stats Overview */}
-        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Overall Progress</h2>
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Main Progress Card - Similar to ArabicProgressTracker */}
+        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+              <Book className="w-5 h-5 text-emerald-400" />
+              <span>Qur'an Progress Tracker</span>
+            </h3>
+            {learnerId && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <Edit3 className="w-3 h-3" />
+                Click circles to update
+              </span>
+            )}
+          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-4 sm:p-6 border border-purple-500/30">
-              <div className="flex items-center justify-between mb-2">
-                <Book className="w-6 sm:w-8 h-6 sm:h-8 text-purple-400" />
+          {/* Circular Progress */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative w-64 h-64 mb-4">
+              <svg className="transform -rotate-90 w-64 h-64">
+                <circle
+                  cx="128"
+                  cy="128"
+                  r="120"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  fill="transparent"
+                  className="text-gray-700"
+                />
+                <circle
+                  cx="128"
+                  cy="128"
+                  r="120"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  fill="transparent"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  className="text-emerald-400 transition-all duration-1000 ease-out"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <p className="text-5xl font-bold text-emerald-400">{overallProgress}%</p>
+                <p className="text-sm text-gray-500 mt-2">Quran Memorised</p>
               </div>
-              <p className="text-2xl sm:text-4xl font-bold text-purple-400 mb-1">{completedSurahs}</p>
-              <p className="text-xs sm:text-sm text-purple-300 font-semibold">of 114 Surahs</p>
-              <p className="text-xs text-purple-400/70 mt-1">Fully Completed</p>
             </div>
 
-            <div className="bg-gray-700/30 rounded-xl p-4 sm:p-6 border border-gray-600/30">
-              <div className="flex items-center justify-between mb-2">
-                <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-gray-400" />
+            {/* Stats Row */}
+            <div className="flex items-center justify-center space-x-6 text-sm">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{completedSurahs}</p>
+                <p className="text-gray-500">Surahs Complete</p>
               </div>
-              <p className="text-2xl sm:text-4xl font-bold text-white mb-1">{TOTAL_AYAHS}</p>
-              <p className="text-xs sm:text-sm text-gray-400 font-medium">Total Ayahs</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-xl p-4 sm:p-6 border border-cyan-500/30">
-              <div className="flex items-center justify-between mb-2">
-                <Brain className="w-6 sm:w-8 h-6 sm:h-8 text-cyan-400" />
+              <div className="w-px h-12 bg-gray-700"></div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{114 - completedSurahs}</p>
+                <p className="text-gray-500">Remaining</p>
               </div>
-              <p className="text-2xl sm:text-4xl font-bold text-cyan-400 mb-1">{totalAyahsUnderstanding}</p>
-              <p className="text-xs sm:text-sm text-cyan-300 font-medium">Understood</p>
-              <p className="text-xs text-cyan-400/70 mt-1">{Math.round((totalAyahsUnderstanding / TOTAL_AYAHS) * 100)}%</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-xl p-4 sm:p-6 border border-blue-500/30">
-              <div className="flex items-center justify-between mb-2">
-                <Volume2 className="w-6 sm:w-8 h-6 sm:h-8 text-blue-400" />
-              </div>
-              <p className="text-2xl sm:text-4xl font-bold text-blue-400 mb-1">{totalAyahsFluency}</p>
-              <p className="text-xs sm:text-sm text-blue-300 font-medium">Fluent</p>
-              <p className="text-xs text-blue-400/70 mt-1">{Math.round((totalAyahsFluency / TOTAL_AYAHS) * 100)}%</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl p-4 sm:p-6 border border-amber-500/30">
-              <div className="flex items-center justify-between mb-2">
-                <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-amber-400" />
-              </div>
-              <p className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1">{totalAyahsMemorized}</p>
-              <p className="text-xs sm:text-sm text-amber-300 font-medium">Memorised</p>
-              <p className="text-xs text-amber-400/70 mt-1">{Math.round((totalAyahsMemorized / TOTAL_AYAHS) * 100)}%</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl p-4 sm:p-6 border border-emerald-500/30">
-              <div className="flex items-center justify-between mb-2">
-                <Award className="w-6 sm:w-8 h-6 sm:h-8 text-emerald-400" />
-              </div>
-              <p className="text-3xl sm:text-5xl font-bold text-emerald-400 mb-1">{overallProgress}%</p>
-              <p className="text-xs sm:text-sm text-emerald-300 font-semibold">Overall Hifdh</p>
             </div>
           </div>
-        </div>
 
-        {/* Teacher Notes Section */}
-        {teacherNotes && (
-          <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-2xl p-4 sm:p-6 lg:p-8 border border-purple-500/30 backdrop-blur-sm shadow-xl mb-6 sm:mb-8">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-5 sm:w-6 h-5 sm:h-6 text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-base sm:text-lg font-bold text-white">Notes from {teacherName}</h3>
-                  <User className="w-4 h-4 text-purple-400" />
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/30 text-center">
+              <Brain className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-cyan-400">{totalAyahsUnderstanding}</p>
+              <p className="text-xs text-cyan-300">Understood</p>
+            </div>
+            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30 text-center">
+              <Volume2 className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-blue-400">{totalAyahsFluency}</p>
+              <p className="text-xs text-blue-300">Fluent</p>
+            </div>
+            <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30 text-center">
+              <Heart className="w-5 h-5 text-orange-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-orange-400">{totalAyahsMemorized}</p>
+              <p className="text-xs text-orange-300">Memorised</p>
+            </div>
+          </div>
+
+          {/* Teacher Notes */}
+          {teacherNotes && (
+            <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/30 mb-6">
+              <div className="flex items-start gap-3">
+                <MessageSquare className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-medium text-purple-400">Notes from {teacherName}</p>
+                    <User className="w-3 h-3 text-purple-400" />
+                  </div>
+                  <p className="text-sm text-purple-200">{teacherNotes}</p>
                 </div>
-                <p className="text-sm sm:text-base text-purple-200 whitespace-pre-wrap leading-relaxed">{teacherNotes}</p>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Juz Navigation */}
-        <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 backdrop-blur-sm shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Navigate by Juz</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search surah..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-48 pl-9 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Juz Selector */}
-          <div className="flex items-center gap-2 mb-4">
-            <button
-              onClick={() => setSelectedJuz(Math.max(1, selectedJuz - 1))}
-              disabled={selectedJuz <= 1}
-              className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30 border border-gray-600/50"
-            >
-              <ChevronLeft className="w-5 h-5 text-white" />
-            </button>
-
-            <div className="flex-1 flex gap-1 overflow-x-auto pb-2 scrollbar-thin">
-              {JUZ_RANGES.map((juz) => (
-                <button
-                  key={juz.juz}
-                  onClick={() => {
-                    setSelectedJuz(juz.juz);
-                    setSearchQuery('');
-                  }}
-                  className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                    selectedJuz === juz.juz
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 border border-gray-600/50'
-                  }`}
-                >
-                  {juz.juz}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setSelectedJuz(Math.min(30, selectedJuz + 1))}
-              disabled={selectedJuz >= 30}
-              className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30 border border-gray-600/50"
-            >
-              <ChevronRight className="w-5 h-5 text-white" />
-            </button>
-          </div>
-
-          {/* Current Juz Info */}
-          {currentJuz && !searchQuery && (
-            <div className="text-center text-gray-400 text-sm mb-6">
-              <span className="font-semibold text-white">Juz {selectedJuz}:</span> {currentJuz.name} • {currentJuz.surahs.length} Surah{currentJuz.surahs.length > 1 ? 's' : ''}
             </div>
           )}
 
+          {/* Juz Selector - Similar to Book Selector */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <button
+              onClick={() => { setShowAll(false); setSearchQuery(''); }}
+              className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition ${
+                !showAll && !searchQuery
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+              }`}
+            >
+              By Juz
+            </button>
+            <button
+              onClick={() => { setShowAll(true); setSearchQuery(''); }}
+              className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition ${
+                showAll
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+              }`}
+            >
+              All 114 Surahs
+            </button>
+          </div>
+
+          {/* Juz Navigation (when By Juz is selected) */}
+          {!showAll && !searchQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setSelectedJuz(Math.max(1, selectedJuz - 1))}
+                disabled={selectedJuz <= 1}
+                className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30"
+              >
+                <ChevronLeft className="w-4 h-4 text-white" />
+              </button>
+
+              <div className="flex-1 flex gap-1 overflow-x-auto pb-1">
+                {JUZ_RANGES.map((juz) => (
+                  <button
+                    key={juz.juz}
+                    onClick={() => setSelectedJuz(juz.juz)}
+                    className={`flex-shrink-0 w-8 h-8 rounded-lg text-xs font-medium transition ${
+                      selectedJuz === juz.juz
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
+                    }`}
+                  >
+                    {juz.juz}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setSelectedJuz(Math.min(30, selectedJuz + 1))}
+                disabled={selectedJuz >= 30}
+                className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition disabled:opacity-30"
+              >
+                <ChevronRight className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          )}
+
+          {/* Current Juz Info */}
+          {currentJuz && !showAll && !searchQuery && (
+            <div className="text-center text-gray-400 text-sm mb-4">
+              <span className="font-semibold text-white">Juz {selectedJuz}:</span> {currentJuz.name}
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search surah by name or number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+            />
+          </div>
+
+          {/* Legend Header */}
+          <div className="flex items-center justify-between mb-3 px-2">
+            <span className="text-xs font-medium text-gray-500 uppercase">Surah</span>
+            <div className="flex items-center gap-2 pr-8">
+              <span className="text-xs font-medium text-cyan-400 uppercase w-8 text-center" title="Understanding">
+                U
+              </span>
+              <span className="text-xs font-medium text-blue-400 uppercase w-8 text-center" title="Fluency">
+                F
+              </span>
+              <span className="text-xs font-medium text-orange-400 uppercase w-8 text-center" title="Memorisation">
+                M
+              </span>
+            </div>
+          </div>
+
           {/* Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-6 text-xs sm:text-sm">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-cyan-500 rounded" />
-              <span className="text-gray-400">Understanding</span>
+          <div className="flex items-center justify-end gap-4 mb-4 px-2 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full border-2 border-cyan-500 bg-cyan-500/20"></div>
+              <span>Understanding</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-blue-500 rounded" />
-              <span className="text-gray-400">Fluency</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-500/20"></div>
+              <span>Fluency</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-amber-500 rounded" />
-              <span className="text-gray-400">Memorised</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full border-2 border-orange-500 bg-orange-500/20"></div>
+              <span>Memorisation</span>
             </div>
           </div>
 
           {/* Surah List */}
-          <div className="space-y-2 max-h-[800px] overflow-y-auto pr-2">
+          <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {filteredSurahs.map((surah) => {
               const stats = getSurahStats(surah.number);
               const isComplete = stats.memorization === stats.total && stats.total > 0;
 
               return (
-                <div
-                  key={surah.number}
-                  className={`bg-gray-700/30 rounded-xl border overflow-hidden transition ${
-                    isComplete ? 'border-emerald-500/50' : 'border-gray-600/30'
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleSurahExpansion(surah.number)}
-                    className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-600/30 transition"
-                  >
-                    <div className="flex items-center space-x-3 sm:space-x-4">
-                      <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-lg flex items-center justify-center ${
-                        isComplete
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-gray-600/50 text-emerald-400'
-                      }`}>
-                        <span className="font-bold text-sm sm:text-base">{surah.number}</span>
+                <div key={surah.number} className="bg-gray-700/30 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between p-3">
+                    <button
+                      onClick={() => toggleSurahExpansion(surah.number)}
+                      className="flex-1 text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                          isComplete
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-gray-600/50 text-gray-400'
+                        }`}>
+                          {surah.number}
+                        </span>
+                        <div>
+                          <span className="text-sm font-medium text-white">
+                            {surah.englishName}
+                          </span>
+                          <span className="text-emerald-400 text-sm ml-2 font-arabic">
+                            {surah.name}
+                          </span>
+                          <p className="text-xs text-gray-500">{surah.ayahCount} Ayahs</p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {/* Progress circles showing surah-level aggregated stats */}
+                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                        stats.understanding === stats.total && stats.total > 0
+                          ? 'bg-cyan-500/20 border-cyan-500'
+                          : 'border-gray-600'
+                      }`} title={`Understanding: ${stats.understanding}/${stats.total}`}>
+                        {stats.understanding === stats.total && stats.total > 0 && (
+                          <Check className="w-4 h-4 text-cyan-400" />
+                        )}
                       </div>
 
-                      <div className="text-left">
-                        <h3 className="text-sm sm:text-lg font-semibold text-white">{surah.name}</h3>
-                        <p className="text-xs sm:text-sm text-gray-400">{surah.englishName} • {surah.ayahCount} Ayahs</p>
+                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                        stats.fluency === stats.total && stats.total > 0
+                          ? 'bg-blue-500/20 border-blue-500'
+                          : 'border-gray-600'
+                      }`} title={`Fluency: ${stats.fluency}/${stats.total}`}>
+                        {stats.fluency === stats.total && stats.total > 0 && (
+                          <Check className="w-4 h-4 text-blue-400" />
+                        )}
                       </div>
+
+                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                        stats.memorization === stats.total && stats.total > 0
+                          ? 'bg-orange-500/20 border-orange-500'
+                          : 'border-gray-600'
+                      }`} title={`Memorisation: ${stats.memorization}/${stats.total}`}>
+                        {stats.memorization === stats.total && stats.total > 0 && (
+                          <Check className="w-4 h-4 text-orange-400" />
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => toggleSurahExpansion(surah.number)}
+                        className="p-1 text-gray-500 hover:text-emerald-400 transition ml-1"
+                      >
+                        {surah.expanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
+                  </div>
 
-                    <div className="flex items-center space-x-3 sm:space-x-6">
-                      <div className="hidden sm:flex items-center gap-3 text-sm">
-                        <span className="text-cyan-400 font-semibold">{stats.understanding}/{stats.total}</span>
-                        <span className="text-blue-400 font-semibold">{stats.fluency}/{stats.total}</span>
-                        <span className="text-amber-400 font-semibold">{stats.memorization}/{stats.total}</span>
-                      </div>
-                      {/* Mobile stats */}
-                      <div className="flex sm:hidden items-center gap-1.5 text-xs">
-                        <span className="text-amber-400 font-semibold">{stats.memorization}/{stats.total}</span>
-                      </div>
-
-                      {surah.expanded ? (
-                        <ChevronUp className="w-5 h-5 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                  </button>
-
+                  {/* Expanded Details */}
                   {surah.expanded && (
-                    <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-600/30">
-                      <div className="pt-4 sm:pt-6 space-y-4 sm:space-y-6">
-                        {/* Theme */}
-                        <div className="bg-gray-600/30 rounded-lg p-3 sm:p-4 border border-gray-500/30">
-                          <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 mb-1 sm:mb-2">Theme Summary</h4>
-                          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{surah.theme}</p>
-                        </div>
+                    <div className="px-3 pb-3 pt-0 space-y-3">
+                      {/* Theme */}
+                      <div className="bg-gray-600/30 rounded-lg p-3 border border-gray-500/30">
+                        <p className="text-xs font-medium text-emerald-400 mb-1">Theme</p>
+                        <p className="text-sm text-gray-300">{surah.theme}</p>
+                      </div>
 
-                        {/* Mobile stats row */}
-                        <div className="flex sm:hidden justify-around bg-gray-600/30 rounded-lg p-3">
-                          <div className="text-center">
-                            <p className="text-cyan-400 font-bold">{stats.understanding}</p>
-                            <p className="text-xs text-gray-400">Understood</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-blue-400 font-bold">{stats.fluency}</p>
-                            <p className="text-xs text-gray-400">Fluent</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-amber-400 font-bold">{stats.memorization}</p>
-                            <p className="text-xs text-gray-400">Memorised</p>
-                          </div>
-                        </div>
+                      {/* Progress Stats - Clickable to Select All */}
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <button
+                          onClick={() => toggleAllAyahsInSurah(surah.number, 'understanding')}
+                          disabled={savingAyah?.startsWith('all-') || !learnerId}
+                          className={`bg-cyan-500/10 rounded-lg p-2 border border-cyan-500/20 hover:bg-cyan-500/20 transition cursor-pointer ${
+                            stats.understanding === stats.total ? 'ring-2 ring-cyan-500' : ''
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <p className="text-lg font-bold text-cyan-400">{stats.understanding}/{stats.total}</p>
+                          <p className="text-xs text-cyan-300">Understood</p>
+                          <p className="text-[10px] text-cyan-400/70 mt-1">
+                            {stats.understanding === stats.total ? 'Tap to unselect all' : 'Tap to select all'}
+                          </p>
+                        </button>
+                        <button
+                          onClick={() => toggleAllAyahsInSurah(surah.number, 'fluency')}
+                          disabled={savingAyah?.startsWith('all-') || !learnerId}
+                          className={`bg-blue-500/10 rounded-lg p-2 border border-blue-500/20 hover:bg-blue-500/20 transition cursor-pointer ${
+                            stats.fluency === stats.total ? 'ring-2 ring-blue-500' : ''
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <p className="text-lg font-bold text-blue-400">{stats.fluency}/{stats.total}</p>
+                          <p className="text-xs text-blue-300">Fluent</p>
+                          <p className="text-[10px] text-blue-400/70 mt-1">
+                            {stats.fluency === stats.total ? 'Tap to unselect all' : 'Tap to select all'}
+                          </p>
+                        </button>
+                        <button
+                          onClick={() => toggleAllAyahsInSurah(surah.number, 'memorization')}
+                          disabled={savingAyah?.startsWith('all-') || !learnerId}
+                          className={`bg-orange-500/10 rounded-lg p-2 border border-orange-500/20 hover:bg-orange-500/20 transition cursor-pointer ${
+                            stats.memorization === stats.total ? 'ring-2 ring-orange-500' : ''
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <p className="text-lg font-bold text-orange-400">{stats.memorization}/{stats.total}</p>
+                          <p className="text-xs text-orange-300">Memorised</p>
+                          <p className="text-[10px] text-orange-400/70 mt-1">
+                            {stats.memorization === stats.total ? 'Tap to unselect all' : 'Tap to select all'}
+                          </p>
+                        </button>
+                      </div>
 
-                        {/* Ayah Grid */}
-                        <div className="grid grid-cols-1 gap-2 max-h-[500px] overflow-y-auto pr-2">
-                          {surah.ayahs.map((ayah) => {
-                            const key = `${surah.number}-${ayah.ayahNumber}`;
-                            const isSaving = savingAyah === key;
+                      {/* Ayah Grid */}
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                        {surah.ayahs.map((ayah) => {
+                          const key = `${surah.number}-${ayah.ayahNumber}`;
+                          const isSaving = savingAyah === key;
 
-                            return (
-                              <div
-                                key={ayah.ayahNumber}
-                                className="bg-gray-600/30 rounded-lg p-3 sm:p-4 border border-gray-500/30 hover:border-gray-400/50 transition"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2 sm:space-x-3">
-                                    <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gray-700/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                      <span className="text-gray-300 font-semibold text-xs sm:text-sm">
-                                        {ayah.ayahNumber}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs sm:text-sm text-gray-400">Ayah {ayah.ayahNumber}</span>
+                          return (
+                            <div
+                              key={ayah.ayahNumber}
+                              className="bg-gray-600/30 rounded-lg p-3 border border-gray-500/30"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-8 h-8 bg-gray-700/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <span className="text-gray-300 font-semibold text-xs">
+                                      {ayah.ayahNumber}
+                                    </span>
                                   </div>
-
-                                  <div className="flex items-center space-x-1.5 sm:space-x-2">
-                                    <button
-                                      onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'understanding')}
-                                      disabled={isSaving}
-                                      className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
-                                        ayah.understanding
-                                          ? 'bg-emerald-500/20 border-emerald-500 hover:bg-emerald-500/30'
-                                          : 'border-gray-300 hover:border-emerald-500/50'
-                                      } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                      title="Understanding"
-                                    >
-                                      {ayah.understanding && (
-                                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
-                                      )}
-                                    </button>
-
-                                    <button
-                                      onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'fluency')}
-                                      disabled={isSaving}
-                                      className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
-                                        ayah.fluency
-                                          ? 'bg-blue-500/20 border-blue-500 hover:bg-blue-500/30'
-                                          : 'border-gray-300 hover:border-blue-500/50'
-                                      } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                      title="Fluency"
-                                    >
-                                      {ayah.fluency && (
-                                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-blue-400" />
-                                      )}
-                                    </button>
-
-                                    <button
-                                      onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'memorization')}
-                                      disabled={isSaving}
-                                      className={`w-8 sm:w-10 h-8 sm:h-10 rounded-lg border-2 transition flex items-center justify-center ${
-                                        ayah.memorization
-                                          ? 'bg-emerald-500/20 border-emerald-500 hover:bg-emerald-500/30'
-                                          : 'border-gray-300 hover:border-emerald-500/50'
-                                      } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                      title="Memorisation"
-                                    >
-                                      {ayah.memorization && (
-                                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-400" />
-                                      )}
-                                    </button>
-
-                                    {isSaving && (
-                                      <div className="w-4 sm:w-5 h-4 sm:h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                                    )}
-                                  </div>
+                                  <span className="text-xs text-gray-400">Ayah {ayah.ayahNumber}</span>
                                 </div>
 
-                                {/* Teacher Notes for this Ayah */}
-                                {ayah.teacherNotes && (
-                                  <div className="mt-2 sm:mt-3 bg-purple-500/10 rounded-lg p-2 sm:p-3 border border-purple-500/30">
-                                    <p className="text-xs text-purple-300">{ayah.teacherNotes}</p>
-                                  </div>
-                                )}
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'understanding')}
+                                    disabled={isSaving || !learnerId}
+                                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      ayah.understanding
+                                        ? 'bg-cyan-500/20 border-cyan-500'
+                                        : 'border-gray-500 hover:border-cyan-400'
+                                    } ${learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                                    title="Understanding"
+                                  >
+                                    {isSaving ? (
+                                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
+                                    ) : ayah.understanding ? (
+                                      <Check className="w-4 h-4 text-cyan-400" />
+                                    ) : null}
+                                  </button>
+
+                                  <button
+                                    onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'fluency')}
+                                    disabled={isSaving || !learnerId}
+                                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      ayah.fluency
+                                        ? 'bg-blue-500/20 border-blue-500'
+                                        : 'border-gray-500 hover:border-blue-400'
+                                    } ${learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                                    title="Fluency"
+                                  >
+                                    {isSaving ? (
+                                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
+                                    ) : ayah.fluency ? (
+                                      <Check className="w-4 h-4 text-blue-400" />
+                                    ) : null}
+                                  </button>
+
+                                  <button
+                                    onClick={() => toggleAyahProgress(surah.number, ayah.ayahNumber, 'memorization')}
+                                    disabled={isSaving || !learnerId}
+                                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      ayah.memorization
+                                        ? 'bg-orange-500/20 border-orange-500'
+                                        : 'border-gray-500 hover:border-orange-400'
+                                    } ${learnerId ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                                    title="Memorisation"
+                                  >
+                                    {isSaving ? (
+                                      <Loader className="w-3 h-3 text-gray-500 animate-spin" />
+                                    ) : ayah.memorization ? (
+                                      <Check className="w-4 h-4 text-orange-400" />
+                                    ) : null}
+                                  </button>
+                                </div>
                               </div>
-                            );
-                          })}
-                        </div>
+
+                              {/* Teacher Notes for this Ayah */}
+                              {ayah.teacherNotes && (
+                                <div className="mt-2 bg-purple-500/10 rounded-lg p-2 border border-purple-500/30">
+                                  <p className="text-xs text-purple-300">{ayah.teacherNotes}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -723,6 +879,27 @@ export default function QuranProgress() {
               );
             })}
           </div>
+
+          {/* Show All Button */}
+          {!showAll && !searchQuery && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="w-full mt-4 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-emerald-400 rounded-lg transition flex items-center justify-center space-x-2"
+            >
+              <span className="text-sm font-medium">Show All 114 Surahs</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          )}
+
+          {showAll && (
+            <button
+              onClick={() => setShowAll(false)}
+              className="w-full mt-4 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-emerald-400 rounded-lg transition flex items-center justify-center space-x-2"
+            >
+              <span className="text-sm font-medium">Show Less</span>
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </main>
     </div>

@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// ElevenLabs voice IDs - using multilingual voices that work well with Arabic
+const VOICES = {
+  // Arabic/Islamic content - deep, reverent male voice
+  arabic: 'onwK4e9ZLuTAKqWW03F9', // Daniel - works well with Arabic
+  // English translations - clear female voice
+  english: 'EXAVITQu4vr4xnSDxMaL', // Sarah - clear pronunciation
+  // Alternative Arabic voice
+  arabic_alt: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - multilingual
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -13,10 +23,10 @@ serve(async (req) => {
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY not set');
-      throw new Error('OpenAI API key not configured');
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    if (!ELEVENLABS_API_KEY) {
+      console.error('ELEVENLABS_API_KEY not set');
+      throw new Error('ElevenLabs API key not configured');
     }
 
     let body;
@@ -34,15 +44,13 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
-    // OpenAI TTS has a 4096 character limit per request
-    const MAX_CHARS = 4096;
+    // ElevenLabs has a 5000 character limit for the standard plan
+    const MAX_CHARS = 5000;
     let processedText = text.trim();
     if (processedText.length > MAX_CHARS) {
-      // For duas, try to truncate at a natural break point
       const truncated = processedText.substring(0, MAX_CHARS);
-      // Look for common dua endings
       const lastPeriod = truncated.lastIndexOf('.');
-      const lastArabicStop = truncated.lastIndexOf('۔'); // Arabic full stop
+      const lastArabicStop = truncated.lastIndexOf('۔');
       const lastBreak = Math.max(lastPeriod, lastArabicStop);
       processedText = lastBreak > MAX_CHARS * 0.7
         ? truncated.substring(0, lastBreak + 1)
@@ -50,47 +58,59 @@ serve(async (req) => {
       console.log(`Text truncated from ${text.length} to ${processedText.length} characters`);
     }
 
-    // Voice selection based on language/content type
-    // For Arabic duas: onyx or echo work well (deeper, more reverent)
-    // For English translations: nova or alloy (clearer pronunciation)
-    let selectedVoice = voice;
-    if (!selectedVoice) {
-      // Default voice selection based on language
+    // Voice selection
+    let selectedVoiceId = voice;
+    if (!selectedVoiceId) {
       if (language === 'arabic') {
-        selectedVoice = 'onyx'; // Deep, reverent tone for Arabic recitation
+        selectedVoiceId = VOICES.arabic;
       } else if (language === 'english') {
-        selectedVoice = 'nova'; // Clear, warm for English
+        selectedVoiceId = VOICES.english;
       } else {
-        selectedVoice = 'onyx'; // Default to onyx for Islamic content
+        selectedVoiceId = VOICES.arabic; // Default for Islamic content
       }
     }
 
-    // Speed adjustment: slightly slower for duas to aid memorization and reflection
-    const speed = language === 'arabic' ? 0.9 : 0.95;
+    console.log(`Using ElevenLabs with voice: ${selectedVoiceId}`);
 
-    console.log(`Using OpenAI TTS with voice: ${selectedVoice}, speed: ${speed}`);
+    // Call ElevenLabs API
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+        body: JSON.stringify({
+          text: processedText,
+          model_id: 'eleven_multilingual_v2', // Best for Arabic
+          voice_settings: {
+            stability: 0.75, // Higher stability for clear recitation
+            similarity_boost: 0.75,
+            style: 0.5, // Some expressiveness
+            use_speaker_boost: true
+          }
+        }),
+      }
+    );
 
-    // Call OpenAI TTS API
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'tts-1', // Use tts-1-hd for higher quality (costs more)
-        input: processedText,
-        voice: selectedVoice,
-        response_format: 'mp3',
-        speed: speed,
-      }),
-    });
+    console.log(`ElevenLabs response status: ${response.status}`);
 
-    console.log(`OpenAI TTS response status: ${response.status}`);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI TTS API error:', response.status, errorText);
-      throw new Error(`OpenAI TTS API error: ${response.status} - ${errorText.substring(0, 200)}`);
+      console.error('ElevenLabs API error:', response.status, errorText);
+
+      // Check for specific error types
+      if (response.status === 401) {
+        throw new Error('ElevenLabs API key is invalid');
+      } else if (response.status === 429) {
+        throw new Error('ElevenLabs rate limit exceeded. Please try again later.');
+      } else if (response.status === 400) {
+        throw new Error('Invalid request to ElevenLabs');
+      }
+
+      throw new Error(`ElevenLabs API error: ${response.status}`);
     }
 
     // Get the audio as a buffer

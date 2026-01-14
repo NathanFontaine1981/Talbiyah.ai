@@ -138,10 +138,12 @@ export default function KhutbaReflections() {
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
-  // TTS playback states (using browser speechSynthesis)
+  // TTS playback states (using ElevenLabs)
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [ttsSection, setTtsSection] = useState<string | null>(null);
+  const [ttsAudioUrl, setTtsAudioUrl] = useState<string | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Audio recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -533,90 +535,89 @@ export default function KhutbaReflections() {
     }
   };
 
-  // Browser-based Text-to-Speech using Web Speech API
-  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
-
+  // ElevenLabs Text-to-Speech
   const playTTS = async (text: string, sectionId: string) => {
-    // Check if browser supports speech synthesis
-    if (!('speechSynthesis' in window)) {
-      toast.error('Your browser does not support text-to-speech. Please try Chrome, Edge, or Safari.');
-      return;
-    }
-
     // If same section is playing, pause it
-    if (ttsSection === sectionId && ttsPlaying) {
-      window.speechSynthesis.pause();
+    if (ttsSection === sectionId && ttsPlaying && ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
       setTtsPlaying(false);
       return;
     }
 
     // If same section is paused, resume
-    if (ttsSection === sectionId && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
+    if (ttsSection === sectionId && ttsAudioRef.current && ttsAudioRef.current.paused && ttsAudioUrl) {
+      ttsAudioRef.current.play();
       setTtsPlaying(true);
       return;
     }
 
-    // Stop any currently playing speech
-    window.speechSynthesis.cancel();
+    // Stop any currently playing audio
+    if (ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
+      ttsAudioRef.current = null;
+    }
+    if (ttsAudioUrl) {
+      URL.revokeObjectURL(ttsAudioUrl);
+      setTtsAudioUrl(null);
+    }
 
     setTtsLoading(true);
     setTtsSection(sectionId);
     setTtsPlaying(false);
 
     try {
-      // Create utterance
-      const utterance = new SpeechSynthesisUtterance(text);
-      speechSynthRef.current = utterance;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            text,
+            language: 'english'
+          }),
+        }
+      );
 
-      // Get available voices and prefer a good English voice
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v =>
-        v.name.includes('Google UK English Male') ||
-        v.name.includes('Daniel') ||
-        v.name.includes('Google US English') ||
-        v.lang.startsWith('en')
-      ) || voices[0];
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate audio');
       }
 
-      // Configure speech settings
-      utterance.rate = 0.9; // Slightly slower for clarity
-      utterance.pitch = 1;
-      utterance.volume = 1;
+      const audioBlob = await response.blob();
+      const url = URL.createObjectURL(audioBlob);
+      setTtsAudioUrl(url);
 
-      utterance.onstart = () => {
+      // Create and play audio
+      const audio = new Audio(url);
+      ttsAudioRef.current = audio;
+
+      audio.onplay = () => {
         setTtsPlaying(true);
         setTtsLoading(false);
       };
 
-      utterance.onend = () => {
+      audio.onended = () => {
         setTtsPlaying(false);
         setTtsSection(null);
       };
 
-      utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+      audio.onerror = () => {
+        console.error('Audio playback error');
         setTtsPlaying(false);
         setTtsSection(null);
         setTtsLoading(false);
-        if (event.error !== 'canceled') {
-          toast.error('Error playing speech. Please try again.');
-        }
+        toast.error('Error playing audio. Please try again.');
       };
 
-      utterance.onpause = () => {
+      audio.onpause = () => {
         setTtsPlaying(false);
       };
 
-      utterance.onresume = () => {
-        setTtsPlaying(true);
-      };
-
-      // Start speaking
-      window.speechSynthesis.speak(utterance);
+      await audio.play();
 
     } catch (error: any) {
       console.error('Error with TTS:', error);
@@ -628,7 +629,14 @@ export default function KhutbaReflections() {
 
   // Stop TTS function
   const stopTTS = () => {
-    window.speechSynthesis.cancel();
+    if (ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
+      ttsAudioRef.current = null;
+    }
+    if (ttsAudioUrl) {
+      URL.revokeObjectURL(ttsAudioUrl);
+      setTtsAudioUrl(null);
+    }
     setTtsPlaying(false);
     setTtsSection(null);
   };
@@ -636,18 +644,14 @@ export default function KhutbaReflections() {
   // Cleanup TTS on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause();
+      }
+      if (ttsAudioUrl) {
+        URL.revokeObjectURL(ttsAudioUrl);
+      }
     };
-  }, []);
-
-  // Load voices when component mounts (some browsers need this)
-  useEffect(() => {
-    const loadVoices = () => {
-      window.speechSynthesis.getVoices();
-    };
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-  }, []);
+  }, [ttsAudioUrl]);
 
   // Show loading state while checking auth
   if (checkingAuth) {
@@ -702,18 +706,7 @@ export default function KhutbaReflections() {
             {ttsPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
           </button>
           <button
-            onClick={() => {
-              if (ttsAudioRef.current) {
-                ttsAudioRef.current.pause();
-                ttsAudioRef.current = null;
-              }
-              if (ttsAudioUrl) {
-                URL.revokeObjectURL(ttsAudioUrl);
-                setTtsAudioUrl(null);
-              }
-              setTtsPlaying(false);
-              setTtsSection(null);
-            }}
+            onClick={stopTTS}
             className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition"
           >
             <X className="w-5 h-5" />
