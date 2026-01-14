@@ -233,7 +233,16 @@ export default function DuaBuilder() {
         URL.revokeObjectURL(audioUrl);
       }
       setAudioUrl(url);
-      toast.success('Audio generated!');
+
+      // Auto-play the audio
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      audio.onplay = () => setIsPlaying(true);
+      audio.onpause = () => setIsPlaying(false);
+      await audio.play();
+
+      toast.success('Playing audio!');
     } catch (error: any) {
       console.error('Error generating audio:', error);
       toast.error(error.message || 'Error generating audio');
