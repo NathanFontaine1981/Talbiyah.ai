@@ -887,6 +887,8 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
   };
 
   // Video Player Screen - for prayers with YouTube video guides
+  const [showEmbed, setShowEmbed] = useState(false);
+
   const renderVideoPlayer = () => {
     if (!selectedPrayer) return null;
 
@@ -906,6 +908,7 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             onClick={() => {
               setViewState('select');
               setSelectedPrayer(null);
+              setShowEmbed(false);
             }}
             className="p-2 hover:bg-slate-800 rounded-full transition-colors"
           >
@@ -929,23 +932,49 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               className="relative w-full bg-black rounded-2xl overflow-hidden"
               style={{ paddingBottom: '56.25%', height: 0 }}
             >
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`}
-                title={`${selectedPrayer.name} Prayer Guide`}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%'
-                }}
-              />
+              {showEmbed ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&autoplay=1`}
+                  title={`${selectedPrayer.name} Prayer Guide`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%'
+                  }}
+                />
+              ) : (
+                <button
+                  onClick={() => setShowEmbed(true)}
+                  className="absolute inset-0 w-full h-full group"
+                >
+                  {/* YouTube Thumbnail */}
+                  <img
+                    src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                    alt={`${selectedPrayer.name} Prayer Video`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to hqdefault if maxres not available
+                      (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    }}
+                  />
+                  {/* Play Button Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                    <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-10 h-10 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
 
-            {/* Direct YouTube Link as backup */}
+            {/* Direct YouTube Link */}
             <a
               href={`https://www.youtube.com/watch?v=${videoId}`}
               target="_blank"
@@ -977,16 +1006,17 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               onClick={() => {
                 setViewState('select');
                 setSelectedPrayer(null);
+                setShowEmbed(false);
               }}
               className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors"
             >
               Choose Another Prayer
             </button>
             <button
-              onClick={onBack}
+              onClick={() => setViewState('intention')}
               className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-colors"
             >
-              Done
+              Step-by-Step Guide
             </button>
           </div>
         </div>
