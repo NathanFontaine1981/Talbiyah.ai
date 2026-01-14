@@ -313,7 +313,9 @@ export default function TeacherSessionsCard() {
         .from('lessons')
         .update({
           teacher_confirmed: true,
-          teacher_confirmed_at: new Date().toISOString()
+          teacher_confirmed_at: new Date().toISOString(),
+          confirmation_status: 'acknowledged',
+          acknowledged_at: new Date().toISOString()
         })
         .eq('id', sessionId);
 
