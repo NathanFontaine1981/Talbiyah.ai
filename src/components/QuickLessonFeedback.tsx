@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
-import { ThumbsUp, ThumbsDown, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, X, Loader2, Sparkles, Eye } from 'lucide-react';
 
 interface QuickLessonFeedbackProps {
   lessonId: string;
@@ -16,10 +17,59 @@ export default function QuickLessonFeedback({
   studentId,
   onComplete
 }: QuickLessonFeedbackProps) {
+  const navigate = useNavigate();
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [issueType, setIssueType] = useState('');
   const [issueDetail, setIssueDetail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  // Insights generation state
+  const [insightsReady, setInsightsReady] = useState(false);
+  const [checkingInsights, setCheckingInsights] = useState(true);
+  const [insightId, setInsightId] = useState<string | null>(null);
+
+  // Poll for insights after feedback is submitted
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    let attempts = 0;
+    const maxAttempts = 30; // Check for 30 seconds
+
+    const checkForInsights = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('lesson_insights')
+          .select('id')
+          .eq('lesson_id', lessonId)
+          .maybeSingle();
+
+        if (data && !error) {
+          setInsightsReady(true);
+          setInsightId(data.id);
+          setCheckingInsights(false);
+          if (interval) clearInterval(interval);
+        } else {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            setCheckingInsights(false);
+            if (interval) clearInterval(interval);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking insights:', err);
+      }
+    };
+
+    // Start checking immediately
+    checkForInsights();
+
+    // Then check every second
+    interval = setInterval(checkForInsights, 1000);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [lessonId]);
 
   const handleQuickFeedback = async (thumbsUp: boolean) => {
     if (!thumbsUp) {
@@ -53,7 +103,8 @@ export default function QuickLessonFeedback({
         });
 
       if (error) throw error;
-      onComplete();
+      setFeedbackSubmitted(true);
+      toast.success('Thanks for your feedback!');
     } catch (error) {
       console.error('Error submitting feedback:', error);
       toast.error('Failed to submit feedback');
@@ -61,6 +112,79 @@ export default function QuickLessonFeedback({
       setSubmitting(false);
     }
   };
+
+  const handleViewInsights = () => {
+    navigate(`/student/lesson-insights/${lessonId}`);
+  };
+
+  // Show insights ready screen after feedback
+  if (feedbackSubmitted) {
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full mx-4 text-center border border-gray-200 shadow-2xl">
+          <div className="mb-6">
+            {checkingInsights ? (
+              <>
+                <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Generating Lesson Insights
+                </h3>
+                <p className="text-gray-400">
+                  AI is analyzing your lesson to create personalized insights...
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-2 text-emerald-400 text-sm">
+                  <Sparkles className="w-4 h-4" />
+                  <span>This usually takes 10-20 seconds</span>
+                </div>
+              </>
+            ) : insightsReady ? (
+              <>
+                <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-emerald-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Insights Ready!
+                </h3>
+                <p className="text-gray-400">
+                  Your personalized lesson insights have been generated.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-5xl mb-4">✅</div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Thanks for the feedback!
+                </h3>
+                <p className="text-gray-400">
+                  Insights will be available soon in your dashboard.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {insightsReady && (
+              <button
+                onClick={handleViewInsights}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition font-semibold text-lg"
+              >
+                <Eye className="w-5 h-5" />
+                View Lesson Insights
+              </button>
+            )}
+            <button
+              onClick={onComplete}
+              className={`w-full px-6 py-3 ${insightsReady ? 'text-gray-400 hover:text-white' : 'bg-gray-700 text-white rounded-xl hover:bg-gray-600'} transition`}
+            >
+              {insightsReady ? 'Skip for now' : 'Go to Dashboard'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showIssueForm) {
     return (
