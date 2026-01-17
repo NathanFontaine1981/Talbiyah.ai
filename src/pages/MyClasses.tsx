@@ -565,6 +565,12 @@ export default function MyClasses() {
                           ) : (
                             <>with {lesson.teacher_name}</>
                           )}
+                          {/* Show time inline for past lessons */}
+                          {lessonIsPast && (
+                            <span className="ml-2 text-gray-400">
+                              • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
+                            </span>
+                          )}
                         </p>
 
                         {/* Lesson topic/summary from insights */}
@@ -573,6 +579,11 @@ export default function MyClasses() {
                             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                               {lesson.insight_title}
                             </p>
+                            {lesson.insight_summary && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                {lesson.insight_summary}
+                              </p>
+                            )}
                             {lesson.key_topics && lesson.key_topics.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mt-1.5">
                                 {lesson.key_topics.map((topic, idx) => {
