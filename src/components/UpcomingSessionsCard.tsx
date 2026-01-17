@@ -18,6 +18,7 @@ interface UpcomingLesson {
   duration_minutes: number;
   '100ms_room_id': string | null;
   has_insights: boolean;
+  insight_title?: string;
   unread_messages: number;
   confirmation_status: string;
   teacher_acknowledgment_message: string | null;
@@ -241,38 +242,44 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         .limit(3);
 
       if (completedLessonsData) {
-        // Check which completed lessons have insights
+        // Check which completed lessons have insights and get their titles
         const completedLessonIds = completedLessonsData.map((l: any) => l.id);
-        const completedLessonsWithInsights = new Set<string>();
+        const completedLessonsInsightsMap = new Map<string, { hasInsights: boolean; title?: string }>();
 
         if (completedLessonIds.length > 0) {
           const { data: completedInsights } = await supabase
             .from('lesson_insights')
-            .select('lesson_id')
+            .select('lesson_id, title')
             .in('lesson_id', completedLessonIds);
 
-          completedInsights?.forEach((i: any) => completedLessonsWithInsights.add(i.lesson_id));
+          completedInsights?.forEach((i: any) => {
+            completedLessonsInsightsMap.set(i.lesson_id, { hasInsights: true, title: i.title });
+          });
         }
 
         const formattedCompletedLessons: UpcomingLesson[] = completedLessonsData
           .filter((lesson: any) => lesson.subjects) // Only include lessons with valid subject
-          .map((lesson: any) => ({
-            id: lesson.id,
-            learner_id: lesson.learner_id,
-            learner_name: lesson.learners?.name || 'Student',
-            teacher_id: lesson.teacher_id,
-            teacher_name: lesson.teacher_profiles?.profiles?.full_name || 'Teacher',
-            teacher_avatar: lesson.teacher_profiles?.profiles?.avatar_url || null,
-            subject_id: lesson.subject_id,
-            subject_name: lesson.subjects?.name || 'Subject',
-            scheduled_time: lesson.scheduled_time,
-            duration_minutes: lesson.duration_minutes,
-            '100ms_room_id': lesson['100ms_room_id'],
-            has_insights: completedLessonsWithInsights.has(lesson.id),
-            unread_messages: 0,
-            confirmation_status: lesson.confirmation_status || 'completed',
-            teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
-          }));
+          .map((lesson: any) => {
+            const insightData = completedLessonsInsightsMap.get(lesson.id);
+            return {
+              id: lesson.id,
+              learner_id: lesson.learner_id,
+              learner_name: lesson.learners?.name || 'Student',
+              teacher_id: lesson.teacher_id,
+              teacher_name: lesson.teacher_profiles?.profiles?.full_name || 'Teacher',
+              teacher_avatar: lesson.teacher_profiles?.profiles?.avatar_url || null,
+              subject_id: lesson.subject_id,
+              subject_name: lesson.subjects?.name || 'Subject',
+              scheduled_time: lesson.scheduled_time,
+              duration_minutes: lesson.duration_minutes,
+              '100ms_room_id': lesson['100ms_room_id'],
+              has_insights: !!insightData?.hasInsights,
+              insight_title: insightData?.title,
+              unread_messages: 0,
+              confirmation_status: lesson.confirmation_status || 'completed',
+              teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
+            };
+          });
 
         setRecentLessons(formattedCompletedLessons);
       }
@@ -448,17 +455,23 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         )}
                       </div>
 
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
                           {lesson.subject_name}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          with {lesson.teacher_name} - {format(lessonDate, 'MMM d')}
+                          with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
                         </p>
+                        {lesson.insight_title && (
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
+                            {lesson.insight_title}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-gray-400">{lesson.duration_minutes} min</span>
                       {lesson.has_insights ? (
                         <button
                           onClick={(e) => {
@@ -728,17 +741,23 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                         )}
                       </div>
 
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
                           {lesson.subject_name}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          with {lesson.teacher_name} - {format(lessonDate, 'MMM d')}
+                          with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
                         </p>
+                        {lesson.insight_title && (
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
+                            {lesson.insight_title}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-gray-400">{lesson.duration_minutes} min</span>
                       {lesson.has_insights ? (
                         <button
                           onClick={(e) => {

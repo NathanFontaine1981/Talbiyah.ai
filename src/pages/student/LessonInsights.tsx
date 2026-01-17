@@ -27,7 +27,10 @@ import {
   Send,
   FileText,
   HelpCircle,
-  Home
+  Home,
+  Video,
+  Play,
+  Download as DownloadIcon
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -1624,6 +1627,8 @@ export default function LessonInsights() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [lessonTime, setLessonTime] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [recordingExpiresAt, setRecordingExpiresAt] = useState<string | null>(null);
 
   // Homework tracking state
   const [completedTasks, setCompletedTasks] = useState<boolean[]>([]);
@@ -2019,6 +2024,10 @@ export default function LessonInsights() {
 
       if (lessonData?.scheduled_time) {
         setLessonTime(lessonData.scheduled_time);
+      }
+      if (lessonData?.recording_url) {
+        setRecordingUrl(lessonData.recording_url);
+        setRecordingExpiresAt(lessonData.recording_expires_at);
       }
 
       let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
@@ -2500,7 +2509,58 @@ export default function LessonInsights() {
             </div>
           )}
 
-          {/* Video Recording removed - accessible via Watch button on My Lessons page */}
+          {/* Video Recording Section */}
+          {recordingUrl && (
+            (() => {
+              const daysLeft = recordingExpiresAt
+                ? Math.max(0, Math.ceil((new Date(recordingExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                : 0;
+              const isExpired = daysLeft <= 0;
+
+              return !isExpired ? (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Video className="w-5 h-5 text-emerald-600" />
+                      <h2 className="text-lg font-bold text-gray-900">Lesson Recording</h2>
+                    </div>
+                    <span className="text-sm bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
+                      {daysLeft} day{daysLeft !== 1 ? 's' : ''} left to watch
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Watch the recording of your lesson to review what was covered. Recordings are available for 7 days after the lesson.
+                  </p>
+                  <div className="flex gap-3">
+                    <a
+                      href={recordingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition"
+                    >
+                      <Play className="w-5 h-5" />
+                      Watch Recording
+                    </a>
+                    <a
+                      href={recordingUrl}
+                      download
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition"
+                      title="Download recording"
+                    >
+                      <DownloadIcon className="w-5 h-5" />
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Video className="w-5 h-5" />
+                    <span>Recording has expired</span>
+                  </div>
+                </div>
+              );
+            })()
+          )}
 
           {/* Detailed Sections */}
           <div className="space-y-4">
