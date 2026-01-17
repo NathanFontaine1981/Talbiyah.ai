@@ -138,9 +138,9 @@ Deno.serve(async (req: Request) => {
           const sessionId = session.id;
           console.log(`Checking session ${sessionId} for assets`);
 
-          // Fetch recording assets for this session
-          const assetsResponse = await fetch(
-            `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}`,
+          // Fetch transcript assets directly (use type filter to avoid pagination issues)
+          const transcriptResponse = await fetch(
+            `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}&type=transcript`,
             {
               headers: {
                 "Authorization": `Bearer ${hmsToken}`,
@@ -149,24 +149,41 @@ Deno.serve(async (req: Request) => {
             }
           );
 
-          if (!assetsResponse.ok) continue;
+          let transcriptAssets: any[] = [];
+          if (transcriptResponse.ok) {
+            const transcriptData = await transcriptResponse.json();
+            transcriptAssets = transcriptData.data || [];
+          }
 
-          const assetsData = await assetsResponse.json();
-          const assets = assetsData.data || [];
+          // Fetch summary assets
+          const summaryResponse = await fetch(
+            `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}&type=summary`,
+            {
+              headers: {
+                "Authorization": `Bearer ${hmsToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-          console.log(`Found ${assets.length} assets for session ${sessionId}`);
+          let summaryAssets: any[] = [];
+          if (summaryResponse.ok) {
+            const summaryData = await summaryResponse.json();
+            summaryAssets = summaryData.data || [];
+          }
 
-          // Find transcript (prefer JSON)
-          const transcriptAsset = assets.find((a: any) =>
-            a.type === "transcript" && a.status === "completed" &&
-            a.metadata?.output_mode === "json"
-          ) || assets.find((a: any) =>
-            a.type === "transcript" && a.status === "completed"
+          console.log(`Found ${transcriptAssets.length} transcript assets, ${summaryAssets.length} summary assets for session ${sessionId}`);
+
+          // Find transcript (prefer JSON format)
+          const transcriptAsset = transcriptAssets.find((a: any) =>
+            a.status === "completed" && a.metadata?.output_mode === "json"
+          ) || transcriptAssets.find((a: any) =>
+            a.status === "completed"
           );
 
           // Find summary
-          const summaryAsset = assets.find((a: any) =>
-            a.type === "summary" && a.status === "completed"
+          const summaryAsset = summaryAssets.find((a: any) =>
+            a.status === "completed"
           );
 
           if (transcriptAsset) {
@@ -279,6 +296,16 @@ Deno.serve(async (req: Request) => {
           continue;
         }
 
+        // Truncate if too long (Claude has ~200k token limit, roughly 800k chars)
+        // Keep first 400k chars which should be enough for a full lesson
+        const maxChars = 400000;
+        let truncatedTranscript = fullTranscript;
+        if (fullTranscript.length > maxChars) {
+          console.log(`Truncating transcript from ${fullTranscript.length} to ${maxChars} chars`);
+          truncatedTranscript = fullTranscript.substring(0, maxChars) +
+            "\n\n[... remainder of transcript truncated for processing ...]";
+        }
+
         // Get subject info
         const { data: subject } = await supabase
           .from("subjects")
@@ -330,7 +357,7 @@ Deno.serve(async (req: Request) => {
           .eq("lesson_id", lesson.id);
 
         // Call generate-lesson-insights
-        console.log("Calling generate-lesson-insights...");
+        console.log(`Calling generate-lesson-insights with ${truncatedTranscript.length} chars...`);
         const insightResponse = await fetch(
           `${supabaseUrl}/functions/v1/generate-lesson-insights`,
           {
@@ -341,7 +368,7 @@ Deno.serve(async (req: Request) => {
             },
             body: JSON.stringify({
               lesson_id: lesson.id,
-              transcript: fullTranscript,
+              transcript: truncatedTranscript,
               subject: subjectName,
               metadata: metadata,
             }),
@@ -363,6 +390,7 @@ Deno.serve(async (req: Request) => {
             insight_id: insightResult.insight_id,
             session_used: sessionUsed,
             transcript_length: fullTranscript.length,
+            truncated: fullTranscript.length > maxChars,
           });
         } else {
           const errorText = await insightResponse.text();

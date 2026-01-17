@@ -689,10 +689,6 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
     const keyTopics = extractKeyTopics(generatedText, isQuranLesson);
     console.log("Extracted key topics:", keyTopics);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     const processingTime = Date.now() - startTime;
 
     // Fetch lesson to get teacher_id and learner_id for RLS
