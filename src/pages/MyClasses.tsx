@@ -577,7 +577,11 @@ export default function MyClasses() {
                         {lessonIsPast && lesson.has_insights && lesson.insight_title && (
                           <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {lesson.insight_title}
+                              {/* Clean up title - show surah name instead of "Qur'an Insights:" prefix */}
+                              {lesson.insight_title
+                                .replace(/^Qur'?[aā]n\s*(with\s+Understanding\s*)?Insights:\s*/i, '')
+                                .replace(/^Arabic\s+Language\s+Insights:\s*/i, '')
+                                .replace(/^[\w\s]+Insights:\s*/i, '')}
                             </p>
                             {lesson.insight_summary && (
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
