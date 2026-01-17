@@ -666,6 +666,8 @@ export default function MyClasses() {
                           // Calculate minutes since lesson ended
                           const lessonEndTime = new Date(parseISO(lesson.scheduled_time).getTime() + (lesson.duration_minutes || 30) * 60000);
                           const minutesSinceEnd = differenceInMinutes(new Date(), lessonEndTime);
+                          // Processing can take up to 2x the lesson duration (for long lessons) or at least 30 mins
+                          const processingWindowMins = Math.max(30, (lesson.duration_minutes || 30) * 2);
 
                           if (lesson.has_insights) {
                             // Insights available - show button
@@ -682,24 +684,32 @@ export default function MyClasses() {
                                 <span>Insights</span>
                               </button>
                             );
-                          } else if (lesson.has_recording && minutesSinceEnd < 15) {
-                            // Recording exists, less than 15 mins - still processing
+                          } else if (lesson.status === 'completed' && minutesSinceEnd < processingWindowMins) {
+                            // Lesson completed recently - processing transcript and insights
                             return (
-                              <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium flex items-center space-x-2 cursor-default">
+                              <div className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-medium flex items-center space-x-2 cursor-default border border-amber-200">
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Processing...</span>
+                                <span>Processing Insights...</span>
                               </div>
                             );
-                          } else if (lesson.has_recording && minutesSinceEnd >= 15) {
-                            // Recording exists but insights failed after 15 mins
+                          } else if (lesson.has_recording && minutesSinceEnd < processingWindowMins) {
+                            // Recording exists - still processing
                             return (
-                              <div className="px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-sm flex items-center space-x-2 border border-amber-200">
+                              <div className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-medium flex items-center space-x-2 cursor-default border border-amber-200">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing Insights...</span>
+                              </div>
+                            );
+                          } else if ((lesson.has_recording || lesson.status === 'completed') && minutesSinceEnd >= processingWindowMins) {
+                            // Recording exists but insights failed after processing window
+                            return (
+                              <div className="px-3 py-2 bg-gray-50 text-gray-500 rounded-lg text-sm flex items-center space-x-2 border border-gray-200">
                                 <AlertTriangle className="w-4 h-4" />
                                 <span>Insights unavailable</span>
                               </div>
                             );
                           }
-                          // No recording - lesson didn't happen, show nothing
+                          // No recording and lesson not completed - show nothing
                           return null;
                         })()}
 

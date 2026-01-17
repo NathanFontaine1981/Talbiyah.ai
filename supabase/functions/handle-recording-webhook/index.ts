@@ -27,6 +27,97 @@ function constantTimeCompare(a: string, b: string): boolean {
   return result === 0;
 }
 
+/**
+ * Transcribe audio using ElevenLabs Scribe for Arabic support
+ * This provides much better Arabic/Quran transcription than 100ms's English-only service
+ */
+async function transcribeWithElevenLabs(audioUrl: string, isArabicContent: boolean): Promise<string | null> {
+  const elevenLabsApiKey = Deno.env.get("ELEVENLABS_API_KEY");
+  if (!elevenLabsApiKey) {
+    console.log("ELEVENLABS_API_KEY not configured, skipping ElevenLabs transcription");
+    return null;
+  }
+
+  try {
+    console.log("Downloading audio for ElevenLabs transcription...");
+
+    // Download the recording
+    const audioResponse = await fetch(audioUrl);
+    if (!audioResponse.ok) {
+      console.error("Failed to download audio:", audioResponse.status);
+      return null;
+    }
+
+    const audioBlob = await audioResponse.blob();
+    console.log("Audio downloaded, size:", audioBlob.size, "bytes");
+
+    // Create form data for ElevenLabs API
+    const formData = new FormData();
+    formData.append("file", audioBlob, "recording.mp4");
+    formData.append("model_id", "scribe_v1");
+
+    // Set language to Arabic for Quran/Arabic lessons
+    if (isArabicContent) {
+      formData.append("language_code", "ar");
+      console.log("Using Arabic language code for transcription");
+    }
+
+    // Enable speaker diarization to identify teacher vs student
+    formData.append("diarize", "true");
+
+    console.log("Sending to ElevenLabs Scribe API...");
+
+    const transcribeResponse = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+      method: "POST",
+      headers: {
+        "xi-api-key": elevenLabsApiKey,
+      },
+      body: formData,
+    });
+
+    if (!transcribeResponse.ok) {
+      const errorText = await transcribeResponse.text();
+      console.error("ElevenLabs transcription failed:", transcribeResponse.status, errorText);
+      return null;
+    }
+
+    const result = await transcribeResponse.json();
+    console.log("ElevenLabs transcription successful");
+
+    // Format transcript with speaker labels if diarization is available
+    if (result.words && Array.isArray(result.words)) {
+      // Group words by speaker
+      let currentSpeaker = "";
+      let segments: string[] = [];
+      let currentSegment = "";
+
+      for (const word of result.words) {
+        const speaker = word.speaker || "Speaker";
+        if (speaker !== currentSpeaker) {
+          if (currentSegment) {
+            segments.push(`${currentSpeaker}: ${currentSegment.trim()}`);
+          }
+          currentSpeaker = speaker;
+          currentSegment = word.text + " ";
+        } else {
+          currentSegment += word.text + " ";
+        }
+      }
+      if (currentSegment) {
+        segments.push(`${currentSpeaker}: ${currentSegment.trim()}`);
+      }
+
+      return segments.join("\n\n");
+    }
+
+    // Fall back to plain text
+    return result.text || result.transcript || null;
+  } catch (error) {
+    console.error("Error in ElevenLabs transcription:", error);
+    return null;
+  }
+}
+
 // 100ms webhook event types
 interface HMS100msWebhook {
   version: string;
@@ -460,13 +551,33 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Determine if this is Arabic/Quran content that needs proper Arabic transcription
+    const subjectLower = subjectName.toLowerCase();
+    const isArabicContent = subjectLower.includes('quran') || subjectLower.includes('qur') || subjectLower.includes('arabic');
+
     // If transcript is available (from webhook or API fetch), generate AI insights
-    if (transcriptUrl || isTranscriptionEvent) {
-      console.log("Transcript available, fetching and generating AI insights...");
+    // For Arabic/Quran content, prefer ElevenLabs transcription for better accuracy
+    let transcriptText = "";
+    let usedElevenLabs = false;
+
+    // Try ElevenLabs first for Arabic content (better Arabic recognition)
+    if (isArabicContent && recordingUrl) {
+      console.log("Arabic/Quran lesson detected - attempting ElevenLabs transcription for better accuracy...");
+      const elevenLabsTranscript = await transcribeWithElevenLabs(recordingUrl, true);
+      if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
+        transcriptText = elevenLabsTranscript;
+        usedElevenLabs = true;
+        console.log("Using ElevenLabs Arabic transcript, length:", transcriptText.length);
+      } else {
+        console.log("ElevenLabs transcription unavailable or too short, falling back to 100ms transcript");
+      }
+    }
+
+    if ((transcriptUrl || isTranscriptionEvent) && !usedElevenLabs) {
+      console.log("Using 100ms transcript...");
 
       try {
-        // Fetch transcript text
-        let transcriptText = "";
+        // Fetch transcript text from 100ms
         if (transcriptUrl) {
           console.log("Fetching transcript from URL...");
           const transcriptResponse = await fetch(transcriptUrl);
@@ -500,7 +611,7 @@ Deno.serve(async (req: Request) => {
               transcriptText = await transcriptResponse.text();
             }
 
-            console.log("Fetched transcript, length:", transcriptText.length);
+            console.log("Fetched 100ms transcript, length:", transcriptText.length);
           } else {
             console.error("Failed to fetch transcript:", transcriptResponse.status);
           }

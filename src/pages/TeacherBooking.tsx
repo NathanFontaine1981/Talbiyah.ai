@@ -138,13 +138,16 @@ export default function TeacherBooking() {
         }
       }
 
-      // Only show Quran and Arabic subjects for now
-      const allowedSubjects = ['quran', 'arabic'];
-      const filteredSubjects = subjectsData.filter(subject =>
-        allowedSubjects.some(allowed =>
-          subject.name.toLowerCase().includes(allowed)
-        )
-      );
+      // Only show Quran with Understanding and Arabic Language for now
+      // Exclude Quran Memorisation (coming later)
+      const filteredSubjects = subjectsData.filter(subject => {
+        const nameLower = subject.name.toLowerCase();
+        // Allow Arabic Language
+        if (nameLower.includes('arabic')) return true;
+        // Allow Quran with Understanding but exclude Quran Memorisation
+        if (nameLower.includes('quran') && !nameLower.includes('memori')) return true;
+        return false;
+      });
 
       setSubjects(filteredSubjects);
 
@@ -468,6 +471,13 @@ export default function TeacherBooking() {
                         {subject.name}
                       </button>
                     ))}
+                    {/* Coming Soon option */}
+                    <button
+                      disabled
+                      className="w-full p-3 rounded-lg text-left bg-gray-50 text-gray-400 cursor-not-allowed border border-dashed border-gray-300"
+                    >
+                      Islamic Studies <span className="text-xs ml-1 opacity-75">(Coming Soon)</span>
+                    </button>
                   </div>
                 </div>
               )}

@@ -15,6 +15,7 @@ interface KhutbaInsightRequest {
   original_text?: string;
   insights: Record<string, unknown>;
   user_id?: string;
+  skip_notifications?: boolean;
 }
 
 Deno.serve(async (req: Request) => {
@@ -124,6 +125,131 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log("Successfully saved khutba insight:", data.id);
+
+    // Skip email notifications if requested (admin will send separately)
+    if (body.skip_notifications) {
+      console.log("Skipping email notifications as requested");
+      return new Response(
+        JSON.stringify({ success: true, id: data.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Send email notification to all users about new khutba insights
+    try {
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      if (RESEND_API_KEY) {
+        // Get all users with email notifications enabled
+        const { data: users, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .not('email', 'is', null);
+
+        if (usersError) {
+          console.error("Error fetching users for notification:", usersError);
+        } else if (users && users.length > 0) {
+          console.log(`Sending khutba notification to ${users.length} users`);
+
+          // Format the date nicely
+          const khutbaDateFormatted = body.khutba_date
+            ? new Date(body.khutba_date).toLocaleDateString('en-GB', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })
+            : 'Recent';
+
+          // Get main points for email preview
+          const mainPoints = body.insights?.main_points?.slice(0, 3) || [];
+          const mainPointsHtml = mainPoints.length > 0
+            ? `<ul style="margin: 16px 0; padding-left: 20px;">${mainPoints.map((p: any) => `<li style="margin: 8px 0;"><strong>${p.point}</strong></li>`).join('')}</ul>`
+            : '';
+
+          // Send batch email (Resend supports up to 100 recipients per batch)
+          const emailAddresses = users
+            .filter(u => u.email)
+            .map(u => u.email as string);
+
+          if (emailAddresses.length > 0) {
+            // Send in batches of 50 to avoid rate limits
+            const batches = [];
+            for (let i = 0; i < emailAddresses.length; i += 50) {
+              batches.push(emailAddresses.slice(i, i + 50));
+            }
+
+            for (const batch of batches) {
+              const emailResponse = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${RESEND_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  from: "Talbiyah <updates@talbiyah.ai>",
+                  bcc: batch, // Use BCC to protect privacy
+                  to: "updates@talbiyah.ai", // Required field
+                  subject: `🕌 New Talbiyah Insights: ${body.title}`,
+                  html: `
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                      <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #059669; margin: 0;">Talbiyah Insights</h1>
+                        <p style="color: #6b7280; margin: 5px 0;">New Khutbah Study Materials Available</p>
+                      </div>
+
+                      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <h2 style="color: #92400e; margin: 0 0 10px 0; font-size: 24px;">${body.title}</h2>
+                        ${body.speaker ? `<p style="color: #b45309; margin: 5px 0;"><strong>Speaker:</strong> ${body.speaker}</p>` : ''}
+                        ${body.location ? `<p style="color: #b45309; margin: 5px 0;"><strong>Location:</strong> ${body.location}</p>` : ''}
+                        <p style="color: #b45309; margin: 5px 0;"><strong>Date:</strong> ${khutbaDateFormatted}</p>
+                      </div>
+
+                      ${mainPointsHtml ? `
+                        <div style="margin-bottom: 24px;">
+                          <h3 style="color: #374151; margin: 0 0 12px 0;">Key Points:</h3>
+                          ${mainPointsHtml}
+                        </div>
+                      ` : ''}
+
+                      <div style="text-align: center; margin: 30px 0;">
+                        <a href="https://talbiyah.ai/insights-library" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                          View Full Insights
+                        </a>
+                      </div>
+
+                      <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+                        <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+                          Study notes include Quranic vocabulary, hadith references, quizzes, homework, and family discussion guides.
+                        </p>
+                      </div>
+
+                      <div style="text-align: center; margin-top: 20px;">
+                        <p style="color: #9ca3af; font-size: 11px;">
+                          Talbiyah - Your Path to Islamic Knowledge<br>
+                          <a href="https://talbiyah.ai" style="color: #059669;">talbiyah.ai</a>
+                        </p>
+                      </div>
+                    </div>
+                  `,
+                }),
+              });
+
+              if (emailResponse.ok) {
+                console.log(`Email batch sent successfully to ${batch.length} users`);
+              } else {
+                const emailError = await emailResponse.text();
+                console.error("Email batch failed:", emailError);
+              }
+            }
+          }
+        }
+      } else {
+        console.log("RESEND_API_KEY not configured, skipping email notifications");
+      }
+    } catch (emailError) {
+      console.error("Error sending email notifications:", emailError);
+      // Don't fail the save if email fails
+    }
 
     return new Response(
       JSON.stringify({ success: true, id: data.id }),

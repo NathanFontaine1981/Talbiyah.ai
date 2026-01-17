@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, User, ArrowLeft, Check } from 'lucide-react';
+import { BookOpen, Upload, User, ArrowLeft, Check, Bell, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
 
@@ -11,8 +11,10 @@ export default function AccountSettings() {
   const [savingDetails, setSavingDetails] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingEducation, setSavingEducation] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [emailNotifications, setEmailNotifications] = useState(true);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
@@ -100,6 +102,9 @@ export default function AccountSettings() {
         if (profile.avatar_url) {
           setAvatarPreview(profile.avatar_url);
         }
+
+        // Load email notification preference (default to true if not set)
+        setEmailNotifications(profile.email_notifications !== false);
 
         const userRoles = profile.roles || [];
         const teacherRole = userRoles.includes('teacher');
@@ -356,6 +361,38 @@ export default function AccountSettings() {
     }
   }
 
+  async function handleSaveNotifications() {
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      setSavingNotifications(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          email_notifications: emailNotifications
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setSuccessMessage('Notification preferences updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving notification preferences:', err);
+      setError(err.message || 'Failed to save notification preferences.');
+    } finally {
+      setSavingNotifications(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -596,6 +633,57 @@ export default function AccountSettings() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Email Notification Preferences */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-8">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 pb-3 border-b border-gray-200 dark:border-gray-700 flex items-center">
+              <Bell className="w-5 h-5 mr-2 text-amber-500" />
+              Email Notifications
+            </h3>
+
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="flex-shrink-0 mt-1">
+                  <Mail className="w-6 h-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Khutbah Reflections Emails</h4>
+                      <p className="text-gray-600 text-sm mt-1">
+                        Receive weekly Talbiyah Insights emails with study notes from Friday khutbahs,
+                        including Quranic vocabulary, hadith references, and family discussion guides.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={emailNotifications}
+                        onChange={(e) => setEmailNotifications(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-gray-500 text-sm">
+                When enabled, you'll receive thoughtfully crafted reflection emails whenever new Talbiyah Insights are published.
+                These are designed to help you and your family benefit from the khutbah throughout the week.
+              </p>
+
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleSaveNotifications}
+                  disabled={savingNotifications}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingNotifications ? 'Saving...' : 'Save Preferences'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {isTeacher && (

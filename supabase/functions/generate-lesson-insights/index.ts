@@ -1,3 +1,4 @@
+// @ts-ignore - Deno types
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -464,6 +465,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Initialize Supabase client to fetch subject-specific template
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     // Determine which prompt to use based on subject
     let systemPrompt: string;
     let insightType: string;
@@ -473,45 +479,80 @@ Deno.serve(async (req: Request) => {
     let verifiedFirstWordsContext = '';
 
     const subjectLower = subject.toLowerCase();
-    const isQuranLesson = subjectLower.includes('quran') || subjectLower.includes('qur');
 
-    if (isQuranLesson) {
+    // Check for specific subject types
+    const isQuranUnderstanding = subjectLower.includes('quran') && subjectLower.includes('understanding');
+    const isQuranMemorisation = subjectLower.includes('quran') && (subjectLower.includes('memori') || subjectLower.includes('hifz') || subjectLower.includes('hifdh'));
+    const isQuranLesson = subjectLower.includes('quran') || subjectLower.includes('qur');
+    const isArabicLesson = subjectLower.includes('arabic');
+
+    // Try to fetch subject-specific template from database
+    const { data: subjectData, error: subjectError } = await supabase
+      .from('subjects')
+      .select('ai_prompt_template, name')
+      .ilike('name', `%${subject.replace(/[%_]/g, '')}%`)
+      .single();
+
+    if (subjectData?.ai_prompt_template) {
+      // Use database template
+      systemPrompt = subjectData.ai_prompt_template;
+      insightType = 'subject_specific';
+      console.log(`Using database template for subject: ${subjectData.name}`);
+
+      // Set title based on subject type
+      if (isQuranUnderstanding) {
+        title = `Qur'an with Understanding: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+      } else if (isQuranMemorisation) {
+        title = `Qur'an Memorisation: ${metadata.surah_name || 'Session'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+      } else if (isQuranLesson) {
+        title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+      } else if (isArabicLesson) {
+        title = `Arabic Language Insights: ${metadata.lesson_date}`;
+      } else {
+        title = `${subject} Insights: ${metadata.lesson_date}`;
+      }
+    } else if (isQuranLesson) {
+      // Fallback to hardcoded Quran prompt
       systemPrompt = QURAN_PROMPT;
       insightType = 'subject_specific';
       title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
-
-      // Fetch verified Quran data from Quran.com API
-      if (metadata.surah_number && metadata.ayah_range) {
-        const ayahRangeMatch = metadata.ayah_range.match(/(\d+)\s*[-–]\s*(\d+)/);
-        if (ayahRangeMatch) {
-          const startAyah = parseInt(ayahRangeMatch[1], 10);
-          const endAyah = parseInt(ayahRangeMatch[2], 10);
-
-          console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
-          verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
-          console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
-
-          // Generate verified First Word Prompter section
-          firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
-
-          // Create context for AI prompt
-          if (verifiedVerses.length > 0) {
-            verifiedFirstWordsContext = `\n\nVERIFIED FIRST WORDS (from Quran.com API - USE THESE EXACT VALUES):\n${verifiedVerses.map(v => `Ayah ${v.ayahNumber}: ${v.firstWord} (${v.transliteration})`).join('\n')}\n`;
-          }
-        }
-      }
-    } else if (subjectLower.includes('arabic')) {
+      console.log('Using fallback QURAN_PROMPT');
+    } else if (isArabicLesson) {
+      // Fallback to hardcoded Arabic prompt
       systemPrompt = ARABIC_PROMPT;
       insightType = 'subject_specific';
       title = `Arabic Language Insights: ${metadata.lesson_date}`;
+      console.log('Using fallback ARABIC_PROMPT');
     } else {
-      return new Response(
-        JSON.stringify({ error: `Unsupported subject for insights generation: ${subject}` }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Generic fallback for any other subject
+      systemPrompt = `You are Talbiyah Insights – ${subject} specialist.
+Transform the class transcript into comprehensive, structured study notes.
+Include: lesson summary, key concepts, important lessons, reflection questions, mini quiz, and homework.
+Make the notes detailed, educational, and easy to revise.`;
+      insightType = 'subject_specific';
+      title = `${subject} Insights: ${metadata.lesson_date}`;
+      console.log(`Using generic template for subject: ${subject}`);
+    }
+
+    // For Quran lessons (both Understanding and Memorisation), fetch verified data
+    if (isQuranLesson && metadata.surah_number && metadata.ayah_range) {
+      const ayahRangeMatch = metadata.ayah_range.match(/(\d+)\s*[-–]\s*(\d+)/);
+      if (ayahRangeMatch) {
+        const startAyah = parseInt(ayahRangeMatch[1], 10);
+        const endAyah = parseInt(ayahRangeMatch[2], 10);
+
+        console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
+        verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
+        console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
+
+        // Generate verified First Word Prompter section
+        firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
+
+        // Create context for AI prompt
+        if (verifiedVerses.length > 0) {
+          verifiedFirstWordsContext = `\n\nVERIFIED FIRST WORDS (from Quran.com API - USE THESE EXACT VALUES):\n${verifiedVerses.map(v => `Ayah ${v.ayahNumber}: ${v.firstWord} (${v.transliteration})`).join('\n')}\n`;
         }
-      );
+      }
     }
 
     // Build user prompt based on subject type

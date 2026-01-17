@@ -38,7 +38,11 @@ import {
   Volume2,
   Pause,
   Play,
-  X
+  X,
+  Send,
+  Mail,
+  Users,
+  Bell
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -137,6 +141,13 @@ export default function KhutbaReflections() {
   const [saving, setSaving] = useState(false);
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  // Notification states (separate from saving)
+  const [sendingToDashboards, setSendingToDashboards] = useState(false);
+  const [sentToDashboards, setSentToDashboards] = useState(false);
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [emailsSent, setEmailsSent] = useState(false);
+  const [emailCount, setEmailCount] = useState<number | null>(null);
 
   // TTS playback states (using ElevenLabs)
   const [ttsLoading, setTtsLoading] = useState(false);
@@ -474,7 +485,7 @@ export default function KhutbaReflections() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Save insights to database via Edge Function
+  // Save insights to database via Edge Function (just saves, no notifications)
   const saveInsights = async () => {
     if (!studyNotes || !isAdmin) return;
 
@@ -494,7 +505,8 @@ export default function KhutbaReflections() {
             khutba_date: khutbaDate || null,
             original_text: inputText,
             insights: studyNotes,
-            user_id: userId
+            user_id: userId,
+            skip_notifications: true // Don't send emails automatically
           })
         }
       );
@@ -506,12 +518,91 @@ export default function KhutbaReflections() {
       }
 
       setSavedInsightId(result.id);
-      toast.success('Talbiyah Insights saved successfully! It is now available in the library for all users.');
+      toast.success('Saved to Library! Now you can notify users via dashboard or email.');
     } catch (error: any) {
       console.error('Error saving insights:', error);
       toast.error(`Error saving: ${error.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Send notification to all user dashboards
+  const sendToDashboards = async () => {
+    if (!savedInsightId || !studyNotes) return;
+
+    setSendingToDashboards(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-khutba-insights`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            insight_id: savedInsightId,
+            title: studyNotes.title,
+            speaker: speakerName || studyNotes.speaker,
+            notification_type: 'dashboard'
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to send notifications');
+      }
+
+      setSentToDashboards(true);
+      toast.success(`Dashboard notification sent to ${result.user_count || 'all'} users!`);
+    } catch (error: any) {
+      console.error('Error sending dashboard notifications:', error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setSendingToDashboards(false);
+    }
+  };
+
+  // Send email to all users who have email notifications enabled
+  const sendEmailNotifications = async () => {
+    if (!savedInsightId || !studyNotes) return;
+
+    setSendingEmails(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-khutba-insights`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            insight_id: savedInsightId,
+            title: studyNotes.title,
+            speaker: speakerName || studyNotes.speaker,
+            khutba_date: khutbaDate,
+            main_points: studyNotes.main_points?.slice(0, 3),
+            notification_type: 'email'
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to send emails');
+      }
+
+      setEmailsSent(true);
+      setEmailCount(result.email_count || 0);
+      toast.success(`Reflection emails sent to ${result.email_count || 0} users who opted in!`);
+    } catch (error: any) {
+      console.error('Error sending email notifications:', error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setSendingEmails(false);
     }
   };
 
@@ -736,7 +827,13 @@ export default function KhutbaReflections() {
               </div>
             </div>
 
-            <div className="w-32"></div>
+            <button
+              onClick={() => navigate('/insights-library')}
+              className="flex items-center space-x-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition text-sm font-medium"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>View Library</span>
+            </button>
           </div>
         </div>
       </header>
@@ -1018,18 +1115,6 @@ export default function KhutbaReflections() {
                     <span>{downloadingPDF ? 'Generating...' : 'PDF'}</span>
                   </button>
                   <button
-                    onClick={saveInsights}
-                    disabled={saving || !!savedInsightId}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-                      savedInsightId
-                        ? 'bg-emerald-500/20 text-emerald-400 cursor-default'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-gray-900'
-                    } disabled:opacity-50`}
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : savedInsightId ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                    <span>{savedInsightId ? 'Saved!' : saving ? 'Saving...' : 'Save to Library'}</span>
-                  </button>
-                  <button
                     onClick={copyStudyNotes}
                     className="flex items-center space-x-2 px-4 py-2 bg-gray-200/80 hover:bg-gray-200/80 text-gray-900 rounded-lg transition"
                   >
@@ -1046,6 +1131,92 @@ export default function KhutbaReflections() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Save & Notify Section */}
+            <div className="px-8 py-6 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Save className="w-5 h-5 mr-2 text-amber-600" />
+                Save & Notify Users
+              </h4>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Step 1: Save to Library */}
+                <div className={`p-4 rounded-xl border-2 ${savedInsightId ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-amber-200'}`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${savedInsightId ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {savedInsightId ? <Check className="w-4 h-4" /> : '1'}
+                    </span>
+                    <span className="font-semibold text-gray-900">Save to Library</span>
+                  </div>
+                  <p className="text-gray-500 text-sm mb-3">Save insights for all users to access in the library</p>
+                  <button
+                    onClick={saveInsights}
+                    disabled={saving || !!savedInsightId}
+                    className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition ${
+                      savedInsightId
+                        ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                        : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white'
+                    } disabled:opacity-50`}
+                  >
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : savedInsightId ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                    <span>{savedInsightId ? 'Saved to Library!' : saving ? 'Saving...' : 'Save to Library'}</span>
+                  </button>
+                </div>
+
+                {/* Step 2: Send to Dashboards */}
+                <div className={`p-4 rounded-xl border-2 ${!savedInsightId ? 'opacity-50' : sentToDashboards ? 'bg-blue-50 border-blue-300' : 'bg-white border-blue-200'}`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${sentToDashboards ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
+                      {sentToDashboards ? <Check className="w-4 h-4" /> : '2'}
+                    </span>
+                    <span className="font-semibold text-gray-900">Notify Dashboards</span>
+                  </div>
+                  <p className="text-gray-500 text-sm mb-3">Show notification on every user's dashboard</p>
+                  <button
+                    onClick={sendToDashboards}
+                    disabled={!savedInsightId || sendingToDashboards || sentToDashboards}
+                    className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition ${
+                      sentToDashboards
+                        ? 'bg-blue-100 text-blue-700 cursor-default'
+                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white'
+                    } disabled:opacity-50`}
+                  >
+                    {sendingToDashboards ? <Loader2 className="w-5 h-5 animate-spin" /> : sentToDashboards ? <Check className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                    <span>{sentToDashboards ? 'Notification Sent!' : sendingToDashboards ? 'Sending...' : 'Send to Dashboards'}</span>
+                  </button>
+                </div>
+
+                {/* Step 3: Send Email */}
+                <div className={`p-4 rounded-xl border-2 ${!savedInsightId ? 'opacity-50' : emailsSent ? 'bg-violet-50 border-violet-300' : 'bg-white border-violet-200'}`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${emailsSent ? 'bg-violet-500 text-white' : 'bg-violet-400 text-white'}`}>
+                      {emailsSent ? <Check className="w-4 h-4" /> : '3'}
+                    </span>
+                    <span className="font-semibold text-gray-900">Send Reflection Email</span>
+                  </div>
+                  <p className="text-gray-500 text-sm mb-3">Email users who opted in for reflections</p>
+                  <button
+                    onClick={sendEmailNotifications}
+                    disabled={!savedInsightId || sendingEmails || emailsSent}
+                    className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition ${
+                      emailsSent
+                        ? 'bg-violet-100 text-violet-700 cursor-default'
+                        : 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white'
+                    } disabled:opacity-50`}
+                  >
+                    {sendingEmails ? <Loader2 className="w-5 h-5 animate-spin" /> : emailsSent ? <Check className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
+                    <span>{emailsSent ? `Sent to ${emailCount} users!` : sendingEmails ? 'Sending...' : 'Send Reflection Email'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {savedInsightId && (
+                <p className="text-center text-gray-500 text-sm mt-4">
+                  <Check className="w-4 h-4 inline mr-1 text-emerald-500" />
+                  Insights saved! Users can now find it in the <button onClick={() => navigate('/insights-library')} className="text-amber-600 hover:underline font-medium">Insights Library</button>
+                </p>
+              )}
             </div>
 
             {/* Content */}
@@ -1505,15 +1676,29 @@ export default function KhutbaReflections() {
           </div>
         )}
 
-        {/* Link to Khutba Creator */}
-        <div className="bg-white border border-emerald-200 rounded-2xl p-6 text-center">
-          <p className="text-gray-500 mb-3">Need to create a khutbah from scratch?</p>
-          <button
-            onClick={() => navigate('/khutba-creator')}
-            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
-          >
-            Go to Khutbah Creator
-          </button>
+        {/* Links to other sections */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Link to Insights Library */}
+          <div className="bg-white border border-amber-200 rounded-2xl p-6 text-center">
+            <p className="text-gray-500 mb-3">View all saved Talbiyah Insights</p>
+            <button
+              onClick={() => navigate('/insights-library')}
+              className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-lg font-semibold transition"
+            >
+              View Insights Library
+            </button>
+          </div>
+
+          {/* Link to Khutba Creator */}
+          <div className="bg-white border border-emerald-200 rounded-2xl p-6 text-center">
+            <p className="text-gray-500 mb-3">Need to create a khutbah from scratch?</p>
+            <button
+              onClick={() => navigate('/khutba-creator')}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-lg font-semibold transition"
+            >
+              Go to Khutbah Creator
+            </button>
+          </div>
         </div>
       </main>
     </div>
