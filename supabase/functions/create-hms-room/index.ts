@@ -64,7 +64,7 @@ serve(async (req) => {
       body: JSON.stringify({
         name: roomName,
         description: description || `Live Islamic Learning Session: ${roomName}`,
-        template_id: '695721684f8717ae22337997', // Talbiyah EU template with auto transcription & insights
+        template_id: '696bc294a090b0544dfda056', // Talbiyah Europe workspace template
         region: 'eu', // EU region for UK users - lowest latency
       })
     })
@@ -322,7 +322,7 @@ serve(async (req) => {
       room: {
         id: roomData.id,
         name: roomData.name,
-        templateId: '684b54d6033903926e6127a1',
+        templateId: '696bc294a090b0544dfda056',
         createdAt: roomData.created_at || new Date().toISOString(),
         
         // Provide primary room code for compatibility
@@ -390,7 +390,7 @@ serve(async (req) => {
             : 'Check HMS configuration and try again',
           troubleshooting: {
             checkToken: 'Verify HMS_APP_ACCESS_KEY and HMS_APP_SECRET are set in Supabase secrets',
-            checkTemplate: 'Ensure template 684b54d6033903926e6127a1 exists',
+            checkTemplate: 'Ensure template 696bc294a090b0544dfda056 exists',
             checkRoles: 'Verify template has host and guest roles configured',
             retryLater: 'Room codes may need more time to propagate in HMS system'
           }

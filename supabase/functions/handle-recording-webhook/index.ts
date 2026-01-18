@@ -473,9 +473,10 @@ Deno.serve(async (req: Request) => {
       try {
         const hmsToken = await getHMSManagementToken();
 
-        // Fetch recording assets for this session
-        const assetsResponse = await fetch(
-          `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}`,
+        // Query specifically for transcript assets (avoids pagination issues)
+        console.log("Fetching transcript assets with type filter...");
+        const transcriptResponse = await fetch(
+          `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}&type=transcript`,
           {
             headers: {
               'Authorization': `Bearer ${hmsToken}`,
@@ -484,21 +485,17 @@ Deno.serve(async (req: Request) => {
           }
         );
 
-        if (assetsResponse.ok) {
-          const assetsData = await assetsResponse.json();
-          console.log("Found", assetsData.data?.length || 0, "recording assets for session");
+        if (transcriptResponse.ok) {
+          const transcriptData = await transcriptResponse.json();
+          console.log("Found", transcriptData.data?.length || 0, "transcript assets for session");
 
           // Find transcript assets (prefer JSON, then TXT)
-          const transcriptAsset = assetsData.data?.find((asset: any) =>
-            asset.type === 'transcript' && asset.status === 'completed' &&
-            asset.metadata?.output_mode === 'json'
-          ) || assetsData.data?.find((asset: any) =>
-            asset.type === 'transcript' && asset.status === 'completed'
-          );
-
-          // Find summary asset
-          const summaryAsset = assetsData.data?.find((asset: any) =>
-            asset.type === 'summary' && asset.status === 'completed'
+          const transcriptAsset = transcriptData.data?.find((asset: any) =>
+            asset.status === 'completed' && asset.metadata?.output_mode === 'json'
+          ) || transcriptData.data?.find((asset: any) =>
+            asset.status === 'completed' && asset.metadata?.output_mode === 'txt'
+          ) || transcriptData.data?.find((asset: any) =>
+            asset.status === 'completed'
           );
 
           if (transcriptAsset) {
@@ -521,30 +518,57 @@ Deno.serve(async (req: Request) => {
               transcriptUrl = presignData.url;
               console.log("Got presigned URL for transcript");
             }
-          }
-
-          if (summaryAsset && !summaryUrl) {
-            console.log("Found summary asset:", summaryAsset.id);
-
-            const presignResponse = await fetch(
-              `https://api.100ms.live/v2/recording-assets/${summaryAsset.id}/presigned-url`,
-              {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${hmsToken}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-
-            if (presignResponse.ok) {
-              const presignData = await presignResponse.json();
-              summaryUrl = presignData.url;
-              console.log("Got presigned URL for summary");
-            }
+          } else {
+            console.log("No completed transcript assets found yet");
           }
         } else {
-          console.log("Could not fetch recording assets:", assetsResponse.status);
+          console.log("Could not fetch transcript assets:", transcriptResponse.status);
+        }
+
+        // Query specifically for summary assets (separate query to avoid pagination)
+        if (!summaryUrl) {
+          console.log("Fetching summary assets with type filter...");
+          const summaryResponse = await fetch(
+            `https://api.100ms.live/v2/recording-assets?session_id=${sessionId}&type=summary`,
+            {
+              headers: {
+                'Authorization': `Bearer ${hmsToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (summaryResponse.ok) {
+            const summaryData = await summaryResponse.json();
+            console.log("Found", summaryData.data?.length || 0, "summary assets for session");
+
+            const summaryAsset = summaryData.data?.find((asset: any) =>
+              asset.status === 'completed'
+            );
+
+            if (summaryAsset) {
+              console.log("Found summary asset:", summaryAsset.id);
+
+              const presignResponse = await fetch(
+                `https://api.100ms.live/v2/recording-assets/${summaryAsset.id}/presigned-url`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${hmsToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (presignResponse.ok) {
+                const presignData = await presignResponse.json();
+                summaryUrl = presignData.url;
+                console.log("Got presigned URL for summary");
+              }
+            } else {
+              console.log("No completed summary assets found yet");
+            }
+          }
         }
       } catch (apiError) {
         console.error("Error fetching from 100ms API:", apiError);
@@ -641,12 +665,20 @@ Deno.serve(async (req: Request) => {
         }
 
         // Combine transcript and summary for richer context
-        const fullTranscript = summaryText
+        let fullTranscript = summaryText
           ? `SUMMARY:\n${summaryText}\n\nFULL TRANSCRIPT:\n${transcriptText}`
           : transcriptText;
 
+        // Truncate if too long (Claude has 200k token limit, ~4 chars per token)
+        const maxChars = 400000;
+        if (fullTranscript.length > maxChars) {
+          console.log(`Transcript too long (${fullTranscript.length} chars), truncating to ${maxChars} chars`);
+          fullTranscript = fullTranscript.substring(0, maxChars) +
+            "\n\n[... remainder of transcript truncated for processing ...]";
+        }
+
         if (fullTranscript.length > 100) {
-          console.log("Calling generate-lesson-insights function...");
+          console.log("Calling generate-lesson-insights function, transcript length:", fullTranscript.length);
 
           // Determine metadata based on subject type
           const metadata: any = {

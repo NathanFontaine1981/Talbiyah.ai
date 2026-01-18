@@ -96,6 +96,21 @@ serve(async (req) => {
       )
     }
 
+    // Check if original lesson time has elapsed - if so, credit is forfeited
+    const now = new Date()
+    const originalLessonTime = new Date(lesson.scheduled_time)
+
+    if (now >= originalLessonTime) {
+      return new Response(
+        JSON.stringify({
+          error: 'This lesson time has already passed. The credit has been forfeited and cannot be rescheduled.',
+          lesson_elapsed: true,
+          scheduled_time: lesson.scheduled_time
+        }),
+        { status: 400, headers: responseHeaders }
+      )
+    }
+
     // Limit reschedules to once per lesson
     if ((lesson.rescheduled_count || 0) >= 1) {
       return new Response(
@@ -106,7 +121,6 @@ serve(async (req) => {
 
     // Validate new time is in the future
     const newTime = new Date(new_scheduled_time)
-    const now = new Date()
     if (newTime <= now) {
       return new Response(
         JSON.stringify({ error: 'New time must be in the future' }),

@@ -39,6 +39,7 @@ interface VerifiedVerse {
 
 /**
  * Fetch verified Quran verses from Quran.com API
+ * Uses separate endpoints for Arabic text and translations, then merges them
  */
 async function fetchVerifiedQuranData(
   surahNumber: number,
@@ -46,27 +47,47 @@ async function fetchVerifiedQuranData(
   endAyah: number
 ): Promise<VerifiedVerse[]> {
   try {
-    const params = new URLSearchParams({
-      language: 'en',
-      words: 'true',
-      word_fields: 'text_uthmani,text_simple,translation,transliteration',
-      translations: '131',
-      per_page: '50',
-    });
+    // Fetch Arabic text, translations, and word data in parallel
+    const [arabicResponse, translationResponse, wordsResponse] = await Promise.all([
+      fetch(`${QURAN_API_BASE}/quran/verses/uthmani?chapter_number=${surahNumber}`),
+      fetch(`${QURAN_API_BASE}/quran/translations/20?chapter_number=${surahNumber}`), // Saheeh International
+      fetch(`${QURAN_API_BASE}/verses/by_chapter/${surahNumber}?words=true&word_fields=text_uthmani,transliteration&per_page=300`)
+    ]);
 
-    const response = await fetch(
-      `${QURAN_API_BASE}/verses/by_chapter/${surahNumber}?${params}`
-    );
-
-    if (!response.ok) {
-      console.error('Failed to fetch from Quran API:', response.status);
+    if (!arabicResponse.ok || !translationResponse.ok || !wordsResponse.ok) {
+      console.error('Failed to fetch from Quran API:', {
+        arabic: arabicResponse.status,
+        translation: translationResponse.status,
+        words: wordsResponse.status
+      });
       return [];
     }
 
-    const data = await response.json();
+    const [arabicData, translationData, wordsData] = await Promise.all([
+      arabicResponse.json(),
+      translationResponse.json(),
+      wordsResponse.json()
+    ]);
+
+    // Create maps for easy lookup
+    const arabicMap = new Map<number, string>();
+    for (const verse of arabicData.verses || []) {
+      const verseNum = parseInt(verse.verse_key?.split(':')[1] || '0');
+      if (verseNum > 0) {
+        arabicMap.set(verseNum, verse.text_uthmani);
+      }
+    }
+
+    const translationMap = new Map<number, string>();
+    let translationIndex = 1;
+    for (const trans of translationData.translations || []) {
+      translationMap.set(translationIndex, trans.text?.replace(/<[^>]*>/g, '') || '');
+      translationIndex++;
+    }
+
     const verses: VerifiedVerse[] = [];
 
-    for (const verse of data.verses) {
+    for (const verse of wordsData.verses || []) {
       if (verse.verse_number >= startAyah && verse.verse_number <= endAyah) {
         const firstWord = verse.words?.find(
           (w: { char_type_name: string; position: number }) =>
@@ -76,11 +97,11 @@ async function fetchVerifiedQuranData(
         verses.push({
           ayahNumber: verse.verse_number,
           verseKey: verse.verse_key,
-          firstWord: firstWord?.text_uthmani || verse.text_uthmani?.split(' ')[0] || '',
+          firstWord: firstWord?.text_uthmani || '',
           transliteration: firstWord?.transliteration?.text || '',
-          translation: firstWord?.translation?.text || '',
-          fullVerseUthmani: verse.text_uthmani,
-          fullVerseTranslation: verse.translations?.[0]?.text || '',
+          translation: translationMap.get(verse.verse_number)?.split(' ').slice(0, 5).join(' ') || '',
+          fullVerseUthmani: arabicMap.get(verse.verse_number) || '',
+          fullVerseTranslation: translationMap.get(verse.verse_number) || '',
         });
       }
     }
@@ -90,6 +111,36 @@ async function fetchVerifiedQuranData(
     console.error('Error fetching Quran data:', error);
     return [];
   }
+}
+
+/**
+ * Generate Verses Covered section with verified full Arabic and translation
+ */
+function generateVersesCoveredSection(verses: VerifiedVerse[], surahName: string): string {
+  if (verses.length === 0) return '';
+
+  let section = `
+---
+
+## 📖 Verses Covered (Verified from Quran.com)
+
+**Surah ${surahName} - ${verses.length} verses studied**
+
+| Ayah | Arabic Text | English Translation |
+|------|-------------|---------------------|
+`;
+
+  for (const v of verses) {
+    // Escape any pipe characters in the text
+    const arabic = (v.fullVerseUthmani || v.firstWord || '').replace(/\|/g, '\\|');
+    const translation = (v.fullVerseTranslation || v.translation || '').replace(/\|/g, '\\|');
+    section += `| ${v.ayahNumber} | ${arabic} | ${translation} |\n`;
+  }
+
+  section += `
+`;
+
+  return section;
 }
 
 /**
@@ -476,6 +527,7 @@ Deno.serve(async (req: Request) => {
     let title: string;
     let verifiedVerses: VerifiedVerse[] = [];
     let firstWordPrompterSection = '';
+    let versesCoveredSection = '';
     let verifiedFirstWordsContext = '';
 
     const subjectLower = subject.toLowerCase();
@@ -544,6 +596,9 @@ Make the notes detailed, educational, and easy to revise.`;
         console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
         verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
         console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
+
+        // Generate verified Verses Covered section with full Arabic and translation
+        versesCoveredSection = generateVersesCoveredSection(verifiedVerses, metadata.surah_name || 'Quran');
 
         // Generate verified First Word Prompter section
         firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
@@ -632,6 +687,23 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Add verified Verses Covered section for Quran lessons (at the beginning after lesson info)
+    if (isQuranLesson && versesCoveredSection) {
+      // Insert after the first "---" (after lesson info section)
+      const firstDividerIndex = generatedText.indexOf('---');
+      if (firstDividerIndex !== -1) {
+        const afterFirstDivider = generatedText.indexOf('---', firstDividerIndex + 3);
+        if (afterFirstDivider !== -1) {
+          generatedText = generatedText.slice(0, afterFirstDivider) + versesCoveredSection + generatedText.slice(afterFirstDivider);
+        } else {
+          generatedText = generatedText + versesCoveredSection;
+        }
+      } else {
+        generatedText = versesCoveredSection + generatedText;
+      }
+      console.log("Added verified Verses Covered section from Quran.com API");
     }
 
     // Append verified First Word Prompter section for Quran lessons

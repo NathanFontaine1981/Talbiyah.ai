@@ -243,8 +243,8 @@ serve(async (req) => {
                 body: JSON.stringify({
                   name: `lesson-${lessonId}`,
                   description: `Talbiyah.ai Lesson - ${booking.subject || 'Islamic Studies'}`,
-                  template_id: Deno.env.get('HMS_TEMPLATE_ID') || '695721684f8717ae22337997',
-                  region: 'in',
+                  template_id: Deno.env.get('HMS_TEMPLATE_ID') || '696bc294a090b0544dfda056',
+                  region: 'eu',
                 })
               });
 

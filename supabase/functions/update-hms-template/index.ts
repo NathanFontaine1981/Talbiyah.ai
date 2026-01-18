@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const TEMPLATE_ID = "695721684f8717ae22337997"; // EU template with auto transcription
+const TEMPLATE_ID = "696bc294a090b0544dfda056"; // Talbiyah Europe workspace
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getHMSManagementToken } from "../_shared/hms.ts"
 
-const EU_TEMPLATE_ID = "695721684f8717ae22337997";
+const EU_TEMPLATE_ID = "696bc294a090b0544dfda056"; // Talbiyah Europe workspace
 
 serve(async (req) => {
   let HMS_MANAGEMENT_TOKEN: string

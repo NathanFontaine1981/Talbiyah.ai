@@ -97,18 +97,18 @@ serve(async (req) => {
       )
     }
 
-    // Check time until lesson
+    // Check if lesson time has elapsed
     const now = new Date()
     const lessonTime = new Date(lesson.scheduled_time)
-    const hoursUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-    // Policy: Must be 2+ hours before to cancel, otherwise reschedule only
-    if (hoursUntilLesson < 2) {
+    // Policy: Can cancel up until the scheduled lesson time
+    // If lesson time has passed, credit is forfeited - no cancellation allowed
+    if (now >= lessonTime) {
       return new Response(
         JSON.stringify({
-          error: 'Cannot cancel within 2 hours of lesson start. Please reschedule instead.',
-          can_reschedule: true,
-          hours_until_lesson: hoursUntilLesson
+          error: 'This lesson time has already passed. The credit has been forfeited and cannot be refunded.',
+          lesson_elapsed: true,
+          scheduled_time: lesson.scheduled_time
         }),
         { status: 400, headers: responseHeaders }
       )
