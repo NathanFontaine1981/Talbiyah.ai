@@ -466,8 +466,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                           <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
                             {/* Clean up title - remove prefix like "Qur'an Insights:" or "Arabic Language Insights:" */}
                             {lesson.insight_title
-                              .replace(/^Qur'?[aā]n\s*(with\s+Understanding\s*)?Insights:\s*/i, '')
-                              .replace(/^Arabic\s+Language\s+Insights:\s*/i, '')
+                              .replace(/^Qur'?[aā]n\s*(with\s+Understanding\s*)?:?\s*(Insights:?)?\s*/i, '')
+                              .replace(/^Arabic\s+Language\s*:?\s*(Insights:?)?\s*/i, '')
                               .replace(/^[\w\s]+Insights:\s*/i, '')}
                           </p>
                         )}
@@ -756,8 +756,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                           <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
                             {/* Clean up title - remove prefix like "Qur'an Insights:" or "Arabic Language Insights:" */}
                             {lesson.insight_title
-                              .replace(/^Qur'?[aā]n\s*(with\s+Understanding\s*)?Insights:\s*/i, '')
-                              .replace(/^Arabic\s+Language\s+Insights:\s*/i, '')
+                              .replace(/^Qur'?[aā]n\s*(with\s+Understanding\s*)?:?\s*(Insights:?)?\s*/i, '')
+                              .replace(/^Arabic\s+Language\s*:?\s*(Insights:?)?\s*/i, '')
                               .replace(/^[\w\s]+Insights:\s*/i, '')}
                           </p>
                         )}

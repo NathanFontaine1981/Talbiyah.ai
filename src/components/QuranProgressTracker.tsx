@@ -54,46 +54,79 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
 
   async function loadProgress() {
     try {
-      // Load from surah_retention_tracker (synced with My Memorisation page)
-      // First try with fluency/understanding columns
-      let data: { surah_number: number; fluency_complete?: boolean; understanding_complete?: boolean }[] | null = null;
+      // Load from BOTH sources and merge them:
+      // 1. surah_retention_tracker (My Memorisation page)
+      // 2. lesson_progress_tracker (Teacher updates)
 
+      // Source 1: surah_retention_tracker
+      let retentionData: { surah_number: number; fluency_complete?: boolean; understanding_complete?: boolean }[] = [];
       try {
-        const { data: extendedData, error: extendedError } = await supabase
+        const { data, error } = await supabase
           .from('surah_retention_tracker')
           .select('surah_number, fluency_complete, understanding_complete')
           .eq('learner_id', learnerId)
           .eq('memorization_status', 'memorized');
 
-        if (!extendedError) {
-          data = extendedData;
+        if (!error && data) {
+          retentionData = data;
         }
       } catch {
-        // Columns may not exist - fall back to basic query
+        // Table or columns may not exist
       }
 
-      // Fall back to basic query if extended failed
-      if (!data) {
-        const { data: basicData, error } = await supabase
-          .from('surah_retention_tracker')
-          .select('surah_number')
-          .eq('learner_id', learnerId)
-          .eq('memorization_status', 'memorized');
+      // Source 2: lesson_progress_tracker (where teacher updates go)
+      let lessonData: { topic: string; understanding_complete?: boolean; fluency_complete?: boolean; memorization_complete?: boolean; teacher_notes?: string }[] = [];
+      try {
+        const { data, error } = await supabase
+          .from('lesson_progress_tracker')
+          .select('topic, understanding_complete, fluency_complete, memorization_complete, teacher_notes')
+          .eq('learner_id', learnerId);
 
-        if (error) throw error;
-        data = basicData;
+        if (!error && data) {
+          lessonData = data;
+        }
+      } catch {
+        // Table may not exist
       }
+
+      // Helper to extract surah number from topic like "Surah Al-Fatiha" or "Surah 1"
+      const getSurahNumberFromTopic = (topic: string, surahName: string): boolean => {
+        const topicLower = topic.toLowerCase();
+        const nameLower = surahName.toLowerCase();
+        // Match by name (e.g., "Surah Al-Fatiha" contains "al-fatihah")
+        if (topicLower.includes(nameLower.replace(/['-]/g, '')) ||
+            nameLower.includes(topicLower.replace(/['-]/g, '').replace('surah ', ''))) {
+          return true;
+        }
+        // Also try without "al-" prefix
+        const nameWithoutAl = nameLower.replace(/^al-/, '');
+        if (topicLower.includes(nameWithoutAl)) {
+          return true;
+        }
+        return false;
+      };
 
       const surahProgress = SURAHS.map((surahName, index) => {
         const surahNumber = index + 1;
-        const progressRecord = data?.find(p => p.surah_number === surahNumber);
+
+        // Check surah_retention_tracker
+        const retentionRecord = retentionData.find(p => p.surah_number === surahNumber);
+
+        // Check lesson_progress_tracker (match by surah name in topic)
+        const lessonRecord = lessonData.find(p =>
+          getSurahNumberFromTopic(p.topic, surahName) ||
+          p.topic.includes(`Surah ${surahNumber}`) ||
+          p.topic === `Surah ${surahNumber}`
+        );
+
+        // Merge both sources - if either says complete, it's complete
         return {
           surahNumber,
           surahName,
-          understanding: progressRecord?.understanding_complete ?? false,
-          fluency: progressRecord?.fluency_complete ?? false,
-          memorization: progressRecord ? true : false,
-          teacherNotes: undefined
+          understanding: (retentionRecord?.understanding_complete ?? false) || (lessonRecord?.understanding_complete ?? false),
+          fluency: (retentionRecord?.fluency_complete ?? false) || (lessonRecord?.fluency_complete ?? false),
+          memorization: (retentionRecord ? true : false) || (lessonRecord?.memorization_complete ?? false),
+          teacherNotes: lessonRecord?.teacher_notes
         };
       });
 
@@ -120,14 +153,16 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
 
   const totalSurahs = 114;
   const memorisedSurahs = progress.filter(s => s.memorization).length;
-  const completedSurahs = progress.filter(
-    s => s.understanding && s.fluency && s.memorization
-  ).length;
-  // Show memorisation percentage as main metric (more commonly used)
-  const percentageComplete = Math.round((memorisedSurahs / totalSurahs) * 100);
+  const understoodSurahs = progress.filter(s => s.understanding).length;
 
-  const circumference = 2 * Math.PI * 120;
-  const strokeDashoffset = circumference - (percentageComplete / 100) * circumference;
+  // Calculate percentages
+  const memorisedPercent = Math.round((memorisedSurahs / totalSurahs) * 100);
+  const understoodPercent = Math.round((understoodSurahs / totalSurahs) * 100);
+
+  // For the smaller dual circles
+  const smallCircumference = 2 * Math.PI * 70;
+  const memorisedOffset = smallCircumference - (memorisedPercent / 100) * smallCircumference;
+  const understoodOffset = smallCircumference - (understoodPercent / 100) * smallCircumference;
 
   const displayedSurahs = showAll ? progress : progress.slice(0, 10);
 
@@ -149,52 +184,74 @@ export default function QuranProgressTracker({ learnerId }: QuranProgressTracker
         <span>Qur'an Progress Tracker</span>
       </h3>
 
-      <div className="flex flex-col items-center mb-8">
-        <div className="relative w-64 h-64 mb-4">
-          <svg className="transform -rotate-90 w-64 h-64">
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              stroke="currentColor"
-              strokeWidth="12"
-              fill="transparent"
-              className="text-gray-700"
-            />
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              stroke="currentColor"
-              strokeWidth="12"
-              fill="transparent"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="text-orange-500 transition-all duration-1000 ease-out"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-5xl font-bold text-orange-500">{percentageComplete}%</p>
-            <p className="text-sm text-gray-500 mt-2">Qur'an Mastered</p>
+      {/* Two Circular Progress Indicators */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
+        {/* Understanding Circle */}
+        <div className="flex flex-col items-center">
+          <div className="relative w-40 h-40 mb-3">
+            <svg className="transform -rotate-90 w-40 h-40">
+              <circle
+                cx="80"
+                cy="80"
+                r="70"
+                stroke="currentColor"
+                strokeWidth="10"
+                fill="transparent"
+                className="text-gray-700"
+              />
+              <circle
+                cx="80"
+                cy="80"
+                r="70"
+                stroke="currentColor"
+                strokeWidth="10"
+                fill="transparent"
+                strokeDasharray={smallCircumference}
+                strokeDashoffset={understoodOffset}
+                className="text-sky-400 transition-all duration-1000 ease-out"
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <p className="text-3xl font-bold text-sky-400">{understoodPercent}%</p>
+              <p className="text-xs text-gray-500 mt-1">Understood</p>
+            </div>
           </div>
+          <p className="text-sm font-medium text-sky-300">{understoodSurahs}/114 surahs</p>
         </div>
 
-        <div className="flex items-center justify-center space-x-4 text-sm">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-orange-400">{memorisedSurahs}</p>
-            <p className="text-gray-500">Memorised</p>
+        {/* Memorisation Circle */}
+        <div className="flex flex-col items-center">
+          <div className="relative w-40 h-40 mb-3">
+            <svg className="transform -rotate-90 w-40 h-40">
+              <circle
+                cx="80"
+                cy="80"
+                r="70"
+                stroke="currentColor"
+                strokeWidth="10"
+                fill="transparent"
+                className="text-gray-700"
+              />
+              <circle
+                cx="80"
+                cy="80"
+                r="70"
+                stroke="currentColor"
+                strokeWidth="10"
+                fill="transparent"
+                strokeDasharray={smallCircumference}
+                strokeDashoffset={memorisedOffset}
+                className="text-orange-500 transition-all duration-1000 ease-out"
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <p className="text-3xl font-bold text-orange-500">{memorisedPercent}%</p>
+              <p className="text-xs text-gray-500 mt-1">Memorised</p>
+            </div>
           </div>
-          <div className="w-px h-12 bg-gray-600"></div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-emerald-400">{completedSurahs}</p>
-            <p className="text-gray-500">Fully Mastered</p>
-          </div>
-          <div className="w-px h-12 bg-gray-600"></div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-white">{totalSurahs - memorisedSurahs}</p>
-            <p className="text-gray-500">Remaining</p>
-          </div>
+          <p className="text-sm font-medium text-orange-300">{memorisedSurahs}/114 surahs</p>
         </div>
       </div>
 

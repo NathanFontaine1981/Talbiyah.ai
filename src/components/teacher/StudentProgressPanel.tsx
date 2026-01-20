@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronUp, BookOpen, Brain, Volume2, Heart, Edit3, Save, X, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, BookOpen, Brain, Volume2, Heart, Edit3, Save, X, Check, CheckSquare, Square, Layers } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 // All 114 Surahs of the Quran with their ayah counts
@@ -141,6 +141,15 @@ interface StudentProgressPanelProps {
   onNotesUpdate?: () => void;
 }
 
+// Juz groupings for batch selection
+const JUZ_GROUPS = [
+  { name: "Juz 30 (Amma)", start: 78, end: 114 },
+  { name: "Juz 29 (Tabarak)", start: 67, end: 77 },
+  { name: "Juz 28 (Qad Sami'a)", start: 58, end: 66 },
+  { name: "Last 10 Surahs", start: 105, end: 114 },
+  { name: "Last 5 Surahs", start: 110, end: 114 },
+];
+
 export default function StudentProgressPanel({
   studentId,
   onNotesUpdate,
@@ -152,6 +161,11 @@ export default function StudentProgressPanel({
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesText, setNotesText] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Batch mode state
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedSurahs, setSelectedSurahs] = useState<Set<number>>(new Set());
+  const [batchSaving, setBatchSaving] = useState(false);
 
   useEffect(() => {
     if (isExpanded) {
@@ -297,6 +311,103 @@ export default function StudentProgressPanel({
     }
   };
 
+  // Toggle surah selection for batch mode
+  const toggleSurahSelection = (surahNumber: number) => {
+    const newSelected = new Set(selectedSurahs);
+    if (newSelected.has(surahNumber)) {
+      newSelected.delete(surahNumber);
+    } else {
+      newSelected.add(surahNumber);
+    }
+    setSelectedSurahs(newSelected);
+  };
+
+  // Select a range of surahs (for Juz selection)
+  const selectSurahRange = (start: number, end: number) => {
+    const newSelected = new Set(selectedSurahs);
+    for (let i = start; i <= end; i++) {
+      newSelected.add(i);
+    }
+    setSelectedSurahs(newSelected);
+  };
+
+  // Clear all selections
+  const clearSelection = () => {
+    setSelectedSurahs(new Set());
+  };
+
+  // Batch update selected surahs
+  const handleBatchUpdate = async (stage: 'understanding' | 'fluency' | 'memorization', value: boolean) => {
+    if (selectedSurahs.size === 0) {
+      toast.error('Please select at least one surah');
+      return;
+    }
+
+    setBatchSaving(true);
+    const fieldName = `${stage}_complete`;
+
+    try {
+      // Get subject ID for Quran
+      const { data: subjectData } = await supabase
+        .from('subjects')
+        .select('id')
+        .ilike('name', '%quran%')
+        .single();
+
+      const updates: Promise<void>[] = [];
+
+      for (const surahNumber of selectedSurahs) {
+        const surah = SURAHS[surahNumber - 1];
+        if (!surah) continue;
+
+        const existingProgress = getProgressForSurah(surahNumber);
+
+        if (existingProgress) {
+          // Update existing record
+          updates.push(
+            supabase
+              .from('lesson_progress_tracker')
+              .update({ [fieldName]: value })
+              .eq('id', existingProgress.id)
+              .then(({ error }) => {
+                if (error) throw error;
+              })
+          );
+        } else if (value) {
+          // Only create new record if setting to true
+          updates.push(
+            supabase
+              .from('lesson_progress_tracker')
+              .insert({
+                learner_id: studentId,
+                subject_id: subjectData?.id,
+                topic: `Surah ${surah.name}`,
+                [fieldName]: true,
+              })
+              .then(({ error }) => {
+                if (error) throw error;
+              })
+          );
+        }
+      }
+
+      await Promise.all(updates);
+      await loadProgress();
+
+      const stageLabel = stage === 'understanding' ? 'Understanding' : stage === 'fluency' ? 'Fluency' : 'Memorisation';
+      toast.success(`Updated ${stageLabel} for ${selectedSurahs.size} surahs`);
+
+      // Clear selection after successful batch update
+      setSelectedSurahs(new Set());
+      setBatchMode(false);
+    } catch (error: any) {
+      console.error('Error in batch update:', error);
+      toast.error('Failed to update: ' + error.message);
+    } finally {
+      setBatchSaving(false);
+    }
+  };
+
   const stats = calculateOverallProgress();
 
   return (
@@ -310,8 +421,8 @@ export default function StudentProgressPanel({
           <BookOpen className="w-5 h-5 text-emerald-400" />
           <span className="font-medium text-white">Quran Progress Tracker</span>
           {progress.length > 0 && (
-            <span className="text-xs px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">
-              {stats.memorized}/114 memorized
+            <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">
+              {stats.memorizedPercent}% memorised
             </span>
           )}
         </div>
@@ -331,24 +442,195 @@ export default function StudentProgressPanel({
             </div>
           ) : (
             <>
-              {/* Progress Summary */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center">
-                  <Brain className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-                  <p className="text-xl font-bold text-blue-400">{stats.understood}</p>
-                  <p className="text-xs text-blue-300">Understanding</p>
+              {/* Progress Summary - Two Circular Progress Indicators */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Understanding Progress Circle */}
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex flex-col items-center">
+                  <div className="relative w-20 h-20 mb-2">
+                    {/* Background circle */}
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="text-blue-900/30"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={`${stats.understoodPercent} 100`}
+                        className="text-blue-400"
+                      />
+                    </svg>
+                    {/* Center content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Brain className="w-4 h-4 text-blue-400 mb-0.5" />
+                      <span className="text-lg font-bold text-blue-400">{stats.understoodPercent}%</span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-blue-300">Understanding</p>
+                  <p className="text-xs text-blue-400/70">{stats.understood}/114 surahs</p>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
-                  <Volume2 className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
-                  <p className="text-xl font-bold text-emerald-400">{stats.fluent}</p>
-                  <p className="text-xs text-emerald-300">Fluency</p>
-                </div>
-                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-center">
-                  <Heart className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                  <p className="text-xl font-bold text-purple-400">{stats.memorized}</p>
-                  <p className="text-xs text-purple-300">Memorised</p>
+
+                {/* Memorisation Progress Circle */}
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex flex-col items-center">
+                  <div className="relative w-20 h-20 mb-2">
+                    {/* Background circle */}
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="text-orange-900/30"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={`${stats.memorizedPercent} 100`}
+                        className="text-orange-400"
+                      />
+                    </svg>
+                    {/* Center content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Heart className="w-4 h-4 text-orange-400 mb-0.5" />
+                      <span className="text-lg font-bold text-orange-400">{stats.memorizedPercent}%</span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-orange-300">Memorised</p>
+                  <p className="text-xs text-orange-400/70">{stats.memorized}/114 surahs</p>
                 </div>
               </div>
+
+              {/* Batch Mode Toggle and Actions */}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <button
+                  onClick={() => {
+                    setBatchMode(!batchMode);
+                    if (batchMode) {
+                      setSelectedSurahs(new Set());
+                    }
+                    setSelectedSurah(null);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition ${
+                    batchMode
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  {batchMode ? 'Exit Batch Mode' : 'Batch Update'}
+                </button>
+
+                {batchMode && (
+                  <>
+                    <span className="text-xs text-gray-500">|</span>
+                    <span className="text-xs text-amber-600 font-medium">
+                      {selectedSurahs.size} selected
+                    </span>
+                    {selectedSurahs.size > 0 && (
+                      <button
+                        onClick={clearSelection}
+                        className="text-xs text-gray-500 hover:text-gray-700 underline"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Batch Quick Select (Juz Groups) */}
+              {batchMode && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                  <p className="text-xs font-medium text-amber-800 mb-2">Quick Select:</p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {JUZ_GROUPS.map((group) => (
+                      <button
+                        key={group.name}
+                        onClick={() => selectSurahRange(group.start, group.end)}
+                        className="px-2 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 rounded transition"
+                      >
+                        {group.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Batch Actions */}
+                  {selectedSurahs.size > 0 && (
+                    <div className="border-t border-amber-200 pt-3 mt-2">
+                      <p className="text-xs font-medium text-amber-800 mb-2">
+                        Apply to {selectedSurahs.size} surahs:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleBatchUpdate('understanding', true)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          <Brain className="w-3 h-3" />
+                          Mark Understanding
+                        </button>
+                        <button
+                          onClick={() => handleBatchUpdate('fluency', true)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          Mark Fluency
+                        </button>
+                        <button
+                          onClick={() => handleBatchUpdate('memorization', true)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          <Heart className="w-3 h-3" />
+                          Mark Memorised
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          onClick={() => handleBatchUpdate('understanding', false)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          Clear Understanding
+                        </button>
+                        <button
+                          onClick={() => handleBatchUpdate('fluency', false)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          Clear Fluency
+                        </button>
+                        <button
+                          onClick={() => handleBatchUpdate('memorization', false)}
+                          disabled={batchSaving}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition disabled:opacity-50"
+                        >
+                          Clear Memorised
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Surah Grid - show last 30 (Juz Amma) by default for quick access */}
               <div className="space-y-2">
@@ -362,26 +644,42 @@ export default function StudentProgressPanel({
                       surahProgress.memorization_complete
                     );
                     const isComplete = surahProgress?.memorization_complete;
+                    const isSelected = selectedSurahs.has(surah.number);
 
                     return (
                       <button
                         key={surah.number}
                         onClick={() => {
-                          setSelectedSurah(selectedSurah === surah.number ? null : surah.number);
-                          setNotesText(surahProgress?.teacher_notes || '');
-                          setEditingNotes(false);
+                          if (batchMode) {
+                            toggleSurahSelection(surah.number);
+                          } else {
+                            setSelectedSurah(selectedSurah === surah.number ? null : surah.number);
+                            setNotesText(surahProgress?.teacher_notes || '');
+                            setEditingNotes(false);
+                          }
                         }}
-                        className={`p-2 rounded-lg text-center transition ${
-                          selectedSurah === surah.number
+                        className={`p-2 rounded-lg text-center transition relative ${
+                          batchMode && isSelected
+                            ? 'bg-amber-500 ring-2 ring-amber-300'
+                            : selectedSurah === surah.number
                             ? 'bg-emerald-600 ring-2 ring-emerald-400'
                             : isComplete
-                            ? 'bg-purple-600/50 hover:bg-purple-600'
+                            ? 'bg-orange-500/50 hover:bg-orange-500'
                             : hasAnyProgress
                             ? 'bg-blue-600/50 hover:bg-blue-600'
                             : 'bg-gray-100 hover:bg-gray-200'
                         }`}
                         title={surah.name}
                       >
+                        {batchMode && (
+                          <span className="absolute -top-1 -right-1">
+                            {isSelected ? (
+                              <CheckSquare className="w-3 h-3 text-amber-200" />
+                            ) : (
+                              <Square className="w-3 h-3 text-gray-400" />
+                            )}
+                          </span>
+                        )}
                         <span className="text-xs font-medium text-white">{surah.number}</span>
                       </button>
                     );
@@ -446,7 +744,7 @@ export default function StudentProgressPanel({
                             onClick={() => handleToggleStage(selectedSurah, 'memorization')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${
                               surahProgress?.memorization_complete
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-orange-500 text-white'
                                 : 'bg-gray-200 text-gray-600 hover:bg-gray-200'
                             }`}
                           >

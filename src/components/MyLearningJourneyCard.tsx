@@ -167,7 +167,6 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
         {
           name: "Qur'an Memorisation",
           progress: quranProgress,
-          subtitle: memorizedCount > 0 ? `${memorizedCount} of 114 surahs memorised` : 'Start tracking your memorisation',
           icon: BookOpen,
           color: 'text-emerald-400',
           bgColor: 'from-emerald-500/20 to-green-500/20',

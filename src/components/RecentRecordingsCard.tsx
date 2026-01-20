@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, PlayCircle, ChevronRight, Calendar, RefreshCw, Clock } from 'lucide-react';
+import { FileText, PlayCircle, ChevronRight, Calendar, RefreshCw, Clock, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO, differenceInDays, addDays } from 'date-fns';
+import { format, parseISO, differenceInDays, addDays, differenceInMinutes } from 'date-fns';
 
 interface RecentRecording {
   id: string;
@@ -221,20 +221,36 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* Insights button - color based on subject */}
-                {recording.has_insights && (
-                  <button
-                    onClick={() => navigate(`/lesson/${recording.id}/insights`)}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
-                      isQuran
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>View Insights</span>
-                  </button>
-                )}
+                {/* Insights button - with processing state */}
+                {(() => {
+                  const lessonEndTime = new Date(lessonDate.getTime() + recording.duration_minutes * 60 * 1000);
+                  const minutesSinceEnd = differenceInMinutes(new Date(), lessonEndTime);
+                  const processingWindowMins = Math.max(30, recording.duration_minutes * 2);
+
+                  if (recording.has_insights) {
+                    return (
+                      <button
+                        onClick={() => navigate(`/lesson/${recording.id}/insights`)}
+                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center space-x-2 border ${
+                          isQuran
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>View Insights</span>
+                      </button>
+                    );
+                  } else if (minutesSinceEnd < processingWindowMins) {
+                    return (
+                      <div className="flex-1 px-4 py-2.5 bg-amber-50 text-amber-600 rounded-lg font-medium flex items-center justify-center space-x-2 border border-amber-200">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing Insights...</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {/* Watch video button - color based on subject */}
                 {recording.recording_url && !isRecordingExpired ? (

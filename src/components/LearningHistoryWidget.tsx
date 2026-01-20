@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, FileText, ChevronRight } from 'lucide-react';
+import { BookOpen, FileText, ChevronRight, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
 
 interface LessonHistory {
   id: string;
   subject_name: string;
   teacher_name: string;
   scheduled_time: string;
+  duration_minutes: number;
   has_insights: boolean;
 }
 
@@ -40,6 +41,7 @@ export default function LearningHistoryWidget() {
         .select(`
           id,
           scheduled_time,
+          duration_minutes,
           status,
           teacher_profiles!inner(
             user_id,
@@ -65,6 +67,7 @@ export default function LearningHistoryWidget() {
           subject_name: lesson.subjects.name,
           teacher_name: lesson.teacher_profiles.profiles.full_name || 'Teacher',
           scheduled_time: lesson.scheduled_time,
+          duration_minutes: lesson.duration_minutes || 30,
           has_insights: lesson.talbiyah_insights && lesson.talbiyah_insights.length > 0
         }));
         setLessons(formattedLessons);
@@ -119,6 +122,12 @@ export default function LearningHistoryWidget() {
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson) => {
+            const isQuran = lesson.subject_name.toLowerCase().includes('quran');
+            const lessonEndTime = new Date(parseISO(lesson.scheduled_time).getTime() + lesson.duration_minutes * 60 * 1000);
+            const minutesSinceEnd = differenceInMinutes(new Date(), lessonEndTime);
+            const processingWindowMins = Math.max(30, lesson.duration_minutes * 2);
+            const isProcessing = !lesson.has_insights && minutesSinceEnd < processingWindowMins;
+
             return (
               <div
                 key={lesson.id}
@@ -126,8 +135,8 @@ export default function LearningHistoryWidget() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className={`font-semibold text-white mb-1 transition ${
-                      isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                    <h4 className={`font-semibold text-gray-900 mb-1 transition ${
+                      isQuran ? 'group-hover:text-emerald-600' : 'group-hover:text-blue-600'
                     }`}>
                       {lesson.subject_name}
                     </h4>
@@ -136,17 +145,23 @@ export default function LearningHistoryWidget() {
                       <span>{format(parseISO(lesson.scheduled_time), 'MMM d, yyyy')}</span>
                       {lesson.has_insights && (
                         <span className={`flex items-center space-x-1 ${
-                          isQuran ? 'text-emerald-400' : 'text-blue-400'
+                          isQuran ? 'text-emerald-600' : 'text-blue-600'
                         }`}>
                           <FileText className="w-3 h-3" />
                           <span>Insights Available</span>
+                        </span>
+                      )}
+                      {isProcessing && (
+                        <span className="flex items-center space-x-1 text-amber-600">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Processing...</span>
                         </span>
                       )}
                     </div>
                   </div>
 
                   <button className={`p-2 text-gray-500 transition ${
-                    isQuran ? 'group-hover:text-emerald-400' : 'group-hover:text-blue-400'
+                    isQuran ? 'group-hover:text-emerald-600' : 'group-hover:text-blue-600'
                   }`}>
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -156,12 +171,21 @@ export default function LearningHistoryWidget() {
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <button className={`text-sm font-medium flex items-center space-x-2 transition ${
                       isQuran
-                        ? 'text-emerald-400 hover:text-emerald-300'
-                        : 'text-blue-400 hover:text-blue-300'
+                        ? 'text-emerald-600 hover:text-emerald-700'
+                        : 'text-blue-600 hover:text-blue-700'
                     }`}>
                       <FileText className="w-4 h-4" />
                       <span>View Talbiyah Insights</span>
                     </button>
+                  </div>
+                )}
+
+                {isProcessing && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center space-x-2 text-amber-600 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating insights from your lesson...</span>
+                    </div>
                   </div>
                 )}
               </div>

@@ -625,7 +625,7 @@ export default function MemorizationSetupPage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {juzSurahs.map(surah => {
+                      {juzSurahs.sort((a, b) => a.number - b.number).map(surah => {
                         const isSelected = currentSelection.has(surah.number);
                         const hasQuiz = SURAHS_WITH_QUIZZES.includes(surah.number);
                         const colorClasses = activeTab === 'memorisation'

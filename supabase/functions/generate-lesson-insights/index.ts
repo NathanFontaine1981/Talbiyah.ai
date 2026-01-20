@@ -1,6 +1,11 @@
 // @ts-ignore - Deno types
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  verifyAndCorrectQuizAnswers,
+  createVerificationLog,
+  type VerificationSummary
+} from "../_shared/quizVerification.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -399,14 +404,22 @@ Example:
 
 ### 6️⃣ Conversation Practice (Role-Play)
 * Turn key parts of the lesson into short Arabic dialogues that the student can practise.
-* Use Teacher (T) and Student (S) labels and include English translations underneath.
+* **CRITICAL: Use the table format below. EVERY line MUST have an English translation.**
 
-Example:
-T: أَيْنَ تَشْرَبُ القَهْوَةَ؟
-S: أَشْرَبُ القَهْوَةَ فِي المَقْهَى.
-(Where do you drink coffee? I drink coffee in the café.)
+**Use this exact table format:**
 
-Include at least 2–3 short dialogues per lesson if possible.
+| Speaker | Arabic | Transliteration | English |
+|---------|--------|-----------------|---------|
+| Teacher | كَيْفَ حَالُكَ؟ | Kayfa haaluka? | How are you? |
+| Student | أَنَا بِخَيْرٍ، الْحَمْدُ لِلَّهِ | Ana bikhayr, alhamdulillah | I am fine, praise be to Allah |
+| Teacher | مَا اسْمُكَ؟ | Maa ismuka? | What is your name? |
+| Student | اسْمِي أَحْمَد | Ismee Ahmad | My name is Ahmad |
+
+**Rules:**
+- Include at least 2–3 dialogues (6-10 lines total)
+- NEVER leave the English column empty
+- Every Arabic line must have its transliteration AND English translation
+- Use realistic, practical conversations from the lesson content
 
 ---
 
@@ -712,6 +725,30 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       console.log("Appended verified First Word Prompter section from Quran.com API");
     }
 
+    // QUIZ VERIFICATION: Auto-correct quiz answers about Quran verses
+    let quizVerificationResult: VerificationSummary | null = null;
+    if (isQuranLesson && verifiedVerses.length > 0) {
+      console.log("Running quiz verification against verified Quran data...");
+
+      quizVerificationResult = verifyAndCorrectQuizAnswers(generatedText, {
+        surahNumber: metadata.surah_number,
+        surahName: metadata.surah_name,
+        ayahRange: metadata.ayah_range,
+        verifiedVerses: verifiedVerses
+      });
+
+      if (quizVerificationResult.correctionsApplied > 0) {
+        console.log(`Quiz verification: ${quizVerificationResult.correctionsApplied} corrections applied`);
+        generatedText = quizVerificationResult.correctedContent;
+
+        // Log the corrections for monitoring
+        const verificationLog = createVerificationLog(lesson_id, quizVerificationResult);
+        console.log("Quiz corrections:", JSON.stringify(verificationLog.corrections));
+      } else {
+        console.log(`Quiz verification: ${quizVerificationResult.totalQuestions} questions checked, all correct`);
+      }
+    }
+
     console.log("Insights generated successfully, saving to database...");
 
     // Extract key topics from the generated content
@@ -794,16 +831,29 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
     let saveError;
 
     // Build detailed insights object with verified Quran data if available
-    const detailedInsightsData = {
+    const detailedInsightsData: Record<string, unknown> = {
       content: generatedText,
       subject: subject,
       metadata: metadata,
       generated_at: new Date().toISOString(),
-      ...(isQuranLesson && verifiedVerses.length > 0 && {
-        verified_verses: verifiedVerses,
-        quran_api_source: 'quran.com/api/v4',
-      }),
     };
+
+    // Add verified Quran data if available
+    if (isQuranLesson && verifiedVerses.length > 0) {
+      detailedInsightsData.verified_verses = verifiedVerses;
+      detailedInsightsData.quran_api_source = 'quran.com/api/v4';
+    }
+
+    // Add quiz verification metadata if verification was performed
+    if (quizVerificationResult) {
+      detailedInsightsData.quiz_verification = {
+        verified_at: new Date().toISOString(),
+        total_questions: quizVerificationResult.totalQuestions,
+        verse_related_questions: quizVerificationResult.verseRelatedQuestions,
+        corrections_made: quizVerificationResult.correctionsApplied,
+        status: quizVerificationResult.correctionsApplied > 0 ? 'auto_corrected' : 'verified'
+      };
+    }
 
     if (existingInsight) {
       // Update existing - ensure teacher_id, learner_id, subject_id are set for RLS

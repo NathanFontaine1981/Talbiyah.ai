@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download, ChevronDown, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, differenceInDays, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
@@ -583,14 +583,38 @@ export default function TeacherSessionsCard() {
                       </>
                     ) : (
                       <div className="flex items-center space-x-3">
-                        {/* View Insights Button */}
-                        <button
-                          onClick={() => navigate(`/lesson/${session.id}/insights`)}
-                          className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 hover:text-purple-300 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition font-semibold text-sm flex items-center space-x-2"
-                        >
-                          <BookOpen className="w-4 h-4" />
-                          <span>Insights</span>
-                        </button>
+                        {/* View Insights Button - with processing state */}
+                        {(() => {
+                          const lessonEndTime = new Date(parseISO(session.scheduled_time).getTime() + (session.duration_minutes || 30) * 60000);
+                          const minutesSinceEnd = differenceInMinutes(new Date(), lessonEndTime);
+                          const processingWindowMins = Math.max(30, (session.duration_minutes || 30) * 2);
+
+                          if (session.has_insights) {
+                            return (
+                              <button
+                                onClick={() => navigate(`/lesson/${session.id}/insights`)}
+                                className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 hover:text-purple-300 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition font-semibold text-sm flex items-center space-x-2"
+                              >
+                                <BookOpen className="w-4 h-4" />
+                                <span>Insights</span>
+                              </button>
+                            );
+                          } else if (minutesSinceEnd < processingWindowMins) {
+                            return (
+                              <div className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg font-medium flex items-center space-x-2 cursor-default border border-amber-500/30">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span className="text-sm">Processing...</span>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm flex items-center space-x-2 border border-gray-200">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span>No insights</span>
+                              </div>
+                            );
+                          }
+                        })()}
 
                         {/* Recording Buttons - only show if recording exists and not expired */}
                         {session.has_recording && session.recording_url && (

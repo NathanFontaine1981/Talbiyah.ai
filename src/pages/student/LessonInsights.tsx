@@ -148,6 +148,82 @@ interface QuizQuestion {
   correctAnswer: number;
 }
 
+// Verified verse interface for quiz correction
+interface VerifiedVerse {
+  ayahNumber: number;
+  verseKey: string;
+  fullVerseTranslation: string;
+}
+
+// Known correct answers for common Quran quiz questions
+// This is a safety net to catch AI hallucinations about Quran verses
+const KNOWN_QURAN_CORRECTIONS: { [key: string]: string } = {
+  // Surah An-Nazi'at (79:24) - Pharaoh's claim
+  'pharaoh declare': 'I am your lord most high',
+  'pharaoh say': 'I am your lord most high',
+  'fir\'awn declare': 'I am your lord most high',
+  'فرعون': 'I am your lord most high',
+};
+
+/**
+ * Correct quiz answers using verified verses from Quran.com API
+ * This fixes AI hallucinations about what the Quran actually says
+ */
+function correctQuizAnswers(
+  questions: QuizQuestion[],
+  verifiedVerses?: VerifiedVerse[]
+): QuizQuestion[] {
+  if (!questions.length) return questions;
+
+  return questions.map(q => {
+    const questionLower = q.question.toLowerCase();
+
+    // Check for known corrections first (hardcoded safety net)
+    for (const [pattern, correctText] of Object.entries(KNOWN_QURAN_CORRECTIONS)) {
+      if (questionLower.includes(pattern)) {
+        // Find the option that matches the correct answer
+        const correctIndex = q.options.findIndex(opt =>
+          opt.text.toLowerCase().includes(correctText.toLowerCase())
+        );
+
+        if (correctIndex !== -1 && correctIndex !== q.correctAnswer) {
+          console.log(`Quiz correction applied: "${q.options[q.correctAnswer]?.text}" -> "${q.options[correctIndex]?.text}"`);
+          return { ...q, correctAnswer: correctIndex };
+        }
+      }
+    }
+
+    // If we have verified verses, try to match against them
+    if (verifiedVerses && verifiedVerses.length > 0) {
+      // Check if question is about what someone said/declared
+      const isSpeechQuestion = /what\s+did\s+\w+\s+(say|declare|proclaim|claim)/i.test(questionLower);
+
+      if (isSpeechQuestion) {
+        // Try to find the best matching option from verified verses
+        for (const verse of verifiedVerses) {
+          const verseTranslation = verse.fullVerseTranslation.toLowerCase();
+
+          // Check each option against the verified verse
+          for (let i = 0; i < q.options.length; i++) {
+            const optionText = q.options[i].text.toLowerCase();
+
+            // Check if this option matches the verse translation
+            if (verseTranslation.includes(optionText) ||
+                optionText.split(' ').filter(w => w.length > 3).every(word => verseTranslation.includes(word))) {
+              if (i !== q.correctAnswer) {
+                console.log(`Quiz correction (verse match): "${q.options[q.correctAnswer]?.text}" -> "${q.options[i]?.text}"`);
+                return { ...q, correctAnswer: i };
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return q;
+  });
+}
+
 // Dialogue line interface
 interface DialogueLine {
   speaker: string;
@@ -194,6 +270,11 @@ function cleanMarkdown(text: string): string {
     .replace(/\s+template\s*$/gi, '') // Remove trailing "Template"
     .replace(/^template\s+/gi, '') // Remove leading "Template"
     .trim();
+}
+
+// Clean verse translation - remove leading verse numbers like "15. " or "15 "
+function cleanTranslation(text: string): string {
+  return text.replace(/^\d+\.\s*/, '').replace(/^\d+\s+/, '').trim();
 }
 
 // Parse vocabulary from content
@@ -419,11 +500,51 @@ function parseGrammarPoints(content: string): GrammarPoint[] {
   return points;
 }
 
-// Parse dialogues
+// Parse dialogues - supports both table format and traditional T:/S: format
 function parseDialogues(content: string): DialogueLine[] {
   const dialogues: DialogueLine[] = [];
   const lines = content.split('\n');
 
+  // First, try to parse table format:
+  // | Speaker | Arabic | Transliteration | English |
+  // |---------|--------|-----------------|---------|
+  // | Teacher | كَيْفَ حَالُكَ؟ | Kayfa haaluka? | How are you? |
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip header row and separator row
+    if (trimmed.includes('Speaker') && trimmed.includes('Arabic')) continue;
+    if (trimmed.match(/^\|[\s\-:]+\|/)) continue;
+
+    // Parse table row: | Speaker | Arabic | Transliteration | English |
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cells = trimmed.split('|').map(c => c.trim()).filter(c => c.length > 0);
+
+      if (cells.length >= 4) {
+        const speaker = cells[0];
+        const arabic = cells[1];
+        const transliteration = cells[2];
+        const english = cells[3];
+
+        // Validate it's a dialogue row (has Arabic text and valid speaker)
+        if (/[أ-ي]/.test(arabic) && /^(Teacher|Student|T|S)$/i.test(speaker)) {
+          dialogues.push({
+            speaker: speaker.toLowerCase() === 't' ? 'Teacher' : speaker.toLowerCase() === 's' ? 'Student' : speaker,
+            arabic: arabic,
+            transliteration: transliteration,
+            english: english || 'Translation not provided'
+          });
+        }
+      }
+    }
+  }
+
+  // If table parsing found dialogues, return them
+  if (dialogues.length > 0) {
+    return dialogues;
+  }
+
+  // Fall back to traditional T:/S: format parsing
   let currentSpeaker = '';
   let currentArabic = '';
   let currentTranslit = '';
@@ -444,7 +565,7 @@ function parseDialogues(content: string): DialogueLine[] {
           speaker: currentSpeaker,
           arabic: currentArabic,
           transliteration: currentTranslit,
-          english: currentEnglish
+          english: currentEnglish || 'Translation not provided'
         });
       }
 
@@ -511,7 +632,7 @@ function parseDialogues(content: string): DialogueLine[] {
       speaker: currentSpeaker,
       arabic: currentArabic,
       transliteration: currentTranslit,
-      english: currentEnglish
+      english: currentEnglish || 'Translation not provided'
     });
   }
 
@@ -679,18 +800,41 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
   const lines = content.split('\n');
   let currentQuestion: QuizQuestion | null = null;
 
+  // Helper to validate and push current question
+  const pushQuestion = () => {
+    if (currentQuestion && currentQuestion.options.length > 0) {
+      // Validate correctAnswer - default to 0 if not set or invalid
+      if (currentQuestion.correctAnswer < 0 || currentQuestion.correctAnswer >= currentQuestion.options.length) {
+        currentQuestion.correctAnswer = 0;
+      }
+      questions.push(currentQuestion);
+    }
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+    if (!line) continue;
 
     // Detect question - starts with number, possibly with ** or Q prefix
     const qMatch = line.match(/^(?:\*\*)?(?:Q)?(\d+)[.)]\s*(?:\*\*)?\s*(.+)/);
     if (qMatch) {
-      if (currentQuestion && currentQuestion.options.length > 0) {
-        questions.push(currentQuestion);
-      }
+      pushQuestion();
 
       // Get the full question text
-      const questionText = qMatch[2];
+      let questionText = qMatch[2];
+
+      // Check if this is a translation question with arrow format: "Translate: X → Y ✅"
+      const arrowMatch = questionText.match(/(.+?)\s*→\s*(.+)/);
+      if (arrowMatch) {
+        const isCorrect = arrowMatch[2].includes('✅');
+        const answer = arrowMatch[2].replace(/✅/g, '').trim();
+        currentQuestion = {
+          question: cleanMarkdown(arrowMatch[1]),
+          options: [{ text: answer }],
+          correctAnswer: isCorrect ? 0 : -1
+        };
+        continue;
+      }
 
       currentQuestion = {
         question: cleanMarkdown(questionText),
@@ -759,11 +903,11 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
     }
   }
 
-  if (currentQuestion && currentQuestion.options.length > 0) {
-    questions.push(currentQuestion);
-  }
+  // Push final question
+  pushQuestion();
 
-  return questions;
+  // Filter out questions with fewer than 2 options (unless it's a single-answer translation question)
+  return questions.filter(q => q.options.length >= 2 || (q.options.length === 1 && q.question.toLowerCase().includes('translate')));
 }
 
 // Parse homework tasks
@@ -891,27 +1035,27 @@ function FlipCard({ word }: { word: VocabWord }) {
       >
         {/* Front - Arabic */}
         <div
-          className="absolute w-full h-full bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-400 transition flex flex-col items-center justify-center shadow-sm"
+          className="absolute w-full h-full bg-white rounded-xl p-3 border-2 border-emerald-200 hover:border-emerald-400 transition flex flex-col items-center justify-center shadow-sm overflow-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-5xl font-arabic text-emerald-700 mb-1 text-center leading-relaxed" dir="rtl">{word.arabic}</p>
+          <p className="text-3xl sm:text-4xl font-arabic text-emerald-700 mb-1 text-center leading-relaxed truncate max-w-full px-1" dir="rtl">{word.arabic}</p>
           {word.transliteration && (
-            <p className="text-sm text-gray-500 italic">{word.transliteration}</p>
+            <p className="text-xs text-gray-500 italic truncate max-w-full px-2">{word.transliteration}</p>
           )}
-          <p className="text-xs text-gray-400 mt-2">Tap to flip</p>
+          <p className="text-xs text-gray-400 mt-1">Tap to flip</p>
         </div>
 
         {/* Back - English */}
         <div
-          className="absolute w-full h-full bg-emerald-50 rounded-xl p-4 border-2 border-emerald-300 flex flex-col items-center justify-center"
+          className="absolute w-full h-full bg-emerald-50 rounded-xl p-3 border-2 border-emerald-300 flex flex-col items-center justify-center overflow-hidden"
           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <p className="text-lg font-medium text-emerald-800 text-center">{word.english}</p>
+          <p className="text-sm sm:text-base font-medium text-emerald-800 text-center line-clamp-3 px-1">{word.english}</p>
           {word.transliteration && (
-            <p className="text-sm text-gray-600 italic mt-1">{word.transliteration}</p>
+            <p className="text-xs text-gray-600 italic mt-1 truncate max-w-full px-2">{word.transliteration}</p>
           )}
           {word.wordType && (
-            <span className="text-xs bg-emerald-200 text-emerald-700 px-2 py-0.5 rounded mt-2">{word.wordType}</span>
+            <span className="text-xs bg-emerald-200 text-emerald-700 px-2 py-0.5 rounded mt-1">{word.wordType}</span>
           )}
         </div>
       </div>
@@ -948,7 +1092,7 @@ function InteractiveQuiz({
 
   const COOLDOWN_MINUTES = 10;
 
-  // Check cooldown on mount and set up timer
+  // Check cooldown on mount and block quiz if in cooldown period
   useEffect(() => {
     if (attemptData?.lastAttemptAt) {
       const lastAttempt = new Date(attemptData.lastAttemptAt);
@@ -980,6 +1124,7 @@ function InteractiveQuiz({
   }, [cooldownRemaining]);
 
   const handleAnswerClick = (questionIndex: number, optionIndex: number) => {
+    // Block all clicks if quiz was completed and cooldown is active
     if (quizCompleted && cooldownRemaining > 0) return;
 
     const newSelectedAnswers = { ...selectedAnswers, [questionIndex]: optionIndex };
@@ -1060,6 +1205,27 @@ function InteractiveQuiz({
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Cooldown message - shown when user can't take quiz yet */}
+      {quizCompleted && cooldownRemaining > 0 && answeredCount === 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-orange-800">Quiz Cooldown Active</p>
+              <p className="text-sm text-orange-700">
+                You've already completed this quiz. To prevent memorising answers, please wait before trying again.
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-orange-600">Try again in</p>
+              <p className="text-2xl font-mono font-bold text-orange-700">{formatCooldown(cooldownRemaining)}</p>
+            </div>
           </div>
         </div>
       )}
@@ -1236,9 +1402,15 @@ function DialogueCard({ line }: { line: DialogueLine }) {
       )}
 
       {/* English */}
-      <p className="text-gray-700">
-        {line.english}
-      </p>
+      {line.english && line.english !== 'Translation not provided' ? (
+        <p className="text-gray-700">
+          {line.english}
+        </p>
+      ) : (
+        <p className="text-gray-400 italic text-sm">
+          (English translation not available)
+        </p>
+      )}
     </div>
   );
 }
@@ -2030,9 +2202,10 @@ export default function LessonInsights() {
         setRecordingExpiresAt(lessonData.recording_expires_at);
       }
 
+      // Query by lesson_id only - RLS handles access control
+      // Don't filter by learner_id as it can cause mismatches when parent has multiple learners
       let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
-      if (learnerId) insightQuery = insightQuery.eq('learner_id', learnerId);
-      // Order by detailed_insights to prefer insights with content, then by most recent
+      // Order by most recent
       insightQuery = insightQuery.order('created_at', { ascending: false }).limit(1);
 
       const { data: insightResults, error: insightError } = await insightQuery;
@@ -2307,7 +2480,7 @@ export default function LessonInsights() {
     ? verifiedVerses.map(v => ({
         arabic: v.fullVerseUthmani,
         transliteration: v.transliteration || '',
-        english: v.fullVerseTranslation,
+        english: cleanTranslation(v.fullVerseTranslation), // Remove leading verse numbers from translation
         ayahNumber: v.ayahNumber
       }))
     : (sentenceSection ? parseKeySentences(sentenceSection.content) : []);
@@ -2325,7 +2498,12 @@ export default function LessonInsights() {
   const dialogues = dialogueSection ? parseDialogues(dialogueSection.content) : [];
 
   const quizSection = sections.find(s => s.type === 'quiz');
-  const quizQuestions = quizSection ? parseQuizQuestions(quizSection.content) : [];
+  const parsedQuizQuestions = quizSection ? parseQuizQuestions(quizSection.content) : [];
+
+  // CRITICAL: Apply quiz corrections using verified verses to fix AI hallucinations
+  const quizQuestions = isQuran
+    ? correctQuizAnswers(parsedQuizQuestions, verifiedVerses as VerifiedVerse[] | undefined)
+    : parsedQuizQuestions;
 
   const homeworkSection = sections.find(s => s.type === 'homework');
   const homeworkTasks = homeworkSection ? parseHomework(homeworkSection.content) : [];
@@ -2464,52 +2642,7 @@ export default function LessonInsights() {
             </div>
           </div>
 
-          {/* Summary Card */}
-          {summarySection && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-900">At a Glance</h2>
-              </div>
-              <div className="prose prose-sm max-w-none text-gray-700">
-                {cleanMarkdown(summarySection.content).split('\n').filter(l => l.trim()).map((line, i) => (
-                  <p key={i} className="flex items-start gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <span>{cleanMarkdown(line)}</span>
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Focus Words with Matching Quiz and Flip Cards */}
-          {vocabulary.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Book className="w-5 h-5 text-emerald-600" />
-                  <h2 className="text-lg font-bold text-gray-900">Focus Words</h2>
-                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{vocabulary.length} words</span>
-                </div>
-              </div>
-
-              {/* Flip Cards Section */}
-              <div className="border-t border-gray-200 pt-6 mt-6">
-                <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
-                  <Scissors className="w-4 h-4" />
-                  Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
-                </p>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {vocabulary.map((word, idx) => (
-                    <FlipCard key={idx} word={word} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Video Recording Section */}
+          {/* Video Recording Section - FIRST after hero */}
           {recordingUrl && (
             (() => {
               const daysLeft = recordingExpiresAt
@@ -2518,7 +2651,7 @@ export default function LessonInsights() {
               const isExpired = daysLeft <= 0;
 
               return !isExpired ? (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Video className="w-5 h-5 text-emerald-600" />
@@ -2552,7 +2685,7 @@ export default function LessonInsights() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 mb-6">
                   <div className="flex items-center gap-2 text-gray-500">
                     <Video className="w-5 h-5" />
                     <span>Recording has expired</span>
@@ -2560,6 +2693,102 @@ export default function LessonInsights() {
                 </div>
               );
             })()
+          )}
+
+          {/* At a Glance - Smart Stats Grid */}
+          {(vocabulary.length > 0 || quizQuestions.length > 0 || sentences.length > 0 || homeworkTasks.length > 0 || metadata?.surah_name) && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-lg font-bold text-gray-900">At a Glance</h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {/* Quran: Surah/Ayah info */}
+                {isQuran && metadata?.surah_name && (
+                  <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                    <BookOpen className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Surah</p>
+                    <p className="font-semibold text-emerald-700 text-sm">{metadata.surah_name}</p>
+                    {metadata.ayah_range && <p className="text-xs text-gray-500">Ayat {metadata.ayah_range}</p>}
+                  </div>
+                )}
+                {/* Vocabulary count */}
+                {vocabulary.length > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-3 text-center">
+                    <Book className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Vocabulary</p>
+                    <p className="font-semibold text-blue-700">{vocabulary.length} words</p>
+                  </div>
+                )}
+                {/* Quiz count */}
+                {quizQuestions.length > 0 && (
+                  <div className="bg-purple-50 rounded-xl p-3 text-center">
+                    <HelpCircle className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Quiz</p>
+                    <p className="font-semibold text-purple-700">{quizQuestions.length} questions</p>
+                  </div>
+                )}
+                {/* Homework count */}
+                {homeworkTasks.length > 0 && (
+                  <div className="bg-amber-50 rounded-xl p-3 text-center">
+                    <Target className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Homework</p>
+                    <p className="font-semibold text-amber-700">{homeworkTasks.length} tasks</p>
+                  </div>
+                )}
+                {/* Verses count for Quran */}
+                {isQuran && sentences.length > 0 && (
+                  <div className="bg-teal-50 rounded-xl p-3 text-center">
+                    <MessageCircle className="w-5 h-5 text-teal-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Verses</p>
+                    <p className="font-semibold text-teal-700">{sentences.length} ayat</p>
+                  </div>
+                )}
+                {/* Duration */}
+                {metadata?.duration_minutes && (
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <Clock className="w-5 h-5 text-gray-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Duration</p>
+                    <p className="font-semibold text-gray-700">{metadata.duration_minutes} min</p>
+                  </div>
+                )}
+                {/* Grammar points for Arabic */}
+                {!isQuran && grammarPoints.length > 0 && (
+                  <div className="bg-orange-50 rounded-xl p-3 text-center">
+                    <PenTool className="w-5 h-5 text-orange-600 mx-auto mb-1" />
+                    <p className="text-xs text-gray-500">Grammar</p>
+                    <p className="font-semibold text-orange-700">{grammarPoints.length} points</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Focus Words with Matching Quiz and Flip Cards */}
+          {vocabulary.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Book className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Focus Words</h2>
+                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{vocabulary.length} words</span>
+                </div>
+              </div>
+
+              {/* Flip Cards Section */}
+              <div className="border-t border-gray-200 pt-6 mt-6">
+                <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+                  <Scissors className="w-4 h-4" />
+                  Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {vocabulary.map((word, idx) => (
+                    <FlipCard key={idx} word={word} />
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Detailed Sections */}
@@ -2689,12 +2918,16 @@ export default function LessonInsights() {
             {takeawaysSection && (
               <CollapsibleSection title="Key Takeaways" icon={Trophy} color="teal">
                 <div className="space-y-2">
-                  {cleanMarkdown(takeawaysSection.content).split('\n').filter(l => l.trim()).map((line, i) => (
-                    <div key={i} className="flex items-start gap-2 bg-white rounded-lg p-3 border border-teal-100">
-                      <CheckCircle className="w-5 h-5 text-teal-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{cleanMarkdown(line)}</span>
-                    </div>
-                  ))}
+                  {cleanMarkdown(takeawaysSection.content)
+                    .split('\n')
+                    .map(line => cleanMarkdown(line))
+                    .filter(line => line.trim().length > 0)
+                    .map((line, i) => (
+                      <div key={i} className="flex items-start gap-2 bg-white rounded-lg p-3 border border-teal-100">
+                        <CheckCircle className="w-5 h-5 text-teal-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{line}</span>
+                      </div>
+                    ))}
                 </div>
               </CollapsibleSection>
             )}

@@ -178,31 +178,59 @@ export default function QuranProgress() {
       }
 
       let ayahProgressData: any[] = [];
+      let memorizedSurahs: Set<number> = new Set();
+      let understoodSurahsSet: Set<number> = new Set();
+      let fluentSurahsSet: Set<number> = new Set();
 
       if (learner) {
         setLearnerId(learner.id);
 
+        // Load ayah-level progress
         const { data: progressData } = await supabase
           .from('ayah_progress')
           .select('*')
           .eq('learner_id', learner.id);
 
         ayahProgressData = progressData || [];
+
+        // Also load surah-level progress from surah_retention_tracker
+        const { data: surahRetentionData } = await supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+          .eq('learner_id', learner.id);
+
+        if (surahRetentionData) {
+          surahRetentionData.forEach((record: any) => {
+            if (record.memorization_status === 'memorized') {
+              memorizedSurahs.add(record.surah_number);
+            }
+            if (record.fluency_complete) {
+              fluentSurahsSet.add(record.surah_number);
+            }
+            if (record.understanding_complete) {
+              understoodSurahsSet.add(record.surah_number);
+            }
+          });
+        }
       }
 
       const surahsWithProgress: SurahProgress[] = SURAHS_DATA.map(surah => {
         const ayahs: AyahProgress[] = [];
+        const isSurahMemorized = memorizedSurahs.has(surah.number);
+        const isSurahFluent = fluentSurahsSet.has(surah.number);
+        const isSurahUnderstood = understoodSurahsSet.has(surah.number);
 
         for (let i = 1; i <= surah.ayahCount; i++) {
           const progressRecord = ayahProgressData?.find(
             p => p.surah_number === surah.number && p.ayah_number === i
           );
 
+          // Use ayah-level data if available, otherwise fall back to surah-level data
           ayahs.push({
             ayahNumber: i,
-            understanding: progressRecord?.understanding_complete || false,
-            fluency: progressRecord?.fluency_complete || false,
-            memorization: progressRecord?.memorization_complete || false,
+            understanding: progressRecord?.understanding_complete || isSurahUnderstood,
+            fluency: progressRecord?.fluency_complete || isSurahFluent,
+            memorization: progressRecord?.memorization_complete || isSurahMemorized,
             teacherNotes: progressRecord?.teacher_notes || ''
           });
         }
@@ -393,14 +421,24 @@ export default function QuranProgress() {
 
   const completedSurahs = surahs.filter(surah =>
     surah.ayahs.length > 0 &&
-    surah.ayahs.every(ayah => ayah.understanding && ayah.fluency && ayah.memorization)
+    surah.ayahs.every(ayah => ayah.memorization)
+  ).length;
+
+  const understoodSurahs = surahs.filter(surah =>
+    surah.ayahs.length > 0 &&
+    surah.ayahs.every(ayah => ayah.understanding)
   ).length;
 
   const overallProgress = calculateOverallProgress(totalAyahsMemorized);
+  const understandingProgress = calculateOverallProgress(totalAyahsUnderstanding);
 
   // Circular progress calculation
   const circumference = 2 * Math.PI * 120;
   const strokeDashoffset = circumference - (overallProgress / 100) * circumference;
+
+  // Understanding progress (smaller ring)
+  const understandingCircumference = 2 * Math.PI * 90;
+  const understandingStrokeDashoffset = understandingCircumference - (understandingProgress / 100) * understandingCircumference;
 
   // Get surahs for current Juz
   const currentJuz = JUZ_RANGES.find(j => j.juz === selectedJuz);
@@ -465,48 +503,93 @@ export default function QuranProgress() {
             )}
           </div>
 
-          {/* Circular Progress */}
+          {/* Dual Circular Progress */}
           <div className="flex flex-col items-center mb-8">
-            <div className="relative w-64 h-64 mb-4">
-              <svg className="transform -rotate-90 w-64 h-64">
-                <circle
-                  cx="128"
-                  cy="128"
-                  r="120"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  className="text-gray-700"
-                />
-                <circle
-                  cx="128"
-                  cy="128"
-                  r="120"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  className="text-emerald-400 transition-all duration-1000 ease-out"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-5xl font-bold text-emerald-400">{overallProgress}%</p>
-                <p className="text-sm text-gray-500 mt-2">Quran Memorised</p>
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              {/* Memorisation Progress */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-40 h-40 mb-2">
+                  <svg className="transform -rotate-90 w-40 h-40">
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      fill="transparent"
+                      className="text-gray-700"
+                    />
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      fill="transparent"
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={(2 * Math.PI * 70) - (overallProgress / 100) * (2 * Math.PI * 70)}
+                      className="text-emerald-400 transition-all duration-1000 ease-out"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-3xl font-bold text-emerald-400">{overallProgress}%</p>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-emerald-400">Memorised</p>
+                <p className="text-xs text-gray-500">{completedSurahs} surahs complete</p>
+              </div>
+
+              {/* Understanding Progress */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-40 h-40 mb-2">
+                  <svg className="transform -rotate-90 w-40 h-40">
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      fill="transparent"
+                      className="text-gray-700"
+                    />
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      fill="transparent"
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={(2 * Math.PI * 70) - (understandingProgress / 100) * (2 * Math.PI * 70)}
+                      className="text-cyan-400 transition-all duration-1000 ease-out"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-3xl font-bold text-cyan-400">{understandingProgress}%</p>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-cyan-400">Understood</p>
+                <p className="text-xs text-gray-500">{understoodSurahs} surahs complete</p>
               </div>
             </div>
 
             {/* Stats Row */}
             <div className="flex items-center justify-center space-x-6 text-sm">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{completedSurahs}</p>
-                <p className="text-gray-500">Surahs Complete</p>
+                <p className="text-2xl font-bold text-emerald-400">{completedSurahs}</p>
+                <p className="text-gray-500">Surahs Memorised</p>
+              </div>
+              <div className="w-px h-12 bg-gray-700"></div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-cyan-400">{understoodSurahs}</p>
+                <p className="text-gray-500">Surahs Understood</p>
               </div>
               <div className="w-px h-12 bg-gray-700"></div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{114 - completedSurahs}</p>
-                <p className="text-gray-500">Remaining</p>
+                <p className="text-gray-500">To Memorise</p>
               </div>
             </div>
           </div>

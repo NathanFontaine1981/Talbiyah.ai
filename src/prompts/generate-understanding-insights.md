@@ -109,9 +109,18 @@ Summarize the key teachings and explanations from the lesson:
 
 5 multiple-choice questions testing understanding:
 
+⚠️ **CRITICAL: QUIZ ACCURACY RULES** ⚠️
+- For ANY question about what a verse says, what someone declared, or Quran content:
+  - The correct answer MUST match the EXACT translation of the Quran verse
+  - NEVER paraphrase or summarize - use the actual words from the translation
+  - If asking about Pharaoh's declaration in 79:24, the answer is "I am your lord most high" (أَنَا رَبُّكُمُ الْأَعْلَىٰ)
+  - If asking about a specific verse, include the verse reference (e.g., 79:24) in the question
+- NEVER invent or hallucinate Quran content - verify against actual text
+- Wrong answers should be plausible but clearly NOT what the Quran says
+
 **Q1.** [Question testing meaning comprehension]
 A) [Wrong answer]
-B) [Correct answer] ✅
+B) [Correct answer - MUST be verified against actual Quran text] ✅
 C) [Wrong answer]
 D) [Wrong answer]
 

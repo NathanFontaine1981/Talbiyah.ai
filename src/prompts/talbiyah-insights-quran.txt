@@ -49,9 +49,17 @@ Encourage thinking and self-assessment, not rote recall.
 Create 3–5 simple multiple-choice or matching questions drawn only from what was actually covered in class.
 Mix meaning, tafṣīr context, and vocabulary.
 
+⚠️ **CRITICAL ACCURACY REQUIREMENT** ⚠️
+- For ANY question about what a Quran verse says or what someone declared in the Quran:
+  - The correct answer MUST use the EXACT wording from the Quran translation
+  - Example: Pharaoh's declaration (79:24) is "I am your lord most high" - NOT "I am a god among gods"
+  - NEVER paraphrase, summarize, or invent Quran content
+  - Include the verse reference (e.g., 79:24) when asking about specific verses
+- Verify all factual answers against the actual Quran text before including
+
 Format example:
 **Q1.** Where did Allah call Mūsā (ʿalayhi as-salām)?
-A) Mount Uhud B) Madīnah ✅ C) Sacred Valley of Ṭuwā D) Mount Sinai
+A) Mount Uhud B) Madīnah C) Sacred Valley of Ṭuwā ✅ D) Mount Sinai
 
 ---
 

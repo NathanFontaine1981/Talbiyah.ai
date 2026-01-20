@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, CheckCircle, Book, Mic, Brain, Loader } from 'lucide-react';
+
+// Clean footnote markers from translation text (e.g., "ease1" -> "ease")
+function cleanTranslation(text: string): string {
+  return text
+    .replace(/(\w)(\d+)(?=\s|$|[.,;:!?])/g, '$1') // Remove numbers attached to words
+    .replace(/<sup>.*?<\/sup>/g, '') // Remove HTML superscript tags
+    .replace(/\[\d+\]/g, '') // Remove bracketed numbers like [1]
+    .trim();
+}
 import { supabase } from '../lib/supabaseClient';
 
 interface VerseMemorizerProps {
@@ -30,6 +39,7 @@ export default function VerseMemorizer({
 }: VerseMemorizerProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [showTransliteration, setShowTransliteration] = useState(true);
+  const [showTranslation, setShowTranslation] = useState(false);
   const [progress, setProgress] = useState<AyahProgress>({
     understanding_completed: false,
     fluency_completed: false,
@@ -203,9 +213,27 @@ export default function VerseMemorizer({
         </div>
       )}
 
-      {/* Translation */}
+      {/* Translation - Tap to Reveal */}
       <div className="px-6 py-4 border-t border-gray-100">
-        <p className="text-gray-700 text-lg leading-relaxed">{translation}</p>
+        {showTranslation ? (
+          <div>
+            <p className="text-gray-700 text-lg leading-relaxed">{cleanTranslation(translation)}</p>
+            <button
+              onClick={() => setShowTranslation(false)}
+              className="mt-2 text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            >
+              Hide translation
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowTranslation(true)}
+            className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-emerald-600 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+            Tap to reveal translation
+          </button>
+        )}
       </div>
 
       {/* Progress tracking buttons */}

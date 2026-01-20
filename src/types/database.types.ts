@@ -51,6 +51,11 @@ export type Database = {
           teacher_notes: string | null
           understanding_complete: boolean | null
           updated_at: string | null
+          recall_score: number | null
+          recall_attempts: number | null
+          last_recall_at: string | null
+          recall_correct_count: number | null
+          recall_streak: number | null
         }
         Insert: {
           ayah_number: number
@@ -63,6 +68,11 @@ export type Database = {
           teacher_notes?: string | null
           understanding_complete?: boolean | null
           updated_at?: string | null
+          recall_score?: number | null
+          recall_attempts?: number | null
+          last_recall_at?: string | null
+          recall_correct_count?: number | null
+          recall_streak?: number | null
         }
         Update: {
           ayah_number?: number
@@ -75,6 +85,11 @@ export type Database = {
           teacher_notes?: string | null
           understanding_complete?: boolean | null
           updated_at?: string | null
+          recall_score?: number | null
+          recall_attempts?: number | null
+          last_recall_at?: string | null
+          recall_correct_count?: number | null
+          recall_streak?: number | null
         }
         Relationships: [
           {

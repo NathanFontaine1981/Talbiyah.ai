@@ -52,7 +52,12 @@ export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesW
         await fetchPrayerTimesForCoordinates(latitude, longitude);
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        // User denied location or geolocation unavailable - this is expected, not an error
+        // Error codes: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+        if (error.code !== 1) {
+          // Only log non-permission errors (timeout, unavailable)
+          console.warn('Geolocation unavailable:', error.message);
+        }
         setLocationPermission('denied');
         setLocation('London, UK (default)');
         fetchPrayerTimesForCoordinates(51.5074, -0.1278); // London fallback

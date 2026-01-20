@@ -330,3 +330,140 @@ export async function getAllSurahs(): Promise<ChapterInfo[]> {
     return [];
   }
 }
+
+// ============================================================================
+// QUIZ VERIFICATION UTILITIES (Frontend)
+// ============================================================================
+
+export interface VerifiedVerse {
+  ayahNumber: number;
+  verseKey: string;
+  firstWord: string;
+  transliteration: string;
+  translation: string;
+  fullVerseUthmani: string;
+  fullVerseTranslation: string;
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: { text: string; arabic?: string; transliteration?: string }[];
+  correctAnswer: number;
+}
+
+export interface QuizVerificationWarning {
+  questionIndex: number;
+  question: string;
+  answer: string;
+  warning: string;
+  verseRef?: string;
+}
+
+// Patterns to detect questions that reference specific verses
+const VERSE_QUESTION_PATTERNS = [
+  /what\s+(?:did|does)\s+(?:Allah|Pharaoh|Fir(?:'|')awn|Musa|Moses|Ibrahim|Abraham|the\s+(?:Lord|Creator))\s+(?:say|declare|proclaim)/i,
+  /according\s+to\s+(?:this\s+)?(?:ayah|verse|āyah)/i,
+  /(?:ayah|verse|āyah)\s+(\d+)/i,
+  /(?:Pharaoh|Fir(?:'|')awn)(?:'|')s?\s+(?:claim|declaration|statement)/i,
+];
+
+/**
+ * Check if a quiz question is about a specific verse
+ */
+export function isVerseRelatedQuestion(question: string): boolean {
+  return VERSE_QUESTION_PATTERNS.some(pattern => pattern.test(question));
+}
+
+/**
+ * Extract verse number from a question
+ */
+export function extractVerseNumber(question: string): number | null {
+  const match = question.match(/(?:ayah|verse|āyah)\s+(\d+)/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Calculate text similarity (Jaccard on words)
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  if (!str1 || !str2) return 0;
+
+  const normalize = (s: string) => s.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+
+  const words1 = new Set(normalize(str1));
+  const words2 = new Set(normalize(str2));
+
+  if (words1.size === 0 || words2.size === 0) return 0;
+
+  const intersection = [...words1].filter(w => words2.has(w)).length;
+  const union = new Set([...words1, ...words2]).size;
+
+  return intersection / union;
+}
+
+/**
+ * Verify quiz questions against verified verses at display time
+ * Returns warnings for any questions that may have incorrect answers
+ */
+export function verifyQuizAtDisplayTime(
+  questions: QuizQuestion[],
+  verifiedVerses: VerifiedVerse[]
+): { questions: QuizQuestion[]; warnings: QuizVerificationWarning[] } {
+  const warnings: QuizVerificationWarning[] = [];
+
+  if (!verifiedVerses || verifiedVerses.length === 0) {
+    return { questions, warnings };
+  }
+
+  questions.forEach((q, index) => {
+    // Skip if not a verse-related question
+    if (!isVerseRelatedQuestion(q.question)) return;
+
+    // Get the correct answer text
+    const correctOption = q.options[q.correctAnswer];
+    if (!correctOption) return;
+
+    const answerText = correctOption.text;
+
+    // Try to find matching verse
+    const verseNum = extractVerseNumber(q.question);
+    let matchedVerse: VerifiedVerse | undefined;
+
+    if (verseNum) {
+      matchedVerse = verifiedVerses.find(v => v.ayahNumber === verseNum);
+    }
+
+    // If no specific verse, try to match by content
+    if (!matchedVerse) {
+      let bestSim = 0;
+      for (const v of verifiedVerses) {
+        const sim = calculateSimilarity(answerText, v.fullVerseTranslation);
+        if (sim > bestSim) {
+          bestSim = sim;
+          matchedVerse = v;
+        }
+      }
+      if (bestSim < 0.2) matchedVerse = undefined;
+    }
+
+    if (matchedVerse) {
+      const similarity = calculateSimilarity(answerText, matchedVerse.fullVerseTranslation);
+
+      // If very low similarity, warn about potential incorrect answer
+      if (similarity < 0.3) {
+        warnings.push({
+          questionIndex: index,
+          question: q.question,
+          answer: answerText,
+          warning: `Answer may not match verified Quran text`,
+          verseRef: matchedVerse.verseKey
+        });
+      }
+    }
+  });
+
+  return { questions, warnings };
+}

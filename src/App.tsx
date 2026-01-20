@@ -116,6 +116,7 @@ const RecordingWithInsights = lazy(() => import('./pages/student/RecordingWithIn
 const DailyMaintenancePage = lazy(() => import('./pages/student/DailyMaintenancePage'));
 const SmartHomeworkPage = lazy(() => import('./pages/student/SmartHomeworkPage'));
 const MemorizationSetupPage = lazy(() => import('./pages/student/MemorizationSetupPage'));
+const AyahRecallPracticePage = lazy(() => import('./pages/student/AyahRecallPracticePage'));
 
 // Parent pages
 const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
@@ -573,6 +574,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MemorizationSetupPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/practice/ayah-recall"
+          element={
+            <ProtectedRoute>
+              <AyahRecallPracticePage />
             </ProtectedRoute>
           }
         />

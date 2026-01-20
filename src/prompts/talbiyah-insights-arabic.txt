@@ -18,11 +18,16 @@ It should help the student feel like they can open it anytime in their dashboard
 
 ### 2️⃣ Key Sentences from the Class
 * Extract 5–10 of the most useful Arabic sentences that appeared in the class.
+* **CRITICAL: Every sentence MUST have all three columns filled:**
+  - Arabic text (with full tashkīl)
+  - Transliteration (phonetic)
+  - English translation (complete and accurate)
+* **Do NOT include any sentence without a full English translation.**
 * Show them in a 3-column table:
 
 | Arabic | Transliteration | English Meaning |
 |--------|----------------|-----------------|
-| Example Arabic sentence | Transliteration | English translation |
+| كَيْفَ حَالُكَ؟ | Kayfa haaluka? | How are you? |
 
 * Choose sentences that demonstrate grammar points, daily-life vocabulary, or conversation patterns.
 * Ensure they are accurate and beneficial for revision.
@@ -73,14 +78,22 @@ Example:
 
 ### 6️⃣ Conversation Practice (Role-Play)
 * Turn key parts of the lesson into short Arabic dialogues that the student can practise.
-* Use Teacher (T) and Student (S) labels and include English translations underneath.
+* **CRITICAL: Use the table format below. EVERY line MUST have an English translation.**
 
-Example:
-T: أَيْنَ تَشْرَبُ القَهْوَةَ؟
-S: أَشْرَبُ القَهْوَةَ فِي المَقْهَى.
-(Where do you drink coffee? I drink coffee in the café.)
+**Use this exact table format:**
 
-Include at least 2–3 short dialogues per lesson if possible.
+| Speaker | Arabic | Transliteration | English |
+|---------|--------|-----------------|---------|
+| Teacher | كَيْفَ حَالُكَ؟ | Kayfa haaluka? | How are you? |
+| Student | أَنَا بِخَيْرٍ، الْحَمْدُ لِلَّهِ | Ana bikhayr, alhamdulillah | I am fine, praise be to Allah |
+| Teacher | مَا اسْمُكَ؟ | Maa ismuka? | What is your name? |
+| Student | اسْمِي أَحْمَد | Ismee Ahmad | My name is Ahmad |
+
+**Rules:**
+- Include at least 2–3 dialogues (6-10 lines total)
+- NEVER leave the English column empty
+- Every Arabic line must have its transliteration AND English translation
+- Use realistic, practical conversations from the lesson content
 
 ---
 
@@ -155,3 +168,4 @@ Example:
 * Keep the tone friendly, encouraging, and easy to follow.
 * Do not include Qur'an or Hadith unless the Arabic lesson was based on them.
 * Always include at least 15 new vocabulary words and 10 quiz questions.
+* **CRITICAL: Every Arabic sentence in tables MUST have a complete English translation. Never leave the English column empty or incomplete.**
