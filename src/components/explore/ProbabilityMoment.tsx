@@ -1,15 +1,37 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, TrendingDown, MessageCircle, Scale, Gavel } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MessageCircle, Scale, Gavel, CheckCircle2, Search, Sparkles, BookOpen } from 'lucide-react';
 
 interface ProbabilityMomentProps {
   verifiedCount: number;
   onComplete: () => void;
+  onConvinced?: () => void; // Fast track for convinced users
   onBack?: () => void;
 }
 
-export const ProbabilityMoment = ({ verifiedCount, onComplete, onBack }: ProbabilityMomentProps) => {
-  const [stage, setStage] = useState<'counting' | 'pause' | 'nathan'>('counting');
+// Secondary miracles to show if they want more evidence
+const secondaryMiracles = [
+  {
+    id: 'word-symmetry',
+    title: 'Word Count Symmetry',
+    category: 'Linguistic',
+    icon: <BookOpen className="w-5 h-5" />,
+    description: '"Day" (yawm) appears 365 times. "Month" (shahr) appears 12 times. "Man" and "Woman" each appear 23 times (chromosomes). Mathematical precision in a book revealed over 23 years.',
+    verse: 'Throughout',
+  },
+  {
+    id: 'iron-sent-down',
+    title: 'Iron Sent Down',
+    category: 'Scientific',
+    icon: <Sparkles className="w-5 h-5" />,
+    description: 'The Quran says iron was "sent down" (57:25). Scientists confirm iron came from space—meteorites and supernova explosions. The word "sent down" is scientifically accurate.',
+    verse: '57:25',
+  },
+];
+
+export const ProbabilityMoment = ({ verifiedCount, onComplete, onConvinced, onBack }: ProbabilityMomentProps) => {
+  const [stage, setStage] = useState<'counting' | 'pause' | 'nathan' | 'checkpoint' | 'more-evidence'>('counting');
+  const [expandedMiracle, setExpandedMiracle] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [canContinue, setCanContinue] = useState(false);
 
@@ -260,7 +282,7 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete, onBack }: Probabi
                 transition={{ duration: 0.5 }}
               >
                 <button
-                  onClick={onComplete}
+                  onClick={() => setStage('checkpoint')}
                   disabled={!canContinue}
                   className={`px-8 py-4 rounded-full text-lg font-semibold transition flex items-center justify-center gap-2 mx-auto ${
                     canContinue
@@ -272,6 +294,145 @@ export const ProbabilityMoment = ({ verifiedCount, onComplete, onBack }: Probabi
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </motion.div>
+            </motion.div>
+          )}
+
+          {/* Stage 4: Checkpoint - Are you convinced? */}
+          {stage === 'checkpoint' && (
+            <motion.div
+              key="checkpoint"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl font-serif text-white mb-4">
+                Checkpoint
+              </h1>
+
+              <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8">
+                <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                  You've verified <span className="text-emerald-400 font-semibold">{verifiedCount} facts</span> that the Quran stated accurately—
+                  centuries before modern science discovered them.
+                </p>
+
+                <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-6">
+                  <p className="text-xl text-white font-medium mb-2">
+                    Are you convinced?
+                  </p>
+                  <p className="text-emerald-200">
+                    That this book could only come from the One who created everything?
+                  </p>
+                </div>
+
+                <p className="text-slate-400 text-sm">
+                  There's no pressure. Take your time.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => onConvinced ? onConvinced() : onComplete()}
+                  className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  Yes, I Believe
+                </button>
+                <button
+                  onClick={() => setStage('more-evidence')}
+                  className="px-8 py-4 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full text-lg font-medium transition flex items-center justify-center gap-2"
+                >
+                  <Search className="w-5 h-5" />
+                  Show Me More
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Stage 5: More Evidence */}
+          {stage === 'more-evidence' && (
+            <motion.div
+              key="more-evidence"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-indigo-400" />
+              </div>
+              <h2 className="text-2xl font-serif text-white mb-2">Additional Evidence</h2>
+              <p className="text-slate-400 mb-8">Here are more miracles to consider</p>
+
+              <div className="space-y-4 mb-8">
+                {secondaryMiracles.map((miracle, index) => (
+                  <motion.div
+                    key={miracle.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-slate-900/70 rounded-xl border border-slate-700 overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setExpandedMiracle(expandedMiracle === miracle.id ? null : miracle.id)}
+                      className="w-full p-4 text-left hover:bg-slate-800/50 transition"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center flex-shrink-0 text-indigo-400">
+                          {miracle.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-medium">{miracle.title}</span>
+                            <span className="text-xs px-2 py-0.5 bg-slate-700 rounded text-slate-400">{miracle.category}</span>
+                          </div>
+                          <p className="text-slate-500 text-sm">Surah {miracle.verse}</p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {expandedMiracle === miracle.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 pt-2 border-t border-slate-700">
+                            <p className="text-slate-300 text-sm leading-relaxed">
+                              {miracle.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <p className="text-slate-400 mb-4">
+                  Seen enough? Or continue to explore more.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => onConvinced ? onConvinced() : onComplete()}
+                    className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    I'm Convinced
+                  </button>
+                  <button
+                    onClick={onComplete}
+                    className="px-8 py-4 border border-slate-600 text-slate-300 hover:bg-slate-800 rounded-full text-lg font-medium transition"
+                  >
+                    Continue Journey
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Languages, Star, ArrowRight } from 'lucide-react';
+import { BookOpen, Languages, Star, ArrowRight, Gamepad2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface CourseProgress {
@@ -12,6 +12,7 @@ interface CourseProgress {
   bgColor: string;
   route: string;
   action: string;
+  practiceRoute?: string;
 }
 
 interface MyLearningJourneyCardProps {
@@ -171,7 +172,8 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
           color: 'text-emerald-400',
           bgColor: 'from-emerald-500/20 to-green-500/20',
           route: '/my-memorization',
-          action: quranProgress > 0 ? 'Manage' : 'Set Up'
+          action: quranProgress > 0 ? 'Manage' : 'Set Up',
+          practiceRoute: '/practice/ayah-recall'
         },
         {
           name: 'Arabic Language',
@@ -236,13 +238,25 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate(course.route)}
-                className={`px-4 py-2 bg-gradient-to-r ${course.bgColor.replace('/20', '')} rounded-lg font-semibold text-sm transition hover:scale-105 flex items-center space-x-2 text-white`}
-              >
-                <span>{course.action}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {course.practiceRoute && (
+                  <button
+                    onClick={() => navigate(course.practiceRoute!)}
+                    className="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-semibold text-sm transition hover:scale-105 flex items-center space-x-1 text-white"
+                    title="Practice Ayah Recall"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                    <span>Practice</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate(course.route)}
+                  className={`px-4 py-2 bg-gradient-to-r ${course.bgColor.replace('/20', '')} rounded-lg font-semibold text-sm transition hover:scale-105 flex items-center space-x-2 text-white`}
+                >
+                  <span>{course.action}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">

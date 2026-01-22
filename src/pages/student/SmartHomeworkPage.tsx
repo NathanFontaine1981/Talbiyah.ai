@@ -145,6 +145,7 @@ const SURAH_NAMES: { [key: number]: { name: string; arabicName: string } } = {
   1: { name: 'Al-Fatihah', arabicName: 'الفاتحة' },
   18: { name: 'Al-Kahf', arabicName: 'الكهف' },
   36: { name: 'Ya-Sin', arabicName: 'يس' },
+  53: { name: 'An-Najm', arabicName: 'النجم' },
   55: { name: 'Ar-Rahman', arabicName: 'الرحمن' },
   56: { name: "Al-Waqi'ah", arabicName: 'الواقعة' },
   67: { name: 'Al-Mulk', arabicName: 'الملك' },
@@ -816,6 +817,32 @@ const SURAH_VOCABULARY: { [key: number]: VocabularyWord[] } = {
     { arabic: 'سَاهُونَ', english: 'heedless', transliteration: 'Sahun' },
     { arabic: 'الْمَاعُونَ', english: 'small kindnesses', transliteration: "Al-Ma'un" },
   ],
+  53: [ // An-Najm
+    { arabic: 'وَالنَّجْمِ', english: 'By the star', transliteration: 'Wan-Najm' },
+    { arabic: 'هَوَىٰ', english: 'when it descends', transliteration: 'Hawa' },
+    { arabic: 'ضَلَّ', english: 'has strayed', transliteration: 'Dalla' },
+    { arabic: 'صَاحِبُكُمْ', english: 'your companion', transliteration: 'Sahibukum' },
+    { arabic: 'غَوَىٰ', english: 'nor has he erred', transliteration: 'Ghawa' },
+    { arabic: 'يَنطِقُ', english: 'he speaks', transliteration: 'Yantiqu' },
+    { arabic: 'الْهَوَىٰ', english: 'desire', transliteration: 'Al-Hawa' },
+    { arabic: 'وَحْيٌ', english: 'revelation', transliteration: 'Wahy' },
+    { arabic: 'يُوحَىٰ', english: 'revealed', transliteration: 'Yuha' },
+    { arabic: 'عَلَّمَهُ', english: 'taught him', transliteration: "'Allamahu" },
+    { arabic: 'شَدِيدُ', english: 'intense', transliteration: 'Shadid' },
+    { arabic: 'الْقُوَىٰ', english: 'in strength', transliteration: 'Al-Quwa' },
+    { arabic: 'فَاسْتَوَىٰ', english: 'and rose', transliteration: 'Fastawa' },
+    { arabic: 'الْأُفُقِ', english: 'the horizon', transliteration: 'Al-Ufuq' },
+    { arabic: 'الْأَعْلَى', english: 'the highest', transliteration: "Al-A'la" },
+    { arabic: 'دَنَا', english: 'he approached', transliteration: 'Dana' },
+    { arabic: 'فَتَدَلَّىٰ', english: 'and descended', transliteration: 'Fatadalla' },
+    { arabic: 'قَوْسَيْنِ', english: 'two bow lengths', transliteration: 'Qawsayn' },
+    { arabic: 'أَوْحَىٰ', english: 'He revealed', transliteration: 'Awha' },
+    { arabic: 'عَبْدِهِ', english: 'to His servant', transliteration: "'Abdihi" },
+    { arabic: 'الْفُؤَادُ', english: 'the heart', transliteration: "Al-Fu'ad" },
+    { arabic: 'كَذَبَ', english: 'lied', transliteration: 'Kadhaba' },
+    { arabic: 'رَأَىٰ', english: 'he saw', transliteration: "Ra'a" },
+    { arabic: 'تُمَارُونَهُ', english: 'you dispute with him', transliteration: 'Tumarunahu' },
+  ],
 };
 
 // External app recommendations
@@ -1458,11 +1485,25 @@ export default function SmartHomeworkPage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Back button */}
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            // Step back through the flow instead of exiting completely
+            if (session) {
+              // If in a game session, go back to surah selection
+              setSession(null);
+              setShowSurahSelector(true);
+              setSelectedSurahs([]);
+              setGameStarted(false);
+              setTimer(0);
+              setIsPaused(false);
+            } else {
+              // Otherwise go to dashboard
+              navigate('/dashboard');
+            }
+          }}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Dashboard
+          {session ? 'Back to Surah Selection' : 'Back to Dashboard'}
         </button>
 
         {/* Header */}
@@ -1570,7 +1611,7 @@ export default function SmartHomeworkPage() {
 
                 {/* Surah Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
-                  {availableSurahs.map(surahNum => {
+                  {[...availableSurahs].sort((a, b) => a - b).map(surahNum => {
                     const surahName = SURAH_NAMES[surahNum];
                     const isSelected = selectedSurahs.includes(surahNum);
                     return (

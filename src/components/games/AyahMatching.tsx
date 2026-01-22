@@ -9,10 +9,15 @@ interface AyahData {
   englishTranslation: string;
 }
 
+interface AyahResult {
+  ayahNumber: number;
+  correct: boolean;
+}
+
 interface AyahMatchingProps {
   ayahs: AyahData[];
   surahName: string;
-  onComplete: (correct: number, total: number) => void;
+  onComplete: (correct: number, total: number, results: AyahResult[]) => void;
 }
 
 type MatchState = 'idle' | 'selected' | 'correct' | 'incorrect';
@@ -161,7 +166,12 @@ export default function AyahMatching({ ayahs, surahName, onComplete }: AyahMatch
           // Check if all matched
           if (matchedCount + 1 === gameAyahs.length) {
             setIsComplete(true);
-            onComplete(matchedCount + 1, attempts + 1);
+            // All matched ayahs are correct
+            const results: AyahResult[] = gameAyahs.map(ayah => ({
+              ayahNumber: ayah.ayahNumber,
+              correct: true
+            }));
+            onComplete(matchedCount + 1, attempts + 1, results);
           }
 
           // Clear selections after delay

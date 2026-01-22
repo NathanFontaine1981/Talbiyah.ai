@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   X, Play, CheckCircle2, ChevronRight, BookOpen,
   Sparkles, Eye, ScrollText, Microscope, BarChart3,
-  Dices, PauseCircle, HelpCircle, MessageSquare,
-  Handshake, Clock, Lightbulb, Footprints
+  Dices, MessageSquare,
+  Handshake, Clock, Lightbulb, Footprints, Scale, Heart
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
@@ -14,36 +14,56 @@ import ChainOfCustody from '../../components/explore/ChainOfCustody';
 import AxiomCheck from '../../components/explore/AxiomCheck';
 import AuthorityMatch from '../../components/explore/AuthorityMatch';
 import ProbabilityMoment from '../../components/explore/ProbabilityMoment';
-import ConvictionCheckpoint from '../../components/explore/ConvictionCheckpoint';
-import TheQuestion from '../../components/explore/TheQuestion';
+import TheSource from '../../components/explore/TheSource';
 import TheReconciliation from '../../components/explore/TheReconciliation';
 import ProphetTimeline from '../../components/explore/ProphetTimeline';
 import CheatCodes from '../../components/explore/CheatCodes';
 import TheFirstStep from '../../components/explore/TheFirstStep';
-import TheVoice from '../../components/explore/TheVoice';
 import ExploreProgressBar from '../../components/explore/ExploreProgressBar';
+import ChapterIntro from '../../components/explore/ChapterIntro';
+import ChapterComplete from '../../components/explore/ChapterComplete';
+import ChapterSelect, { EXPLORE_CHAPTERS, type Chapter } from '../../components/explore/ChapterSelect';
 
 const STORAGE_KEY = 'talbiyah_explore_progress';
 
-// Stage order for the Explore journey (The Almanac)
-// 0. Menu - Episode overview showing all sections
-// 1. Intro - Personal introduction, what I discovered
-// 2. BiasBlur - Acknowledge biases before exploring
-// 3. ChainOfCustody - Document analysis: Bible vs Quran preservation
-// 4. AxiomCheck - Present undeniable facts user already accepts (The Data)
-// 5. AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
-// 6. ProbabilityMoment - Visual probability dropping, forced pause
-// 7. Checkpoint - Ask if convinced, offer to show more evidence
-// 8. TheQuestion - Ask where they think the knowledge came from
-// 9. TheVoice - The Quran's divine voice and the choice
-// 10. TheReconciliation - Explain how all Abrahamic religions are one
-// 11. ProphetTimeline - Visual timeline of prophets and their eras
-// 12. CheatCodes - Life guidance from the Quran (Cheat Codes)
-// 13. TheFirstStep - Soft shahada (Tawhid) and next steps
-type FlowStage = 'menu' | 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'the-voice' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
+// Stage order for the Explore journey - organized into 3 chapters
+//
+// Chapter 1: Open Mind (Preparation) - ~10 min
+// - Intro - Personal introduction, what I discovered
+// - BiasBlur - Acknowledge biases before exploring
+// - ChainOfCustody - Document analysis: Bible vs Quran preservation
+//
+// Chapter 2: The Evidence - ~15 min
+// - AxiomCheck - Present undeniable facts user already accepts (The Data)
+// - AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
+// - ProbabilityMoment - Visual probability dropping + checkpoint (merged)
+//
+// Chapter 3: What's Inside - ~20 min
+// - TheSource - The Question + The Voice (merged)
+// - TheReconciliation - Explain how all Abrahamic religions are one
+// - ProphetTimeline - Visual timeline of prophets and their eras
+// - CheatCodes - Life guidance from the Quran (Cheat Codes)
+// - TheFirstStep - Soft shahada (Tawhid) and next steps
+
+type FlowStage =
+  | 'menu'
+  | 'chapter-1-intro' | 'intro' | 'bias' | 'chain-of-custody' | 'chapter-1-complete'
+  | 'chapter-2-intro' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'chapter-2-complete'
+  | 'chapter-3-intro' | 'the-source' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
 
 // Order of stages for navigation (menu is separate, not in the flow)
-const STAGE_ORDER: FlowStage[] = ['intro', 'bias', 'chain-of-custody', 'axiom-check', 'authority-match', 'probability-moment', 'checkpoint', 'the-question', 'the-voice', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'];
+const STAGE_ORDER: FlowStage[] = [
+  'chapter-1-intro', 'intro', 'bias', 'chain-of-custody', 'chapter-1-complete',
+  'chapter-2-intro', 'axiom-check', 'authority-match', 'probability-moment', 'chapter-2-complete',
+  'chapter-3-intro', 'the-source', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'
+];
+
+// Chapter definitions for navigation
+const CHAPTER_STAGES: Record<number, { intro: FlowStage; stages: FlowStage[] }> = {
+  1: { intro: 'chapter-1-intro', stages: ['intro', 'bias', 'chain-of-custody'] },
+  2: { intro: 'chapter-2-intro', stages: ['axiom-check', 'authority-match', 'probability-moment'] },
+  3: { intro: 'chapter-3-intro', stages: ['the-source', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'] },
+};
 
 // Episode definitions for the menu
 interface Episode {
@@ -56,26 +76,35 @@ interface Episode {
   color: string;
 }
 
+// Episodes organized by chapter
 const EPISODES: Episode[] = [
+  // Chapter 1: Open Mind
   { id: 'intro', episode: 1, title: 'The Beginning', description: 'A personal journey of discovery', duration: '3 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
-  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Acknowledge biases before exploring truth', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'purple' },
-  { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'orange' },
-  { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: <Microscope className="w-6 h-6" />, color: 'cyan' },
+  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Acknowledge biases before exploring truth', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'amber' },
+  { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'amber' },
+  // Chapter 2: The Evidence
+  { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: <Microscope className="w-6 h-6" />, color: 'emerald' },
   { id: 'authority-match', episode: 5, title: 'Past Scores', description: 'Ancient texts meet modern knowledge', duration: '5 min', icon: <BarChart3 className="w-6 h-6" />, color: 'emerald' },
-  { id: 'probability-moment', episode: 6, title: 'The Odds', description: 'What are the chances?', duration: '3 min', icon: <Dices className="w-6 h-6" />, color: 'pink' },
-  { id: 'checkpoint', episode: 7, title: 'Checkpoint', description: 'A moment to reflect', duration: '2 min', icon: <PauseCircle className="w-6 h-6" />, color: 'slate' },
-  { id: 'the-question', episode: 8, title: 'The Question', description: 'Where did this knowledge come from?', duration: '3 min', icon: <HelpCircle className="w-6 h-6" />, color: 'violet' },
-  { id: 'the-voice', episode: 9, title: 'The Voice', description: 'Who is speaking in the Quran?', duration: '4 min', icon: <MessageSquare className="w-6 h-6" />, color: 'sky' },
-  { id: 'reconciliation', episode: 10, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'teal' },
-  { id: 'prophet-timeline', episode: 11, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'indigo' },
-  { id: 'cheat-codes', episode: 12, title: 'Life Guidance', description: 'Practical wisdom for daily life', duration: '5 min', icon: <Lightbulb className="w-6 h-6" />, color: 'yellow' },
-  { id: 'first-step', episode: 13, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'emerald' },
+  { id: 'probability-moment', episode: 6, title: 'The Verdict', description: 'Weighing the evidence', duration: '6 min', icon: <Dices className="w-6 h-6" />, color: 'emerald' },
+  // Chapter 3: What's Inside
+  { id: 'the-source', episode: 7, title: 'The Source', description: 'Where did this knowledge come from?', duration: '8 min', icon: <MessageSquare className="w-6 h-6" />, color: 'purple' },
+  { id: 'reconciliation', episode: 8, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'purple' },
+  { id: 'prophet-timeline', episode: 9, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'purple' },
+  { id: 'cheat-codes', episode: 10, title: 'Life Guidance', description: 'Practical wisdom for daily life', duration: '5 min', icon: <Lightbulb className="w-6 h-6" />, color: 'purple' },
+  { id: 'first-step', episode: 11, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'purple' },
 ];
+
+// Helper to get chapter number for an episode
+const getEpisodeChapter = (episodeId: FlowStage): number => {
+  if (['intro', 'bias', 'chain-of-custody', 'chapter-1-intro', 'chapter-1-complete'].includes(episodeId)) return 1;
+  if (['axiom-check', 'authority-match', 'probability-moment', 'chapter-2-intro', 'chapter-2-complete'].includes(episodeId)) return 2;
+  return 3;
+};
 
 export default function ExplorePage() {
   const navigate = useNavigate();
   const [flowStage, setFlowStage] = useState<FlowStage>('menu');
-  const [highestStageReached, setHighestStageReached] = useState<FlowStage>('intro');
+  const [highestStageReached, setHighestStageReached] = useState<FlowStage>('chapter-1-intro');
   const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [beliefChoice, setBeliefChoice] = useState<string | null>(null);
@@ -171,6 +200,19 @@ export default function ExplorePage() {
     setFlowStage(stage);
   };
 
+  // Chapter intro handlers
+  const handleChapter1IntroBegin = () => {
+    advanceToStage('intro');
+  };
+
+  const handleChapter2IntroBegin = () => {
+    advanceToStage('axiom-check');
+  };
+
+  const handleChapter3IntroBegin = () => {
+    advanceToStage('the-source');
+  };
+
   // Stage handlers
   const handleIntroComplete = () => {
     advanceToStage('bias');
@@ -181,7 +223,7 @@ export default function ExplorePage() {
   };
 
   const handleChainOfCustodyComplete = () => {
-    advanceToStage('axiom-check');
+    advanceToStage('chapter-1-complete');
   };
 
   const handleBiasBack = () => {
@@ -193,7 +235,7 @@ export default function ExplorePage() {
   };
 
   const handleAxiomCheckBack = () => {
-    setFlowStage('chain-of-custody');
+    setFlowStage('chapter-2-intro');
   };
 
   const handleAuthorityMatchBack = () => {
@@ -204,16 +246,12 @@ export default function ExplorePage() {
     setFlowStage('authority-match');
   };
 
-  const handleCheckpointBack = () => {
-    setFlowStage('probability-moment');
-  };
-
-  const handleQuestionBack = () => {
-    setFlowStage('checkpoint');
+  const handleSourceBack = () => {
+    setFlowStage('chapter-3-intro');
   };
 
   const handleReconciliationBack = () => {
-    setFlowStage('the-voice');
+    setFlowStage('the-source');
   };
 
   const handleCheatCodesBack = () => {
@@ -235,25 +273,33 @@ export default function ExplorePage() {
   };
 
   const handleProbabilityMomentComplete = () => {
-    advanceToStage('checkpoint');
+    // Normal continue - go to chapter 2 complete screen
+    advanceToStage('chapter-2-complete');
   };
 
-  const handleCheckpointConvinced = () => {
+  const handleProbabilityMomentConvinced = () => {
     // Fast track - they're convinced, skip to reconciliation
     advanceToStage('reconciliation');
   };
 
-  const handleCheckpointShowMore = () => {
-    // Continue the full journey
-    advanceToStage('the-question');
+  // Chapter completion handlers
+  const handleChapter1Complete = () => {
+    advanceToStage('chapter-2-intro');
   };
 
-  const handleQuestionComplete = (belief: string) => {
-    setBeliefChoice(belief);
-    advanceToStage('the-voice');
+  const handleChapter1TakeBreak = () => {
+    setFlowStage('menu');
   };
 
-  const handleVoiceComplete = () => {
+  const handleChapter2Complete = () => {
+    advanceToStage('chapter-3-intro');
+  };
+
+  const handleChapter2TakeBreak = () => {
+    setFlowStage('menu');
+  };
+
+  const handleSourceComplete = () => {
     advanceToStage('reconciliation');
   };
 
@@ -304,7 +350,7 @@ export default function ExplorePage() {
 
   // Reset journey to the beginning
   const handleResetJourney = () => {
-    setHighestStageReached('intro');
+    setHighestStageReached('chapter-1-intro');
     setAgreedAxioms([]);
     setVerifiedCount(0);
     setBeliefChoice(null);
@@ -437,7 +483,7 @@ export default function ExplorePage() {
           )}
 
           {/* Continue and Reset buttons if progress exists */}
-          {highestStageReached !== 'intro' && (
+          {highestStageReached !== 'intro' && highestStageReached !== 'chapter-1-intro' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -471,126 +517,197 @@ export default function ExplorePage() {
             </motion.div>
           )}
 
-          {/* Episodes heading */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mb-6 mt-4"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-white">Episodes</h2>
-          </motion.div>
+          {/* Chapter cards with episodes */}
+          <div className="space-y-6">
+            {/* Chapter 1: Open Mind */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gradient-to-br from-amber-900/20 to-orange-900/10 border border-amber-700/30 rounded-3xl overflow-hidden"
+            >
+              {/* Chapter header */}
+              <button
+                onClick={() => setFlowStage('chapter-1-intro')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-amber-900/20 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                  <Eye className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-amber-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 1</p>
+                  <h3 className="text-xl font-bold text-white">Open Mind</h3>
+                  <p className="text-slate-400 text-sm">Preparing for the journey • ~10 min</p>
+                </div>
+                <div className="text-amber-400">
+                  <Play className="w-6 h-6" />
+                </div>
+              </button>
 
-          {/* Episode list */}
-          <div className="space-y-3">
-            {EPISODES.map((episode, index) => {
-              const isCompleted = isEpisodeCompleted(episode.id);
-              const isCurrent = episode.id === highestStageReached;
-
-              // Dynamic color classes based on episode color
-              const getIconColorClass = () => {
-                if (isCompleted) return 'text-emerald-400';
-                const colorMap: Record<string, string> = {
-                  amber: 'text-amber-400',
-                  purple: 'text-purple-400',
-                  orange: 'text-orange-400',
-                  cyan: 'text-cyan-400',
-                  emerald: 'text-emerald-400',
-                  pink: 'text-pink-400',
-                  slate: 'text-slate-400',
-                  violet: 'text-violet-400',
-                  sky: 'text-sky-400',
-                  teal: 'text-teal-400',
-                  indigo: 'text-indigo-400',
-                  yellow: 'text-yellow-400',
-                };
-                return colorMap[episode.color] || 'text-slate-400';
-              };
-
-              const getIconBgClass = () => {
-                if (isCompleted) return 'bg-emerald-900/50 border-emerald-700/30';
-                if (isCurrent) return 'bg-amber-900/50 border-amber-600/30';
-                const colorMap: Record<string, string> = {
-                  amber: 'bg-amber-900/30 border-amber-700/20',
-                  purple: 'bg-purple-900/30 border-purple-700/20',
-                  orange: 'bg-orange-900/30 border-orange-700/20',
-                  cyan: 'bg-cyan-900/30 border-cyan-700/20',
-                  emerald: 'bg-emerald-900/30 border-emerald-700/20',
-                  pink: 'bg-pink-900/30 border-pink-700/20',
-                  slate: 'bg-slate-800/50 border-slate-700/20',
-                  violet: 'bg-violet-900/30 border-violet-700/20',
-                  sky: 'bg-sky-900/30 border-sky-700/20',
-                  teal: 'bg-teal-900/30 border-teal-700/20',
-                  indigo: 'bg-indigo-900/30 border-indigo-700/20',
-                  yellow: 'bg-yellow-900/30 border-yellow-700/20',
-                };
-                return colorMap[episode.color] || 'bg-slate-800/50 border-slate-700/20';
-              };
-
-              return (
-                <motion.button
-                  key={episode.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  onClick={() => setFlowStage(episode.id)}
-                  className={`group w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left hover:scale-[1.01] ${
-                    isCompleted
-                      ? 'bg-emerald-900/20 border-emerald-700/30 hover:border-emerald-600/50 hover:bg-emerald-900/30'
-                      : isCurrent
-                        ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/20 border-amber-600/50 hover:border-amber-500 shadow-lg shadow-amber-900/20'
-                        : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600 hover:bg-slate-800/50'
-                  }`}
-                >
-                  {/* Episode icon */}
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-110 ${getIconBgClass()}`}>
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-7 h-7 text-emerald-400" />
-                    ) : (
-                      <div className={getIconColorClass()}>
-                        {episode.icon}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Episode info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-semibold uppercase tracking-wide ${
-                        isCompleted ? 'text-emerald-400' : isCurrent ? 'text-amber-400' : 'text-slate-500'
+              {/* Chapter 1 episodes */}
+              <div className="px-4 pb-4 space-y-2">
+                {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 1).map((episode) => {
+                  const isCompleted = isEpisodeCompleted(episode.id);
+                  const isCurrent = episode.id === highestStageReached;
+                  return (
+                    <button
+                      key={episode.id}
+                      onClick={() => setFlowStage(episode.id)}
+                      className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                        isCompleted
+                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          : isCurrent
+                            ? 'bg-amber-900/40 ring-1 ring-amber-500/50'
+                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isCompleted ? 'bg-emerald-500/20' : 'bg-amber-500/20'
                       }`}>
-                        Episode {episode.episode}
-                      </span>
-                      <span className="text-slate-500">•</span>
-                      <span className="text-xs text-slate-400">{episode.duration}</span>
-                    </div>
-                    <h3 className="font-semibold text-white text-lg mb-0.5">
-                      {episode.title}
-                    </h3>
-                    <p className="text-sm text-slate-300">
-                      {episode.description}
-                    </p>
-                  </div>
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <span className="text-amber-400 text-sm font-bold">{episode.episode}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
+                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
 
-                  {/* Action indicator */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all group-hover:translate-x-1 ${
-                    isCompleted
-                      ? 'bg-emerald-800/30'
-                      : isCurrent
-                        ? 'bg-amber-800/30'
-                        : 'bg-slate-800/50'
-                  }`}>
-                    <ChevronRight className={`w-5 h-5 ${
-                      isCompleted ? 'text-emerald-400' : isCurrent ? 'text-amber-400' : 'text-slate-500'
-                    }`} />
-                  </div>
-                </motion.button>
-              );
-            })}
+            {/* Chapter 2: The Evidence */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gradient-to-br from-emerald-900/20 to-teal-900/10 border border-emerald-700/30 rounded-3xl overflow-hidden"
+            >
+              {/* Chapter header */}
+              <button
+                onClick={() => setFlowStage('chapter-2-intro')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-emerald-900/20 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                  <Scale className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 2</p>
+                  <h3 className="text-xl font-bold text-white">The Evidence</h3>
+                  <p className="text-slate-400 text-sm">Scientific facts in ancient text • ~15 min</p>
+                </div>
+                <div className="text-emerald-400">
+                  <Play className="w-6 h-6" />
+                </div>
+              </button>
+
+              {/* Chapter 2 episodes */}
+              <div className="px-4 pb-4 space-y-2">
+                {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 2).map((episode) => {
+                  const isCompleted = isEpisodeCompleted(episode.id);
+                  const isCurrent = episode.id === highestStageReached;
+                  return (
+                    <button
+                      key={episode.id}
+                      onClick={() => setFlowStage(episode.id)}
+                      className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                        isCompleted
+                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          : isCurrent
+                            ? 'bg-emerald-900/40 ring-1 ring-emerald-500/50'
+                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isCompleted ? 'bg-emerald-500/20' : 'bg-emerald-500/20'
+                      }`}>
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <span className="text-emerald-400 text-sm font-bold">{episode.episode}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
+                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Chapter 3: What's Inside */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 border border-purple-700/30 rounded-3xl overflow-hidden"
+            >
+              {/* Chapter header */}
+              <button
+                onClick={() => setFlowStage('chapter-3-intro')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-purple-900/20 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
+                  <Heart className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-purple-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 3</p>
+                  <h3 className="text-xl font-bold text-white">What's Inside</h3>
+                  <p className="text-slate-400 text-sm">The message and meaning • ~20 min</p>
+                </div>
+                <div className="text-purple-400">
+                  <Play className="w-6 h-6" />
+                </div>
+              </button>
+
+              {/* Chapter 3 episodes */}
+              <div className="px-4 pb-4 space-y-2">
+                {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 3).map((episode) => {
+                  const isCompleted = isEpisodeCompleted(episode.id);
+                  const isCurrent = episode.id === highestStageReached;
+                  return (
+                    <button
+                      key={episode.id}
+                      onClick={() => setFlowStage(episode.id)}
+                      className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                        isCompleted
+                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          : isCurrent
+                            ? 'bg-purple-900/40 ring-1 ring-purple-500/50'
+                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isCompleted ? 'bg-emerald-500/20' : 'bg-purple-500/20'
+                      }`}>
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <span className="text-purple-400 text-sm font-bold">{episode.episode}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
+                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
           </div>
 
           {/* Start button if no progress */}
-          {highestStageReached === 'intro' && (
+          {(highestStageReached === 'intro' || highestStageReached === 'chapter-1-intro') && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -598,7 +715,7 @@ export default function ExplorePage() {
               className="mt-10 text-center"
             >
               <button
-                onClick={() => setFlowStage('intro')}
+                onClick={() => setFlowStage('chapter-1-intro')}
                 className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50 hover:scale-105"
               >
                 <Play className="w-6 h-6" />
@@ -661,6 +778,29 @@ export default function ExplorePage() {
     );
   }
 
+  // Chapter 1 Intro
+  if (flowStage === 'chapter-1-intro') {
+    return (
+      <ChapterIntro
+        chapterNumber={1}
+        title="Open Mind"
+        subtitle="Preparing for the journey"
+        description="Before exploring evidence, we clear our biases and examine how religious texts have been preserved throughout history."
+        bulletPoints={[
+          'Acknowledge and set aside preconceptions',
+          'Compare scripture preservation methods',
+          'Understand the chain of custody concept',
+        ]}
+        duration="10 min"
+        episodeCount={3}
+        icon={<Eye className="w-10 h-10" />}
+        color="amber"
+        onBegin={handleChapter1IntroBegin}
+        onBack={() => setFlowStage('menu')}
+      />
+    );
+  }
+
   // Stage 1: Introduction (no progress bar yet)
   if (flowStage === 'intro') {
     return (
@@ -671,7 +811,7 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 1: Bias Blur
+  // Stage 2: Bias Blur
   if (flowStage === 'bias') {
     return (
       <div className="relative">
@@ -695,6 +835,45 @@ export default function ExplorePage() {
           />
         </div>
       </div>
+    );
+  }
+
+  // Chapter 1 Complete
+  if (flowStage === 'chapter-1-complete') {
+    return (
+      <ChapterComplete
+        chapterNumber={1}
+        chapterTitle="Open Mind"
+        nextChapterTitle="The Evidence"
+        nextChapterNumber={2}
+        icon={<Eye className="w-8 h-8" />}
+        color="amber"
+        onContinue={handleChapter1Complete}
+        onTakeBreak={handleChapter1TakeBreak}
+      />
+    );
+  }
+
+  // Chapter 2 Intro
+  if (flowStage === 'chapter-2-intro') {
+    return (
+      <ChapterIntro
+        chapterNumber={2}
+        title="The Evidence"
+        subtitle="Scientific facts in ancient text"
+        description="Examine undeniable scientific facts stated in the Quran over 1,400 years ago—long before modern discovery."
+        bulletPoints={[
+          'Review scientific facts we can all agree on',
+          'See how ancient text matches modern science',
+          'Weigh the statistical probability',
+        ]}
+        duration="15 min"
+        episodeCount={3}
+        icon={<Scale className="w-10 h-10" />}
+        color="emerald"
+        onBegin={handleChapter2IntroBegin}
+        onBack={() => setFlowStage('menu')}
+      />
     );
   }
 
@@ -726,7 +905,7 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 4: Probability Moment - Visual probability dropping, forced pause
+  // Stage 4: Probability Moment - Visual probability dropping + checkpoint (merged)
   if (flowStage === 'probability-moment') {
     return (
       <div className="relative">
@@ -735,6 +914,7 @@ export default function ExplorePage() {
           <ProbabilityMoment
             verifiedCount={verifiedCount}
             onComplete={handleProbabilityMomentComplete}
+            onConvinced={handleProbabilityMomentConvinced}
             onBack={handleProbabilityMomentBack}
           />
         </div>
@@ -742,56 +922,63 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 5: Checkpoint - Ask if convinced, offer to show more evidence
-  if (flowStage === 'checkpoint') {
+  // Chapter 2 Complete
+  if (flowStage === 'chapter-2-complete') {
     return (
-      <div className="relative">
-        <NavWithProgress />
-        <div className="pt-16 md:pt-14">
-          <ConvictionCheckpoint
-            verifiedCount={verifiedCount}
-            onConvinced={handleCheckpointConvinced}
-            onShowMore={handleCheckpointShowMore}
-            onBack={handleCheckpointBack}
-          />
-        </div>
-      </div>
+      <ChapterComplete
+        chapterNumber={2}
+        chapterTitle="The Evidence"
+        nextChapterTitle="What's Inside"
+        nextChapterNumber={3}
+        icon={<Scale className="w-8 h-8" />}
+        color="emerald"
+        onContinue={handleChapter2Complete}
+        onTakeBreak={handleChapter2TakeBreak}
+      />
     );
   }
 
-  // Stage 6: The Question - Ask where they think the knowledge came from
-  if (flowStage === 'the-question') {
+  // Chapter 3 Intro
+  if (flowStage === 'chapter-3-intro') {
+    return (
+      <ChapterIntro
+        chapterNumber={3}
+        title="What's Inside"
+        subtitle="The message and meaning"
+        description="Discover what this book actually says—about life, purpose, and your place in creation."
+        bulletPoints={[
+          'Explore the source of this knowledge',
+          'Understand the connection between faiths',
+          'Learn practical life guidance',
+        ]}
+        duration="20 min"
+        episodeCount={5}
+        icon={<Heart className="w-10 h-10" />}
+        color="purple"
+        onBegin={handleChapter3IntroBegin}
+        onBack={() => setFlowStage('menu')}
+      />
+    );
+  }
+
+  // Stage 5: The Source - The Question + The Voice (merged)
+  if (flowStage === 'the-source') {
     return (
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <TheQuestion
+          <TheSource
             verifiedCount={verifiedCount}
             totalFacts={agreedAxioms.length}
-            onComplete={handleQuestionComplete}
-            onBack={handleQuestionBack}
+            onComplete={handleSourceComplete}
+            onBack={handleSourceBack}
           />
         </div>
       </div>
     );
   }
 
-  // Stage 7: The Voice - The Quran's divine voice and the choice
-  if (flowStage === 'the-voice') {
-    return (
-      <div className="relative">
-        <NavWithProgress />
-        <div className="pt-16 md:pt-14">
-          <TheVoice
-            onComplete={handleVoiceComplete}
-            onBack={() => setFlowStage('the-question')}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Stage 8: The Reconciliation - Explain how all Abrahamic religions are one
+  // Stage 6: The Reconciliation - Explain how all Abrahamic religions are one
   if (flowStage === 'reconciliation') {
     return (
       <div className="relative">

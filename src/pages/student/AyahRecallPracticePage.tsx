@@ -131,6 +131,11 @@ interface SessionResult {
   accuracy: number;
 }
 
+interface AyahResult {
+  ayahNumber: number;
+  correct: boolean;
+}
+
 export default function AyahRecallPracticePage() {
   const navigate = useNavigate();
 
@@ -270,13 +275,13 @@ export default function AyahRecallPracticePage() {
   }
 
   // Handle game completion
-  async function handleGameComplete(correct: number, total: number) {
+  async function handleGameComplete(correct: number, total: number, results: AyahResult[]) {
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
     setSessionResult({ correct, total, accuracy });
     setGameStarted(false);
 
-    // Save progress to database
-    if (learnerId && selectedSurah) {
+    // Save progress to database - now per-ayah based on individual results
+    if (learnerId && selectedSurah && results.length > 0) {
       try {
         // First, get existing progress for all ayahs
         const { data: existingProgress } = await supabase
@@ -289,20 +294,20 @@ export default function AyahRecallPracticePage() {
           (existingProgress || []).map(p => [p.ayah_number, p])
         );
 
-        // Update recall stats for each ayah
-        for (const ayah of ayahs) {
-          const existing = existingMap.get(ayah.ayahNumber);
+        // Update recall stats for each ayah based on individual results
+        for (const result of results) {
+          const existing = existingMap.get(result.ayahNumber);
           const currentAttempts = (existing?.recall_attempts || 0) + 1;
-          const currentCorrect = (existing?.recall_correct_count || 0) + (accuracy >= 70 ? 1 : 0);
+          const currentCorrect = (existing?.recall_correct_count || 0) + (result.correct ? 1 : 0);
           const newScore = Math.round((currentCorrect / currentAttempts) * 100);
-          const newStreak = accuracy >= 70 ? (existing?.recall_streak || 0) + 1 : 0;
+          const newStreak = result.correct ? (existing?.recall_streak || 0) + 1 : 0;
 
           await supabase
             .from('ayah_progress')
             .upsert({
               learner_id: learnerId,
               surah_number: selectedSurah,
-              ayah_number: ayah.ayahNumber,
+              ayah_number: result.ayahNumber,
               recall_attempts: currentAttempts,
               recall_correct_count: currentCorrect,
               recall_score: newScore,
@@ -321,12 +326,13 @@ export default function AyahRecallPracticePage() {
   // Handle back navigation
   function handleBack() {
     if (gameStarted) {
+      // If in a game, go back to game mode selection
       setGameStarted(false);
       setSessionResult(null);
-    } else if (selectedGameMode) {
-      setSelectedGameMode(null);
     } else if (selectedSurah) {
+      // If viewing game modes (surah selected), go back to surah selection
       setSelectedSurah(null);
+      setSelectedGameMode(null);
       setAyahs([]);
     } else {
       navigate('/dashboard');

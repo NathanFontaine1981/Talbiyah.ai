@@ -9,10 +9,15 @@ interface AyahData {
   englishTranslation: string;
 }
 
+interface AyahResult {
+  ayahNumber: number;
+  correct: boolean;
+}
+
 interface AyahTypeRecallProps {
   ayahs: AyahData[];
   surahName: string;
-  onComplete: (correct: number, total: number) => void;
+  onComplete: (correct: number, total: number, results: AyahResult[]) => void;
 }
 
 // Normalize Arabic text for comparison (remove diacritics)
@@ -75,6 +80,7 @@ export default function AyahTypeRecall({ ayahs, surahName, onComplete }: AyahTyp
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [ayahResults, setAyahResults] = useState<AyahResult[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const currentAyah = ayahs[currentIndex];
@@ -92,6 +98,7 @@ export default function AyahTypeRecall({ ayahs, surahName, onComplete }: AyahTyp
     setIsCorrect(null);
     setCorrectCount(0);
     setIsComplete(false);
+    setAyahResults([]);
   }, [ayahs]);
 
   // Focus input when moving to next question
@@ -111,20 +118,30 @@ export default function AyahTypeRecall({ ayahs, surahName, onComplete }: AyahTyp
     if (isMatch) {
       setCorrectCount(prev => prev + 1);
     }
+
+    // Track this ayah's result
+    setAyahResults(prev => [...prev, {
+      ayahNumber: currentAyah.ayahNumber,
+      correct: isMatch
+    }]);
   }
 
   function handleSkip() {
     setShowAnswer(true);
     setIsCorrect(false);
+
+    // Track as incorrect when skipped
+    setAyahResults(prev => [...prev, {
+      ayahNumber: currentAyah.ayahNumber,
+      correct: false
+    }]);
   }
 
   function handleNext() {
     if (currentIndex + 1 >= ayahs.length) {
       setIsComplete(true);
-      onComplete(
-        isCorrect ? correctCount + 1 : correctCount,
-        ayahs.length
-      );
+      const finalCorrect = isCorrect ? correctCount + 1 : correctCount;
+      onComplete(finalCorrect, ayahs.length, ayahResults);
       return;
     }
 
@@ -143,6 +160,7 @@ export default function AyahTypeRecall({ ayahs, surahName, onComplete }: AyahTyp
     setIsCorrect(null);
     setCorrectCount(0);
     setIsComplete(false);
+    setAyahResults([]);
   }
 
   function toggleHint() {

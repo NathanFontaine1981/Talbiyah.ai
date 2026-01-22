@@ -12,7 +12,12 @@ import {
   Info,
   BookOpen,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Mail,
+  Send,
+  CheckCircle2,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -84,7 +89,184 @@ const settingSections: SettingSection[] = [
   { id: 'lessons', title: 'Lessons', description: 'Duration, booking rules, insights', icon: BookOpen, color: 'purple' },
   { id: 'notifications', title: 'Notifications', description: 'Email settings, reminders', icon: Bell, color: 'amber' },
   { id: 'video', title: 'Video & Recording', description: 'Provider settings, auto-recording', icon: Video, color: 'rose' },
-  { id: 'gamification', title: 'Gamification', description: 'XP rewards, streak bonuses', icon: Shield, color: 'cyan' }
+  { id: 'gamification', title: 'Gamification', description: 'XP rewards, streak bonuses', icon: Shield, color: 'cyan' },
+  { id: 'email-testing', title: 'Email Testing', description: 'Send test emails to verify templates', icon: Mail, color: 'blue' }
+];
+
+// All email types with their test data
+const EMAIL_TYPES = [
+  {
+    type: 'welcome',
+    name: 'Welcome Email',
+    description: 'Sent to new users after signup',
+    data: {}
+  },
+  {
+    type: 'admin_new_signup',
+    name: 'Admin: New Signup',
+    description: 'Notifies admin of new user registrations',
+    data: {
+      user_name: 'Test User',
+      user_email: 'testuser@example.com',
+      user_role: 'student',
+      signup_time: new Date().toISOString(),
+      referral_code: 'ABC123'
+    }
+  },
+  {
+    type: 'lesson_reminder_1h',
+    name: 'Lesson Reminder (1 hour)',
+    description: 'Reminds students 1 hour before lesson',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      subject: 'Quran Recitation',
+      scheduled_time: new Date(Date.now() + 3600000).toISOString(),
+      lesson_url: 'https://talbiyah.ai/lesson/test-123'
+    }
+  },
+  {
+    type: 'lesson_time_changed',
+    name: 'Lesson Time Changed',
+    description: 'Notifies when lesson is rescheduled',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      old_time: new Date(Date.now() + 86400000).toISOString(),
+      new_time: new Date(Date.now() + 172800000).toISOString(),
+      subject: 'Quran Recitation'
+    }
+  },
+  {
+    type: 'lesson_cancelled',
+    name: 'Lesson Cancelled',
+    description: 'Notifies when lesson is cancelled',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      scheduled_time: new Date(Date.now() + 86400000).toISOString(),
+      subject: 'Quran Recitation',
+      reason: 'Teacher unavailable due to emergency'
+    }
+  },
+  {
+    type: 'teacher_message',
+    name: 'Teacher Message',
+    description: 'Notifies student of new message from teacher',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      message_preview: 'As-salamu alaykum, please review the verses we covered...',
+      lesson_subject: 'Quran Recitation'
+    }
+  },
+  {
+    type: 'tier_promotion',
+    name: 'Teacher Tier Promotion',
+    description: 'Congratulates teacher on tier upgrade',
+    data: {
+      new_tier_name: 'Gold',
+      new_tier_icon: '🥇',
+      hourly_rate: 25
+    }
+  },
+  {
+    type: 'tier_eligible_for_review',
+    name: 'Tier Eligible for Review',
+    description: 'Notifies teacher they qualify for tier upgrade',
+    data: {
+      eligible_tier_name: 'Gold',
+      hours_taught: 100,
+      average_rating: 4.8
+    }
+  },
+  {
+    type: 'lesson_acknowledged',
+    name: 'Lesson Acknowledged',
+    description: 'Confirms teacher accepted the booking',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      scheduled_time: new Date(Date.now() + 86400000).toISOString(),
+      subject: 'Quran Recitation'
+    }
+  },
+  {
+    type: 'lesson_declined',
+    name: 'Lesson Declined',
+    description: 'Notifies student when booking is declined',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      scheduled_time: new Date(Date.now() + 86400000).toISOString(),
+      reason: 'Schedule conflict with another commitment'
+    }
+  },
+  {
+    type: 'teacher_application_received',
+    name: 'Teacher Application Received',
+    description: 'Admin notification of new teacher application',
+    data: {
+      applicant_name: 'Muhammad Ali',
+      applicant_email: 'mali@example.com',
+      subjects: ['Quran', 'Arabic', 'Tajweed'],
+      education_level: 'Islamic Studies Degree'
+    }
+  },
+  {
+    type: 'referral_reward',
+    name: 'Referral Reward',
+    description: 'Notifies user of earned referral credits',
+    data: {
+      credits_earned: 5,
+      referred_name: 'Abdullah Khan',
+      total_credits: 15
+    }
+  },
+  {
+    type: 'hours_transferred',
+    name: 'Hours Transferred',
+    description: 'Notifies of teaching hours transfer',
+    data: {
+      hours_transferred: 10,
+      from_teacher: 'Ustadh Ahmad',
+      to_teacher: 'Ustadh Ibrahim',
+      is_sender: false
+    }
+  },
+  {
+    type: 'teacher_new_booking',
+    name: 'Teacher: New Booking',
+    description: 'Notifies teacher of new lesson booking',
+    data: {
+      student_name: 'Fatima Ali',
+      subject: 'Quran Recitation',
+      scheduled_time: new Date(Date.now() + 86400000).toISOString(),
+      duration_minutes: 60
+    }
+  },
+  {
+    type: 'teacher_approved',
+    name: 'Teacher Approved',
+    description: 'Congratulates teacher on application approval',
+    data: {}
+  },
+  {
+    type: 'credit_purchase_confirmation',
+    name: 'Credit Purchase Confirmation',
+    description: 'Confirms credit purchase',
+    data: {
+      credits: 10,
+      amount: 100,
+      pack_type: 'standard',
+      new_balance: 15
+    }
+  },
+  {
+    type: 'student_booking_confirmation',
+    name: 'Student Booking Confirmation',
+    description: 'Confirms lesson booking for student',
+    data: {
+      teacher_name: 'Ustadh Ahmad',
+      subject: 'Quran Recitation',
+      scheduled_time: new Date(Date.now() + 86400000).toISOString(),
+      duration_minutes: 60
+    }
+  }
 ];
 
 export default function AdminSettings() {
@@ -95,6 +277,50 @@ export default function AdminSettings() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>('general');
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Email testing state
+  const [emailStatuses, setEmailStatuses] = useState<Record<string, 'idle' | 'sending' | 'success' | 'error'>>({});
+  const [sendingAllEmails, setSendingAllEmails] = useState(false);
+
+  // Send a single test email
+  async function sendTestEmail(emailType: string, data: any) {
+    setEmailStatuses(prev => ({ ...prev, [emailType]: 'sending' }));
+
+    try {
+      const { error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          type: emailType,
+          recipient_email: 'contact@talbiyah.ai',
+          recipient_name: 'Talbiyah Admin',
+          data
+        }
+      });
+
+      if (error) throw error;
+
+      setEmailStatuses(prev => ({ ...prev, [emailType]: 'success' }));
+      toast.success(`${emailType} email sent successfully!`);
+    } catch (error) {
+      console.error(`Error sending ${emailType} email:`, error);
+      setEmailStatuses(prev => ({ ...prev, [emailType]: 'error' }));
+      toast.error(`Failed to send ${emailType} email`);
+    }
+  }
+
+  // Send all test emails
+  async function sendAllTestEmails() {
+    setSendingAllEmails(true);
+    toast.info('Sending all test emails to contact@talbiyah.ai...');
+
+    for (const email of EMAIL_TYPES) {
+      await sendTestEmail(email.type, email.data);
+      // Small delay between emails to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    setSendingAllEmails(false);
+    toast.success('All test emails sent! Check contact@talbiyah.ai inbox.');
+  }
 
   useEffect(() => {
     loadSettings();
@@ -485,6 +711,98 @@ export default function AdminSettings() {
                 <span className="text-gray-500 dark:text-gray-400">XP</span>
               </div>
             </SettingField>
+          </div>
+        </SettingsSection>
+
+        {/* Email Testing Section */}
+        <SettingsSection
+          section={settingSections[6]}
+          expanded={expandedSection === 'email-testing'}
+          onToggle={() => toggleSection('email-testing')}
+        >
+          <div className="space-y-6">
+            {/* Send All Button */}
+            <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Send All Test Emails</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Send all {EMAIL_TYPES.length} email types to contact@talbiyah.ai
+                </p>
+              </div>
+              <button
+                onClick={sendAllTestEmails}
+                disabled={sendingAllEmails}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-semibold transition flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingAllEmails ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Send All</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Individual Email Types */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900 dark:text-white">Or send individually:</h4>
+              <div className="grid gap-3">
+                {EMAIL_TYPES.map((email) => {
+                  const status = emailStatuses[email.type] || 'idle';
+                  return (
+                    <div
+                      key={email.type}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900 dark:text-white text-sm">
+                            {email.name}
+                          </span>
+                          {status === 'success' && (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          )}
+                          {status === 'error' && (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {email.description}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => sendTestEmail(email.type, email.data)}
+                        disabled={status === 'sending' || sendingAllEmails}
+                        className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {status === 'sending' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4" />
+                            <span>Send</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start space-x-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-amber-400">
+                All test emails will be sent to <strong>contact@talbiyah.ai</strong>.
+                Check your inbox (and spam folder) after sending.
+              </p>
+            </div>
           </div>
         </SettingsSection>
       </div>

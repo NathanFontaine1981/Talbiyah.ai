@@ -9,10 +9,15 @@ interface AyahData {
   englishTranslation: string;
 }
 
+interface AyahResult {
+  ayahNumber: number;
+  correct: boolean;
+}
+
 interface AyahMultipleChoiceProps {
   ayahs: AyahData[];
   surahName: string;
-  onComplete: (correct: number, total: number) => void;
+  onComplete: (correct: number, total: number, results: AyahResult[]) => void;
 }
 
 interface Question {
@@ -37,6 +42,7 @@ export default function AyahMultipleChoice({ ayahs, surahName, onComplete }: Aya
   const [showAnswer, setShowAnswer] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [ayahResults, setAyahResults] = useState<AyahResult[]>([]);
 
   // Generate questions with shuffled options
   const questions = useMemo(() => {
@@ -70,6 +76,7 @@ export default function AyahMultipleChoice({ ayahs, surahName, onComplete }: Aya
     setShowAnswer(false);
     setCorrectCount(0);
     setIsComplete(false);
+    setAyahResults([]);
   }, [ayahs]);
 
   function handleOptionSelect(index: number) {
@@ -78,18 +85,23 @@ export default function AyahMultipleChoice({ ayahs, surahName, onComplete }: Aya
     setSelectedOption(index);
     setShowAnswer(true);
 
-    if (index === currentQuestion.correctIndex) {
+    const isCorrect = index === currentQuestion.correctIndex;
+    if (isCorrect) {
       setCorrectCount(prev => prev + 1);
     }
+
+    // Track this ayah's result
+    setAyahResults(prev => [...prev, {
+      ayahNumber: currentQuestion.ayah.ayahNumber,
+      correct: isCorrect
+    }]);
   }
 
   function handleNext() {
     if (currentIndex + 1 >= questions.length) {
       setIsComplete(true);
-      onComplete(
-        selectedOption === currentQuestion.correctIndex ? correctCount + 1 : correctCount,
-        questions.length
-      );
+      const finalCorrect = selectedOption === currentQuestion.correctIndex ? correctCount + 1 : correctCount;
+      onComplete(finalCorrect, questions.length, ayahResults);
       return;
     }
 
@@ -104,6 +116,7 @@ export default function AyahMultipleChoice({ ayahs, surahName, onComplete }: Aya
     setShowAnswer(false);
     setCorrectCount(0);
     setIsComplete(false);
+    setAyahResults([]);
   }
 
   function getOptionStyle(index: number) {

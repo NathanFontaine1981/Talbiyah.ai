@@ -647,11 +647,26 @@ export default function DailyMaintenancePage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Back button */}
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            // Step back through the flow instead of exiting completely
+            if (selectedPromptSurah) {
+              // If in surah testing, go back to surah selection
+              setSelectedPromptSurah(null);
+              setRevealedAnswer(false);
+              setCurrentAyahIndex(0);
+              setAyahFirstWords([]);
+            } else if (showFirstWordPrompter) {
+              // If First Word Prompter is expanded, collapse it
+              setShowFirstWordPrompter(false);
+            } else {
+              // Otherwise go to dashboard
+              navigate('/dashboard');
+            }
+          }}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Dashboard
+          {selectedPromptSurah ? 'Back to Surah Selection' : showFirstWordPrompter ? 'Back' : 'Back to Dashboard'}
         </button>
 
         {/* Header */}

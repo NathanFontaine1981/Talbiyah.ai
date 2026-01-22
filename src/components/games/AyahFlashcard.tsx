@@ -9,10 +9,15 @@ interface AyahData {
   englishTranslation: string;
 }
 
+interface AyahResult {
+  ayahNumber: number;
+  correct: boolean;
+}
+
 interface AyahFlashcardProps {
   ayahs: AyahData[];
   surahName: string;
-  onComplete: (correct: number, total: number) => void;
+  onComplete: (correct: number, total: number, results: AyahResult[]) => void;
 }
 
 export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlashcardProps) {
@@ -22,6 +27,7 @@ export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlas
   const [unknownCount, setUnknownCount] = useState(0);
   const [reviewedAyahs, setReviewedAyahs] = useState<Set<number>>(new Set());
   const [isComplete, setIsComplete] = useState(false);
+  const [ayahResults, setAyahResults] = useState<AyahResult[]>([]);
 
   const currentAyah = ayahs[currentIndex];
   const progress = (reviewedAyahs.size / ayahs.length) * 100;
@@ -34,6 +40,7 @@ export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlas
     setUnknownCount(0);
     setReviewedAyahs(new Set());
     setIsComplete(false);
+    setAyahResults([]);
   }, [ayahs]);
 
   function handleFlip() {
@@ -45,7 +52,13 @@ export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlas
     newReviewed.add(currentIndex);
     setReviewedAyahs(newReviewed);
     setKnownCount(prev => prev + 1);
-    goToNext(newReviewed);
+
+    // Track this ayah as correct
+    const newResult: AyahResult = { ayahNumber: currentAyah.ayahNumber, correct: true };
+    const newResults = [...ayahResults, newResult];
+    setAyahResults(newResults);
+
+    goToNext(newReviewed, newResults, knownCount + 1);
   }
 
   function handleDontKnow() {
@@ -53,16 +66,22 @@ export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlas
     newReviewed.add(currentIndex);
     setReviewedAyahs(newReviewed);
     setUnknownCount(prev => prev + 1);
-    goToNext(newReviewed);
+
+    // Track this ayah as incorrect
+    const newResult: AyahResult = { ayahNumber: currentAyah.ayahNumber, correct: false };
+    const newResults = [...ayahResults, newResult];
+    setAyahResults(newResults);
+
+    goToNext(newReviewed, newResults, knownCount);
   }
 
-  function goToNext(reviewed: Set<number>) {
+  function goToNext(reviewed: Set<number>, results: AyahResult[], correctCount: number) {
     setIsFlipped(false);
 
     // Check if all ayahs have been reviewed
     if (reviewed.size >= ayahs.length) {
       setIsComplete(true);
-      onComplete(knownCount + 1, ayahs.length); // +1 because we just added one
+      onComplete(correctCount, ayahs.length, results);
       return;
     }
 
@@ -91,6 +110,7 @@ export default function AyahFlashcard({ ayahs, surahName, onComplete }: AyahFlas
     setUnknownCount(0);
     setReviewedAyahs(new Set());
     setIsComplete(false);
+    setAyahResults([]);
   }
 
   if (!currentAyah) {
