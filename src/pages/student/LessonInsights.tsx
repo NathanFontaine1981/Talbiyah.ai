@@ -643,8 +643,9 @@ function parseDialogues(content: string): DialogueLine[] {
 function parseTafsirPoints(content: string): TafsirPoint[] {
   const points: TafsirPoint[] = [];
 
-  // Split by ### Ayah headers
+  // First, try to split by ### Ayah headers (structured format)
   const sections = content.split(/(?=###\s*Ayah[s]?\s*\d)/i);
+  let foundStructuredFormat = false;
 
   for (const section of sections) {
     if (!section.trim()) continue;
@@ -652,6 +653,7 @@ function parseTafsirPoints(content: string): TafsirPoint[] {
     // Match ayah header like "### Ayah 34: فَإِذَا" or "### Ayahs 37-39: The Path"
     const headerMatch = section.match(/###\s*Ayahs?\s*([\d\-]+)[:\s]*(.*)/i);
     if (!headerMatch) continue;
+    foundStructuredFormat = true;
 
     const ayahRef = headerMatch[1].includes('-') ? `Ayahs ${headerMatch[1]}` : `Ayah ${headerMatch[1]}`;
     const headerRest = headerMatch[2] || '';
@@ -752,6 +754,86 @@ function parseTafsirPoints(content: string): TafsirPoint[] {
         reflection: reflection.trim() || undefined,
         scholarQuotes: scholarQuotes.length > 0 ? scholarQuotes : undefined
       });
+    }
+  }
+
+  // FALLBACK: If no structured ### Ayah format found, parse paragraph-style tafsir
+  // This handles "Flow of Meaning" style content that's written as prose
+  if (!foundStructuredFormat || points.length === 0) {
+    // Split content into paragraphs
+    const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 50);
+
+    if (paragraphs.length > 0) {
+      // Try to identify themed sections by looking for "Ayat X-Y:" patterns or thematic breaks
+      let currentTheme = 'Tafsir Overview';
+      let currentContent = '';
+      let pointIndex = 0;
+
+      for (const para of paragraphs) {
+        const trimmed = para.trim();
+
+        // Skip headers and separators
+        if (trimmed.startsWith('#') || trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 100) {
+          // Check if it's a theme header like "**Ayat 1-5: The Opening**"
+          const themeMatch = trimmed.match(/\*\*(?:Ayat?s?\s*)?([\d\-]+)?[:\s]*([^*]+)\*\*/i);
+          if (themeMatch) {
+            // Save previous content if any
+            if (currentContent.trim()) {
+              points.push({
+                ayahRef: currentTheme,
+                arabic: '',
+                translation: '',
+                tafsir: currentContent.trim(),
+              });
+            }
+            currentTheme = themeMatch[1] ? `Ayat ${themeMatch[1]}: ${themeMatch[2].trim()}` : themeMatch[2].trim();
+            currentContent = '';
+          }
+          continue;
+        }
+
+        // Check if paragraph starts with an ayah reference pattern
+        const ayahRefMatch = trimmed.match(/^(?:Ayat?s?\s*)?([\d]+(?:\s*[-–]\s*[\d]+)?)[:\s]+(.+)/i);
+        if (ayahRefMatch) {
+          // Save previous content if any
+          if (currentContent.trim()) {
+            points.push({
+              ayahRef: currentTheme,
+              arabic: '',
+              translation: '',
+              tafsir: currentContent.trim(),
+            });
+          }
+          currentTheme = `Ayat ${ayahRefMatch[1]}`;
+          currentContent = ayahRefMatch[2];
+          continue;
+        }
+
+        // Regular paragraph - add to current content
+        currentContent += (currentContent ? '\n\n' : '') + trimmed;
+
+        // If content is getting long, create a point and start new one
+        if (currentContent.length > 800) {
+          points.push({
+            ayahRef: currentTheme || `Section ${++pointIndex}`,
+            arabic: '',
+            translation: '',
+            tafsir: currentContent.trim(),
+          });
+          currentContent = '';
+          currentTheme = '';
+        }
+      }
+
+      // Don't forget the last section
+      if (currentContent.trim()) {
+        points.push({
+          ayahRef: currentTheme || 'Tafsir Summary',
+          arabic: '',
+          translation: '',
+          tafsir: currentContent.trim(),
+        });
+      }
     }
   }
 
@@ -964,8 +1046,10 @@ function parseInsightSections(content: string): InsightSection[] {
   const matches: { title: string; start: number }[] = [];
 
   // Extended regex to match Arabic, Quran, and general section headers
-  // Handles formats like: "## Section Name", "**1. Section Name**", "1. **Section Name**", "**Section Name**"
-  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d️⃣|\d+[.)]?\s*)?\**(?:\d+[.)]\s*)?\s*(Lesson Summary|Lesson Information|Key Sentences|Key Verses|Vocabulary|Focus Words|Key Arabic Vocabulary|Arabic Vocabulary|Verses Covered|First Word Prompter|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Tafsir|Flow of Meaning|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Key Lessons|Lessons & Tadabbur|Tadabbur Points|Mini Quiz|Comprehension Check|Homework|Practice Tasks|Weekly Reflection|Reflection Questions|Flashcard Challenge|Summary Takeaway|Talbiyah Insights Summary|Final Reflection|Summary & Key Takeaway)(?:\s*\([^)]*\))?\**\s*/i;
+  // Handles formats like: "## Section Name", "**1. Section Name**", "1. **Section Name**", "**Section Name**", "## **1️⃣ Section Name**"
+  // Also handles multi-digit keycaps (11️⃣) and special keycaps (🔟)
+  // Allows arbitrary text after section name before optional parentheses (e.g., "Vocabulary List (with Tashkīl)")
+  const sectionPattern = /^(?:#{1,3}\s*)?(?:\d+️⃣|🔟|\d+[.)]?\s*)?\**(?:\d+️⃣\s*|🔟\s*|\d+[.)]\s*)?\s*(Lesson Summary|Lesson Information|Key Sentences|Key Verses|Vocabulary|Focus Words|Key Arabic Vocabulary|Arabic Vocabulary|Verses Covered|First Word Prompter|Grammar Focus|Grammar Points|Teacher Notes|Tajweed Points|Tafsir Points|Tafsir|Flow of Meaning|Memorisation Progress|Memorization Progress|Conversation Practice|Role-?Play|Pronunciation|Key Takeaways|Key Lessons|Lessons & Tadabbur|Tadabbur Points|Mini Quiz|Comprehension Check|Homework|Practice Tasks|Weekly Reflection|Reflection Questions|Flashcard Challenge|Summary Takeaway|Talbiyah Insights Summary|Final Reflection|Summary & Key Takeaway)(?:[^*\n]*?)(?:\s*\([^)]*\))?\**\s*/i;
 
   for (const line of lines) {
     const headerMatch = line.match(sectionPattern);
@@ -992,7 +1076,7 @@ function parseInsightSections(content: string): InsightSection[] {
     else if (titleLower.includes('sentence') || titleLower.includes('verses covered') || titleLower.includes('key verses')) type = 'sentences';
     else if (titleLower.includes('first word prompter')) type = 'prompter';
     else if (titleLower.includes('grammar') || titleLower.includes('tajweed')) type = 'grammar';
-    else if (titleLower.includes('tafsir') || titleLower.includes('flow of meaning')) type = 'tafsir';
+    else if (titleLower.includes('tafsir') || titleLower.includes('tafsīr') || titleLower.includes('flow of meaning')) type = 'tafsir';
     else if (titleLower.includes('notes') || titleLower.includes('correction')) type = 'notes';
     else if (titleLower.includes('key lessons') || titleLower.includes('tadabbur') || titleLower.includes('lessons &')) type = 'takeaways';
     else if (titleLower.includes('conversation') || titleLower.includes('role')) type = 'dialogue';

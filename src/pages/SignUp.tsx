@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle, Compass } from 'lucide-react';
+import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle, Compass, Phone } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { validateEmail } from '../utils/emailValidation';
@@ -22,7 +22,7 @@ export default function SignUp() {
   );
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [authForm, setAuthForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+  const [authForm, setAuthForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [referralCode, setReferralCode] = useState(referralCodeFromUrl || '');
   const [referrerName, setReferrerName] = useState<string | null>(null);
   const [referralValidation, setReferralValidation] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
@@ -147,6 +147,18 @@ export default function SignUp() {
       return;
     }
 
+    if (!authForm.phone.trim()) {
+      setAuthError('Please enter your phone number');
+      return;
+    }
+
+    // Basic phone validation - allow digits, spaces, plus, hyphens, parentheses
+    const phoneRegex = /^[+]?[\d\s()-]{8,20}$/;
+    if (!phoneRegex.test(authForm.phone.trim())) {
+      setAuthError('Please enter a valid phone number');
+      return;
+    }
+
     // Validate email before signup
     const emailValidation = validateEmail(authForm.email);
     if (!emailValidation.valid) {
@@ -176,6 +188,7 @@ export default function SignUp() {
         options: {
           data: {
             full_name: authForm.fullName.trim(),
+            phone: authForm.phone.trim(),
             selected_role: selectedRole,
             referral_code: referralCode.trim() || null
           }
@@ -202,6 +215,7 @@ export default function SignUp() {
           .upsert({
             id: data.user.id,
             full_name: authForm.fullName.trim(),
+            phone: authForm.phone.trim(),
             role: selectedRole,  // Set the singular role field
             roles: roles,
             referral_code: selectedRole === 'explorer' ? null : newReferralCode, // No referral for explorers
@@ -534,6 +548,25 @@ export default function SignUp() {
                   <span>{emailError}</span>
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4" />
+                  <span>Phone Number</span>
+                  <span className="text-xs text-red-500">*</span>
+                </div>
+              </label>
+              <input
+                type="tel"
+                required
+                value={authForm.phone}
+                onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="+44 7123 456789"
+              />
+              <p className="text-gray-500 text-xs mt-1">We'll use this to contact you about lessons</p>
             </div>
 
             <div>

@@ -67,12 +67,13 @@ serve(async (req) => {
       throw new Error('Failed to fetch admin list');
     }
 
+    // If no admins found, use fallback email
+    const adminList = (!admins || admins.length === 0)
+      ? [{ id: 'fallback', email: 'contact@talbiyah.ai', full_name: 'Admin' }]
+      : admins;
+
     if (!admins || admins.length === 0) {
-      console.log('No admins found to notify');
-      return new Response(
-        JSON.stringify({ message: "No admins to notify" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log('No admins found in database, using fallback email: contact@talbiyah.ai');
     }
 
     // Check if Resend API key is configured
@@ -224,8 +225,8 @@ serve(async (req) => {
       </html>
     `;
 
-    // Send email to all admins
-    const emailPromises = admins.map(async (admin) => {
+    // Send email to all admins (or fallback)
+    const emailPromises = adminList.map(async (admin) => {
       if (!admin.email) return null;
 
       try {
@@ -267,7 +268,7 @@ serve(async (req) => {
       .update({ admin_notified: true })
       .eq('id', payload.flag_id);
 
-    console.log(`Admin alerts sent: ${successCount}/${admins.length}`);
+    console.log(`Admin alerts sent: ${successCount}/${adminList.length}`);
 
     return new Response(
       JSON.stringify({

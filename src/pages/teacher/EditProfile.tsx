@@ -304,7 +304,7 @@ export default function EditProfile() {
       // Get teacher profile
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id, bio, hourly_rate, video_intro_url, youtube_intro_url, education_level')
+        .select('id, bio, hourly_rate, video_intro_url, youtube_intro_url, education_level, status')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -312,6 +312,12 @@ export default function EditProfile() {
 
       if (!teacherProfile) {
         setError('Teacher profile not found');
+        return;
+      }
+
+      // Only approved teachers can access this page
+      if (teacherProfile.status !== 'approved') {
+        navigate('/teacher/pending-approval');
         return;
       }
 

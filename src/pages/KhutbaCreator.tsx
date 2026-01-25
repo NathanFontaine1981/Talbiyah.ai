@@ -19,11 +19,18 @@ import {
   Save,
   FolderOpen,
   Trash2,
-  X
+  X,
+  Coins,
+  Gift
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { generateKhutbaHTML } from '../utils/generateKhutbaHTML';
+
+// Token costs
+const KHUTBAH_TEXT_TOKEN_COST = 20; // After 2 free per month
+const KHUTBAH_AUDIO_TOKEN_COST = 25;
+const FREE_KHUTBAHS_PER_MONTH = 2;
 
 // Khutba Structure Types
 interface KhutbaSection {
@@ -227,6 +234,14 @@ export default function KhutbaCreator() {
   const [savedKhutbahs, setSavedKhutbahs] = useState<any[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
+  // Token and usage state
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
+  const [monthlyUsage, setMonthlyUsage] = useState<{ current_count: number; remaining_free: number }>({
+    current_count: 0,
+    remaining_free: FREE_KHUTBAHS_PER_MONTH
+  });
+  const [downloadingAudio, setDownloadingAudio] = useState(false);
+
   // Check if user is admin and get user ID
   useEffect(() => {
     const checkAdmin = async () => {
@@ -239,10 +254,37 @@ export default function KhutbaCreator() {
           .eq('id', user.id)
           .single();
         setIsAdmin(profile?.roles?.includes('admin') || false);
+
+        // Load token balance and monthly usage
+        loadTokenBalance(user.id);
+        loadMonthlyUsage(user.id);
       }
     };
     checkAdmin();
   }, []);
+
+  // Load token balance
+  const loadTokenBalance = async (uid: string) => {
+    const { data } = await supabase
+      .from('user_tokens')
+      .select('tokens_remaining')
+      .eq('user_id', uid)
+      .maybeSingle();
+    setTokenBalance(data?.tokens_remaining || 0);
+  };
+
+  // Load monthly khutbah usage
+  const loadMonthlyUsage = async (uid: string) => {
+    const { data, error } = await supabase.rpc('check_khutbah_usage', {
+      p_user_id: uid
+    });
+    if (!error && data) {
+      setMonthlyUsage({
+        current_count: data.current_count || 0,
+        remaining_free: data.remaining_free || FREE_KHUTBAHS_PER_MONTH
+      });
+    }
+  };
 
   // Cleanup audio URL on unmount
   useEffect(() => {
@@ -411,12 +453,47 @@ export default function KhutbaCreator() {
     setIsPlaying(false);
   };
 
-  const downloadAudio = () => {
-    if (!audioUrl || !khutba) return;
-    const link = document.createElement('a');
-    link.href = audioUrl;
-    link.download = `khutba-${khutba.title.replace(/\s+/g, '-').toLowerCase()}.mp3`;
-    link.click();
+  const downloadAudio = async () => {
+    if (!audioUrl || !khutba || !userId) return;
+
+    if (tokenBalance < KHUTBAH_AUDIO_TOKEN_COST) {
+      toast.error(`You need ${KHUTBAH_AUDIO_TOKEN_COST} tokens to download audio.`, {
+        action: {
+          label: 'Buy Tokens',
+          onClick: () => navigate('/buy-credits?tab=tokens')
+        }
+      });
+      return;
+    }
+
+    setDownloadingAudio(true);
+    try {
+      // Deduct tokens
+      const { data: deductResult, error: deductError } = await supabase.rpc('deduct_user_tokens', {
+        p_user_id: userId,
+        p_tokens: KHUTBAH_AUDIO_TOKEN_COST,
+        p_feature: 'khutbah_audio',
+        p_notes: `Downloaded audio for khutbah: ${khutba.title}`
+      });
+
+      if (deductError || !deductResult?.success) {
+        throw new Error(deductResult?.error || 'Failed to deduct tokens');
+      }
+      setTokenBalance(deductResult.new_balance);
+
+      // Download the file
+      const link = document.createElement('a');
+      link.href = audioUrl;
+      link.download = `khutba-${khutba.title.replace(/\s+/g, '-').toLowerCase()}.mp3`;
+      link.click();
+
+      toast.success(`Audio downloaded! ${KHUTBAH_AUDIO_TOKEN_COST} tokens used.`);
+    } catch (error: any) {
+      console.error('Error downloading audio:', error);
+      toast.error(error.message || 'Error downloading audio');
+    } finally {
+      setDownloadingAudio(false);
+    }
   };
 
   // Load saved khutbahs
@@ -539,13 +616,44 @@ export default function KhutbaCreator() {
     const topicToUse = selectedTopic || topic.trim();
     if (!topicToUse || loading) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Check if user needs to pay tokens (after free limit)
+    const needsTokens = monthlyUsage.remaining_free <= 0;
+
+    if (needsTokens && user) {
+      if (tokenBalance < KHUTBAH_TEXT_TOKEN_COST) {
+        toast.error(`You've used your ${FREE_KHUTBAHS_PER_MONTH} free khutbahs this month. You need ${KHUTBAH_TEXT_TOKEN_COST} tokens for additional khutbahs.`, {
+          action: {
+            label: 'Buy Tokens',
+            onClick: () => navigate('/buy-credits?tab=tokens')
+          }
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     setKhutba(null);
     setSaved(false);
     setSavedKhutbahId(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Deduct tokens if beyond free limit
+      if (needsTokens && user) {
+        const { data: deductResult, error: deductError } = await supabase.rpc('deduct_user_tokens', {
+          p_user_id: user.id,
+          p_tokens: KHUTBAH_TEXT_TOKEN_COST,
+          p_feature: 'khutbah_text',
+          p_notes: `Generated khutbah: ${topicToUse}`
+        });
+
+        if (deductError || !deductResult?.success) {
+          throw new Error(deductResult?.error || 'Failed to deduct tokens');
+        }
+        setTokenBalance(deductResult.new_balance);
+        toast.success(`${KHUTBAH_TEXT_TOKEN_COST} tokens used`);
+      }
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-khutba`,
@@ -571,6 +679,13 @@ export default function KhutbaCreator() {
 
       const result = await response.json();
       setKhutba(result);
+
+      // Increment usage count
+      if (user) {
+        await supabase.rpc('increment_khutbah_usage', { p_user_id: user.id });
+        // Reload usage
+        loadMonthlyUsage(user.id);
+      }
 
       setTimeout(() => {
         khutbaRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -680,14 +795,38 @@ export default function KhutbaCreator() {
               </div>
             </div>
 
+            {/* Token and Usage Display */}
             {userId && (
-              <button
-                onClick={toggleSavedKhutbahs}
-                className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition border border-emerald-200"
-              >
-                <FolderOpen className="w-5 h-5" />
-                <span>My Saved Khutbahs</span>
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Free usage indicator */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-sm">
+                  <Gift className="w-4 h-4 text-green-600" />
+                  <span className="text-green-700">
+                    {monthlyUsage.remaining_free > 0 ? (
+                      <>{monthlyUsage.remaining_free} free left</>
+                    ) : (
+                      <span className="text-amber-600">Free limit reached</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Token balance */}
+                <button
+                  onClick={() => navigate('/buy-credits?tab=tokens')}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-lg text-sm transition"
+                >
+                  <Coins className="w-4 h-4 text-violet-600" />
+                  <span className="text-violet-700 font-medium">{tokenBalance} tokens</span>
+                </button>
+
+                <button
+                  onClick={toggleSavedKhutbahs}
+                  className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition border border-emerald-200"
+                >
+                  <FolderOpen className="w-5 h-5" />
+                  <span>My Saved Khutbahs</span>
+                </button>
+              </div>
             )}
             {!userId && <div className="w-32"></div>}
           </div>
@@ -1014,10 +1153,16 @@ export default function KhutbaCreator() {
                     </button>
                     <button
                       onClick={downloadAudio}
-                      className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-gray-900 rounded-lg transition"
+                      disabled={downloadingAudio}
+                      className="flex items-center space-x-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition disabled:opacity-50"
                     >
-                      <Download className="w-4 h-4" />
+                      {downloadingAudio ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
                       <span>Download MP3</span>
+                      <span className="text-xs bg-violet-500 px-1.5 py-0.5 rounded">{KHUTBAH_AUDIO_TOKEN_COST} tokens</span>
                     </button>
                   </div>
                 </div>

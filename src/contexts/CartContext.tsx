@@ -13,6 +13,7 @@ export interface CartItem {
   price: number;
   created_at: string;
   expires_at: string;
+  lesson_tier?: 'standard' | 'premium';
 }
 
 interface ExpiryNotification {
@@ -120,7 +121,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         duration_minutes: item.duration_minutes,
         price: parseFloat(item.price),
         created_at: item.created_at,
-        expires_at: item.expires_at
+        expires_at: item.expires_at,
+        lesson_tier: item.lesson_tier || 'premium',
       }));
 
       setCartItems(formattedItems);
@@ -151,7 +153,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           subject_id: item.subject_id,
           scheduled_time: item.scheduled_time,
           duration_minutes: item.duration_minutes,
-          price: item.price
+          price: item.price,
+          lesson_tier: item.lesson_tier || 'premium',
         });
 
       if (error) throw error;

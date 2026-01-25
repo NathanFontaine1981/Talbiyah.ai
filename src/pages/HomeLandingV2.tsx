@@ -122,6 +122,7 @@ export default function HomeLandingV2() {
           </button>
 
           <div className="hidden md:flex items-center space-x-6">
+            <button onClick={() => navigate('/features')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Features</button>
             <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
             <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Foundations</button>
 

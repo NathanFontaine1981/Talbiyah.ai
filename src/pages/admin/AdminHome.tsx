@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight } from 'lucide-react';
+import { Users, GraduationCap, Calendar, BookCheck, UserPlus, CalendarPlus, BookOpen, TrendingUp, Megaphone, Database, Activity, Video, CheckCircle, DollarSign, Heart, RefreshCw, Bell, X, AlertCircle, AlertTriangle, Award, ArrowRight, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import ThemeToggle from '../../components/ThemeToggle';
+import { toast } from 'sonner';
 
 interface DashboardStats {
   totalStudents: number;
@@ -83,6 +84,105 @@ export default function AdminHome() {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
+  }
+
+  async function sendTestEmail() {
+    try {
+      toast.info('Sending test email to contact@talbiyah.ai...');
+
+      const { data, error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          type: 'admin_new_signup',
+          recipient_email: 'contact@talbiyah.ai',
+          recipient_name: 'Talbiyah Admin',
+          data: {
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+            user_role: 'student',
+            signup_time: new Date().toISOString(),
+            referral_code: null
+          }
+        }
+      });
+
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        toast.error(`Email failed: ${error.message || JSON.stringify(error)}`);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Email service error:', data.error);
+        toast.error(`Email service error: ${data.error}`);
+        return;
+      }
+
+      toast.success(`Test email sent! Email ID: ${data?.email_id || 'unknown'}`);
+      console.log('Email sent successfully:', data);
+    } catch (error: any) {
+      console.error('Test email error:', error);
+      toast.error(`Failed: ${error.message || 'Unknown error'}`);
+    }
+  }
+
+  async function resendLastSignupNotifications() {
+    try {
+      toast.info('Fetching last 5 signups...');
+
+      // Get the last 5 signups
+      const { data: recentSignups, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, roles, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      if (!recentSignups || recentSignups.length === 0) {
+        toast.error('No recent signups found');
+        return;
+      }
+
+      toast.info(`Sending ${recentSignups.length} notification emails...`);
+
+      // Send notification for each signup
+      for (const user of recentSignups) {
+        const userRole = user.roles?.includes('teacher') ? 'teacher' :
+                        user.roles?.includes('parent') ? 'parent' : 'student';
+
+        try {
+          const { data, error: emailError } = await supabase.functions.invoke('send-notification-email', {
+            body: {
+              type: 'admin_new_signup',
+              recipient_email: 'contact@talbiyah.ai',
+              recipient_name: 'Talbiyah Admin',
+              data: {
+                user_name: user.full_name || 'Unknown',
+                user_email: user.email || 'No email',
+                user_role: userRole,
+                signup_time: user.created_at,
+                referral_code: null
+              }
+            }
+          });
+
+          if (emailError) {
+            console.error(`Failed for ${user.full_name}:`, emailError);
+          } else {
+            console.log(`Sent notification for: ${user.full_name}`, data);
+          }
+        } catch (emailError) {
+          console.error(`Failed to send notification for ${user.full_name}:`, emailError);
+        }
+      }
+
+      toast.success(`Sent ${recentSignups.length} signup notifications to contact@talbiyah.ai`);
+    } catch (error) {
+      console.error('Error resending notifications:', error);
+      toast.error('Failed to resend notifications');
+    }
   }
 
   async function fetchStats() {
@@ -561,6 +661,18 @@ export default function AdminHome() {
             onClick={() => setShowAnnouncement(true)}
             color="amber"
           />
+          <ActionButton
+            icon={Mail}
+            label="Test Email Setup"
+            onClick={sendTestEmail}
+            color="red"
+          />
+          <ActionButton
+            icon={Mail}
+            label="Resend Last 5 Signup Emails"
+            onClick={resendLastSignupNotifications}
+            color="pink"
+          />
         </div>
       </div>
 
@@ -640,6 +752,8 @@ function ActionButton({ icon: Icon, label, onClick, color }: any) {
     blue: 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400',
     purple: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-400',
     amber: 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20 text-amber-400',
+    pink: 'bg-pink-500/10 hover:bg-pink-500/20 border-pink-500/20 text-pink-400',
+    red: 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400',
   };
 
   return (

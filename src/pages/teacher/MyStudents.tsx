@@ -97,11 +97,17 @@ export default function MyStudents() {
 
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, status')
         .eq('user_id', user.id)
         .single();
 
       if (profileError || !teacherProfile) throw new Error('Teacher profile not found');
+
+      // Only approved teachers can access this page
+      if (teacherProfile.status !== 'approved') {
+        navigate('/teacher/pending-approval');
+        return;
+      }
 
       // Fetch relationships for this teacher
       const { data: relationships, error: relError } = await supabase

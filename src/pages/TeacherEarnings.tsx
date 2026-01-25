@@ -76,13 +76,19 @@ export default function TeacherEarnings() {
 
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, status')
         .eq('user_id', user.id)
         .single();
 
       if (profileError || !teacherProfile) {
         setIsTeacher(false);
         setLoading(false);
+        return;
+      }
+
+      // Only approved teachers can access this page
+      if (teacherProfile.status !== 'approved') {
+        navigate('/teacher/pending-approval');
         return;
       }
 

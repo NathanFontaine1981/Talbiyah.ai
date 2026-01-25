@@ -104,38 +104,35 @@ serve(async (req) => {
 
     // IDEMPOTENCY CHECK: Prevent duplicate event processing
     // Check if this event has already been processed
-    const { data: existingEvent } = await supabaseClient
-      .from('processed_webhook_events')
-      .select('id')
-      .eq('event_id', event.id)
-      .single()
+    try {
+      const { data: existingEvent } = await supabaseClient
+        .from('processed_webhook_events')
+        .select('id')
+        .eq('event_id', event.id)
+        .single()
 
-    if (existingEvent) {
-      console.log(`Event ${event.id} already processed, skipping`)
-      return new Response(
-        JSON.stringify({ received: true, duplicate: true }),
-        {
-          headers: { ...stripeWebhookHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      if (existingEvent) {
+        console.log(`Event ${event.id} already processed, skipping`)
+        return new Response(
+          JSON.stringify({ received: true, duplicate: true }),
+          {
+            headers: { ...stripeWebhookHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Record this event as being processed (do this BEFORE processing)
+      await supabaseClient
+        .from('processed_webhook_events')
+        .insert({
+          event_id: event.id,
+          event_type: event.type,
+          processed_at: new Date().toISOString()
+        })
+    } catch (idempotencyError) {
+      // Table might not exist yet - log and continue
+      console.warn('Idempotency check skipped:', idempotencyError instanceof Error ? idempotencyError.message : 'Unknown error')
     }
-
-    // Record this event as being processed (do this BEFORE processing)
-    await supabaseClient
-      .from('processed_webhook_events')
-      .insert({
-        event_id: event.id,
-        event_type: event.type,
-        processed_at: new Date().toISOString()
-      })
-      .catch(err => {
-        // If insert fails due to unique constraint, another process is handling it
-        if (err.code === '23505') {
-          console.log(`Event ${event.id} being processed by another instance`)
-          return
-        }
-        console.error('Failed to record webhook event:', err.message)
-      })
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -145,11 +142,98 @@ serve(async (req) => {
         const packType = session.metadata?.pack_type
         const pendingBookingId = session.metadata?.pending_booking_id
 
+        // Handle token purchase
+        const isTokenPurchase = session.metadata?.type === 'token_purchase'
+        if (isTokenPurchase) {
+          const userId = session.metadata.user_id
+          const tokens = parseInt(session.metadata.tokens)
+          const packageType = session.metadata.package_type
+          const amount = session.amount_total / 100 // Convert from pence to pounds
+
+          // Update token purchase record
+          const { error: updateError } = await supabaseClient
+            .from('token_purchases')
+            .update({
+              stripe_payment_intent_id: session.payment_intent,
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('stripe_checkout_session_id', session.id)
+
+          if (updateError) {
+            console.error('Failed to update token purchase record:', updateError.message);
+          }
+
+          // Add tokens to user balance using the database function
+          const { data: tokenResult, error: tokensError } = await supabaseClient
+            .rpc('add_user_tokens', {
+              p_user_id: userId,
+              p_tokens: tokens,
+              p_transaction_type: 'purchase',
+              p_notes: `Purchased ${packageType} token pack (${tokens} tokens)`
+            })
+
+          if (tokensError) {
+            console.error('Failed to add tokens:', tokensError.message);
+          }
+
+          // Log successful token payment
+          await logPaymentEvent(
+            supabaseClient,
+            req,
+            'payment_completed',
+            userId,
+            session.payment_intent as string,
+            amount,
+            { type: 'token_pack', package_type: packageType, tokens }
+          )
+
+          // Send confirmation email for token purchase
+          try {
+            const { data: userProfile } = await supabaseClient
+              .from('profiles')
+              .select('full_name')
+              .eq('id', userId)
+              .single()
+
+            if (session.customer_details?.email) {
+              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                },
+                body: JSON.stringify({
+                  type: 'token_purchase_confirmation',
+                  recipient_email: session.customer_details.email,
+                  recipient_name: userProfile?.full_name || 'Valued Customer',
+                  data: {
+                    tokens: tokens,
+                    amount: amount,
+                    package_type: packageType,
+                    new_balance: tokenResult?.new_balance || tokens
+                  }
+                })
+              })
+            }
+          } catch (emailErr) {
+            console.error('Failed to send token purchase email:', emailErr.message)
+          }
+
+          break
+        }
+
         if (packType) {
           // Handle credit pack purchase
           const userId = session.metadata.user_id
           const credits = parseInt(session.metadata.credits)
           const amount = session.amount_total / 100 // Convert from pence to pounds
+
+          // Determine bonus tokens based on pack type
+          let bonusTokens = 0
+          if (packType === 'light') bonusTokens = 100
+          else if (packType === 'standard') bonusTokens = 300
+          else if (packType === 'intensive') bonusTokens = 700
 
           // Create purchase record
           const { data: purchase, error: purchaseError } = await supabaseClient
@@ -183,6 +267,23 @@ serve(async (req) => {
 
           if (creditsError) {
             console.error('Failed to add credits:', creditsError.message);
+          }
+
+          // Add bonus tokens if applicable
+          if (bonusTokens > 0) {
+            const { error: bonusTokensError } = await supabaseClient
+              .rpc('add_user_tokens', {
+                p_user_id: userId,
+                p_tokens: bonusTokens,
+                p_transaction_type: 'bonus_from_credits',
+                p_notes: `Bonus tokens from ${packType} credit pack purchase`
+              })
+
+            if (bonusTokensError) {
+              console.error('Failed to add bonus tokens:', bonusTokensError.message);
+            } else {
+              console.log(`Added ${bonusTokens} bonus tokens for ${packType} credit purchase`)
+            }
           }
 
           // Log successful payment

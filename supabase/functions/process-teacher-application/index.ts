@@ -179,43 +179,43 @@ serve(async (req) => {
       .eq("id", application.id);
 
     // Send notification to admins
+    // Note: roles is an array field, use contains() instead of eq()
     const { data: admins } = await supabaseClient
       .from("profiles")
       .select("id, email, full_name")
-      .eq("role", "admin");
+      .contains("roles", ["admin"]);
 
-    if (admins && admins.length > 0) {
-      // Send email notification to first admin
-      const adminEmail = admins[0].email;
-      if (adminEmail) {
-        try {
-          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-          const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-          await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              type: "teacher_application_received",
-              recipient_email: adminEmail,
-              recipient_name: admins[0].full_name || "Admin",
-              data: {
-                applicant_name: user.full_name || "Unknown",
-                applicant_email: user.email,
-                subjects: selected_subjects || [],
-                education_level: qualifications?.education_level,
-              },
-            }),
-          });
-          console.log("✅ Admin notification sent for new teacher application");
-        } catch (emailError) {
-          console.error("Failed to send admin notification:", emailError);
-        }
-      }
-      console.log(`New ${requested_tier} tier application from ${user.email}`, admins);
+    // Use first admin's email or fallback to contact@talbiyah.ai
+    const adminEmail = admins?.[0]?.email || "contact@talbiyah.ai";
+    const adminName = admins?.[0]?.full_name || "Admin";
+
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          type: "teacher_application_received",
+          recipient_email: adminEmail,
+          recipient_name: adminName,
+          data: {
+            applicant_name: user.full_name || "Unknown",
+            applicant_email: user.email,
+            subjects: selected_subjects || [],
+            education_level: qualifications?.education_level,
+          },
+        }),
+      });
+      console.log("✅ Admin notification sent for new teacher application to", adminEmail);
+    } catch (emailError) {
+      console.error("Failed to send admin notification:", emailError);
     }
+
+    console.log(`New ${requested_tier} tier application from ${user.email}`, admins);
 
     return new Response(
       JSON.stringify({

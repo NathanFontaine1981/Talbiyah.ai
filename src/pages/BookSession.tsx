@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Check, Star, Clock, User, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, Check, Star, Clock, User, ShoppingCart, Sparkles, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
@@ -15,6 +15,7 @@ interface Teacher {
   bio: string | null;
   hourly_rate: number;
   rating: number;
+  is_legacy_assigned?: boolean;
 }
 
 interface TimeSlot {
@@ -65,10 +66,14 @@ export default function BookSession() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [isLegacyStudent, setIsLegacyStudent] = useState(false);
+  const [isFirstLegacyLesson, setIsFirstLegacyLesson] = useState(false);
+  const [assignedTeacherIds, setAssignedTeacherIds] = useState<string[]>([]);
 
   const subjectId = searchParams.get('subject');
 
   useEffect(() => {
+    checkLegacyStatus();
     loadSubject();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectId]);
@@ -78,7 +83,7 @@ export default function BookSession() {
       loadTeachers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, subjectId]);
+  }, [currentStep, subjectId, assignedTeacherIds]);
 
   useEffect(() => {
     if (currentStep === 3 && selectedTeacher) {
@@ -86,6 +91,47 @@ export default function BookSession() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, selectedTeacher, duration, selectedWeek]);
+
+  async function checkLegacyStatus() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if user is a legacy student
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_legacy_student')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.is_legacy_student) {
+        setIsLegacyStudent(true);
+
+        // Get assigned legacy teachers
+        const { data: assignments } = await supabase
+          .from('legacy_teacher_students')
+          .select('teacher_id')
+          .eq('student_id', user.id);
+
+        const teacherIds = (assignments || []).map(a => a.teacher_id);
+        setAssignedTeacherIds(teacherIds);
+
+        // Check if this is their first legacy lesson (for FOMO trial)
+        const { data: existingTrialLesson } = await supabase
+          .from('lessons')
+          .select('id')
+          .eq('learner_id', user.id)
+          .eq('free_insights_trial', true)
+          .not('status', 'in', '("cancelled_by_teacher","cancelled_by_student")')
+          .limit(1)
+          .single();
+
+        setIsFirstLegacyLesson(!existingTrialLesson);
+      }
+    } catch (error) {
+      console.error('Error checking legacy status:', error);
+    }
+  }
 
   async function loadSubject() {
     if (!subjectId) {
@@ -133,15 +179,21 @@ export default function BookSession() {
 
       if (error) throw error;
 
-      const formattedTeachers: Teacher[] = ((data || []) as RawTeacherData[]).map((item) => ({
+      let formattedTeachers: Teacher[] = ((data || []) as RawTeacherData[]).map((item) => ({
         id: item.teacher_profiles.id,
         user_id: item.teacher_profiles.user_id,
         full_name: item.teacher_profiles.profiles.full_name || 'Unknown Teacher',
         avatar_url: item.teacher_profiles.profiles.avatar_url,
         bio: item.teacher_profiles.profiles.bio,
         hourly_rate: parseFloat(String(item.teacher_profiles.hourly_rate)),
-        rating: item.teacher_profiles.rating || 5
+        rating: item.teacher_profiles.rating || 5,
+        is_legacy_assigned: assignedTeacherIds.includes(item.teacher_profiles.id),
       }));
+
+      // For legacy students, only show their assigned teachers
+      if (isLegacyStudent && assignedTeacherIds.length > 0) {
+        formattedTeachers = formattedTeachers.filter(t => assignedTeacherIds.includes(t.id));
+      }
 
       setTeachers(formattedTeachers);
     } catch (error) {
@@ -231,7 +283,11 @@ export default function BookSession() {
         await removeFromCart(existingCartItem.id);
       } else {
         // Add to cart if not already there
-        const price = duration === 30 ? 7.50 : 15.00;
+        // Legacy students: £6/30min, £12/60min (billed monthly)
+        // Regular students: £7.50/30min, £15/60min (paid upfront)
+        const price = isLegacyStudent
+          ? (duration === 30 ? 6.00 : 12.00)
+          : (duration === 30 ? 7.50 : 15.00);
 
         await addToCart({
           teacher_id: selectedTeacher.id,
@@ -240,7 +296,8 @@ export default function BookSession() {
           subject_name: subject.name,
           scheduled_time: slot.time.toISOString(),
           duration_minutes: duration,
-          price
+          price,
+          lesson_tier: isLegacyStudent ? 'standard' : 'premium',
         });
       }
     } catch (error) {
@@ -335,6 +392,23 @@ export default function BookSession() {
       </header>
 
       <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
+        {/* Legacy Student Banner */}
+        {isLegacyStudent && (
+          <div className="mb-6 bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="flex items-center justify-center gap-3">
+              <FileText className="w-5 h-5 text-amber-600" />
+              <span className="text-amber-800 font-medium">Legacy Account - Pay at month end</span>
+            </div>
+            {isFirstLegacyLesson && (
+              <div className="mt-2 flex items-center justify-center gap-2 text-emerald-600">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">Your first lesson includes FREE AI insights!</span>
+                <Sparkles className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Subject Header */}
         {subject && (
           <div className="mb-6 bg-emerald-50 rounded-xl p-4 border border-emerald-200">
@@ -457,7 +531,7 @@ export default function BookSession() {
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">30 Minutes</p>
-                      <p className="text-xl font-bold mt-1">£7.50</p>
+                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '6.00' : '7.50'}</p>
                       <p className="text-xs text-gray-400 mt-2">30-min slots</p>
                     </button>
 
@@ -471,7 +545,7 @@ export default function BookSession() {
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">60 Minutes</p>
-                      <p className="text-xl font-bold mt-1">£15.00</p>
+                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '12.00' : '15.00'}</p>
                       <p className="text-xs text-gray-400 mt-2">Hourly slots</p>
                     </button>
                   </div>

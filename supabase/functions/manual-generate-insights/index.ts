@@ -48,8 +48,19 @@ serve(async (req) => {
     const learnerName = (lesson.learners as any)?.name || "Student";
     const teacherName = (lesson.teacher_profiles as any)?.profiles?.full_name || "Teacher";
 
+    // Check if there's an existing insight with a title (may contain surah info)
+    const { data: existingInsight } = await supabase
+      .from('lesson_insights')
+      .select('title')
+      .eq('lesson_id', lesson_id)
+      .maybeSingle();
+
+    // Use existing insight title or subject name as lesson_title for surah parsing
+    const lessonTitle = existingInsight?.title || subjectName;
+
     console.log(`Generating insights for lesson ${lesson_id}:`, {
       subject: subjectName,
+      lessonTitle: lessonTitle,
       learner: learnerName,
       teacher: teacherName,
       transcript_length: transcript.length
@@ -78,6 +89,7 @@ serve(async (req) => {
         lesson_id: lesson.id,
         transcript: transcript,
         subject: subjectName,
+        lesson_title: lessonTitle, // Pass the title for surah parsing
         metadata: metadata,
       }),
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield, RotateCcw, AlertTriangle, UserPlus, FileText, ToggleLeft, ToggleRight, Star, Crown } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -15,10 +15,25 @@ interface User {
   deleted_at?: string;
   hard_delete_at?: string;
   deletion_reason?: string;
+  is_legacy_student?: boolean;
   teacher_profile?: {
     id: string;
     status: string;
+    is_legacy_teacher?: boolean;
   };
+}
+
+interface LegacyTeacherAssignment {
+  id: string;
+  teacher_id: string;
+  teacher_name: string;
+}
+
+interface AvailableTeacher {
+  id: string;
+  user_id: string;
+  full_name: string;
+  is_legacy_teacher: boolean;
 }
 
 interface UserStats {
@@ -27,10 +42,13 @@ interface UserStats {
   teachers: number;
   parents: number;
   admins: number;
+  legacyStudents: number;
+  legacyTeachers: number;
 }
 
 type RoleFilter = 'all' | 'student' | 'teacher' | 'parent' | 'admin';
 type StatusFilter = 'all' | 'active' | 'inactive' | 'pending';
+type TierFilter = 'all' | 'legacy' | 'standard';
 type SortOption = 'newest' | 'oldest' | 'name';
 
 export default function UserManagement() {
@@ -44,12 +62,15 @@ export default function UserManagement() {
     teachers: 0,
     parents: 0,
     admins: 0,
+    legacyStudents: 0,
+    legacyTeachers: 0,
   });
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [tierFilter, setTierFilter] = useState<TierFilter>('all');
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
   // Modals
@@ -61,13 +82,17 @@ export default function UserManagement() {
   // Bulk actions
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
+  // Legacy student management
+  const [showLegacyAssignment, setShowLegacyAssignment] = useState(false);
+  const [legacyAssignmentUser, setLegacyAssignmentUser] = useState<User | null>(null);
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
     applyFilters();
-  }, [searchQuery, roleFilter, statusFilter, sortOption, users]);
+  }, [searchQuery, roleFilter, statusFilter, tierFilter, sortOption, users]);
 
   async function fetchUsers() {
     try {
@@ -77,7 +102,7 @@ export default function UserManagement() {
         .from('profiles')
         .select(`
           *,
-          teacher_profile:teacher_profiles(id, status)
+          teacher_profile:teacher_profiles(id, status, is_legacy_teacher)
         `)
         .order('created_at', { ascending: false });
 
@@ -91,8 +116,10 @@ export default function UserManagement() {
       const teachers = data?.filter(u => u.roles?.includes('teacher')).length || 0;
       const parents = data?.filter(u => u.roles?.includes('parent')).length || 0;
       const admins = data?.filter(u => u.roles?.includes('admin')).length || 0;
+      const legacyStudents = data?.filter(u => u.is_legacy_student).length || 0;
+      const legacyTeachers = data?.filter(u => u.teacher_profile?.is_legacy_teacher).length || 0;
 
-      setStats({ total, students, teachers, parents, admins });
+      setStats({ total, students, teachers, parents, admins, legacyStudents, legacyTeachers });
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -142,6 +169,17 @@ export default function UserManagement() {
     } else if (statusFilter === 'pending') {
       filtered = filtered.filter(user =>
         user.teacher_profile && (user.teacher_profile as any).status === 'pending'
+      );
+    }
+
+    // Tier filter
+    if (tierFilter === 'legacy') {
+      filtered = filtered.filter(user =>
+        user.is_legacy_student || user.teacher_profile?.is_legacy_teacher
+      );
+    } else if (tierFilter === 'standard') {
+      filtered = filtered.filter(user =>
+        !user.is_legacy_student && !user.teacher_profile?.is_legacy_teacher
       );
     }
 
@@ -341,6 +379,74 @@ export default function UserManagement() {
       console.error(`Error ${action}ing user:`, error);
       toast.error(`Failed to ${action} user. Please try again.`);
     }
+  }
+
+  async function handleToggleLegacyStudent(user: User) {
+    const newStatus = !user.is_legacy_student;
+    const action = newStatus ? 'mark as legacy' : 'remove legacy status from';
+
+    if (!confirm(`Are you sure you want to ${action} ${user.full_name}?\n\n${newStatus ? 'Legacy students pay via monthly invoice instead of upfront payment.' : 'This student will need to pay upfront like regular students.'}`)) return;
+
+    try {
+      console.log('Updating legacy status for:', user.id, 'to:', newStatus);
+
+      const { error, count } = await supabase
+        .from('profiles')
+        .update({ is_legacy_student: newStatus })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      console.log('Update completed, rows affected:', count);
+
+      // Verify the update worked by fetching the user
+      const { data: verifyData } = await supabase
+        .from('profiles')
+        .select('is_legacy_student')
+        .eq('id', user.id)
+        .single();
+
+      console.log('Verified is_legacy_student:', verifyData?.is_legacy_student);
+
+      if (verifyData?.is_legacy_student !== newStatus) {
+        throw new Error('Update did not persist - check RLS policies in Supabase');
+      }
+
+      await fetchUsers();
+      toast.success(`${user.full_name} is now ${newStatus ? 'a legacy student' : 'a regular student'}`);
+    } catch (error: any) {
+      console.error('Error toggling legacy status:', error);
+      toast.error(error.message || 'Failed to update legacy status. Check RLS policies.');
+    }
+  }
+
+  async function handleToggleLegacyTeacher(user: User) {
+    if (!user.teacher_profile) return;
+
+    const newStatus = !user.teacher_profile.is_legacy_teacher;
+    const action = newStatus ? 'mark as legacy teacher' : 'remove legacy teacher status from';
+
+    if (!confirm(`Are you sure you want to ${action} ${user.full_name}?\n\n${newStatus ? 'Legacy teachers have grandfathered rates and billing terms.' : 'This teacher will use standard rates and billing.'}`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('teacher_profiles')
+        .update({ is_legacy_teacher: newStatus })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await fetchUsers();
+      toast.success(`${user.full_name} is now ${newStatus ? 'a legacy teacher' : 'a standard teacher'}`);
+    } catch (error) {
+      console.error('Error toggling legacy teacher status:', error);
+      toast.error('Failed to update legacy teacher status. Please try again.');
+    }
+  }
+
+  function handleManageLegacyTeachers(user: User) {
+    setLegacyAssignmentUser(user);
+    setShowLegacyAssignment(true);
   }
 
   function handleExportUsers() {
@@ -569,13 +675,56 @@ export default function UserManagement() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
         <StatCard icon={Users} label="Total Users" value={stats.total} color="blue" />
         <StatCard icon={Users} label="Students" value={stats.students} color="cyan" />
         <StatCard icon={GraduationCap} label="Teachers" value={stats.teachers} color="emerald" />
         <StatCard icon={Heart} label="Parents" value={stats.parents} color="pink" />
         <StatCard icon={Shield} label="Admins" value={stats.admins} color="purple" />
+        <StatCard icon={FileText} label="Legacy Students" value={stats.legacyStudents} color="amber" />
+        <StatCard icon={FileText} label="Legacy Teachers" value={stats.legacyTeachers} color="orange" />
       </div>
+
+      {/* Legacy Quick Actions */}
+      {(stats.legacyStudents > 0 || stats.legacyTeachers > 0) && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <FileText className="w-6 h-6 text-amber-400" />
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Legacy Users</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {stats.legacyStudents} legacy student{stats.legacyStudents !== 1 ? 's' : ''}, {stats.legacyTeachers} legacy teacher{stats.legacyTeachers !== 1 ? 's' : ''} (billed monthly at £12/hour)
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  setTierFilter('legacy');
+                  setRoleFilter('all');
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ${
+                  tierFilter === 'legacy'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>View All Legacy Users</span>
+              </button>
+              {tierFilter === 'legacy' && (
+                <button
+                  onClick={() => setTierFilter('all')}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
@@ -594,7 +743,7 @@ export default function UserManagement() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Role</label>
             <select
@@ -621,6 +770,19 @@ export default function UserManagement() {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="pending">Pending Approval</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Filter by Tier</label>
+            <select
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value as TierFilter)}
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            >
+              <option value="all">All Tiers</option>
+              <option value="legacy">Legacy Only</option>
+              <option value="standard">Standard Only</option>
             </select>
           </div>
 
@@ -691,6 +853,12 @@ export default function UserManagement() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Phone</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Role(s)</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center space-x-1">
+                    <span>Tier</span>
+                    <span className="text-amber-400">★</span>
+                  </div>
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Joined</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
               </tr>
@@ -698,7 +866,7 @@ export default function UserManagement() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                     No users found
                   </td>
                 </tr>
@@ -718,6 +886,9 @@ export default function UserManagement() {
                     onRestore={() => handleRestoreUser(user)}
                     onSendEmail={() => handleSendEmail(user)}
                     onSuspend={() => handleSuspendUser(user)}
+                    onToggleLegacy={() => handleToggleLegacyStudent(user)}
+                    onToggleLegacyTeacher={() => handleToggleLegacyTeacher(user)}
+                    onManageLegacyTeachers={() => handleManageLegacyTeachers(user)}
                   />
                 ))
               )}
@@ -752,6 +923,16 @@ export default function UserManagement() {
           }}
         />
       )}
+      {showLegacyAssignment && legacyAssignmentUser && (
+        <LegacyTeacherAssignmentModal
+          user={legacyAssignmentUser}
+          onClose={() => {
+            setShowLegacyAssignment(false);
+            setLegacyAssignmentUser(null);
+          }}
+          onSuccess={fetchUsers}
+        />
+      )}
     </div>
   );
 }
@@ -764,6 +945,8 @@ function StatCard({ icon: Icon, label, value, color }: any) {
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     pink: 'bg-pink-500/10 border-pink-500/20 text-pink-400',
     purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    orange: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
   };
 
   return (
@@ -778,7 +961,7 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 }
 
 // User Row Component
-function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onSoftDelete, onHardDelete, onRestore, onSendEmail, onSuspend }: any) {
+function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onSoftDelete, onHardDelete, onRestore, onSendEmail, onSuspend, onToggleLegacy, onToggleLegacyTeacher, onManageLegacyTeachers }: any) {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(user.roles || []);
@@ -813,10 +996,73 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
   }
 
   const isDeleted = !!user.deleted_at;
+  const isLegacy = user.is_legacy_student || user.teacher_profile?.is_legacy_teacher;
+  const isLegacyStudent = user.is_legacy_student;
+  const isLegacyTeacher = user.teacher_profile?.is_legacy_teacher;
+
+  // Determine tier styling
+  const getTierInfo = () => {
+    if (isLegacyStudent && isLegacyTeacher) {
+      return {
+        label: 'Legacy',
+        sublabel: 'Student & Teacher',
+        icon: Crown,
+        bgClass: 'bg-gradient-to-r from-amber-500/20 to-purple-500/20',
+        borderClass: 'border-amber-400',
+        textClass: 'text-amber-500',
+        iconClass: 'text-amber-400',
+      };
+    }
+    if (isLegacyStudent) {
+      return {
+        label: 'Legacy',
+        sublabel: 'Student',
+        icon: Star,
+        bgClass: 'bg-amber-500/15',
+        borderClass: 'border-amber-400',
+        textClass: 'text-amber-500',
+        iconClass: 'text-amber-400',
+      };
+    }
+    if (isLegacyTeacher) {
+      return {
+        label: 'Legacy',
+        sublabel: 'Teacher',
+        icon: Crown,
+        bgClass: 'bg-purple-500/15',
+        borderClass: 'border-purple-400',
+        textClass: 'text-purple-500',
+        iconClass: 'text-purple-400',
+      };
+    }
+    return {
+      label: 'Standard',
+      sublabel: null,
+      icon: null,
+      bgClass: '',
+      borderClass: '',
+      textClass: 'text-gray-400',
+      iconClass: '',
+    };
+  };
+
+  const tierInfo = getTierInfo();
+
+  // Row classes with premium highlighting for legacy users
+  const rowClasses = [
+    'transition relative',
+    isDeleted ? 'opacity-60 bg-red-500/5' : '',
+    isLegacy && !isDeleted ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.05]' : '',
+    'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+  ].filter(Boolean).join(' ');
 
   return (
-    <tr className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${isDeleted ? 'opacity-60 bg-red-500/5' : ''}`}>
-      <td className="px-4 py-4">
+    <tr className={rowClasses}>
+      {/* Gold left border for legacy users */}
+      {isLegacy && !isDeleted && (
+        <td className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-amber-500"></td>
+      )}
+      <td className={`px-4 py-4 ${isLegacy ? 'pl-5' : ''}`}>
         <input
           type="checkbox"
           checked={isSelected}
@@ -826,6 +1072,10 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center space-x-2">
+          {/* Legacy star icon next to name */}
+          {isLegacy && !isDeleted && (
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400 flex-shrink-0" />
+          )}
           <p className={`font-medium ${isDeleted ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
             {user.full_name || 'Unnamed User'}
           </p>
@@ -907,6 +1157,22 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
           )}
         </div>
       </td>
+      {/* NEW: Tier Column */}
+      <td className="px-4 py-4">
+        {isLegacy ? (
+          <div className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg border ${tierInfo.bgClass} ${tierInfo.borderClass}`}>
+            {tierInfo.icon && <tierInfo.icon className={`w-4 h-4 ${tierInfo.iconClass} ${isLegacyStudent ? 'fill-current' : ''}`} />}
+            <div className="flex flex-col">
+              <span className={`text-sm font-semibold ${tierInfo.textClass}`}>{tierInfo.label}</span>
+              {tierInfo.sublabel && (
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 -mt-0.5">{tierInfo.sublabel}</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <span className="text-sm text-gray-400 dark:text-gray-500">Standard</span>
+        )}
+      </td>
       <td className="px-4 py-4">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
           {format(new Date(user.created_at), 'MMM d, yyyy')}
@@ -965,6 +1231,63 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                   <Mail className="w-4 h-4" />
                   <span>Send Email</span>
                 </button>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                <button
+                  onClick={() => {
+                    onToggleLegacy();
+                    setShowActionsDropdown(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+                    user.is_legacy_student ? 'text-amber-500 dark:text-amber-400' : 'text-blue-500 dark:text-blue-400'
+                  }`}
+                >
+                  {user.is_legacy_student ? (
+                    <>
+                      <ToggleRight className="w-4 h-4" />
+                      <span>Remove Legacy Status</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-4 h-4" />
+                      <span>Mark as Legacy Student</span>
+                    </>
+                  )}
+                </button>
+                {user.is_legacy_student && (
+                  <button
+                    onClick={() => {
+                      onManageLegacyTeachers();
+                      setShowActionsDropdown(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-emerald-500 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Assign Legacy Teachers</span>
+                  </button>
+                )}
+                {user.teacher_profile && (
+                  <button
+                    onClick={() => {
+                      onToggleLegacyTeacher();
+                      setShowActionsDropdown(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+                      user.teacher_profile?.is_legacy_teacher ? 'text-purple-500 dark:text-purple-400' : 'text-indigo-500 dark:text-indigo-400'
+                    }`}
+                  >
+                    {user.teacher_profile?.is_legacy_teacher ? (
+                      <>
+                        <ToggleRight className="w-4 h-4" />
+                        <span>Remove Legacy Teacher</span>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-4 h-4" />
+                        <span>Mark as Legacy Teacher</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                 <button
                   onClick={() => {
@@ -1407,10 +1730,239 @@ function EditUserModal({ user, onClose, onSuccess }: any) {
   );
 }
 
+// Legacy Teacher Assignment Modal
+function LegacyTeacherAssignmentModal({ user, onClose, onSuccess }: { user: User; onClose: () => void; onSuccess: () => void }) {
+  const [assignments, setAssignments] = useState<LegacyTeacherAssignment[]>([]);
+  const [availableTeachers, setAvailableTeachers] = useState<AvailableTeacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchAvailableTeachers();
+  }, []);
+
+  async function fetchAssignments() {
+    try {
+      const { data, error } = await supabase
+        .from('legacy_teacher_students')
+        .select(`
+          id,
+          teacher_id,
+          teacher_profiles!inner(
+            id,
+            user_id,
+            profiles!inner(full_name)
+          )
+        `)
+        .eq('student_id', user.id);
+
+      if (error) throw error;
+
+      const formattedAssignments = (data || []).map((a: any) => ({
+        id: a.id,
+        teacher_id: a.teacher_profiles.id,
+        teacher_name: a.teacher_profiles.profiles.full_name,
+      }));
+
+      setAssignments(formattedAssignments);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      toast.error('Failed to load assigned teachers');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchAvailableTeachers() {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_profiles')
+        .select(`
+          id,
+          user_id,
+          is_legacy_teacher,
+          profiles!inner(full_name)
+        `)
+        .eq('status', 'approved');
+
+      if (error) throw error;
+
+      const formattedTeachers = (data || []).map((t: any) => ({
+        id: t.id,
+        user_id: t.user_id,
+        full_name: t.profiles.full_name,
+        is_legacy_teacher: t.is_legacy_teacher || false,
+      }));
+
+      setAvailableTeachers(formattedTeachers);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    }
+  }
+
+  async function handleAddTeacher() {
+    if (!selectedTeacherId) return;
+
+    setAdding(true);
+    try {
+      // Also mark the teacher as legacy if not already
+      const teacher = availableTeachers.find(t => t.id === selectedTeacherId);
+      if (teacher && !teacher.is_legacy_teacher) {
+        await supabase
+          .from('teacher_profiles')
+          .update({ is_legacy_teacher: true })
+          .eq('id', selectedTeacherId);
+      }
+
+      const { error } = await supabase
+        .from('legacy_teacher_students')
+        .insert({
+          teacher_id: selectedTeacherId,
+          student_id: user.id,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('This teacher is already assigned to this student');
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success('Teacher assigned successfully');
+        setSelectedTeacherId('');
+        await fetchAssignments();
+        await fetchAvailableTeachers();
+      }
+    } catch (error) {
+      console.error('Error assigning teacher:', error);
+      toast.error('Failed to assign teacher');
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function handleRemoveTeacher(assignmentId: string, teacherName: string) {
+    if (!confirm(`Remove ${teacherName} from ${user.full_name}'s assigned teachers?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('legacy_teacher_students')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast.success('Teacher removed successfully');
+      await fetchAssignments();
+    } catch (error) {
+      console.error('Error removing teacher:', error);
+      toast.error('Failed to remove teacher');
+    }
+  }
+
+  // Filter out already assigned teachers
+  const unassignedTeachers = availableTeachers.filter(
+    t => !assignments.some(a => a.teacher_id === t.id)
+  );
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 max-w-md w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-white">Assign Legacy Teachers</h3>
+            <p className="text-sm text-gray-400 mt-1">{user.full_name}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Add Teacher */}
+        <div className="mb-6">
+          <label className="block text-sm text-gray-400 mb-2">Add Teacher</label>
+          <div className="flex gap-2">
+            <select
+              value={selectedTeacherId}
+              onChange={(e) => setSelectedTeacherId(e.target.value)}
+              className="flex-1 px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">Select a teacher...</option>
+              {unassignedTeachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.full_name} {teacher.is_legacy_teacher ? '(Legacy)' : ''}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddTeacher}
+              disabled={!selectedTeacherId || adding}
+              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {adding ? (
+                <RefreshCw size={16} className="animate-spin" />
+              ) : (
+                <UserPlus size={16} />
+              )}
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Current Assignments */}
+        <div>
+          <label className="block text-sm text-gray-400 mb-2">Assigned Teachers</label>
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />
+            </div>
+          ) : assignments.length === 0 ? (
+            <p className="text-gray-500 text-sm py-4 text-center">No teachers assigned yet</p>
+          ) : (
+            <div className="space-y-2">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-lg border border-gray-600"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <GraduationCap size={16} className="text-emerald-400" />
+                    </div>
+                    <span className="text-white">{assignment.teacher_name}</span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveTeacher(assignment.id, assignment.teacher_name)}
+                    className="text-red-400 hover:text-red-300 p-1"
+                    title="Remove teacher"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-gray-700">
+          <p className="text-xs text-gray-500">
+            Legacy students can only book lessons with their assigned teachers.
+            Lessons are billed monthly at £12/hour.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // User Details Modal
 function UserDetailsModal({ user, onClose }: any) {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userCredits, setUserCredits] = useState<number | null>(null);
+  const [learners, setLearners] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUserDetails();
@@ -1427,6 +1979,27 @@ function UserDetailsModal({ user, onClose }: any) {
         .limit(10);
 
       setSessions(sessionData || []);
+
+      // Fetch user credits
+      const { data: creditsData } = await supabase
+        .from('user_credits')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (creditsData) {
+        setUserCredits(creditsData.balance);
+      }
+
+      // Fetch learners if parent
+      if (user.roles?.includes('parent')) {
+        const { data: learnersData } = await supabase
+          .from('learners')
+          .select('id, name, age, quran_level')
+          .eq('parent_id', user.id);
+
+        setLearners(learnersData || []);
+      }
     } catch (error) {
       console.error('Error fetching user details:', error);
     } finally {
@@ -1448,32 +2021,141 @@ function UserDetailsModal({ user, onClose }: any) {
         <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{user.full_name}</h4>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">{user.email}</p>
-              {user.phone && <p className="text-gray-500 dark:text-gray-400 text-sm">{user.phone}</p>}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {(user.roles || []).map((role: string) => (
-                <span key={role} className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded text-xs capitalize">
-                  {role}
-                </span>
-              ))}
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{user.full_name || 'Unnamed User'}</h4>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {(user.roles || []).map((role: string) => (
+                  <span key={role} className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded text-xs capitalize">
+                    {role}
+                  </span>
+                ))}
+                {user.is_legacy_student && (
+                  <span className="px-2 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded text-xs">
+                    Legacy Student
+                  </span>
+                )}
+                {user.teacher_profile?.is_legacy_teacher && (
+                  <span className="px-2 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded text-xs">
+                    Legacy Teacher
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          {/* Contact Details - Clickable */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center space-x-3">
+              <Mail className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                <a
+                  href={`mailto:${user.email}`}
+                  className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                >
+                  {user.email}
+                </a>
+              </div>
+              <a
+                href={`mailto:${user.email}`}
+                className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-sm transition flex items-center space-x-1"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Email</span>
+              </a>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Phone / Mobile</p>
+                {user.phone ? (
+                  <a
+                    href={`tel:${user.phone}`}
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                  >
+                    {user.phone}
+                  </a>
+                ) : (
+                  <p className="text-gray-400 italic">Not provided</p>
+                )}
+              </div>
+              {user.phone && (
+                <a
+                  href={`tel:${user.phone}`}
+                  className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm transition flex items-center space-x-1"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span>Call</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Account Details */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t border-gray-200 dark:border-gray-600 pt-4">
             <div>
-              <p className="text-gray-500 dark:text-gray-400">Joined</p>
-              <p className="text-gray-900 dark:text-white">{format(new Date(user.created_at), 'MMMM d, yyyy')}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">User ID</p>
+              <p className="text-gray-900 dark:text-white font-mono text-xs truncate" title={user.id}>{user.id.slice(0, 8)}...</p>
             </div>
             <div>
-              <p className="text-gray-500 dark:text-gray-400">Last Sign In</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Joined</p>
+              <p className="text-gray-900 dark:text-white">{format(new Date(user.created_at), 'MMM d, yyyy')}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Last Sign In</p>
               <p className="text-gray-900 dark:text-white">
                 {user.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'MMM d, yyyy') : 'Never'}
               </p>
             </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Credits Balance</p>
+              <p className="text-gray-900 dark:text-white font-semibold">
+                {userCredits !== null ? `${userCredits} credits` : '-'}
+              </p>
+            </div>
           </div>
+
+          {/* Deletion info if applicable */}
+          {user.deleted_at && (
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-sm font-medium">Account Deleted</p>
+              <p className="text-gray-400 text-xs mt-1">
+                Deleted on: {format(new Date(user.deleted_at), 'MMM d, yyyy')}
+                {user.deletion_reason && ` - Reason: ${user.deletion_reason}`}
+              </p>
+              {user.hard_delete_at && (
+                <p className="text-gray-400 text-xs">
+                  Permanent deletion scheduled: {format(new Date(user.hard_delete_at), 'MMM d, yyyy')}
+                </p>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Learners (if parent) */}
+        {user.roles?.includes('parent') && learners.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Children / Learners</h4>
+            <div className="space-y-2">
+              {learners.map((learner) => (
+                <div key={learner.id} className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-900 dark:text-white font-medium">{learner.name}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
+                        Age: {learner.age || 'N/A'} | Level: {learner.quran_level || 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sessions */}
         <div className="mb-6">

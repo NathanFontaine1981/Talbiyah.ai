@@ -370,10 +370,10 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find lesson by 100ms room_id
+    // Find lesson by 100ms room_id - include tier info for conditional processing
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
-      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status")
+      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status, lesson_tier, free_insights_trial")
       .eq("100ms_room_id", roomId)
       .single();
 
@@ -401,26 +401,54 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Determine what to generate based on tier
+    // Premium tier OR free_insights_trial gets full features
+    // Standard tier (legacy billing) gets no insights or recording saved
+    // Default to premium behavior if tier not set (backwards compatibility)
+    const lessonTier = lesson.lesson_tier || 'premium';
+    const freeInsightsTrial = lesson.free_insights_trial || false;
+
+    const shouldGenerateInsights =
+      lessonTier === 'premium' ||
+      freeInsightsTrial === true;
+
+    const shouldSaveRecording =
+      lessonTier === 'premium' ||
+      freeInsightsTrial === true;
+
+    console.log("Tier-based processing:", {
+      lesson_id: lesson.id,
+      lesson_tier: lessonTier,
+      free_insights_trial: freeInsightsTrial,
+      shouldGenerateInsights,
+      shouldSaveRecording,
+    });
+
     // Calculate expiry date (7 days from now for presigned URL)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Update lesson with recording URL directly
-    // The lessons table has recording_url and recording_expires_at columns
+    // Update lesson - only save recording URL for Premium tier or free trial
     console.log("Updating lesson with recording:", {
       lesson_id: lesson.id,
-      recording_url: recordingUrl?.substring(0, 50) + "...",
+      recording_url: shouldSaveRecording ? recordingUrl?.substring(0, 50) + "..." : "SKIPPED (standard tier)",
       expires_at: expiresAt.toISOString(),
       has_transcript: !!transcriptUrl,
     });
 
+    const updateData: Record<string, any> = {
+      status: "completed",
+    };
+
+    // Only save recording URL for Premium tier or free trial
+    if (shouldSaveRecording && recordingUrl) {
+      updateData.recording_url = recordingUrl;
+      updateData.recording_expires_at = expiresAt.toISOString();
+    }
+
     const { error: updateError } = await supabase
       .from("lessons")
-      .update({
-        recording_url: recordingUrl,
-        recording_expires_at: expiresAt.toISOString(),
-        status: "completed",
-      })
+      .update(updateData)
       .eq("id", lesson.id);
 
     if (updateError) {
@@ -677,7 +705,7 @@ Deno.serve(async (req: Request) => {
             "\n\n[... remainder of transcript truncated for processing ...]";
         }
 
-        if (fullTranscript.length > 100) {
+        if (fullTranscript.length > 100 && shouldGenerateInsights) {
           console.log("Calling generate-lesson-insights function, transcript length:", fullTranscript.length);
 
           // Determine metadata based on subject type
@@ -731,8 +759,10 @@ Deno.serve(async (req: Request) => {
             console.error("Failed to generate AI insights:", errorText);
             // Fall through to create basic insight
           }
+        } else if (shouldGenerateInsights) {
+          console.log("Transcript too short for AI insights, will create basic insight");
         } else {
-          console.log("Transcript too short, creating basic insight");
+          console.log("Standard tier lesson - skipping insight generation");
         }
       } catch (error) {
         console.error("Error processing transcript:", error);
@@ -747,7 +777,8 @@ Deno.serve(async (req: Request) => {
       .eq("lesson_id", lesson.id)
       .single();
 
-    if (!existingInsight) {
+    // Only create basic insight for Premium tier or free trial
+    if (!existingInsight && shouldGenerateInsights) {
       console.log("No AI insight created, generating basic insight...");
 
       const { error: insightError } = await supabase

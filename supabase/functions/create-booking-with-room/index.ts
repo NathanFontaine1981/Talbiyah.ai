@@ -39,7 +39,7 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method } = await req.json()
+    const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method, is_legacy_booking } = await req.json()
 
     if (!cart_items || cart_items.length === 0) {
       throw new Error('No cart items provided')
@@ -51,6 +51,22 @@ serve(async (req) => {
 
     // Check if paying with credits
     const isCreditsPayment = payment_method === 'credits'
+
+    // Legacy billing: check if this learner has used their free insights trial
+    let hasUsedFreeInsightsTrial = false
+    if (is_legacy_booking) {
+      const { data: trialData } = await supabaseClient
+        .from('lessons')
+        .select('id')
+        .eq('learner_id', learner_id)
+        .eq('free_insights_trial', true)
+        .not('status', 'in', '("cancelled_by_teacher","cancelled_by_student")')
+        .limit(1)
+        .single()
+
+      hasUsedFreeInsightsTrial = !!trialData
+      console.log(`Legacy booking: learner ${learner_id}, hasUsedFreeInsightsTrial: ${hasUsedFreeInsightsTrial}`)
+    }
 
     // Check if promo code provides 100% discount
     let isFree = false
@@ -194,7 +210,15 @@ serve(async (req) => {
       } else if (isCreditsPayment) {
         paymentStatus = 'completed'  // Credit payments are considered completed
         paymentMethod = 'credits'
+      } else if (is_legacy_booking) {
+        paymentStatus = 'pending'  // Legacy lessons are paid at end of month
+        paymentMethod = 'legacy_invoice'
       }
+
+      // Determine lesson tier and free trial status
+      const lessonTier = is_legacy_booking ? 'standard' : (item.lesson_tier || 'premium')
+      // First legacy lesson gets free insights trial as FOMO hook
+      const freeInsightsTrial = is_legacy_booking && !hasUsedFreeInsightsTrial
 
       // Create lesson with detailed payment tracking
       const { data: lesson, error: lessonError } = await supabaseClient
@@ -210,11 +234,13 @@ serve(async (req) => {
           teacher_rate_at_booking: originalPrice,
           platform_fee: 0,
           total_cost_paid: price,
-          payment_id: isFree ? `promo_${promoCodeUsed}_${Date.now()}` : (isCreditsPayment ? `credits_${Date.now()}_${Math.random().toString(36).substring(7)}` : null),
+          payment_id: isFree ? `promo_${promoCodeUsed}_${Date.now()}` : (isCreditsPayment ? `credits_${Date.now()}_${Math.random().toString(36).substring(7)}` : (is_legacy_booking ? `legacy_${Date.now()}_${Math.random().toString(36).substring(7)}` : null)),
           payment_status: paymentStatus,
           '100ms_room_id': roomId,
           teacher_room_code: teacherRoomCode,
           student_room_code: studentRoomCode,
+          lesson_tier: lessonTier,
+          free_insights_trial: freeInsightsTrial,
         })
         .select()
         .single()
@@ -227,8 +253,17 @@ serve(async (req) => {
         original_price: originalPrice,
         paid: price,
         promo_code: promoCodeUsed,
-        is_credits: isCreditsPayment
+        is_credits: isCreditsPayment,
+        is_legacy: is_legacy_booking || false,
+        lesson_tier: lessonTier,
+        free_insights_trial: freeInsightsTrial,
       })
+
+      // Mark free trial as used for subsequent bookings in this batch
+      if (freeInsightsTrial) {
+        hasUsedFreeInsightsTrial = true
+        console.log(`✨ FOMO trial activated for learner ${learner_id} - first legacy lesson gets FREE insights!`)
+      }
 
       // Record promo code usage if applicable
       if (promoCodeIdToUse && promoDiscountAmount > 0) {

@@ -19,7 +19,8 @@ import {
   ChevronUp,
   Volume2,
   Pause,
-  Play
+  Play,
+  Coins
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { generateTalbiyahInsightsPDF } from '../utils/generateInsightsPDF';
@@ -34,6 +35,10 @@ interface KhutbaInsight {
   created_at: string;
   created_by: string;
 }
+
+// Token costs for premium features
+const INSIGHT_AUDIO_TOKEN_COST = 15;
+const INSIGHT_PDF_TOKEN_COST = 10;
 
 // Quiz Question Component - hides answer until student selects
 function QuizQuestion({ question, index }: { question: any; index: number }) {
@@ -115,13 +120,42 @@ export default function InsightsLibrary() {
   const [ttsSection, setTtsSection] = useState<string | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Token balance state
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
+  const [tokenLoading, setTokenLoading] = useState(true);
+
   // Get unique speakers for filter
   const speakers = [...new Set(insights.filter(i => i.speaker).map(i => i.speaker as string))];
 
   useEffect(() => {
     fetchInsights();
     checkAdmin();
+    loadTokenBalance();
   }, []);
+
+  async function loadTokenBalance() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setTokenLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('get_user_tokens', {
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error loading token balance:', error);
+      } else {
+        setTokenBalance(data || 0);
+      }
+    } catch (error) {
+      console.error('Error loading token balance:', error);
+    } finally {
+      setTokenLoading(false);
+    }
+  }
 
   async function checkAdmin() {
     try {
@@ -187,8 +221,41 @@ export default function InsightsLibrary() {
   }
 
   async function handleDownloadPDF(insight: KhutbaInsight) {
+    // Check token balance first
+    if (tokenBalance < INSIGHT_PDF_TOKEN_COST) {
+      toast.error(`Not enough tokens. PDF download costs ${INSIGHT_PDF_TOKEN_COST} tokens.`, {
+        action: {
+          label: 'Buy Tokens',
+          onClick: () => navigate('/buy-credits?tab=tokens')
+        }
+      });
+      return;
+    }
+
     setDownloadingPDF(insight.id);
     try {
+      // Deduct tokens first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to download PDFs');
+        return;
+      }
+
+      const { data: deductResult, error: deductError } = await supabase.rpc('deduct_user_tokens', {
+        p_user_id: user.id,
+        p_tokens: INSIGHT_PDF_TOKEN_COST,
+        p_feature: 'insight_pdf_download',
+        p_notes: `PDF download: ${insight.title}`
+      });
+
+      if (deductError || !deductResult?.success) {
+        toast.error(deductResult?.error || 'Failed to deduct tokens');
+        return;
+      }
+
+      // Update local balance
+      setTokenBalance(deductResult.new_balance);
+
       await generateTalbiyahInsightsPDF({
         ...insight.insights,
         title: insight.title,
@@ -196,6 +263,8 @@ export default function InsightsLibrary() {
         khutba_date: insight.khutba_date,
         location: insight.location
       });
+
+      toast.success(`PDF downloaded! ${INSIGHT_PDF_TOKEN_COST} tokens used.`);
     } catch (error: any) {
       console.error('Error generating PDF:', error);
       toast.error('Error generating PDF. Please try again.');
@@ -222,6 +291,17 @@ export default function InsightsLibrary() {
       return;
     }
 
+    // Check token balance before generating new audio
+    if (tokenBalance < INSIGHT_AUDIO_TOKEN_COST) {
+      toast.error(`Not enough tokens. Audio costs ${INSIGHT_AUDIO_TOKEN_COST} tokens.`, {
+        action: {
+          label: 'Buy Tokens',
+          onClick: () => navigate('/buy-credits?tab=tokens')
+        }
+      });
+      return;
+    }
+
     // Stop any currently playing audio
     if (ttsAudioRef.current) {
       ttsAudioRef.current.pause();
@@ -237,6 +317,32 @@ export default function InsightsLibrary() {
     setTtsPlaying(false);
 
     try {
+      // Deduct tokens first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to use audio');
+        setTtsLoading(false);
+        setTtsSection(null);
+        return;
+      }
+
+      const { data: deductResult, error: deductError } = await supabase.rpc('deduct_user_tokens', {
+        p_user_id: user.id,
+        p_tokens: INSIGHT_AUDIO_TOKEN_COST,
+        p_feature: 'insight_audio',
+        p_notes: `Audio playback: ${sectionId}`
+      });
+
+      if (deductError || !deductResult?.success) {
+        toast.error(deductResult?.error || 'Failed to deduct tokens');
+        setTtsLoading(false);
+        setTtsSection(null);
+        return;
+      }
+
+      // Update local balance
+      setTokenBalance(deductResult.new_balance);
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-khutba-audio`,
         {
@@ -416,7 +522,23 @@ export default function InsightsLibrary() {
               </div>
             </div>
 
-            <div className="w-32"></div>
+            {/* Token Balance Display */}
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg">
+                <Coins className="w-4 h-4 text-violet-600" />
+                {tokenLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
+                ) : (
+                  <span className="text-sm font-semibold text-violet-700">{tokenBalance} tokens</span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate('/buy-credits?tab=tokens')}
+                className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+              >
+                Get More
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -578,6 +700,7 @@ export default function InsightsLibrary() {
                       onClick={() => handleDownloadPDF(insight)}
                       disabled={downloadingPDF === insight.id}
                       className="flex items-center space-x-1 text-emerald-600 hover:text-emerald-700 transition text-sm disabled:opacity-50"
+                      title={`Download PDF (${INSIGHT_PDF_TOKEN_COST} tokens)`}
                     >
                       {downloadingPDF === insight.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -585,6 +708,7 @@ export default function InsightsLibrary() {
                         <Download className="w-4 h-4" />
                       )}
                       <span>PDF</span>
+                      <span className="text-xs text-gray-400">({INSIGHT_PDF_TOKEN_COST})</span>
                     </button>
 
                     {isAdmin && (
@@ -882,7 +1006,7 @@ export default function InsightsLibrary() {
                 ) : (
                   <Volume2 className="w-5 h-5" />
                 )}
-                <span>{ttsLoading && ttsSection === 'summary' ? 'Loading...' : ttsPlaying && ttsSection === 'summary' ? 'Pause' : 'Listen'}</span>
+                <span>{ttsLoading && ttsSection === 'summary' ? 'Loading...' : ttsPlaying && ttsSection === 'summary' ? 'Pause' : `Listen (${INSIGHT_AUDIO_TOKEN_COST} tokens)`}</span>
               </button>
               <button
                 onClick={() => handleDownloadPDF(selectedInsight)}
@@ -894,7 +1018,7 @@ export default function InsightsLibrary() {
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                <span>Download PDF</span>
+                <span>Download PDF ({INSIGHT_PDF_TOKEN_COST} tokens)</span>
               </button>
               <button
                 onClick={() => setSelectedInsight(null)}

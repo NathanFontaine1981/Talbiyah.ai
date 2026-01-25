@@ -56,6 +56,7 @@ import TeacherStudentsCard from '../components/TeacherStudentsCard';
 import ReferralWidget from '../components/ReferralWidget';
 import TeacherAvailabilityCard from '../components/TeacherAvailabilityCard';
 import CreditBalanceWidget from '../components/CreditBalanceWidget';
+import TokenBalanceWidget from '../components/TokenBalanceWidget';
 import MyTeachersSection from '../components/student/MyTeachersSection';
 import { DiagnosticCTACard } from '../components/diagnostic';
 import {
@@ -249,17 +250,20 @@ export default function Dashboard() {
         } else if (teacherProfile.status === 'rejected') {
           navigate('/teacher/rejected');
           return;
+        } else if (teacherProfile.status === 'approved') {
+          // Only grant Teacher role if explicitly approved
+          roles.push('Teacher');
+
+          const { data: availabilityData } = await supabase
+            .from('teacher_availability')
+            .select('id')
+            .eq('teacher_id', teacherProfile.id)
+            .eq('is_available', true)
+            .limit(1);
+
+          setHasAvailability((availabilityData?.length || 0) > 0);
         }
-        roles.push('Teacher');
-
-        const { data: availabilityData } = await supabase
-          .from('teacher_availability')
-          .select('id')
-          .eq('teacher_id', teacherProfile.id)
-          .eq('is_available', true)
-          .limit(1);
-
-        setHasAvailability((availabilityData?.length || 0) > 0);
+        // If status is neither pending, rejected, nor approved, don't grant Teacher role
       }
 
       // Check for student role (either explicitly in roles array or as default)
@@ -274,7 +278,7 @@ export default function Dashboard() {
       let primaryRole = 'Student';
       if (isAdmin) {
         primaryRole = 'Admin';
-      } else if (teacherProfile) {
+      } else if (teacherProfile && teacherProfile.status === 'approved') {
         primaryRole = 'Teacher';
       }
       setUserRole(primaryRole);
@@ -621,9 +625,10 @@ export default function Dashboard() {
                   </button>
 
                   {showRoleSwitcher && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                      <div className="px-3 py-2 border-b border-gray-100">
-                        <p className="text-xs font-semibold text-gray-400 uppercase">Switch Dashboard View</p>
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-xs font-semibold text-gray-400 uppercase">Switch View</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Changes this page's layout</p>
                       </div>
                       {availableRoles.map(role => (
                         <button
@@ -634,8 +639,8 @@ export default function Dashboard() {
                           }}
                           className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
                             selectedViewRole === role
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : 'text-gray-600 hover:bg-gray-50'
+                              ? role === 'Admin' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
                           <span className={`w-2.5 h-2.5 rounded-full ${
@@ -643,12 +648,26 @@ export default function Dashboard() {
                             role === 'Teacher' ? 'bg-blue-500' :
                             'bg-emerald-500'
                           }`}></span>
-                          <span className="font-medium">{role} Dashboard</span>
+                          <span className="font-medium">{role} View</span>
                           {selectedViewRole === role && (
                             <CheckCircle className="w-4 h-4 ml-auto" />
                           )}
                         </button>
                       ))}
+                      {availableRoles.includes('Admin') && (
+                        <>
+                          <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                          <Link
+                            to="/admin"
+                            onClick={() => setShowRoleSwitcher(false)}
+                            className="w-full px-4 py-3 flex items-center space-x-3 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            <span className="font-medium">Go to Admin Panel</span>
+                            <ArrowRight className="w-4 h-4 ml-auto" />
+                          </Link>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -740,8 +759,9 @@ export default function Dashboard() {
 
             {/* PRIORITY 2: Credits & Booking */}
             {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6">
+              <div className="mb-6 grid md:grid-cols-2 gap-4">
                 <CreditBalanceWidget />
+                <TokenBalanceWidget />
               </div>
             )}
 

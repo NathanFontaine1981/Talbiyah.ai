@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Child {
@@ -37,6 +37,11 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'credits'>('stripe');
   const [freeFirstLesson, setFreeFirstLesson] = useState(false);
   const [freeFirstLessonDiscount, setFreeFirstLessonDiscount] = useState(0);
+  const [isLegacyStudent, setIsLegacyStudent] = useState(false);
+  const [isFirstLegacyLesson, setIsFirstLegacyLesson] = useState(false);
+
+  // Check if all cart items are legacy (standard tier)
+  const isLegacyBooking = isLegacyStudent && cartItems.every(item => item.lesson_tier === 'standard');
 
   useEffect(() => {
     loadUserAndChildren();
@@ -76,9 +81,38 @@ export default function Checkout() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('roles')
+        .select('roles, is_legacy_student')
         .eq('id', user.id)
         .single();
+
+      // Check if user is a legacy student
+      if (profile?.is_legacy_student) {
+        setIsLegacyStudent(true);
+        setPaymentMethod('stripe'); // Will be overridden to legacy flow
+
+        // Check if this is their first legacy lesson (for FOMO trial)
+        const { data: learners } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id);
+
+        const learnerIds = learners?.map(l => l.id) || [];
+
+        if (learnerIds.length > 0) {
+          const { data: existingTrialLesson } = await supabase
+            .from('lessons')
+            .select('id')
+            .in('learner_id', learnerIds)
+            .eq('free_insights_trial', true)
+            .not('status', 'in', '("cancelled_by_teacher","cancelled_by_student")')
+            .limit(1)
+            .maybeSingle();
+
+          setIsFirstLegacyLesson(!existingTrialLesson);
+        } else {
+          setIsFirstLegacyLesson(true);
+        }
+      }
 
       if (profile?.roles && profile.roles.includes('parent')) {
         setIsParent(true);
@@ -402,6 +436,83 @@ export default function Checkout() {
         };
       });
 
+      // Handle legacy booking (monthly invoice)
+      if (isLegacyBooking) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
+
+        // Determine learner_id
+        let learnerId: string;
+        if (isParent && selectedChildId) {
+          const selectedChild = children.find(c => c.id === selectedChildId);
+          if (!selectedChild?.learner_id) {
+            throw new Error('Selected child has no learner profile');
+          }
+          learnerId = selectedChild.learner_id;
+        } else {
+          // Student booking for themselves - get or create learner
+          const { data: existingLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', session.user.id)
+            .maybeSingle();
+
+          if (existingLearner) {
+            learnerId = existingLearner.id;
+          } else {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .single();
+
+            const { data: newLearner } = await supabase
+              .from('learners')
+              .insert({
+                parent_id: session.user.id,
+                name: profile?.full_name || 'Student',
+                gamification_points: 0
+              })
+              .select('id')
+              .single();
+
+            if (!newLearner) throw new Error('Failed to create learner profile');
+            learnerId = newLearner.id;
+          }
+        }
+
+        // Call edge function to create bookings with 100ms rooms
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              cart_items: cartItems,
+              learner_id: learnerId,
+              is_legacy_booking: true
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create booking');
+        }
+
+        await response.json();
+
+        // Clear cart
+        await clearCart();
+
+        // Redirect to dashboard
+        navigate('/dashboard?booking_success=true&payment=legacy');
+        return;
+      }
+
       // If 100% discount applied (actualPayable is 0), create bookings directly without Stripe
       if (actualPayable <= 0) {
         const { data: { session } } = await supabase.auth.getSession();
@@ -698,7 +809,40 @@ export default function Checkout() {
               </div>
             </div>
 
-            {!(promoApplied && promoDiscount >= finalPrice) && !hasUnlimitedCredits && (
+            {/* Legacy Booking - No Payment Required */}
+            {isLegacyBooking && (
+              <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-amber-600" />
+                  <span>Legacy Account - Pay at Month End</span>
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  Your lessons will be invoiced at the end of the month at <span className="font-bold text-amber-600">£12/hour</span>.
+                </p>
+                <div className="bg-white rounded-lg p-4 border border-amber-200">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-700">No upfront payment required</p>
+                      <p className="text-sm text-gray-600 mt-1">Click "Confirm Booking" to schedule your lessons.</p>
+                    </div>
+                  </div>
+                </div>
+                {isFirstLegacyLesson && (
+                  <div className="mt-4 p-4 bg-emerald-100 border border-emerald-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-5 h-5 text-emerald-600" />
+                      <span className="font-bold text-emerald-700">FREE AI Insights!</span>
+                    </div>
+                    <p className="text-sm text-emerald-600 mt-1">
+                      Your first lesson includes AI-powered insights and recording as a special trial!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!(promoApplied && promoDiscount >= finalPrice) && !hasUnlimitedCredits && !isLegacyBooking && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                   <CreditCard className="w-5 h-5" />
@@ -966,9 +1110,11 @@ export default function Checkout() {
 
               <button
                 onClick={handleCheckout}
-                disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits)}
+                disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits && !isLegacyBooking)}
                 className={`w-full px-6 py-4 text-white rounded-full text-lg font-bold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
-                  hasUnlimitedCredits
+                  isLegacyBooking
+                    ? 'bg-amber-500 hover:bg-amber-600'
+                    : hasUnlimitedCredits
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600'
                     : 'bg-emerald-500 hover:bg-emerald-600'
                 }`}
@@ -977,6 +1123,11 @@ export default function Checkout() {
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
+                  </>
+                ) : isLegacyBooking ? (
+                  <>
+                    <FileText className="w-5 h-5" />
+                    <span>Confirm Booking</span>
                   </>
                 ) : hasUnlimitedCredits ? (
                   <>
@@ -1018,6 +1169,11 @@ export default function Checkout() {
               {promoApplied && promoDiscount >= finalPrice && (
                 <p className="text-xs text-center text-emerald-600 mt-4">
                   Your booking is completely free with promo code {promoCode.toUpperCase()}!
+                </p>
+              )}
+              {isLegacyBooking && (
+                <p className="text-xs text-center text-amber-600 mt-4">
+                  Legacy Account - Lessons billed monthly at £12/hour
                 </p>
               )}
             </div>

@@ -78,12 +78,18 @@ export default function TeacherPaymentSettings() {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, status')
         .eq('user_id', user.id)
         .single();
 
       if (!teacherProfile) {
         console.error('No teacher profile found');
+        return;
+      }
+
+      // Only approved teachers can access this page
+      if (teacherProfile.status !== 'approved') {
+        navigate('/teacher/pending-approval');
         return;
       }
 

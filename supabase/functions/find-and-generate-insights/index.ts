@@ -42,6 +42,16 @@ serve(async (req) => {
       const learnerName = (lesson.learners as any)?.name || "Student";
       const teacherName = (lesson.teacher_profiles as any)?.profiles?.full_name || "Teacher";
 
+      // Check if there's an existing insight with a title (may contain surah info)
+      const { data: existingInsight } = await supabase
+        .from('lesson_insights')
+        .select('title')
+        .eq('lesson_id', lesson_id)
+        .maybeSingle();
+
+      // Use existing insight title or subject name as lesson_title
+      const lessonTitle = existingInsight?.title || subjectName;
+
       const metadata = {
         teacher_name: teacherName,
         student_names: [learnerName],
@@ -54,7 +64,7 @@ serve(async (req) => {
         duration_minutes: lesson.duration_minutes,
       };
 
-      console.log(`Generating insights for lesson ${lesson.id} by ID`);
+      console.log(`Generating insights for lesson ${lesson.id} by ID, title: ${lessonTitle}`);
 
       const insightResponse = await fetch(`${supabaseUrl}/functions/v1/generate-lesson-insights`, {
         method: "POST",
@@ -66,6 +76,7 @@ serve(async (req) => {
           lesson_id: lesson.id,
           transcript: transcript,
           subject: subjectName,
+          lesson_title: lessonTitle, // Pass the title for surah parsing
           metadata: metadata,
         }),
       });
@@ -234,7 +245,7 @@ serve(async (req) => {
         duration_minutes: matchedLesson.duration_minutes,
       };
 
-      console.log(`Generating insights for lesson ${matchedLesson.id}`);
+      console.log(`Generating insights for lesson ${matchedLesson.id}, subject: ${subjectName}`);
 
       const insightResponse = await fetch(`${supabaseUrl}/functions/v1/generate-lesson-insights`, {
         method: "POST",
@@ -246,6 +257,7 @@ serve(async (req) => {
           lesson_id: matchedLesson.id,
           transcript: transcript,
           subject: subjectName,
+          lesson_title: subjectName, // Pass subject name as title for surah parsing
           metadata: metadata,
         }),
       });

@@ -190,12 +190,18 @@ export default function TeacherAvailability() {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id, is_accepting_bookings')
+        .select('id, is_accepting_bookings, status')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (!teacherProfile) {
         navigate('/dashboard');
+        return;
+      }
+
+      // Only approved teachers can access this page
+      if (teacherProfile.status !== 'approved') {
+        navigate('/teacher/pending-approval');
         return;
       }
 
