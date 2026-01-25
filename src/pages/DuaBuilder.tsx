@@ -16,15 +16,25 @@ import {
   BookOpen,
   Star,
   Trash2,
-  X,
   ChevronDown,
   ChevronUp,
-  Download
+  Download,
+  Coins,
+  Layers,
+  GraduationCap,
+  Moon
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { ALLAH_NAMES, getNamesByCategory, searchNames, type AllahName } from '../data/allahNames';
 import { DUA_LIBRARY, DUA_CATEGORIES, getDuasByCategory, searchDuas, type LibraryDua, type DuaCategory } from '../data/duaLibrary';
+
+// New modular dua components
+import DuaComposer from '../components/dua/DuaComposer';
+import DuaLearnTab from '../components/dua/DuaLearnTab';
+import DuaMyDuasTab from '../components/dua/DuaMyDuasTab';
+
+const DUA_AUDIO_TOKEN_COST = 10;
 
 // Types
 interface GeneratedDua {
@@ -43,24 +53,11 @@ interface GeneratedDua {
   };
 }
 
-interface SavedDua {
-  id: string;
-  title: string;
-  arabic_text: string;
-  transliteration: string;
-  english_text: string;
-  category_id: string;
-  allah_names_used: string[];
-  is_favorite: boolean;
-  source: string;
-  created_at: string;
-}
-
-type TabType = 'library' | 'create' | 'saved' | 'names';
+type TabType = 'build' | 'library' | 'saved' | 'names' | 'learn';
 
 export default function DuaBuilder() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('library');
+  const [activeTab, setActiveTab] = useState<TabType>('build');
   const [userId, setUserId] = useState<string | null>(null);
 
   // Library state
@@ -69,10 +66,11 @@ export default function DuaBuilder() {
   const [librarySearch, setLibrarySearch] = useState('');
   const [expandedDuaId, setExpandedDuaId] = useState<string | null>(null);
 
-  // Create state
+  // Legacy Create state (for AI generation fallback)
   const [createCategory, setCreateCategory] = useState<string>('');
   const [generating, setGenerating] = useState(false);
   const [generatedDua, setGeneratedDua] = useState<GeneratedDua | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   // Audio state
   const [generatingAudio, setGeneratingAudio] = useState(false);
@@ -82,8 +80,6 @@ export default function DuaBuilder() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Saved duas state
-  const [savedDuas, setSavedDuas] = useState<SavedDua[]>([]);
-  const [loadingSaved, setLoadingSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Names state
@@ -94,16 +90,31 @@ export default function DuaBuilder() {
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Get user on mount
+  // Token state
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
+  const [downloadingAudio, setDownloadingAudio] = useState(false);
+
+  // Get user and tokens on mount
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
+        loadTokenBalance(user.id);
       }
     };
     getUser();
   }, []);
+
+  // Load token balance
+  const loadTokenBalance = async (uid: string) => {
+    const { data } = await supabase
+      .from('user_tokens')
+      .select('tokens_remaining')
+      .eq('user_id', uid)
+      .maybeSingle();
+    setTokenBalance(data?.tokens_remaining || 0);
+  };
 
   // Cleanup audio URL on unmount
   useEffect(() => {
@@ -113,13 +124,6 @@ export default function DuaBuilder() {
       }
     };
   }, [audioUrl]);
-
-  // Load saved duas when tab is opened
-  useEffect(() => {
-    if (activeTab === 'saved' && userId && savedDuas.length === 0) {
-      loadSavedDuas();
-    }
-  }, [activeTab, userId]);
 
   // Filter library duas
   const getFilteredDuas = (): LibraryDua[] => {
@@ -151,7 +155,7 @@ export default function DuaBuilder() {
     return ALLAH_NAMES;
   };
 
-  // Generate dua
+  // Generate dua (AI fallback)
   const handleGenerateDua = async () => {
     if (!createCategory) {
       toast.error('Please select a category');
@@ -251,6 +255,85 @@ export default function DuaBuilder() {
     }
   };
 
+  // Download audio (costs tokens)
+  const handleDownloadAudio = async (text: string, language: 'arabic' | 'english', title: string) => {
+    if (!userId) {
+      toast.error('Please sign in to download audio');
+      return;
+    }
+
+    if (tokenBalance < DUA_AUDIO_TOKEN_COST) {
+      toast.error(`Insufficient tokens. You need ${DUA_AUDIO_TOKEN_COST} tokens to download audio.`, {
+        action: {
+          label: 'Buy Tokens',
+          onClick: () => navigate('/buy-credits?tab=tokens')
+        }
+      });
+      return;
+    }
+
+    setDownloadingAudio(true);
+    setAudioLanguage(language);
+
+    try {
+      // Deduct tokens first
+      const { data: deductResult, error: deductError } = await supabase.rpc('deduct_user_tokens', {
+        p_user_id: userId,
+        p_tokens: DUA_AUDIO_TOKEN_COST,
+        p_feature: 'dua_audio',
+        p_notes: `Downloaded ${language} audio for dua: ${title}`
+      });
+
+      if (deductError || !deductResult?.success) {
+        throw new Error(deductResult?.error || 'Failed to deduct tokens');
+      }
+
+      // Update local token balance
+      setTokenBalance(deductResult.new_balance);
+
+      // Generate audio
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            text,
+            language
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate audio');
+      }
+
+      const audioBlob = await response.blob();
+
+      // Download the file
+      const url = URL.createObjectURL(audioBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `dua-${title.toLowerCase().replace(/\s+/g, '-')}-${language}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Audio downloaded! ${DUA_AUDIO_TOKEN_COST} tokens used.`);
+    } catch (error: any) {
+      console.error('Error downloading audio:', error);
+      toast.error(error.message || 'Error downloading audio');
+    } finally {
+      setDownloadingAudio(false);
+    }
+  };
+
   // Audio controls
   const togglePlayback = () => {
     if (!audioRef.current) return;
@@ -290,80 +373,18 @@ export default function DuaBuilder() {
         is_favorite: false
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('saved_duas')
-        .insert(duaData)
-        .select()
-        .single();
+        .insert(duaData);
 
       if (error) throw error;
 
-      setSavedDuas(prev => [data, ...prev]);
       toast.success('Dua saved to My Duas!');
     } catch (error: any) {
       console.error('Error saving dua:', error);
       toast.error('Error saving dua');
     } finally {
       setSaving(false);
-    }
-  };
-
-  // Load saved duas
-  const loadSavedDuas = async () => {
-    if (!userId) return;
-    setLoadingSaved(true);
-
-    try {
-      const { data, error } = await supabase
-        .from('saved_duas')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setSavedDuas(data || []);
-    } catch (error: any) {
-      console.error('Error loading saved duas:', error);
-      toast.error('Error loading saved duas');
-    } finally {
-      setLoadingSaved(false);
-    }
-  };
-
-  // Toggle favorite
-  const toggleFavorite = async (id: string, currentState: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('saved_duas')
-        .update({ is_favorite: !currentState })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setSavedDuas(prev =>
-        prev.map(d => d.id === id ? { ...d, is_favorite: !currentState } : d)
-      );
-    } catch (error: any) {
-      console.error('Error updating favorite:', error);
-      toast.error('Error updating favorite');
-    }
-  };
-
-  // Delete saved dua
-  const deleteSavedDua = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('saved_duas')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setSavedDuas(prev => prev.filter(d => d.id !== id));
-      toast.success('Dua removed');
-    } catch (error: any) {
-      console.error('Error deleting dua:', error);
-      toast.error('Error deleting dua');
     }
   };
 
@@ -464,32 +485,61 @@ export default function DuaBuilder() {
       {/* Header */}
       <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-emerald-100 hover:text-white mb-4"
-          >
-            <ChevronLeft size={20} />
-            Back
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1 text-emerald-100 hover:text-white"
+            >
+              <ChevronLeft size={20} />
+              Back
+            </button>
+            {userId && (
+              <button
+                onClick={() => navigate('/buy-credits?tab=tokens')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm transition"
+              >
+                <Coins size={16} />
+                <span>{tokenBalance} tokens</span>
+              </button>
+            )}
+          </div>
           <h1 className="text-2xl font-bold">Dua Builder</h1>
           <p className="text-emerald-100 mt-1">
-            Learn, memorize, and create personalized duas
+            Build, learn, and memorize authentic duas
           </p>
+
+          {/* Qunut Practice Quick Link */}
+          <button
+            onClick={() => navigate('/qunut-practice')}
+            className="mt-4 w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                <Moon className="text-amber-300" size={20} />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-white">Qunut Dua for Witr</p>
+                <p className="text-xs text-emerald-200">Learn, practice & download PDF</p>
+              </div>
+            </div>
+            <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
+          </button>
         </div>
 
         {/* Tabs */}
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-1 bg-emerald-700/50 rounded-lg p-1">
+          <div className="flex gap-1 bg-emerald-700/50 rounded-lg p-1 overflow-x-auto">
             {[
+              { id: 'build' as TabType, label: 'Build', icon: Layers },
               { id: 'library' as TabType, label: 'Library', icon: BookOpen },
-              { id: 'create' as TabType, label: 'Create', icon: Sparkles },
               { id: 'saved' as TabType, label: 'My Duas', icon: Heart },
-              { id: 'names' as TabType, label: 'Names', icon: Star }
+              { id: 'names' as TabType, label: 'Names', icon: Star },
+              { id: 'learn' as TabType, label: 'Learn', icon: GraduationCap }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-white text-emerald-700'
                     : 'text-emerald-100 hover:bg-emerald-600/50'
@@ -505,6 +555,108 @@ export default function DuaBuilder() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Build Tab - New Modular Composer */}
+        {activeTab === 'build' && (
+          <div className="space-y-6">
+            {/* AI Generator toggle */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowAIGenerator(!showAIGenerator)}
+                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              >
+                <Sparkles size={14} />
+                {showAIGenerator ? 'Hide AI Generator' : 'Quick AI Generate'}
+              </button>
+            </div>
+
+            {/* AI Generator (collapsed by default) */}
+            {showAIGenerator && (
+              <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2 text-violet-800">
+                  <Sparkles size={20} />
+                  <h3 className="font-semibold">Quick AI Generation</h3>
+                </div>
+                <p className="text-sm text-violet-700">
+                  Let AI generate a complete dua for you. For more control and authentic content,
+                  use the block-by-block builder below.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {DUA_CATEGORIES.filter(c => !c.isCore).slice(0, 6).map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCreateCategory(cat.id)}
+                      className={`p-3 rounded-lg text-left text-sm transition-all ${
+                        createCategory === cat.id
+                          ? 'bg-violet-600 text-white'
+                          : 'bg-white border border-violet-200 hover:border-violet-300'
+                      }`}
+                    >
+                      <span className="text-lg">{cat.icon}</span>
+                      <span className={`ml-2 ${createCategory === cat.id ? 'text-white' : 'text-gray-700'}`}>
+                        {cat.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleGenerateDua}
+                  disabled={!createCategory || generating}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      Generate Dua
+                    </>
+                  )}
+                </button>
+
+                {/* Generated dua display */}
+                {generatedDua && (
+                  <div className="bg-white rounded-lg p-4 space-y-4">
+                    <h4 className="font-medium text-gray-900">{generatedDua.title}</h4>
+                    <p className="text-lg font-arabic text-right text-gray-900" dir="rtl">
+                      {generatedDua.arabic}
+                    </p>
+                    <p className="text-sm text-gray-600 italic">{generatedDua.transliteration}</p>
+                    <p className="text-gray-700">{generatedDua.english}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleGenerateAudio(generatedDua.arabic, 'arabic')}
+                        disabled={generatingAudio}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100"
+                      >
+                        <Volume2 size={14} /> Play
+                      </button>
+                      <button
+                        onClick={() => handleSaveDua(generatedDua, 'generated')}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                      >
+                        <Save size={14} /> Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Main Modular Composer */}
+            <DuaComposer
+              userId={userId}
+              tokenBalance={tokenBalance}
+              onTokensUsed={setTokenBalance}
+            />
+          </div>
+        )}
+
         {/* Library Tab */}
         {activeTab === 'library' && (
           <div className="space-y-4">
@@ -580,297 +732,13 @@ export default function DuaBuilder() {
           </div>
         )}
 
-        {/* Create Tab */}
-        {activeTab === 'create' && (
-          <div className="space-y-6">
-            {/* Category selection */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                What are you seeking?
-              </h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Select a category and we'll generate a personalized dua with the proper Islamic structure.
-                Your privacy is maintained - you don't need to share specific details.
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {DUA_CATEGORIES.filter(c => !c.isCore).map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCreateCategory(cat.id)}
-                    className={`p-4 rounded-xl text-left transition-all ${
-                      createCategory === cat.id
-                        ? 'bg-emerald-600 text-white shadow-lg scale-[1.02]'
-                        : 'bg-white border border-gray-200 hover:border-emerald-300 hover:shadow'
-                    }`}
-                  >
-                    <span className="text-2xl mb-2 block">{cat.icon}</span>
-                    <span className={`font-medium ${createCategory === cat.id ? 'text-white' : 'text-gray-900'}`}>
-                      {cat.name}
-                    </span>
-                    <p className={`text-xs mt-1 ${createCategory === cat.id ? 'text-emerald-100' : 'text-gray-500'}`}>
-                      {cat.description}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Generate button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleGenerateDua}
-                disabled={!createCategory || generating}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {generating ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    Generate Dua
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Generated dua */}
-            {generatedDua && (
-              <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
-                <div className="text-center">
-                  <h3 className="text-xl font-bold text-gray-900">{generatedDua.title}</h3>
-                  <p className="text-gray-500">{generatedDua.titleArabic}</p>
-                </div>
-
-                {/* Names used */}
-                {generatedDua.namesUsed && generatedDua.namesUsed.length > 0 && (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {generatedDua.namesUsed.map(name => (
-                      <span
-                        key={name}
-                        className="px-2 py-1 bg-emerald-50 text-emerald-700 text-sm rounded-full"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Arabic */}
-                <div className="p-4 bg-emerald-50 rounded-lg">
-                  <p className="text-2xl text-right font-arabic leading-loose text-gray-900" dir="rtl">
-                    {generatedDua.arabic}
-                  </p>
-                </div>
-
-                {/* Transliteration */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-1">Transliteration</h4>
-                  <p className="text-gray-700 italic">{generatedDua.transliteration}</p>
-                </div>
-
-                {/* Translation */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-1">Translation</h4>
-                  <p className="text-gray-800">{generatedDua.english}</p>
-                </div>
-
-                {/* Audio controls */}
-                <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => handleGenerateAudio(generatedDua.arabic, 'arabic')}
-                    disabled={generatingAudio}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {generatingAudio && audioLanguage === 'arabic' ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Volume2 size={16} />
-                    )}
-                    Arabic Audio
-                  </button>
-                  <button
-                    onClick={() => handleGenerateAudio(generatedDua.english, 'english')}
-                    disabled={generatingAudio}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {generatingAudio && audioLanguage === 'english' ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Volume2 size={16} />
-                    )}
-                    English Audio
-                  </button>
-
-                  {audioUrl && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={togglePlayback}
-                        className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                      >
-                        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                      </button>
-                      <button
-                        onClick={stopPlayback}
-                        className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                      >
-                        <StopCircle size={16} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Save and copy */}
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => copyToClipboard(`${generatedDua.arabic}\n\n${generatedDua.transliteration}\n\n${generatedDua.english}`, 'generated')}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                  >
-                    {copiedId === 'generated' ? <Check size={16} /> : <Copy size={16} />}
-                    Copy
-                  </button>
-                  {userId && (
-                    <button
-                      onClick={() => handleSaveDua(generatedDua, 'generated')}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                    >
-                      {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                      Save to My Duas
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Saved Duas Tab */}
         {activeTab === 'saved' && (
-          <div className="space-y-4">
-            {!userId ? (
-              <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to save duas</h3>
-                <p className="text-gray-500">Create an account to save and organize your favorite duas.</p>
-              </div>
-            ) : loadingSaved ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="animate-spin text-emerald-600" size={32} />
-              </div>
-            ) : savedDuas.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No saved duas yet</h3>
-                <p className="text-gray-500">
-                  Save duas from the Library or Create tabs to build your personal collection.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Favorites first */}
-                {savedDuas.filter(d => d.is_favorite).length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-1">
-                      <Heart size={14} className="text-red-500" /> Favorites
-                    </h3>
-                    <div className="space-y-3">
-                      {savedDuas.filter(d => d.is_favorite).map(dua => (
-                        <div key={dua.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-medium text-gray-900">{dua.title}</h4>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => toggleFavorite(dua.id, dua.is_favorite)}
-                                className="p-1.5 text-red-500 hover:bg-red-50 rounded"
-                              >
-                                <Heart size={16} fill="currentColor" />
-                              </button>
-                              <button
-                                onClick={() => deleteSavedDua(dua.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-lg text-right font-arabic text-gray-900 mb-2" dir="rtl">
-                            {dua.arabic_text}
-                          </p>
-                          <p className="text-sm text-gray-600 italic mb-2">{dua.transliteration}</p>
-                          <p className="text-sm text-gray-700">{dua.english_text}</p>
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => handleGenerateAudio(dua.arabic_text, 'arabic')}
-                              disabled={generatingAudio}
-                              className="flex items-center gap-1 px-2 py-1 text-xs bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100"
-                            >
-                              <Volume2 size={12} /> Play
-                            </button>
-                            <button
-                              onClick={() => copyToClipboard(`${dua.arabic_text}\n\n${dua.transliteration}\n\n${dua.english_text}`, dua.id)}
-                              className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                            >
-                              {copiedId === dua.id ? <Check size={12} /> : <Copy size={12} />} Copy
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* All saved */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">All Saved ({savedDuas.length})</h3>
-                  {savedDuas.filter(d => !d.is_favorite).map(dua => (
-                    <div key={dua.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="font-medium text-gray-900">{dua.title}</h4>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => toggleFavorite(dua.id, dua.is_favorite)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
-                          >
-                            <Heart size={16} />
-                          </button>
-                          <button
-                            onClick={() => deleteSavedDua(dua.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-lg text-right font-arabic text-gray-900 mb-2" dir="rtl">
-                        {dua.arabic_text}
-                      </p>
-                      <p className="text-sm text-gray-600 italic mb-2">{dua.transliteration}</p>
-                      <p className="text-sm text-gray-700">{dua.english_text}</p>
-                      <div className="flex gap-2 mt-3">
-                        <button
-                          onClick={() => handleGenerateAudio(dua.arabic_text, 'arabic')}
-                          disabled={generatingAudio}
-                          className="flex items-center gap-1 px-2 py-1 text-xs bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100"
-                        >
-                          <Volume2 size={12} /> Play
-                        </button>
-                        <button
-                          onClick={() => copyToClipboard(`${dua.arabic_text}\n\n${dua.transliteration}\n\n${dua.english_text}`, dua.id)}
-                          className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                        >
-                          {copiedId === dua.id ? <Check size={12} /> : <Copy size={12} />} Copy
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <DuaMyDuasTab
+            userId={userId}
+            onGenerateAudio={handleGenerateAudio}
+            generatingAudio={generatingAudio}
+          />
         )}
 
         {/* Names of Allah Tab */}
@@ -984,6 +852,9 @@ export default function DuaBuilder() {
             </div>
           </div>
         )}
+
+        {/* Learn Tab */}
+        {activeTab === 'learn' && <DuaLearnTab />}
       </div>
 
       {/* Global audio player */}

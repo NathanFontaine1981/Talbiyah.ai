@@ -109,10 +109,9 @@ export async function updateQuranProgress(
         .eq('student_id', studentId)
         .eq('surah_number', coverage.surah_number)
         .eq('ayah_number', ayahNumber)
-        .single();
+        .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // PGRST116 is "not found" which is okay
+      if (fetchError) {
         console.error('Error fetching progress:', fetchError);
         continue;
       }

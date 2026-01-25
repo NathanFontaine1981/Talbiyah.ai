@@ -70,7 +70,7 @@ export default function VerseMemorizer({
           .eq('student_id', userId)
           .eq('surah_number', surahNumber)
           .eq('ayah_number', ayahNumber)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setProgress({
@@ -106,7 +106,7 @@ export default function VerseMemorizer({
         .eq('student_id', userId)
         .eq('surah_number', surahNumber)
         .eq('ayah_number', ayahNumber)
-        .single();
+        .maybeSingle();
 
       const updateData = {
         [`${stage}_completed`]: newValue,

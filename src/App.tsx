@@ -32,6 +32,7 @@ const PageLoader = () => (
 // Core pages - loaded immediately
 import Home from './pages/Home';
 import HomeLandingV2 from './pages/HomeLandingV2';
+import Features from './pages/Features';
 import Demo from './pages/Demo';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
@@ -58,6 +59,7 @@ const BuyCredits = lazy(() => import('./pages/BuyCredits'));
 const TransferCredits = lazy(() => import('./pages/TransferCredits'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const CreditPurchaseSuccess = lazy(() => import('./pages/CreditPurchaseSuccess'));
+const TokenPurchaseSuccess = lazy(() => import('./pages/TokenPurchaseSuccess'));
 const BookingOptions = lazy(() => import('./pages/BookingOptions'));
 const QuranProgress = lazy(() => import('./pages/QuranProgress'));
 const ArabicProgress = lazy(() => import('./pages/ArabicProgress'));
@@ -86,6 +88,7 @@ const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceRefe
 const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference'));
 const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
 const DuaBuilder = lazy(() => import('./pages/DuaBuilder'));
+const QunutPractice = lazy(() => import('./pages/QunutPractice'));
 const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
@@ -163,6 +166,7 @@ const FeedbackManagement = lazy(() => import('./pages/admin/FeedbackManagement')
 const AdminSuggestions = lazy(() => import('./pages/admin/AdminSuggestions'));
 const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessments'));
 const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
+const LegacyBilling = lazy(() => import('./pages/admin/LegacyBilling'));
 
 function App() {
   return (
@@ -173,6 +177,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<HomeLandingV2 />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/landing-old" element={<Home />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/signup" element={<SignUp />} />
@@ -360,6 +365,7 @@ function App() {
           <Route path="suggestions" element={<AdminSuggestions />} />
           <Route path="diagnostic-assessments" element={<DiagnosticAssessments />} />
           <Route path="content-moderation" element={<ContentModeration />} />
+          <Route path="legacy-billing" element={<LegacyBilling />} />
         </Route>
         <Route
           path="/apply-to-teach"
@@ -670,6 +676,14 @@ function App() {
           }
         />
         <Route
+          path="/token-purchase-success"
+          element={
+            <ProtectedRoute>
+              <TokenPurchaseSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/recordings/history"
           element={
             <ProtectedRoute>
@@ -768,6 +782,7 @@ function App() {
           }
         />
         <Route path="/dua-builder" element={<DuaBuilder />} />
+        <Route path="/qunut-practice" element={<QunutPractice />} />
         <Route
           path="/khutba-reflections"
           element={

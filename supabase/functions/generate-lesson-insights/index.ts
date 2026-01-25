@@ -19,6 +19,7 @@ interface LessonInsightRequest {
   lesson_id: string;
   transcript: string;
   subject: string; // 'quran', 'arabic', etc.
+  lesson_title?: string; // Full lesson title which may contain surah info
   metadata: {
     // For Quran lessons
     surah_name?: string;
@@ -32,6 +33,233 @@ interface LessonInsightRequest {
   };
 }
 
+// Surah name to number mapping for common surahs
+const SURAH_NAME_TO_NUMBER: Record<string, number> = {
+  'al-fatiha': 1, 'fatiha': 1,
+  'al-baqarah': 2, 'baqarah': 2,
+  'al-imran': 3, 'imran': 3, 'ali-imran': 3,
+  'an-nisa': 4, 'nisa': 4,
+  'al-maidah': 5, 'maidah': 5,
+  'al-anam': 6, 'anam': 6,
+  'al-araf': 7, 'araf': 7,
+  'al-anfal': 8, 'anfal': 8,
+  'at-tawbah': 9, 'tawbah': 9,
+  'yunus': 10,
+  'hud': 11,
+  'yusuf': 12,
+  'ar-rad': 13, 'rad': 13,
+  'ibrahim': 14,
+  'al-hijr': 15, 'hijr': 15,
+  'an-nahl': 16, 'nahl': 16,
+  'al-isra': 17, 'isra': 17,
+  'al-kahf': 18, 'kahf': 18,
+  'maryam': 19,
+  'ta-ha': 20, 'taha': 20,
+  'al-anbiya': 21, 'anbiya': 21,
+  'al-hajj': 22, 'hajj': 22,
+  'al-muminun': 23, 'muminun': 23,
+  'an-nur': 24, 'nur': 24,
+  'al-furqan': 25, 'furqan': 25,
+  'ash-shuara': 26, 'shuara': 26,
+  'an-naml': 27, 'naml': 27,
+  'al-qasas': 28, 'qasas': 28,
+  'al-ankabut': 29, 'ankabut': 29,
+  'ar-rum': 30, 'rum': 30,
+  'luqman': 31,
+  'as-sajdah': 32, 'sajdah': 32,
+  'al-ahzab': 33, 'ahzab': 33,
+  'saba': 34,
+  'fatir': 35,
+  'ya-sin': 36, 'yasin': 36,
+  'as-saffat': 37, 'saffat': 37,
+  'sad': 38,
+  'az-zumar': 39, 'zumar': 39,
+  'ghafir': 40,
+  'fussilat': 41,
+  'ash-shura': 42, 'shura': 42,
+  'az-zukhruf': 43, 'zukhruf': 43,
+  'ad-dukhan': 44, 'dukhan': 44,
+  'al-jathiyah': 45, 'jathiyah': 45,
+  'al-ahqaf': 46, 'ahqaf': 46,
+  'muhammad': 47,
+  'al-fath': 48, 'fath': 48,
+  'al-hujurat': 49, 'hujurat': 49,
+  'qaf': 50,
+  'adh-dhariyat': 51, 'dhariyat': 51,
+  'at-tur': 52, 'tur': 52,
+  'an-najm': 53, 'najm': 53,
+  'al-qamar': 54, 'qamar': 54,
+  'ar-rahman': 55, 'rahman': 55,
+  'al-waqiah': 56, 'waqiah': 56,
+  'al-hadid': 57, 'hadid': 57,
+  'al-mujadilah': 58, 'mujadilah': 58,
+  'al-hashr': 59, 'hashr': 59,
+  'al-mumtahanah': 60, 'mumtahanah': 60,
+  'as-saff': 61, 'saff': 61,
+  'al-jumuah': 62, 'jumuah': 62,
+  'al-munafiqun': 63, 'munafiqun': 63,
+  'at-taghabun': 64, 'taghabun': 64,
+  'at-talaq': 65, 'talaq': 65,
+  'at-tahrim': 66, 'tahrim': 66,
+  'al-mulk': 67, 'mulk': 67,
+  'al-qalam': 68, 'qalam': 68,
+  'al-haqqah': 69, 'haqqah': 69,
+  'al-maarij': 70, 'maarij': 70,
+  'nuh': 71,
+  'al-jinn': 72, 'jinn': 72,
+  'al-muzzammil': 73, 'muzzammil': 73,
+  'al-muddaththir': 74, 'muddaththir': 74,
+  'al-qiyamah': 75, 'qiyamah': 75,
+  'al-insan': 76, 'insan': 76,
+  'al-mursalat': 77, 'mursalat': 77,
+  'an-naba': 78, 'naba': 78,
+  'an-naziat': 79, 'naziat': 79,
+  'abasa': 80,
+  'at-takwir': 81, 'takwir': 81,
+  'al-infitar': 82, 'infitar': 82,
+  'al-mutaffifin': 83, 'mutaffifin': 83,
+  'al-inshiqaq': 84, 'inshiqaq': 84,
+  'al-buruj': 85, 'buruj': 85,
+  'at-tariq': 86, 'tariq': 86,
+  'al-ala': 87, 'ala': 87,
+  'al-ghashiyah': 88, 'ghashiyah': 88,
+  'al-fajr': 89, 'fajr': 89,
+  'al-balad': 90, 'balad': 90,
+  'ash-shams': 91, 'shams': 91,
+  'al-layl': 92, 'layl': 92,
+  'ad-duha': 93, 'duha': 93,
+  'ash-sharh': 94, 'sharh': 94, 'al-inshirah': 94, 'inshirah': 94,
+  'at-tin': 95, 'tin': 95,
+  'al-alaq': 96, 'alaq': 96,
+  'al-qadr': 97, 'qadr': 97,
+  'al-bayyinah': 98, 'bayyinah': 98,
+  'az-zalzalah': 99, 'zalzalah': 99,
+  'al-adiyat': 100, 'adiyat': 100,
+  'al-qariah': 101, 'qariah': 101,
+  'at-takathur': 102, 'takathur': 102,
+  'al-asr': 103, 'asr': 103,
+  'al-humazah': 104, 'humazah': 104,
+  'al-fil': 105, 'fil': 105,
+  'quraysh': 106,
+  'al-maun': 107, 'maun': 107,
+  'al-kawthar': 108, 'kawthar': 108,
+  'al-kafirun': 109, 'kafirun': 109,
+  'an-nasr': 110, 'nasr': 110,
+  'al-masad': 111, 'masad': 111,
+  'al-ikhlas': 112, 'ikhlas': 112,
+  'al-falaq': 113, 'falaq': 113,
+  'an-nas': 114, 'nas': 114,
+};
+
+/**
+ * Parse surah info from a title string like "Quran with Tadabbur: Surah An-Naba (78) - The Great News"
+ * or "Surah Al-Mulk (67), Ayat 1-10"
+ */
+function parseSurahInfoFromTitle(title: string): { surahName?: string; surahNumber?: number; ayahRange?: string } | null {
+  if (!title) return null;
+
+  // Pattern 1: "Surah Name (number)" or "Surah Name (number) - Description"
+  // e.g., "Surah An-Naba (78)" or "Surah An-Naba (78) - The Great News"
+  const pattern1 = /[Ss]urah\s+([A-Za-z\-']+)\s*\((\d+)\)/i;
+  const match1 = title.match(pattern1);
+
+  if (match1) {
+    const result: { surahName?: string; surahNumber?: number; ayahRange?: string } = {
+      surahName: match1[1].trim(),
+      surahNumber: parseInt(match1[2], 10),
+    };
+
+    // Try to extract ayah range: "Ayat X-Y" or "Verses X-Y" or "(X-Y)"
+    const ayahPattern = /(?:[Aa]yat?|[Vv]erses?)\s*([\d]+)\s*[-–]\s*([\d]+)/;
+    const ayahMatch = title.match(ayahPattern);
+    if (ayahMatch) {
+      result.ayahRange = `${ayahMatch[1]}-${ayahMatch[2]}`;
+    }
+
+    return result;
+  }
+
+  // Pattern 2: Just "Surah Name" without number - look up in mapping
+  const pattern2 = /[Ss]urah\s+([A-Za-z\-']+)/i;
+  const match2 = title.match(pattern2);
+
+  if (match2) {
+    const surahName = match2[1].trim();
+    const normalizedName = surahName.toLowerCase().replace(/['']/g, '');
+    const surahNumber = SURAH_NAME_TO_NUMBER[normalizedName];
+
+    if (surahNumber) {
+      const result: { surahName?: string; surahNumber?: number; ayahRange?: string } = {
+        surahName: surahName,
+        surahNumber: surahNumber,
+      };
+
+      // Try to extract ayah range
+      const ayahPattern = /(?:[Aa]yat?|[Vv]erses?)\s*([\d]+)\s*[-–]\s*([\d]+)/;
+      const ayahMatch = title.match(ayahPattern);
+      if (ayahMatch) {
+        result.ayahRange = `${ayahMatch[1]}-${ayahMatch[2]}`;
+      }
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract surah info from AI-generated content
+ * Looks for patterns like "Surah Actually Covered: Surah An-Naba (78)" or "Main Lesson Content: Surah Al-Mulk, Ayat 1-10"
+ */
+function extractSurahInfoFromAIContent(content: string): { surahName?: string; surahNumber?: number; ayahRange?: string } | null {
+  const patterns = [
+    // "Surah Actually Covered: Surah An-Naba (78)"
+    /Surah Actually Covered[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s*\((\d+)\))?/i,
+    // "Main Lesson Content: Surah Al-Mulk (67), Ayat 1-10"
+    /Main Lesson Content[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s*\((\d+)\))?(?:,?\s*(?:Ayat?|Verses?)?\s*([\d]+[-–][\d]+))?/i,
+    // "Surah: An-Naba (78)" or just "Surah: An-Naba"
+    /^[\*\-\s]*Surah[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s+and\s+[A-Za-z\-']+)?(?:\s*\((\d+)\))?/im,
+    // "Verses Covered: An-Naba 1-40"
+    /Verses Covered[:\s]+([A-Za-z\-']+)\s*([\d]+[-–][\d]+)?/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      const surahName = match[1].trim();
+      let surahNumber = match[2] ? parseInt(match[2], 10) : undefined;
+
+      // If no number found, look up in mapping
+      if (!surahNumber) {
+        const normalizedName = surahName.toLowerCase().replace(/['']/g, '');
+        surahNumber = SURAH_NAME_TO_NUMBER[normalizedName];
+      }
+
+      const result: { surahName?: string; surahNumber?: number; ayahRange?: string } = {
+        surahName: surahName,
+        surahNumber: surahNumber,
+      };
+
+      // Extract ayah range if present in match
+      if (match[3]) {
+        result.ayahRange = match[3].replace('–', '-');
+      } else {
+        // Try to find ayah range elsewhere in first 2000 chars
+        const ayahPattern = /(?:Ayat?|Verses?)[:\s]*([\d]+)\s*[-–]\s*([\d]+)/i;
+        const ayahMatch = content.substring(0, 2000).match(ayahPattern);
+        if (ayahMatch) {
+          result.ayahRange = `${ayahMatch[1]}-${ayahMatch[2]}`;
+        }
+      }
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
 interface VerifiedVerse {
   ayahNumber: number;
   verseKey: string;
@@ -40,6 +268,111 @@ interface VerifiedVerse {
   translation: string;
   fullVerseUthmani: string;
   fullVerseTranslation: string;
+}
+
+interface TafsirEntry {
+  verseKey: string;
+  ayahNumber: number;
+  text: string;
+  tafsirName: string;
+}
+
+/**
+ * Fetch scholarly tafsir from Quran.com API
+ * Uses Ibn Kathir (Abridged) - ID 169 for English tafsir
+ */
+async function fetchTafsirData(
+  surahNumber: number,
+  startAyah: number,
+  endAyah: number
+): Promise<TafsirEntry[]> {
+  const tafsirEntries: TafsirEntry[] = [];
+  const TAFSIR_ID = 169; // Ibn Kathir (Abridged) in English
+
+  try {
+    // Fetch tafsir for each verse in range (API returns per-ayah)
+    const fetchPromises: Promise<Response>[] = [];
+    for (let ayah = startAyah; ayah <= endAyah; ayah++) {
+      const verseKey = `${surahNumber}:${ayah}`;
+      fetchPromises.push(
+        fetch(`${QURAN_API_BASE}/tafsirs/${TAFSIR_ID}/by_ayah/${verseKey}`)
+      );
+    }
+
+    const responses = await Promise.all(fetchPromises);
+
+    for (let i = 0; i < responses.length; i++) {
+      const response = responses[i];
+      const ayahNumber = startAyah + i;
+      const verseKey = `${surahNumber}:${ayahNumber}`;
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tafsir?.text) {
+          // Clean HTML tags from tafsir text
+          let cleanText = data.tafsir.text
+            .replace(/<h2[^>]*>.*?<\/h2>/gi, '') // Remove headers
+            .replace(/<p[^>]*>/gi, '\n') // Replace p tags with newlines
+            .replace(/<\/p>/gi, '\n')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]*>/g, '') // Remove remaining HTML tags
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
+            .trim();
+
+          // Limit length per verse to keep response manageable
+          if (cleanText.length > 2000) {
+            cleanText = cleanText.substring(0, 2000) + '...';
+          }
+
+          tafsirEntries.push({
+            verseKey,
+            ayahNumber,
+            text: cleanText,
+            tafsirName: data.tafsir.resource_name || 'Ibn Kathir (Abridged)'
+          });
+        }
+      } else {
+        console.warn(`Failed to fetch tafsir for ${verseKey}: ${response.status}`);
+      }
+    }
+
+    return tafsirEntries;
+  } catch (error) {
+    console.error('Error fetching tafsir data:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate Tafsir section with actual scholarly commentary
+ */
+function generateTafsirSection(tafsirEntries: TafsirEntry[], surahName: string): string {
+  if (tafsirEntries.length === 0) return '';
+
+  let section = `
+---
+
+## 📖 Scholarly Tafsir (Ibn Kathir)
+
+**Surah ${surahName} - Classical Commentary from Tafsir Ibn Kathir**
+
+*This tafsir is sourced directly from Quran.com's verified scholarly database.*
+
+`;
+
+  for (const entry of tafsirEntries) {
+    section += `### Ayah ${entry.ayahNumber}\n\n`;
+    section += `${entry.text}\n\n`;
+  }
+
+  section += `---\n\n*Source: ${tafsirEntries[0]?.tafsirName || 'Ibn Kathir (Abridged)'} via Quran.com API*\n\n`;
+
+  return section;
 }
 
 /**
@@ -188,11 +521,29 @@ The goal is to help students understand, internalise, and live by the Qur'an's m
 
 ---
 
+### ⚠️ CRITICAL: TRANSCRIPT ANALYSIS FIRST
+
+**IMPORTANT**: The metadata provided (surah name, ayah range) may be INACCURATE or a general booking title.
+You MUST analyze the transcript carefully to determine:
+1. Which surah(s) were ACTUALLY discussed in this lesson
+2. Which specific ayat (verses) were covered
+3. What topics were actually taught (tafsir, memorization, revision, etc.)
+
+**Rules:**
+- If the transcript mentions reviewing/reciting a DIFFERENT surah at the start (e.g., revision of previously learned material), note this separately
+- Identify the MAIN surah being taught in this lesson from what the teacher explains
+- Extract the actual ayah numbers mentioned in the lesson discussion
+- If no specific verses are clearly discussed, state "General discussion" rather than guessing
+- Always prioritize what you find in the transcript over the metadata
+
+---
+
 ### 🕌 TALBIYAH INSIGHTS – QUR'ĀN WITH TADABBUR (UNDERSTANDING & REFLECTION)
 
 **1. Lesson Information**
-- Surah: [Name and Number]
-- Verses Covered: [Ayah range]
+- Surah Actually Covered: [Extract from transcript - NOT from metadata]
+- Verses Actually Discussed: [Extract from transcript - specify exact ayat]
+- Revision/Warm-up: [If student recited a different surah for revision, note it here]
 - Teacher: [Name]
 - Student(s): [Name(s)]
 - Date: [Lesson date]
@@ -201,7 +552,13 @@ The goal is to help students understand, internalise, and live by the Qur'an's m
 ---
 
 **2. Verses Covered (Arabic & Translation)**
-Display each verse that was studied in this lesson as a table. For each ayah include:
+IMPORTANT: Only include verses that were ACTUALLY discussed in the transcript. Do NOT include verses just because they appear in the metadata.
+
+First, clearly state:
+- "Main Lesson Content: Surah [Name] ([Number]), Ayat [X-Y]" - based on what the teacher actually explained
+- If there was revision: "Revision Portion: Surah [Name], Ayat [X-Y]" - if student recited previous material
+
+Then display each verse that was ACTUALLY studied (not just recited for warm-up) as a table:
 - Ayah number
 - Full Arabic text (Uthmānī script with tashkīl/vowel marks)
 - English translation
@@ -211,19 +568,25 @@ Use this table format:
 |------|--------|-------------|
 | 1 | بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ | In the name of Allah, the Most Gracious, the Most Merciful |
 
-Include ALL verses covered in the lesson (typically 5-15 ayat).
+Only include verses where the teacher provided explanation or discussion.
 
 ---
 
-**3. Flow of Meaning (Tafsīr Summary)**
-Write a detailed English explanation of the verses in order, combining:
-- Word-by-word or phrase-by-phrase breakdown where relevant
-- Translation of key Arabic terms
-- Tafsīr points from the teacher's explanation
-- Context (when revealed, why, to whom)
-- Key moral and spiritual messages
+**3. Flow of Meaning (Lesson Explanation)**
+NOTE: A separate "Scholarly Tafsir (Ibn Kathir)" section with actual scholarly commentary from Quran.com API will be automatically appended to these insights.
 
-Break this into paragraphs, one for each group of related ayat. Use subheadings like "Ayat 1-3: [Theme]" to organize.
+For THIS section, focus on:
+- What the TEACHER specifically explained about these verses in the lesson
+- Any unique insights, examples, or analogies the teacher used
+- Word meanings and concepts the teacher highlighted
+- How the teacher connected verses to daily life
+- Any questions or discussions that arose during the lesson
+
+**Formatting:**
+- Break into paragraphs, one for each group of related ayat discussed
+- Use subheadings like "Ayat 1-3: [Topic Teacher Covered]"
+- Be honest about what was and wasn't covered - if the teacher only briefly mentioned verses, say so
+- This section captures the LESSON EXPERIENCE, while the scholarly tafsir section provides the comprehensive academic commentary
 
 ---
 
@@ -318,6 +681,7 @@ Always mark the CORRECT answer with ✅
 - **Include only content directly related to the Qur'an lesson** (tafsīr, translation, examples, reflections, Arabic analysis).
 - **Exclude** all irrelevant conversation: greetings ("How are you?"), small talk, technical issues, setup chat, and off-topic discussion.
 - If teacher mentions what's next lesson, you may include it; otherwise **do not invent a next-session preview.**
+- **NEVER generate content about surahs/verses that weren't actually discussed in the transcript.**
 
 ---
 
@@ -326,8 +690,13 @@ Always mark the CORRECT answer with ✅
 2. Write in warm, educational, and reflective tone.
 3. Keep Arabic in standard Uthmānī script with full tashkīl (vowel marks).
 4. Use clear spacing, bullets, and tables for readability.
-5. Stay faithful to what was actually said in the lesson — supplement with authentic tafsīr only where needed for clarity.
-6. Always include ALL verses that were covered in the lesson.`;
+5. The "Flow of Meaning" section should capture WHAT THE TEACHER EXPLAINED (scholarly tafsir is appended automatically from Quran.com API).
+6. For ALL sections: Focus on what was actually covered in the lesson transcript.
+7. If the lesson was primarily recitation/memorization practice, note the lesson focus - the appended tafsir will provide scholarly commentary.
+8. Clearly distinguish between:
+   - Revision/warm-up recitation (student practicing previous material)
+   - Main lesson content (new material being taught)`;
+
 
 const ARABIC_PROMPT = `## 📚 TALBIYAH INSIGHTS – ARABIC LANGUAGE TEMPLATE
 
@@ -506,7 +875,7 @@ Deno.serve(async (req: Request) => {
   const startTime = Date.now();
 
   try {
-    const { lesson_id, transcript, subject, metadata }: LessonInsightRequest = await req.json();
+    const { lesson_id, transcript, subject, lesson_title, metadata }: LessonInsightRequest = await req.json();
 
     if (!lesson_id || !transcript || !subject || !metadata) {
       return new Response(
@@ -516,6 +885,28 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Try to parse surah info from lesson_title if not in metadata
+    if (!metadata.surah_number && lesson_title) {
+      const parsedInfo = parseSurahInfoFromTitle(lesson_title);
+      if (parsedInfo) {
+        console.log(`Parsed surah info from title "${lesson_title}":`, parsedInfo);
+        metadata.surah_name = parsedInfo.surahName || metadata.surah_name;
+        metadata.surah_number = parsedInfo.surahNumber || metadata.surah_number;
+        metadata.ayah_range = parsedInfo.ayahRange || metadata.ayah_range;
+      }
+    }
+
+    // Also try parsing from subject name if still no surah info
+    if (!metadata.surah_number && subject) {
+      const parsedFromSubject = parseSurahInfoFromTitle(subject);
+      if (parsedFromSubject) {
+        console.log(`Parsed surah info from subject "${subject}":`, parsedFromSubject);
+        metadata.surah_name = parsedFromSubject.surahName || metadata.surah_name;
+        metadata.surah_number = parsedFromSubject.surahNumber || metadata.surah_number;
+        metadata.ayah_range = parsedFromSubject.ayahRange || metadata.ayah_range;
+      }
     }
 
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -539,8 +930,10 @@ Deno.serve(async (req: Request) => {
     let insightType: string;
     let title: string;
     let verifiedVerses: VerifiedVerse[] = [];
+    let tafsirEntries: TafsirEntry[] = [];
     let firstWordPrompterSection = '';
     let versesCoveredSection = '';
+    let tafsirSection = '';
     let verifiedFirstWordsContext = '';
 
     const subjectLower = subject.toLowerCase();
@@ -564,13 +957,14 @@ Deno.serve(async (req: Request) => {
       insightType = 'subject_specific';
       console.log(`Using database template for subject: ${subjectData.name}`);
 
-      // Set title based on subject type
+      // Set initial title based on subject type (will be refined after AI analysis)
+      // Using date-based titles since surah/ayah metadata may be inaccurate
       if (isQuranUnderstanding) {
-        title = `Qur'an with Understanding: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+        title = `Qur'an with Understanding: ${metadata.lesson_date}`;
       } else if (isQuranMemorisation) {
-        title = `Qur'an Memorisation: ${metadata.surah_name || 'Session'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+        title = `Qur'an Memorisation: ${metadata.lesson_date}`;
       } else if (isQuranLesson) {
-        title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+        title = `Qur'an Insights: ${metadata.lesson_date}`;
       } else if (isArabicLesson) {
         title = `Arabic Language Insights: ${metadata.lesson_date}`;
       } else {
@@ -580,7 +974,7 @@ Deno.serve(async (req: Request) => {
       // Fallback to hardcoded Quran prompt
       systemPrompt = QURAN_PROMPT;
       insightType = 'subject_specific';
-      title = `Qur'an Insights: ${metadata.surah_name || 'Lesson'} ${metadata.ayah_range ? `(${metadata.ayah_range})` : ''}`;
+      title = `Qur'an Insights: ${metadata.lesson_date}`;
       console.log('Using fallback QURAN_PROMPT');
     } else if (isArabicLesson) {
       // Fallback to hardcoded Arabic prompt
@@ -607,14 +1001,27 @@ Make the notes detailed, educational, and easy to revise.`;
         const endAyah = parseInt(ayahRangeMatch[2], 10);
 
         console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
-        verifiedVerses = await fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah);
+
+        // Fetch verses and tafsir in parallel
+        const [fetchedVerses, fetchedTafsir] = await Promise.all([
+          fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah),
+          fetchTafsirData(metadata.surah_number, startAyah, endAyah)
+        ]);
+
+        verifiedVerses = fetchedVerses;
+        tafsirEntries = fetchedTafsir;
+
         console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
+        console.log(`Fetched ${tafsirEntries.length} tafsir entries from Ibn Kathir`);
 
         // Generate verified Verses Covered section with full Arabic and translation
         versesCoveredSection = generateVersesCoveredSection(verifiedVerses, metadata.surah_name || 'Quran');
 
         // Generate verified First Word Prompter section
         firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
+
+        // Generate scholarly Tafsir section
+        tafsirSection = generateTafsirSection(tafsirEntries, metadata.surah_name || 'Quran');
 
         // Create context for AI prompt
         if (verifiedVerses.length > 0) {
@@ -626,12 +1033,13 @@ Make the notes detailed, educational, and easy to revise.`;
     // Build user prompt based on subject type
     let userPrompt = `Generate Talbiyah Insights for this ${subject} lesson:
 
-METADATA:`;
+BOOKING METADATA (may be inaccurate - use transcript to verify):`;
 
     if (metadata.surah_name && metadata.surah_number) {
       userPrompt += `
-- Surah: ${metadata.surah_name} (${metadata.surah_number})
-- Verses: ${metadata.ayah_range}`;
+- Booked as: ${metadata.surah_name} (${metadata.surah_number})
+- Booked verses: ${metadata.ayah_range}
+⚠️ WARNING: The above is just the booking title. ANALYZE THE TRANSCRIPT to determine what was ACTUALLY taught.`;
     }
 
     userPrompt += `
@@ -646,10 +1054,19 @@ METADATA:`;
 
     userPrompt += `
 ${verifiedFirstWordsContext}
+
+CRITICAL INSTRUCTIONS:
+1. Read the ENTIRE transcript carefully before generating insights
+2. Identify which surah(s) and ayat were ACTUALLY discussed (not what the booking says)
+3. If the student recited one surah for revision/warm-up but learned a different surah, note BOTH
+4. For the "Flow of Meaning" section: Focus on what the TEACHER actually explained in the lesson
+5. NOTE: Scholarly tafsir from Ibn Kathir will be automatically appended from Quran.com API - you don't need to generate comprehensive tafsir
+6. Your role is to capture the LESSON EXPERIENCE - the teacher's explanations, examples, and discussions
+
 TRANSCRIPT:
 ${transcript}
 
-${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a First Word Prompter section, you MUST use the VERIFIED FIRST WORDS provided above. Do NOT guess or generate first words - they have been verified from the Quran.com API.\n\n' : ''}Generate the insights following the exact format specified in the system prompt.`;
+${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a First Word Prompter section, you MUST use the VERIFIED FIRST WORDS provided above. Do NOT guess or generate first words - they have been verified from the Quran.com API.\n\n' : ''}Generate the insights following the exact format specified in the system prompt. Remember: transcript content takes priority over booking metadata.`;
 
     console.log(`Calling Claude API to generate ${subject} insights...`);
 
@@ -702,8 +1119,107 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       );
     }
 
-    // Add verified Verses Covered section for Quran lessons (at the beginning after lesson info)
-    if (isQuranLesson && versesCoveredSection) {
+    // CRITICAL: Extract actual surah info from AI-generated content
+    // This is the authoritative source - AI analyzes the actual transcript
+    let actualSurahInfo: { surahName?: string; surahNumber?: number; ayahRange?: string } | null = null;
+    if (isQuranLesson) {
+      actualSurahInfo = extractSurahInfoFromAIContent(generatedText);
+      if (actualSurahInfo) {
+        console.log("AI identified actual surah from transcript:", actualSurahInfo);
+
+        // Check if AI found a different surah than what was in metadata
+        const metadataSurahNumber = metadata.surah_number;
+        const actualSurahNumber = actualSurahInfo.surahNumber;
+
+        if (actualSurahNumber && (!metadataSurahNumber || actualSurahNumber !== metadataSurahNumber)) {
+          console.log(`Surah mismatch detected! Metadata: ${metadataSurahNumber}, AI found: ${actualSurahNumber}`);
+          console.log("Re-fetching verified verses for correct surah...");
+
+          // Parse ayah range from AI content, default to 1-10 if not found
+          let startAyah = 1;
+          let endAyah = 10;
+          if (actualSurahInfo.ayahRange) {
+            const ayahMatch = actualSurahInfo.ayahRange.match(/(\d+)\s*[-–]\s*(\d+)/);
+            if (ayahMatch) {
+              startAyah = parseInt(ayahMatch[1], 10);
+              endAyah = parseInt(ayahMatch[2], 10);
+            }
+          }
+
+          // Re-fetch the correct verses and tafsir in parallel
+          const [correctedVerses, correctedTafsir] = await Promise.all([
+            fetchVerifiedQuranData(actualSurahNumber, startAyah, endAyah),
+            fetchTafsirData(actualSurahNumber, startAyah, endAyah)
+          ]);
+
+          if (correctedVerses.length > 0) {
+            console.log(`Successfully fetched ${correctedVerses.length} verses for Surah ${actualSurahNumber}`);
+            console.log(`Successfully fetched ${correctedTafsir.length} tafsir entries for Surah ${actualSurahNumber}`);
+            verifiedVerses = correctedVerses;
+            tafsirEntries = correctedTafsir;
+
+            // Update metadata with correct info for storage
+            metadata.surah_name = actualSurahInfo.surahName || metadata.surah_name;
+            metadata.surah_number = actualSurahNumber;
+            metadata.ayah_range = actualSurahInfo.ayahRange || `${startAyah}-${endAyah}`;
+
+            // Re-generate the verified sections
+            versesCoveredSection = generateVersesCoveredSection(verifiedVerses, metadata.surah_name || 'Quran');
+            firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
+            tafsirSection = generateTafsirSection(tafsirEntries, metadata.surah_name || 'Quran');
+          } else {
+            console.log(`Warning: Could not fetch verses for Surah ${actualSurahNumber}`);
+          }
+        } else if (actualSurahNumber && metadataSurahNumber === actualSurahNumber) {
+          console.log(`Surah confirmed: metadata and AI agree on Surah ${actualSurahNumber}`);
+          // Update ayah range if AI found more specific info
+          if (actualSurahInfo.ayahRange && !metadata.ayah_range) {
+            metadata.ayah_range = actualSurahInfo.ayahRange;
+          }
+        }
+      } else if (verifiedVerses.length === 0) {
+        // If AI didn't explicitly identify a surah but we have no verified verses,
+        // try one more time to parse from the lesson title
+        console.log("AI did not explicitly identify surah, checking if we need to fetch verses...");
+      }
+    }
+
+    // IMPORTANT: Only add verified verses if we have them and they match the AI-identified content
+    // After the re-fetch logic above, verifiedVerses should now contain the correct surah's verses
+    const shouldAppendVerifiedVerses = (): boolean => {
+      // Must have valid verified verses and be a Quran lesson
+      if (!isQuranLesson || !versesCoveredSection || verifiedVerses.length === 0) {
+        return false;
+      }
+
+      // If we have actualSurahInfo (AI analysis), check consistency
+      if (actualSurahInfo?.surahNumber) {
+        // We should have already re-fetched if there was a mismatch
+        // Just verify we have the right surah
+        const expectedVerseKey = `${actualSurahInfo.surahNumber}:`;
+        if (verifiedVerses[0]?.verseKey?.startsWith(expectedVerseKey)) {
+          console.log(`Verified verses match AI-identified surah ${actualSurahInfo.surahNumber}`);
+          return true;
+        } else {
+          console.log(`Warning: Verified verses don't match AI-identified surah. Expected ${expectedVerseKey}, got ${verifiedVerses[0]?.verseKey}`);
+          return false;
+        }
+      }
+
+      // If no AI-identified surah but we have metadata, check that
+      if (metadata.surah_number) {
+        const expectedVerseKey = `${metadata.surah_number}:`;
+        if (verifiedVerses[0]?.verseKey?.startsWith(expectedVerseKey)) {
+          return true;
+        }
+      }
+
+      // Default: don't append if we can't verify correctness
+      return false;
+    };
+
+    // Add verified Verses Covered section for Quran lessons (only if surah matches)
+    if (shouldAppendVerifiedVerses() && versesCoveredSection) {
       // Insert after the first "---" (after lesson info section)
       const firstDividerIndex = generatedText.indexOf('---');
       if (firstDividerIndex !== -1) {
@@ -717,12 +1233,20 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
         generatedText = versesCoveredSection + generatedText;
       }
       console.log("Added verified Verses Covered section from Quran.com API");
+    } else if (isQuranLesson && versesCoveredSection) {
+      console.log("Skipped verified verse append - AI identified different content than metadata");
     }
 
-    // Append verified First Word Prompter section for Quran lessons
-    if (isQuranLesson && firstWordPrompterSection) {
+    // Append verified First Word Prompter section for Quran lessons (only if surah matches)
+    if (shouldAppendVerifiedVerses() && firstWordPrompterSection) {
       generatedText = generatedText + firstWordPrompterSection;
       console.log("Appended verified First Word Prompter section from Quran.com API");
+    }
+
+    // Append scholarly Tafsir section from Ibn Kathir (only if surah matches)
+    if (shouldAppendVerifiedVerses() && tafsirSection) {
+      generatedText = generatedText + tafsirSection;
+      console.log(`Appended scholarly Tafsir section with ${tafsirEntries.length} entries from Ibn Kathir`);
     }
 
     // QUIZ VERIFICATION: Auto-correct quiz answers about Quran verses
@@ -844,6 +1368,16 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       detailedInsightsData.quran_api_source = 'quran.com/api/v4';
     }
 
+    // Add scholarly tafsir data if available
+    if (isQuranLesson && tafsirEntries.length > 0) {
+      detailedInsightsData.tafsir = {
+        source: 'Ibn Kathir (Abridged)',
+        source_id: 169,
+        entries: tafsirEntries,
+        fetched_at: new Date().toISOString()
+      };
+    }
+
     // Add quiz verification metadata if verification was performed
     if (quizVerificationResult) {
       detailedInsightsData.quiz_verification = {
@@ -855,6 +1389,59 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       };
     }
 
+    // Generate a meaningful summary (first 2000 chars or up to the first major section break)
+    const generateSummary = (content: string): string => {
+      // Try to find the Summary Takeaway section for a better summary
+      const summaryMatch = content.match(/(?:Summary Takeaway|Talbiyah Insights Summary)[^\n]*\n([\s\S]{100,800}?)(?:\n---|\n##|$)/i);
+      if (summaryMatch) {
+        return summaryMatch[1].trim().substring(0, 2000);
+      }
+      // Otherwise use first 2000 chars
+      return content.substring(0, 2000);
+    };
+
+    // Extract actual surah info from AI-generated content to create accurate title
+    const extractActualSurahInfo = (content: string): { surah?: string; ayat?: string } | null => {
+      // Look for patterns like "Surah Actually Covered: Surah An-Naba (78)"
+      // or "Main Lesson Content: Surah Al-Mulk (67), Ayat 1-10"
+      const patterns = [
+        /Surah Actually Covered[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s*\((\d+)\))?(?:,?\s*(?:Ayat?|Verses?)?\s*([\d\-–]+))?/i,
+        /Main Lesson Content[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s*\((\d+)\))?(?:,?\s*(?:Ayat?|Verses?)?\s*([\d\-–]+))?/i,
+        /Surah[:\s]+(?:Surah\s+)?([A-Za-z\-']+)(?:\s*\((\d+)\))?/i,
+      ];
+
+      for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+          return {
+            surah: match[1].trim(),
+            ayat: match[3]?.trim() || undefined
+          };
+        }
+      }
+      return null;
+    };
+
+    // Try to extract actual surah info from the generated content
+    const actualSurahInfo = isQuranLesson ? extractActualSurahInfo(generatedText) : null;
+
+    // Update title with actual content if found
+    if (actualSurahInfo?.surah) {
+      const surahPart = actualSurahInfo.surah;
+      const ayatPart = actualSurahInfo.ayat ? ` (${actualSurahInfo.ayat})` : '';
+
+      if (isQuranUnderstanding) {
+        title = `Qur'an with Understanding: Surah ${surahPart}${ayatPart}`;
+      } else if (isQuranMemorisation) {
+        title = `Qur'an Memorisation: Surah ${surahPart}${ayatPart}`;
+      } else if (isQuranLesson) {
+        title = `Qur'an Insights: Surah ${surahPart}${ayatPart}`;
+      }
+      console.log(`Updated title from AI analysis: ${title}`);
+    }
+
+    const summaryText = generateSummary(generatedText);
+
     if (existingInsight) {
       // Update existing - ensure teacher_id, learner_id, subject_id are set for RLS
       const { data, error } = await supabase
@@ -865,7 +1452,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           subject_id: lessonData.subject_id,
           insight_type: insightType,
           title: title,
-          summary: generatedText.substring(0, 500),
+          summary: summaryText,
           key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
@@ -888,7 +1475,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           subject_id: lessonData.subject_id,
           insight_type: insightType,
           title: title,
-          summary: generatedText.substring(0, 500),
+          summary: summaryText,
           key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
           ai_model: 'claude-sonnet-4-20250514',
