@@ -400,6 +400,14 @@ export default function QunutPractice() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-slate-900 focus:rounded-lg"
+      >
+        Skip to dua content
+      </a>
+
       {/* Header */}
       <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -420,7 +428,7 @@ export default function QunutPractice() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 py-8">
         {/* Title Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-1 rounded-full text-sm mb-4">
@@ -436,9 +444,10 @@ export default function QunutPractice() {
         <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700">
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Mode Toggle */}
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="group" aria-label="Practice mode">
               <button
                 onClick={() => setPracticeMode('full')}
+                aria-pressed={practiceMode === 'full'}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   practiceMode === 'full'
                     ? 'bg-amber-500 text-slate-900'
@@ -450,6 +459,7 @@ export default function QunutPractice() {
               </button>
               <button
                 onClick={() => setPracticeMode('line-by-line')}
+                aria-pressed={practiceMode === 'line-by-line'}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   practiceMode === 'line-by-line'
                     ? 'bg-amber-500 text-slate-900'
@@ -566,6 +576,7 @@ export default function QunutPractice() {
                     {'note' in section && section.note && (
                       <button
                         onClick={() => toggleNote(section.id as number)}
+                        aria-expanded={expandedNotes.includes(section.id as number)}
                         className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
                       >
                         {expandedNotes.includes(section.id as number) ? (
@@ -592,7 +603,7 @@ export default function QunutPractice() {
                     onClick={() => handleGenerateAudio(section.arabic, section.id as number)}
                     disabled={generatingAudio}
                     className="flex-shrink-0 p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
-                    title="Play this line"
+                    aria-label={`Play line ${index + 1} audio`}
                   >
                     {generatingAudio && currentPlayingSection === section.id ? (
                       <Loader2 size={18} className="animate-spin" />
@@ -616,11 +627,13 @@ export default function QunutPractice() {
               <span className="text-slate-400 text-sm">
                 Line {currentLine + 1} of {allSections.length}
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-1" role="group" aria-label="Line navigation">
                 {allSections.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentLine(i)}
+                    aria-label={`Go to line ${i + 1}${i === currentLine ? ' (current)' : i < currentLine ? ' (completed)' : ''}`}
+                    aria-current={i === currentLine ? 'step' : undefined}
                     className={`w-3 h-3 rounded-full transition-colors ${
                       i === currentLine
                         ? 'bg-amber-500'

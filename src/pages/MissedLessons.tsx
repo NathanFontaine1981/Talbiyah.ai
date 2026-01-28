@@ -212,11 +212,20 @@ export default function MissedLessons() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to missed lessons
+      </a>
+
+      <main id="main-content" className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard')}
+            aria-label="Go back to dashboard"
             className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -357,7 +366,7 @@ export default function MissedLessons() {
             </button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

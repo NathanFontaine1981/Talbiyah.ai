@@ -459,7 +459,15 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to messages
+      </a>
+
+      <main id="main-content" className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -482,8 +490,10 @@ export default function Messages() {
               {/* Search */}
               <div className="p-4 border-b">
                 <div className="relative">
+                  <label htmlFor="conversation-search" className="sr-only">Search conversations</label>
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
+                    id="conversation-search"
                     type="text"
                     placeholder="Search conversations..."
                     value={searchQuery}
@@ -508,6 +518,7 @@ export default function Messages() {
                     <button
                       key={conv.relationship_id}
                       onClick={() => handleConversationClick(conv)}
+                      aria-current={selectedConversation?.relationship_id === conv.relationship_id ? 'true' : undefined}
                       className={`w-full p-4 text-left hover:bg-gray-50 transition ${
                         selectedConversation?.relationship_id === conv.relationship_id
                           ? 'bg-cyan-50 border-l-4 border-emerald-500'
@@ -804,6 +815,7 @@ export default function Messages() {
                                   <button
                                     key={lesson.id}
                                     onClick={() => setSelectedLessonId(lesson.id)}
+                                    aria-pressed={selectedLessonId === lesson.id}
                                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                                       selectedLessonId === lesson.id
                                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
@@ -836,6 +848,7 @@ export default function Messages() {
                             <div>
                               <button
                                 onClick={() => setShowPastLessons(!showPastLessons)}
+                                aria-expanded={showPastLessons}
                                 className="flex items-center justify-between w-full text-xs font-medium text-gray-500 hover:text-gray-700 py-2"
                               >
                                 <div className="flex items-center gap-2">
@@ -855,6 +868,7 @@ export default function Messages() {
                                     <button
                                       key={lesson.id}
                                       onClick={() => setSelectedLessonId(lesson.id)}
+                                      aria-pressed={selectedLessonId === lesson.id}
                                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                                         selectedLessonId === lesson.id
                                           ? 'bg-gray-200 text-gray-800 border border-gray-300'
@@ -913,7 +927,7 @@ export default function Messages() {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

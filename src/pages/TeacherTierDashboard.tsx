@@ -309,7 +309,15 @@ export default function TeacherTierDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to tier dashboard
+      </a>
+
+      <main id="main-content" className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate('/dashboard')}
@@ -364,12 +372,12 @@ export default function TeacherTierDashboard() {
             id="hours-taught"
             text="Total hours you've taught on the platform. More hours = higher tier eligibility."
           >
-            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
+            <div className="bg-white backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
               <div className="flex items-center justify-between mb-2">
                 <Clock className="w-6 h-6 text-emerald-600" />
-                <Info className="w-4 h-4 text-gray-600" />
+                <Info className="w-4 h-4 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-white mb-1">
+              <p className="text-3xl font-bold text-gray-900 mb-1">
                 {stats.hours_taught.toFixed(1)}h
               </p>
               <p className="text-sm text-gray-500">Hours Taught</p>
@@ -380,12 +388,12 @@ export default function TeacherTierDashboard() {
             id="retention-rate"
             text="Percentage of students who return for 2+ lessons. Higher retention unlocks advanced tiers. Requires 5+ unique students to count."
           >
-            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
+            <div className="bg-white backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-emerald-500/50 transition">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-                <Info className="w-4 h-4 text-gray-600" />
+                <TrendingUp className="w-6 h-6 text-emerald-600" />
+                <Info className="w-4 h-4 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-white mb-1">
+              <p className="text-3xl font-bold text-gray-900 mb-1">
                 {stats.total_unique_students >= 5 ? `${stats.retention_rate.toFixed(0)}%` : 'N/A'}
               </p>
               <p className="text-sm text-gray-500">Student Retention</p>
@@ -399,12 +407,12 @@ export default function TeacherTierDashboard() {
             id="total-students"
             text="Number of unique students you've taught. Some may have locked pricing from when you were a lower tier."
           >
-            <div className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-purple-500/50 transition">
+            <div className="bg-white backdrop-blur-sm rounded-xl p-6 border border-gray-200 cursor-help hover:border-purple-500/50 transition">
               <div className="flex items-center justify-between mb-2">
-                <Users className="w-6 h-6 text-purple-400" />
-                <Info className="w-4 h-4 text-gray-600" />
+                <Users className="w-6 h-6 text-purple-600" />
+                <Info className="w-4 h-4 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-white mb-1">{stats.total_students}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{stats.total_students}</p>
               <p className="text-sm text-gray-500">Total Students</p>
               <p className="text-xs text-gray-500 mt-1">
                 {stats.grandfathered_students} with locked pricing
@@ -512,7 +520,7 @@ export default function TeacherTierDashboard() {
                     <div className="flex items-center space-x-3">
                       <span className="text-4xl">{tier.tier_icon}</span>
                       <div>
-                        <h3 className="text-xl font-bold text-white">{tier.tier_name}</h3>
+                        <h3 className={`text-xl font-bold ${isCurrent ? 'text-white' : 'text-gray-900'}`}>{tier.tier_name}</h3>
                         <p className="text-xs text-gray-500">
                           {tier.requires_manual_approval ? 'Manual Approval' : 'Auto-Promotion'}
                         </p>
@@ -526,10 +534,10 @@ export default function TeacherTierDashboard() {
                   </div>
 
                   {/* Earnings */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className={`rounded-lg p-4 mb-4 ${isCurrent ? 'bg-white/10' : 'bg-gray-100'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-500">Hourly Rate</span>
-                      <span className="text-3xl font-bold text-emerald-400">
+                      <span className="text-3xl font-bold text-emerald-600">
                         £{tier.teacher_hourly_rate.toFixed(2)}
                       </span>
                     </div>
@@ -679,18 +687,19 @@ export default function TeacherTierDashboard() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Application Modal */}
       {showApplicationModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-100 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-labelledby="application-modal-title" className="bg-gray-100 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white capitalize">
+              <h2 id="application-modal-title" className="text-2xl font-bold text-white capitalize">
                 Apply for {applicationTier} Tier
               </h2>
               <button
                 onClick={() => setShowApplicationModal(false)}
+                aria-label="Close application modal"
                 className="text-gray-500 hover:text-white transition"
               >
                 <X className="w-6 h-6" />
@@ -700,10 +709,11 @@ export default function TeacherTierDashboard() {
             <div className="space-y-6">
               {/* Reason */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label htmlFor="application-reason" className="block text-sm font-semibold text-gray-600 mb-2">
                   Why do you want to apply for this tier?
                 </label>
                 <textarea
+                  id="application-reason"
                   value={formData.application_reason}
                   onChange={(e) =>
                     setFormData({ ...formData, application_reason: e.target.value })
@@ -716,10 +726,11 @@ export default function TeacherTierDashboard() {
 
               {/* Years Experience */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label htmlFor="years-experience" className="block text-sm font-semibold text-gray-600 mb-2">
                   Years of Teaching Experience
                 </label>
                 <input
+                  id="years-experience"
                   type="number"
                   value={formData.years_experience}
                   onChange={(e) =>
@@ -732,10 +743,11 @@ export default function TeacherTierDashboard() {
 
               {/* English Proficiency */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label htmlFor="english-proficiency" className="block text-sm font-semibold text-gray-600 mb-2">
                   English Proficiency
                 </label>
                 <select
+                  id="english-proficiency"
                   value={formData.english_proficiency}
                   onChange={(e) =>
                     setFormData({ ...formData, english_proficiency: e.target.value })
@@ -751,10 +763,11 @@ export default function TeacherTierDashboard() {
 
               {/* Video URLs */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label htmlFor="intro-video-url" className="block text-sm font-semibold text-gray-600 mb-2">
                   Introduction Video URL (Optional)
                 </label>
                 <input
+                  id="intro-video-url"
                   type="url"
                   value={formData.intro_video_url}
                   onChange={(e) =>
@@ -766,10 +779,11 @@ export default function TeacherTierDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label htmlFor="recitation-sample-url" className="block text-sm font-semibold text-gray-600 mb-2">
                   Quran Recitation Sample URL (Optional)
                 </label>
                 <input
+                  id="recitation-sample-url"
                   type="url"
                   value={formData.recitation_sample_url}
                   onChange={(e) =>

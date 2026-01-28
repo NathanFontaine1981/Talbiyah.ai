@@ -20,11 +20,20 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to cart
+      </a>
+
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/teachers')}
+              aria-label="Go back to teachers"
               className="flex items-center space-x-2 text-gray-500 hover:text-emerald-600 transition"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -41,7 +50,7 @@ export default function Cart() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
+      <main id="main-content" className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
         {cartItems.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
@@ -85,7 +94,7 @@ export default function Cart() {
                   <button
                     onClick={() => removeFromCart(item.id)}
                     className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-500 opacity-0 group-hover:opacity-100 transition"
-                    title="Remove from cart"
+                    aria-label={`Remove ${item.subject_name || 'item'} from cart`}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -163,7 +172,7 @@ export default function Cart() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

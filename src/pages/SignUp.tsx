@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle, Compass, Phone } from 'lucide-react';
+import { BookOpen, User, GraduationCap, Loader2, Mail, Lock, ArrowLeft, Gift, Users, CheckCircle, XCircle, AlertTriangle, Compass, Phone, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { validateEmail } from '../utils/emailValidation';
@@ -28,6 +28,9 @@ export default function SignUp() {
   const [referralValidation, setReferralValidation] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<ReturnType<typeof validatePassword> | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (referralCodeFromUrl) {
@@ -141,6 +144,11 @@ export default function SignUp() {
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setAuthError('');
+
+    if (!agreedToTerms) {
+      setAuthError('Please agree to the Terms of Service and Privacy Policy');
+      return;
+    }
 
     if (!authForm.fullName.trim()) {
       setAuthError('Please enter your full name');
@@ -451,6 +459,14 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      {/* Skip to form link for accessibility */}
+      <a
+        href="#signup-form"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to signup form
+      </a>
+
       <div className="w-full max-w-md">
         <button
           onClick={() => (autoRole || isExplorerSignup) ? navigate(isExplorerSignup ? '/explore' : '/') : setStep('role')}
@@ -460,7 +476,7 @@ export default function SignUp() {
           <span>Back</span>
         </button>
 
-        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+        <div id="signup-form" className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
           <div className="text-center mb-8">
             <div className="inline-flex items-center space-x-2 mb-6">
               <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-md">
@@ -576,14 +592,24 @@ export default function SignUp() {
                   <span>Password</span>
                 </div>
               </label>
-              <input
-                type="password"
-                required
-                value={authForm.password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                placeholder="Min 8 chars, uppercase, lowercase, number"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={authForm.password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Min 8 chars, uppercase, lowercase, number"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
               {/* Password strength indicator */}
               {passwordStrength && authForm.password && (
                 <div className="mt-2">
@@ -612,14 +638,24 @@ export default function SignUp() {
                   <span>Confirm Password</span>
                 </div>
               </label>
-              <input
-                type="password"
-                required
-                value={authForm.confirmPassword}
-                onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                placeholder="Confirm your password"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  value={authForm.confirmPassword}
+                  onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {/* Referral Code Field - Only for students and parents (not teachers or explorers) */}
@@ -698,14 +734,14 @@ export default function SignUp() {
               )}
             </div>
 
-            {/* Referral Benefits Explanation - Only for students and parents (not teachers) */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-              <h3 className="text-gray-900 font-semibold text-base mb-3 flex items-center space-x-2">
+            {/* Referral Benefits Explanation - Collapsible */}
+            <details className="bg-gray-50 border border-gray-200 rounded-xl">
+              <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center space-x-2 hover:bg-gray-100 rounded-xl transition">
                 <Gift className="w-5 h-5 text-emerald-500" />
                 <span>Why Use a Referral Code?</span>
-              </h3>
-
-              <div className="space-y-3">
+                <span className="text-xs text-gray-400 ml-auto">(tap to expand)</span>
+              </summary>
+              <div className="px-5 pb-5 space-y-3">
                 <div>
                   <p className="text-gray-700 text-sm font-medium mb-2">When you sign up with a referral code:</p>
                   <ul className="space-y-1.5 text-gray-600 text-sm">
@@ -717,10 +753,6 @@ export default function SignUp() {
                       <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Join a community of learners</span>
                     </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 flex-shrink-0">•</span>
-                      <span>Support someone's learning journey</span>
-                    </li>
                   </ul>
                 </div>
 
@@ -729,27 +761,44 @@ export default function SignUp() {
                   <ul className="space-y-1.5 text-gray-600 text-sm">
                     <li className="flex items-start space-x-2">
                       <span className="text-emerald-500 flex-shrink-0">•</span>
-                      <span><strong className="text-emerald-600">Earn 1 FREE lesson</strong> for every 10 learning hours your referrals complete</span>
+                      <span><strong className="text-emerald-600">Earn 1 FREE lesson</strong> for every 10 learning hours</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="text-emerald-500 flex-shrink-0">•</span>
                       <span>Share the gift of Quranic understanding</span>
                     </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 flex-shrink-0">•</span>
-                      <span>Help others while helping yourself</span>
-                    </li>
                   </ul>
                 </div>
               </div>
-            </div>
+            </details>
             </>
             )}
 
+            {/* Terms and Privacy Consent */}
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
+              />
+              <label htmlFor="terms" className="text-sm text-gray-600">
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                  Terms of Service
+                </a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={authLoading}
-              className="w-full px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-md disabled:opacity-50 flex items-center justify-center space-x-2"
+              disabled={authLoading || !agreedToTerms}
+              className="w-full px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {authLoading ? (
                 <>

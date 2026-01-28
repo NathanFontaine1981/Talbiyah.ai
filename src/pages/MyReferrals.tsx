@@ -318,6 +318,14 @@ export default function MyReferrals() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to referral content
+      </a>
+
       {/* Header */}
       <div className={`bg-gradient-to-r ${getTierGradient(credits?.tier || 'bronze')} py-12 px-6`}>
         <div className="max-w-7xl mx-auto">
@@ -354,7 +362,7 @@ export default function MyReferrals() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8">
         {/* How It Works - Overview Section */}
         <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-3">
@@ -845,6 +853,7 @@ export default function MyReferrals() {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setOpenFaqIndex(openFaqIndex === 0 ? null : 0)}
+                    aria-expanded={openFaqIndex === 0}
                     className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100/70 transition"
                   >
                     <span className="font-semibold text-gray-900">Can I convert my credits to cash?</span>
@@ -877,6 +886,7 @@ export default function MyReferrals() {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setOpenFaqIndex(openFaqIndex === 1 ? null : 1)}
+                    aria-expanded={openFaqIndex === 1}
                     className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100/70 transition"
                   >
                     <span className="font-semibold text-gray-900">How do I transfer credits to someone?</span>
@@ -909,6 +919,7 @@ export default function MyReferrals() {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setOpenFaqIndex(openFaqIndex === 2 ? null : 2)}
+                    aria-expanded={openFaqIndex === 2}
                     className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100/70 transition"
                   >
                     <span className="font-semibold text-gray-900">When do I receive my credits?</span>
@@ -945,6 +956,7 @@ export default function MyReferrals() {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setOpenFaqIndex(openFaqIndex === 3 ? null : 3)}
+                    aria-expanded={openFaqIndex === 3}
                     className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100/70 transition"
                   >
                     <span className="font-semibold text-gray-900">What counts as an "active" referral?</span>
@@ -982,6 +994,7 @@ export default function MyReferrals() {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                   <button
                     onClick={() => setOpenFaqIndex(openFaqIndex === 4 ? null : 4)}
+                    aria-expanded={openFaqIndex === 4}
                     className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-100/70 transition"
                   >
                     <span className="font-semibold text-gray-900">How do lifetime rewards work?</span>
@@ -1015,18 +1028,19 @@ export default function MyReferrals() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Transfer Modal */}
       {showTransferModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6">Transfer Credits</h2>
+          <div role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title" className="bg-white rounded-2xl p-8 max-w-md w-full border border-gray-200">
+            <h2 id="transfer-modal-title" className="text-2xl font-bold mb-6">Transfer Credits</h2>
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="text-sm text-gray-500 mb-2 block">Recipient Email</label>
+                <label htmlFor="recipient-email" className="text-sm text-gray-500 mb-2 block">Recipient Email</label>
                 <input
+                  id="recipient-email"
                   type="email"
                   value={transferEmail}
                   onChange={(e) => setTransferEmail(e.target.value)}
@@ -1036,10 +1050,11 @@ export default function MyReferrals() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-500 mb-2 block">
+                <label htmlFor="credits-amount" className="text-sm text-gray-500 mb-2 block">
                   Credits to Transfer (Available: {Math.floor(credits?.available_hours || 0)})
                 </label>
                 <input
+                  id="credits-amount"
                   type="number"
                   value={transferHours}
                   onChange={(e) => setTransferHours(e.target.value)}
@@ -1052,8 +1067,9 @@ export default function MyReferrals() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-500 mb-2 block">Message (Optional)</label>
+                <label htmlFor="transfer-message" className="text-sm text-gray-500 mb-2 block">Message (Optional)</label>
                 <textarea
+                  id="transfer-message"
                   value={transferMessage}
                   onChange={(e) => setTransferMessage(e.target.value)}
                   placeholder="Enjoy these free lessons!"

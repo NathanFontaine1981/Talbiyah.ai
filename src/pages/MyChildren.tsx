@@ -85,7 +85,13 @@ export default function MyChildren() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg"
+      >
+        Skip to children list
+      </a>
+      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate('/dashboard')}
@@ -156,6 +162,7 @@ export default function MyChildren() {
                   <button
                     onClick={() => handleRemoveChild(child.id, child.child_name)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    aria-label={`Remove ${child.child_name}`}
                     title="Remove child"
                   >
                     <X className="w-5 h-5" />
@@ -198,7 +205,7 @@ export default function MyChildren() {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       {/* Add Child Modal */}
       {showAddModal && (
@@ -295,16 +302,17 @@ function AddChildModal({ onClose, onSuccess }: AddChildModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">Add Child</h3>
+      <div role="dialog" aria-modal="true" aria-labelledby="add-child-title" className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <h3 id="add-child-title" className="text-2xl font-bold text-gray-900 mb-6">Add Child</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="child-name" className="block text-sm font-semibold text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-1" />
               Child's Name <span className="text-red-500">*</span>
             </label>
             <input
+              id="child-name"
               type="text"
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
@@ -315,11 +323,12 @@ function AddChildModal({ onClose, onSuccess }: AddChildModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="child-dob" className="block text-sm font-semibold text-gray-700 mb-2">
               <Calendar className="w-4 h-4 inline mr-1" />
               Date of Birth <span className="text-red-500">*</span>
             </label>
             <input
+              id="child-dob"
               type="date"
               value={childDob}
               onChange={(e) => setChildDob(e.target.value)}
@@ -387,7 +396,7 @@ function AddChildModal({ onClose, onSuccess }: AddChildModalProps) {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
@@ -517,8 +526,8 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Create Login for {child.child_name}</h3>
+      <div role="dialog" aria-modal="true" aria-labelledby="upgrade-account-title" className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <h3 id="upgrade-account-title" className="text-2xl font-bold text-gray-900 mb-2">Create Login for {child.child_name}</h3>
         <p className="text-gray-600 mb-6 text-sm">
           This will create a separate account that {child.child_name} can use to log in independently.
           You'll still have access to manage their account.
@@ -526,11 +535,12 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="child-email" className="block text-sm font-semibold text-gray-700 mb-2">
               <Mail className="w-4 h-4 inline mr-1" />
               Email Address <span className="text-red-500">*</span>
             </label>
             <input
+              id="child-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -541,11 +551,12 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="child-password" className="block text-sm font-semibold text-gray-700 mb-2">
               <Lock className="w-4 h-4 inline mr-1" />
               Password <span className="text-red-500">*</span>
             </label>
             <input
+              id="child-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -557,11 +568,12 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="child-confirm-password" className="block text-sm font-semibold text-gray-700 mb-2">
               <Lock className="w-4 h-4 inline mr-1" />
               Confirm Password <span className="text-red-500">*</span>
             </label>
             <input
+              id="child-confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -573,7 +585,7 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}

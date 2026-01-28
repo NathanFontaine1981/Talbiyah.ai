@@ -141,7 +141,7 @@ export default function CreditPurchaseSuccess() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
-        <div className="max-w-md w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-12 border border-red-500/30 backdrop-blur-sm shadow-xl text-center">
+        <main id="main-content" role="alert" className="max-w-md w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-12 border border-red-500/30 backdrop-blur-sm shadow-xl text-center">
           <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-14 h-14 text-red-500" />
           </div>
@@ -153,14 +153,14 @@ export default function CreditPurchaseSuccess() {
           >
             Go to Dashboard
           </button>
-        </div>
+        </main>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
-      <div className="max-w-2xl w-full">
+      <main id="main-content" className="max-w-2xl w-full">
         <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-12 border border-gray-200 backdrop-blur-sm shadow-xl text-center">
           {verifying ? (
             <>
@@ -281,7 +281,7 @@ export default function CreditPurchaseSuccess() {
             Thank you for choosing Talbiyah.ai for your Islamic learning journey
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

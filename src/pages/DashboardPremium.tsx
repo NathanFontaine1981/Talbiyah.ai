@@ -414,6 +414,14 @@ export default function DashboardPremium() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50/80 to-rose-50/30 flex">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to dashboard content
+      </a>
+
       {/* Subtle pattern overlay */}
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -436,6 +444,7 @@ export default function DashboardPremium() {
             </div>
             <button
               onClick={() => setShowBookingSuccess(false)}
+              aria-label="Dismiss notification"
               className="text-gray-400 hover:text-gray-600 ml-2"
             >
               <X className="w-5 h-5" />
@@ -481,6 +490,7 @@ export default function DashboardPremium() {
           </button>
           <button
             onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
             className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition rounded-xl hover:bg-gray-100/80"
           >
             <X className="w-5 h-5" />
@@ -491,8 +501,10 @@ export default function DashboardPremium() {
         {!sidebarCollapsed && (
           <div className="px-4 py-4">
             <div className="relative">
+              <label htmlFor="sidebar-search" className="sr-only">Search</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
+                id="sidebar-search"
                 type="text"
                 placeholder="Search..."
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-100/80 border border-gray-200/60 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition"
@@ -582,6 +594,7 @@ export default function DashboardPremium() {
         {/* Desktop collapse button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-400 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
         >
           {sidebarCollapsed ? (
@@ -598,6 +611,8 @@ export default function DashboardPremium() {
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               className="lg:hidden p-2.5 text-gray-500 hover:text-gray-700 transition rounded-xl hover:bg-gray-100/80 border border-transparent hover:border-gray-200/60"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -605,7 +620,7 @@ export default function DashboardPremium() {
             <div className="hidden lg:block"></div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <button className="relative p-2.5 text-gray-500 hover:text-gray-700 transition rounded-xl hover:bg-gray-100/80 border border-transparent hover:border-gray-200/60">
+              <button aria-label="Notifications" className="relative p-2.5 text-gray-500 hover:text-gray-700 transition rounded-xl hover:bg-gray-100/80 border border-transparent hover:border-gray-200/60">
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
               </button>
@@ -614,6 +629,8 @@ export default function DashboardPremium() {
                 <div className="relative">
                   <button
                     onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                    aria-expanded={showRoleSwitcher}
+                    aria-label="Switch dashboard view"
                     className="flex items-center space-x-2 px-3 py-2 bg-gray-100/80 hover:bg-gray-200/80 border border-gray-200/60 rounded-xl transition"
                   >
                     <span className={`w-2 h-2 rounded-full ${
@@ -681,7 +698,7 @@ export default function DashboardPremium() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto">
             {/* Header Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

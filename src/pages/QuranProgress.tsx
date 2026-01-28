@@ -473,6 +473,14 @@ export default function QuranProgress() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to Quran progress
+      </a>
+
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Breadcrumbs
@@ -486,7 +494,7 @@ export default function QuranProgress() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 py-6">
         {/* Main Progress Card - Similar to ArabicProgressTracker */}
         <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm shadow-xl">
           {/* Header */}
@@ -630,9 +638,10 @@ export default function QuranProgress() {
           )}
 
           {/* Juz Selector - Similar to Book Selector */}
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2" role="group" aria-label="View mode">
             <button
               onClick={() => { setShowAll(false); setSearchQuery(''); }}
+              aria-pressed={!showAll && !searchQuery}
               className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition ${
                 !showAll && !searchQuery
                   ? 'bg-emerald-600 text-white'
@@ -643,6 +652,7 @@ export default function QuranProgress() {
             </button>
             <button
               onClick={() => { setShowAll(true); setSearchQuery(''); }}
+              aria-pressed={showAll}
               className={`flex-shrink-0 py-2 px-4 rounded-lg text-sm font-medium transition ${
                 showAll
                   ? 'bg-emerald-600 text-white'
@@ -699,8 +709,10 @@ export default function QuranProgress() {
 
           {/* Search */}
           <div className="relative mb-4">
+            <label htmlFor="surah-search" className="sr-only">Search surah by name or number</label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
+              id="surah-search"
               type="text"
               placeholder="Search surah by name or number..."
               value={searchQuery}
@@ -752,6 +764,7 @@ export default function QuranProgress() {
                   <div className="flex items-center justify-between p-3">
                     <button
                       onClick={() => toggleSurahExpansion(surah.number)}
+                      aria-expanded={surah.expanded}
                       className="flex-1 text-left"
                     >
                       <div className="flex items-center gap-3">
@@ -808,6 +821,8 @@ export default function QuranProgress() {
 
                       <button
                         onClick={() => toggleSurahExpansion(surah.number)}
+                        aria-expanded={surah.expanded}
+                        aria-label={surah.expanded ? `Collapse ${surah.englishName}` : `Expand ${surah.englishName}`}
                         className="p-1 text-gray-500 hover:text-emerald-400 transition ml-1"
                       >
                         {surah.expanded ? (

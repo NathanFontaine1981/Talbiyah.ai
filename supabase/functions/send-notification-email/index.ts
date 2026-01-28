@@ -41,7 +41,8 @@ type NotificationType =
   | "welcome"
   | "credit_purchase_confirmation"
   | "student_booking_confirmation"
-  | "admin_new_signup";
+  | "admin_new_signup"
+  | "lesson_insight_ready";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -155,6 +156,9 @@ Deno.serve(async (req: Request) => {
         break;
       case "admin_new_signup":
         emailContent = getAdminNewSignupEmail(payload);
+        break;
+      case "lesson_insight_ready":
+        emailContent = getLessonInsightReadyEmail(payload);
         break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
@@ -1134,6 +1138,159 @@ function getAdminNewSignupEmail(payload: NotificationPayload): { subject: string
           <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
             <p style="margin: 0;">Talbiyah.ai Admin Notification</p>
           </div>
+        </body>
+      </html>
+    `
+  };
+}
+
+function getLessonInsightReadyEmail(payload: NotificationPayload): { subject: string; html: string } {
+  const {
+    student_name,
+    teacher_name,
+    subject,
+    lesson_date,
+    insight_title,
+    teacher_notes,
+    homework_assigned,
+    insights_url,
+    insights_ready = true // Default to true, can be false if still processing
+  } = payload.data;
+
+  const lessonDate = new Date(lesson_date);
+  const formattedDate = lessonDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return {
+    subject: insights_ready
+      ? `📊 Lesson Insights Ready - ${student_name}'s ${subject} Lesson`
+      : `⏳ Generating Insights - ${student_name}'s ${subject} Lesson`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${insights_ready ? 'Lesson Insights Ready' : 'Generating Insights'}</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+          <!-- Header with gradient -->
+          <div style="background: linear-gradient(135deg, ${insights_ready ? '#8b5cf6' : '#f59e0b'} 0%, #06b6d4 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 64px; margin-bottom: 10px;">${insights_ready ? '📊' : '⏳'}</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 28px;">${insights_ready ? 'Lesson Insights Ready!' : 'Generating AI Insights...'}</h1>
+            <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">${insights_ready ? `${student_name}'s learning summary is available` : `Processing ${student_name}'s lesson`}</p>
+          </div>
+
+          <!-- Main content -->
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #8b5cf6;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
+              Great news! AI-powered insights have been generated for <strong>${student_name}</strong>'s recent lesson with <strong>${teacher_name}</strong>.
+            </p>
+
+            <!-- Lesson Details -->
+            <div style="background: #f5f3ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #5b21b6; font-size: 16px;">📅 Lesson Details</h3>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Subject: <strong>${subject}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Teacher: <strong>${teacher_name}</strong></p>
+              <p style="margin: 0; color: #6b21a8;">Date: <strong>${formattedDate}</strong></p>
+            </div>
+
+            ${insights_ready ? `
+            <!-- Insight Title -->
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📝 Insight Summary</h3>
+              <p style="margin: 0; color: #047857; font-size: 15px; font-weight: 600;">"${sanitizeForHtml(insight_title)}"</p>
+            </div>
+            ` : `
+            <!-- Processing Status -->
+            <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">⏳ AI Processing</h3>
+              <p style="margin: 0; color: #78350f; font-size: 15px;">Our AI is analyzing the lesson recording and generating personalized insights. This usually takes 2-5 minutes.</p>
+            </div>
+            `}
+
+            ${teacher_notes ? `
+            <!-- Teacher's Notes -->
+            <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">👨‍🏫 Teacher's Notes</h3>
+              <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.7; white-space: pre-wrap;">${sanitizeForHtml(teacher_notes)}</p>
+            </div>
+            ` : ''}
+
+            ${homework_assigned ? `
+            <!-- Homework -->
+            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #1e40af; font-size: 16px;">📚 Homework Assigned</h3>
+              <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.7;">${sanitizeForHtml(homework_assigned)}</p>
+            </div>
+            ` : ''}
+
+            ${insights_ready ? `
+            <!-- What's Included -->
+            <div style="background: #f1f5f9; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #475569; font-size: 16px;">✨ What's Included</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #64748b;">
+                <li style="margin-bottom: 8px;">Key concepts covered in the lesson</li>
+                <li style="margin-bottom: 8px;">Areas of strength and improvement</li>
+                <li style="margin-bottom: 8px;">Personalized study recommendations</li>
+                <li style="margin-bottom: 8px;">Interactive quiz to reinforce learning</li>
+                <li>Audio version available (Premium)</li>
+              </ul>
+            </div>
+            ` : `
+            <!-- What Will Be Included -->
+            <div style="background: #f1f5f9; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #475569; font-size: 16px;">✨ What You'll Receive</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #64748b;">
+                <li style="margin-bottom: 8px;">Key concepts covered in the lesson</li>
+                <li style="margin-bottom: 8px;">Areas of strength and improvement</li>
+                <li style="margin-bottom: 8px;">Personalized study recommendations</li>
+                <li style="margin-bottom: 8px;">Interactive quiz to reinforce learning</li>
+                <li>We'll email you when it's ready!</li>
+              </ul>
+            </div>
+            `}
+          </div>
+
+          <!-- CTA -->
+          ${insights_ready ? `
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${insights_url || 'https://talbiyah.ai/dashboard'}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              View Full Insights
+            </a>
+          </div>
+          ` : `
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background: #f1f5f9; color: #64748b; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              ⏳ AI Insights Processing...
+            </div>
+            <p style="margin: 12px 0 0 0; color: #94a3b8; font-size: 14px;">
+              We'll send another email when your insights are ready to view.
+            </p>
+          </div>
+          `}
+
+          <!-- Tip -->
+          <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0; color: #166534; font-size: 14px; line-height: 1.6;">
+              💡 <strong>Tip for Parents:</strong> Review the insights together with ${student_name} and discuss the key points. This helps reinforce learning and shows your child that you're engaged in their Islamic education journey.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+            <p style="margin: 5px 0 0 0;">AI-Powered Islamic Learning</p>
+          </div>
+
         </body>
       </html>
     `

@@ -85,7 +85,15 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to admin content
+      </a>
+
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex items-center space-x-4 mb-12">
           <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
             <Shield className="w-7 h-7 text-white" />
@@ -94,7 +102,7 @@ export default function Admin() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+          <div role="alert" className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
@@ -116,10 +124,10 @@ export default function Admin() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bio</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Hourly Rate</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bio</th>
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Hourly Rate</th>
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
@@ -171,7 +179,7 @@ export default function Admin() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

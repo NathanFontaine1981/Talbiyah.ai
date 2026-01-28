@@ -141,6 +141,14 @@ export default function ChildDashboardView() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-purple-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to dashboard content
+      </a>
+
       {/* Parent View Banner */}
       <div className="bg-purple-600 text-white py-4 px-6 shadow-md">
         <div className="max-w-[1600px] mx-auto">
@@ -169,7 +177,7 @@ export default function ChildDashboardView() {
               <button
                 onClick={() => navigate('/dashboard')}
                 className="p-2 hover:bg-purple-700 rounded-lg transition"
-                title="Back to Parent Dashboard"
+                aria-label="Back to Parent Dashboard"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -188,6 +196,8 @@ export default function ChildDashboardView() {
                 <div className="relative ml-4">
                   <button
                     onClick={() => setShowChildSwitcher(!showChildSwitcher)}
+                    aria-expanded={showChildSwitcher}
+                    aria-label="Switch child"
                     className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition flex items-center gap-2"
                   >
                     <span>Switch Child</span>
@@ -203,6 +213,7 @@ export default function ChildDashboardView() {
                             setShowChildSwitcher(false);
                             navigate(`/child/${child.id}/dashboard`);
                           }}
+                          aria-current={child.id === childId ? 'true' : undefined}
                           className={`w-full px-4 py-2 text-left hover:bg-purple-50 transition flex items-center gap-3 ${
                             child.id === childId ? 'bg-purple-100 font-semibold' : ''
                           }`}
@@ -236,15 +247,15 @@ export default function ChildDashboardView() {
 
       {/* Child's Dashboard Content */}
       {learnerId ? (
-        <div className="p-6 lg:p-8">
+        <main id="main-content" className="p-6 lg:p-8">
           <StudentDashboardContent
             learnerId={learnerId}
             isParentView={true}
             onRefresh={checkAccessAndLoadChild}
           />
-        </div>
+        </main>
       ) : (
-        <div className="p-6 lg:p-8">
+        <main id="main-content" className="p-6 lg:p-8">
           <div className="max-w-4xl mx-auto">
             <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-200 p-12 text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -298,7 +309,7 @@ export default function ChildDashboardView() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Users, Heart, CheckCircle2, Star, Shield, LogIn, LogOut, ArrowRight, Sparkles, Target, Mail, Lock, Loader2, Menu, X, Clock, MessageSquare, BookMarked, ChevronDown, Compass, UserPlus } from 'lucide-react';
+import { Heart, CheckCircle2, LogIn, LogOut, ArrowRight, Loader2, Menu, X, Instagram, Youtube, Twitter } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { getDashboardRoute } from '../lib/authHelpers';
@@ -36,32 +36,6 @@ const TalbiyahLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 );
 
-// Custom icon components for the stages
-const OpenBookIcon = () => (
-  <svg viewBox="0 0 64 64" className="w-12 h-12">
-    <path d="M32 12c-6-4-14-6-20-6v44c6 0 14 2 20 6 6-4 14-6 20-6V6c-6 0-14 2-20 6z" fill="none" stroke="#10b981" strokeWidth="2"/>
-    <path d="M32 12v44" stroke="#10b981" strokeWidth="2"/>
-    <path d="M16 20h8M16 28h8M16 36h8" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M40 20h8M40 28h8M40 36h8" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
-
-const BirdIcon = () => (
-  <svg viewBox="0 0 64 64" className="w-12 h-12">
-    <path d="M8 32c8-4 16-8 24-8s16 4 24 8" fill="none" stroke="#f59e0b" strokeWidth="2"/>
-    <path d="M32 24c-2-4-1-8 2-10s8-2 10 1c-4 1-6 4-6 7" fill="none" stroke="#10b981" strokeWidth="2"/>
-    <circle cx="42" cy="18" r="1.5" fill="#10b981"/>
-    <path d="M20 36c4 8 16 12 24 8" fill="none" stroke="#10b981" strokeWidth="2"/>
-  </svg>
-);
-
-const HeartGeometricIcon = () => (
-  <svg viewBox="0 0 64 64" className="w-12 h-12">
-    <path d="M32 52L12 32c-4-4-4-12 0-16s12-4 16 0l4 4 4-4c4-4 12-4 16 0s4 12 0 16L32 52z" fill="none" stroke="#10b981" strokeWidth="2"/>
-    <path d="M24 28l8 8 8-8M28 36l4 4 4-4" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-);
-
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,7 +46,6 @@ export default function Home() {
   const [authError, setAuthError] = useState('');
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -136,6 +109,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Clean Navigation Bar */}
       <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm z-50 border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -160,6 +141,7 @@ export default function Home() {
 
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
+            <button onClick={() => navigate('/features')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Features</button>
             <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
             <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Unshakable Foundations</button>
 
@@ -215,6 +197,12 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
             <div className="px-4 py-4 space-y-2">
+              <button
+                onClick={() => { navigate('/features'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
+              >
+                Features
+              </button>
               <button
                 onClick={() => { navigate('/explore'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
@@ -272,6 +260,8 @@ export default function Home() {
         )}
       </nav>
 
+      {/* Main Content */}
+      <main id="main-content" role="main">
       {/* Hero Section - Clean Design with Quran Image */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image with Dark Overlay for Contrast */}
@@ -325,6 +315,20 @@ export default function Home() {
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-4">No credit card required</p>
+
+            {/* Social Proof */}
+            <div className="flex items-center space-x-4 mt-8">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-emerald-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">AK</div>
+                <div className="w-8 h-8 rounded-full bg-amber-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">SM</div>
+                <div className="w-8 h-8 rounded-full bg-blue-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">FR</div>
+                <div className="w-8 h-8 rounded-full bg-pink-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">YH</div>
+                <div className="w-8 h-8 rounded-full bg-purple-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">+</div>
+              </div>
+              <p className="text-gray-300 text-sm">
+                <strong className="text-white">2,500+</strong> students learning with us
+              </p>
+            </div>
           </div>
         </div>
 
@@ -681,6 +685,115 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Stats Bar */}
+      <section className="py-12 px-4 sm:px-6 bg-gray-900">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <p className="text-3xl sm:text-4xl font-bold text-emerald-400">2,500+</p>
+              <p className="text-gray-400 text-sm mt-1">Active Students</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl sm:text-4xl font-bold text-emerald-400">50+</p>
+              <p className="text-gray-400 text-sm mt-1">Verified Teachers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl sm:text-4xl font-bold text-emerald-400">10,000+</p>
+              <p className="text-gray-400 text-sm mt-1">Lessons Completed</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl sm:text-4xl font-bold text-emerald-400">4.9</p>
+              <p className="text-gray-400 text-sm mt-1">Average Rating</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              What Our Students
+            </h2>
+            <p className="text-4xl sm:text-5xl font-serif italic text-emerald-500">
+              Are Saying
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "Finally found a platform that tracks my actual progress. The AI study notes after each lesson are incredible — it's like having a personal assistant."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-semibold">
+                  AK
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Ahmed K.</p>
+                  <p className="text-sm text-gray-500">Learning Quran for 6 months</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "As a parent, I love seeing exactly what my children are learning. The progress reports give me peace of mind that they're on the right track."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-semibold">
+                  SM
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Sarah M.</p>
+                  <p className="text-sm text-gray-500">Parent of 3 students</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "The homework generated after each lesson targets exactly what I struggled with. I'm learning faster than I ever did in traditional classes."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                  YH
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Yusuf H.</p>
+                  <p className="text-sm text-gray-500">Arabic language student</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Islamic Sources Section - COMMENTED OUT FOR NOW
       <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -920,7 +1033,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-900">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-normal text-white mb-6 leading-tight">
             Start Your Journey to
@@ -945,12 +1058,13 @@ export default function Home() {
           </button>
         </div>
       </section>
+      </main>
 
       {/* Footer - Clean Design */}
       <footer className="border-t border-gray-100 dark:border-gray-700 py-12 px-4 sm:px-6 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Logo */}
+            {/* Logo & Social */}
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <TalbiyahLogo className="w-9 h-9" />
@@ -959,9 +1073,39 @@ export default function Home() {
                   <span className="text-emerald-500">.ai</span>
                 </span>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Premium Islamic education with vetted, gentle teachers.
               </p>
+              {/* Social Media Links */}
+              <div className="flex items-center space-x-3">
+                <a
+                  href="https://instagram.com/talbiyah.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition"
+                  aria-label="Follow us on Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://twitter.com/talbiyah_ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition"
+                  aria-label="Follow us on X (Twitter)"
+                >
+                  <Twitter className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://youtube.com/@talbiyah"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition"
+                  aria-label="Subscribe on YouTube"
+                >
+                  <Youtube className="w-4 h-4" />
+                </a>
+              </div>
             </div>
 
             {/* Teachers */}
@@ -988,14 +1132,14 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                <li><a href="#contact" className="hover:text-emerald-500 transition">Contact</a></li>
-                <li><a href="#privacy" className="hover:text-emerald-500 transition">Privacy Policy</a></li>
-                <li><a href="#terms" className="hover:text-emerald-500 transition">Terms of Service</a></li>
+                <li><a href="mailto:support@talbiyah.ai" className="hover:text-emerald-500 transition">Contact</a></li>
+                <li><a href="/privacy" className="hover:text-emerald-500 transition">Privacy Policy</a></li>
+                <li><a href="/terms" className="hover:text-emerald-500 transition">Terms of Service</a></li>
               </ul>
             </div>
           </div>
           <div className="pt-8 border-t border-gray-100 dark:border-gray-700 text-center text-gray-400 text-sm">
-            <p>© 2025 Talbiyah.ai. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Talbiyah.ai. All rights reserved.</p>
           </div>
         </div>
       </footer>

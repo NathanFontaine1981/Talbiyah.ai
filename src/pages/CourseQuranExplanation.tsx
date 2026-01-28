@@ -86,6 +86,14 @@ export default function CourseQuranExplanation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to course content
+      </a>
+
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-lg z-50 border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
@@ -96,6 +104,7 @@ export default function CourseQuranExplanation() {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/courses-overview')}
+              aria-label="Go back to courses"
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -113,6 +122,7 @@ export default function CourseQuranExplanation() {
         </div>
       </nav>
 
+      <main id="main-content">
       <section className="pt-32 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
@@ -335,6 +345,7 @@ export default function CourseQuranExplanation() {
           </button>
         </div>
       </section>
+      </main>
     </div>
   );
 }

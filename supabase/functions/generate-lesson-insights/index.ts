@@ -1501,6 +1501,85 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
 
     console.log("Insights saved successfully:", savedInsight.id);
 
+    // Send notification email to parent
+    try {
+      // Fetch learner details including parent information
+      const { data: learnerData, error: learnerError } = await supabase
+        .from('learners')
+        .select(`
+          name,
+          profiles!learners_parent_id_fkey(
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('id', lessonData.learner_id)
+        .single();
+
+      if (learnerError) {
+        console.error("Error fetching learner data for notification:", learnerError);
+      } else if (learnerData?.profiles?.email) {
+        // Fetch teacher notes from lesson_details
+        const { data: lessonDetails } = await supabase
+          .from('lesson_details')
+          .select('teacher_notes')
+          .eq('lesson_id', lesson_id)
+          .maybeSingle();
+
+        // Fetch homework assigned
+        const { data: homeworkData } = await supabase
+          .from('student_homework')
+          .select('assignment_details')
+          .eq('lesson_id', lesson_id)
+          .maybeSingle();
+
+        // Fetch teacher name
+        const { data: teacherData } = await supabase
+          .from('teacher_profiles')
+          .select('profiles(full_name)')
+          .eq('id', lessonData.teacher_id)
+          .single();
+
+        // Call the notification email function
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            type: 'lesson_insight_ready',
+            recipient_email: learnerData.profiles.email,
+            recipient_name: learnerData.profiles.full_name || 'Parent',
+            data: {
+              student_name: learnerData.name,
+              teacher_name: teacherData?.profiles?.full_name || metadata.teacher_name,
+              subject: subject,
+              lesson_date: metadata.lesson_date,
+              insight_title: title,
+              teacher_notes: lessonDetails?.teacher_notes || null,
+              homework_assigned: homeworkData?.assignment_details || null,
+              insights_url: `https://talbiyah.ai/student/${lessonData.learner_id}/lesson/${lesson_id}/insights`,
+            },
+          }),
+        });
+
+        if (emailResponse.ok) {
+          console.log("Parent notification email sent successfully");
+        } else {
+          const errorText = await emailResponse.text();
+          console.error("Failed to send parent notification email:", errorText);
+        }
+      } else {
+        console.log("No parent email found for learner, skipping notification");
+      }
+    } catch (emailError) {
+      // Don't fail the whole request if email fails
+      console.error("Error sending parent notification email:", emailError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -390,6 +390,14 @@ export default function TeacherBooking() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to booking calendar
+      </a>
+
       <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -408,7 +416,7 @@ export default function TeacherBooking() {
         </div>
       </header>
 
-      <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
         {/* Step Indicator */}
         <div className="flex items-center justify-center space-x-2 mb-8">
           <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
@@ -462,6 +470,7 @@ export default function TeacherBooking() {
                       <button
                         key={subject.id}
                         onClick={() => setSelectedSubject(subject)}
+                        aria-pressed={selectedSubject?.id === subject.id}
                         className={`w-full p-3 rounded-lg text-left transition ${
                           selectedSubject?.id === subject.id
                             ? 'bg-emerald-500 text-gray-900'
@@ -487,6 +496,8 @@ export default function TeacherBooking() {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setDuration(30)}
+                    aria-pressed={duration === 30}
+                    aria-label="30 minute session, £7.50"
                     className={`p-4 rounded-lg transition ${
                       duration === 30
                         ? 'bg-emerald-500 text-gray-900'
@@ -501,6 +512,8 @@ export default function TeacherBooking() {
                   </button>
                   <button
                     onClick={() => setDuration(60)}
+                    aria-pressed={duration === 60}
+                    aria-label="60 minute session, £15.00"
                     className={`p-4 rounded-lg transition ${
                       duration === 60
                         ? 'bg-emerald-500 text-gray-900'
@@ -524,12 +537,14 @@ export default function TeacherBooking() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
+                    aria-label="Go to previous week"
                     className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition"
                   >
                     Previous Week
                   </button>
                   <button
                     onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
+                    aria-label="Go to next week"
                     className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition"
                   >
                     Next Week
@@ -560,6 +575,8 @@ export default function TeacherBooking() {
                               key={idx}
                               onClick={() => handleSelectTimeSlot(slot)}
                               disabled={!slot.available || addingToCart}
+                              aria-pressed={isInCart}
+                              aria-label={`${format(slot.time, 'EEEE, MMMM d')} at ${format(slot.time, 'h:mm a')}${isInCart ? ' - in cart' : slot.available ? ' - available' : ' - unavailable'}`}
                               className={`w-full p-2 rounded text-xs transition ${
                                 isInCart
                                   ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50 font-semibold'
@@ -604,6 +621,7 @@ export default function TeacherBooking() {
                       >
                         <button
                           onClick={() => removeFromCart(item.id)}
+                          aria-label={`Remove ${item.subject_name} session on ${format(parseISO(item.scheduled_time), 'MMM d')} from cart`}
                           className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded text-red-400 opacity-0 group-hover:opacity-100 transition"
                           title="Remove from cart"
                         >
@@ -667,7 +685,7 @@ export default function TeacherBooking() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

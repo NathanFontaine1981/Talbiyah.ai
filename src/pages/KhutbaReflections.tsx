@@ -761,6 +761,12 @@ export default function KhutbaReflections() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to content
+      </a>
       {/* Floating Audio Player */}
       {(ttsPlaying || ttsLoading) && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-violet-500/40 flex items-center space-x-4 animate-in slide-in-from-bottom-4">
@@ -792,12 +798,14 @@ export default function KhutbaReflections() {
               }
             }}
             disabled={ttsLoading}
+            aria-label={ttsPlaying ? 'Pause audio' : 'Play audio'}
             className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition disabled:opacity-50"
           >
             {ttsPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
           </button>
           <button
             onClick={stopTTS}
+            aria-label="Stop and close audio player"
             className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition"
           >
             <X className="w-5 h-5" />
@@ -838,7 +846,7 @@ export default function KhutbaReflections() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -865,6 +873,7 @@ export default function KhutbaReflections() {
                 <div className="text-center">
                   <button
                     onClick={startRecording}
+                    aria-label="Start recording"
                     className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full flex items-center justify-center mx-auto transition shadow-lg shadow-red-500/30"
                   >
                     <Mic className="w-10 h-10 text-gray-900" />
@@ -880,6 +889,7 @@ export default function KhutbaReflections() {
                     <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping"></div>
                     <button
                       onClick={stopRecording}
+                      aria-label="Stop recording"
                       className="relative w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center transition"
                     >
                       <Square className="w-8 h-8 text-gray-900" />
@@ -964,11 +974,12 @@ export default function KhutbaReflections() {
             </h3>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-gray-500 text-sm mb-2">
+                <label htmlFor="khutba-date" className="block text-gray-500 text-sm mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
                   Date of Khutbah
                 </label>
                 <input
+                  id="khutba-date"
                   type="date"
                   value={khutbaDate}
                   onChange={(e) => setKhutbaDate(e.target.value)}
@@ -976,11 +987,12 @@ export default function KhutbaReflections() {
                 />
               </div>
               <div>
-                <label className="block text-gray-500 text-sm mb-2">
+                <label htmlFor="speaker-name" className="block text-gray-500 text-sm mb-2">
                   <User className="w-4 h-4 inline mr-1" />
                   Speaker / Imam
                 </label>
                 <input
+                  id="speaker-name"
                   type="text"
                   value={speakerName}
                   onChange={(e) => setSpeakerName(e.target.value)}
@@ -989,11 +1001,12 @@ export default function KhutbaReflections() {
                 />
               </div>
               <div>
-                <label className="block text-gray-500 text-sm mb-2">
+                <label htmlFor="khutba-location" className="block text-gray-500 text-sm mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
                   Location / Mosque
                 </label>
                 <input
+                  id="khutba-location"
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -1228,6 +1241,7 @@ export default function KhutbaReflections() {
                   <div className="flex items-center justify-between mb-4">
                     <button
                       onClick={() => setTranscriptExpanded(!transcriptExpanded)}
+                      aria-expanded={transcriptExpanded}
                       className="flex items-center text-left"
                     >
                       <h4 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1484,6 +1498,7 @@ export default function KhutbaReflections() {
                     </h4>
                     <button
                       onClick={() => setShowQuizAnswers(!showQuizAnswers)}
+                      aria-expanded={showQuizAnswers}
                       className="flex items-center space-x-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition text-sm"
                     >
                       {showQuizAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

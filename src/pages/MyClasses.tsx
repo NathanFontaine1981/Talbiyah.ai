@@ -345,10 +345,65 @@ export default function MyClasses() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your lessons...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-2 mb-6">
+              <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                <div className="h-5 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+              <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Week Group Skeleton */}
+          <div className="space-y-8">
+            {[1, 2].map((week) => (
+              <div key={week} className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((card) => (
+                    <div
+                      key={card}
+                      className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                          <div>
+                            <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                          <div className="text-right">
+                            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                            <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                          </div>
+                          <div className="h-12 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -356,7 +411,15 @@ export default function MyClasses() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to lessons
+      </a>
+
+      <main id="main-content" className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -374,9 +437,15 @@ export default function MyClasses() {
             </div>
 
             {/* Filter Buttons */}
-            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div
+              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700 shadow-sm"
+              role="tablist"
+              aria-label="Lesson filters"
+            >
               <button
                 onClick={() => setFilter('upcoming')}
+                role="tab"
+                aria-selected={filter === 'upcoming'}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'upcoming'
                     ? 'bg-emerald-500 text-white'
@@ -387,6 +456,8 @@ export default function MyClasses() {
               </button>
               <button
                 onClick={() => setFilter('past')}
+                role="tab"
+                aria-selected={filter === 'past'}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'past'
                     ? 'bg-emerald-500 text-white'
@@ -397,6 +468,8 @@ export default function MyClasses() {
               </button>
               <button
                 onClick={() => setFilter('missed')}
+                role="tab"
+                aria-selected={filter === 'missed'}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'missed'
                     ? 'bg-red-500 text-white'
@@ -407,6 +480,8 @@ export default function MyClasses() {
               </button>
               <button
                 onClick={() => setFilter('all')}
+                role="tab"
+                aria-selected={filter === 'all'}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   filter === 'all'
                     ? 'bg-emerald-500 text-white'
@@ -465,6 +540,8 @@ export default function MyClasses() {
                 {/* Week Header - Clickable */}
                 <button
                   onClick={toggleWeek}
+                  aria-expanded={isExpanded}
+                  aria-controls={`week-lessons-${group.weekLabel.replace(/\s+/g, '-').toLowerCase()}`}
                   className="w-full flex items-center space-x-4 group cursor-pointer"
                 >
                   <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold text-sm transition ${
@@ -491,7 +568,10 @@ export default function MyClasses() {
 
                 {/* Lessons in this week - Only show when expanded */}
                 {isExpanded && (
-                <div className="space-y-3">
+                <div
+                  id={`week-lessons-${group.weekLabel.replace(/\s+/g, '-').toLowerCase()}`}
+                  className="space-y-3"
+                >
                   {group.lessons.map((lesson) => {
                     const lessonDate = parseISO(lesson.scheduled_time);
                     const isToday = format(lessonDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -814,7 +894,7 @@ export default function MyClasses() {
             })}
           </div>
         )}
-      </div>
+      </main>
 
       {/* Message Modal */}
       {viewingMessage && messageContent && (
@@ -822,17 +902,23 @@ export default function MyClasses() {
           <div
             className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50"
             onClick={closeMessage}
+            aria-hidden="true"
           ></div>
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="message-modal-title"
+              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200"
+            >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Message from Teacher</h3>
+                    <h3 id="message-modal-title" className="text-xl font-bold text-gray-900">Message from Teacher</h3>
                     <p className="text-sm text-gray-500">
                       {lessons.find(l => l.id === viewingMessage)?.teacher_name}
                     </p>
@@ -871,10 +957,16 @@ export default function MyClasses() {
           <div
             className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50"
             onClick={() => setShowCancelModal(null)}
+            aria-hidden="true"
           ></div>
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-modal-title"
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200"
+            >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -886,7 +978,7 @@ export default function MyClasses() {
                       showCancelModal.canCancel ? 'text-red-600' : 'text-amber-600'
                     }`} />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 id="cancel-modal-title" className="text-xl font-bold text-gray-900">
                     {showCancelModal.canCancel ? 'Cancel Lesson' : 'Cannot Cancel'}
                   </h3>
                 </div>

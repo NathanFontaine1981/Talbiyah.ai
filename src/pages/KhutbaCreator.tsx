@@ -773,6 +773,14 @@ export default function KhutbaCreator() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to content
+      </a>
+
       {/* Header */}
       <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-4">
@@ -839,12 +847,18 @@ export default function KhutbaCreator() {
           <div
             className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50"
             onClick={() => setShowSavedKhutbahs(false)}
+            aria-hidden="true"
           ></div>
-          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 overflow-y-auto">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="saved-khutbahs-title"
+            className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 overflow-y-auto"
+          >
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <FolderOpen className="w-6 h-6 text-emerald-600" />
-                <h2 className="text-xl font-bold text-gray-900">My Saved Khutbahs</h2>
+                <h2 id="saved-khutbahs-title" className="text-xl font-bold text-gray-900">My Saved Khutbahs</h2>
               </div>
               <button
                 onClick={() => setShowSavedKhutbahs(false)}
@@ -917,7 +931,7 @@ export default function KhutbaCreator() {
         </>
       )}
 
-      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         {/* Hero */}
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -940,11 +954,12 @@ export default function KhutbaCreator() {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Duration */}
               <div>
-                <label className="block text-gray-900 font-medium mb-2 flex items-center">
+                <label htmlFor="khutbah-duration" className="block text-gray-900 font-medium mb-2 flex items-center">
                   <Clock className="w-4 h-4 mr-2 text-emerald-600" />
                   Duration
                 </label>
                 <select
+                  id="khutbah-duration"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value as 'short' | 'medium' | 'long')}
                   disabled={loading}
@@ -960,11 +975,12 @@ export default function KhutbaCreator() {
 
               {/* Audience */}
               <div>
-                <label className="block text-gray-900 font-medium mb-2 flex items-center">
+                <label htmlFor="khutbah-audience" className="block text-gray-900 font-medium mb-2 flex items-center">
                   <Users className="w-4 h-4 mr-2 text-emerald-600" />
                   Audience
                 </label>
                 <select
+                  id="khutbah-audience"
                   value={audience}
                   onChange={(e) => setAudience(e.target.value)}
                   disabled={loading}
@@ -989,7 +1005,9 @@ export default function KhutbaCreator() {
 
             {/* Topic Input */}
             <div className="mb-4">
+              <label htmlFor="khutbah-topic" className="sr-only">Khutbah topic</label>
               <input
+                id="khutbah-topic"
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -1188,6 +1206,7 @@ export default function KhutbaCreator() {
                 <div className="mb-6">
                   <button
                     onClick={() => toggleSection('first_opening')}
+                    aria-expanded={expandedSections.first_opening}
                     className="w-full flex items-center justify-between text-left mb-4"
                   >
                     <h5 className="text-lg font-semibold text-gray-900">Opening</h5>
@@ -1259,6 +1278,7 @@ export default function KhutbaCreator() {
                 <div className="mb-6">
                   <button
                     onClick={() => toggleSection('first_content')}
+                    aria-expanded={expandedSections.first_content}
                     className="w-full flex items-center justify-between text-left mb-4"
                   >
                     <h5 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1376,6 +1396,7 @@ export default function KhutbaCreator() {
                 <div className="mb-6">
                   <button
                     onClick={() => toggleSection('first_closing')}
+                    aria-expanded={expandedSections.first_closing}
                     className="w-full flex items-center justify-between text-left mb-4"
                   >
                     <h5 className="text-lg font-semibold text-gray-900">Closing of First Khutbah</h5>
@@ -1415,6 +1436,7 @@ export default function KhutbaCreator() {
                 <div className="mb-6">
                   <button
                     onClick={() => toggleSection('second_khutbah')}
+                    aria-expanded={expandedSections.second_khutbah}
                     className="w-full flex items-center justify-between text-left mb-4"
                   >
                     <h5 className="text-lg font-semibold text-gray-900">Content</h5>

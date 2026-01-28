@@ -65,7 +65,15 @@ export default function BookingOptions() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-6">
-      <div className="max-w-6xl mx-auto">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to booking options
+      </a>
+
+      <main id="main-content" className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -212,7 +220,7 @@ export default function BookingOptions() {
             Perfect for 2 lessons per week for a month, or 1 lesson per week for 2 months.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

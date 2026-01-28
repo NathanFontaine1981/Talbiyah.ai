@@ -103,6 +103,12 @@ export default function HomeLandingV2() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to main content
+      </a>
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm z-50 border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -116,6 +122,8 @@ export default function HomeLandingV2() {
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -224,6 +232,7 @@ export default function HomeLandingV2() {
       </nav>
 
       {/* Hero Section - Learning Hub Focus */}
+      <main id="main-content">
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -1021,6 +1030,7 @@ export default function HomeLandingV2() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-gray-100 py-12 px-4 sm:px-6 bg-white">
@@ -1075,13 +1085,14 @@ export default function HomeLandingV2() {
       {/* Sign In Modal */}
       {showSignInModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 relative shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-labelledby="signin-modal-title" className="bg-white rounded-3xl max-w-md w-full p-8 relative shadow-2xl">
             <button
               onClick={() => {
                 setShowSignInModal(false);
                 setAuthError('');
                 setAuthForm({ email: '', password: '' });
               }}
+              aria-label="Close sign in modal"
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
             >
               <X className="w-5 h-5" />
@@ -1089,24 +1100,25 @@ export default function HomeLandingV2() {
 
             <div className="text-center mb-6">
               <TalbiyahLogo className="w-12 h-12 mx-auto mb-4" />
-              <h2 className="text-2xl font-serif font-semibold text-gray-900 mb-2">
+              <h2 id="signin-modal-title" className="text-2xl font-serif font-semibold text-gray-900 mb-2">
                 Welcome Back
               </h2>
               <p className="text-gray-500">Sign in to continue your journey</p>
             </div>
 
             {authError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-red-600 text-sm">{authError}</p>
               </div>
             )}
 
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="signin-email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <input
+                  id="signin-email"
                   type="email"
                   required
                   value={authForm.email}
@@ -1117,10 +1129,11 @@ export default function HomeLandingV2() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="signin-password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <input
+                  id="signin-password"
                   type="password"
                   required
                   value={authForm.password}

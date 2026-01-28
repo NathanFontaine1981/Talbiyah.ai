@@ -734,7 +734,10 @@ function LessonContent() {
   if (error || !lesson) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900 flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div
+          role="alert"
+          className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
+        >
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-red-600" />
@@ -832,9 +835,14 @@ function LessonContent() {
           {/* Mobile Instructions Modal */}
           {showMobileInstructions && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-2xl w-full p-8 border border-emerald-400/30 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="mobile-instructions-title"
+                className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-2xl w-full p-8 border border-emerald-400/30 shadow-2xl max-h-[90vh] overflow-y-auto"
+              >
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white flex items-center space-x-3">
+                  <h3 id="mobile-instructions-title" className="text-2xl font-bold text-white flex items-center space-x-3">
                     <Smartphone className="w-7 h-7 text-emerald-600" />
                     <span>Mobile/Tablet Join Instructions</span>
                   </h3>
@@ -1030,7 +1038,11 @@ function LessonContent() {
     <div className="fixed inset-0 bg-black z-50">
       {/* Connection Warning Banner */}
       {connectionWarning && (
-        <div className="absolute top-0 left-0 right-0 z-[60] bg-amber-500 text-white px-4 py-2 flex items-center justify-between">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="absolute top-0 left-0 right-0 z-[60] bg-amber-500 text-white px-4 py-2 flex items-center justify-between"
+        >
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
             <span className="font-medium">{connectionWarning}</span>
@@ -1273,7 +1285,7 @@ function LessonContent() {
                     video_tile_layout: {
                       grid: {
                         enable_local_tile_inset: true,
-                        prominent_roles: ['teacher'],
+                        prominent_roles: ['host'],
                         enable_spotlighting_peer: true
                       }
                     },
@@ -1288,8 +1300,8 @@ function LessonContent() {
                     whiteboard: true,
                     on_stage_exp: {
                       enabled: true,
-                      off_stage_roles: ['student'],
-                      on_stage_role: 'teacher'
+                      off_stage_roles: ['guest'],
+                      on_stage_role: 'host'
                     },
                     brb: true
                   }
@@ -1321,9 +1333,15 @@ function LessonContent() {
           <div className="w-1/3 h-full bg-gray-50 border-l border-gray-200 overflow-hidden flex flex-col">
             {/* Sidebar Tab Switcher - show if Quran or Arabic subject */}
             {(lesson.subject_name.toLowerCase().includes('quran') || lesson.subject_name.toLowerCase().includes('arabic')) && (
-              <div className="flex border-b border-gray-200 bg-white">
+              <div
+                role="tablist"
+                aria-label="Sidebar content"
+                className="flex border-b border-gray-200 bg-white"
+              >
                 <button
                   onClick={() => setSidebarMode('messages')}
+                  role="tab"
+                  aria-selected={sidebarMode === 'messages'}
                   className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                     sidebarMode === 'messages'
                       ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
@@ -1336,6 +1354,8 @@ function LessonContent() {
                 {lesson.subject_name.toLowerCase().includes('quran') && (
                   <button
                     onClick={() => setSidebarMode('quran')}
+                    role="tab"
+                    aria-selected={sidebarMode === 'quran'}
                     className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                       sidebarMode === 'quran'
                         ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50'
@@ -1349,6 +1369,8 @@ function LessonContent() {
                 {lesson.subject_name.toLowerCase().includes('arabic') && (
                   <button
                     onClick={() => setSidebarMode('pdf')}
+                    role="tab"
+                    aria-selected={sidebarMode === 'pdf'}
                     className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                       sidebarMode === 'pdf'
                         ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
@@ -1489,12 +1511,17 @@ function LessonContent() {
       {/* End Session Confirmation Modal */}
       {showEndSessionConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-6">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-session-title"
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+          >
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <PhoneOff className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">End Session?</h3>
+              <h3 id="end-session-title" className="text-xl font-bold text-gray-900 mb-2">End Session?</h3>
               <p className="text-gray-600 mb-6">
                 {userRole === 'teacher'
                   ? 'This will end the lesson for both you and the student. The session will be marked as completed.'
@@ -1535,7 +1562,12 @@ function LessonContent() {
       {/* Post-Lesson Form for Teachers */}
       {showPostLessonForm && lesson && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-6 overflow-y-auto">
-          <div className="max-w-2xl w-full my-8">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Post-lesson feedback form"
+            className="max-w-2xl w-full my-8"
+          >
             <PostLessonForm
               lesson={{
                 id: lesson.id,

@@ -347,6 +347,14 @@ export default function UnshakableFoundations() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to course content
+      </a>
+
       {/* Header */}
       {viewMode !== 'intro' && (
         <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
@@ -354,6 +362,7 @@ export default function UnshakableFoundations() {
             <div className="flex items-center justify-between">
               <button
                 onClick={handleBack}
+                aria-label="Go back"
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -374,6 +383,7 @@ export default function UnshakableFoundations() {
       )}
 
       {/* Main Content */}
+      <main id="main-content">
       <AnimatePresence mode="wait">
         {/* Intro View */}
         {(viewMode === 'intro' || showIntro) && (
@@ -515,6 +525,7 @@ export default function UnshakableFoundations() {
           </motion.div>
         )}
       </AnimatePresence>
+      </main>
     </div>
   );
 }

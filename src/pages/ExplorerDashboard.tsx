@@ -106,6 +106,14 @@ export default function ExplorerDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to dashboard content
+      </a>
+
       {/* Header */}
       <header className="border-b border-slate-800/50 bg-slate-950/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -120,6 +128,7 @@ export default function ExplorerDashboard() {
           </div>
           <button
             onClick={handleSignOut}
+            aria-label="Sign out"
             className="flex items-center gap-2 text-slate-400 hover:text-white transition"
           >
             <LogOut className="w-5 h-5" />
@@ -128,7 +137,7 @@ export default function ExplorerDashboard() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 py-12">
         {/* Welcome */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -222,7 +231,7 @@ export default function ExplorerDashboard() {
             Become a Student
           </button>
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }

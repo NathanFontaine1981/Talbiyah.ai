@@ -426,6 +426,14 @@ export default function Teachers() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to teacher list
+      </a>
+
       <nav className="fixed top-0 w-full bg-white dark:bg-gray-800 backdrop-blur-md z-50 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -462,10 +470,11 @@ export default function Teachers() {
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center space-x-2"
+                aria-label={`Shopping cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
               >
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 text-white rounded-full text-xs font-bold flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 text-white rounded-full text-xs font-bold flex items-center justify-center" aria-hidden="true">
                     {cartCount}
                   </span>
                 )}
@@ -499,7 +508,7 @@ export default function Teachers() {
         </div>
       </nav>
 
-      <div className="pt-24 pb-16 px-6">
+      <main id="main-content" className="pt-24 pb-16 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             {searchParams.get('subject') && (
@@ -513,9 +522,13 @@ export default function Teachers() {
                 <span>Back to Subject Selection</span>
               </button>
             )}
-            <div className="flex items-center justify-center space-x-2 mb-6">
+            <div className="flex items-center justify-center flex-wrap gap-3 mb-6">
               <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-100 border border-emerald-300 rounded-full">
                 <span className="text-emerald-600 font-semibold text-sm">Step 2 of 3: Choose Your Teacher</span>
+              </div>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-full text-green-700 dark:text-green-400 text-sm">
+                <Shield className="w-4 h-4" />
+                <span>All teachers vetted & approved</span>
               </div>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Find a Teacher</h1>
@@ -525,7 +538,7 @@ export default function Teachers() {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
-            <aside className="w-full lg:w-64 flex-shrink-0">
+            <aside className="w-full lg:w-64 flex-shrink-0" role="complementary" aria-label="Filter teachers">
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-24">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h2>
 
@@ -574,8 +587,30 @@ export default function Teachers() {
 
             <div className="flex-1">
               {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="text-gray-500">Loading teachers...</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 animate-pulse">
+                      <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 h-10"></div>
+                      <div className="p-6">
+                        <div className="flex items-start space-x-4 mb-4">
+                          <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-600"></div>
+                          <div className="flex-1">
+                            <div className="h-5 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                            <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-4/5 mb-4"></div>
+                        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                          <div className="h-8 bg-gray-200 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="h-10 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                            <div className="h-10 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : filteredTeachers.length === 0 ? (
                 <div className="text-center py-20">
@@ -753,10 +788,11 @@ export default function Teachers() {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center space-x-2">
+                  <nav aria-label="Teacher list pagination" className="mt-8 flex items-center justify-center space-x-2">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
+                      aria-label="Go to previous page"
                       className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
                       <ChevronLeft className="w-5 h-5" />
@@ -783,6 +819,8 @@ export default function Teachers() {
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
+                            aria-label={`Page ${page}`}
+                            aria-current={currentPage === page ? 'page' : undefined}
                             className={`w-10 h-10 rounded-lg font-medium transition ${
                               currentPage === page
                                 ? 'bg-emerald-500 text-white'
@@ -798,6 +836,7 @@ export default function Teachers() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
+                      aria-label="Go to next page"
                       className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -806,27 +845,28 @@ export default function Teachers() {
                     <span className="ml-4 text-sm text-gray-600">
                       Showing {((currentPage - 1) * TEACHERS_PER_PAGE) + 1}-{Math.min(currentPage * TEACHERS_PER_PAGE, filteredTeachers.length)} of {filteredTeachers.length} teachers
                     </span>
-                  </div>
+                  </nav>
                 )}
                 </>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Add to My Teachers Modal */}
       {addTeacherModalOpen && selectedTeacherForAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-labelledby="add-teacher-modal-title" className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Add to My Teachers</h2>
+                <h2 id="add-teacher-modal-title" className="text-xl font-bold text-gray-900">Add to My Teachers</h2>
                 <button
                   onClick={() => {
                     setAddTeacherModalOpen(false);
                     setSelectedTeacherForAdd(null);
                   }}
+                  aria-label="Close add teacher modal"
                   className="p-2 hover:bg-gray-100 rounded-lg transition"
                 >
                   <X className="w-5 h-5 text-gray-500" />
@@ -854,10 +894,11 @@ export default function Teachers() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="add-teacher-subject" className="block text-sm font-medium text-gray-700 mb-2">
                   Which subject do you want to learn from this teacher?
                 </label>
                 <select
+                  id="add-teacher-subject"
                   value={selectedSubjectForAdd}
                   onChange={(e) => setSelectedSubjectForAdd(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"

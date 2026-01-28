@@ -846,6 +846,12 @@ export default function TeacherAvailability() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to availability calendar
+      </a>
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -893,7 +899,7 @@ export default function TeacherAvailability() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -926,6 +932,7 @@ export default function TeacherAvailability() {
               <button
                 onClick={() => setCurrentWeekOffset(prev => prev - 1)}
                 disabled={currentWeekOffset === 0}
+                aria-label="Go to previous week"
                 className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-lg font-semibold transition flex items-center space-x-2"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -936,6 +943,7 @@ export default function TeacherAvailability() {
               </h3>
               <button
                 onClick={() => setCurrentWeekOffset(prev => prev + 1)}
+                aria-label="Go to next week"
                 className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition flex items-center space-x-2"
               >
                 <span>Next Week</span>
@@ -996,7 +1004,7 @@ export default function TeacherAvailability() {
 
           {/* Success message */}
           {successMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex items-start space-x-3 animate-fade-in">
+            <div role="alert" className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex items-start space-x-3 animate-fade-in">
               <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm font-semibold text-green-700">{successMessage}</p>
             </div>
@@ -1004,7 +1012,7 @@ export default function TeacherAvailability() {
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start space-x-3">
+            <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start space-x-3">
               <X className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{error}</p>
             </div>

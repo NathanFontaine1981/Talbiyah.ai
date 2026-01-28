@@ -50,7 +50,7 @@ export default function BookingSuccess() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-2xl w-full">
+      <main id="main-content" className="max-w-2xl w-full">
         {/* Success Animation */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-emerald-500 rounded-full mb-6 animate-bounce">
@@ -171,7 +171,7 @@ export default function BookingSuccess() {
             You'll receive a reminder before each session starts.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

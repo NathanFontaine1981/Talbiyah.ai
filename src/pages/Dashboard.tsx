@@ -8,10 +8,7 @@ import {
   LayoutDashboard,
   Search,
   Users,
-  Video,
   GraduationCap,
-  Settings,
-  ChevronLeft,
   ChevronRight,
   Trophy,
   Gift,
@@ -20,25 +17,13 @@ import {
   ArrowRight,
   MessageCircle,
   Calendar,
-  Edit,
   CreditCard,
-  Briefcase,
-  Scroll,
   Mic,
-  Home,
-  Library,
-  Headphones,
-  Baby,
-  TrendingUp,
   Sparkles,
   Menu,
   X,
   Compass,
-  UserPlus,
-  Receipt,
-  Moon,
-  Lightbulb,
-  FileText
+  Settings,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -65,6 +50,7 @@ import {
 } from '../components/progress';
 import ThemeToggle from '../components/ThemeToggle';
 import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
+import { DashboardSidebar } from '../components/dashboard';
 
 interface UserProfile {
   full_name: string | null;
@@ -92,18 +78,6 @@ interface ChildLink {
   account_id: string | null;
 }
 
-interface MenuItem {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  path: string;
-  active: boolean;
-  roles: string[];
-  unreadCount?: number;
-  isNew?: boolean;
-  comingSoon?: boolean;
-  external?: boolean;
-}
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -125,6 +99,10 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -167,13 +145,65 @@ export default function Dashboard() {
       }, 5000);
     }
 
+    // Keyboard shortcuts handler
+    function handleKeyDown(e: KeyboardEvent) {
+      // Don't trigger if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+
+      // Show help with ?
+      if (key === '?' && e.shiftKey) {
+        e.preventDefault();
+        setShowKeyboardShortcuts(prev => !prev);
+        return;
+      }
+
+      // Escape closes modals
+      if (key === 'escape') {
+        setShowKeyboardShortcuts(false);
+        setShowRoleSwitcher(false);
+        setMobileMenuOpen(false);
+        setPendingKey(null);
+        return;
+      }
+
+      // Two-key shortcuts (g + letter)
+      if (pendingKey === 'g') {
+        e.preventDefault();
+        setPendingKey(null);
+        switch (key) {
+          case 'd': navigate('/dashboard'); break;
+          case 't': navigate('/teachers'); break;
+          case 'm': navigate('/messages'); break;
+          case 'c': navigate('/courses-overview'); break;
+          case 'l': navigate('/my-classes'); break;
+          case 's': navigate('/account/settings'); break;
+        }
+        return;
+      }
+
+      // Start of two-key sequence
+      if (key === 'g') {
+        setPendingKey('g');
+        // Clear pending key after 1 second
+        setTimeout(() => setPendingKey(null), 1000);
+        return;
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       isMounted = false;
       channel.unsubscribe();
+      window.removeEventListener('keydown', handleKeyDown);
       if (successTimeout) clearTimeout(successTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pendingKey]);
 
   async function loadUnreadMessageCount() {
     try {
@@ -298,6 +328,30 @@ export default function Dashboard() {
         .maybeSingle();
 
       setLearner(learnerData);
+
+      // Check if user is new (no lessons completed, account created within last 7 days)
+      const { count: lessonCount } = await supabase
+        .from('lessons')
+        .select('id', { count: 'exact', head: true })
+        .or(`student_id.eq.${user.id},teacher_id.eq.${user.id}`)
+        .eq('status', 'completed');
+
+      const accountAge = user.created_at ?
+        (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24) : 999;
+
+      const userIsNew = (lessonCount === 0 || lessonCount === null) && accountAge < 7;
+      setIsNewUser(userIsNew);
+
+      // Show welcome banner if new and hasn't dismissed it
+      // Add ?welcome=test to URL to force show banner for testing
+      const forceWelcome = searchParams.get('welcome') === 'test';
+      if (forceWelcome) {
+        localStorage.removeItem('talbiyah_welcome_dismissed');
+      }
+      const dismissedWelcome = localStorage.getItem('talbiyah_welcome_dismissed');
+      if ((userIsNew || forceWelcome) && !dismissedWelcome) {
+        setShowWelcomeBanner(true);
+      }
     } catch (err) {
       console.error('Error loading user:', err);
     } finally {
@@ -319,106 +373,59 @@ export default function Dashboard() {
     setTimeout(() => setReferralCopied(false), 2000);
   }
 
-  // Organised menu sections
-  const menuSections = [
-    {
-      title: null, // No header for home section
-      items: [
-        { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
-      ]
-    },
-    {
-      title: 'Learn',
-      items: [
-        { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student', 'Parent'] },
-        { icon: BookOpen, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent'], isNew: true },
-        { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
-        { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
-        { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
-        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent'], isNew: true },
-        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'] },
-        { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student'] },
-      ]
-    },
-    {
-      title: 'Teach',
-      items: [
-        { icon: Briefcase, label: 'Teacher Hub', path: '/teacher/hub', active: false, roles: ['Teacher'] },
-        { icon: Users, label: 'My Students', path: '/teacher/my-students', active: false, roles: ['Teacher'] },
-        { icon: Calendar, label: 'My Calendar', path: '/teacher/schedule', active: false, roles: ['Teacher'] },
-        { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Teacher'] },
-        { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
-        { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
-        { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
-      ]
-    },
-    {
-      title: 'Messages',
-      items: [
-        { icon: MessageCircle, label: 'Conversations', path: '/messages', active: false, roles: ['Student', 'Teacher'], unreadCount: unreadMessageCount },
-      ]
-    },
-    {
-      title: 'Credits',
-      items: [
-        { icon: CreditCard, label: 'Buy Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
-        { icon: Receipt, label: 'Payment History', path: '/payment-history', active: false, roles: ['Student', 'Parent'] },
-        { icon: Gift, label: 'Referrals', path: '/my-referrals', active: false, roles: ['Student'] },
-      ]
-    },
-    {
-      title: 'Resources',
-      items: [
-        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: UserPlus, label: 'Unshakable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
-        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
-        { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
-        { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
-        { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
-        { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-      ]
-    },
-    {
-      title: 'Admin',
-      items: [
-        { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/admin', active: false, roles: ['Admin'] },
-        { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics', active: false, roles: ['Admin'] },
-        { icon: Users, label: 'Manage Users', path: '/admin/users', active: false, roles: ['Admin'] },
-        { icon: GraduationCap, label: 'Manage Teachers', path: '/admin/teachers', active: false, roles: ['Admin'] },
-        { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator', active: false, roles: ['Admin'] },
-        { icon: Lightbulb, label: 'User Suggestions', path: '/admin/suggestions', active: false, roles: ['Admin'] },
-      ]
-    },
-    {
-      title: 'Profile',
-      items: [
-        { icon: UserIcon, label: 'My Account', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
-        { icon: Baby, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
-        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
-      ]
-    },
-  ];
-
-  // Filter sections based on selected view role (allows dual-role users to switch views)
-  const filteredSections = menuSections.map(section => ({
-    ...section,
-    items: section.items.filter(item => {
-      if (item.roles.includes(selectedViewRole)) return true;
-      if (item.label === 'My Children' && profile?.roles?.includes('parent')) return true;
-      return false;
-    })
-  })).filter(section => section.items.length > 0);
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+        {/* Skeleton Sidebar */}
+        <aside className="hidden lg:block w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-3 w-16 bg-gray-100 dark:bg-gray-600 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-10 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+            ))}
+          </div>
+        </aside>
+
+        {/* Skeleton Content */}
+        <div className="flex-1 flex flex-col">
+          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse lg:hidden"></div>
+              <div className="hidden lg:block"></div>
+              <div className="flex items-center space-x-4">
+                <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 p-8">
+            <div className="max-w-[1600px] mx-auto">
+              {/* Header skeleton */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div className="lg:col-span-2 h-32 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                <div className="h-32 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+              </div>
+              {/* Content skeleton */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 space-y-6">
+                  <div className="h-48 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                  <div className="h-64 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                </div>
+                <div className="space-y-6">
+                  <div className="h-40 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                  <div className="h-40 bg-white dark:bg-gray-800 rounded-2xl animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );
@@ -426,6 +433,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Booking Success Toast */}
       {showBookingSuccess && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
@@ -451,6 +466,103 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Keyboard Shortcuts Modal */}
+      {showKeyboardShortcuts && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowKeyboardShortcuts(false)}>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+              <button
+                onClick={() => setShowKeyboardShortcuts(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Navigation</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Go to Dashboard</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">d</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Find Teachers</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">t</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Messages</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">m</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Courses</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">c</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">My Lessons</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">l</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Settings</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">g</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">s</kbd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">General</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Show this help</span>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">?</kbd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">Close modal / Cancel</span>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">Esc</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-gray-400 text-center">
+              Press <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">?</kbd> anytime to toggle this help
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Key Indicator */}
+      {pendingKey && (
+        <div className="fixed bottom-4 right-4 z-50 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+          <kbd className="px-2 py-1 bg-gray-700 rounded text-sm font-mono">{pendingKey}</kbd>
+          <span className="text-gray-300 text-sm">waiting for next key...</span>
+        </div>
+      )}
+
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
@@ -459,133 +571,16 @@ export default function Dashboard() {
         />
       )}
 
-      <aside
-        className={`${
-          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
-        } w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 fixed h-full z-50
-        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-      >
-        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-          <button
-            onClick={() => {
-              navigate('/');
-              setMobileMenuOpen(false);
-            }}
-            className="flex items-center space-x-3 group flex-1"
-          >
-            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-              <span className="text-white font-bold text-lg">T</span>
-            </div>
-            {!sidebarCollapsed && (
-              <div className="overflow-hidden">
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition whitespace-nowrap">
-                  Talbiyah<span className="text-emerald-500">.ai</span>
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Islamic Learning</p>
-              </div>
-            )}
-          </button>
-          {/* Mobile close button */}
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition rounded-lg hover:bg-gray-100"
-            aria-label="Close sidebar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {filteredSections.map((section, sectionIdx) => (
-            <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
-              {section.title && !sidebarCollapsed && (
-                <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  {section.title}
-                </p>
-              )}
-              {section.title && sidebarCollapsed && (
-                <div className="border-t border-gray-200 my-2"></div>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item: MenuItem) => (
-                  <button
-                    key={`${section.title}-${item.path}-${item.label}`}
-                    onClick={() => {
-                      if (!item.comingSoon) {
-                        if (item.external) {
-                          window.open(item.path, '_blank');
-                        } else {
-                          navigate(item.path);
-                        }
-                        setMobileMenuOpen(false);
-                      }
-                    }}
-                    disabled={item.comingSoon}
-                    className={`w-full px-4 py-2.5 rounded-xl flex items-center space-x-3 transition ${
-                      item.active
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : item.comingSoon
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                    title={sidebarCollapsed ? item.label : undefined}
-                  >
-                    <div className="relative">
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {sidebarCollapsed && item.unreadCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                          {item.unreadCount > 99 ? '99+' : item.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    {!sidebarCollapsed && (
-                      <span className="font-medium whitespace-nowrap flex-1 text-left text-sm">{item.label}</span>
-                    )}
-                    {!sidebarCollapsed && item.unreadCount > 0 && (
-                      <span className="min-w-[20px] h-[20px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                        {item.unreadCount > 99 ? '99+' : item.unreadCount}
-                      </span>
-                    )}
-                    {!sidebarCollapsed && item.isNew && (
-                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[10px] font-bold rounded">NEW</span>
-                    )}
-                    {!sidebarCollapsed && item.comingSoon && (
-                      <span className="px-1.5 py-0.5 bg-gray-200 text-gray-500 text-[10px] font-medium rounded">SOON</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={() => {
-              handleSignOut();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition text-gray-600 hover:bg-red-50 hover:text-red-600"
-            title={sidebarCollapsed ? 'Sign Out' : undefined}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="font-medium">Sign Out</span>}
-          </button>
-        </div>
-
-        {/* Desktop collapse button - hidden on mobile */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-400 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
-      </aside>
+      <DashboardSidebar
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        selectedViewRole={selectedViewRole}
+        unreadMessageCount={unreadMessageCount}
+        profileRoles={profile?.roles}
+        onSignOut={handleSignOut}
+      />
 
       <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ml-0 transition-all duration-300`}>
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -603,9 +598,12 @@ export default function Dashboard() {
 
             <div className="flex items-center space-x-2 sm:space-x-6">
               <ThemeToggle variant="dropdown" />
-              <button className="relative p-2 text-gray-500 hover:text-gray-700 transition">
+              <button
+                className="relative p-2 text-gray-500 hover:text-gray-700 transition"
+                aria-label="Notifications (new notifications available)"
+              >
                 <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
               </button>
 
               {/* Role Switcher for users with multiple roles */}
@@ -703,7 +701,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-2">
@@ -717,6 +715,84 @@ export default function Dashboard() {
                 <PrayerTimesWidget userRole={isParent ? 'Parent' : selectedViewRole} />
               </div>
             </div>
+
+            {/* New User Welcome Banner */}
+            {showWelcomeBanner && (selectedViewRole === 'Student' || isParent) && (
+              <div className="mb-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                {/* Background pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                </div>
+
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white mb-1">Welcome to Talbiyah.ai! 🎉</h2>
+                      <p className="text-emerald-50">Here's how to get started with your Islamic learning journey:</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowWelcomeBanner(false);
+                        localStorage.setItem('talbiyah_welcome_dismissed', 'true');
+                      }}
+                      className="text-white/70 hover:text-white transition p-1"
+                      aria-label="Dismiss welcome banner"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-white/15 backdrop-blur rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                        <h3 className="font-semibold text-white">Find a Teacher</h3>
+                      </div>
+                      <p className="text-emerald-50 text-sm">Browse our qualified teachers and book your first lesson</p>
+                    </div>
+                    <div className="bg-white/15 backdrop-blur rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                        <h3 className="font-semibold text-white">Explore Free Courses</h3>
+                      </div>
+                      <p className="text-emerald-50 text-sm">Start with Exploring Islam or Unshakable Foundations - completely free!</p>
+                    </div>
+                    <div className="bg-white/15 backdrop-blur rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                        <h3 className="font-semibold text-white">Try AI Tools</h3>
+                      </div>
+                      <p className="text-emerald-50 text-sm">Use Dua Builder, Khutbah Creator, and more - many features are free!</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => navigate('/teachers')}
+                      className="px-5 py-2.5 bg-white hover:bg-gray-100 text-emerald-600 rounded-full font-semibold transition shadow-lg flex items-center gap-2"
+                    >
+                      <Search className="w-4 h-4" />
+                      Find Teachers
+                    </button>
+                    <button
+                      onClick={() => navigate('/explore')}
+                      className="px-5 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full font-semibold transition flex items-center gap-2"
+                    >
+                      <Compass className="w-4 h-4" />
+                      Exploring Islam
+                    </button>
+                    <button
+                      onClick={() => navigate('/features')}
+                      className="px-5 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full font-semibold transition flex items-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      See All Features
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Teacher Availability Warning Banner */}
             {selectedViewRole === 'Teacher' && !hasAvailability && (

@@ -449,6 +449,12 @@ export default function ApplyToTeach() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to application form
+      </a>
       <nav className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -471,7 +477,7 @@ export default function ApplyToTeach() {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Apply to Teach at Talbiyah.ai</h2>
           <p className="text-gray-500">Complete your teacher profile and application</p>
@@ -479,13 +485,13 @@ export default function ApplyToTeach() {
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-6 p-6 bg-green-50 border-2 border-green-300 rounded-xl shadow-lg">
+            <div role="alert" className="mb-6 p-6 bg-green-50 border-2 border-green-300 rounded-xl shadow-lg">
               <div className="text-green-800 text-sm font-medium whitespace-pre-line leading-relaxed">
                 {successMessage}
               </div>
@@ -526,10 +532,11 @@ export default function ApplyToTeach() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                    <label htmlFor="full-name" className="block text-sm font-medium text-gray-900 mb-2">
                       Full Name
                     </label>
                     <input
+                      id="full-name"
                       type="text"
                       value={formData.full_name}
                       onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -561,10 +568,11 @@ export default function ApplyToTeach() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                    <label htmlFor="date-of-birth" className="block text-sm font-medium text-gray-900 mb-2">
                       Date of Birth
                     </label>
                     <input
+                      id="date-of-birth"
                       type="date"
                       value={formData.date_of_birth}
                       onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
@@ -573,10 +581,11 @@ export default function ApplyToTeach() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                    <label htmlFor="location" className="block text-sm font-medium text-gray-900 mb-2">
                       Location
                     </label>
                     <input
+                      id="location"
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -586,10 +595,11 @@ export default function ApplyToTeach() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                    <label htmlFor="timezone" className="block text-sm font-medium text-gray-900 mb-2">
                       Timezone
                     </label>
                     <input
+                      id="timezone"
                       type="text"
                       value={formData.timezone}
                       onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
@@ -599,11 +609,11 @@ export default function ApplyToTeach() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                <fieldset>
+                  <legend className="block text-sm font-medium text-gray-900 mb-3">
                     Gender
-                  </label>
-                  <div className="flex space-x-6">
+                  </legend>
+                  <div className="flex space-x-6" role="radiogroup" aria-label="Gender selection">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
@@ -627,13 +637,14 @@ export default function ApplyToTeach() {
                       <span className="text-gray-700">Female</span>
                     </label>
                   </div>
-                </div>
+                </fieldset>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="about-me" className="block text-sm font-medium text-gray-900 mb-2">
                     About Me
                   </label>
                   <textarea
+                    id="about-me"
                     value={formData.about_me}
                     onChange={(e) => setFormData({ ...formData, about_me: e.target.value })}
                     rows={5}
@@ -651,10 +662,11 @@ export default function ApplyToTeach() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="education-level" className="block text-sm font-medium text-gray-900 mb-2">
                     Education Level
                   </label>
                   <select
+                    id="education-level"
                     value={formData.education_level}
                     onChange={(e) => setFormData({ ...formData, education_level: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -700,10 +712,11 @@ export default function ApplyToTeach() {
               <div className="space-y-6">
                 {/* Years of Experience */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="years-experience" className="block text-sm font-medium text-gray-900 mb-2">
                     Years of Teaching Experience *
                   </label>
                   <select
+                    id="years-experience"
                     value={formData.years_experience}
                     onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -719,11 +732,12 @@ export default function ApplyToTeach() {
 
                 {/* English Proficiency */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                  <label htmlFor="english-level" className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
                     <Globe className="w-4 h-4" />
                     <span>English Proficiency Level *</span>
                   </label>
                   <select
+                    id="english-level"
                     value={formData.english_level}
                     onChange={(e) => setFormData({ ...formData, english_level: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -812,10 +826,11 @@ export default function ApplyToTeach() {
                   {hasDegree && (
                     <div className="ml-8 space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <label htmlFor="degree-type" className="block text-sm font-medium text-gray-900 mb-2">
                           Degree Type *
                         </label>
                         <select
+                          id="degree-type"
                           value={formData.degree_type}
                           onChange={(e) => setFormData({ ...formData, degree_type: e.target.value })}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -902,7 +917,7 @@ export default function ApplyToTeach() {
             </div>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

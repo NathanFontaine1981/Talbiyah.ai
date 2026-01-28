@@ -445,6 +445,14 @@ export default function InsightsLibrary() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to insights
+      </a>
+
       {/* Floating Audio Player */}
       {(ttsPlaying || ttsLoading) && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-violet-500/40 flex items-center space-x-4">
@@ -476,6 +484,7 @@ export default function InsightsLibrary() {
               }
             }}
             disabled={ttsLoading}
+            aria-label={ttsPlaying ? 'Pause audio' : 'Play audio'}
             className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition disabled:opacity-50"
           >
             {ttsPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
@@ -493,6 +502,7 @@ export default function InsightsLibrary() {
               setTtsPlaying(false);
               setTtsSection(null);
             }}
+            aria-label="Stop and close audio player"
             className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition"
           >
             <X className="w-5 h-5" />
@@ -543,7 +553,7 @@ export default function InsightsLibrary() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         {/* Hero */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -560,8 +570,10 @@ export default function InsightsLibrary() {
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
+              <label htmlFor="insights-search" className="sr-only">Search insights</label>
               <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
+                id="insights-search"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -581,6 +593,7 @@ export default function InsightsLibrary() {
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
+              aria-expanded={showFilters}
               className="flex items-center space-x-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition"
             >
               <Filter className="w-5 h-5" />
@@ -594,8 +607,9 @@ export default function InsightsLibrary() {
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-600 text-sm mb-2">Speaker / Imam</label>
+                  <label htmlFor="filter-speaker" className="block text-gray-600 text-sm mb-2">Speaker / Imam</label>
                   <select
+                    id="filter-speaker"
                     value={filterSpeaker}
                     onChange={(e) => setFilterSpeaker(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -742,12 +756,17 @@ export default function InsightsLibrary() {
       {/* Detail Modal */}
       {selectedInsight && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto p-4">
-          <div className="bg-white border border-gray-200 rounded-2xl max-w-4xl w-full my-8">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="insight-modal-title"
+            className="bg-white border border-gray-200 rounded-2xl max-w-4xl w-full my-8"
+          >
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 px-6 py-4 border-b border-amber-500/20 flex items-start justify-between sticky top-0 z-10">
               <div>
                 <p className="text-amber-400 text-sm font-medium">Talbiyah Insights</p>
-                <h2 className="text-xl font-bold text-white">{selectedInsight.title}</h2>
+                <h2 id="insight-modal-title" className="text-xl font-bold text-white">{selectedInsight.title}</h2>
                 {selectedInsight.speaker && (
                   <p className="text-emerald-600 text-sm mt-1">By {selectedInsight.speaker}</p>
                 )}

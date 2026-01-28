@@ -87,7 +87,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <main id="main-content" role="status" aria-live="polite" className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         {status === 'loading' && (
           <>
             <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
@@ -112,7 +112,7 @@ export default function AuthCallback() {
         )}
 
         {status === 'error' && (
-          <>
+          <div role="alert">
             <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <XCircle className="w-12 h-12 text-red-400" />
             </div>
@@ -124,9 +124,9 @@ export default function AuthCallback() {
             >
               Go to Home
             </button>
-          </>
+          </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

@@ -53,6 +53,14 @@ export default function SubjectSelection() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to course selection
+      </a>
+
       <nav className="fixed top-0 w-full bg-white backdrop-blur-lg z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
@@ -64,6 +72,7 @@ export default function SubjectSelection() {
             <button
               onClick={() => navigate(-1)}
               className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
+              aria-label="Go back"
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back</span>
@@ -88,7 +97,7 @@ export default function SubjectSelection() {
         </div>
       </nav>
 
-      <div className="pt-32 pb-20 px-6">
+      <main id="main-content" className="pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center space-x-2 mb-6">
@@ -210,7 +219,7 @@ export default function SubjectSelection() {
             </button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

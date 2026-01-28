@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles, Shield, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Child {
@@ -736,10 +736,57 @@ export default function Checkout() {
 
   if (loading || cartLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Loading...</p>
+      <div className="min-h-screen bg-gray-50 py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Skeleton Back Button */}
+          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-8"></div>
+          {/* Skeleton Title */}
+          <div className="h-10 w-40 bg-gray-200 rounded animate-pulse mb-8"></div>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Skeleton Order Summary */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm animate-pulse">
+                <div className="h-6 w-40 bg-gray-200 rounded mb-4"></div>
+                <div className="space-y-3">
+                  {[1, 2].map(i => (
+                    <div key={i} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex justify-between mb-2">
+                        <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                        <div className="h-5 w-16 bg-gray-200 rounded"></div>
+                      </div>
+                      <div className="h-4 w-48 bg-gray-100 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Skeleton Payment Methods */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm animate-pulse">
+                <div className="h-6 w-40 bg-gray-200 rounded mb-4"></div>
+                <div className="space-y-3">
+                  {[1, 2].map(i => (
+                    <div key={i} className="h-20 bg-gray-100 rounded-xl border border-gray-200"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-1">
+              {/* Skeleton Price Breakdown */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm animate-pulse">
+                <div className="h-6 w-36 bg-gray-200 rounded mb-4"></div>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between">
+                    <div className="h-4 w-24 bg-gray-100 rounded"></div>
+                    <div className="h-4 w-16 bg-gray-100 rounded"></div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-200 flex justify-between">
+                    <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                    <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+                <div className="h-14 bg-gray-200 rounded-full"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -767,15 +814,24 @@ export default function Checkout() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={() => navigate('/teachers')}
-          className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Teachers</span>
-        </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to checkout
+      </a>
+
+      <main id="main-content" className="py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => navigate('/teachers')}
+            className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Teachers</span>
+          </button>
 
         <h1 className="text-4xl font-bold mb-8 text-gray-900">
           Checkout
@@ -871,6 +927,7 @@ export default function Checkout() {
                     <button
                       onClick={() => setPaymentMethod('credits')}
                       disabled={!hasEnoughCredits}
+                      aria-pressed={paymentMethod === 'credits'}
                       className={`w-full p-4 rounded-xl text-left transition border-2 ${
                         paymentMethod === 'credits'
                           ? 'bg-emerald-50 border-emerald-500 text-gray-900'
@@ -904,6 +961,7 @@ export default function Checkout() {
                   {/* Stripe Option */}
                   <button
                     onClick={() => setPaymentMethod('stripe')}
+                    aria-pressed={paymentMethod === 'stripe'}
                     className={`w-full p-4 rounded-xl text-left transition border-2 ${
                       paymentMethod === 'stripe'
                         ? 'bg-emerald-50 border-emerald-500 text-gray-900'
@@ -980,11 +1038,12 @@ export default function Checkout() {
                   <User className="w-5 h-5" />
                   <span>Who is this for?</span>
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3" role="group" aria-label="Select child for booking">
                   {children.map((child) => (
                     <button
                       key={child.id}
                       onClick={() => setSelectedChildId(child.id)}
+                      aria-pressed={selectedChildId === child.id}
                       className={`w-full p-4 rounded-xl text-left transition ${
                         selectedChildId === child.id
                           ? 'bg-emerald-500 text-white'
@@ -1067,11 +1126,12 @@ export default function Checkout() {
 
               {/* Promo Code Section */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="promo-code" className="block text-sm font-medium text-gray-700 mb-2">
                   Promo Code
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
+                    id="promo-code"
                     type="text"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
@@ -1103,7 +1163,7 @@ export default function Checkout() {
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg" role="alert" aria-live="assertive">
                   <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
@@ -1157,9 +1217,21 @@ export default function Checkout() {
                 </p>
               )}
               {!hasUnlimitedCredits && !(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'stripe' && (
-                <p className="text-xs text-center text-gray-500 mt-4">
-                  Secure payment powered by Stripe
-                </p>
+                <div className="mt-4">
+                  <div className="flex items-center justify-center gap-4 text-gray-400">
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="w-4 h-4 text-emerald-500" />
+                      <span className="text-xs">Secure checkout</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Lock className="w-4 h-4 text-emerald-500" />
+                      <span className="text-xs">SSL encrypted</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    Powered by Stripe
+                  </p>
+                </div>
               )}
               {!hasUnlimitedCredits && !(promoApplied && promoDiscount >= finalPrice) && paymentMethod === 'credits' && (
                 <p className="text-xs text-center text-emerald-600 mt-4">
@@ -1179,7 +1251,8 @@ export default function Checkout() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

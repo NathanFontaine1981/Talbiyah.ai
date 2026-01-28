@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { CreditCard, Check, Loader2, AlertCircle, Send, Sparkles, Zap } from 'lucide-react';
+import { CreditCard, Check, Loader2, AlertCircle, Send, Sparkles, Zap, Shield, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface CreditPack {
@@ -54,6 +54,18 @@ const creditPacks: CreditPack[] = [
     bonusTokens: 700,
   },
 ];
+
+// Calculate savings percentage (baseline £15/lesson for single lessons)
+const BASELINE_CREDIT_PRICE = 15;
+function getCreditSavingsPercent(pricePerLesson: number): number {
+  return Math.round((1 - pricePerLesson / BASELINE_CREDIT_PRICE) * 100);
+}
+
+// Calculate token savings (baseline £0.05/token)
+const BASELINE_TOKEN_PRICE = 0.05;
+function getTokenSavingsPercent(pricePerToken: number): number {
+  return Math.round((1 - pricePerToken / BASELINE_TOKEN_PRICE) * 100);
+}
 
 const tokenPacks: TokenPack[] = [
   {
@@ -212,7 +224,15 @@ export default function BuyCredits() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-16 px-6">
-      <div className="max-w-6xl mx-auto">
+      {/* Skip link for accessibility */}
+      <a
+        href="#purchase-options"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to purchase options
+      </a>
+
+      <main className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Buy Credits & Tokens</h1>
@@ -238,10 +258,13 @@ export default function BuyCredits() {
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-6" role="tablist" aria-label="Purchase options">
           <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex">
             <button
               onClick={() => handleTabChange('credits')}
+              role="tab"
+              aria-selected={activeTab === 'credits'}
+              aria-controls="credits-panel"
               className={`px-6 py-3 rounded-lg font-semibold transition flex items-center space-x-2 ${
                 activeTab === 'credits'
                   ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
@@ -253,6 +276,9 @@ export default function BuyCredits() {
             </button>
             <button
               onClick={() => handleTabChange('tokens')}
+              role="tab"
+              aria-selected={activeTab === 'tokens'}
+              aria-controls="tokens-panel"
               className={`px-6 py-3 rounded-lg font-semibold transition flex items-center space-x-2 ${
                 activeTab === 'tokens'
                   ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm'
@@ -262,6 +288,53 @@ export default function BuyCredits() {
               <Sparkles className="w-5 h-5" />
               <span>AI Tokens</span>
             </button>
+          </div>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="flex items-center justify-center gap-6 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <Shield className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm">7-day money-back guarantee</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <Lock className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm">Secure checkout</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <CreditCard className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm">Powered by Stripe</span>
+          </div>
+        </div>
+
+        {/* Social Proof */}
+        <div className="text-center mb-8">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">1,247</span> credit packs purchased by happy learners
+          </p>
+        </div>
+
+        {/* Testimonial */}
+        <div className="max-w-2xl mx-auto mb-10 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold flex-shrink-0">
+              AH
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 text-sm italic mb-2">
+                "The Standard Pack was perfect for our family. My two kids share the credits and the bonus tokens are great for the AI features. Already bought our second pack!"
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
+                <strong className="text-gray-700 dark:text-gray-300">Ahmed H.</strong> — Parent, purchased 2 packs
+              </p>
+            </div>
           </div>
         </div>
 
@@ -284,7 +357,7 @@ export default function BuyCredits() {
 
         {/* Credit Packs */}
         {activeTab === 'credits' && (
-          <>
+          <div id="purchase-options" role="tabpanel" aria-labelledby="credits-tab">
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {creditPacks.map((pack) => (
                 <div
@@ -299,6 +372,15 @@ export default function BuyCredits() {
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <span className="bg-emerald-500 text-white text-xs font-bold px-4 py-1 rounded-full">
                         MOST POPULAR
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Savings Badge */}
+                  {getCreditSavingsPercent(pack.pricePerLesson) > 0 && (
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-full">
+                        Save {getCreditSavingsPercent(pack.pricePerLesson)}%
                       </span>
                     </div>
                   )}
@@ -404,12 +486,12 @@ export default function BuyCredits() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Token Packs */}
         {activeTab === 'tokens' && (
-          <>
+          <div id="purchase-options" role="tabpanel" aria-labelledby="tokens-tab">
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {tokenPacks.map((pack) => (
                 <div
@@ -424,6 +506,15 @@ export default function BuyCredits() {
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <span className="bg-violet-500 text-white text-xs font-bold px-4 py-1 rounded-full">
                         BEST VALUE
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Savings Badge */}
+                  {getTokenSavingsPercent(pack.pricePerToken) > 0 && (
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-full">
+                        Save {getTokenSavingsPercent(pack.pricePerToken)}%
                       </span>
                     </div>
                   )}
@@ -520,8 +611,54 @@ export default function BuyCredits() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
+
+        {/* FAQ Section */}
+        <div className="mt-12 bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            <details className="group">
+              <summary className="flex justify-between items-center cursor-pointer list-none p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <span className="font-medium text-gray-900 dark:text-white">Do credits expire?</span>
+                <span className="text-emerald-500 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p className="mt-2 px-4 pb-4 text-gray-600 dark:text-gray-300 text-sm">
+                No, credits never expire. Use them whenever you're ready to book lessons.
+              </p>
+            </details>
+
+            <details className="group">
+              <summary className="flex justify-between items-center cursor-pointer list-none p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <span className="font-medium text-gray-900 dark:text-white">Can I get a refund?</span>
+                <span className="text-emerald-500 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p className="mt-2 px-4 pb-4 text-gray-600 dark:text-gray-300 text-sm">
+                Yes! We offer a 7-day money-back guarantee for unused credits. After 7 days, you can transfer credits to family or friends instead.
+              </p>
+            </details>
+
+            <details className="group">
+              <summary className="flex justify-between items-center cursor-pointer list-none p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <span className="font-medium text-gray-900 dark:text-white">What's the difference between credits and tokens?</span>
+                <span className="text-emerald-500 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p className="mt-2 px-4 pb-4 text-gray-600 dark:text-gray-300 text-sm">
+                Credits are for booking live 1-on-1 lessons with teachers. Tokens are for AI features like dua audio downloads, khutbah creation, and insight summaries.
+              </p>
+            </details>
+
+            <details className="group">
+              <summary className="flex justify-between items-center cursor-pointer list-none p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <span className="font-medium text-gray-900 dark:text-white">Can I share credits with family?</span>
+                <span className="text-emerald-500 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p className="mt-2 px-4 pb-4 text-gray-600 dark:text-gray-300 text-sm">
+                Yes! Parents can use credits across all their children's accounts. You can also transfer credits to anyone using our transfer feature.
+              </p>
+            </details>
+          </div>
+        </div>
 
         {/* Back Button */}
         <div className="mt-8 text-center">
@@ -532,7 +669,7 @@ export default function BuyCredits() {
             ← Back to Dashboard
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

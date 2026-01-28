@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Check, Star, Clock, User, ShoppingCart, Sparkles, FileText } from 'lucide-react';
+import { ChevronLeft, Check, Star, Clock, User, ShoppingCart, Sparkles, FileText, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
@@ -362,10 +362,60 @@ export default function BookSession() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading...</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Skeleton Header */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-20"></div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
+          {/* Skeleton Subject Badge */}
+          <div className="mb-6 h-14 bg-gray-100 rounded-xl animate-pulse"></div>
+          {/* Skeleton Steps */}
+          <div className="mb-8 flex items-center justify-center space-x-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse"></div>
+                  <div className="mt-2 h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                {i < 3 && <div className="w-24 h-0.5 mx-4 bg-gray-200"></div>}
+              </div>
+            ))}
+          </div>
+          {/* Skeleton Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm animate-pulse">
+                <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                      <div className="flex items-start space-x-4 mb-4">
+                        <div className="w-16 h-16 rounded-full bg-gray-200"></div>
+                        <div className="flex-1">
+                          <div className="h-5 w-32 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                      <div className="h-4 w-full bg-gray-100 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm animate-pulse">
+                <div className="h-6 w-32 bg-gray-200 rounded mb-6"></div>
+                <div className="h-32 bg-gray-100 rounded"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -373,6 +423,14 @@ export default function BookSession() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to booking
+      </a>
+
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -391,7 +449,7 @@ export default function BookSession() {
         </div>
       </header>
 
-      <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-[1800px] mx-auto px-6 lg:px-8 py-8">
         {/* Legacy Student Banner */}
         {isLegacyStudent && (
           <div className="mb-6 bg-amber-50 rounded-xl p-4 border border-amber-200">
@@ -419,10 +477,14 @@ export default function BookSession() {
           </div>
         )}
 
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
+        <nav aria-label="Booking progress" className="mb-8">
+          <ol className="flex items-center justify-center space-x-4">
             {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
+              <li
+                key={step.number}
+                className="flex items-center"
+                aria-current={currentStep === step.number ? 'step' : undefined}
+              >
                 <div className="flex flex-col items-center">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition ${
@@ -432,6 +494,7 @@ export default function BookSession() {
                         ? 'bg-emerald-50 text-emerald-600 border-2 border-emerald-500'
                         : 'bg-gray-100 text-gray-400 border-2 border-gray-200'
                     }`}
+                    aria-hidden="true"
                   >
                     {step.completed ? <Check className="w-6 h-6" /> : step.number}
                   </div>
@@ -440,7 +503,9 @@ export default function BookSession() {
                       currentStep >= step.number ? 'text-gray-900' : 'text-gray-400'
                     }`}
                   >
+                    <span className="sr-only">Step {step.number}: </span>
                     {step.label}
+                    {step.completed && <span className="sr-only"> (completed)</span>}
                   </p>
                 </div>
                 {index < steps.length - 1 && (
@@ -448,12 +513,13 @@ export default function BookSession() {
                     className={`w-24 h-0.5 mx-4 ${
                       step.completed ? 'bg-emerald-500' : 'bg-gray-200'
                     }`}
+                    aria-hidden="true"
                   />
                 )}
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ol>
+        </nav>
 
         <div className={`grid grid-cols-1 gap-8 ${currentStep === 3 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           <div className={currentStep === 3 ? 'lg:col-span-3' : 'lg:col-span-2'}>
@@ -622,6 +688,8 @@ export default function BookSession() {
                                       key={idx}
                                       onClick={() => handleSelectTimeSlot(slot)}
                                       disabled={!slot.available}
+                                      aria-pressed={isInCart}
+                                      aria-label={`${format(slot.time, 'h:mm a')}${isInCart ? ', selected and in cart' : ''}`}
                                       className={`w-full text-xs sm:text-[10px] py-2 sm:py-1.5 px-1 min-h-[36px] sm:min-h-0 rounded transition ${
                                         isInCart
                                           ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold'
@@ -646,16 +714,25 @@ export default function BookSession() {
             )}
           </div>
 
-          <div className={currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-1'}>
+          <aside
+            className={currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-1'}
+            aria-label="Shopping cart"
+          >
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-24">
-              <div className="flex items-center space-x-2 mb-6">
+              <div className="flex items-center space-x-2 mb-4">
                 <ShoppingCart className="w-5 h-5 text-emerald-600" />
                 <h3 className="text-xl font-bold text-gray-900">Shopping Cart</h3>
               </div>
 
+              {/* Trust Indicator */}
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mb-6 pb-4 border-b border-gray-100">
+                <Shield className="w-4 h-4 text-emerald-500" />
+                <span>Secure checkout powered by Stripe</span>
+              </div>
+
               {cartItems.length === 0 ? (
                 <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" aria-hidden="true" />
                   <p className="text-gray-500 text-sm">Your cart is empty</p>
                   <p className="text-gray-400 text-xs mt-1">Select time slots to add sessions</p>
                 </div>
@@ -761,9 +838,9 @@ export default function BookSession() {
                 </>
               )}
             </div>
-          </div>
+          </aside>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

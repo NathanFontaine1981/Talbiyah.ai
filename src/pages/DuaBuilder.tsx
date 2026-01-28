@@ -405,6 +405,7 @@ export default function DuaBuilder() {
     <div key={dua.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <button
         onClick={onToggle}
+        aria-expanded={isExpanded}
         className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
       >
         <div>
@@ -482,6 +483,14 @@ export default function DuaBuilder() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to content
+      </a>
+
       {/* Header */}
       <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -528,7 +537,11 @@ export default function DuaBuilder() {
 
         {/* Tabs */}
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-1 bg-emerald-700/50 rounded-lg p-1 overflow-x-auto">
+          <div
+            role="tablist"
+            aria-label="Dua Builder sections"
+            className="flex gap-1 bg-emerald-700/50 rounded-lg p-1 overflow-x-auto"
+          >
             {[
               { id: 'build' as TabType, label: 'Build', icon: Layers },
               { id: 'library' as TabType, label: 'Library', icon: BookOpen },
@@ -539,6 +552,8 @@ export default function DuaBuilder() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
                 className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-white text-emerald-700'
@@ -554,7 +569,7 @@ export default function DuaBuilder() {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 py-6">
         {/* Build Tab - New Modular Composer */}
         {activeTab === 'build' && (
           <div className="space-y-6">
@@ -663,8 +678,10 @@ export default function DuaBuilder() {
             {/* Search and filters */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
+                <label htmlFor="library-search" className="sr-only">Search duas</label>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
+                  id="library-search"
                   type="text"
                   placeholder="Search duas..."
                   value={librarySearch}
@@ -746,8 +763,10 @@ export default function DuaBuilder() {
           <div className="space-y-4">
             {/* Search */}
             <div className="relative">
+              <label htmlFor="names-search" className="sr-only">Search Names of Allah</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
+                id="names-search"
                 type="text"
                 placeholder="Search by name, meaning, or description..."
                 value={namesSearch}
@@ -805,6 +824,7 @@ export default function DuaBuilder() {
                 >
                   <button
                     onClick={() => setExpandedNameNumber(expandedNameNumber === name.number ? null : name.number)}
+                    aria-expanded={expandedNameNumber === name.number}
                     className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-4">
@@ -855,7 +875,7 @@ export default function DuaBuilder() {
 
         {/* Learn Tab */}
         {activeTab === 'learn' && <DuaLearnTab />}
-      </div>
+      </main>
 
       {/* Global audio player */}
       {audioUrl && (

@@ -268,11 +268,20 @@ export default function CoursesOverview() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to courses
+      </a>
+
       <header className="bg-white backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-[1800px] mx-auto px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
+              aria-label="Go back to dashboard"
               className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -297,6 +306,7 @@ export default function CoursesOverview() {
               {/* My Progress Tab */}
               <button
                 onClick={() => setSelectedView('parent')}
+                aria-pressed={selectedView === 'parent'}
                 className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap flex items-center space-x-2 ${
                   selectedView === 'parent'
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
@@ -312,6 +322,7 @@ export default function CoursesOverview() {
                 <button
                   key={child.id}
                   onClick={() => setSelectedView(child.id)}
+                  aria-pressed={selectedView === child.id}
                   className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap flex items-center space-x-2 ${
                     selectedView === child.id
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
@@ -332,7 +343,7 @@ export default function CoursesOverview() {
         </div>
       )}
 
-      <main className="max-w-[1400px] mx-auto px-6 lg:px-8 py-12">
+      <main id="main-content" className="max-w-[1400px] mx-auto px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent">

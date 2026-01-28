@@ -183,7 +183,13 @@ export default function PaymentHistory() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-600 focus:text-white focus:rounded-lg"
+      >
+        Skip to payment history
+      </a>
+      <main id="main-content" className="max-w-4xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
@@ -232,14 +238,14 @@ export default function PaymentHistory() {
 
         {/* Alerts */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+          <div role="alert" className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <p className="text-red-800 dark:text-red-300">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start gap-3">
+          <div role="alert" className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
             <p className="text-emerald-800 dark:text-emerald-300">{success}</p>
           </div>
@@ -247,8 +253,11 @@ export default function PaymentHistory() {
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <div role="tablist" aria-label="Payment history tabs" className="flex border-b border-gray-200 dark:border-gray-700">
             <button
+              role="tab"
+              aria-selected={activeTab === 'purchases'}
+              aria-controls="purchases-panel"
               onClick={() => setActiveTab('purchases')}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === 'purchases'
@@ -259,6 +268,9 @@ export default function PaymentHistory() {
               Credit Purchases
             </button>
             <button
+              role="tab"
+              aria-selected={activeTab === 'transactions'}
+              aria-controls="transactions-panel"
               onClick={() => setActiveTab('transactions')}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                 activeTab === 'transactions'
@@ -272,7 +284,7 @@ export default function PaymentHistory() {
 
           {/* Purchases Tab */}
           {activeTab === 'purchases' && (
-            <div className="p-6">
+            <div id="purchases-panel" role="tabpanel" aria-labelledby="purchases-tab" className="p-6">
               {purchases.length === 0 ? (
                 <div className="text-center py-12">
                   <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -363,7 +375,7 @@ export default function PaymentHistory() {
 
           {/* Transactions Tab */}
           {activeTab === 'transactions' && (
-            <div className="p-6">
+            <div id="transactions-panel" role="tabpanel" aria-labelledby="transactions-tab" className="p-6">
               {transactions.length === 0 ? (
                 <div className="text-center py-12">
                   <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
@@ -419,12 +431,13 @@ export default function PaymentHistory() {
             </div>
           )}
         </div>
+      </main>
 
-        {/* Refund Modal */}
-        {showRefundModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Request Refund</h3>
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="refund-modal-title" className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 id="refund-modal-title" className="text-xl font-bold text-gray-900 dark:text-white mb-4">Request Refund</h3>
 
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Are you sure you want to request a refund? Your credits will be deducted and the amount
@@ -432,17 +445,18 @@ export default function PaymentHistory() {
               </p>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Reason (Optional)
-                </label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Why are you requesting a refund?"
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white resize-none"
-                />
-              </div>
+              <label htmlFor="refund-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Reason (Optional)
+              </label>
+              <textarea
+                id="refund-reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Why are you requesting a refund?"
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white resize-none"
+              />
+            </div>
 
               <div className="flex gap-3">
                 <button
@@ -475,7 +489,6 @@ export default function PaymentHistory() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

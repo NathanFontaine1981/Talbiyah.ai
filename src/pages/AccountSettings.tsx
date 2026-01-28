@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, User, ArrowLeft, Check, Bell, Mail } from 'lucide-react';
+import { BookOpen, Upload, User, ArrowLeft, Check, Bell, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
 
@@ -39,6 +39,8 @@ export default function AccountSettings() {
     new_password: '',
     confirm_password: ''
   });
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [teacherData, setTeacherData] = useState({
     education_level: '',
@@ -395,10 +397,41 @@ export default function AccountSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Skeleton Nav */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+              <div>
+                <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-4 w-32 bg-gray-100 dark:bg-gray-600 rounded animate-pulse mt-1"></div>
+              </div>
+            </div>
+            <div className="h-10 w-40 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          {/* Skeleton Header */}
+          <div className="mb-8">
+            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+            <div className="h-5 w-72 bg-gray-100 dark:bg-gray-600 rounded animate-pulse"></div>
+          </div>
+          {/* Skeleton Cards */}
+          <div className="space-y-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 animate-pulse">
+                <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-6 pb-3 border-b border-gray-200 dark:border-gray-700"></div>
+                <div className="space-y-4">
+                  <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-lg"></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-lg"></div>
+                    <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-lg"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -406,6 +439,14 @@ export default function AccountSettings() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to settings
+      </a>
+
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -428,21 +469,21 @@ export default function AccountSettings() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-5xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile Settings</h2>
           <p className="text-gray-600 dark:text-gray-300">Manage your account settings and preferences</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" role="alert" aria-live="assertive">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
-            <Check className="w-5 h-5 text-green-600" />
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2" role="status" aria-live="polite">
+            <Check className="w-5 h-5 text-green-600" aria-hidden="true" />
             <p className="text-green-800 text-sm font-medium">{successMessage}</p>
           </div>
         )}
@@ -466,14 +507,18 @@ export default function AccountSettings() {
                       <User className="w-10 h-10 text-gray-400" />
                     )}
                   </div>
-                  <label className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium cursor-pointer transition flex items-center space-x-2">
-                    <Upload className="w-4 h-4" />
+                  <label
+                    htmlFor="avatar-upload"
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium cursor-pointer transition flex items-center space-x-2"
+                  >
+                    <Upload className="w-4 h-4" aria-hidden="true" />
                     <span>Change Photo</span>
                     <input
+                      id="avatar-upload"
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
-                      className="hidden"
+                      className="sr-only"
                     />
                   </label>
                 </div>
@@ -481,10 +526,11 @@ export default function AccountSettings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="full_name" className="block text-sm font-medium text-gray-900 mb-2">
                     Full Name
                   </label>
                   <input
+                    id="full_name"
                     type="text"
                     value={profileData.full_name}
                     onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
@@ -494,10 +540,11 @@ export default function AccountSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
                     Email Address
                   </label>
                   <input
+                    id="email"
                     type="email"
                     value={profileData.email}
                     disabled
@@ -526,10 +573,11 @@ export default function AccountSettings() {
             <form onSubmit={handleSaveDetails} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-900 mb-2">
                     Date of Birth
                   </label>
                   <input
+                    id="date_of_birth"
                     type="date"
                     value={personalData.date_of_birth}
                     onChange={(e) => setPersonalData({ ...personalData, date_of_birth: e.target.value })}
@@ -538,10 +586,11 @@ export default function AccountSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-900 mb-2">
                     Location
                   </label>
                   <input
+                    id="location"
                     type="text"
                     value={personalData.location}
                     onChange={(e) => setPersonalData({ ...personalData, location: e.target.value })}
@@ -551,10 +600,11 @@ export default function AccountSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="timezone" className="block text-sm font-medium text-gray-900 mb-2">
                     Timezone
                   </label>
                   <input
+                    id="timezone"
                     type="text"
                     value={personalData.timezone}
                     onChange={(e) => setPersonalData({ ...personalData, timezone: e.target.value })}
@@ -565,10 +615,11 @@ export default function AccountSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="about_me" className="block text-sm font-medium text-gray-900 mb-2">
                   About Me
                 </label>
                 <textarea
+                  id="about_me"
                   value={personalData.about_me}
                   onChange={(e) => setPersonalData({ ...personalData, about_me: e.target.value })}
                   rows={4}
@@ -597,29 +648,51 @@ export default function AccountSettings() {
             <form onSubmit={handleUpdatePassword} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="new_password" className="block text-sm font-medium text-gray-900 mb-2">
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    value={passwordData.new_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      id="new_password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={passwordData.new_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-900 mb-2">
                     Confirm New Password
                   </label>
-                  <input
-                    type="password"
-                    value={passwordData.confirm_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      id="confirm_password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordData.confirm_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -662,8 +735,11 @@ export default function AccountSettings() {
                         checked={emailNotifications}
                         onChange={(e) => setEmailNotifications(e.target.checked)}
                         className="sr-only peer"
+                        aria-label="Enable Khutbah Reflections email notifications"
+                        role="switch"
+                        aria-checked={emailNotifications}
                       />
-                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500" aria-hidden="true"></div>
                     </label>
                   </div>
                 </div>
@@ -790,7 +866,7 @@ export default function AccountSettings() {
             </>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

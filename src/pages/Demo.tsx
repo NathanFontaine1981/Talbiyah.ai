@@ -6,9 +6,20 @@ import { ArrowLeft, BookOpen, Brain, Lightbulb, FileText, CheckCircle, HelpCircl
 function FlipCard({ word }: { word: { arabic: string; transliteration: string; meaning: string } }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsFlipped(!isFlipped);
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => setIsFlipped(!isFlipped)}
+      onKeyDown={handleKeyDown}
+      aria-label={`Flashcard: ${word.transliteration}. ${isFlipped ? `Meaning: ${word.meaning}` : 'Press to reveal meaning'}`}
       className="cursor-pointer h-32 perspective-1000"
       style={{ perspective: '1000px' }}
     >
@@ -61,6 +72,14 @@ export default function Demo() {
   if (!selectedCourse) {
     return (
       <div className="min-h-screen bg-gray-50">
+        {/* Skip Link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+        >
+          Skip to course selection
+        </a>
+
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -81,7 +100,7 @@ export default function Demo() {
         </div>
 
         {/* Selection Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+        <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               See the Smart-Track Engine in Action
@@ -132,7 +151,7 @@ export default function Demo() {
               </div>
             </button>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -141,6 +160,14 @@ export default function Demo() {
   if (selectedCourse === 'quran') {
     return (
       <div className="min-h-screen bg-gray-50">
+        {/* Skip Link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+        >
+          Skip to Quran study notes
+        </a>
+
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -170,7 +197,7 @@ export default function Demo() {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
           {/* Title Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
             <div className="flex items-center space-x-3 mb-4">
@@ -207,6 +234,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('verses')}
+              aria-expanded={expandedSections.includes('verses')}
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -256,6 +284,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-purple-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('tafsir')}
+              aria-expanded={expandedSections.includes('tafsir')}
               className="w-full px-6 py-4 flex items-center justify-between bg-purple-50 hover:bg-purple-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -313,6 +342,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('flashcards')}
+              aria-expanded={expandedSections.includes('flashcards')}
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -352,6 +382,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('lessons')}
+              aria-expanded={expandedSections.includes('lessons')}
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -389,6 +420,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('reflection')}
+              aria-expanded={expandedSections.includes('reflection')}
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -427,6 +459,7 @@ export default function Demo() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <button
               onClick={() => toggleSection('prompter')}
+              aria-expanded={expandedSections.includes('prompter')}
               className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
             >
               <div className="flex items-center space-x-3">
@@ -480,7 +513,7 @@ export default function Demo() {
               Start Your Free Assessment
             </button>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -488,6 +521,14 @@ export default function Demo() {
   // Arabic Demo
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to Arabic study notes
+      </a>
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -517,7 +558,7 @@ export default function Demo() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Title Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
           <div className="flex items-center space-x-3 mb-4">
@@ -554,6 +595,7 @@ export default function Demo() {
         <div className="bg-white rounded-2xl shadow-sm border border-blue-200 mb-6 overflow-hidden">
           <button
             onClick={() => toggleSection('grammar')}
+            aria-expanded={expandedSections.includes('grammar')}
             className="w-full px-6 py-4 flex items-center justify-between bg-blue-50 hover:bg-blue-100 transition"
           >
             <div className="flex items-center space-x-3">
@@ -651,6 +693,7 @@ export default function Demo() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
           <button
             onClick={() => toggleSection('conversation')}
+            aria-expanded={expandedSections.includes('conversation')}
             className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
           >
             <div className="flex items-center space-x-3">
@@ -750,6 +793,7 @@ export default function Demo() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
           <button
             onClick={() => toggleSection('homework')}
+            aria-expanded={expandedSections.includes('homework')}
             className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition"
           >
             <div className="flex items-center space-x-3">
@@ -801,7 +845,7 @@ export default function Demo() {
             Start Your Free Assessment
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

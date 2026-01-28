@@ -237,6 +237,14 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-blue-50">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to onboarding form
+      </a>
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-6 py-4">
@@ -253,15 +261,15 @@ export default function Onboarding() {
       </header>
 
       {/* Progress Bar */}
-      <div className="bg-white border-b border-gray-200">
+      <nav aria-label="Onboarding progress" className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="flex items-center py-4">
+          <ol className="flex items-center py-4">
             {[
               { num: 1, label: 'About You' },
               { num: 2, label: 'Your Child' },
               { num: 3, label: 'Welcome' }
             ].map((s, index) => (
-              <div key={s.num} className="flex items-center flex-1">
+              <li key={s.num} className="flex items-center flex-1" aria-current={step === s.num ? 'step' : undefined}>
                 <div className="flex items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                     step > s.num
@@ -269,7 +277,7 @@ export default function Onboarding() {
                       : step === s.num
                         ? 'bg-emerald-500 text-white ring-4 ring-cyan-100'
                         : 'bg-gray-200 text-gray-500'
-                  }`}>
+                  }`} aria-label={step > s.num ? `Step ${s.num}: ${s.label} - completed` : `Step ${s.num}: ${s.label}`}>
                     {step > s.num ? '✓' : s.num}
                   </div>
                   <span className={`ml-3 font-medium hidden sm:block ${
@@ -281,16 +289,16 @@ export default function Onboarding() {
                 {index < 2 && (
                   <div className={`flex-1 h-1 mx-4 rounded ${
                     step > s.num ? 'bg-emerald-500' : 'bg-gray-200'
-                  }`} />
+                  }`} aria-hidden="true" />
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
-      </div>
+      </nav>
 
       {/* Content */}
-      <main className="py-8 px-4">
+      <main id="main-content" className="py-8 px-4">
         {step === 1 && (
           <ParentDetailsStep
             data={parentData}

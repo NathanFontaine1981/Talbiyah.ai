@@ -214,7 +214,13 @@ export default function RescheduleLesson() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to reschedule form
+      </a>
+      <main id="main-content" className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -262,6 +268,7 @@ export default function RescheduleLesson() {
           <button
             onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
             disabled={weekOffset === 0}
+            aria-label="Go to previous week"
             className="px-6 py-3 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-xl transition font-semibold"
           >
             Previous Week
@@ -271,6 +278,7 @@ export default function RescheduleLesson() {
           </span>
           <button
             onClick={() => setWeekOffset(weekOffset + 1)}
+            aria-label="Go to next week"
             className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition font-semibold"
           >
             Next Week
@@ -291,6 +299,8 @@ export default function RescheduleLesson() {
                   key={i}
                   onClick={() => !isPastDate && setSelectedDate(date)}
                   disabled={isPastDate}
+                  aria-pressed={isSelected}
+                  aria-label={`Select ${format(date, 'EEEE, MMMM d')}`}
                   className={`p-6 rounded-xl border-2 transition text-center ${
                     isSelected
                       ? 'border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/20'
@@ -330,6 +340,8 @@ export default function RescheduleLesson() {
                   <button
                     key={timeSlot}
                     onClick={() => setSelectedTime(timeSlot)}
+                    aria-pressed={selectedTime === timeSlot}
+                    aria-label={`Select time ${timeSlot}`}
                     className={`p-4 rounded-xl border-2 transition font-semibold ${
                       selectedTime === timeSlot
                         ? 'border-emerald-500 bg-emerald-500/20 text-white shadow-lg shadow-emerald-500/20'
@@ -370,7 +382,7 @@ export default function RescheduleLesson() {
             )}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

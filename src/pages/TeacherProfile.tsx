@@ -334,7 +334,7 @@ export default function TeacherProfile() {
 
         <div className="pt-32 px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
+            <div role="alert" className="mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Teacher Not Found</h1>
               <p className="text-gray-600 text-lg mb-8">{error || 'The teacher profile you are looking for does not exist or is no longer available.'}</p>
               <button
@@ -359,6 +359,12 @@ export default function TeacherProfile() {
 
   return (
     <div className="min-h-screen bg-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to teacher profile
+      </a>
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition">
@@ -376,7 +382,7 @@ export default function TeacherProfile() {
         </div>
       </nav>
 
-      <div className="pt-32 pb-20 px-6">
+      <main id="main-content" className="pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto">
           {/* Enhanced Header with Tier Badge and Stats */}
           <div className="mb-8">
@@ -503,6 +509,7 @@ export default function TeacherProfile() {
                   <button
                     onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
                     disabled={weekOffset === 0}
+                    aria-label="Previous week"
                     className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -513,6 +520,7 @@ export default function TeacherProfile() {
                   <button
                     onClick={() => setWeekOffset(weekOffset + 1)}
                     disabled={weekOffset >= 3}
+                    aria-label="Next week"
                     className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     <ChevronRight className="w-5 h-5 text-gray-600" />
@@ -626,7 +634,7 @@ export default function TeacherProfile() {
             />
           )}
         </div>
-      </div>
+      </main>
 
       <footer className="border-t border-gray-200 py-8 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto text-center text-gray-500 text-sm">

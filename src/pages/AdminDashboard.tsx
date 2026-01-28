@@ -160,9 +160,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"
+      >
+        Skip to admin content
+      </a>
+
       <aside className={`bg-gradient-to-b from-gray-950 to-gray-900 flex-shrink-0 transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col border-r border-gray-800`}>
         <div className="p-6 border-b border-gray-800">
-          <button onClick={() => navigate('/')} className="flex items-center space-x-3 hover:opacity-80 transition">
+          <button onClick={() => navigate('/')} aria-label="Go to home page" className="flex items-center space-x-3 hover:opacity-80 transition">
             <BookOpen className="w-8 h-8 text-emerald-400" />
             {!sidebarCollapsed && (
               <div>
@@ -191,6 +199,7 @@ export default function AdminDashboard() {
                       <Link
                         to={item.path}
                         title={sidebarCollapsed ? item.label : undefined}
+                        aria-current={isActive(item.path, item.exact) ? 'page' : undefined}
                         className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition ${
                           isActive(item.path, item.exact)
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -211,6 +220,8 @@ export default function AdminDashboard() {
         <div className="p-4 border-t border-gray-800">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            aria-expanded={!sidebarCollapsed}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="w-full flex items-center justify-center py-2 text-gray-400 hover:text-white transition"
           >
             <ChevronLeft className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
@@ -227,9 +238,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center space-x-6">
-              <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">
+              <button aria-label="Notifications" className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">
                 <Bell className="w-6 h-6" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
               </button>
 
               <div className="flex items-center space-x-3">
@@ -248,6 +259,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleSignOut}
+                aria-label="Sign out"
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition"
               >
                 <LogOut className="w-5 h-5" />
@@ -256,7 +268,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <main id="main-content" className="flex-1 p-6 lg:p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <Outlet />
         </main>
       </div>
