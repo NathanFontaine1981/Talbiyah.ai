@@ -19,6 +19,7 @@ interface Lesson {
   status: string;
   '100ms_room_id': string | null;
   has_insights: boolean;
+  insights_processing?: boolean; // True when only fallback auto_generated insight exists
   unread_messages: number;
   confirmation_status?: string;
   has_recording?: boolean;
@@ -174,18 +175,19 @@ export default function MyClasses() {
         // Check which lessons have insights
         const lessonIds = (lessonsData as RawLessonData[]).map((l) => l.id);
 
-        // Fetch insight details (title, summary, key_topics) for lessons
-        const insightsMap = new Map<string, { title: string; summary: string; key_topics: string[] | null }>();
+        // Fetch insight details (title, summary, key_topics, ai_model) for lessons
+        const insightsMap = new Map<string, { title: string; summary: string; key_topics: string[] | null; ai_model: string }>();
         if (lessonIds.length > 0) {
           const { data: insightsData } = await supabase
             .from('lesson_insights')
-            .select('lesson_id, title, summary, key_topics')
+            .select('lesson_id, title, summary, key_topics, ai_model')
             .in('lesson_id', lessonIds);
           insightsData?.forEach(insight => {
             insightsMap.set(insight.lesson_id, {
               title: insight.title,
               summary: insight.summary,
-              key_topics: insight.key_topics
+              key_topics: insight.key_topics,
+              ai_model: insight.ai_model || 'unknown'
             });
           });
         }
@@ -209,6 +211,9 @@ export default function MyClasses() {
         const formattedLessons: Lesson[] = (lessonsData as RawLessonData[]).map((lesson) => {
           const recording = recordingsMap.get(lesson.id);
           const insight = insightsMap.get(lesson.id);
+          // Only count as "has_insights" if it's a real Claude insight, not auto_generated fallback
+          const isRealInsight = insight && insight.ai_model !== 'auto_generated';
+          const isProcessingInsight = insight && insight.ai_model === 'auto_generated';
           return {
             id: lesson.id,
             learner_id: lesson.learner_id,
@@ -222,7 +227,8 @@ export default function MyClasses() {
             duration_minutes: lesson.duration_minutes,
             status: lesson.status,
             '100ms_room_id': lesson['100ms_room_id'],
-            has_insights: !!insight,
+            has_insights: !!isRealInsight,
+            insights_processing: !!isProcessingInsight,
             unread_messages: unreadMessageCounts.get(lesson.id) || 0,
             confirmation_status: lesson.confirmation_status,
             has_recording: !!recording,
@@ -765,7 +771,7 @@ export default function MyClasses() {
                           const processingWindowMins = Math.max(30, (lesson.duration_minutes || 30) * 2);
 
                           if (lesson.has_insights) {
-                            // Insights available - show button
+                            // Full AI insights available - show button
                             return (
                               <button
                                 onClick={handleViewInsights}
@@ -778,6 +784,14 @@ export default function MyClasses() {
                                 <BookOpen className="w-4 h-4" />
                                 <span>Insights</span>
                               </button>
+                            );
+                          } else if (lesson.insights_processing) {
+                            // Fallback insight exists, full AI insight still processing
+                            return (
+                              <div className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-medium flex items-center space-x-2 cursor-default border border-amber-200">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing Insights...</span>
+                              </div>
                             );
                           } else if (lesson.status === 'completed' && minutesSinceEnd < processingWindowMins) {
                             // Lesson completed recently - processing transcript and insights
