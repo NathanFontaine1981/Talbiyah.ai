@@ -56,11 +56,9 @@ async function transcribeWithElevenLabs(audioUrl: string, isArabicContent: boole
     formData.append("file", audioBlob, "recording.mp4");
     formData.append("model_id", "scribe_v1");
 
-    // Set language to Arabic for Quran/Arabic lessons
-    if (isArabicContent) {
-      formData.append("language_code", "ar");
-      console.log("Using Arabic language code for transcription");
-    }
+    // Don't set language_code - let ElevenLabs auto-detect for mixed Arabic/English lessons
+    // Setting "ar" causes poor transcription of English explanations
+    console.log("Using auto language detection for transcription (mixed Arabic/English)");
 
     // Enable speaker diarization to identify teacher vs student
     formData.append("diarize", "true");
