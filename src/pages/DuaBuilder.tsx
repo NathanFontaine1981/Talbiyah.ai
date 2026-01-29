@@ -22,7 +22,8 @@ import {
   Coins,
   Layers,
   GraduationCap,
-  Moon
+  Moon,
+  Compass
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -517,22 +518,42 @@ export default function DuaBuilder() {
             Build, learn, and memorize authentic duas
           </p>
 
-          {/* Qunut Practice Quick Link */}
-          <button
-            onClick={() => navigate('/qunut-practice')}
-            className="mt-4 w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                <Moon className="text-amber-300" size={20} />
+          {/* Quick Links to Special Duas */}
+          <div className="mt-4 space-y-2">
+            {/* Qunut Practice Quick Link */}
+            <button
+              onClick={() => navigate('/qunut-practice')}
+              className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                  <Moon className="text-amber-300" size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-white">Qunut Dua for Witr</p>
+                  <p className="text-xs text-emerald-200">Learn, practice & download PDF</p>
+                </div>
               </div>
-              <div className="text-left">
-                <p className="font-semibold text-white">Qunut Dua for Witr</p>
-                <p className="text-xs text-emerald-200">Learn, practice & download PDF</p>
+              <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
+            </button>
+
+            {/* Istikhara Practice Quick Link */}
+            <button
+              onClick={() => navigate('/istikhara-practice')}
+              className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <Compass className="text-blue-300" size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-white">Salatul Istikhara</p>
+                  <p className="text-xs text-emerald-200">Step-by-step guidance prayer</p>
+                </div>
               </div>
-            </div>
-            <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
-          </button>
+              <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

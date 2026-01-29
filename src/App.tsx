@@ -89,6 +89,7 @@ const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference
 const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
 const DuaBuilder = lazy(() => import('./pages/DuaBuilder'));
 const QunutPractice = lazy(() => import('./pages/QunutPractice'));
+const IstikharaPractice = lazy(() => import('./pages/IstikharaPractice'));
 const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
@@ -783,6 +784,7 @@ function App() {
         />
         <Route path="/dua-builder" element={<DuaBuilder />} />
         <Route path="/qunut-practice" element={<QunutPractice />} />
+        <Route path="/istikhara-practice" element={<IstikharaPractice />} />
         <Route
           path="/khutba-reflections"
           element={
