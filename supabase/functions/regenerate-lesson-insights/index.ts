@@ -13,7 +13,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { lesson_id } = await req.json();
+    const { lesson_id, surah_name, surah_number, ayah_range } = await req.json();
 
     if (!lesson_id) {
       return new Response(
@@ -21,6 +21,11 @@ Deno.serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Manual surah override for accurate Quran.com data fetching
+    const manualSurahName = surah_name;
+    const manualSurahNumber = surah_number ? parseInt(surah_number, 10) : undefined;
+    const manualAyahRange = ayah_range;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -50,6 +55,34 @@ Deno.serve(async (req: Request) => {
     const teacherName = (lesson.teacher_profiles as any)?.profiles?.full_name || "Teacher";
     const subjectName = (lesson.subjects as any)?.name || "Lesson";
     const learnerName = (lesson.learners as any)?.name || "Student";
+    const lessonTitle = subjectName; // Subject name contains surah info like "Quran with Understanding"
+
+    // Use manual surah info if provided, otherwise try to parse from title
+    let surahName: string | undefined = manualSurahName;
+    let surahNumber: number | undefined = manualSurahNumber;
+    let ayahRange: string | undefined = manualAyahRange;
+
+    if (!surahName && !surahNumber) {
+      // Pattern: "Surah An-Najm (53:1-18)" or "Surah Al-Kahf (18)" or "Surah Name (number), Ayat X-Y"
+      const surahMatch = lessonTitle.match(/[Ss]urah\s+([A-Za-z\-']+)\s*(?:\((\d+)(?::(\d+)-(\d+))?\))?/);
+      if (surahMatch) {
+        surahName = surahMatch[1];
+        if (surahMatch[2]) surahNumber = parseInt(surahMatch[2], 10);
+        if (surahMatch[3] && surahMatch[4]) {
+          ayahRange = `${surahMatch[3]}-${surahMatch[4]}`;
+        }
+      }
+
+      // Also try to extract ayah range from title like "Ayat 1-18" or "(1-18)"
+      if (!ayahRange) {
+        const ayahMatch = lessonTitle.match(/(?:[Aa]yat?\s*)?(\d+)\s*[-–]\s*(\d+)/);
+        if (ayahMatch) {
+          ayahRange = `${ayahMatch[1]}-${ayahMatch[2]}`;
+        }
+      }
+    }
+
+    console.log("Surah info:", { surahName, surahNumber, ayahRange, lessonTitle, manual: !!manualSurahNumber });
 
     let transcriptText = "";
 
@@ -166,6 +199,7 @@ Deno.serve(async (req: Request) => {
         lesson_id: lesson.id,
         transcript: transcriptText,
         subject: subjectName,
+        lesson_title: lessonTitle,
         metadata: {
           teacher_name: teacherName,
           student_names: [learnerName],
@@ -173,6 +207,9 @@ Deno.serve(async (req: Request) => {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
           }),
           duration_minutes: lesson.duration_minutes,
+          surah_name: surahName,
+          surah_number: surahNumber,
+          ayah_range: ayahRange,
         },
       }),
     });
