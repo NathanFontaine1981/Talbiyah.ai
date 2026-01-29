@@ -626,7 +626,35 @@ Format each question EXACTLY like this - put ✅ ONLY after the CORRECT answer:
 **Q1.** What does "Ar-Raḥmān" specifically refer to?
 A) Allah's mercy only for Muslims B) Allah's universal mercy for all creation ✅ C) Allah's anger toward sinners D) Allah's knowledge of everything
 
-CRITICAL: Double-check that the ✅ is placed after the factually correct answer based on Islamic knowledge.
+⚠️ CRITICAL QUIZ ACCURACY RULES:
+1. ONLY place ✅ after the FACTUALLY CORRECT answer - never on wrong answers
+2. For vocabulary questions, use the EXACT meanings from the vocabulary reference below
+3. For verse-meaning questions, verify against the actual verse translation
+4. DOUBLE-CHECK every ✅ placement before finalizing
+
+### MANDATORY VOCABULARY REFERENCE (Use these exact meanings):
+- **تَبَارَكَ (tabāraka)** = "Blessed is He" (NOT "He is great")
+- **الْمُلْك (al-mulk)** = "The Dominion/Sovereignty" (complete authority)
+- **قَدِير (qadīr)** = "All-Powerful/Competent over all things"
+- **الْمَوْت (al-mawt)** = "Death"
+- **الْحَيَاة (al-ḥayāh)** = "Life"
+- **لِيَبْلُوَكُمْ (li-yabluwakum)** = "To test you"
+- **أَحْسَنُ عَمَلًا (aḥsanu ʿamalan)** = "Best in deeds"
+- **الْعَزِيز (al-ʿAzīz)** = "The Exalted in Might"
+- **الْغَفُور (al-Ghafūr)** = "The Forgiving"
+- **الرَّحْمَٰن (Ar-Raḥmān)** = "The Most Merciful" (universal mercy for ALL creation)
+- **الرَّحِيم (Ar-Raḥīm)** = "The Especially Merciful" (special mercy for believers)
+- **رَبّ الْعَالَمِين (Rabb al-ʿĀlamīn)** = "Lord of all the worlds"
+- **مَالِك يَوْم الدِّين (Mālik Yawm al-Dīn)** = "Master/Owner of the Day of Judgment"
+- **قَيِّم (qayyim)** = "Straight/Upright" (without crookedness)
+- **يُنْذِر (yundhir)** = "To warn"
+- **زِينَة (zīnah)** = "Adornment/Decoration"
+- **فِتْنَة (fitnah)** = "Trial/Test"
+
+### VERSE MEANING VERIFICATION:
+- Surah Al-Mulk 67:2 - Allah created death and life "to TEST you which of you is BEST IN DEEDS"
+- Surah Al-Kahf 18:7 - Earth's adornments are "to TEST them which of them is BEST IN DEEDS"
+- Always verify quiz answers against actual verse meanings
 
 ---
 

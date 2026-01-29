@@ -52,12 +52,163 @@ const VERSE_QUESTION_PATTERNS = [
   /["']I\s+am\s+(?:your\s+)?(?:lord|god)/i,
 ];
 
+// Patterns to detect vocabulary/meaning questions
+const VOCAB_QUESTION_PATTERNS = [
+  /what\s+does\s+["'""]?(\w+)["'""]?\s+mean/i,
+  /the\s+meaning\s+of\s+["'""]?(\w+)["'""]?/i,
+  /["'""]?(\w+)["'""]?\s+(?:means|refers\s+to|specifically\s+refer)/i,
+  /what\s+is\s+the\s+(?:meaning|definition)\s+of/i,
+  /why\s+did\s+allah\s+create\s+(?:death\s+and\s+life|life\s+and\s+death)/i,
+  /according\s+to\s+the\s+verse/i,
+];
+
+// CRITICAL: Known correct Arabic vocabulary meanings
+// These override any AI-generated answers
+const ARABIC_VOCAB_CORRECTIONS: Record<string, { correct: string; wrong: string[] }> = {
+  // Tabāraka - most common error
+  'tabāraka': { correct: 'blessed', wrong: ['all-knowing', 'knowing', 'great', 'mighty', 'powerful', 'high', 'seeing'] },
+  'tabaraka': { correct: 'blessed', wrong: ['all-knowing', 'knowing', 'great', 'mighty', 'powerful', 'high', 'seeing'] },
+  'تبارك': { correct: 'blessed', wrong: ['all-knowing', 'knowing', 'great', 'mighty', 'powerful', 'high', 'seeing'] },
+
+  // Al-Mulk
+  'al-mulk': { correct: 'dominion', wrong: ['power only', 'kingdom only'] },
+  'الملك': { correct: 'dominion', wrong: ['power only', 'kingdom only'] },
+
+  // Qadīr
+  'qadīr': { correct: 'all-powerful', wrong: ['strong only', 'mighty only'] },
+  'قدير': { correct: 'all-powerful', wrong: ['strong only', 'mighty only'] },
+
+  // Rahman/Raheem
+  'ar-raḥmān': { correct: 'universal mercy', wrong: ['mercy only for muslims', 'special mercy for believers'] },
+  'الرحمن': { correct: 'universal mercy', wrong: ['mercy only for muslims', 'special mercy for believers'] },
+  'ar-raḥīm': { correct: 'special mercy for believers', wrong: ['universal mercy', 'general mercy for all'] },
+  'الرحيم': { correct: 'special mercy for believers', wrong: ['universal mercy', 'general mercy for all'] },
+
+  // Qayyim
+  'qayyim': { correct: 'straight', wrong: ['great', 'powerful', 'beautiful', 'knowing'] },
+  'قيم': { correct: 'straight', wrong: ['great', 'powerful', 'beautiful', 'knowing'] },
+};
+
+// Known verse meaning corrections - map question patterns to correct answer patterns
+const VERSE_MEANING_CORRECTIONS: Record<string, { correctPattern: string; wrongPatterns: string[] }> = {
+  // Why did Allah create death and life?
+  'create death and life': {
+    correctPattern: 'test',
+    wrongPatterns: ['accident', 'entertainment', 'show his power', 'for fun', 'by chance']
+  },
+  'created death and life': {
+    correctPattern: 'test',
+    wrongPatterns: ['accident', 'entertainment', 'show his power', 'for fun', 'by chance']
+  },
+
+  // Looking for flaws in creation
+  'flaws in allah': {
+    correctPattern: 'frustrated',
+    wrongPatterns: ['experts', 'find many', 'special knowledge', 'gain']
+  },
+  'look repeatedly': {
+    correctPattern: 'frustrated',
+    wrongPatterns: ['experts', 'find many', 'special knowledge', 'gain']
+  },
+
+  // Stars purpose
+  'stars in the': {
+    correctPattern: 'beauty',
+    wrongPatterns: ['navigation', 'time-keeping', 'light and heat']
+  },
+  'dual purpose': {
+    correctPattern: 'beauty',
+    wrongPatterns: ['navigation', 'time-keeping', 'light and heat']
+  },
+};
+
 // Patterns to extract verse numbers from questions
 const VERSE_NUMBER_PATTERNS = [
   /(?:ayah|verse|āyah)\s+(\d+)/i,
   /(\d+):(\d+)/,
   /verses?\s+(\d+)(?:\s*[-–]\s*(\d+))?/i,
 ];
+
+/**
+ * Check if a question is a vocabulary/meaning question
+ */
+export function isVocabQuestion(question: string): boolean {
+  return VOCAB_QUESTION_PATTERNS.some(pattern => pattern.test(question));
+}
+
+/**
+ * Verify vocabulary question answer and return correction if needed
+ */
+export function verifyVocabAnswer(
+  question: string,
+  answer: string,
+  allOptions: string[]
+): { corrected: boolean; newAnswer: string; correctOptionIndex: number } {
+  const questionLower = question.toLowerCase();
+  const answerLower = answer.toLowerCase();
+
+  console.log(`Verifying quiz answer: Q="${question.substring(0, 50)}..." A="${answer}"`);
+  console.log(`Available options: ${allOptions.join(' | ')}`);
+
+  // Check for vocabulary term corrections
+  for (const [term, { correct, wrong }] of Object.entries(ARABIC_VOCAB_CORRECTIONS)) {
+    if (questionLower.includes(term.toLowerCase())) {
+      console.log(`Found vocab term "${term}" in question`);
+
+      // Check if current answer is a known wrong answer
+      const isWrongAnswer = wrong.some(w => answerLower.includes(w.toLowerCase()));
+
+      if (isWrongAnswer) {
+        // Find the option that contains the correct meaning
+        const correctIndex = allOptions.findIndex(opt =>
+          opt.toLowerCase().includes(correct.toLowerCase())
+        );
+
+        if (correctIndex !== -1) {
+          console.log(`VOCAB CORRECTION: "${answer}" -> "${allOptions[correctIndex]}" (term: ${term})`);
+          return { corrected: true, newAnswer: allOptions[correctIndex], correctOptionIndex: correctIndex };
+        }
+      }
+
+      // Check if current answer matches correct - no correction needed
+      if (answerLower.includes(correct.toLowerCase())) {
+        console.log(`Answer "${answer}" is correct for term "${term}"`);
+        return { corrected: false, newAnswer: answer, correctOptionIndex: -1 };
+      }
+    }
+  }
+
+  // Check for verse meaning corrections
+  for (const [pattern, { correctPattern, wrongPatterns }] of Object.entries(VERSE_MEANING_CORRECTIONS)) {
+    if (questionLower.includes(pattern.toLowerCase())) {
+      console.log(`Found verse pattern "${pattern}" in question`);
+
+      // Check if current answer matches a known wrong pattern
+      const isWrongAnswer = wrongPatterns.some(w => answerLower.includes(w.toLowerCase()));
+
+      if (isWrongAnswer) {
+        // Find the option that contains the correct pattern
+        const correctIndex = allOptions.findIndex(opt =>
+          opt.toLowerCase().includes(correctPattern.toLowerCase())
+        );
+
+        if (correctIndex !== -1 && allOptions[correctIndex].toLowerCase() !== answerLower) {
+          console.log(`VERSE CORRECTION: "${answer}" -> "${allOptions[correctIndex]}" (pattern: ${pattern})`);
+          return { corrected: true, newAnswer: allOptions[correctIndex], correctOptionIndex: correctIndex };
+        }
+      }
+
+      // Check if current answer has the correct pattern
+      if (answerLower.includes(correctPattern.toLowerCase())) {
+        console.log(`Answer "${answer}" is correct for pattern "${pattern}"`);
+        return { corrected: false, newAnswer: answer, correctOptionIndex: -1 };
+      }
+    }
+  }
+
+  console.log(`No correction needed for: "${answer}"`);
+  return { corrected: false, newAnswer: answer, correctOptionIndex: -1 };
+}
 
 /**
  * Extract verse reference from a quiz question
@@ -136,12 +287,29 @@ export function extractRelevantTranslation(question: string, verse: VerifiedVers
 
 /**
  * Parse quiz questions from generated content
- * Returns array of question objects with question text and correct answer
+ * Returns array of question objects with question text, all options, and correct answer
+ * Handles both multi-line and inline option formats
  */
-function parseQuizFromContent(content: string): { question: string; correctAnswer: string; startIndex: number; endIndex: number }[] {
-  const questions: { question: string; correctAnswer: string; startIndex: number; endIndex: number }[] = [];
+function parseQuizFromContent(content: string): {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  correctLetter: string;
+  fullBlock: string;
+  startIndex: number;
+  endIndex: number;
+}[] {
+  const questions: {
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    correctLetter: string;
+    fullBlock: string;
+    startIndex: number;
+    endIndex: number;
+  }[] = [];
 
-  // Pattern to match quiz questions: Q1., Q2., **Q1.**, 1., etc.
+  // Pattern to match quiz questions: Q1., Q2., **Q1.**, etc.
   const questionPattern = /(?:\*\*)?Q?(\d+)\.\*?\*?\s*(.+?)(?=(?:\*\*)?Q?\d+\.\*?\*?|\n\n---|\n\n\*\*|$)/gs;
 
   let match;
@@ -149,19 +317,44 @@ function parseQuizFromContent(content: string): { question: string; correctAnswe
     const questionBlock = match[2];
     const startIndex = match.index;
     const endIndex = match.index + match[0].length;
+    const fullBlock = match[0];
 
-    // Find the question text (first line or up to the options)
-    const questionMatch = questionBlock.match(/^(.+?)(?:\n|(?=[A-D]\)))/s);
+    // Find the question text - everything before the first A)
+    const questionMatch = questionBlock.match(/^(.+?)(?=\s*[A-D]\))/s);
     if (!questionMatch) continue;
 
-    const questionText = questionMatch[1].trim();
+    const questionText = questionMatch[1].replace(/\n/g, ' ').trim();
 
-    // Find the correct answer (marked with ✅)
-    const correctMatch = questionBlock.match(/([A-D])\)\s*(.+?)\s*✅/);
-    if (correctMatch) {
+    // Extract all options - handle INLINE format: A) text B) text C) text D) text
+    // This regex captures: letter, option text (everything until next letter) or ✅)
+    const options: string[] = [];
+    let correctAnswer = '';
+    let correctLetter = '';
+
+    // Match each option - handles inline format with ✅ markers
+    const optionMatches = questionBlock.matchAll(/([A-D])\)\s*([^A-D]+?)(?=\s*[A-D]\)|$)/g);
+
+    for (const optMatch of optionMatches) {
+      const letter = optMatch[1];
+      let optionText = optMatch[2].trim();
+
+      // Check if this option has the ✅
+      if (optionText.includes('✅')) {
+        correctAnswer = optionText.replace(/\s*✅\s*/g, '').trim();
+        correctLetter = letter;
+        optionText = correctAnswer;
+      }
+
+      options.push(optionText);
+    }
+
+    if (correctAnswer && options.length >= 2) {
       questions.push({
         question: questionText,
-        correctAnswer: correctMatch[2].trim(),
+        options,
+        correctAnswer,
+        correctLetter,
+        fullBlock,
         startIndex,
         endIndex
       });
@@ -252,15 +445,8 @@ export function verifyAndCorrectQuizAnswers(
 ): VerificationSummary {
   const { verifiedVerses } = context;
 
-  if (!verifiedVerses || verifiedVerses.length === 0) {
-    return {
-      totalQuestions: 0,
-      verseRelatedQuestions: 0,
-      correctionsApplied: 0,
-      correctedContent: generatedContent,
-      corrections: []
-    };
-  }
+  // NOTE: Don't return early if no verified verses - we still need to check vocab questions!
+  console.log(`Starting quiz verification. Verified verses available: ${verifiedVerses?.length || 0}`);
 
   // Parse quiz questions from content
   const questions = parseQuizFromContent(generatedContent);
@@ -275,32 +461,75 @@ export function verifyAndCorrectQuizAnswers(
     const q = questions[i];
 
     const isVerseRelated = isVerseRelatedQuestion(q.question);
+    const isVocab = isVocabQuestion(q.question);
+
     if (isVerseRelated) {
       verseRelatedCount++;
     }
 
-    const result = verifyAndCorrectQuizAnswer(q.question, q.correctAnswer, verifiedVerses);
+    let correctionMade = false;
+    let newAnswer = q.correctAnswer;
+    let similarity = 1;
+
+    // First check vocabulary questions (most common issue)
+    if (isVocab || q.question.toLowerCase().includes('mean') || q.question.toLowerCase().includes('why did allah')) {
+      const vocabResult = verifyVocabAnswer(q.question, q.correctAnswer, q.options);
+
+      if (vocabResult.corrected) {
+        correctionMade = true;
+        newAnswer = vocabResult.newAnswer;
+        similarity = 0;
+
+        // Move the ✅ marker to the correct option
+        // First remove ✅ from wrong answer
+        const wrongAnswerPattern = new RegExp(
+          escapeRegex(q.correctAnswer) + '\\s*✅',
+          'g'
+        );
+        correctedContent = correctedContent.replace(wrongAnswerPattern, q.correctAnswer);
+
+        // Then add ✅ to correct answer
+        const correctAnswerPattern = new RegExp(
+          escapeRegex(newAnswer) + '(?!\\s*✅)',
+          'g'
+        );
+        correctedContent = correctedContent.replace(correctAnswerPattern, newAnswer + ' ✅');
+
+        console.log(`Quiz vocab correction applied: "${q.correctAnswer}" -> "${newAnswer}"`);
+        correctionsApplied++;
+      }
+    }
+
+    // Then check verse-related questions if no vocab correction was made
+    if (!correctionMade && isVerseRelated && verifiedVerses && verifiedVerses.length > 0) {
+      const result = verifyAndCorrectQuizAnswer(q.question, q.correctAnswer, verifiedVerses);
+
+      if (result.corrected) {
+        correctionMade = true;
+        newAnswer = result.newAnswer;
+        similarity = result.similarity;
+
+        // Replace the incorrect answer with the corrected one
+        const answerPattern = new RegExp(
+          escapeRegex(q.correctAnswer) + '(\\s*✅)',
+          'g'
+        );
+        correctedContent = correctedContent.replace(answerPattern, result.newAnswer + '$1');
+        correctionsApplied++;
+      } else {
+        similarity = result.similarity;
+      }
+    }
 
     corrections.unshift({
       questionText: q.question,
       verseReference: extractVerseReference(q.question)?.ayah?.toString() || null,
       originalAnswer: q.correctAnswer,
-      verifiedAnswer: result.corrected ? result.newAnswer : null,
-      isVerified: result.similarity >= 0.4 || !isVerseRelated,
-      correctionMade: result.corrected,
-      similarity: result.similarity
+      verifiedAnswer: correctionMade ? newAnswer : null,
+      isVerified: similarity >= 0.4 || (!isVerseRelated && !isVocab),
+      correctionMade,
+      similarity
     });
-
-    if (result.corrected) {
-      // Replace the incorrect answer with the corrected one
-      // Find the answer in the content and replace it
-      const answerPattern = new RegExp(
-        escapeRegex(q.correctAnswer) + '(\\s*✅)',
-        'g'
-      );
-      correctedContent = correctedContent.replace(answerPattern, result.newAnswer + '$1');
-      correctionsApplied++;
-    }
   }
 
   return {
