@@ -1422,13 +1422,13 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       return null;
     };
 
-    // Try to extract actual surah info from the generated content
-    const actualSurahInfo = isQuranLesson ? extractActualSurahInfo(generatedText) : null;
+    // Try to extract actual surah info from the generated content for title
+    const actualSurahTitle = isQuranLesson ? extractActualSurahInfo(generatedText) : null;
 
     // Update title with actual content if found
-    if (actualSurahInfo?.surah) {
-      const surahPart = actualSurahInfo.surah;
-      const ayatPart = actualSurahInfo.ayat ? ` (${actualSurahInfo.ayat})` : '';
+    if (actualSurahTitle?.surah) {
+      const surahPart = actualSurahTitle.surah;
+      const ayatPart = actualSurahTitle.ayat ? ` (${actualSurahTitle.ayat})` : '';
 
       if (isQuranUnderstanding) {
         title = `Qur'an with Understanding: Surah ${surahPart}${ayatPart}`;
