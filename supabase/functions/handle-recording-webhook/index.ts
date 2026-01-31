@@ -847,7 +847,7 @@ Deno.serve(async (req: Request) => {
               },
               body: JSON.stringify({
                 from: "Talbiyah <alerts@talbiyah.ai>",
-                to: ["nathanlfontaine@gmail.com"],
+                to: ["contact@talbiyah.ai"],
                 subject: `⚠️ Lesson Insights Failed - ${learnerName}`,
                 html: `
                   <h2>Lesson Insights Generation Failed</h2>

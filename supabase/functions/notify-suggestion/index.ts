@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_EMAIL = "nathanlfontaine@gmail.com";
+const ADMIN_EMAIL = "contact@talbiyah.ai";
 
 const categoryLabels: Record<string, string> = {
   feature_request: "Feature Request",
