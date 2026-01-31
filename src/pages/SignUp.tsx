@@ -23,6 +23,66 @@ export default function SignUp() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authForm, setAuthForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const [countryCode, setCountryCode] = useState('+44'); // Default to UK
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+
+  // Common country codes - UK first as default
+  const countryCodes = [
+    { code: '+44', country: 'United Kingdom', flag: '🇬🇧' },
+    { code: '+1', country: 'United States / Canada', flag: '🇺🇸' },
+    { code: '+91', country: 'India', flag: '🇮🇳' },
+    { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
+    { code: '+880', country: 'Bangladesh', flag: '🇧🇩' },
+    { code: '+971', country: 'United Arab Emirates', flag: '🇦🇪' },
+    { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+    { code: '+20', country: 'Egypt', flag: '🇪🇬' },
+    { code: '+90', country: 'Turkey', flag: '🇹🇷' },
+    { code: '+60', country: 'Malaysia', flag: '🇲🇾' },
+    { code: '+62', country: 'Indonesia', flag: '🇮🇩' },
+    { code: '+33', country: 'France', flag: '🇫🇷' },
+    { code: '+49', country: 'Germany', flag: '🇩🇪' },
+    { code: '+31', country: 'Netherlands', flag: '🇳🇱' },
+    { code: '+32', country: 'Belgium', flag: '🇧🇪' },
+    { code: '+27', country: 'South Africa', flag: '🇿🇦' },
+    { code: '+234', country: 'Nigeria', flag: '🇳🇬' },
+    { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+    { code: '+61', country: 'Australia', flag: '🇦🇺' },
+    { code: '+64', country: 'New Zealand', flag: '🇳🇿' },
+    { code: '+353', country: 'Ireland', flag: '🇮🇪' },
+    { code: '+39', country: 'Italy', flag: '🇮🇹' },
+    { code: '+34', country: 'Spain', flag: '🇪🇸' },
+    { code: '+48', country: 'Poland', flag: '🇵🇱' },
+    { code: '+46', country: 'Sweden', flag: '🇸🇪' },
+    { code: '+47', country: 'Norway', flag: '🇳🇴' },
+    { code: '+45', country: 'Denmark', flag: '🇩🇰' },
+    { code: '+41', country: 'Switzerland', flag: '🇨🇭' },
+    { code: '+43', country: 'Austria', flag: '🇦🇹' },
+    { code: '+212', country: 'Morocco', flag: '🇲🇦' },
+    { code: '+216', country: 'Tunisia', flag: '🇹🇳' },
+    { code: '+213', country: 'Algeria', flag: '🇩🇿' },
+    { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
+    { code: '+974', country: 'Qatar', flag: '🇶🇦' },
+    { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
+    { code: '+968', country: 'Oman', flag: '🇴🇲' },
+    { code: '+962', country: 'Jordan', flag: '🇯🇴' },
+    { code: '+961', country: 'Lebanon', flag: '🇱🇧' },
+    { code: '+63', country: 'Philippines', flag: '🇵🇭' },
+    { code: '+65', country: 'Singapore', flag: '🇸🇬' },
+    { code: '+86', country: 'China', flag: '🇨🇳' },
+    { code: '+81', country: 'Japan', flag: '🇯🇵' },
+    { code: '+82', country: 'South Korea', flag: '🇰🇷' },
+  ];
+
+  // Filter countries based on input
+  const filteredCountries = countryCode
+    ? countryCodes.filter(c =>
+        c.code.includes(countryCode) ||
+        c.country.toLowerCase().includes(countryCode.toLowerCase().replace('+', ''))
+      )
+    : countryCodes;
+
+  // Get current country info for display
+  const currentCountry = countryCodes.find(c => c.code === countryCode);
   const [referralCode, setReferralCode] = useState(referralCodeFromUrl || '');
   const [referrerName, setReferrerName] = useState<string | null>(null);
   const [referralValidation, setReferralValidation] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
@@ -160,12 +220,15 @@ export default function SignUp() {
       return;
     }
 
-    // Basic phone validation - allow digits, spaces, plus, hyphens, parentheses
-    const phoneRegex = /^[+]?[\d\s()-]{8,20}$/;
+    // Basic phone validation - allow digits, spaces, hyphens, parentheses (no + as country code is separate)
+    const phoneRegex = /^[\d\s()-]{6,15}$/;
     if (!phoneRegex.test(authForm.phone.trim())) {
-      setAuthError('Please enter a valid phone number');
+      setAuthError('Please enter a valid phone number (digits only, without country code)');
       return;
     }
+
+    // Combine country code with phone number
+    const fullPhoneNumber = `${countryCode} ${authForm.phone.trim()}`;
 
     // Validate email before signup
     const emailValidation = validateEmail(authForm.email);
@@ -196,7 +259,7 @@ export default function SignUp() {
         options: {
           data: {
             full_name: authForm.fullName.trim(),
-            phone: authForm.phone.trim(),
+            phone: fullPhoneNumber,
             selected_role: selectedRole,
             referral_code: referralCode.trim() || null
           }
@@ -223,7 +286,7 @@ export default function SignUp() {
           .upsert({
             id: data.user.id,
             full_name: authForm.fullName.trim(),
-            phone: authForm.phone.trim(),
+            phone: fullPhoneNumber,
             role: selectedRole,  // Set the singular role field
             roles: roles,
             referral_code: selectedRole === 'explorer' ? null : newReferralCode, // No referral for explorers
@@ -364,7 +427,7 @@ export default function SignUp() {
   if (step === 'role' && !autoRole) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-5xl">
           <button
             onClick={() => navigate('/')}
             className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
@@ -380,11 +443,41 @@ export default function SignUp() {
               </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
-              Create Your Account
+              Where are you on your journey?
             </h1>
-            <p className="text-xl text-gray-500">Choose how you'd like to get started</p>
+            <p className="text-xl text-gray-500">Choose your path and we'll guide you</p>
           </div>
 
+          {/* Top row - Exploring & New to Islam */}
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-6">
+            <button
+              onClick={() => navigate('/explore')}
+              className="group"
+            >
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-lg transition text-center h-full">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                  <Compass className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm curious about Islam</h3>
+                <p className="text-gray-500 text-sm">Explore freely, no signup needed</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/new-muslim-landing')}
+              className="group"
+            >
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center h-full relative">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                  <Gift className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm new to Islam</h3>
+                <p className="text-gray-500 text-sm">Begin your foundations journey</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Bottom row - Student, Parent, Teacher */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <button
               onClick={() => {
@@ -393,12 +486,12 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center">
-                <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition text-center h-full">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">I am a Student</h3>
-                <p className="text-gray-500 text-sm">Learn Quran & Arabic</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Student of Islam</h3>
+                <p className="text-gray-500 text-sm">Learn Quran & Arabic with teachers</p>
               </div>
             </button>
 
@@ -409,15 +502,15 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border-2 border-emerald-500 hover:shadow-lg transition text-center relative">
+              <div className="bg-white p-8 rounded-2xl border-2 border-emerald-500 hover:shadow-lg transition text-center h-full relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
                 </div>
-                <div className="w-16 h-16 mx-auto bg-emerald-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">I am a Parent</h3>
-                <p className="text-gray-500 text-sm">Manage multiple children</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Parent</h3>
+                <p className="text-gray-500 text-sm">Manage your children's learning</p>
               </div>
             </button>
 
@@ -428,28 +521,13 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-lg transition text-center">
-                <div className="w-16 h-16 mx-auto bg-amber-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-rose-500 hover:shadow-lg transition text-center h-full">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-rose-500 to-red-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">I want to Teach</h3>
-                <p className="text-gray-500 text-sm">Apply as a Teacher</p>
+                <p className="text-gray-500 text-sm">Share your knowledge with others</p>
               </div>
-            </button>
-          </div>
-
-          {/* Explorer option - for those just exploring */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-500 mb-4">Just curious about Islam?</p>
-            <button
-              onClick={() => {
-                setSelectedRole('explorer');
-                setStep('form');
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-xl font-medium transition"
-            >
-              <Compass className="w-5 h-5" />
-              I'm just exploring
             </button>
           </div>
         </div>
@@ -574,15 +652,74 @@ export default function SignUp() {
                   <span className="text-xs text-red-500">*</span>
                 </div>
               </label>
-              <input
-                type="tel"
-                required
-                value={authForm.phone}
-                onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                placeholder="+44 7123 456789"
-              />
-              <p className="text-gray-500 text-xs mt-1">We'll use this to contact you about lessons</p>
+              <div className="flex gap-2">
+                {/* Country Code Input with Dropdown */}
+                <div className="relative">
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={countryCode}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        // Ensure it starts with +
+                        if (val && !val.startsWith('+')) {
+                          val = '+' + val;
+                        }
+                        setCountryCode(val);
+                        setShowCountryDropdown(true);
+                      }}
+                      onFocus={() => setShowCountryDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowCountryDropdown(false), 200)}
+                      className="w-24 px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="+44"
+                    />
+                    {currentCountry && (
+                      <span className="absolute right-2 text-lg pointer-events-none">{currentCountry.flag}</span>
+                    )}
+                  </div>
+                  {/* Dropdown */}
+                  {showCountryDropdown && filteredCountries.length > 0 && (
+                    <div className="absolute z-50 mt-1 w-72 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+                      {filteredCountries.slice(0, 10).map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            setCountryCode(c.code);
+                            setShowCountryDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-emerald-50 flex items-center gap-2 text-sm"
+                        >
+                          <span className="text-lg">{c.flag}</span>
+                          <span className="font-medium">{c.code}</span>
+                          <span className="text-gray-500">{c.country}</span>
+                        </button>
+                      ))}
+                      {filteredCountries.length > 10 && (
+                        <p className="px-3 py-2 text-xs text-gray-400 text-center">
+                          Type to filter more countries...
+                        </p>
+                      )}
+                      {filteredCountries.length === 0 && countryCode && (
+                        <p className="px-3 py-2 text-xs text-gray-500 text-center">
+                          Using custom code: {countryCode}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="tel"
+                  required
+                  value={authForm.phone}
+                  onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="7123 456789"
+                />
+              </div>
+              <p className="text-gray-500 text-xs mt-1">
+                {currentCountry ? `${currentCountry.flag} ${currentCountry.country}` : 'Enter country code or select from list'} — We'll use this to contact you about lessons
+              </p>
             </div>
 
             <div>

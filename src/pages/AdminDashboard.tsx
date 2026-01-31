@@ -25,7 +25,8 @@ import {
   MessageSquare,
   ClipboardCheck,
   Shield,
-  FileText
+  FileText,
+  Mail
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
     {
       title: 'System',
       items: [
+        { icon: Mail, label: 'Email Center', path: '/admin/email' },
         { icon: MessageSquare, label: 'User Feedback', path: '/admin/feedback' },
         { icon: Tag, label: 'Promo Codes', path: '/admin/promo-codes' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },

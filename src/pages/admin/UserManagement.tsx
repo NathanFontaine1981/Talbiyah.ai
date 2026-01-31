@@ -3,6 +3,7 @@ import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import UserProfileModal from '../../components/admin/UserProfileModal';
 
 interface User {
   id: string;
@@ -98,26 +99,41 @@ export default function UserManagement() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          teacher_profile:teacher_profiles(id, status, is_legacy_teacher)
-        `)
-        .order('created_at', { ascending: false });
+      // Use admin function to get users with auth emails
+      const { data, error } = await supabase.rpc('get_admin_users_list');
 
       if (error) throw error;
 
-      setUsers(data || []);
+      // Transform data to match expected User interface
+      const transformedData = (data || []).map((u: any) => ({
+        id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+        phone: u.phone || u.phone_number, // Use phone_number as fallback
+        roles: u.roles || [],
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at,
+        deleted_at: u.deleted_at,
+        hard_delete_at: u.hard_delete_at,
+        deletion_reason: u.deletion_reason,
+        is_legacy_student: u.is_legacy_student,
+        teacher_profile: u.teacher_profile_id ? {
+          id: u.teacher_profile_id,
+          status: u.teacher_status,
+          is_legacy_teacher: u.is_legacy_teacher,
+        } : null,
+      }));
 
-      // Calculate stats
-      const total = data?.length || 0;
-      const students = data?.filter(u => u.roles?.includes('student')).length || 0;
-      const teachers = data?.filter(u => u.roles?.includes('teacher')).length || 0;
-      const parents = data?.filter(u => u.roles?.includes('parent')).length || 0;
-      const admins = data?.filter(u => u.roles?.includes('admin')).length || 0;
-      const legacyStudents = data?.filter(u => u.is_legacy_student).length || 0;
-      const legacyTeachers = data?.filter(u => u.teacher_profile?.is_legacy_teacher).length || 0;
+      setUsers(transformedData);
+
+      // Calculate stats from transformed data
+      const total = transformedData.length;
+      const students = transformedData.filter((u: User) => u.roles?.includes('student')).length;
+      const teachers = transformedData.filter((u: User) => u.roles?.includes('teacher')).length;
+      const parents = transformedData.filter((u: User) => u.roles?.includes('parent')).length;
+      const admins = transformedData.filter((u: User) => u.roles?.includes('admin')).length;
+      const legacyStudents = transformedData.filter((u: User) => u.is_legacy_student).length;
+      const legacyTeachers = transformedData.filter((u: User) => u.teacher_profile?.is_legacy_teacher).length;
 
       setStats({ total, students, teachers, parents, admins, legacyStudents, legacyTeachers });
     } catch (error) {
@@ -915,8 +931,8 @@ export default function UserManagement() {
         />
       )}
       {showUserDetails && selectedUser && (
-        <UserDetailsModal
-          user={selectedUser}
+        <UserProfileModal
+          userId={selectedUser.id}
           onClose={() => {
             setShowUserDetails(false);
             setSelectedUser(null);
