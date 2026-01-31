@@ -269,35 +269,8 @@ export default function SignUp() {
       if (error) throw error;
 
       if (data.user) {
-
-        // Generate unique 6-char referral code for new user
-        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-        const newReferralCode = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-
-        // Parents are students with parent capabilities, explorers just get explorer role
-        const roles = selectedRole === 'parent'
-          ? ['student', 'parent']
-          : selectedRole === 'explorer'
-            ? ['explorer']
-            : [selectedRole];
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            full_name: authForm.fullName.trim(),
-            phone: fullPhoneNumber,
-            role: selectedRole,  // Set the singular role field
-            roles: roles,
-            referral_code: selectedRole === 'explorer' ? null : newReferralCode, // No referral for explorers
-            onboarding_completed: selectedRole !== 'parent'  // Only parents need onboarding
-          }, {
-            onConflict: 'id'
-          });
-
-        if (profileError) {
-          console.error('Profile creation failed:', profileError);
-        }
+        // Profile is created by database trigger (handle_new_user)
+        // with all metadata from signUp options.data
 
         // Handle referral tracking if user signed up with a referral code
         if (referralCode && referralCode.trim() !== '') {
