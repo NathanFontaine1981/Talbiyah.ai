@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
-import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, Loader2, Plus, Trash2 } from 'lucide-react';
 
 interface CancelLessonModalProps {
   lesson: {
@@ -32,6 +32,8 @@ export default function CancelLessonModal({
   const [cancelReason, setCancelReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [suggestNewTime, setSuggestNewTime] = useState(false);
+  const [suggestedTimes, setSuggestedTimes] = useState<string[]>(['']);
 
   const handleSubmit = async () => {
     if (!cancelReason) {
@@ -51,12 +53,17 @@ export default function CancelLessonModal({
 
     setSubmitting(true);
     try {
+      // Filter out empty suggested times and convert to ISO strings
+      const validSuggestedTimes = suggestNewTime
+        ? suggestedTimes.filter(t => t.trim()).map(t => new Date(t).toISOString())
+        : null;
+
       // Reuse decline-lesson function as it handles cancellation and credit refund
       const { error } = await supabase.functions.invoke('decline-lesson', {
         body: {
           lesson_id: lesson.id,
           decline_reason: `[Teacher Cancelled] ${finalReason}`,
-          suggested_times: null,
+          suggested_times: validSuggestedTimes,
         },
       });
 
@@ -159,10 +166,74 @@ export default function CancelLessonModal({
             </div>
           )}
 
+          {/* Suggest Alternative Times */}
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={suggestNewTime}
+                onChange={(e) => setSuggestNewTime(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Suggest alternative times to the student
+              </span>
+            </label>
+          </div>
+
+          {suggestNewTime && (
+            <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <p className="text-sm text-emerald-800 mb-3">
+                Suggest up to 3 alternative times for rescheduling:
+              </p>
+              <div className="space-y-2">
+                {suggestedTimes.map((time, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <input
+                      type="datetime-local"
+                      value={time}
+                      onChange={(e) => {
+                        const newTimes = [...suggestedTimes];
+                        newTimes[index] = e.target.value;
+                        setSuggestedTimes(newTimes);
+                      }}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                    {suggestedTimes.length > 1 && (
+                      <button
+                        onClick={() => {
+                          setSuggestedTimes(suggestedTimes.filter((_, i) => i !== index));
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {suggestedTimes.length < 3 && (
+                  <button
+                    onClick={() => setSuggestedTimes([...suggestedTimes, ''])}
+                    className="flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add another time
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-sm text-red-800">
               <strong>Note:</strong> The student will be automatically refunded 1 credit
               and notified of this cancellation.
+              {suggestNewTime && suggestedTimes.some(t => t.trim()) && (
+                <span className="block mt-1">
+                  Your suggested times will be included in the notification.
+                </span>
+              )}
             </p>
           </div>
         </div>
