@@ -350,7 +350,7 @@ export default function SignUp() {
           supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'admin_new_signup',
-              recipient_email: 'contact@talbiyah.ai',
+              recipient_email: 'nathanlfontaine@gmail.com',
               recipient_name: 'Talbiyah Admin',
               data: {
                 user_name: authForm.fullName.trim(),
