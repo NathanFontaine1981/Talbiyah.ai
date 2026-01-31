@@ -464,7 +464,7 @@ export default function SignUp() {
             </button>
 
             <button
-              onClick={() => navigate('/new-muslim-landing')}
+              onClick={() => navigate('/new-muslim')}
               className="group"
             >
               <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center h-full relative">
