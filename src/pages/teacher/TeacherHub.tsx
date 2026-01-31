@@ -14,10 +14,12 @@ import {
   ArrowLeft,
   Loader2,
   ClipboardCheck,
+  XCircle,
 } from 'lucide-react';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
 import WeeklyCalendar from '../../components/teacher/WeeklyCalendar';
 import DiagnosticSessionsCard from '../../components/teacher/DiagnosticSessionsCard';
+import CancelLessonModal from '../../components/teacher/CancelLessonModal';
 
 interface TeacherStats {
   tier: string;
@@ -58,6 +60,7 @@ export default function TeacherHub() {
   const [stats, setStats] = useState<TeacherStats | null>(null);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingLesson[]>([]);
+  const [cancellingLesson, setCancellingLesson] = useState<UpcomingLesson | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -467,10 +470,22 @@ export default function TeacherHub() {
                       </div>
                     </div>
 
-                    {/* Duration */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      <span>{lesson.duration_minutes} minutes</span>
+                    {/* Duration & Cancel */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>{lesson.duration_minutes} minutes</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCancellingLesson(lesson);
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition flex items-center gap-1"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 );
@@ -575,6 +590,18 @@ export default function TeacherHub() {
             </button>
           </div>
         </div>
+
+        {/* Cancel Lesson Modal */}
+        {cancellingLesson && (
+          <CancelLessonModal
+            lesson={cancellingLesson}
+            onClose={() => setCancellingLesson(null)}
+            onComplete={() => {
+              setCancellingLesson(null);
+              loadDashboardData(); // Refresh the lessons list
+            }}
+          />
+        )}
       </div>
     </div>
   );
