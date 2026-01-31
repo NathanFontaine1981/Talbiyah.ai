@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Talbiyah.ai <notifications@talbiyah.ai>",
+        from: "Talbiyah.ai <contact@talbiyah.ai>",
         to: [referrerUser.email],
         subject: "🎉 New Referral Sign Up - Someone Joined Using Your Link!",
         html: `

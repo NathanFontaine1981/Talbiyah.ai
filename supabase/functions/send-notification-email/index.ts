@@ -42,7 +42,8 @@ type NotificationType =
   | "credit_purchase_confirmation"
   | "student_booking_confirmation"
   | "admin_new_signup"
-  | "lesson_insight_ready";
+  | "lesson_insight_ready"
+  | "admin_notification";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -160,6 +161,9 @@ Deno.serve(async (req: Request) => {
       case "lesson_insight_ready":
         emailContent = getLessonInsightReadyEmail(payload);
         break;
+      case "admin_notification":
+        emailContent = getAdminNotificationEmail(payload);
+        break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
     }
@@ -171,7 +175,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Talbiyah.ai <notifications@talbiyah.ai>",
+        from: "Talbiyah.ai <contact@talbiyah.ai>",
         to: [payload.recipient_email],
         subject: emailContent.subject,
         html: emailContent.html,
@@ -1289,6 +1293,55 @@ function getLessonInsightReadyEmail(payload: NotificationPayload): { subject: st
           <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
             <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
             <p style="margin: 5px 0 0 0;">AI-Powered Islamic Learning</p>
+          </div>
+
+        </body>
+      </html>
+    `
+  };
+}
+
+function getAdminNotificationEmail(payload: NotificationPayload): { subject: string; html: string } {
+  const { subject, message } = payload.data;
+
+  // Convert newlines to <br> for HTML
+  const htmlMessage = sanitizeForHtml(message).replace(/\n/g, '<br>');
+
+  return {
+    subject: subject || 'Message from Talbiyah.ai',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${sanitizeForHtml(subject)}</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+          <!-- Header with gradient -->
+          <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">📧</div>
+            <h1 style="color: white; margin: 0; font-size: 24px;">Message from Talbiyah.ai</h1>
+          </div>
+
+          <!-- Main content -->
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #10b981;">
+            <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;">
+              <strong>As-salamu alaykum ${payload.recipient_name},</strong>
+            </p>
+            <div style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.8;">
+              ${htmlMessage}
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
+            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
+            <p style="margin: 5px 0 0 0;">Islamic Learning, Simplified</p>
+            <p style="margin: 10px 0 0 0;">
+              <a href="https://talbiyah.ai" style="color: #10b981; text-decoration: none;">Visit our website</a>
+            </p>
           </div>
 
         </body>

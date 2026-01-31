@@ -96,7 +96,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Talbiyah.ai <notifications@talbiyah.ai>",
+        from: "Talbiyah.ai <contact@talbiyah.ai>",
         to: [ADMIN_EMAIL],
         subject: `💡 New Suggestion: ${suggestion.title}`,
         html: emailHtml,
