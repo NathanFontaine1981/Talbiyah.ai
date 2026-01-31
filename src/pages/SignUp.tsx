@@ -361,24 +361,20 @@ export default function SignUp() {
       }
 
       if (data.user) {
-        // Send welcome email to new user
-        try {
-          await supabase.functions.invoke('send-notification-email', {
+        // Send emails in background - don't block signup flow
+        // Using Promise.allSettled to fire and forget
+        Promise.allSettled([
+          // Welcome email to new user
+          supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'welcome',
               recipient_email: authForm.email,
               recipient_name: authForm.fullName.trim(),
               data: {}
             }
-          });
-        } catch (welcomeEmailError) {
-          console.error('Error sending welcome email:', welcomeEmailError);
-          // Don't block signup if welcome email fails
-        }
-
-        // Send admin notification email
-        try {
-          await supabase.functions.invoke('send-notification-email', {
+          }),
+          // Admin notification email
+          supabase.functions.invoke('send-notification-email', {
             body: {
               type: 'admin_new_signup',
               recipient_email: 'contact@talbiyah.ai',
@@ -391,11 +387,14 @@ export default function SignUp() {
                 referral_code: referralCode.trim() || null
               }
             }
+          })
+        ]).then(results => {
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.error(`Email ${index} failed:`, result.reason);
+            }
           });
-        } catch (adminEmailError) {
-          console.error('Error sending admin notification:', adminEmailError);
-          // Don't block signup if admin email fails
-        }
+        });
 
         // Check if email confirmation is required (user not confirmed yet)
         if (!data.user.email_confirmed_at) {
