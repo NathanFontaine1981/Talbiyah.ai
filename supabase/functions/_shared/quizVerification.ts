@@ -699,14 +699,23 @@ const KNOWN_QUIZ_ANSWERS: Record<number, { pattern: RegExp; correctPattern: stri
   78: [ // Surah An-Naba
     // Q: What are people questioning? A: Day of Judgment
     { pattern: /what\s+are\s+.*questioning|opening\s+of\s+surah/i, correctPattern: 'day of judgment' },
-    // Q: Mountains function like? A: Pegs/stakes
-    { pattern: /mountains\s+function|mountains\s+like|mountains\s+as/i, correctPattern: 'peg' },
+    // Q: What does النبأ العظيم refer to? A: Day of Judgment
+    { pattern: /النبأ\s*العظيم|an-naba.*al-.*azeem|great\s+news|refer.*opening/i, correctPattern: 'day of judgment' },
+    { pattern: /النبأ|naba.*refer|naba.*mean/i, correctPattern: 'judgment' },
+    // Q: Mountains described as / function like? A: Pegs/stakes
+    { pattern: /mountains?\s+(?:function|like|as|described)/i, correctPattern: 'stake' },
+    { pattern: /how\s+are\s+mountains/i, correctPattern: 'stake' },
+    // Q: Scientific concept about mountains (awtād)? A: Stabilizing earth
+    { pattern: /scientific\s+concept.*mountain|awt[āa]d.*scientific/i, correctPattern: 'stabiliz' },
+    { pattern: /mountains.*awt[āa]d|awt[āa]d.*mountain/i, correctPattern: 'stabiliz' },
+    // Q: What makes verses miraculous? A: Scientific accuracy unknown at the time
+    { pattern: /what\s+makes.*miraculous|miraculous.*verses/i, correctPattern: 'scientific' },
+    { pattern: /according.*teacher.*miraculous/i, correctPattern: 'scientific' },
+    // Q: Purpose of signs of creation? A: Prove Allah's power / reality of resurrection
+    { pattern: /purpose.*signs.*creation|signs.*creation.*purpose/i, correctPattern: 'prove' },
+    { pattern: /purpose.*presenting.*signs/i, correctPattern: 'prove' },
     // Q: subatan means? A: rest/sleep
-    { pattern: /sub[āa]t[an]*\s+(mean|refer)/i, correctPattern: 'rest' },
-    // Q: What makes Quran miraculous? A: Not known when revealed to illiterate Prophet
-    { pattern: /miraculous|scientific\s+knowledge/i, correctPattern: 'illiterate' },
-    // Q: What is النبأ العظيم? A: Day of Judgment
-    { pattern: /النبأ\s*العظيم|great\s+news/i, correctPattern: 'day of judgment' },
+    { pattern: /sub[āa]t[an]*\s*(mean|refer)/i, correctPattern: 'rest' },
     // Q: What does لباس mean? A: covering
     { pattern: /lib[āa]s|لباس/i, correctPattern: 'cover' },
     // Q: What does سبات mean? A: rest
@@ -748,19 +757,34 @@ export function markQuizAnswersFromVocabulary(
   let markedContent = content.replace(/\s*✅/g, '');
   console.log('Stripped all existing ✅ marks to re-verify answers');
 
-  // Pattern to match quiz questions - handles both inline and multi-line formats
-  const quizPattern = /(\*\*Q\d+\.\*?\*?\s+.+?)(?=\*\*Q\d+\.|---|\n\n\*\*[78]|$)/gs;
+  // Pattern to match quiz questions - handles multiple formats:
+  // Format 1: **Q1.** question text
+  // Format 2: 1. **question text**
+  // Format 3: **1. question text**
+  const quizPattern = /(?:\*\*Q?(\d+)\.\*?\*?|\d+\.\s*\*\*|^\*\*\d+\.)\s*(.+?)(?=(?:\*\*Q?\d+\.|\d+\.\s*\*\*|\*\*\d+\.)|\n\n---|\n\n##|$)/gms;
 
   const matches = [...markedContent.matchAll(quizPattern)];
+  console.log(`Found ${matches.length} quiz questions to process`);
 
   for (const match of matches) {
-    const questionBlock = match[1];
+    const questionBlock = match[0];
 
-    // Extract question text
-    const questionMatch = questionBlock.match(/\*\*Q\d+\.\*?\*?\s+(.+?)(?=\n?[A-D]\))/s);
+    // Extract question text - handle multiple formats:
+    // Format 1: **Q1.** question text
+    // Format 2: 1. **question text**
+    // Format 3: **1. question text**
+    let questionMatch = questionBlock.match(/\*\*Q?\d+\.\*?\*?\s*(.+?)(?=\n?[A-D]\))/s);
+    if (!questionMatch) {
+      // Try format: 1. **question text**
+      questionMatch = questionBlock.match(/\d+\.\s*\*\*(.+?)\*\*(?=\n?[A-D]\))/s);
+    }
+    if (!questionMatch) {
+      // Try simpler pattern
+      questionMatch = questionBlock.match(/\*\*(.+?)\*\*(?=\n?[A-D]\))/s);
+    }
     if (!questionMatch) continue;
 
-    const questionText = questionMatch[1];
+    const questionText = questionMatch[1].replace(/\*\*/g, '').trim();
     const questionLower = questionText.toLowerCase();
 
     // Extract options - handle both inline (A) text B) text) and multi-line formats
