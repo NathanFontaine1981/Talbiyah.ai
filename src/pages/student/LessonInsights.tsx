@@ -1105,7 +1105,7 @@ function FlipCard({ word }: { word: VocabWord }) {
   return (
     <div
       onClick={() => setIsFlipped(!isFlipped)}
-      className="cursor-pointer h-36 perspective-1000"
+      className="cursor-pointer h-40 perspective-1000"
       style={{ perspective: '1000px' }}
     >
       <div
@@ -1117,29 +1117,32 @@ function FlipCard({ word }: { word: VocabWord }) {
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
         }}
       >
-        {/* Front - Arabic (Dark theme) */}
+        {/* Front - Arabic (Clean light theme) */}
         <div
-          className="absolute w-full h-full bg-gradient-to-br from-slate-900 via-emerald-950/30 to-slate-900 rounded-2xl p-4 border border-slate-700 hover:border-emerald-500/50 transition flex flex-col items-center justify-center shadow-lg overflow-hidden"
+          className="absolute w-full h-full bg-white rounded-xl p-4 border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col items-center justify-center overflow-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-3xl sm:text-4xl font-arabic text-emerald-300 mb-2 text-center leading-relaxed" dir="rtl">{word.arabic}</p>
+          <p className="text-3xl sm:text-4xl font-arabic text-emerald-700 mb-2 text-center leading-relaxed" dir="rtl">{word.arabic}</p>
           {word.transliteration && (
-            <p className="text-xs text-slate-400 italic">{word.transliteration}</p>
+            <p className="text-sm text-slate-500 italic">{word.transliteration}</p>
           )}
-          <p className="text-xs text-slate-500 mt-2">Tap to reveal</p>
+          <p className="text-xs text-slate-400 mt-3 flex items-center gap-1">
+            <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse"></span>
+            Tap to reveal
+          </p>
         </div>
 
-        {/* Back - English (Amber theme) */}
+        {/* Back - English (Warm theme) */}
         <div
-          className="absolute w-full h-full bg-gradient-to-br from-slate-900 via-amber-950/30 to-slate-900 rounded-2xl p-4 border border-amber-700/50 flex flex-col items-center justify-center overflow-hidden"
+          className="absolute w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 flex flex-col items-center justify-center overflow-hidden"
           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <p className="text-base sm:text-lg font-semibold text-amber-200 text-center line-clamp-3 px-1">{word.english}</p>
+          <p className="text-base sm:text-lg font-semibold text-slate-800 text-center line-clamp-3 px-1 leading-relaxed">{word.english}</p>
           {word.transliteration && (
-            <p className="text-xs text-slate-400 italic mt-2">{word.transliteration}</p>
+            <p className="text-sm text-slate-500 italic mt-2">{word.transliteration}</p>
           )}
           {word.wordType && (
-            <span className="text-xs bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50 mt-2">{word.wordType}</span>
+            <span className="text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200 mt-3 font-medium">{word.wordType}</span>
           )}
         </div>
       </div>
@@ -1677,72 +1680,176 @@ function TeacherNoteCard({ note }: { note: TeacherNote }) {
 function TafsirCard({ point }: { point: TafsirPoint }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Filter out greetings and technical phrases from content
+  const filterTranscriptNoise = (text: string): string => {
+    const noisePatterns = [
+      /can you (see|hear) my screen/gi,
+      /good morning/gi,
+      /how are you/gi,
+      /السلام عليكم/g,
+      /وعليكم السلام/g,
+      /صباح الخير/g,
+      /is this working/gi,
+      /let me share/gi,
+    ];
+    let cleaned = text;
+    noisePatterns.forEach(pattern => {
+      cleaned = cleaned.replace(pattern, '');
+    });
+    return cleaned.replace(/\s+/g, ' ').trim();
+  };
+
+  // Separate formal tafsir from teacher's personal insights
+  const separateContent = (tafsir: string): { formal: string; teacherInsight: string | null } => {
+    // Look for patterns indicating teacher's personal insight
+    const teacherPatterns = [
+      /teacher('s)?\s*(says?|explains?|notes?|mentions?|points?\s*out)/gi,
+      /in\s*(this|our)\s*lesson/gi,
+      /as\s*(I|we)\s*(mentioned|discussed|explained)/gi,
+    ];
+
+    let teacherInsight: string | null = null;
+    let formal = tafsir;
+
+    // Check if content has teacher-specific insights
+    for (const pattern of teacherPatterns) {
+      const match = tafsir.match(pattern);
+      if (match) {
+        const idx = tafsir.indexOf(match[0]);
+        if (idx > 50) {
+          teacherInsight = tafsir.slice(idx);
+          formal = tafsir.slice(0, idx).trim();
+          break;
+        }
+      }
+    }
+
+    return { formal: filterTranscriptNoise(formal), teacherInsight: teacherInsight ? filterTranscriptNoise(teacherInsight) : null };
+  };
+
+  const { formal: formalTafsir, teacherInsight } = point.tafsir
+    ? separateContent(point.tafsir)
+    : { formal: '', teacherInsight: null };
+
   return (
-    <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl border border-teal-200 overflow-hidden">
+    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:border-emerald-200 transition-colors">
       {/* Header - Always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 text-left flex items-start gap-3 hover:bg-teal-100/50 transition-colors"
+        className="w-full p-8 text-left flex items-start gap-6 hover:bg-slate-50/30 transition-colors"
       >
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-sm">
+        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center font-semibold text-xl shadow-sm">
           {point.ayahRef.replace('Ayah ', '').split('-')[0]}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-teal-800">{point.ayahRef}</h4>
-            <ChevronDown className={`w-5 h-5 text-teal-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            <h4 className="font-semibold text-[#0F172A] text-xl">{point.ayahRef}</h4>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isExpanded ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+              <ChevronDown className={`w-5 h-5 ${isExpanded ? 'text-emerald-600' : 'text-slate-400'} transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </div>
           </div>
           {point.arabic && (
-            <p className="font-arabic text-3xl text-teal-900 mt-2 text-right leading-loose" dir="rtl">
-              {point.arabic}
-            </p>
+            <div className="mt-6 py-4 text-center overflow-visible">
+              <p
+                className="text-center overflow-visible"
+                dir="rtl"
+                style={{
+                  fontFamily: "'Amiri Quran', 'Scheherazade New', 'Amiri', serif",
+                  fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                  lineHeight: '2.8',
+                  color: '#0F172A'
+                }}
+              >
+                {point.arabic}
+              </p>
+            </div>
           )}
           {point.translation && (
-            <p className="text-gray-700 italic mt-1">"{point.translation}"</p>
+            <p className="text-[#64748B] italic mt-4 text-lg leading-relaxed text-center">"{point.translation}"</p>
           )}
         </div>
       </button>
 
-      {/* Expanded content */}
+      {/* Expanded content - Clean Study Guide Layout */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-teal-200 bg-white/50">
-          {/* Tafsir explanation */}
-          {point.tafsir && (
-            <div className="mt-4">
-              <h5 className="text-sm font-semibold text-teal-700 mb-2 flex items-center gap-2">
+        <div className="border-t border-slate-100">
+          {/* Formal Tafsir Section */}
+          {formalTafsir && (
+            <div className="px-5 py-5 border-b border-slate-100">
+              <h5 className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                Tafsir
+                Classical Tafsir
               </h5>
-              <p className="text-gray-700 leading-relaxed">{point.tafsir}</p>
+              <div className="bg-[#F8FAFC] rounded-xl p-5 border border-slate-100">
+                <p className="text-[#0F172A] leading-relaxed text-base">{formalTafsir}</p>
+              </div>
             </div>
           )}
 
-          {/* Scholar quotes */}
-          {point.scholarQuotes && point.scholarQuotes.length > 0 && (
-            <div className="mt-4">
-              <h5 className="text-sm font-semibold text-teal-700 mb-2 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" />
-                Scholar's Commentary
+          {/* Teacher's Personal Insight - Quote Block Style */}
+          {(teacherInsight || point.reflection) && (
+            <div className="px-5 py-5 border-b border-slate-100 bg-gradient-to-r from-amber-50/50 to-transparent">
+              <h5 className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                Teacher's Insight
               </h5>
-              <div className="space-y-3">
+              <blockquote className="relative pl-5 border-l-4 border-[#D4AF37]">
+                <p className="text-[#0F172A] leading-relaxed text-base italic">
+                  {teacherInsight || point.reflection}
+                </p>
+              </blockquote>
+            </div>
+          )}
+
+          {/* Scholar Commentary - Clean Quote Blocks */}
+          {point.scholarQuotes && point.scholarQuotes.length > 0 && (
+            <div className="px-5 py-5 border-b border-slate-100">
+              <h5 className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-4 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Scholar Commentary
+              </h5>
+              <div className="space-y-4">
                 {point.scholarQuotes.map((sq, i) => (
-                  <div key={i} className="bg-teal-50 rounded-lg p-3 border-l-4 border-teal-500">
-                    <p className="text-gray-700 italic">"{sq.quote}"</p>
-                    <p className="text-teal-700 text-sm font-medium mt-1">— {sq.scholar}</p>
-                  </div>
+                  <blockquote key={i} className="relative pl-5 border-l-4 border-[#059669]">
+                    <p className="text-[#0F172A] italic leading-relaxed">"{sq.quote}"</p>
+                    <footer className="mt-2">
+                      <cite className="text-[#059669] text-sm font-semibold not-italic">— {sq.scholar}</cite>
+                    </footer>
+                  </blockquote>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Reflection prompt */}
-          {point.reflection && (
-            <div className="mt-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
-              <h5 className="text-sm font-semibold text-amber-700 mb-1 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Reflection
+          {/* Key Arabic Terms Table */}
+          {point.arabic && (
+            <div className="px-5 py-5 bg-[#F8FAFC]">
+              <h5 className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-4 flex items-center gap-2">
+                <PenTool className="w-4 h-4" />
+                Key Terms from this Verse
               </h5>
-              <p className="text-gray-700">{point.reflection}</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left text-[#64748B] font-semibold py-3 px-4 uppercase tracking-wider text-xs">Arabic</th>
+                      <th className="text-left text-[#64748B] font-semibold py-3 px-4 uppercase tracking-wider text-xs">Root</th>
+                      <th className="text-left text-[#64748B] font-semibold py-3 px-4 uppercase tracking-wider text-xs">Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    <tr className="border-b border-slate-100">
+                      <td className="py-3 px-4">
+                        <span className="font-arabic text-xl text-[#0F172A]" dir="rtl" style={{ fontFamily: "'Amiri', serif" }}>
+                          {point.arabic.split(' ')[0]}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-[#64748B]">—</td>
+                      <td className="py-3 px-4 text-[#0F172A]">{point.translation?.split(' ').slice(0, 3).join(' ')}...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1812,13 +1919,13 @@ function HomeworkCard({
   );
 }
 
-// Collapsible Section Component
+// Collapsible Section Component - Clean Apple Aesthetic
 function CollapsibleSection({
   title,
   icon: Icon,
   children,
   defaultOpen = false,
-  color = 'indigo',
+  color = 'emerald',
   badge
 }: {
   title: string;
@@ -1830,44 +1937,47 @@ function CollapsibleSection({
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  const colorClasses: Record<string, { bg: string; border: string; headerBg: string }> = {
-    blue: { bg: 'bg-blue-50', border: 'border-blue-200', headerBg: 'bg-gradient-to-r from-blue-500 to-blue-600' },
-    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', headerBg: 'bg-gradient-to-r from-emerald-500 to-emerald-600' },
-    orange: { bg: 'bg-orange-50', border: 'border-orange-200', headerBg: 'bg-gradient-to-r from-orange-500 to-orange-600' },
-    purple: { bg: 'bg-purple-50', border: 'border-purple-200', headerBg: 'bg-gradient-to-r from-purple-500 to-purple-600' },
-    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', headerBg: 'bg-gradient-to-r from-indigo-500 to-indigo-600' },
-    teal: { bg: 'bg-teal-50', border: 'border-teal-200', headerBg: 'bg-gradient-to-r from-teal-500 to-teal-600' },
-    amber: { bg: 'bg-amber-50', border: 'border-amber-200', headerBg: 'bg-gradient-to-r from-amber-500 to-amber-600' },
-    rose: { bg: 'bg-rose-50', border: 'border-rose-200', headerBg: 'bg-gradient-to-r from-rose-500 to-rose-600' },
-    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', headerBg: 'bg-gradient-to-r from-emerald-500 to-emerald-600' },
+  // Simplified color mapping - accent color only for icon
+  const colorClasses: Record<string, { iconBg: string; iconColor: string; badgeColor: string }> = {
+    blue: { iconBg: 'bg-blue-50', iconColor: 'text-blue-600', badgeColor: 'text-blue-600 bg-blue-50' },
+    emerald: { iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', badgeColor: 'text-emerald-600 bg-emerald-50' },
+    orange: { iconBg: 'bg-orange-50', iconColor: 'text-orange-500', badgeColor: 'text-orange-600 bg-orange-50' },
+    purple: { iconBg: 'bg-purple-50', iconColor: 'text-purple-600', badgeColor: 'text-purple-600 bg-purple-50' },
+    indigo: { iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600', badgeColor: 'text-indigo-600 bg-indigo-50' },
+    teal: { iconBg: 'bg-teal-50', iconColor: 'text-teal-600', badgeColor: 'text-teal-600 bg-teal-50' },
+    amber: { iconBg: 'bg-amber-50', iconColor: 'text-amber-600', badgeColor: 'text-amber-600 bg-amber-50' },
+    rose: { iconBg: 'bg-rose-50', iconColor: 'text-rose-600', badgeColor: 'text-rose-600 bg-rose-50' },
+    cyan: { iconBg: 'bg-cyan-50', iconColor: 'text-cyan-600', badgeColor: 'text-cyan-600 bg-cyan-50' },
   };
 
-  const colors = colorClasses[color] || colorClasses.indigo;
+  const colors = colorClasses[color] || colorClasses.emerald;
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border ${colors.border} overflow-hidden`}>
+    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full ${colors.headerBg} px-6 py-4 flex items-center justify-between`}
+        className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50/30 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <Icon className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 ${colors.iconBg} rounded-2xl flex items-center justify-center`}>
+            <Icon className={`w-6 h-6 ${colors.iconColor}`} />
           </div>
-          <h3 className="text-lg font-bold text-white">{title}</h3>
+          <h3 className="text-xl font-semibold text-[#0F172A]">{title}</h3>
           {badge && (
-            <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">{badge}</span>
+            <span className={`${colors.badgeColor} text-sm px-3 py-1.5 rounded-full font-medium`}>{badge}</span>
           )}
         </div>
-        {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-white" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-white" />
-        )}
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOpen ? 'bg-slate-100' : ''}`}>
+          {isOpen ? (
+            <ChevronUp className="w-5 h-5 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400" />
+          )}
+        </div>
       </button>
 
       {isOpen && (
-        <div className={`p-6 ${colors.bg}`}>
+        <div className="px-8 py-8 border-t border-slate-100 bg-[#F8FAFC]">
           {children}
         </div>
       )}
@@ -2513,12 +2623,12 @@ export default function LessonInsights() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
+          <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <Loader className="w-8 h-8 text-emerald-600 animate-spin" />
           </div>
-          <p className="text-gray-600 font-medium">Loading your lesson insights...</p>
+          <p className="text-[#64748B] font-medium">Loading your lesson insights...</p>
         </div>
       </div>
     );
@@ -2526,16 +2636,60 @@ export default function LessonInsights() {
 
   if (error || !insight) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-gray-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-bold text-center text-gray-900 mb-2">{error || 'Insights not available'}</h2>
-          <p className="text-gray-500 text-center text-sm mb-6">The insights for this lesson may still be processing.</p>
-          <button onClick={() => navigate(-1)} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition">
+          <h2 className="text-xl font-semibold text-center text-[#0F172A] mb-2">{error || 'Insights not available'}</h2>
+          <p className="text-[#64748B] text-center text-sm mb-6">The insights for this lesson may still be processing.</p>
+          <button onClick={() => navigate(-1)} className="w-full px-6 py-3 bg-[#059669] hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors">
             Go Back
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if insights are still being generated (placeholder state)
+  const isGenerating = insight.title?.toLowerCase().includes('regenerating') ||
+                       insight.title?.toLowerCase().includes('processing') ||
+                       (!insight.summary && !insight.detailed_insights?.content);
+
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <Sparkles className="w-10 h-10 text-emerald-600 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-semibold text-[#0F172A] mb-3">Generating Your Insights</h2>
+          <p className="text-[#64748B] text-base mb-4">
+            Our AI is analyzing your lesson to create personalized insights, vocabulary, and quizzes.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-amber-800 text-sm text-left">
+                <span className="font-semibold">Please note:</span> Insights typically take up to 5 minutes to generate after your lesson has completed.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
+            >
+              Go Back
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 px-6 py-3 bg-[#059669] hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -2611,34 +2765,86 @@ export default function LessonInsights() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @media print { body { background: white !important; } .print\\:hidden { display: none !important; } }
+
+        /* Premium Typography - Apple-style */
+        body, .font-sans {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          letter-spacing: -0.01em;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Elegant Arabic Typography - High-quality Serif */
         .font-arabic, [dir="rtl"] {
-          font-family: 'Amiri Quran', 'KFGQPC Uthmanic Script HAFS', 'Noto Naskh Arabic', 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif !important;
+          font-family: 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
           font-feature-settings: normal;
           text-rendering: optimizeLegibility;
           -webkit-font-smoothing: antialiased;
-          /* Extra line height for tashkeel (vowel marks) */
-          line-height: 2 !important;
+          line-height: 2.5 !important;
         }
-        /* Ensure Arabic text displays correctly - use 'embed' NOT 'bidi-override' */
+
+        /* RTL Support */
         [dir="rtl"] {
           unicode-bidi: embed;
           direction: rtl;
           text-align: right;
         }
-        /* Prevent html2canvas from reversing Arabic text */
         .font-arabic {
           unicode-bidi: embed;
+          overflow: visible;
         }
-        /* Ensure tashkeel is visible with proper spacing */
-        .font-arabic.leading-loose, .font-arabic.leading-relaxed {
-          line-height: 2.2 !important;
+
+        /* Glassmorphism Navigation */
+        .glass-nav {
+          background: rgba(248, 250, 252, 0.9);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+        }
+
+        /* Teacher's Pearl Callout */
+        .teachers-pearl {
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+          border-left: 4px solid #D4AF37;
+        }
+
+        /* Clean Tables */
+        .word-breakdown-table {
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+        .word-breakdown-table th {
+          background: #F8FAFC;
+          font-weight: 600;
+          text-transform: uppercase;
+          font-size: 0.7rem;
+          letter-spacing: 0.05em;
+          color: #64748B;
+        }
+        .word-breakdown-table td, .word-breakdown-table th {
+          padding: 0.875rem 1rem;
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .word-breakdown-table tr:last-child td {
+          border-bottom: none;
+        }
+
+        /* Premium Color Palette */
+        :root {
+          --color-background: #F8FAFC;
+          --color-primary: #0F172A;
+          --color-secondary: #64748B;
+          --color-accent: #059669;
+          --color-gold: #D4AF37;
+          --color-border: #E2E8F0;
+          --color-border-subtle: #F1F5F9;
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 print:hidden">
+      <div className="min-h-screen bg-[#F8FAFC]">
+        {/* Header - Glassmorphism Navigation */}
+        <header className="glass-nav border-b border-slate-200/60 sticky top-0 z-50 print:hidden">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex flex-col gap-3">
               <Breadcrumbs
@@ -2649,18 +2855,18 @@ export default function LessonInsights() {
                 homePath="/dashboard"
               />
               <div className="flex items-center justify-between">
-                <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition font-medium">
+                <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-slate-600 hover:text-emerald-600 transition-colors font-medium">
                   <Home className="w-5 h-5" />
                   <span>Dashboard</span>
                 </button>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => window.print()} className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Print">
+                <div className="flex items-center gap-1">
+                  <button onClick={() => window.print()} className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors" title="Print">
                     <Printer className="w-5 h-5" />
                   </button>
                   <button
                     onClick={downloadAsPDF}
                     disabled={downloadingPDF}
-                    className="p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition disabled:opacity-50"
+                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors disabled:opacity-50"
                     title="Download PDF"
                   >
                     {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
@@ -2671,67 +2877,59 @@ export default function LessonInsights() {
           </div>
         </header>
 
-        <main id="insights-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          {/* Hero Card */}
-          <div className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white shadow-xl ${
+        <main id="insights-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          {/* Hero Card - Premium High-End Design */}
+          <div className={`rounded-3xl overflow-hidden mb-12 shadow-sm ${
             isQuran
-              ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-500'
               : isArabic
-                ? 'bg-gradient-to-br from-blue-600 via-blue-500 to-sky-600'
-                : 'bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700'
+                ? 'bg-gradient-to-r from-blue-600 to-sky-500'
+                : 'bg-gradient-to-r from-violet-600 to-purple-500'
           }`}>
-            <div className="flex flex-col gap-4">
-              {/* Title row */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  {isQuran ? <BookMarked className="w-6 h-6" /> : <Book className="w-6 h-6" />}
+            <div className="p-8 sm:p-12 text-white">
+              <div className="flex flex-col gap-5">
+                {/* Title row */}
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 bg-white/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                    {isQuran ? <BookMarked className="w-7 h-7" /> : <Book className="w-7 h-7" />}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-semibold tracking-tight leading-tight">{cleanMarkdown(insight.title)}</h1>
+                    {isQuran && metadata?.surah_name && (
+                      <p className="text-white/80 mt-1 text-lg">
+                        Surah {metadata.surah_name}{metadata.ayah_range ? ` • Ayat ${metadata.ayah_range}` : ''}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <h1 className="text-xl md:text-2xl font-bold">{cleanMarkdown(insight.title)}</h1>
-              </div>
 
-              {/* Details row */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/90 text-sm bg-white/10 rounded-xl px-4 py-3">
-                {(lessonTime || metadata?.lesson_date) && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  </div>
-                )}
-                {(lessonTime || metadata?.lesson_date) && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                )}
-                {metadata?.duration_minutes && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>{metadata.duration_minutes} min</span>
-                  </div>
-                )}
-                {metadata?.teacher_name && (
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4" />
-                    <span>{metadata.teacher_name}</span>
-                  </div>
-                )}
-                {/* For Quran - show Surah info */}
-                {isQuran && metadata?.surah_name && (
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    <span>Surah {metadata.surah_name}{metadata.ayah_range ? ` (${metadata.ayah_range})` : ''}</span>
-                  </div>
-                )}
-                {/* For Arabic - extract book/unit from title if present */}
-                {!isQuran && insight.title && (insight.title.toLowerCase().includes('book') || insight.title.toLowerCase().includes('unit')) && (
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    <span>
-                      {insight.title.match(/book\s*\d+[ab]?/i)?.[0] || ''}
-                      {insight.title.match(/unit\s*\d+/i)?.[0] ? ` ${insight.title.match(/unit\s*\d+/i)?.[0]}` : ''}
-                    </span>
-                  </div>
-                )}
+                {/* Details row - Clean pills */}
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {(lessonTime || metadata?.lesson_date) && (
+                    <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                    </div>
+                  )}
+                  {(lessonTime || metadata?.lesson_date) && (
+                    <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{new Date(lessonTime || metadata!.lesson_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  )}
+                  {metadata?.duration_minutes && (
+                    <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{metadata.duration_minutes} min</span>
+                    </div>
+                  )}
+                  {metadata?.teacher_name && (
+                    <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      <span>{metadata.teacher_name}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -2745,25 +2943,27 @@ export default function LessonInsights() {
               const isExpired = daysLeft <= 0;
 
               return !isExpired ? (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mb-12">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Video className="w-5 h-5 text-emerald-600" />
-                      <h2 className="text-lg font-bold text-gray-900">Lesson Recording</h2>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                        <Video className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h2 className="text-lg font-semibold text-slate-800">Lesson Recording</h2>
                     </div>
-                    <span className="text-sm bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
-                      {daysLeft} day{daysLeft !== 1 ? 's' : ''} left to watch
+                    <span className="text-sm bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full font-medium border border-amber-200">
+                      {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Watch the recording of your lesson to review what was covered. Recordings are available for 7 days after the lesson.
+                  <p className="text-sm text-slate-500 mb-5">
+                    Watch the recording of your lesson to review what was covered. Recordings are available for 7 days.
                   </p>
                   <div className="flex gap-3">
                     <a
                       href={recordingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition"
+                      className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors"
                     >
                       <Play className="w-5 h-5" />
                       Watch Recording
@@ -2771,7 +2971,7 @@ export default function LessonInsights() {
                     <a
                       href={recordingUrl}
                       download
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors"
                       title="Download recording"
                     >
                       <DownloadIcon className="w-5 h-5" />
@@ -2779,8 +2979,8 @@ export default function LessonInsights() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center gap-2 text-gray-500">
+                <div className="bg-[#F8FAFC] rounded-3xl border border-slate-100 p-8 mb-12">
+                  <div className="flex items-center gap-2 text-slate-400">
                     <Video className="w-5 h-5" />
                     <span>Recording has expired</span>
                   </div>
@@ -2789,69 +2989,69 @@ export default function LessonInsights() {
             })()
           )}
 
-          {/* At a Glance - Smart Stats Grid */}
+          {/* At a Glance - Premium Stats Grid */}
           {(vocabulary.length > 0 || quizQuestions.length > 0 || sentences.length > 0 || homeworkTasks.length > 0 || metadata?.surah_name) && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-900">At a Glance</h2>
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mb-12">
+              <div className="flex items-center gap-2 mb-5">
+                <Sparkles className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-semibold text-slate-800">At a Glance</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {/* Quran: Surah/Ayah info */}
                 {isQuran && metadata?.surah_name && (
-                  <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                    <BookOpen className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Surah</p>
-                    <p className="font-semibold text-emerald-700 text-sm">{metadata.surah_name}</p>
-                    {metadata.ayah_range && <p className="text-xs text-gray-500">Ayat {metadata.ayah_range}</p>}
+                  <div className="bg-emerald-50/50 rounded-xl p-4 text-center border border-emerald-100">
+                    <BookOpen className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Surah</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{metadata.surah_name}</p>
+                    {metadata.ayah_range && <p className="text-xs text-slate-500 mt-0.5">Ayat {metadata.ayah_range}</p>}
                   </div>
                 )}
                 {/* Vocabulary count */}
                 {vocabulary.length > 0 && (
-                  <div className="bg-blue-50 rounded-xl p-3 text-center">
-                    <Book className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Vocabulary</p>
-                    <p className="font-semibold text-blue-700">{vocabulary.length} words</p>
+                  <div className="bg-blue-50/50 rounded-xl p-4 text-center border border-blue-100">
+                    <Book className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Vocabulary</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{vocabulary.length} words</p>
                   </div>
                 )}
                 {/* Quiz count */}
                 {quizQuestions.length > 0 && (
-                  <div className="bg-purple-50 rounded-xl p-3 text-center">
-                    <HelpCircle className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Quiz</p>
-                    <p className="font-semibold text-purple-700">{quizQuestions.length} questions</p>
+                  <div className="bg-violet-50/50 rounded-xl p-4 text-center border border-violet-100">
+                    <HelpCircle className="w-5 h-5 text-violet-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Quiz</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{quizQuestions.length} questions</p>
                   </div>
                 )}
                 {/* Homework count */}
                 {homeworkTasks.length > 0 && (
-                  <div className="bg-amber-50 rounded-xl p-3 text-center">
-                    <Target className="w-5 h-5 text-amber-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Homework</p>
-                    <p className="font-semibold text-amber-700">{homeworkTasks.length} tasks</p>
+                  <div className="bg-amber-50/50 rounded-xl p-4 text-center border border-amber-100">
+                    <Target className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Homework</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{homeworkTasks.length} tasks</p>
                   </div>
                 )}
                 {/* Verses count for Quran */}
                 {isQuran && sentences.length > 0 && (
-                  <div className="bg-teal-50 rounded-xl p-3 text-center">
-                    <MessageCircle className="w-5 h-5 text-teal-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Verses</p>
-                    <p className="font-semibold text-teal-700">{sentences.length} ayat</p>
+                  <div className="bg-teal-50/50 rounded-xl p-4 text-center border border-teal-100">
+                    <MessageCircle className="w-5 h-5 text-teal-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Verses</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{sentences.length} ayat</p>
                   </div>
                 )}
                 {/* Duration */}
                 {metadata?.duration_minutes && (
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
-                    <Clock className="w-5 h-5 text-gray-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Duration</p>
-                    <p className="font-semibold text-gray-700">{metadata.duration_minutes} min</p>
+                  <div className="bg-slate-50/50 rounded-xl p-4 text-center border border-slate-200">
+                    <Clock className="w-5 h-5 text-slate-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Duration</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{metadata.duration_minutes} min</p>
                   </div>
                 )}
                 {/* Grammar points for Arabic */}
                 {!isQuran && grammarPoints.length > 0 && (
-                  <div className="bg-orange-50 rounded-xl p-3 text-center">
-                    <PenTool className="w-5 h-5 text-orange-600 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">Grammar</p>
-                    <p className="font-semibold text-orange-700">{grammarPoints.length} points</p>
+                  <div className="bg-orange-50/50 rounded-xl p-4 text-center border border-orange-100">
+                    <PenTool className="w-5 h-5 text-orange-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Grammar</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{grammarPoints.length} points</p>
                   </div>
                 )}
               </div>
@@ -2860,46 +3060,40 @@ export default function LessonInsights() {
 
           {/* Focus Words - Vocabulary Flashcards */}
           {vocabulary.length > 0 && (
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700 p-4 sm:p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mb-12">
+              <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-900/50 rounded-xl flex items-center justify-center">
-                    <Book className="w-5 h-5 text-emerald-400" />
+                  <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <Book className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">Vocabulary Flashcards</h2>
-                    <p className="text-xs text-slate-400">Tap to reveal meanings</p>
+                    <h2 className="text-lg font-semibold text-slate-800">Vocabulary Flashcards</h2>
+                    <p className="text-sm text-slate-500">Tap each card to reveal the meaning</p>
                   </div>
                 </div>
-                <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-700/50">{vocabulary.length} words</span>
+                <span className="text-sm bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200 font-medium">{vocabulary.length} words</span>
               </div>
 
               {/* Flip Cards Section */}
-              <div className="pt-4">
-                <p className="text-sm text-slate-400 mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  Practice these words from your lesson. Tap each card to test yourself!
-                </p>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {vocabulary.map((word, idx) => (
-                    <FlipCard key={idx} word={word} />
-                  ))}
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {vocabulary.map((word, idx) => (
+                  <FlipCard key={idx} word={word} />
+                ))}
               </div>
             </div>
           )}
 
-          {/* Detailed Sections */}
-          <div className="space-y-4">
+          {/* Detailed Sections - High-End Gallery Spacing */}
+          <div className="space-y-8">
 
-            {/* Key Sentences / Verses Covered */}
+            {/* Verses Covered - Premium Flashcard System */}
             {sentences.length > 0 && (
               <CollapsibleSection
-                title={isQuran ? "Verses Covered" : "Key Sentences"}
-                icon={MessageCircle}
-                color="cyan"
+                title={isQuran ? "Verse Flashcards" : "Key Sentences"}
+                icon={BookOpen}
+                color="emerald"
                 defaultOpen={true}
+                badge={`${sentences.length} ${isQuran ? 'ayat' : 'sentences'}`}
               >
                 {isQuran && lessonId ? (
                   <VerseListMemorizer
@@ -3034,14 +3228,14 @@ export default function LessonInsights() {
 
           {/* Homework Submission Section */}
           {(homeworkTasks.length > 0 || quizQuestions.length > 0) && (
-            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl shadow-sm border border-cyan-200 p-4 sm:p-6 mt-6 sm:mt-8 print:hidden">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mt-12 print:hidden">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
-                  <Send className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <Send className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Submit Your Homework</h3>
-                  <p className="text-sm text-gray-600">Complete the tasks above and submit for teacher review</p>
+                  <h3 className="text-lg font-semibold text-slate-800">Submit Your Homework</h3>
+                  <p className="text-sm text-slate-500">Complete the tasks above and submit for teacher review</p>
                 </div>
               </div>
 
@@ -3155,12 +3349,12 @@ export default function LessonInsights() {
           )}
 
           {/* Rating Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-6 sm:mt-8 print:hidden">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mt-12 print:hidden">
             <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">How was this lesson?</h3>
-              <p className="text-gray-500 text-sm mb-4">Your feedback helps us improve</p>
+              <h3 className="text-lg font-semibold text-slate-800 mb-1">How was this lesson?</h3>
+              <p className="text-slate-500 text-sm mb-5">Your feedback helps us improve</p>
 
-              <div className="flex items-center justify-center gap-1 mb-4">
+              <div className="flex items-center justify-center gap-1.5 mb-4">
                 {[1, 2, 3, 4, 5].map((starValue) => (
                   <button
                     key={starValue}
@@ -3170,13 +3364,13 @@ export default function LessonInsights() {
                     disabled={submittingRating}
                     className="transition-all hover:scale-110 disabled:opacity-50 p-1"
                   >
-                    <Star className={`w-8 h-8 transition-colors ${starValue <= (hoveredRating || rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                    <Star className={`w-8 h-8 transition-colors ${starValue <= (hoveredRating || rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
                   </button>
                 ))}
               </div>
 
               {ratingSubmitted && (
-                <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-2 px-4 rounded-xl">
+                <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-2.5 px-4 rounded-xl border border-emerald-100">
                   <CheckCircle className="w-4 h-4" />
                   <span className="font-medium text-sm">Thanks for your feedback!</span>
                 </div>
@@ -3184,8 +3378,8 @@ export default function LessonInsights() {
             </div>
           </div>
 
-          <div className="text-center text-sm text-gray-400 mt-8 pb-8">
-            <p>Talbiyah.ai - Your Islamic Learning Companion</p>
+          <div className="text-center text-sm text-[#64748B] mt-20 pb-16">
+            <p className="font-medium">Talbiyah.ai — Your Islamic Learning Companion</p>
           </div>
         </main>
       </div>
