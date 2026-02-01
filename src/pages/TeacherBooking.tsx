@@ -189,8 +189,9 @@ export default function TeacherBooking() {
     const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
     const weekEnd = addDays(weekStart, 6);
 
-    // Set time increment based on session duration
-    const minuteIncrement = duration; // 30 or 60 minutes
+    // Always use 30-minute granularity for availability tracking
+    // This ensures 60-minute lessons can start at :00 or :30
+    const baseIncrement = 30;
 
     // Fetch the teacher's recurring availability
     const { data: recurringAvailability, error: recurringError } = await supabase
@@ -236,8 +237,8 @@ export default function TeacherBooking() {
           const startMinutes = startHour * 60 + startMin;
           const endMinutes = endHour * 60 + endMin;
 
-          // Mark all time slots within this availability window
-          for (let mins = startMinutes; mins < endMinutes; mins += minuteIncrement) {
+          // Mark all time slots within this availability window (30-min granularity)
+          for (let mins = startMinutes; mins < endMinutes; mins += baseIncrement) {
             const hour = Math.floor(mins / 60);
             const minute = mins % 60;
             const timeKey = `${dateStr}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -256,8 +257,8 @@ export default function TeacherBooking() {
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
 
-        // Mark all time slots within this availability window
-        for (let mins = startMinutes; mins < endMinutes; mins += minuteIncrement) {
+        // Mark all time slots within this availability window (30-min granularity)
+        for (let mins = startMinutes; mins < endMinutes; mins += baseIncrement) {
           const hour = Math.floor(mins / 60);
           const minute = mins % 60;
           const timeKey = `${slot.date}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -279,18 +280,18 @@ export default function TeacherBooking() {
       console.error('Error fetching existing lessons:', error);
     }
 
-    // Create a set of booked time slots for quick lookup
+    // Create a set of booked time slots for quick lookup (30-min granularity)
     const bookedSlots = new Set<string>();
     if (existingLessons) {
       existingLessons.forEach(lesson => {
         const lessonStart = new Date(lesson.scheduled_time);
         const lessonEnd = new Date(lessonStart.getTime() + lesson.duration_minutes * 60 * 1000);
 
-        // Mark all time slots that overlap with this lesson as booked
+        // Mark all 30-min slots that overlap with this lesson as booked
         let currentSlot = new Date(lessonStart);
         while (currentSlot < lessonEnd) {
           bookedSlots.add(currentSlot.toISOString());
-          currentSlot = new Date(currentSlot.getTime() + minuteIncrement * 60 * 1000);
+          currentSlot = new Date(currentSlot.getTime() + baseIncrement * 60 * 1000);
         }
       });
     }
@@ -301,26 +302,34 @@ export default function TeacherBooking() {
       const currentDay = addDays(weekStart, day);
       const dateStr = format(currentDay, 'yyyy-MM-dd');
 
+      // Always check 30-minute intervals so 60-min lessons can start at :00 or :30
       for (let hour = 0; hour < 24; hour++) {
-        for (let minute = 0; minute < 60; minute += minuteIncrement) {
+        for (let minute = 0; minute < 60; minute += baseIncrement) {
           const slotTime = setMinutes(setHours(currentDay, hour), minute);
           const timeKey = `${dateStr}-${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
           // Only show slots that the teacher has marked as available
           if (!availableTimeSlots.has(timeKey)) continue;
 
+          // For 60-minute lessons, also check if the :30 slot is available
+          if (duration === 60) {
+            const halfHourLater = new Date(slotTime.getTime() + 30 * 60 * 1000);
+            const halfHourKey = `${format(halfHourLater, 'yyyy-MM-dd')}-${format(halfHourLater, 'HH:mm')}`;
+            if (!availableTimeSlots.has(halfHourKey)) continue;
+          }
+
           if (slotTime > new Date()) {
             // Check if this slot conflicts with any existing booking
             const slotEnd = new Date(slotTime.getTime() + duration * 60 * 1000);
             let hasConflict = false;
 
-            // Check if this slot or any time within it is already booked
+            // Check all 30-min blocks within the lesson duration for conflicts
             let checkTime = new Date(slotTime);
             while (checkTime < slotEnd && !hasConflict) {
               if (bookedSlots.has(checkTime.toISOString())) {
                 hasConflict = true;
               }
-              checkTime = new Date(checkTime.getTime() + minuteIncrement * 60 * 1000);
+              checkTime = new Date(checkTime.getTime() + baseIncrement * 60 * 1000);
             }
 
             slots.push({
