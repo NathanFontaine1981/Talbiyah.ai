@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   verifyAndCorrectQuizAnswers,
   createVerificationLog,
+  markQuizAnswersFromVocabulary,
   type VerificationSummary
 } from "../_shared/quizVerification.ts";
 
@@ -616,10 +617,423 @@ Use this for memorization practice - see the first word and try to recall the co
   return section;
 }
 
-// System prompts
-const QURAN_PROMPT = `You are Talbiyah Insights – Qur'an with Tadabbur.
-Your task is to transform a Qur'an lesson transcript into structured, reflective, and easy-to-study notes.
-The goal is to help students understand, internalise, and live by the Qur'an's meanings.
+// Quran Lesson Types - detected from transcript
+type QuranLessonType = 'tafsir' | 'hifdh' | 'revision' | 'mixed';
+
+interface LessonClassification {
+  lessonType: QuranLessonType;
+  confidence: number;
+  surahNumber?: number;
+  surahName?: string;
+  ayahRange?: string;
+  reasoning: string;
+}
+
+/**
+ * Classify the Quran lesson type from transcript content
+ * Returns: tafsir, hifdh, revision, or mixed
+ */
+async function classifyQuranLessonType(
+  transcript: string,
+  anthropicApiKey: string
+): Promise<LessonClassification> {
+  const classificationPrompt = `Analyze this Quran lesson transcript and classify it.
+
+CLASSIFICATION TYPES:
+1. **tafsir** - Teacher EXPLAINS meanings, themes, context, or scholarly commentary. Student asks questions about meanings. Focus is on UNDERSTANDING.
+2. **hifdh** - Student READS/RECITES verses, teacher CORRECTS pronunciation/tajweed. Student REPEATS after teacher. Focus is on MEMORIZATION or FLUENT READING.
+3. **revision** - Student recites FROM MEMORY, teacher listens and notes mistakes. Testing previously memorized content.
+4. **mixed** - Combination: some explanation AND some reading practice in the same lesson.
+
+ANALYZE THE TRANSCRIPT FOR:
+- Who is speaking more? (Teacher explaining = tafsir, Student reciting = hifdh/revision)
+- Is the teacher explaining meanings or correcting pronunciation?
+- Is the student reading from text or reciting from memory?
+- Are there discussions about tafsir/themes or focus on recitation accuracy?
+
+ALSO EXTRACT:
+- Surah name and number actually covered
+- Ayah range discussed/recited
+
+Respond in this EXACT JSON format (no other text):
+{
+  "lessonType": "tafsir" | "hifdh" | "revision" | "mixed",
+  "confidence": 0.0-1.0,
+  "surahNumber": number or null,
+  "surahName": "string" or null,
+  "ayahRange": "X-Y" or null,
+  "reasoning": "Brief explanation of classification"
+}
+
+TRANSCRIPT:
+${transcript.substring(0, 8000)}`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 500,
+        temperature: 0.1,
+        messages: [{ role: "user", content: classificationPrompt }]
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Classification API error:", await response.text());
+      return { lessonType: 'mixed', confidence: 0.5, reasoning: 'Classification failed, using default' };
+    }
+
+    const data = await response.json();
+    const responseText = data.content?.[0]?.text || '';
+
+    // Parse JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      console.log("Lesson classification:", parsed);
+      return {
+        lessonType: parsed.lessonType || 'mixed',
+        confidence: parsed.confidence || 0.7,
+        surahNumber: parsed.surahNumber,
+        surahName: parsed.surahName,
+        ayahRange: parsed.ayahRange,
+        reasoning: parsed.reasoning || ''
+      };
+    }
+  } catch (error) {
+    console.error("Error classifying lesson:", error);
+  }
+
+  return { lessonType: 'mixed', confidence: 0.5, reasoning: 'Classification failed, using default' };
+}
+
+// =============================================================================
+// QURAN LESSON PROMPTS - Specialized for each lesson type
+// =============================================================================
+
+const QURAN_TAFSIR_PROMPT = `You are Talbiyah Insights – Qur'an Tafsir & Tadabbur Specialist.
+This lesson was identified as a TAFSIR/UNDERSTANDING focused lesson where the teacher explains verse meanings.
+
+Your task: Transform this transcript into comprehensive study notes focused on UNDERSTANDING and REFLECTION.
+
+---
+
+### 🕌 TALBIYAH INSIGHTS – QUR'ĀN TAFSIR & TADABBUR
+
+**1. Lesson Information**
+- Surah Covered: [Extract from transcript]
+- Verses Explained: [Specific ayat range, e.g., "1-16"]
+- Teacher: [Name]
+- Student(s): [Name(s)]
+- Date: [Lesson date]
+- Lesson Focus: Tafsir & Understanding
+
+---
+
+**2. Verses Studied (Arabic & Translation)**
+⚠️ CRITICAL: List EVERY verse from the lesson, starting from ayah 1. Do NOT skip any verses.
+
+| Ayah | Arabic (with full tashkīl) | English Translation |
+|------|---------------------------|---------------------|
+| 1    | [First verse Arabic]       | [Translation]       |
+| 2    | [Second verse Arabic]      | [Translation]       |
+... continue for ALL verses discussed in the lesson
+
+---
+
+**3. Tafsir (Verse-by-Verse)**
+For each verse or group of verses, provide the teacher's explanation in this format:
+
+### Ayat 1-2: [Theme Title]
+**Arabic:** [Arabic text of these verses]
+**Translation:** [English translation]
+**Teacher's Explanation:** [What the teacher explained about these verses - 2-3 sentences]
+
+### Ayat 3-5: [Theme Title]
+**Arabic:** [Arabic text]
+**Translation:** [English translation]
+**Teacher's Explanation:** [Teacher's explanation - 2-3 sentences]
+
+... continue for all verse groups discussed in the lesson.
+
+⚠️ Group verses by theme (2-4 verses per group). Each group should have Arabic, translation, and explanation.
+
+---
+
+**4. Key Arabic Vocabulary**
+List **15-20 important words** from the verses studied:
+
+| Arabic | Transliteration | Root | Meaning | Context |
+|--------|-----------------|------|---------|---------|
+| النبأ | an-naba' | ن ب أ | news/tidings | The "great news" refers to... |
+
+---
+
+**5. Themes & Tadabbur Points**
+List 8-10 key spiritual lessons and reflections:
+- [Theme 1]
+- [Theme 2]
+...
+
+---
+
+**6. Mini Quiz**
+Create 5-6 multiple-choice questions. DO NOT mark any answers yet.
+
+Format (no ✅ markers):
+**Q1.** [Question about vocabulary or verse meaning]
+A) [Option]
+B) [Option]
+C) [Option]
+D) [Option]
+
+**Q2.** [Next question]
+A) [Option]
+B) [Option]
+C) [Option]
+D) [Option]
+
+⚠️ IMPORTANT: Do NOT mark correct answers with ✅. Leave all options unmarked.
+Quiz answers will be verified separately against authentic sources.
+
+---
+
+**7. Reflection Questions**
+4-5 deep questions for personal contemplation.
+
+---
+
+**8. Homework**
+- 📖 Re-read verses with reflection
+- ✍️ Written response to one reflection question
+- 🎧 Listen to the verses with a recommended reciter
+
+---
+
+**9. Summary**
+3-4 sentences capturing the main spiritual message.
+
+---
+
+### RULES
+- Include ALL verses from the lesson in section 2 - do not skip any
+- Tafsir section must be prose only - no tables
+- Do NOT mark quiz answers - leave them unmarked
+- Use Arabic with full tashkīl throughout
+- Focus on what the TEACHER actually explained`;
+
+const QURAN_HIFDH_PROMPT = `You are Talbiyah Insights – Qur'an Hifdh (Memorization) Specialist.
+This lesson was identified as a HIFDH/MEMORIZATION focused lesson where the student practices reading or memorizing.
+
+Your task: Transform this transcript into practical memorization aids and recitation guides.
+
+---
+
+### 🕌 TALBIYAH INSIGHTS – QUR'ĀN HIFDH (MEMORIZATION)
+
+**1. Lesson Information**
+- Surah Practiced: [Extract from transcript]
+- Verses Covered: [Ayat that were read/memorized]
+- Teacher: [Name]
+- Student(s): [Name(s)]
+- Date: [Lesson date]
+- Lesson Focus: Memorization & Recitation Practice
+
+---
+
+**2. Verses Practiced**
+List all verses that were read/recited:
+| Ayah | Arabic (with tashkīl) | Transliteration | Translation |
+|------|----------------------|-----------------|-------------|
+
+---
+
+**3. 🎯 First Word Prompter (Memorization Aid)**
+This is the CORE section for hifdh lessons. For EACH ayah:
+| Ayah | First Word | Transliteration | English Hint | Full Verse Preview |
+|------|------------|-----------------|--------------|-------------------|
+
+**How to use:**
+1. Look at the first word only
+2. Try to recall the complete ayah
+3. Check your answer
+4. Repeat until automatic
+
+---
+
+**4. 🔍 Verse Revealer (Progressive Practice)**
+For each verse, show it in stages for gradual memorization:
+**Ayah X:**
+- First 2 words: [Arabic] - [Transliteration]
+- First half: [Arabic] - [Transliteration]
+- Full verse: [Arabic] - [Transliteration]
+
+---
+
+**5. Pronunciation & Tajweed Notes**
+Document corrections and tips from the lesson:
+- ✅ Corrections made by teacher
+- 🔊 Specific letters/sounds to practice
+- ⚠️ Common mistakes to avoid
+- 💡 Tajweed rules applied (if mentioned)
+
+---
+
+**6. Connection Phrases**
+How verses connect to help with flow:
+| End of Ayah X | Beginning of Ayah X+1 | Connection Tip |
+|---------------|----------------------|----------------|
+
+---
+
+**7. Recitation Checklist**
+Self-assessment for the student:
+☐ Can recite Ayah 1 without looking
+☐ Can recite Ayah 2 without looking
+... (for each verse)
+☐ Can recite all verses in sequence
+☐ Tajweed is correct on difficult letters
+
+---
+
+**8. Brief Meaning Summary**
+Short meaning of each verse (1 sentence each) to aid memorization through understanding:
+- Ayah 1: [Brief meaning]
+- Ayah 2: [Brief meaning]
+
+---
+
+**9. Practice Plan**
+- 🔁 Morning: Recite new verses 10x each
+- 🔁 Evening: Review and connect to previous verses
+- 🎧 Listen to Sheikh [Recommended reciter] before bed
+- 📝 Write verses from memory to test retention
+
+---
+
+**10. Progress Notes**
+- Verses memorized this lesson: X
+- Total verses in surah: Y
+- Remaining: Z
+- Estimated completion: [Based on pace]
+
+---
+
+### RULES
+- Focus on MEMORIZATION AIDS and RECITATION
+- Include all pronunciation corrections from the teacher
+- Make the first-word prompter comprehensive
+- Arabic must have full tashkīl for correct pronunciation`;
+
+const QURAN_REVISION_PROMPT = `You are Talbiyah Insights – Qur'an Revision Specialist.
+This lesson was identified as a REVISION/TESTING session where the student recited from memory.
+
+Your task: Document what was revised, note mistakes, and create a targeted review plan.
+
+---
+
+### 🕌 TALBIYAH INSIGHTS – QUR'ĀN REVISION SESSION
+
+**1. Session Information**
+- Surah(s) Revised: [Extract from transcript]
+- Verses Tested: [Ayat recited from memory]
+- Teacher: [Name]
+- Student: [Name]
+- Date: [Lesson date]
+- Session Type: Revision & Assessment
+
+---
+
+**2. Revision Summary**
+| Surah | Ayat Range | Performance | Notes |
+|-------|-----------|-------------|-------|
+| [Name] | X-Y | Strong/Needs Work | Brief note |
+
+---
+
+**3. ✅ What Went Well**
+Document verses/sections the student recited correctly:
+- Strong memorization of: [specific ayat]
+- Good tajweed on: [specific sounds/rules]
+- Smooth flow between: [ayat connections]
+
+---
+
+**4. ⚠️ Mistakes & Corrections**
+Document every mistake noted in the lesson:
+
+| Ayah | Mistake Made | Correct Version | Type |
+|------|-------------|-----------------|------|
+| X | [What student said] | [Correct text] | Word/Pronunciation/Sequence |
+
+---
+
+**5. 🎯 Priority Review List**
+Verses that need the most attention (ranked):
+1. **Ayah X** - [Reason: forgotten word/wrong pronunciation]
+2. **Ayah Y** - [Reason]
+3. **Ayah Z** - [Reason]
+
+---
+
+**6. Targeted Practice Plan**
+Based on mistakes, create a specific practice plan:
+
+**Immediate (Today):**
+- Recite problematic verses 20x each
+- Focus on: [specific corrections]
+
+**This Week:**
+- Daily revision of [ayat range]
+- Re-memorize: [weak verses]
+
+**Before Next Session:**
+- Full recitation test of [surah/section]
+
+---
+
+**7. First Word Prompter (Weak Verses)**
+Only for verses that had mistakes:
+| Ayah | First Word | Transliteration | What to Remember |
+|------|------------|-----------------|------------------|
+
+---
+
+**8. Confidence Tracker**
+Self-assessment for next session:
+☐ Ayah X - Confident / Needs review
+☐ Ayah Y - Confident / Needs review
+... (for problematic verses)
+
+---
+
+**9. Teacher Feedback**
+Summarize any feedback or encouragement from the teacher.
+
+---
+
+**10. Next Session Goals**
+- Revise: [specific section]
+- Master: [weak verses]
+- New memorization: [if mentioned]
+
+---
+
+### RULES
+- Focus on ASSESSMENT and IMPROVEMENT
+- Document ALL mistakes accurately
+- Create actionable review plans
+- Be encouraging but honest about areas needing work`;
+
+const QURAN_MIXED_PROMPT = `You are Talbiyah Insights – Qur'an with Tadabbur.
+This lesson contains BOTH explanation/tafsir AND recitation/memorization practice.
+Your task is to transform this transcript into comprehensive notes covering BOTH aspects.
 
 ---
 
@@ -1140,11 +1554,46 @@ Deno.serve(async (req: Request) => {
         title = `${subject} Insights: ${metadata.lesson_date}`;
       }
     } else if (isQuranLesson) {
-      // Fallback to hardcoded Quran prompt
-      systemPrompt = QURAN_PROMPT;
+      // Classify the lesson type based on transcript content
+      console.log('Classifying Quran lesson type from transcript...');
+      const classification = await classifyQuranLessonType(transcript, anthropicApiKey!);
+      console.log(`Classification result: ${classification.lessonType} (confidence: ${classification.confidence})`);
+      console.log(`Classification reasoning: ${classification.reasoning}`);
+
+      // Select the appropriate prompt based on lesson type
+      switch (classification.lessonType) {
+        case 'tafsir':
+          systemPrompt = QURAN_TAFSIR_PROMPT;
+          title = `Qur'an Tafsir: ${metadata.lesson_date}`;
+          console.log('Using QURAN_TAFSIR_PROMPT for understanding/explanation lesson');
+          break;
+        case 'hifdh':
+          systemPrompt = QURAN_HIFDH_PROMPT;
+          title = `Qur'an Hifdh: ${metadata.lesson_date}`;
+          console.log('Using QURAN_HIFDH_PROMPT for memorization lesson');
+          break;
+        case 'revision':
+          systemPrompt = QURAN_REVISION_PROMPT;
+          title = `Qur'an Revision: ${metadata.lesson_date}`;
+          console.log('Using QURAN_REVISION_PROMPT for revision/assessment lesson');
+          break;
+        case 'mixed':
+        default:
+          systemPrompt = QURAN_MIXED_PROMPT;
+          title = `Qur'an Insights: ${metadata.lesson_date}`;
+          console.log('Using QURAN_MIXED_PROMPT for mixed/general lesson');
+          break;
+      }
+
+      // Use classification's surah info if metadata is missing
+      if (!metadata.surah_number && classification.surahNumber) {
+        metadata.surah_number = classification.surahNumber;
+        metadata.surah_name = classification.surahName || '';
+        metadata.ayah_range = classification.ayahRange || '';
+        console.log(`Updated metadata from classification: Surah ${classification.surahNumber} (${classification.surahName}), ayat ${classification.ayahRange}`);
+      }
+
       insightType = 'subject_specific';
-      title = `Qur'an Insights: ${metadata.lesson_date}`;
-      console.log('Using fallback QURAN_PROMPT');
     } else if (isArabicLesson) {
       // Fallback to hardcoded Arabic prompt
       systemPrompt = ARABIC_PROMPT;
@@ -1396,7 +1845,13 @@ Generate the insights following the exact format specified in the system prompt.
       console.log(`Appended scholarly Tafsir section with ${tafsirEntries.length} entries from Ibn Kathir`);
     }
 
-    // QUIZ VERIFICATION: Auto-correct quiz answers about Quran verses
+    // QUIZ MARKING: First, mark unmarked quiz answers using vocabulary data
+    if (isQuranLesson && metadata.surah_number) {
+      console.log(`Marking quiz answers using vocabulary data for surah ${metadata.surah_number}...`);
+      generatedText = markQuizAnswersFromVocabulary(generatedText, metadata.surah_number);
+    }
+
+    // QUIZ VERIFICATION: Then verify and correct any marked answers
     let quizVerificationResult: VerificationSummary | null = null;
     if (isQuranLesson && verifiedVerses.length > 0) {
       console.log("Running quiz verification against verified Quran data...");

@@ -1105,7 +1105,7 @@ function FlipCard({ word }: { word: VocabWord }) {
   return (
     <div
       onClick={() => setIsFlipped(!isFlipped)}
-      className="cursor-pointer h-32 perspective-1000"
+      className="cursor-pointer h-36 perspective-1000"
       style={{ perspective: '1000px' }}
     >
       <div
@@ -1117,29 +1117,29 @@ function FlipCard({ word }: { word: VocabWord }) {
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
         }}
       >
-        {/* Front - Arabic */}
+        {/* Front - Arabic (Dark theme) */}
         <div
-          className="absolute w-full h-full bg-white rounded-xl p-3 border-2 border-emerald-200 hover:border-emerald-400 transition flex flex-col items-center justify-center shadow-sm overflow-hidden"
+          className="absolute w-full h-full bg-gradient-to-br from-slate-900 via-emerald-950/30 to-slate-900 rounded-2xl p-4 border border-slate-700 hover:border-emerald-500/50 transition flex flex-col items-center justify-center shadow-lg overflow-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-3xl sm:text-4xl font-arabic text-emerald-700 mb-1 text-center leading-relaxed truncate max-w-full px-1" dir="rtl">{word.arabic}</p>
+          <p className="text-3xl sm:text-4xl font-arabic text-emerald-300 mb-2 text-center leading-relaxed" dir="rtl">{word.arabic}</p>
           {word.transliteration && (
-            <p className="text-xs text-gray-500 italic truncate max-w-full px-2">{word.transliteration}</p>
+            <p className="text-xs text-slate-400 italic">{word.transliteration}</p>
           )}
-          <p className="text-xs text-gray-400 mt-1">Tap to flip</p>
+          <p className="text-xs text-slate-500 mt-2">Tap to reveal</p>
         </div>
 
-        {/* Back - English */}
+        {/* Back - English (Amber theme) */}
         <div
-          className="absolute w-full h-full bg-emerald-50 rounded-xl p-3 border-2 border-emerald-300 flex flex-col items-center justify-center overflow-hidden"
+          className="absolute w-full h-full bg-gradient-to-br from-slate-900 via-amber-950/30 to-slate-900 rounded-2xl p-4 border border-amber-700/50 flex flex-col items-center justify-center overflow-hidden"
           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
-          <p className="text-sm sm:text-base font-medium text-emerald-800 text-center line-clamp-3 px-1">{word.english}</p>
+          <p className="text-base sm:text-lg font-semibold text-amber-200 text-center line-clamp-3 px-1">{word.english}</p>
           {word.transliteration && (
-            <p className="text-xs text-gray-600 italic mt-1 truncate max-w-full px-2">{word.transliteration}</p>
+            <p className="text-xs text-slate-400 italic mt-2">{word.transliteration}</p>
           )}
           {word.wordType && (
-            <span className="text-xs bg-emerald-200 text-emerald-700 px-2 py-0.5 rounded mt-1">{word.wordType}</span>
+            <span className="text-xs bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50 mt-2">{word.wordType}</span>
           )}
         </div>
       </div>
@@ -1500,20 +1500,23 @@ function DialogueCard({ line }: { line: DialogueLine }) {
 }
 
 // Key Sentence Card Component
-function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence; isQuran?: boolean }) {
+function KeySentenceCard({ sentence, isQuran = false, isArabic = false }: { sentence: KeySentence; isQuran?: boolean; isArabic?: boolean }) {
+  // Color scheme: Quran = green, Arabic = blue, Other = purple
+  const colorScheme = isQuran
+    ? { bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200' }
+    : isArabic
+      ? { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700 border-blue-200' }
+      : { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-700 border-purple-200' };
+
   return (
-    <div className={`rounded-xl p-4 border-l-4 ${
-      isQuran
-        ? 'bg-emerald-50 border-emerald-500'
-        : 'bg-blue-50 border-blue-500'
-    }`}>
+    <div className={`rounded-xl p-4 border-l-4 ${colorScheme.bg} ${colorScheme.border}`}>
       {/* Ayah number badge for Quran verses */}
       {isQuran && sentence.ayahNumber && (
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full font-bold text-sm border border-emerald-200">
+          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm border ${colorScheme.badge}`}>
             {sentence.ayahNumber}
           </span>
-          <span className="text-sm text-emerald-600">Ayah {sentence.ayahNumber}</span>
+          <span className={`text-sm ${colorScheme.text}`}>Ayah {sentence.ayahNumber}</span>
         </div>
       )}
 
@@ -1523,7 +1526,7 @@ function KeySentenceCard({ sentence, isQuran = false }: { sentence: KeySentence;
       </p>
 
       {/* Transliteration */}
-      <p className={`mb-1 italic ${isQuran ? 'text-emerald-700' : 'text-blue-700'}`}>
+      <p className={`mb-1 italic ${colorScheme.text}`}>
         {sentence.transliteration}
       </p>
 
@@ -1925,16 +1928,17 @@ export default function LessonInsights() {
       const contentWidth = pageWidth - margin * 2;
       let yPos = margin;
 
-      // Colors
+      // Colors - Quran = green, Arabic = blue, Other = purple
       const EMERALD = [5, 150, 105] as [number, number, number];
-      const INDIGO = [99, 102, 241] as [number, number, number];
+      const BLUE = [59, 130, 246] as [number, number, number];
+      const PURPLE = [147, 51, 234] as [number, number, number];
       const SLATE_800 = [30, 41, 59] as [number, number, number];
       const SLATE_600 = [71, 85, 105] as [number, number, number];
       const WHITE = [255, 255, 255] as [number, number, number];
       const CREAM = [254, 252, 232] as [number, number, number];
       const GOLD = [180, 140, 50] as [number, number, number];
 
-      const accentColor = isQuran ? EMERALD : INDIGO;
+      const accentColor = isQuran ? EMERALD : isArabic ? BLUE : PURPLE;
 
       const addFooter = () => {
         doc.setFontSize(8);
@@ -2538,7 +2542,9 @@ export default function LessonInsights() {
   }
 
   const metadata = insight.detailed_insights?.metadata;
-  const isQuran = insight.insight_type === 'quran_tadabbur' || insight.detailed_insights?.subject?.toLowerCase().includes('quran') || metadata?.subject?.toLowerCase().includes('quran');
+  const subjectLower = (insight.detailed_insights?.subject || metadata?.subject || '').toLowerCase();
+  const isQuran = insight.insight_type === 'quran_tadabbur' || subjectLower.includes('quran') || subjectLower.includes('tajweed');
+  const isArabic = !isQuran && subjectLower.includes('arabic');
   const hasDetailedInsights = !!insight.detailed_insights?.content;
 
   // Parse all sections - safely handle any parsing errors
@@ -2668,7 +2674,11 @@ export default function LessonInsights() {
         <main id="insights-content" className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Hero Card */}
           <div className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white shadow-xl ${
-            isQuran ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700' : 'bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700'
+            isQuran
+              ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700'
+              : isArabic
+                ? 'bg-gradient-to-br from-blue-600 via-blue-500 to-sky-600'
+                : 'bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700'
           }`}>
             <div className="flex flex-col gap-4">
               {/* Title row */}
@@ -2848,25 +2858,30 @@ export default function LessonInsights() {
             </div>
           )}
 
-          {/* Focus Words with Matching Quiz and Flip Cards */}
+          {/* Focus Words - Vocabulary Flashcards */}
           {vocabulary.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-4 sm:p-6 mb-6">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700 p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Book className="w-5 h-5 text-emerald-600" />
-                  <h2 className="text-lg font-bold text-gray-900">Focus Words</h2>
-                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{vocabulary.length} words</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-900/50 rounded-xl flex items-center justify-center">
+                    <Book className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Vocabulary Flashcards</h2>
+                    <p className="text-xs text-slate-400">Tap to reveal meanings</p>
+                  </div>
                 </div>
+                <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-700/50">{vocabulary.length} words</span>
               </div>
 
               {/* Flip Cards Section */}
-              <div className="border-t border-gray-200 pt-6 mt-6">
-                <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
-                  <Scissors className="w-4 h-4" />
-                  Tap any card to reveal the English meaning. Pro tip: Print this page, cut out the cards, and write the English on the back for flashcard practice!
+              <div className="pt-4">
+                <p className="text-sm text-slate-400 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  Practice these words from your lesson. Tap each card to test yourself!
                 </p>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {vocabulary.map((word, idx) => (
                     <FlipCard key={idx} word={word} />
                   ))}
@@ -2911,7 +2926,7 @@ export default function LessonInsights() {
                 ) : (
                   <div className="space-y-3">
                     {sentences.map((sentence, i) => (
-                      <KeySentenceCard key={i} sentence={sentence} isQuran={isQuran} />
+                      <KeySentenceCard key={i} sentence={sentence} isQuran={isQuran} isArabic={isArabic} />
                     ))}
                   </div>
                 )}

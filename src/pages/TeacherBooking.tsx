@@ -446,19 +446,24 @@ export default function TeacherBooking() {
             </div>
 
             {/* Subject Display (if pre-selected from Step 1) */}
-            {preSelectedSubject && preSelectedSubject !== '' && selectedSubject && (
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm text-gray-500 mb-1">Subject (Selected in Step 1)</h3>
-                    <p className="text-xl font-bold text-emerald-400">{selectedSubject.name}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                    <Check className="w-6 h-6 text-emerald-400" />
+            {preSelectedSubject && preSelectedSubject !== '' && selectedSubject && (() => {
+              const isArabicSubject = selectedSubject.name.toLowerCase().includes('arabic');
+              const colorClass = isArabicSubject ? 'text-sky-500' : 'text-emerald-400';
+              const bgColorClass = isArabicSubject ? 'bg-sky-500/20' : 'bg-emerald-500/20';
+              return (
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm text-gray-500 mb-1">Subject (Selected in Step 1)</h3>
+                      <p className={`text-xl font-bold ${colorClass}`}>{selectedSubject.name}</p>
+                    </div>
+                    <div className={`w-12 h-12 ${bgColorClass} rounded-full flex items-center justify-center`}>
+                      <Check className={`w-6 h-6 ${colorClass}`} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Subject & Duration Selection */}
             <div className={`grid grid-cols-1 ${(!preSelectedSubject || preSelectedSubject === '') && subjects.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
@@ -466,20 +471,24 @@ export default function TeacherBooking() {
                 <div className="bg-white rounded-xl p-6 border border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Subject</h3>
                   <div className="space-y-2">
-                    {subjects.map((subject) => (
-                      <button
-                        key={subject.id}
-                        onClick={() => setSelectedSubject(subject)}
-                        aria-pressed={selectedSubject?.id === subject.id}
-                        className={`w-full p-3 rounded-lg text-left transition ${
-                          selectedSubject?.id === subject.id
-                            ? 'bg-emerald-500 text-gray-900'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {subject.name}
-                      </button>
-                    ))}
+                    {subjects.map((subject) => {
+                      const isArabic = subject.name.toLowerCase().includes('arabic');
+                      const selectedColor = isArabic ? 'bg-sky-500 text-white' : 'bg-emerald-500 text-gray-900';
+                      return (
+                        <button
+                          key={subject.id}
+                          onClick={() => setSelectedSubject(subject)}
+                          aria-pressed={selectedSubject?.id === subject.id}
+                          className={`w-full p-3 rounded-lg text-left transition ${
+                            selectedSubject?.id === subject.id
+                              ? selectedColor
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {subject.name}
+                        </button>
+                      );
+                    })}
                     {/* Coming Soon option */}
                     <button
                       disabled

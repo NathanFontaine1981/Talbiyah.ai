@@ -185,62 +185,54 @@ export default function VerseMemorizer({
   };
 
   return (
-    <div className="bg-white rounded-xl border-l-4 border-emerald-500 border border-gray-200 overflow-hidden shadow-sm">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-white">
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
-            {ayahNumber}
-          </span>
-          <div>
-            <p className="font-medium">Ayah {ayahNumber}</p>
-            {surahNumber && <p className="text-xs text-white/80">Surah {surahNumber}{surahName ? ` - ${surahName}` : ''}</p>}
-          </div>
+    <div className="bg-gradient-to-br from-slate-900 via-emerald-950/30 to-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+      {/* Main Content - Centered Arabic */}
+      <div className="p-6 md:p-8">
+        {/* Arabic Text - Large and Centered */}
+        <div className="text-center mb-4">
+          <p
+            className="font-arabic text-3xl md:text-4xl text-emerald-200"
+            dir="rtl"
+            style={{ lineHeight: '2.2' }}
+          >
+            {arabic}
+          </p>
         </div>
-      </div>
 
-      {/* Arabic */}
-      <div className="p-6 bg-gray-50">
-        <p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-gray-900" dir="rtl">
-          {arabic}
-        </p>
-      </div>
+        {/* Transliteration - Centered Italic */}
+        {transliteration && showTransliteration && (
+          <p className="text-center text-slate-300 italic mb-2 text-lg">
+            {transliteration}
+          </p>
+        )}
 
-      {/* Transliteration */}
-      {transliteration && showTransliteration && (
-        <div className="px-6 py-3 bg-cyan-50 border-t border-cyan-100">
-          <p className="text-cyan-800 italic text-lg">{transliteration}</p>
-        </div>
-      )}
-
-      {/* Translation - Tap to Reveal */}
-      <div className="px-6 py-4 border-t border-gray-100">
+        {/* Translation - Centered Amber */}
         {showTranslation ? (
-          <div>
-            <p className="text-gray-700 text-lg leading-relaxed">{cleanTranslation(translation)}</p>
-            <button
-              onClick={() => setShowTranslation(false)}
-              className="mt-2 text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-            >
-              Hide translation
-            </button>
-          </div>
+          <p className="text-center text-amber-100 text-lg leading-relaxed">
+            {cleanTranslation(translation)}
+          </p>
         ) : (
           <button
             onClick={() => setShowTranslation(true)}
-            className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-emerald-600 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 mt-2 bg-emerald-900/40 hover:bg-emerald-800/50 rounded-xl text-emerald-300 font-medium text-sm flex items-center justify-center gap-2 transition-colors border border-emerald-700/30"
           >
             <ChevronRight className="w-4 h-4" />
             Tap to reveal translation
           </button>
         )}
+
+        {/* Reference */}
+        <p className="text-center text-slate-400 text-xs mt-3">
+          {surahName ? `${surahName} ` : ''}
+          {surahNumber ? `${surahNumber}:` : 'Ayah '}{ayahNumber}
+        </p>
       </div>
 
       {/* Progress tracking buttons */}
       {userId && surahNumber && (
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <p className="text-xs text-gray-500 mb-3">Mark your progress for this ayah:</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-700">
+          <p className="text-xs text-slate-400 mb-3 text-center">Mark your progress:</p>
+          <div className="flex flex-wrap justify-center gap-2">
             <StageButton
               stage="understanding"
               icon={Brain}
@@ -262,27 +254,33 @@ export default function VerseMemorizer({
           </div>
           {/* Progress indicator */}
           {(progress.understanding_completed || progress.fluency_completed || progress.memorization_completed) && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-              <CheckCircle className="w-3 h-3 text-emerald-500" />
-              <span>
-                Progress saved to your Quran tracker
-              </span>
+            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-emerald-400">
+              <CheckCircle className="w-3 h-3" />
+              <span>Progress saved</span>
             </div>
           )}
         </div>
       )}
 
-      {/* Toggle transliteration */}
-      {transliteration && (
-        <div className="px-6 py-3 border-t border-gray-100">
+      {/* Toggle buttons */}
+      <div className="px-6 py-3 border-t border-slate-700 flex justify-center gap-4">
+        {transliteration && (
           <button
             onClick={() => setShowTransliteration(!showTransliteration)}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
           >
             {showTransliteration ? 'Hide' : 'Show'} transliteration
           </button>
-        </div>
-      )}
+        )}
+        {showTranslation && (
+          <button
+            onClick={() => setShowTranslation(false)}
+            className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            Hide translation
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -309,7 +307,7 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-emerald-600" />
           Verses Covered
@@ -320,7 +318,7 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'single'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             One at a Time
@@ -330,7 +328,7 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'all'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             Show All
@@ -338,17 +336,17 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-        <p className="text-sm text-emerald-800">
-          <strong>Track your progress:</strong> Mark each ayah as you learn.
-          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+      {/* Instructions - Dark theme */}
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-4">
+        <p className="text-sm text-slate-300">
+          <strong className="text-emerald-400">Track your progress:</strong> Mark each ayah as you learn.
+          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-purple-900/50 text-purple-300 rounded border border-purple-700/50">
             <Brain className="w-3 h-3" /> Meaning
           </span>
-          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded border border-blue-700/50">
             <Mic className="w-3 h-3" /> Fluent
           </span>
-          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+          <span className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 bg-emerald-900/50 text-emerald-300 rounded border border-emerald-700/50">
             <Book className="w-3 h-3" /> Memorized
           </span>
         </p>
@@ -369,22 +367,22 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
 
           {/* Navigation */}
           {verses.length > 1 && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-3">
               <button
                 onClick={() => setActiveVerse(Math.max(0, activeVerse - 1))}
                 disabled={activeVerse === 0}
-                className="flex items-center gap-1 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-1 px-4 py-2 rounded-lg bg-slate-700 text-slate-200 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
               </button>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-400">
                 {activeVerse + 1} of {verses.length}
               </span>
               <button
                 onClick={() => setActiveVerse(Math.min(verses.length - 1, activeVerse + 1))}
                 disabled={activeVerse === verses.length - 1}
-                className="flex items-center gap-1 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-1 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -394,15 +392,15 @@ export function VerseListMemorizer({ verses, lessonId, surahNumber, surahName }:
 
           {/* Verse selector dots */}
           {verses.length > 1 && (
-            <div className="flex justify-center gap-2 flex-wrap">
+            <div className="flex justify-center gap-2 flex-wrap bg-slate-800/30 rounded-xl p-3">
               {verses.map((v, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveVerse(idx)}
                   className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                     idx === activeVerse
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
                   {v.ayahNumber || idx + 1}

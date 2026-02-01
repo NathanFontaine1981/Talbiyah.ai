@@ -87,6 +87,47 @@ const ARABIC_VOCAB_CORRECTIONS: Record<string, { correct: string; wrong: string[
   // Qayyim
   'qayyim': { correct: 'straight', wrong: ['great', 'powerful', 'beautiful', 'knowing'] },
   'قيم': { correct: 'straight', wrong: ['great', 'powerful', 'beautiful', 'knowing'] },
+
+  // Surah An-Naba (78) vocabulary
+  'an-naba': { correct: 'news', wrong: ['story', 'tale', 'message', 'warning'] },
+  'النبأ': { correct: 'news', wrong: ['story', 'tale', 'message', 'warning'] },
+  'naba': { correct: 'news', wrong: ['story', 'tale', 'message', 'warning'] },
+
+  'mihād': { correct: 'resting place', wrong: ['carpet', 'bed', 'floor', 'ground'] },
+  'mihad': { correct: 'resting place', wrong: ['carpet', 'bed', 'floor', 'ground'] },
+  'مهاد': { correct: 'resting place', wrong: ['carpet', 'bed', 'floor', 'ground'] },
+
+  'awtād': { correct: 'stakes', wrong: ['mountains only', 'pillars', 'supports', 'anchors'] },
+  'awtad': { correct: 'stakes', wrong: ['mountains only', 'pillars', 'supports', 'anchors'] },
+  'أوتاد': { correct: 'stakes', wrong: ['mountains only', 'pillars', 'supports', 'anchors'] },
+
+  'subāt': { correct: 'rest', wrong: ['death', 'unconsciousness', 'peace', 'comfort'] },
+  'subat': { correct: 'rest', wrong: ['death', 'unconsciousness', 'peace', 'comfort'] },
+  'سبات': { correct: 'rest', wrong: ['death', 'unconsciousness', 'peace', 'comfort'] },
+
+  'libās': { correct: 'covering', wrong: ['darkness', 'blanket', 'protection', 'veil'] },
+  'libas': { correct: 'covering', wrong: ['darkness', 'blanket', 'protection', 'veil'] },
+  'لباس': { correct: 'covering', wrong: ['darkness', 'blanket', 'protection', 'veil'] },
+
+  'ma\'āsh': { correct: 'livelihood', wrong: ['work', 'activity', 'movement', 'life'] },
+  'maash': { correct: 'livelihood', wrong: ['work', 'activity', 'movement', 'life'] },
+  'معاش': { correct: 'livelihood', wrong: ['work', 'activity', 'movement', 'life'] },
+
+  'sirāj': { correct: 'lamp', wrong: ['light', 'sun only', 'star', 'fire'] },
+  'siraj': { correct: 'lamp', wrong: ['light', 'sun only', 'star', 'fire'] },
+  'سراج': { correct: 'lamp', wrong: ['light', 'sun only', 'star', 'fire'] },
+
+  'wahhāj': { correct: 'burning', wrong: ['bright', 'shining', 'glowing', 'hot'] },
+  'wahhaj': { correct: 'burning', wrong: ['bright', 'shining', 'glowing', 'hot'] },
+  'وهاج': { correct: 'burning', wrong: ['bright', 'shining', 'glowing', 'hot'] },
+
+  'thajjāj': { correct: 'pouring', wrong: ['heavy', 'abundant', 'continuous', 'strong'] },
+  'thajjaj': { correct: 'pouring', wrong: ['heavy', 'abundant', 'continuous', 'strong'] },
+  'ثجاج': { correct: 'pouring', wrong: ['heavy', 'abundant', 'continuous', 'strong'] },
+
+  'alfāf': { correct: 'dense', wrong: ['beautiful', 'lush', 'green', 'tall'] },
+  'alfaf': { correct: 'dense', wrong: ['beautiful', 'lush', 'green', 'tall'] },
+  'ألفاف': { correct: 'dense', wrong: ['beautiful', 'lush', 'green', 'tall'] },
 };
 
 // Known verse meaning corrections - map question patterns to correct answer patterns
@@ -568,4 +609,176 @@ export function createVerificationLog(
       similarity: c.similarity
     }))
   };
+}
+
+/**
+ * Surah vocabulary data for quiz verification
+ * Maps surah number to vocabulary words with meanings
+ */
+export const SURAH_VOCABULARY: Record<number, Record<string, string>> = {
+  // Surah An-Naba (78)
+  78: {
+    'النبأ': 'the news/tidings',
+    'العظيم': 'the great',
+    'مختلفون': 'in disagreement',
+    'مهاد': 'resting place/expanse',
+    'أوتاد': 'stakes/pegs',
+    'أزواج': 'pairs',
+    'سبات': 'rest',
+    'لباس': 'covering/clothing',
+    'معاش': 'livelihood',
+    'شداد': 'strong',
+    'سراج': 'lamp',
+    'وهاج': 'burning/blazing',
+    'المعصرات': 'rain clouds',
+    'ثجاج': 'pouring',
+    'حب': 'grain',
+    'نبات': 'vegetation',
+    'جنات': 'gardens',
+    'ألفاف': 'dense/entwined',
+    'ميقات': 'appointed time',
+    'أفواج': 'groups/multitudes',
+    'سراب': 'mirage',
+    'مرصاد': 'lying in wait',
+    'مآب': 'place of return',
+    'أحقاب': 'ages/eons',
+    'حميم': 'scalding water',
+    'غساق': 'purulence',
+    'جزاء': 'recompense',
+    'وفاق': 'appropriate',
+    'حساب': 'account',
+    'كذاب': 'denial',
+    'أحصيناه': 'enumerated/recorded',
+    'مفاز': 'success/attainment',
+    'حدائق': 'gardens',
+    'أعناب': 'grapes',
+    'كواعب': 'full-breasted maidens',
+    'أتراب': 'of equal age',
+    'دهاق': 'full/overflowing',
+    'لغو': 'vain talk',
+    'كذاب': 'denial/lies',
+    'عطاء': 'gift/reward',
+    'الرحمن': 'the Most Merciful',
+    'خطاب': 'speech/address',
+  },
+  // Surah Al-Mulk (67)
+  67: {
+    'تبارك': 'blessed',
+    'الملك': 'dominion/sovereignty',
+    'قدير': 'all-powerful',
+    'الموت': 'death',
+    'الحياة': 'life',
+    'ليبلوكم': 'to test you',
+    'أحسن': 'best',
+    'عملا': 'in deed',
+    'العزيز': 'the Almighty',
+    'الغفور': 'the Forgiving',
+    'طباق': 'layers',
+    'تفاوت': 'inconsistency',
+    'فطور': 'breaks/cracks',
+    'خاسئ': 'humbled',
+    'حسير': 'fatigued',
+    'مصابيح': 'lamps',
+    'رجوم': 'missiles',
+    'السعير': 'the Blaze',
+    'شهيق': 'inhaling',
+    'تفور': 'boiling over',
+    'تميز': 'burst',
+    'الغيظ': 'rage',
+    'فوج': 'group',
+    'خزنتها': 'its keepers',
+    'نذير': 'warner',
+  },
+};
+
+/**
+ * Mark quiz answers using surah_data vocabulary
+ * This is called when AI generates quiz without marked answers
+ */
+export function markQuizAnswersFromVocabulary(
+  content: string,
+  surahNumber: number
+): string {
+  const vocab = SURAH_VOCABULARY[surahNumber];
+  if (!vocab) {
+    console.log(`No vocabulary data for surah ${surahNumber}, skipping quiz marking`);
+    return content;
+  }
+
+  // Pattern to match unmarked quiz questions
+  // Format: **Q1.** Question text\nA) option\nB) option\nC) option\nD) option
+  const quizPattern = /(\*\*Q\d+\.\*?\*?\s+.+?)(?=\*\*Q\d+\.|---|\n\n\*\*[78]|$)/gs;
+
+  let markedContent = content;
+  const matches = content.matchAll(quizPattern);
+
+  for (const match of matches) {
+    const questionBlock = match[1];
+
+    // Skip if already has ✅
+    if (questionBlock.includes('✅')) continue;
+
+    // Extract question text
+    const questionMatch = questionBlock.match(/\*\*Q\d+\.\*?\*?\s+(.+?)(?=\n?[A-D]\))/s);
+    if (!questionMatch) continue;
+
+    const questionText = questionMatch[1].toLowerCase();
+
+    // Extract options
+    const optionMatches = [...questionBlock.matchAll(/([A-D])\)\s*([^\n]+)/g)];
+    if (optionMatches.length < 2) continue;
+
+    // Find the correct answer based on vocabulary
+    let correctIndex = -1;
+    let bestScore = 0;
+
+    // Check if it's a vocabulary question
+    for (const [arabicWord, meaning] of Object.entries(vocab)) {
+      if (questionText.includes(arabicWord.toLowerCase()) ||
+          questionText.includes(meaning.toLowerCase().split('/')[0])) {
+        // Found the word - now find which option matches the meaning
+        for (let i = 0; i < optionMatches.length; i++) {
+          const optionText = optionMatches[i][2].toLowerCase();
+          const meaningParts = meaning.toLowerCase().split('/');
+
+          for (const part of meaningParts) {
+            if (optionText.includes(part.trim())) {
+              const score = part.trim().length;
+              if (score > bestScore) {
+                bestScore = score;
+                correctIndex = i;
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+
+    // If no vocab match, try to find based on common patterns
+    if (correctIndex === -1) {
+      // For theme questions, look for keywords
+      for (let i = 0; i < optionMatches.length; i++) {
+        const optionText = optionMatches[i][2].toLowerCase();
+        // Positive indicators for correct answers
+        if (optionText.includes('day of judgment') ||
+            optionText.includes('resurrection') ||
+            optionText.includes('test') ||
+            optionText.includes('blessed')) {
+          correctIndex = i;
+          break;
+        }
+      }
+    }
+
+    // Mark the correct answer if found
+    if (correctIndex >= 0 && optionMatches[correctIndex]) {
+      const correctOption = optionMatches[correctIndex][0];
+      const markedOption = correctOption + ' ✅';
+      markedContent = markedContent.replace(correctOption, markedOption);
+      console.log(`Marked answer: ${correctOption} -> ${markedOption}`);
+    }
+  }
+
+  return markedContent;
 }
