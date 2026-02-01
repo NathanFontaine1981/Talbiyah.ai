@@ -73,7 +73,7 @@ export default function DashboardSidebar({
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
 
-  // Organised menu sections
+  // Organised menu sections - simplified structure
   const menuSections: MenuSection[] = [
     {
       title: null,
@@ -82,16 +82,14 @@ export default function DashboardSidebar({
       ]
     },
     {
-      title: 'Learn',
+      title: 'My Learning',
       items: [
-        { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student', 'Parent'] },
-        { icon: BookOpen, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent'], isNew: true },
-        { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
-        { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
         { icon: Calendar, label: 'My Lessons', path: '/my-classes', active: false, roles: ['Student', 'Parent'] },
-        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent'], isNew: true },
-        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'] },
+        { icon: Users, label: 'My Teachers', path: '/my-teachers', active: false, roles: ['Student'] },
+        { icon: Search, label: 'Find Teachers', path: '/teachers', active: false, roles: ['Student', 'Parent'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Student'] },
+        { icon: GraduationCap, label: 'Courses', path: '/courses-overview', active: false, roles: ['Student', 'Parent'] },
+        { icon: Users, label: 'Group Classes', path: '/group-classes', active: false, roles: ['Student', 'Parent'] },
       ]
     },
     {
@@ -113,27 +111,28 @@ export default function DashboardSidebar({
       ]
     },
     {
-      title: 'Credits',
+      title: 'Tools & Resources',
+      items: [
+        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent'], isNew: true },
+        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
+        { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
+        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
+        { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
+        { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
+        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: UserPlus, label: 'Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
+        { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
+        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+      ]
+    },
+    {
+      title: 'Credits & Billing',
       items: [
         { icon: CreditCard, label: 'Buy Credits', path: '/buy-credits', active: false, roles: ['Student', 'Parent'] },
         { icon: Receipt, label: 'Payment History', path: '/payment-history', active: false, roles: ['Student', 'Parent'] },
         { icon: Gift, label: 'Referrals', path: '/my-referrals', active: false, roles: ['Student'] },
-      ]
-    },
-    {
-      title: 'Resources',
-      items: [
-        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: UserPlus, label: 'Unshakable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
-        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
-        { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
-        { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
-        { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
-        { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
       ]
     },
     {
@@ -148,11 +147,10 @@ export default function DashboardSidebar({
       ]
     },
     {
-      title: 'Profile',
+      title: 'Account',
       items: [
-        { icon: UserIcon, label: 'My Account', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
         { icon: Baby, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
-        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin'] },
+        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
       ]
     },
   ];

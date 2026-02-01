@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Talbiyah.ai Lessons <lessons@talbiyah.ai>",
+        from: "Talbiyah.ai <notifications@talbiyah.ai>",
         to: [payload.student_email],
         subject: `✅ Lesson Confirmed with ${payload.teacher_name} - ${formattedDate}`,
         html: `

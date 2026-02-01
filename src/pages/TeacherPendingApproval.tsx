@@ -208,7 +208,7 @@ export default function TeacherPendingApproval() {
 
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500">
-                Questions? Contact us at <a href="mailto:contact@talbiyah.ai" className="text-blue-400 hover:text-blue-300">contact@talbiyah.ai</a>
+                Questions? Contact us at <a href="mailto:support@talbiyah.ai" className="text-blue-400 hover:text-blue-300">support@talbiyah.ai</a>
               </p>
             </div>
           </div>

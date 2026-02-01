@@ -263,7 +263,7 @@ export default function TokenPurchaseSuccess() {
               Need help or have questions?
             </p>
             <p className="text-violet-600 dark:text-violet-400 font-medium">
-              Contact us at contact@talbiyah.ai
+              Contact us at support@talbiyah.ai
             </p>
           </div>
 

@@ -93,8 +93,9 @@ async function getAssetPresignedUrl(assetId: string, hmsToken: string): Promise<
 /**
  * Transcribe audio using ElevenLabs Scribe API
  * Best for Arabic/Quran content with mixed Arabic and English
+ * For lessons ≤35 minutes (manageable file sizes)
  */
-async function transcribeWithElevenLabs(recordingUrl: string): Promise<string | null> {
+async function transcribeWithElevenLabs(recordingUrl: string, maxFileSizeMB: number = 200): Promise<string | null> {
   const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
   if (!ELEVENLABS_API_KEY) {
@@ -103,6 +104,19 @@ async function transcribeWithElevenLabs(recordingUrl: string): Promise<string | 
   }
 
   try {
+    // Check file size first to avoid memory issues
+    console.log("Checking recording file size...");
+    const headResponse = await fetch(recordingUrl, { method: 'HEAD' });
+    const contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
+    const fileSizeMB = contentLength / (1024 * 1024);
+
+    console.log(`Recording size: ${fileSizeMB.toFixed(1)} MB`);
+
+    if (fileSizeMB > maxFileSizeMB) {
+      console.log(`File too large (${fileSizeMB.toFixed(1)}MB > ${maxFileSizeMB}MB), skipping ElevenLabs`);
+      return null; // Signal to use AssemblyAI instead
+    }
+
     console.log("Downloading recording for ElevenLabs transcription...");
 
     // Fetch the recording
@@ -114,12 +128,6 @@ async function transcribeWithElevenLabs(recordingUrl: string): Promise<string | 
 
     const audioBlob = await recordingResponse.blob();
     console.log("Recording downloaded, size:", audioBlob.size, "bytes");
-
-    // ElevenLabs Scribe supports files up to 1GB
-    if (audioBlob.size > 1024 * 1024 * 1024) {
-      console.log("Recording too large for ElevenLabs (>1GB), skipping");
-      return null;
-    }
 
     // Create form data for ElevenLabs Scribe API
     const formData = new FormData();
@@ -622,21 +630,31 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // For Arabic/Quran content, ALWAYS use ElevenLabs as primary transcription
+        // For Arabic/Quran content, use specialized transcription
         // 100ms transcription doesn't handle Arabic/Quran recitation well
         const subjectLower = subjectName.toLowerCase();
         const isArabicContent = subjectLower.includes('quran') || subjectLower.includes('qur') ||
                                 subjectLower.includes('arabic') || subjectLower.includes('tajweed') ||
                                 subjectLower.includes('tajwid') || subjectLower.includes('hifz');
 
+        // Determine if lesson is "long" (>35 min) - these need special handling
+        const isLongLesson = lesson.duration_minutes && lesson.duration_minutes > 35;
+
         if (isArabicContent && recordingUrl) {
-          console.log("Arabic/Quran content detected - using ElevenLabs Scribe as PRIMARY transcription...");
-          const elevenLabsTranscript = await transcribeWithElevenLabs(recordingUrl);
-          if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
-            console.log("Using ElevenLabs transcript (best for Arabic), length:", elevenLabsTranscript.length);
-            transcriptText = elevenLabsTranscript;
+          if (isLongLesson) {
+            // Long lessons: Use the 100ms transcript we already have (no file download = no memory issues)
+            console.log(`Long Arabic lesson (${lesson.duration_minutes} min) - using 100ms transcript (already fetched, no memory pressure)...`);
+            // transcriptText already contains 100ms transcript if available, keep it
           } else {
-            console.log("ElevenLabs failed or empty, falling back to 100ms transcript");
+            // Short lessons: Use ElevenLabs (best Arabic quality)
+            console.log("Arabic/Quran content detected - using ElevenLabs Scribe as PRIMARY transcription...");
+            const elevenLabsTranscript = await transcribeWithElevenLabs(recordingUrl);
+            if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
+              console.log("Using ElevenLabs transcript (best for Arabic), length:", elevenLabsTranscript.length);
+              transcriptText = elevenLabsTranscript;
+            } else {
+              console.log("ElevenLabs failed or empty, falling back to 100ms transcript");
+            }
           }
         }
 
@@ -741,20 +759,33 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // If no 100ms transcript available, try Whisper for Arabic/Quran content
+    // If no 100ms transcript available, use specialized transcription for Arabic/Quran
     if (!transcriptText && recordingUrl && shouldGenerateInsights) {
       const subjectLower = subjectName.toLowerCase();
       const isArabicContent = subjectLower.includes('quran') || subjectLower.includes('qur') ||
                               subjectLower.includes('arabic') || subjectLower.includes('tajweed') ||
                               subjectLower.includes('tajwid') || subjectLower.includes('hifz');
 
-      if (isArabicContent) {
-        console.log("No 100ms transcript available, trying ElevenLabs Scribe for Arabic content...");
-        const whisperTranscript = await transcribeWithElevenLabs(recordingUrl);
+      // Determine if lesson is "long" (>35 min)
+      const isLongLesson = lesson.duration_minutes && lesson.duration_minutes > 35;
 
-        if (whisperTranscript && whisperTranscript.length > 100) {
-          console.log("Got ElevenLabs transcript, length:", whisperTranscript.length);
-          transcriptText = whisperTranscript;
+      if (isArabicContent) {
+        let arabicTranscript: string | null = null;
+
+        if (isLongLesson) {
+          // Long lessons: Skip ElevenLabs to avoid memory issues
+          // The 100ms transcript should be available via webhook/API
+          console.log(`No 100ms transcript, long lesson (${lesson.duration_minutes} min) - cannot use ElevenLabs (memory limits), skipping...`);
+          // Don't try ElevenLabs for long lessons - it will hit memory limits
+        } else {
+          // Short lessons: Use ElevenLabs (best Arabic quality)
+          console.log("No 100ms transcript available, trying ElevenLabs Scribe for Arabic content...");
+          arabicTranscript = await transcribeWithElevenLabs(recordingUrl);
+        }
+
+        if (arabicTranscript && arabicTranscript.length > 100) {
+          console.log("Got specialized transcript, length:", arabicTranscript.length);
+          transcriptText = arabicTranscript;
 
           // Generate insights with Whisper transcript
           const metadata: any = {
@@ -780,7 +811,7 @@ Deno.serve(async (req: Request) => {
             },
             body: JSON.stringify({
               lesson_id: lesson.id,
-              transcript: whisperTranscript,
+              transcript: arabicTranscript,
               subject: subjectName,
               metadata: metadata,
             }),
@@ -788,7 +819,7 @@ Deno.serve(async (req: Request) => {
 
           if (insightResponse.ok) {
             const insightResult = await insightResponse.json();
-            console.log("AI insights generated from ElevenLabs transcript:", insightResult.insight_id);
+            console.log("AI insights generated from specialized transcript:", insightResult.insight_id);
 
             await supabase
               .from("lesson_insights")
@@ -796,7 +827,7 @@ Deno.serve(async (req: Request) => {
               .eq("lesson_id", lesson.id);
           } else {
             const errorText = await insightResponse.text();
-            console.error("Failed to generate AI insights from ElevenLabs:", errorText);
+            console.error("Failed to generate AI insights from specialized transcription:", errorText);
           }
         }
       }

@@ -221,7 +221,7 @@ export default function DiagnosticSuccess() {
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Questions? Contact us at contact@talbiyah.ai
+          Questions? Contact us at support@talbiyah.ai
         </p>
       </div>
     </div>

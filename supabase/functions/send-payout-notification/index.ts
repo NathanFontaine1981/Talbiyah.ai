@@ -236,7 +236,7 @@ The Talbiyah.ai Team
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Talbiyah.ai <payouts@talbiyah.ai>',
+        from: 'Talbiyah.ai <billing@talbiyah.ai>',
         to: teacherEmail,
         subject: subject,
         html: htmlContent,

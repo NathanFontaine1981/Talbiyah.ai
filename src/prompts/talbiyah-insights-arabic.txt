@@ -138,15 +138,54 @@ Example:
 ---
 
 ### 🔟 Homework / Practice Tasks
-* List 3–5 things the student should do before the next lesson.
-* Include a mix of writing, speaking, and reading tasks.
-* Keep each one short and actionable.
 
-Example:
-📝 Write 5 sentences using أَخْرَجَ in past and future forms.
-🗣️ Practise reading the dialogue aloud and record yourself.
-📖 Revise vocabulary flashcards for "places" and "daily actions."
-🎧 Listen to a short Arabic clip and try to repeat each sentence clearly.
+#### ✍️ Part A: Writing Challenge – Build Your Paragraph
+
+Create a writing exercise based on THIS lesson's vocabulary and grammar.
+
+**Instructions:**
+1. Choose a TOPIC related to the lesson content (e.g., daily routine, shopping, family, travel, etc.)
+2. Write a simple ENGLISH PARAGRAPH (4-6 sentences) that uses vocabulary and grammar from this lesson
+3. The student's task is to translate it into Arabic
+4. Provide a "Build Your Own Sentences" TABLE with 4 rows showing mix-and-match options:
+   - Column 1: Subject options (أَنا، نَحْنُ، هُوَ، هِيَ، أَنْتَ، هُمْ) with English
+   - Column 2: Verb/action options FROM THE LESSON with tashkīl and English
+   - Column 3: Object/place/time endings FROM THE LESSON with tashkīl and English
+5. Include a WORD BANK of 8-10 vocabulary items from the lesson (Arabic with tashkīl + English)
+6. Add a SELF-CHECK list: ☐ Verb conjugations ☐ Connectors used ☐ Tashkīl added
+
+**Example Output:**
+
+#### ✍️ Writing Challenge: Build Your Paragraph
+
+**Topic:** A Trip to the Market
+
+**Your Mission:** Translate this paragraph into Arabic:
+
+> "Yesterday, I went to the market with my mother. We bought bread, fruit, and vegetables. The shopkeeper was very kind. After that, we returned home. It was a good day!"
+
+**Build Your Own Sentences:** Mix and match to create your Arabic paragraph:
+
+| Start with... | Add an action... | End with... |
+|---------------|------------------|-------------|
+| أَنا (I) | ذَهَبْتُ إِلَى (went to) | السُّوقِ (the market) |
+| نَحْنُ (We) | اِشْتَرَيْنا (we bought) | خُبْزًا وَفَواكِهَ (bread and fruit) |
+| هُوَ (He) | كانَ لَطيفًا (was kind) | مَعَ أُمِّي (with my mother) |
+| بَعْدَ ذٰلِكَ (After that) | رَجَعْنا (we returned) | إِلَى البَيْتِ (to the house) |
+
+**Word Bank (use at least 5):**
+السُّوقُ (market) • خُبْزٌ (bread) • فَواكِهُ (fruit) • اِشْتَرَى (bought) • ذَهَبَ (went) • رَجَعَ (returned) • لَطِيفٌ (kind) • أَمْسِ (yesterday) • يَوْمٌ جَيِّدٌ (good day) • البائِعُ (shopkeeper)
+
+**Self-Check:** ☐ Correct verb forms (past tense) ☐ Used connectors (وَ، ثُمَّ، بَعْدَ ذٰلِكَ) ☐ Added tashkīl to key words
+
+---
+
+#### 📋 Part B: Quick Practice Tasks
+List 3-4 short, actionable tasks mixing different skills:
+📝 [Writing task using specific lesson vocabulary/grammar]
+🗣️ [Speaking/pronunciation practice task]
+📖 [Reading or flashcard review task]
+🎧 [Listening task - optional]
 
 ---
 

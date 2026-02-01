@@ -381,14 +381,14 @@ export default function ExplorePage() {
       {/* Back to episodes button - positioned just below progress bar on stages, at top when no progress bar */}
       <button
         onClick={() => setFlowStage('menu')}
-        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} left-6 text-slate-400 hover:text-white transition z-40 flex items-center gap-2 text-sm bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50`}
+        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} left-6 text-slate-300 hover:text-white transition z-40 flex items-center gap-2 text-sm bg-slate-800/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-600/50 shadow-lg`}
       >
         <BookOpen className="w-4 h-4" />
         <span className="hidden md:inline">Episodes</span>
       </button>
       <button
         onClick={() => navigate('/')}
-        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} right-6 text-slate-400 hover:text-white transition z-40 bg-slate-900/80 backdrop-blur-sm p-1.5 rounded-lg border border-slate-700/50`}
+        className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} right-6 text-slate-300 hover:text-white transition z-40 bg-slate-800/90 backdrop-blur-md p-1.5 rounded-lg border border-slate-600/50 shadow-lg`}
       >
         <X className="w-5 h-5" />
       </button>
@@ -418,47 +418,64 @@ export default function ExplorePage() {
     const completedCount = EPISODES.filter(ep => isEpisodeCompleted(ep.id)).length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden">
+        {/* Subtle decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-100/40 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 -left-20 w-60 h-60 bg-amber-100/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-100/30 rounded-full blur-3xl" />
+        </div>
+
         {/* Close button */}
         <button
           onClick={() => navigate('/')}
-          className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
+          className="fixed top-6 right-6 text-slate-400 hover:text-slate-700 transition z-50 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-sm hover:shadow-md border border-slate-200/50"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto px-4 py-16 relative">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-14"
           >
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-              className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-1 shadow-lg shadow-emerald-900/30"
+              className="w-28 h-28 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 shadow-xl shadow-emerald-200/40 ring-4 ring-white"
             >
               <img
                 src="/qurancourse.jpg"
                 alt="Quran"
-                className="w-full h-full object-cover rounded-xl"
+                className="w-full h-full object-cover rounded-2xl"
               />
             </motion.div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-emerald-600 text-sm font-semibold uppercase tracking-widest mb-3"
+            >
+              Interactive Experience
+            </motion.p>
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
               Exploring Islam
             </h1>
-            <p className="text-slate-300 text-lg mb-2">
+            <p className="text-slate-500 text-lg mb-4 max-w-md mx-auto leading-relaxed">
               A journey of discovery in {EPISODES.length} episodes
             </p>
-            <div className="flex items-center justify-center gap-4 text-sm">
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <Clock className="w-4 h-4" />
+            <div className="flex items-center justify-center gap-6 text-sm">
+              <span className="flex items-center gap-2 text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-full">
+                <Clock className="w-4 h-4 text-slate-400" />
                 ~{totalDuration} min
               </span>
-              <span className="text-slate-500">•</span>
-              <span className="text-slate-300">Take breaks anytime</span>
+              <span className="flex items-center gap-2 text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-full">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                No account needed
+              </span>
             </div>
           </motion.div>
 
@@ -468,15 +485,20 @@ export default function ExplorePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="mb-8 p-4 bg-emerald-900/20 border border-emerald-700/30 rounded-xl text-center"
+              className="mb-8 p-5 bg-white border border-emerald-100 rounded-2xl text-center shadow-sm"
             >
-              <p className="text-emerald-300">
-                {completedCount} of {EPISODES.length} episodes completed
-              </p>
-              <div className="mt-2 h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all"
-                  style={{ width: `${(completedCount / EPISODES.length) * 100}%` }}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-slate-700 font-medium">Your Progress</p>
+                <p className="text-emerald-600 font-semibold">
+                  {completedCount} / {EPISODES.length}
+                </p>
+              </div>
+              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(completedCount / EPISODES.length) * 100}%` }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                  className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
                 />
               </div>
             </motion.div>
@@ -492,22 +514,22 @@ export default function ExplorePage() {
             >
               <button
                 onClick={() => setFlowStage(getNextEpisode())}
-                className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl transition-all group shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50"
+                className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-2xl transition-all group shadow-xl shadow-emerald-200/40 hover:shadow-emerald-300/50 hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                     <Play className="w-6 h-6" />
                   </div>
                   <div className="text-left">
                     <span className="font-semibold text-lg block">Continue Journey</span>
-                    <span className="text-amber-100/80 text-sm">Pick up where you left off</span>
+                    <span className="text-emerald-100 text-sm">Pick up where you left off</span>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 onClick={handleResetJourney}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white rounded-xl transition-all border border-slate-700/50"
+                className="w-full flex items-center justify-center gap-2 p-3 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl transition-all border border-slate-200 shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -524,22 +546,22 @@ export default function ExplorePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-gradient-to-br from-amber-900/20 to-orange-900/10 border border-amber-700/30 rounded-3xl overflow-hidden"
+              className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-1-intro')}
-                className="w-full p-5 flex items-center gap-4 hover:bg-amber-900/20 transition-colors"
+                className="w-full p-5 flex items-center gap-4 hover:bg-amber-50/50 transition-colors"
               >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
                   <Eye className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-amber-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 1</p>
-                  <h3 className="text-xl font-bold text-white">Open Mind</h3>
-                  <p className="text-slate-400 text-sm">Preparing for the journey • ~10 min</p>
+                  <p className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 1</p>
+                  <h3 className="text-xl font-bold text-slate-900">Open Mind</h3>
+                  <p className="text-slate-500 text-sm">Preparing for the journey • ~10 min</p>
                 </div>
-                <div className="text-amber-400">
+                <div className="text-amber-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
@@ -555,26 +577,26 @@ export default function ExplorePage() {
                       onClick={() => setFlowStage(episode.id)}
                       className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
                         isCompleted
-                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          ? 'bg-emerald-50 hover:bg-emerald-100'
                           : isCurrent
-                            ? 'bg-amber-900/40 ring-1 ring-amber-500/50'
-                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                            ? 'bg-amber-50 ring-1 ring-amber-300'
+                            : 'bg-slate-50 hover:bg-slate-100'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isCompleted ? 'bg-emerald-500/20' : 'bg-amber-500/20'
+                        isCompleted ? 'bg-emerald-100' : 'bg-amber-100'
                       }`}>
                         {isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <span className="text-amber-400 text-sm font-bold">{episode.episode}</span>
+                          <span className="text-amber-600 text-sm font-bold">{episode.episode}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
-                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                        <h4 className="font-medium text-slate-800 text-sm">{episode.title}</h4>
+                        <p className="text-slate-500 text-xs">{episode.duration}</p>
                       </div>
-                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-500' : 'text-slate-400'} group-hover:translate-x-0.5 transition-transform`} />
                     </button>
                   );
                 })}
@@ -586,22 +608,22 @@ export default function ExplorePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-gradient-to-br from-emerald-900/20 to-teal-900/10 border border-emerald-700/30 rounded-3xl overflow-hidden"
+              className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-2-intro')}
-                className="w-full p-5 flex items-center gap-4 hover:bg-emerald-900/20 transition-colors"
+                className="w-full p-5 flex items-center gap-4 hover:bg-emerald-50/50 transition-colors"
               >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200/50">
                   <Scale className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 2</p>
-                  <h3 className="text-xl font-bold text-white">The Evidence</h3>
-                  <p className="text-slate-400 text-sm">Scientific facts in ancient text • ~15 min</p>
+                  <p className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 2</p>
+                  <h3 className="text-xl font-bold text-slate-900">The Evidence</h3>
+                  <p className="text-slate-500 text-sm">Scientific facts in ancient text • ~15 min</p>
                 </div>
-                <div className="text-emerald-400">
+                <div className="text-emerald-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
@@ -617,26 +639,26 @@ export default function ExplorePage() {
                       onClick={() => setFlowStage(episode.id)}
                       className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
                         isCompleted
-                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          ? 'bg-emerald-50 hover:bg-emerald-100'
                           : isCurrent
-                            ? 'bg-emerald-900/40 ring-1 ring-emerald-500/50'
-                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                            ? 'bg-emerald-50 ring-1 ring-emerald-300'
+                            : 'bg-slate-50 hover:bg-slate-100'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isCompleted ? 'bg-emerald-500/20' : 'bg-emerald-500/20'
+                        isCompleted ? 'bg-emerald-100' : 'bg-emerald-100'
                       }`}>
                         {isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <span className="text-emerald-400 text-sm font-bold">{episode.episode}</span>
+                          <span className="text-emerald-600 text-sm font-bold">{episode.episode}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
-                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                        <h4 className="font-medium text-slate-800 text-sm">{episode.title}</h4>
+                        <p className="text-slate-500 text-xs">{episode.duration}</p>
                       </div>
-                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-500' : 'text-slate-400'} group-hover:translate-x-0.5 transition-transform`} />
                     </button>
                   );
                 })}
@@ -648,22 +670,22 @@ export default function ExplorePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 border border-purple-700/30 rounded-3xl overflow-hidden"
+              className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-3-intro')}
-                className="w-full p-5 flex items-center gap-4 hover:bg-purple-900/20 transition-colors"
+                className="w-full p-5 flex items-center gap-4 hover:bg-purple-50/50 transition-colors"
               >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-200/50">
                   <Heart className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-purple-400 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 3</p>
-                  <h3 className="text-xl font-bold text-white">What's Inside</h3>
-                  <p className="text-slate-400 text-sm">The message and meaning • ~20 min</p>
+                  <p className="text-purple-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 3</p>
+                  <h3 className="text-xl font-bold text-slate-900">What's Inside</h3>
+                  <p className="text-slate-500 text-sm">The message and meaning • ~20 min</p>
                 </div>
-                <div className="text-purple-400">
+                <div className="text-purple-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
@@ -679,26 +701,26 @@ export default function ExplorePage() {
                       onClick={() => setFlowStage(episode.id)}
                       className={`group w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
                         isCompleted
-                          ? 'bg-emerald-900/30 hover:bg-emerald-900/40'
+                          ? 'bg-emerald-50 hover:bg-emerald-100'
                           : isCurrent
-                            ? 'bg-purple-900/40 ring-1 ring-purple-500/50'
-                            : 'bg-slate-900/50 hover:bg-slate-800/50'
+                            ? 'bg-purple-50 ring-1 ring-purple-300'
+                            : 'bg-slate-50 hover:bg-slate-100'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isCompleted ? 'bg-emerald-500/20' : 'bg-purple-500/20'
+                        isCompleted ? 'bg-emerald-100' : 'bg-purple-100'
                       }`}>
                         {isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <span className="text-purple-400 text-sm font-bold">{episode.episode}</span>
+                          <span className="text-purple-600 text-sm font-bold">{episode.episode}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white text-sm">{episode.title}</h4>
-                        <p className="text-slate-400 text-xs">{episode.duration}</p>
+                        <h4 className="font-medium text-slate-800 text-sm">{episode.title}</h4>
+                        <p className="text-slate-500 text-xs">{episode.duration}</p>
                       </div>
-                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-400' : 'text-slate-500'} group-hover:translate-x-0.5 transition-transform`} />
+                      <ChevronRight className={`w-4 h-4 ${isCompleted ? 'text-emerald-500' : 'text-slate-400'} group-hover:translate-x-0.5 transition-transform`} />
                     </button>
                   );
                 })}
@@ -712,16 +734,17 @@ export default function ExplorePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="mt-10 text-center"
+              className="mt-12 text-center"
             >
               <button
                 onClick={() => setFlowStage('chapter-1-intro')}
-                className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50 hover:scale-105"
+                className="group inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full font-semibold text-lg transition-all shadow-xl shadow-emerald-200/40 hover:shadow-emerald-300/50 hover:scale-[1.02] hover:-translate-y-0.5"
               >
                 <Play className="w-6 h-6" />
-                Start the Journey
+                Begin Your Journey
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
+              <p className="mt-4 text-slate-400 text-sm">Free • No account required</p>
             </motion.div>
           )}
 
@@ -731,28 +754,30 @@ export default function ExplorePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="mt-10 p-6 bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-700/30 rounded-2xl"
+              className="mt-12 p-6 bg-white border border-slate-200 rounded-2xl shadow-sm"
             >
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-amber-200 mb-2">
+                <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-emerald-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">
                   Save Your Progress
                 </h3>
-                <p className="text-slate-300 text-sm mb-4">
-                  Create a free account to save your progress and continue your journey anytime.
-                  Your progress is currently only saved on this device.
+                <p className="text-slate-500 text-sm mb-5 max-w-sm mx-auto">
+                  Create a free account to sync your progress across devices and continue anytime.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
                     onClick={() => navigate('/signup?type=explorer')}
-                    className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition"
+                    className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium transition shadow-sm"
                   >
                     Create Free Account
                   </button>
                   <button
                     onClick={() => navigate('/login')}
-                    className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition"
+                    className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl font-medium transition border border-slate-200"
                   >
-                    Already have an account?
+                    Sign In
                   </button>
                 </div>
               </div>
@@ -764,14 +789,10 @@ export default function ExplorePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="mt-8 text-center text-slate-400 text-sm"
+            className="mt-10 text-center text-slate-400 text-sm space-y-1"
           >
-            <p>
-              Best experienced in order. Take your time with each episode.
-            </p>
-            <p className="mt-1">
-              No commitment required - just curiosity.
-            </p>
+            <p>Best experienced in order. Take your time with each episode.</p>
+            <p>No commitment required — just curiosity.</p>
           </motion.div>
         </div>
       </div>

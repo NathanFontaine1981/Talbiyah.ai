@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Nathan Fontaine - Talbiyah.ai <welcome@talbiyah.ai>",
+        from: "Nathan Fontaine - Talbiyah.ai <salams@talbiyah.ai>",
         to: [payload.email],
         subject: "Welcome to Talbiyah.ai - Your Islamic Learning Journey Begins! 🌙",
         html: `

@@ -31,7 +31,7 @@ const creditPacks: CreditPack[] = [
     credits: 4,
     price: 56,
     pricePerLesson: 14,
-    description: '1 lesson/week for 1 month',
+    description: '4 hours: 4 × 60min or 8 × 30min lessons',
     bonusTokens: 100,
   },
   {
@@ -40,7 +40,7 @@ const creditPacks: CreditPack[] = [
     credits: 8,
     price: 104,
     pricePerLesson: 13,
-    description: '2 lessons/week for 1 month',
+    description: '8 hours: 8 × 60min or 16 × 30min lessons',
     bonusTokens: 300,
     popular: true,
   },
@@ -50,7 +50,7 @@ const creditPacks: CreditPack[] = [
     credits: 16,
     price: 192,
     pricePerLesson: 12,
-    description: '4 lessons/week for 1 month',
+    description: '16 hours: 16 × 60min or 32 × 30min lessons',
     bonusTokens: 700,
   },
 ];

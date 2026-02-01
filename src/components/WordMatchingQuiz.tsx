@@ -284,9 +284,10 @@ export default function WordMatchingQuiz({ words, lessonId, ayahNumber, onComple
   };
 
   const accuracy = attempts > 0 ? Math.round((score / attempts) * 100) : 0;
-  const totalMastered = masteredWords.size;
   const totalWords = words.length;
-  const masteryPercent = Math.round((totalMastered / totalWords) * 100);
+  // Cap mastered count to total words (localStorage may have old entries)
+  const totalMastered = Math.min(masteredWords.size, totalWords);
+  const masteryPercent = Math.min(100, Math.round((totalMastered / totalWords) * 100));
 
   if (words.length === 0) {
     return (

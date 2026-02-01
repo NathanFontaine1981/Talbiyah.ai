@@ -196,7 +196,7 @@ Deno.serve(async (req: Request) => {
                 <strong>The Talbiyah.ai Team</strong>
               </p>
               <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                If you have any questions, please contact us at contact@talbiyah.ai
+                If you have any questions, please contact us at support@talbiyah.ai
               </p>
             </td>
           </tr>
@@ -219,7 +219,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "Talbiyah.ai <lessons@talbiyah.ai>",
+        from: "Talbiyah.ai <notifications@talbiyah.ai>",
         to: [teacher_email],
         subject: `📚 New Class Booking - ${subject_name} with ${student_name}`,
         html: emailHtml,

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
+import { getSubjectGradientClasses } from '../lib/subjectColors';
 
 interface UpcomingLesson {
   id: string;
@@ -659,11 +660,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     {lessonIsPast && lesson.has_insights && (
                       <button
                         onClick={handleViewInsights}
-                        className={`px-4 py-2 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center space-x-2 ${
-                          lesson.subject_name?.toLowerCase().includes('quran')
-                            ? 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
-                            : 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-                        }`}
+                        className={`px-4 py-2 bg-gradient-to-r text-white rounded-lg font-medium transition flex items-center space-x-2 ${getSubjectGradientClasses(lesson.subject_name)}`}
                       >
                         <Sparkles className="w-4 h-4" />
                         <span>View Insights</span>

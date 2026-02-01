@@ -98,6 +98,7 @@ const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 // Explore & New Muslim pages (public)
 const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
 const UnshakableFoundations = lazy(() => import('./pages/UnshakableFoundations'));
+const NewMuslimLanding = lazy(() => import('./pages/NewMuslimLanding'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
 const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 const Suggestions = lazy(() => import('./pages/Suggestions'));
@@ -168,6 +169,7 @@ const AdminSuggestions = lazy(() => import('./pages/admin/AdminSuggestions'));
 const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessments'));
 const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
 const LegacyBilling = lazy(() => import('./pages/admin/LegacyBilling'));
+const AdminEmail = lazy(() => import('./pages/admin/AdminEmail'));
 
 function App() {
   return (
@@ -187,6 +189,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/new-muslim" element={<UnshakableFoundations />} />
+        <Route path="/new-muslim-landing" element={<NewMuslimLanding />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route
@@ -367,6 +370,7 @@ function App() {
           <Route path="diagnostic-assessments" element={<DiagnosticAssessments />} />
           <Route path="content-moderation" element={<ContentModeration />} />
           <Route path="legacy-billing" element={<LegacyBilling />} />
+          <Route path="email" element={<AdminEmail />} />
         </Route>
         <Route
           path="/apply-to-teach"

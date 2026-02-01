@@ -383,7 +383,7 @@ export default function PaymentSuccess() {
               Need help or have questions?
             </p>
             <p className="text-emerald-600 font-medium">
-              Contact us at contact@talbiyah.ai
+              Contact us at support@talbiyah.ai
             </p>
           </div>
 
