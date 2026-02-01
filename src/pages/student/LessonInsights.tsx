@@ -1954,9 +1954,12 @@ function CollapsibleSection({
 
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      {/* Sticky section header - stays at top when scrolling through content */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50/30 transition-colors"
+        className={`w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50/30 transition-colors bg-white ${
+          isOpen ? 'sticky top-0 z-20 shadow-sm border-b border-slate-100' : ''
+        }`}
       >
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 ${colors.iconBg} rounded-2xl flex items-center justify-center`}>
@@ -3060,25 +3063,30 @@ export default function LessonInsights() {
 
           {/* Focus Words - Vocabulary Flashcards */}
           {vocabulary.length > 0 && (
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mb-12">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <Book className="w-5 h-5 text-emerald-600" />
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
+              {/* Sticky header for vocabulary section */}
+              <div className="sticky top-0 z-20 bg-white px-8 sm:px-10 py-6 border-b border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">
+                      <Book className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-800">Vocabulary Flashcards</h2>
+                      <p className="text-sm text-slate-500">Tap each card to reveal the meaning</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-800">Vocabulary Flashcards</h2>
-                    <p className="text-sm text-slate-500">Tap each card to reveal the meaning</p>
-                  </div>
+                  <span className="text-sm bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200 font-medium">{vocabulary.length} words</span>
                 </div>
-                <span className="text-sm bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200 font-medium">{vocabulary.length} words</span>
               </div>
 
               {/* Flip Cards Section */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {vocabulary.map((word, idx) => (
-                  <FlipCard key={idx} word={word} />
-                ))}
+              <div className="p-8 sm:p-10 pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {vocabulary.map((word, idx) => (
+                    <FlipCard key={idx} word={word} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
