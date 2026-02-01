@@ -20,6 +20,8 @@ import PendingLessonsList from '../../components/teacher/PendingLessonsList';
 import WeeklyCalendar from '../../components/teacher/WeeklyCalendar';
 import DiagnosticSessionsCard from '../../components/teacher/DiagnosticSessionsCard';
 import CancelLessonModal from '../../components/teacher/CancelLessonModal';
+import AcknowledgeLessonModal from '../../components/teacher/AcknowledgeLessonModal';
+import DeclineLessonModal from '../../components/teacher/DeclineLessonModal';
 
 interface TeacherStats {
   tier: string;
@@ -50,7 +52,9 @@ interface UpcomingLesson {
   scheduled_time: string;
   duration_minutes: number;
   student_name: string;
+  student_id: string;
   subject: string;
+  confirmation_status: string;
 }
 
 export default function TeacherHub() {
@@ -61,6 +65,8 @@ export default function TeacherHub() {
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingLesson[]>([]);
   const [cancellingLesson, setCancellingLesson] = useState<UpcomingLesson | null>(null);
+  const [acknowledgingLesson, setAcknowledgingLesson] = useState<UpcomingLesson | null>(null);
+  const [decliningLesson, setDecliningLesson] = useState<UpcomingLesson | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -162,6 +168,8 @@ export default function TeacherHub() {
           id,
           scheduled_time,
           duration_minutes,
+          confirmation_status,
+          learner_id,
           subjects(name),
           student:learners!lessons_learner_id_fkey(name)
         `)
@@ -179,7 +187,9 @@ export default function TeacherHub() {
           scheduled_time: lesson.scheduled_time,
           duration_minutes: lesson.duration_minutes,
           student_name: (lesson.student as any)?.name || 'Unknown Student',
+          student_id: lesson.learner_id,
           subject: (lesson.subjects as any)?.name || 'General',
+          confirmation_status: lesson.confirmation_status || 'pending',
         }));
         setUpcomingLessons(formattedLessons);
       }
@@ -470,22 +480,76 @@ export default function TeacherHub() {
                       </div>
                     </div>
 
-                    {/* Duration & Cancel */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Clock className="w-4 h-4" />
-                        <span>{lesson.duration_minutes} minutes</span>
+                    {/* Status Badge */}
+                    {lesson.confirmation_status === 'pending' && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200">
+                          ⏳ Awaiting Acknowledgment
+                        </span>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCancellingLesson(lesson);
-                        }}
-                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition flex items-center gap-1"
-                      >
-                        <XCircle className="w-3 h-3" />
-                        Cancel
-                      </button>
+                    )}
+                    {lesson.confirmation_status === 'acknowledged' && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full border border-green-200">
+                          ✓ Confirmed
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Duration */}
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                      <Clock className="w-4 h-4" />
+                      <span>{lesson.duration_minutes} minutes</span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {lesson.confirmation_status === 'pending' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAcknowledgingLesson(lesson);
+                            }}
+                            className="flex-1 text-xs bg-green-600 text-white hover:bg-green-700 px-3 py-2 rounded-lg transition font-medium"
+                          >
+                            ✓ Confirm
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDecliningLesson(lesson);
+                            }}
+                            className="flex-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg transition font-medium"
+                          >
+                            ✗ Decline
+                          </button>
+                        </>
+                      )}
+                      {lesson.confirmation_status !== 'pending' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/reschedule-lesson?lessonId=${lesson.id}`);
+                            }}
+                            className="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-2 rounded-lg transition font-medium flex items-center justify-center gap-1"
+                          >
+                            <Calendar className="w-3 h-3" />
+                            Reschedule
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCancellingLesson(lesson);
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition flex items-center gap-1"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            Cancel
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -599,6 +663,43 @@ export default function TeacherHub() {
             onComplete={() => {
               setCancellingLesson(null);
               loadDashboardData(); // Refresh the lessons list
+            }}
+          />
+        )}
+
+        {/* Acknowledge Lesson Modal */}
+        {acknowledgingLesson && (
+          <AcknowledgeLessonModal
+            lesson={{
+              lesson_id: acknowledgingLesson.id,
+              student_name: acknowledgingLesson.student_name,
+              scheduled_time: acknowledgingLesson.scheduled_time,
+              duration_minutes: acknowledgingLesson.duration_minutes,
+              subject_name: acknowledgingLesson.subject,
+            }}
+            onClose={() => setAcknowledgingLesson(null)}
+            onComplete={() => {
+              setAcknowledgingLesson(null);
+              loadDashboardData();
+            }}
+          />
+        )}
+
+        {/* Decline Lesson Modal */}
+        {decliningLesson && teacherProfileId && (
+          <DeclineLessonModal
+            lesson={{
+              lesson_id: decliningLesson.id,
+              student_name: decliningLesson.student_name,
+              scheduled_time: decliningLesson.scheduled_time,
+              duration_minutes: decliningLesson.duration_minutes,
+              subject_name: decliningLesson.subject,
+            }}
+            teacherId={teacherProfileId}
+            onClose={() => setDecliningLesson(null)}
+            onComplete={() => {
+              setDecliningLesson(null);
+              loadDashboardData();
             }}
           />
         )}
