@@ -692,6 +692,43 @@ export const SURAH_VOCABULARY: Record<number, Record<string, string>> = {
 };
 
 /**
+ * Known correct answers for common quiz questions
+ * Maps question patterns to correct answer patterns
+ */
+const KNOWN_QUIZ_ANSWERS: Record<number, { pattern: RegExp; correctPattern: string }[]> = {
+  78: [ // Surah An-Naba
+    // Q: What are people questioning? A: Day of Judgment
+    { pattern: /what\s+are\s+.*questioning|opening\s+of\s+surah/i, correctPattern: 'day of judgment' },
+    // Q: Mountains function like? A: Pegs/stakes
+    { pattern: /mountains\s+function|mountains\s+like|mountains\s+as/i, correctPattern: 'peg' },
+    // Q: subatan means? A: rest/sleep
+    { pattern: /sub[āa]t[an]*\s+(mean|refer)/i, correctPattern: 'rest' },
+    // Q: What makes Quran miraculous? A: Not known when revealed to illiterate Prophet
+    { pattern: /miraculous|scientific\s+knowledge/i, correctPattern: 'illiterate' },
+    // Q: What is النبأ العظيم? A: Day of Judgment
+    { pattern: /النبأ\s*العظيم|great\s+news/i, correctPattern: 'day of judgment' },
+    // Q: What does لباس mean? A: covering
+    { pattern: /lib[āa]s|لباس/i, correctPattern: 'cover' },
+    // Q: What does سبات mean? A: rest
+    { pattern: /سبات/i, correctPattern: 'rest' },
+    // Q: What does معاش mean? A: livelihood
+    { pattern: /ma['\']?[āa]sh|معاش/i, correctPattern: 'livelihood' },
+    // Q: What does وهاج mean? A: burning/blazing
+    { pattern: /wahh[āa]j|وهاج/i, correctPattern: 'burn' },
+    // Q: What does ثجاج mean? A: pouring
+    { pattern: /thajj[āa]j|ثجاج/i, correctPattern: 'pour' },
+    // Q: What does أوتاد mean? A: stakes/pegs
+    { pattern: /awt[āa]d|أوتاد/i, correctPattern: 'stake' },
+  ],
+  67: [ // Surah Al-Mulk
+    // Q: What does تبارك mean? A: Blessed
+    { pattern: /tab[āa]raka|تبارك/i, correctPattern: 'bless' },
+    // Q: Why did Allah create death and life? A: To test
+    { pattern: /create.*death.*life|death.*life.*create/i, correctPattern: 'test' },
+  ],
+};
+
+/**
  * Mark quiz answers using surah_data vocabulary
  * This is called when AI generates quiz without marked answers
  */
@@ -700,72 +737,97 @@ export function markQuizAnswersFromVocabulary(
   surahNumber: number
 ): string {
   const vocab = SURAH_VOCABULARY[surahNumber];
-  if (!vocab) {
+  const knownAnswers = KNOWN_QUIZ_ANSWERS[surahNumber] || [];
+
+  if (!vocab && knownAnswers.length === 0) {
     console.log(`No vocabulary data for surah ${surahNumber}, skipping quiz marking`);
     return content;
   }
 
-  // Pattern to match unmarked quiz questions
-  // Format: **Q1.** Question text\nA) option\nB) option\nC) option\nD) option
+  // CRITICAL: First, strip ALL existing ✅ marks to reset
+  let markedContent = content.replace(/\s*✅/g, '');
+  console.log('Stripped all existing ✅ marks to re-verify answers');
+
+  // Pattern to match quiz questions - handles both inline and multi-line formats
   const quizPattern = /(\*\*Q\d+\.\*?\*?\s+.+?)(?=\*\*Q\d+\.|---|\n\n\*\*[78]|$)/gs;
 
-  let markedContent = content;
-  const matches = content.matchAll(quizPattern);
+  const matches = [...markedContent.matchAll(quizPattern)];
 
   for (const match of matches) {
     const questionBlock = match[1];
-
-    // Skip if already has ✅
-    if (questionBlock.includes('✅')) continue;
 
     // Extract question text
     const questionMatch = questionBlock.match(/\*\*Q\d+\.\*?\*?\s+(.+?)(?=\n?[A-D]\))/s);
     if (!questionMatch) continue;
 
-    const questionText = questionMatch[1].toLowerCase();
+    const questionText = questionMatch[1];
+    const questionLower = questionText.toLowerCase();
 
-    // Extract options
-    const optionMatches = [...questionBlock.matchAll(/([A-D])\)\s*([^\n]+)/g)];
+    // Extract options - handle both inline (A) text B) text) and multi-line formats
+    const optionMatches = [...questionBlock.matchAll(/([A-D])\)\s*([^\nA-D]+?)(?=\s*[A-D]\)|$)/g)];
     if (optionMatches.length < 2) continue;
 
-    // Find the correct answer based on vocabulary
-    let correctIndex = -1;
-    let bestScore = 0;
+    console.log(`\nProcessing Q: "${questionText.substring(0, 60)}..."`);
+    console.log(`Options: ${optionMatches.map(m => m[2].trim().substring(0, 30)).join(' | ')}`);
 
-    // Check if it's a vocabulary question
-    for (const [arabicWord, meaning] of Object.entries(vocab)) {
-      if (questionText.includes(arabicWord.toLowerCase()) ||
-          questionText.includes(meaning.toLowerCase().split('/')[0])) {
-        // Found the word - now find which option matches the meaning
+    // Find the correct answer
+    let correctIndex = -1;
+    let matchMethod = '';
+
+    // PRIORITY 1: Check known quiz answers first (most reliable)
+    for (const { pattern, correctPattern } of knownAnswers) {
+      if (pattern.test(questionText)) {
+        // Find the option that contains the correct pattern
         for (let i = 0; i < optionMatches.length; i++) {
           const optionText = optionMatches[i][2].toLowerCase();
-          const meaningParts = meaning.toLowerCase().split('/');
-
-          for (const part of meaningParts) {
-            if (optionText.includes(part.trim())) {
-              const score = part.trim().length;
-              if (score > bestScore) {
-                bestScore = score;
-                correctIndex = i;
-              }
-            }
+          if (optionText.includes(correctPattern.toLowerCase())) {
+            correctIndex = i;
+            matchMethod = `known_answer:${correctPattern}`;
+            break;
           }
         }
-        break;
+        if (correctIndex >= 0) break;
       }
     }
 
-    // If no vocab match, try to find based on common patterns
+    // PRIORITY 2: Check vocabulary matches
+    if (correctIndex === -1 && vocab) {
+      for (const [arabicWord, meaning] of Object.entries(vocab)) {
+        if (questionLower.includes(arabicWord.toLowerCase()) ||
+            questionLower.includes(meaning.toLowerCase().split('/')[0])) {
+          // Found the word - now find which option matches the meaning
+          let bestScore = 0;
+          for (let i = 0; i < optionMatches.length; i++) {
+            const optionText = optionMatches[i][2].toLowerCase();
+            const meaningParts = meaning.toLowerCase().split('/');
+
+            for (const part of meaningParts) {
+              if (optionText.includes(part.trim())) {
+                const score = part.trim().length;
+                if (score > bestScore) {
+                  bestScore = score;
+                  correctIndex = i;
+                  matchMethod = `vocab:${arabicWord}=${meaning}`;
+                }
+              }
+            }
+          }
+          if (correctIndex >= 0) break;
+        }
+      }
+    }
+
+    // PRIORITY 3: Fallback patterns for common themes
     if (correctIndex === -1) {
-      // For theme questions, look for keywords
       for (let i = 0; i < optionMatches.length; i++) {
         const optionText = optionMatches[i][2].toLowerCase();
-        // Positive indicators for correct answers
-        if (optionText.includes('day of judgment') ||
-            optionText.includes('resurrection') ||
-            optionText.includes('test') ||
-            optionText.includes('blessed')) {
+        // These are almost always correct for An-Naba questions
+        if ((optionText.includes('day of judgment') || optionText.includes('judgment day')) ||
+            (optionText.includes('peg') && questionLower.includes('mountain')) ||
+            (optionText.includes('rest') && questionLower.includes('sleep')) ||
+            (optionText.includes('illiterate') && questionLower.includes('miraculous'))) {
           correctIndex = i;
+          matchMethod = 'fallback_pattern';
           break;
         }
       }
@@ -773,10 +835,24 @@ export function markQuizAnswersFromVocabulary(
 
     // Mark the correct answer if found
     if (correctIndex >= 0 && optionMatches[correctIndex]) {
-      const correctOption = optionMatches[correctIndex][0];
-      const markedOption = correctOption + ' ✅';
-      markedContent = markedContent.replace(correctOption, markedOption);
-      console.log(`Marked answer: ${correctOption} -> ${markedOption}`);
+      const letter = optionMatches[correctIndex][1];
+      const optionText = optionMatches[correctIndex][2].trim();
+      const fullOption = `${letter}) ${optionText}`;
+
+      // Find and replace the option with the ✅ mark
+      // Handle both inline and multiline formats
+      const optionPattern = new RegExp(
+        escapeRegex(letter) + '\\)\\s*' + escapeRegex(optionText.substring(0, 20)) + '[^\\n]*',
+        'g'
+      );
+
+      const originalOption = markedContent.match(optionPattern)?.[0];
+      if (originalOption) {
+        markedContent = markedContent.replace(originalOption, originalOption + ' ✅');
+        console.log(`✓ Marked: ${letter}) ${optionText.substring(0, 40)}... [${matchMethod}]`);
+      }
+    } else {
+      console.log(`✗ Could not determine correct answer for this question`);
     }
   }
 
