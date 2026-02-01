@@ -1997,6 +1997,9 @@ export default function LessonInsights() {
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [submittingRating, setSubmittingRating] = useState(false);
+
+  // View mode toggle: 'Deep Study' shows all content, 'Memorization' hides text-heavy sections
+  const [viewMode, setViewMode] = useState<'deep-study' | 'memorization'>('deep-study');
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [lessonTime, setLessonTime] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
@@ -2779,13 +2782,15 @@ export default function LessonInsights() {
           -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Elegant Arabic Typography - High-quality Serif */
+        /* Elegant Arabic Typography - High-quality Serif with proper leading to prevent clipping */
         .font-arabic, [dir="rtl"] {
           font-family: 'Amiri Quran', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
           font-feature-settings: normal;
           text-rendering: optimizeLegibility;
           -webkit-font-smoothing: antialiased;
-          line-height: 2.5 !important;
+          line-height: 2.8 !important;
+          padding-top: 0.25em;
+          padding-bottom: 0.25em;
         }
 
         /* RTL Support */
@@ -2862,18 +2867,49 @@ export default function LessonInsights() {
                   <Home className="w-5 h-5" />
                   <span>Dashboard</span>
                 </button>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => window.print()} className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors" title="Print">
-                    <Printer className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={downloadAsPDF}
-                    disabled={downloadingPDF}
-                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors disabled:opacity-50"
-                    title="Download PDF"
-                  >
-                    {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                  </button>
+                <div className="flex items-center gap-3">
+                  {/* Premium View Mode Toggle */}
+                  <div className="relative bg-slate-100 rounded-full p-1 flex items-center">
+                    <button
+                      onClick={() => setViewMode('deep-study')}
+                      className={`relative z-10 px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${
+                        viewMode === 'deep-study'
+                          ? 'text-white'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Deep Study
+                    </button>
+                    <button
+                      onClick={() => setViewMode('memorization')}
+                      className={`relative z-10 px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${
+                        viewMode === 'memorization'
+                          ? 'text-white'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Memorization
+                    </button>
+                    {/* Sliding pill indicator */}
+                    <div
+                      className={`absolute top-1 bottom-1 bg-emerald-600 rounded-full transition-all duration-300 ease-out ${
+                        viewMode === 'deep-study' ? 'left-1 w-[92px]' : 'left-[98px] w-[106px]'
+                      }`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => window.print()} className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors" title="Print">
+                      <Printer className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={downloadAsPDF}
+                      disabled={downloadingPDF}
+                      className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors disabled:opacity-50"
+                      title="Download PDF"
+                    >
+                      {downloadingPDF ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3091,6 +3127,19 @@ export default function LessonInsights() {
             </div>
           )}
 
+          {/* Memorization Mode Banner */}
+          {viewMode === 'memorization' && (
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 mb-8 flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <BookMarked className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-emerald-800 text-lg">Memorization Mode</h3>
+                <p className="text-emerald-700 text-sm">Focus on flashcards, first word prompts, and vocabulary. Switch to Deep Study for tafsir and reflections.</p>
+              </div>
+            </div>
+          )}
+
           {/* Detailed Sections - High-End Gallery Spacing */}
           <div className="space-y-8">
 
@@ -3159,8 +3208,8 @@ export default function LessonInsights() {
               </CollapsibleSection>
             )}
 
-            {/* Tafsir Points - Detailed verse commentary */}
-            {tafsirPoints.length > 0 && (
+            {/* Tafsir Points - Detailed verse commentary (hidden in Memorization mode) */}
+            {tafsirPoints.length > 0 && viewMode === 'deep-study' && (
               <CollapsibleSection title="Tafsir & Commentary" icon={BookMarked} color="teal" defaultOpen={true}>
                 <p className="text-sm text-gray-600 mb-4">
                   Tap each verse to expand and read the detailed tafsir, scholar commentary, and reflection prompts.
@@ -3173,8 +3222,8 @@ export default function LessonInsights() {
               </CollapsibleSection>
             )}
 
-            {/* Teacher Notes */}
-            {teacherNotes.length > 0 && (
+            {/* Teacher Notes (hidden in Memorization mode) */}
+            {teacherNotes.length > 0 && viewMode === 'deep-study' && (
               <CollapsibleSection title="Teacher Notes & Corrections" icon={Lightbulb} color="purple">
                 <div className="space-y-3">
                   {teacherNotes.map((note, i) => (
@@ -3184,8 +3233,8 @@ export default function LessonInsights() {
               </CollapsibleSection>
             )}
 
-            {/* Conversation Practice */}
-            {dialogues.length > 0 && (
+            {/* Conversation Practice (hidden in Memorization mode) */}
+            {dialogues.length > 0 && viewMode === 'deep-study' && (
               <CollapsibleSection title="Conversation Practice" icon={MessageCircle} color="blue">
                 <p className="text-sm text-gray-600 mb-4">Practice these dialogues aloud. Say the Arabic, then check your pronunciation.</p>
                 <div className="space-y-3">
@@ -3215,8 +3264,8 @@ export default function LessonInsights() {
               </CollapsibleSection>
             )}
 
-            {/* Key Takeaways */}
-            {takeawaysSection && (
+            {/* Key Takeaways (hidden in Memorization mode) */}
+            {takeawaysSection && viewMode === 'deep-study' && (
               <CollapsibleSection title="Key Takeaways" icon={Trophy} color="teal">
                 <div className="space-y-2">
                   {cleanMarkdown(takeawaysSection.content)
