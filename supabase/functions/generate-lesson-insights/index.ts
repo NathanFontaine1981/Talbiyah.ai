@@ -277,6 +277,108 @@ interface TafsirEntry {
   tafsirName: string;
 }
 
+interface CachedSurahData {
+  surah_number: number;
+  surah_name_arabic: string;
+  surah_name_english: string;
+  surah_name_transliteration: string;
+  total_ayahs: number;
+  revelation_type: string;
+  themes: string[] | null;
+  verses: Record<string, {
+    arabic: string;
+    translation: string;
+    first_word: string;
+    first_word_transliteration: string;
+  }>;
+  tafsir_ibn_kathir: Record<string, string> | null;
+}
+
+/**
+ * PHASE 2: Fetch verified Quran data from pre-cached surah_data table
+ * This provides A* reliability - no external API calls during insight generation
+ */
+async function fetchCachedSurahData(
+  supabase: ReturnType<typeof createClient>,
+  surahNumber: number
+): Promise<CachedSurahData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('surah_data')
+      .select('*')
+      .eq('surah_number', surahNumber)
+      .single();
+
+    if (error || !data) {
+      console.log(`Surah ${surahNumber} not found in cache, will use API fallback`);
+      return null;
+    }
+
+    console.log(`✅ Found cached data for Surah ${surahNumber} (${data.surah_name_english})`);
+    return data as CachedSurahData;
+  } catch (error) {
+    console.error('Error fetching cached surah data:', error);
+    return null;
+  }
+}
+
+/**
+ * PHASE 2: Convert cached surah data to VerifiedVerse format
+ */
+function convertCachedToVerifiedVerses(
+  cachedData: CachedSurahData,
+  startAyah: number,
+  endAyah: number
+): VerifiedVerse[] {
+  const verses: VerifiedVerse[] = [];
+
+  for (let ayahNum = startAyah; ayahNum <= endAyah; ayahNum++) {
+    const verseData = cachedData.verses[ayahNum.toString()];
+    if (verseData) {
+      verses.push({
+        ayahNumber: ayahNum,
+        verseKey: `${cachedData.surah_number}:${ayahNum}`,
+        firstWord: verseData.first_word || '',
+        transliteration: verseData.first_word_transliteration || '',
+        translation: verseData.translation?.split(' ').slice(0, 5).join(' ') || '',
+        fullVerseUthmani: verseData.arabic || '',
+        fullVerseTranslation: verseData.translation || '',
+      });
+    }
+  }
+
+  return verses.sort((a, b) => a.ayahNumber - b.ayahNumber);
+}
+
+/**
+ * PHASE 2: Convert cached tafsir data to TafsirEntry format
+ */
+function convertCachedToTafsirEntries(
+  cachedData: CachedSurahData,
+  startAyah: number,
+  endAyah: number
+): TafsirEntry[] {
+  const entries: TafsirEntry[] = [];
+
+  if (!cachedData.tafsir_ibn_kathir) {
+    return entries;
+  }
+
+  for (let ayahNum = startAyah; ayahNum <= endAyah; ayahNum++) {
+    const tafsirText = cachedData.tafsir_ibn_kathir[ayahNum.toString()];
+    if (tafsirText) {
+      entries.push({
+        verseKey: `${cachedData.surah_number}:${ayahNum}`,
+        ayahNumber: ayahNum,
+        text: tafsirText,
+        tafsirName: 'Ibn Kathir (Abridged)',
+      });
+    }
+  }
+
+  return entries;
+}
+
 /**
  * Fetch scholarly tafsir from Quran.com API
  * Uses Ibn Kathir (Abridged) - ID 169 for English tafsir
@@ -861,15 +963,54 @@ Example:
 ---
 
 ### 🔟 Homework / Practice Tasks
-* List 3–5 things the student should do before the next lesson.
-* Include a mix of writing, speaking, and reading tasks.
-* Keep each one short and actionable.
 
-Example:
-📝 Write 5 sentences using أَخْرَجَ in past and future forms.
-🗣️ Practise reading the dialogue aloud and record yourself.
-📖 Revise vocabulary flashcards for "places" and "daily actions."
-🎧 Listen to a short Arabic clip and try to repeat each sentence clearly.
+#### ✍️ Part A: Writing Challenge – Build Your Paragraph
+
+Create a writing exercise based on THIS lesson's vocabulary and grammar.
+
+**Instructions:**
+1. Choose a TOPIC related to the lesson content (e.g., daily routine, shopping, family, travel, etc.)
+2. Write a simple ENGLISH PARAGRAPH (4-6 sentences) that uses vocabulary and grammar from this lesson
+3. The student's task is to translate it into Arabic
+4. Provide a "Build Your Own Sentences" TABLE with 4 rows showing mix-and-match options:
+   - Column 1: Subject options (أَنا، نَحْنُ، هُوَ، هِيَ، أَنْتَ، هُمْ) with English
+   - Column 2: Verb/action options FROM THE LESSON with tashkīl and English
+   - Column 3: Object/place/time endings FROM THE LESSON with tashkīl and English
+5. Include a WORD BANK of 8-10 vocabulary items from the lesson (Arabic with tashkīl + English)
+6. Add a SELF-CHECK list: ☐ Verb conjugations ☐ Connectors used ☐ Tashkīl added
+
+**Example Output:**
+
+#### ✍️ Writing Challenge: Build Your Paragraph
+
+**Topic:** A Trip to the Market
+
+**Your Mission:** Translate this paragraph into Arabic:
+
+> "Yesterday, I went to the market with my mother. We bought bread, fruit, and vegetables. The shopkeeper was very kind. After that, we returned home. It was a good day!"
+
+**Build Your Own Sentences:** Mix and match to create your Arabic paragraph:
+
+| Start with... | Add an action... | End with... |
+|---------------|------------------|-------------|
+| أَنا (I) | ذَهَبْتُ إِلَى (went to) | السُّوقِ (the market) |
+| نَحْنُ (We) | اِشْتَرَيْنا (we bought) | خُبْزًا وَفَواكِهَ (bread and fruit) |
+| هُوَ (He) | كانَ لَطيفًا (was kind) | مَعَ أُمِّي (with my mother) |
+| بَعْدَ ذٰلِكَ (After that) | رَجَعْنا (we returned) | إِلَى البَيْتِ (to the house) |
+
+**Word Bank (use at least 5):**
+السُّوقُ (market) • خُبْزٌ (bread) • فَواكِهُ (fruit) • اِشْتَرَى (bought) • ذَهَبَ (went) • رَجَعَ (returned) • لَطِيفٌ (kind) • أَمْسِ (yesterday) • يَوْمٌ جَيِّدٌ (good day) • البائِعُ (shopkeeper)
+
+**Self-Check:** ☐ Correct verb forms (past tense) ☐ Used connectors (وَ، ثُمَّ، بَعْدَ ذٰلِكَ) ☐ Added tashkīl to key words
+
+---
+
+#### 📋 Part B: Quick Practice Tasks
+List 3-4 short, actionable tasks mixing different skills:
+📝 [Writing task using specific lesson vocabulary/grammar]
+🗣️ [Speaking/pronunciation practice task]
+📖 [Reading or flashcard review task]
+🎧 [Listening task - optional]
 
 ---
 
@@ -890,7 +1031,8 @@ Example:
 * Use simple English explanations that any beginner can understand.
 * Keep the tone friendly, encouraging, and easy to follow.
 * Do not include Qur'an or Hadith unless the Arabic lesson was based on them.
-* Always include at least 15 new vocabulary words and 10 quiz questions.`;
+* Always include at least 15 new vocabulary words and 10 quiz questions.
+* **CRITICAL: Every Arabic sentence in tables MUST have a complete English translation. Never leave the English column empty or incomplete.**`;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -962,7 +1104,6 @@ Deno.serve(async (req: Request) => {
     let firstWordPrompterSection = '';
     let versesCoveredSection = '';
     let tafsirSection = '';
-    let verifiedFirstWordsContext = '';
 
     const subjectLower = subject.toLowerCase();
 
@@ -1021,42 +1162,10 @@ Make the notes detailed, educational, and easy to revise.`;
       console.log(`Using generic template for subject: ${subject}`);
     }
 
-    // For Quran lessons (both Understanding and Memorisation), fetch verified data
-    if (isQuranLesson && metadata.surah_number && metadata.ayah_range) {
-      const ayahRangeMatch = metadata.ayah_range.match(/(\d+)\s*[-–]\s*(\d+)/);
-      if (ayahRangeMatch) {
-        const startAyah = parseInt(ayahRangeMatch[1], 10);
-        const endAyah = parseInt(ayahRangeMatch[2], 10);
-
-        console.log(`Fetching verified Quran data for Surah ${metadata.surah_number}, Ayat ${startAyah}-${endAyah}...`);
-
-        // Fetch verses and tafsir in parallel
-        const [fetchedVerses, fetchedTafsir] = await Promise.all([
-          fetchVerifiedQuranData(metadata.surah_number, startAyah, endAyah),
-          fetchTafsirData(metadata.surah_number, startAyah, endAyah)
-        ]);
-
-        verifiedVerses = fetchedVerses;
-        tafsirEntries = fetchedTafsir;
-
-        console.log(`Fetched ${verifiedVerses.length} verified verses from Quran.com API`);
-        console.log(`Fetched ${tafsirEntries.length} tafsir entries from Ibn Kathir`);
-
-        // Generate verified Verses Covered section with full Arabic and translation
-        versesCoveredSection = generateVersesCoveredSection(verifiedVerses, metadata.surah_name || 'Quran');
-
-        // Generate verified First Word Prompter section
-        firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
-
-        // Generate scholarly Tafsir section
-        tafsirSection = generateTafsirSection(tafsirEntries, metadata.surah_name || 'Quran');
-
-        // Create context for AI prompt
-        if (verifiedVerses.length > 0) {
-          verifiedFirstWordsContext = `\n\nVERIFIED FIRST WORDS (from Quran.com API - USE THESE EXACT VALUES):\n${verifiedVerses.map(v => `Ayah ${v.ayahNumber}: ${v.firstWord} (${v.transliteration})`).join('\n')}\n`;
-        }
-      }
-    }
+    // PHASE 1 IMPROVEMENT: Do NOT fetch Quran.com data before Claude
+    // Instead, let Claude analyze the transcript first, then fetch based on AI-identified content
+    // This makes generation reliable even when metadata is missing or inaccurate
+    console.log(`Phase 1: Skipping pre-fetch, will fetch Quran.com data AFTER Claude analysis for reliability`);
 
     // Build user prompt based on subject type
     let userPrompt = `Generate Talbiyah Insights for this ${subject} lesson:
@@ -1081,7 +1190,6 @@ BOOKING METADATA (may be inaccurate - use transcript to verify):`;
     }
 
     userPrompt += `
-${verifiedFirstWordsContext}
 
 CRITICAL INSTRUCTIONS:
 1. Read the ENTIRE transcript carefully before generating insights
@@ -1090,11 +1198,12 @@ CRITICAL INSTRUCTIONS:
 4. For the "Flow of Meaning" section: Focus on what the TEACHER actually explained in the lesson
 5. NOTE: Scholarly tafsir from Ibn Kathir will be automatically appended from Quran.com API - you don't need to generate comprehensive tafsir
 6. Your role is to capture the LESSON EXPERIENCE - the teacher's explanations, examples, and discussions
+7. IMPORTANT: Clearly state the Surah name/number and Ayat range at the beginning so we can fetch verified verse data
 
 TRANSCRIPT:
 ${transcript}
 
-${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a First Word Prompter section, you MUST use the VERIFIED FIRST WORDS provided above. Do NOT guess or generate first words - they have been verified from the Quran.com API.\n\n' : ''}Generate the insights following the exact format specified in the system prompt. Remember: transcript content takes priority over booking metadata.`;
+Generate the insights following the exact format specified in the system prompt. Remember: transcript content takes priority over booking metadata.`;
 
     console.log(`Calling Claude API to generate ${subject} insights...`);
 
@@ -1147,68 +1256,78 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
       );
     }
 
-    // CRITICAL: Extract actual surah info from AI-generated content
-    // This is the authoritative source - AI analyzes the actual transcript
+    // PHASE 1 IMPROVEMENT: Extract surah info from AI-generated content and fetch Quran.com data
+    // This is the authoritative source - AI analyzes the actual transcript FIRST
+    // Then we fetch verified data based on what AI identified (not unreliable metadata)
     let actualSurahInfo: { surahName?: string; surahNumber?: number; ayahRange?: string } | null = null;
     if (isQuranLesson) {
       actualSurahInfo = extractSurahInfoFromAIContent(generatedText);
-      if (actualSurahInfo) {
+
+      if (actualSurahInfo?.surahNumber) {
         console.log("AI identified actual surah from transcript:", actualSurahInfo);
 
-        // Check if AI found a different surah than what was in metadata
-        const metadataSurahNumber = metadata.surah_number;
+        // Parse ayah range from AI content, default to reasonable range if not found
+        let startAyah = 1;
+        let endAyah = 20; // Default to first 20 ayahs if no range specified
+        if (actualSurahInfo.ayahRange) {
+          const ayahMatch = actualSurahInfo.ayahRange.match(/(\d+)\s*[-–]\s*(\d+)/);
+          if (ayahMatch) {
+            startAyah = parseInt(ayahMatch[1], 10);
+            endAyah = parseInt(ayahMatch[2], 10);
+          }
+        }
+
         const actualSurahNumber = actualSurahInfo.surahNumber;
+        console.log(`Fetching verified Quran data for AI-identified Surah ${actualSurahNumber}, Ayat ${startAyah}-${endAyah}...`);
 
-        if (actualSurahNumber && (!metadataSurahNumber || actualSurahNumber !== metadataSurahNumber)) {
-          console.log(`Surah mismatch detected! Metadata: ${metadataSurahNumber}, AI found: ${actualSurahNumber}`);
-          console.log("Re-fetching verified verses for correct surah...");
+        try {
+          // PHASE 2: Try to get data from pre-cached surah_data table FIRST (A* reliability)
+          const cachedSurah = await fetchCachedSurahData(supabase, actualSurahNumber);
 
-          // Parse ayah range from AI content, default to 1-10 if not found
-          let startAyah = 1;
-          let endAyah = 10;
-          if (actualSurahInfo.ayahRange) {
-            const ayahMatch = actualSurahInfo.ayahRange.match(/(\d+)\s*[-–]\s*(\d+)/);
-            if (ayahMatch) {
-              startAyah = parseInt(ayahMatch[1], 10);
-              endAyah = parseInt(ayahMatch[2], 10);
-            }
+          let fetchedVerses: VerifiedVerse[] = [];
+          let fetchedTafsir: TafsirEntry[] = [];
+
+          if (cachedSurah) {
+            // Use cached data - no external API calls needed!
+            console.log(`✅ PHASE 2: Using cached surah_data for Surah ${actualSurahNumber} (A* reliability)`);
+            fetchedVerses = convertCachedToVerifiedVerses(cachedSurah, startAyah, endAyah);
+            fetchedTafsir = convertCachedToTafsirEntries(cachedSurah, startAyah, endAyah);
+            console.log(`Loaded ${fetchedVerses.length} verses and ${fetchedTafsir.length} tafsir entries from cache`);
+          } else {
+            // Fallback to Quran.com API for uncached surahs
+            console.log(`⚠️ Surah ${actualSurahNumber} not cached, falling back to Quran.com API...`);
+            [fetchedVerses, fetchedTafsir] = await Promise.all([
+              fetchVerifiedQuranData(actualSurahNumber, startAyah, endAyah),
+              fetchTafsirData(actualSurahNumber, startAyah, endAyah)
+            ]);
           }
 
-          // Re-fetch the correct verses and tafsir in parallel
-          const [correctedVerses, correctedTafsir] = await Promise.all([
-            fetchVerifiedQuranData(actualSurahNumber, startAyah, endAyah),
-            fetchTafsirData(actualSurahNumber, startAyah, endAyah)
-          ]);
+          if (fetchedVerses.length > 0) {
+            console.log(`Successfully loaded ${fetchedVerses.length} verified verses for Surah ${actualSurahNumber}`);
+            console.log(`Successfully loaded ${fetchedTafsir.length} tafsir entries from Ibn Kathir`);
+            verifiedVerses = fetchedVerses;
+            tafsirEntries = fetchedTafsir;
 
-          if (correctedVerses.length > 0) {
-            console.log(`Successfully fetched ${correctedVerses.length} verses for Surah ${actualSurahNumber}`);
-            console.log(`Successfully fetched ${correctedTafsir.length} tafsir entries for Surah ${actualSurahNumber}`);
-            verifiedVerses = correctedVerses;
-            tafsirEntries = correctedTafsir;
-
-            // Update metadata with correct info for storage
+            // Update metadata with AI-identified info for storage
             metadata.surah_name = actualSurahInfo.surahName || metadata.surah_name;
             metadata.surah_number = actualSurahNumber;
             metadata.ayah_range = actualSurahInfo.ayahRange || `${startAyah}-${endAyah}`;
 
-            // Re-generate the verified sections
+            // Generate the verified sections
             versesCoveredSection = generateVersesCoveredSection(verifiedVerses, metadata.surah_name || 'Quran');
             firstWordPrompterSection = generateFirstWordPrompterSection(verifiedVerses);
             tafsirSection = generateTafsirSection(tafsirEntries, metadata.surah_name || 'Quran');
           } else {
-            console.log(`Warning: Could not fetch verses for Surah ${actualSurahNumber}`);
+            console.log(`Note: Could not fetch verses for Surah ${actualSurahNumber} - insights will work without verified sections`);
           }
-        } else if (actualSurahNumber && metadataSurahNumber === actualSurahNumber) {
-          console.log(`Surah confirmed: metadata and AI agree on Surah ${actualSurahNumber}`);
-          // Update ayah range if AI found more specific info
-          if (actualSurahInfo.ayahRange && !metadata.ayah_range) {
-            metadata.ayah_range = actualSurahInfo.ayahRange;
-          }
+        } catch (quranApiError) {
+          // PHASE 1: Quran.com API failure should NOT block insight generation
+          console.error("Quran.com API error (non-blocking):", quranApiError);
+          console.log("Continuing with Claude-generated insights without verified Quran data");
         }
-      } else if (verifiedVerses.length === 0) {
-        // If AI didn't explicitly identify a surah but we have no verified verses,
-        // try one more time to parse from the lesson title
-        console.log("AI did not explicitly identify surah, checking if we need to fetch verses...");
+      } else {
+        // AI didn't identify a specific surah - insights still work, just without verse data
+        console.log("AI did not identify specific surah from transcript - insights will generate without verified verse sections");
       }
     }
 
@@ -1261,8 +1380,8 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
         generatedText = versesCoveredSection + generatedText;
       }
       console.log("Added verified Verses Covered section from Quran.com API");
-    } else if (isQuranLesson && versesCoveredSection) {
-      console.log("Skipped verified verse append - AI identified different content than metadata");
+    } else if (isQuranLesson && !versesCoveredSection) {
+      console.log("No verified verse section available - Quran.com fetch may have failed or no surah identified");
     }
 
     // Append verified First Word Prompter section for Quran lessons (only if surah matches)
@@ -1486,6 +1605,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,
           processing_time_ms: processingTime,
+          raw_transcript: transcript, // Preserve transcript for future regeneration
         })
         .eq('id', existingInsight.id)
         .select()
@@ -1509,6 +1629,7 @@ ${isQuranLesson && verifiedVerses.length > 0 ? 'IMPORTANT: If you include a Firs
           ai_model: 'claude-sonnet-4-20250514',
           confidence_score: 0.90,
           processing_time_ms: processingTime,
+          raw_transcript: transcript, // Preserve transcript for future regeneration
         })
         .select()
         .single();

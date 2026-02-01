@@ -7,6 +7,88 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ElevenLabs transcription for Arabic/Quran content (much better accuracy)
+async function transcribeWithElevenLabs(recordingUrl: string): Promise<string | null> {
+  const elevenLabsApiKey = Deno.env.get("ELEVENLABS_API_KEY");
+  if (!elevenLabsApiKey) {
+    console.log("ElevenLabs API key not configured");
+    return null;
+  }
+
+  try {
+    console.log("Downloading recording for ElevenLabs transcription...");
+
+    // Download the recording
+    const recordingResponse = await fetch(recordingUrl);
+    if (!recordingResponse.ok) {
+      console.error("Failed to download recording:", recordingResponse.status);
+      return null;
+    }
+
+    const recordingBlob = await recordingResponse.blob();
+    console.log("Recording downloaded, size:", recordingBlob.size, "bytes");
+
+    // Create form data for ElevenLabs
+    const formData = new FormData();
+    formData.append("file", recordingBlob, "recording.mp4");
+    formData.append("model_id", "scribe_v1");
+    formData.append("language_code", "ara"); // Arabic primary - ElevenLabs handles code-switching
+    formData.append("tag_audio_events", "false");
+    formData.append("diarize", "true"); // Enable speaker diarization
+
+    console.log("Sending to ElevenLabs Scribe API...");
+
+    const scribeResponse = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+      method: "POST",
+      headers: {
+        "xi-api-key": elevenLabsApiKey,
+      },
+      body: formData,
+    });
+
+    if (!scribeResponse.ok) {
+      const errorText = await scribeResponse.text();
+      console.error("ElevenLabs Scribe error:", scribeResponse.status, errorText);
+      return null;
+    }
+
+    const scribeResult = await scribeResponse.json();
+    console.log("ElevenLabs Scribe result received");
+
+    // Format transcript with speaker labels if available
+    if (scribeResult.words && Array.isArray(scribeResult.words)) {
+      // Group words by speaker
+      let currentSpeaker = "";
+      let segments: string[] = [];
+      let currentText = "";
+
+      for (const word of scribeResult.words) {
+        const speaker = word.speaker_id || "Speaker";
+        if (speaker !== currentSpeaker) {
+          if (currentText) {
+            segments.push(`${currentSpeaker}: ${currentText.trim()}`);
+          }
+          currentSpeaker = speaker;
+          currentText = word.text || "";
+        } else {
+          currentText += " " + (word.text || "");
+        }
+      }
+      if (currentText) {
+        segments.push(`${currentSpeaker}: ${currentText.trim()}`);
+      }
+
+      return segments.join("\n");
+    }
+
+    // Fallback to simple text
+    return scribeResult.text || null;
+  } catch (error) {
+    console.error("ElevenLabs transcription error:", error);
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -86,8 +168,29 @@ Deno.serve(async (req: Request) => {
 
     let transcriptText = "";
 
-    // Try to get transcript from 100ms API
-    if (lesson["100ms_room_id"]) {
+    // Detect if this is Arabic/Quran content (ElevenLabs is much better for this)
+    const isArabicContent = subjectName.toLowerCase().includes("quran") ||
+      subjectName.toLowerCase().includes("arabic") ||
+      subjectName.toLowerCase().includes("tajweed") ||
+      subjectName.toLowerCase().includes("surah") ||
+      !!surahName || !!surahNumber;
+
+    console.log("Content type detection:", { isArabicContent, subjectName });
+
+    // For Arabic/Quran content, use ElevenLabs as PRIMARY transcription
+    if (isArabicContent && lesson.recording_url) {
+      console.log("Arabic/Quran content detected - using ElevenLabs Scribe as PRIMARY transcription...");
+      const elevenLabsTranscript = await transcribeWithElevenLabs(lesson.recording_url);
+      if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
+        console.log("Using ElevenLabs transcript (best for Arabic), length:", elevenLabsTranscript.length);
+        transcriptText = elevenLabsTranscript;
+      } else {
+        console.log("ElevenLabs failed or too short, will try 100ms as fallback");
+      }
+    }
+
+    // Try to get transcript from 100ms API (fallback for Arabic, primary for non-Arabic)
+    if (!transcriptText && lesson["100ms_room_id"]) {
       console.log("Fetching transcript from 100ms...");
       try {
         const hmsToken = await getHMSManagementToken();
@@ -147,43 +250,19 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Use ElevenLabs if no transcript OR transcript too short (100ms often fails for Arabic)
-    if ((!transcriptText || transcriptText.length < 500) && lesson.recording_url) {
-      console.log("Trying ElevenLabs transcription...");
-      const elevenLabsApiKey = Deno.env.get("ELEVENLABS_API_KEY");
-
-      if (elevenLabsApiKey) {
-        try {
-          const audioResponse = await fetch(lesson.recording_url);
-          if (audioResponse.ok) {
-            const audioBlob = await audioResponse.blob();
-            const formData = new FormData();
-            formData.append("file", audioBlob, "recording.mp4");
-            formData.append("model_id", "scribe_v1");
-            // Don't set language_code - let ElevenLabs auto-detect for mixed Arabic/English
-            formData.append("diarize", "true");
-
-            const transcribeResponse = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-              method: "POST",
-              headers: { "xi-api-key": elevenLabsApiKey },
-              body: formData,
-            });
-
-            if (transcribeResponse.ok) {
-              const result = await transcribeResponse.json();
-              transcriptText = result.text || result.transcript || "";
-              console.log("ElevenLabs transcript, length:", transcriptText.length);
-            }
-          }
-        } catch (e) {
-          console.error("ElevenLabs error:", e);
-        }
+    // If 100ms transcript is missing/short, try ElevenLabs as last resort (even for non-Arabic)
+    if ((!transcriptText || transcriptText.length < 100) && lesson.recording_url && !isArabicContent) {
+      console.log("100ms transcript insufficient, trying ElevenLabs as fallback...");
+      const elevenLabsTranscript = await transcribeWithElevenLabs(lesson.recording_url);
+      if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
+        console.log("Using ElevenLabs transcript as fallback, length:", elevenLabsTranscript.length);
+        transcriptText = elevenLabsTranscript;
       }
     }
 
     if (!transcriptText || transcriptText.length < 50) {
       return new Response(
-        JSON.stringify({ error: "No transcript available" }),
+        JSON.stringify({ error: "No transcript available", recording_url: lesson.recording_url ? "exists" : "missing" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
