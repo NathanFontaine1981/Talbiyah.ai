@@ -756,7 +756,7 @@ export default function Dashboard() {
                         <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">2</div>
                         <h3 className="font-semibold text-white">Explore Free Courses</h3>
                       </div>
-                      <p className="text-emerald-50 text-sm">Start with Exploring Islam or Unshakable Foundations - completely free!</p>
+                      <p className="text-emerald-50 text-sm">Start with Exploring Islam or Core Foundations - completely free!</p>
                     </div>
                     <div className="bg-white/15 backdrop-blur rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-2">

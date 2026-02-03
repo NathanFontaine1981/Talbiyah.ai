@@ -67,7 +67,8 @@ export default function LegacyBilling() {
           ),
           teacher:teacher_id(
             id,
-            profiles:id(full_name)
+            user_id,
+            profiles:user_id(full_name)
           ),
           subjects:subject_id(name)
         `)
