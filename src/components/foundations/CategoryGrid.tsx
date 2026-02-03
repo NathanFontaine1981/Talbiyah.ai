@@ -258,7 +258,7 @@ export default function CategoryGrid({
                   transition={{ delay: index * 0.1 }}
                   onClick={() => !category.isComingSoon && onCategorySelect(category)}
                   disabled={category.isComingSoon}
-                  className={`w-full text-left ${colors.bg} ${colors.border} border rounded-xl p-4 transition hover:shadow-md ${
+                  className={`w-full text-left ${colors.bg} ${colors.border} border rounded-2xl p-4 transition hover:shadow-md ${
                     category.isComingSoon ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                 >
@@ -376,6 +376,22 @@ export default function CategoryGrid({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 relative">
+        {/* Quran Verse - Top */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-3xl mx-auto mb-8"
+        >
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-full px-6 py-4 text-center">
+            <p className="text-lg font-arabic text-amber-800 mb-1" dir="rtl">
+              يَا أَيُّهَا الَّذِينَ آمَنُوا ادْخُلُوا فِي السِّلْمِ كَافَّةً
+            </p>
+            <p className="text-amber-700 text-sm">
+              "O you who have believed, enter into Islam completely." — <span className="text-amber-600">Surah Al-Baqarah (2:208)</span>
+            </p>
+          </div>
+        </motion.div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <motion.p
@@ -391,7 +407,7 @@ export default function CategoryGrid({
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3"
           >
-            Unshakable Foundations
+            Core Foundations
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -457,7 +473,7 @@ export default function CategoryGrid({
                 onClick={() => handlePillarSelect(pillar)}
                 className="group relative"
               >
-                <div className={`bg-gradient-to-br ${colors.gradient} rounded-2xl p-5 sm:p-6 text-left transform transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-xl min-h-[180px] sm:min-h-[220px] flex flex-col relative overflow-hidden`}>
+                <div className={`bg-gradient-to-br ${colors.gradient} rounded-3xl p-5 sm:p-6 text-left transform transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-xl min-h-[180px] sm:min-h-[220px] flex flex-col relative overflow-hidden`}>
 
                   {/* Decorative pattern */}
                   <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
@@ -519,38 +535,6 @@ export default function CategoryGrid({
           })}
         </div>
 
-        {/* Info Card */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="max-w-2xl mx-auto"
-        >
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <BookOpen className="w-5 h-5 text-amber-600" />
-              <h3 className="font-semibold text-amber-800">Enter Into Islam Completely</h3>
-            </div>
-
-            {/* Arabic Verse */}
-            <p className="text-xl font-arabic text-amber-800 mb-2" dir="rtl">
-              يَا أَيُّهَا الَّذِينَ آمَنُوا ادْخُلُوا فِي السِّلْمِ كَافَّةً
-            </p>
-
-            {/* Translation */}
-            <p className="text-amber-700 font-medium mb-2">
-              "O you who have believed, enter into Islam completely."
-            </p>
-            <p className="text-amber-600 text-xs mb-3">— Surah Al-Baqarah (2:208)</p>
-
-            {/* Explanation */}
-            <p className="text-amber-700 text-sm">
-              Allah commands the believers to embrace Islam in its entirety — not picking and choosing,
-              but with complete conviction built on certain knowledge. These foundations give you that certainty,
-              so your faith stands unshakeable.
-            </p>
-          </div>
-        </motion.div>
       </div>
     </div>
   );
