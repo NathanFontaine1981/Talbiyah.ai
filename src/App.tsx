@@ -90,6 +90,7 @@ const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
 const DuaBuilder = lazy(() => import('./pages/DuaBuilder'));
 const QunutPractice = lazy(() => import('./pages/QunutPractice'));
 const IstikharaPractice = lazy(() => import('./pages/IstikharaPractice'));
+const JanazahPractice = lazy(() => import('./pages/JanazahPractice'));
 const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
@@ -102,6 +103,7 @@ const NewMuslimLanding = lazy(() => import('./pages/NewMuslimLanding'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
 const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 const Suggestions = lazy(() => import('./pages/Suggestions'));
+const HowToPage = lazy(() => import('./pages/HowToPage'));
 
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
@@ -192,6 +194,7 @@ function App() {
         <Route path="/new-muslim-landing" element={<NewMuslimLanding />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
+        <Route path="/how-to" element={<HowToPage />} />
         <Route
           path="/explorer"
           element={
@@ -789,6 +792,7 @@ function App() {
         <Route path="/dua-builder" element={<DuaBuilder />} />
         <Route path="/qunut-practice" element={<QunutPractice />} />
         <Route path="/istikhara-practice" element={<IstikharaPractice />} />
+        <Route path="/janazah-practice" element={<JanazahPractice />} />
         <Route
           path="/khutba-reflections"
           element={

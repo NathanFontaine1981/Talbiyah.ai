@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Loader2, AlertCircle, Trophy, RotateCcw, Save, PlayCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { type ExamQuestion } from '../../data/foundationCategories';
 
@@ -9,6 +9,12 @@ interface FoundationExamProps {
   videoTitle: string;
   onComplete: (score: number, passed: boolean) => void;
   onBack: () => void;
+}
+
+interface SavedProgress {
+  currentQuestion: number;
+  answers: Record<number, number>;
+  answeredQuestions: number[];
 }
 
 export default function FoundationExam({
@@ -21,11 +27,16 @@ export default function FoundationExam({
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const PASSING_SCORE = 70;
+  const [passingScore, setPassingScore] = useState(80);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [savedProgressData, setSavedProgressData] = useState<SavedProgress | null>(null);
 
   useEffect(() => {
     loadExam();
@@ -35,6 +46,10 @@ export default function FoundationExam({
     try {
       setLoading(true);
       setError(null);
+
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
 
       // Fetch exam from database
       const { data: exam, error: examError } = await supabase
@@ -47,8 +62,29 @@ export default function FoundationExam({
 
       if (exam && exam.questions && exam.questions.length > 0) {
         setQuestions(exam.questions);
+        if (exam.passing_score) {
+          setPassingScore(exam.passing_score);
+        }
+
+        // Check for saved progress if user is logged in
+        if (user) {
+          const { data: progress } = await supabase
+            .from('foundation_progress')
+            .select('exam_in_progress')
+            .eq('user_id', user.id)
+            .eq('video_id', videoId)
+            .maybeSingle();
+
+          if (progress?.exam_in_progress) {
+            const saved = progress.exam_in_progress as SavedProgress;
+            if (saved.answeredQuestions && saved.answeredQuestions.length > 0) {
+              setSavedProgressData(saved);
+              setShowResumePrompt(true);
+              setHasSavedProgress(true);
+            }
+          }
+        }
       } else {
-        // No exam exists yet - show placeholder
         setError('No exam available for this video yet. Check back soon!');
       }
     } catch (err) {
@@ -59,35 +95,145 @@ export default function FoundationExam({
     }
   }
 
-  function handleSelectAnswer(questionIndex: number, answerIndex: number) {
-    if (submitted) return;
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [questionIndex]: answerIndex
-    });
+  function resumeSavedProgress() {
+    if (savedProgressData) {
+      setCurrentQuestion(savedProgressData.currentQuestion || 0);
+      setSelectedAnswers(savedProgressData.answers || {});
+      setAnsweredQuestions(new Set(savedProgressData.answeredQuestions || []));
+    }
+    setShowResumePrompt(false);
   }
 
-  function calculateScore(): number {
+  function startFresh() {
+    // Clear saved progress in database
+    clearSavedProgress();
+    setShowResumePrompt(false);
+  }
+
+  const saveProgress = useCallback(async (
+    answers: Record<number, number>,
+    answered: Set<number>,
+    currentQ: number
+  ) => {
+    if (!userId) return;
+
+    try {
+      setSaving(true);
+      const progressData: SavedProgress = {
+        currentQuestion: currentQ,
+        answers: answers,
+        answeredQuestions: Array.from(answered)
+      };
+
+      // Upsert progress
+      const { error } = await supabase
+        .from('foundation_progress')
+        .upsert({
+          user_id: userId,
+          video_id: videoId,
+          exam_in_progress: progressData,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,video_id'
+        });
+
+      if (error) {
+        console.error('Error saving progress:', error);
+      } else {
+        setHasSavedProgress(true);
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    } finally {
+      setSaving(false);
+    }
+  }, [userId, videoId]);
+
+  async function clearSavedProgress() {
+    if (!userId) return;
+
+    try {
+      await supabase
+        .from('foundation_progress')
+        .update({ exam_in_progress: null })
+        .eq('user_id', userId)
+        .eq('video_id', videoId);
+
+      setHasSavedProgress(false);
+    } catch (err) {
+      console.error('Error clearing progress:', err);
+    }
+  }
+
+  function handleSelectAnswer(questionIndex: number, answerIndex: number) {
+    if (answeredQuestions.has(questionIndex)) return;
+
+    const newAnswers = {
+      ...selectedAnswers,
+      [questionIndex]: answerIndex
+    };
+    const newAnswered = new Set(answeredQuestions).add(questionIndex);
+
+    setSelectedAnswers(newAnswers);
+    setAnsweredQuestions(newAnswered);
+
+    // Auto-save progress for logged in users
+    if (userId) {
+      saveProgress(newAnswers, newAnswered, currentQuestion);
+    }
+  }
+
+  function calculateScore(): { correct: number; total: number; percentage: number } {
     let correct = 0;
     questions.forEach((q, index) => {
       if (selectedAnswers[index] === q.correctAnswer) {
         correct++;
       }
     });
-    return Math.round((correct / questions.length) * 100);
+    return {
+      correct,
+      total: questions.length,
+      percentage: Math.round((correct / questions.length) * 100)
+    };
   }
 
-  function handleSubmit() {
-    const score = calculateScore();
-    const passed = score >= PASSING_SCORE;
+  function handleFinish() {
+    const { percentage } = calculateScore();
+    const passed = percentage >= passingScore;
     setSubmitted(true);
     setShowResults(true);
-    onComplete(score, passed);
+
+    // Clear saved progress when completing the exam
+    clearSavedProgress();
+
+    onComplete(percentage, passed);
+  }
+
+  function handleRetry() {
+    setSelectedAnswers({});
+    setAnsweredQuestions(new Set());
+    setCurrentQuestion(0);
+    setSubmitted(false);
+    setShowResults(false);
+
+    // Clear saved progress
+    clearSavedProgress();
+  }
+
+  function handleSaveAndExit() {
+    // Progress is already auto-saved, just go back
+    onBack();
   }
 
   function handleNext() {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      const newQuestion = currentQuestion + 1;
+      setCurrentQuestion(newQuestion);
+
+      // Save current question position
+      if (userId && answeredQuestions.size > 0) {
+        saveProgress(selectedAnswers, answeredQuestions, newQuestion);
+      }
     }
   }
 
@@ -124,6 +270,41 @@ export default function FoundationExam({
     );
   }
 
+  // Resume prompt modal
+  if (showResumePrompt) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-lg">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <PlayCircle className="w-8 h-8 text-amber-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Resume Your Progress?</h3>
+          <p className="text-gray-600 mb-2">
+            You have saved progress on this exam.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            {savedProgressData?.answeredQuestions?.length || 0} of {questions.length} questions answered
+          </p>
+
+          <div className="flex gap-3">
+            <button
+              onClick={startFresh}
+              className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-semibold transition"
+            >
+              Start Fresh
+            </button>
+            <button
+              onClick={resumeSavedProgress}
+              className="flex-1 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition"
+            >
+              Resume
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentQ = questions[currentQuestion];
   const answeredCount = Object.keys(selectedAnswers).length;
   const progressPercent = (answeredCount / questions.length) * 100;
@@ -140,11 +321,32 @@ export default function FoundationExam({
           <span>Back to Video</span>
         </button>
 
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Question</p>
-          <p className="font-semibold text-gray-900">{currentQuestion + 1} / {questions.length}</p>
+        <div className="flex items-center gap-4">
+          {/* Save & Exit button for logged in users with progress */}
+          {userId && answeredQuestions.size > 0 && answeredQuestions.size < questions.length && (
+            <button
+              onClick={handleSaveAndExit}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-amber-600 hover:text-amber-700 border border-amber-300 hover:border-amber-400 rounded-lg transition"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save & Exit</span>
+              {saving && <Loader2 className="w-3 h-3 animate-spin" />}
+            </button>
+          )}
+
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Question</p>
+            <p className="font-semibold text-gray-900">{currentQuestion + 1} / {questions.length}</p>
+          </div>
         </div>
       </div>
+
+      {/* Auto-save indicator */}
+      {userId && hasSavedProgress && (
+        <div className="mb-4 text-xs text-gray-400 text-right">
+          Progress auto-saved
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="mb-8">
@@ -176,58 +378,55 @@ export default function FoundationExam({
             {currentQ.options.map((option, index) => {
               const isSelected = selectedAnswers[currentQuestion] === index;
               const isCorrect = currentQ.correctAnswer === index;
-              const showCorrect = submitted;
+              const isAnswered = answeredQuestions.has(currentQuestion);
 
               let buttonClass = 'border-gray-200 hover:border-amber-300 hover:bg-amber-50';
-              if (isSelected && !submitted) {
-                buttonClass = 'border-amber-500 bg-amber-50';
-              } else if (submitted) {
+              if (isAnswered) {
                 if (isCorrect) {
                   buttonClass = 'border-emerald-500 bg-emerald-50';
                 } else if (isSelected && !isCorrect) {
                   buttonClass = 'border-red-500 bg-red-50';
+                } else {
+                  buttonClass = 'border-gray-200 bg-gray-50';
                 }
+              } else if (isSelected) {
+                buttonClass = 'border-amber-500 bg-amber-50';
               }
 
               return (
                 <button
                   key={index}
                   onClick={() => handleSelectAnswer(currentQuestion, index)}
-                  disabled={submitted}
+                  disabled={isAnswered}
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${buttonClass} ${
-                    submitted ? 'cursor-default' : 'cursor-pointer'
+                    isAnswered ? 'cursor-default' : 'cursor-pointer'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      isSelected
-                        ? submitted
-                          ? isCorrect
-                            ? 'border-emerald-500 bg-emerald-500'
-                            : 'border-red-500 bg-red-500'
-                          : 'border-amber-500 bg-amber-500'
-                        : showCorrect && isCorrect
+                      isAnswered
+                        ? isCorrect
                           ? 'border-emerald-500 bg-emerald-500'
+                          : isSelected
+                            ? 'border-red-500 bg-red-500'
+                            : 'border-gray-300'
+                        : isSelected
+                          ? 'border-amber-500 bg-amber-500'
                           : 'border-gray-300'
                     }`}>
-                      {isSelected && (
-                        submitted ? (
-                          isCorrect ? (
-                            <CheckCircle className="w-4 h-4 text-white" />
-                          ) : (
-                            <XCircle className="w-4 h-4 text-white" />
-                          )
-                        ) : (
-                          <div className="w-2 h-2 bg-white rounded-full" />
-                        )
-                      )}
-                      {!isSelected && showCorrect && isCorrect && (
+                      {isAnswered && isCorrect && (
                         <CheckCircle className="w-4 h-4 text-white" />
+                      )}
+                      {isAnswered && isSelected && !isCorrect && (
+                        <XCircle className="w-4 h-4 text-white" />
+                      )}
+                      {!isAnswered && isSelected && (
+                        <div className="w-2 h-2 bg-white rounded-full" />
                       )}
                     </div>
                     <span className={`${
-                      submitted && isCorrect ? 'text-emerald-700 font-medium' :
-                      submitted && isSelected && !isCorrect ? 'text-red-700' :
+                      isAnswered && isCorrect ? 'text-emerald-700 font-medium' :
+                      isAnswered && isSelected && !isCorrect ? 'text-red-700' :
                       'text-gray-700'
                     }`}>
                       {option}
@@ -238,15 +437,26 @@ export default function FoundationExam({
             })}
           </div>
 
-          {/* Explanation (after submit) */}
-          {submitted && currentQ.explanation && (
+          {/* Explanation (shown immediately after answering) */}
+          {answeredQuestions.has(currentQuestion) && currentQ.explanation && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+              className={`mt-4 p-4 rounded-xl border ${
+                selectedAnswers[currentQuestion] === currentQ.correctAnswer
+                  ? 'bg-emerald-50 border-emerald-200'
+                  : 'bg-amber-50 border-amber-200'
+              }`}
             >
-              <p className="text-blue-800 text-sm">
-                <span className="font-semibold">Explanation:</span> {currentQ.explanation}
+              <p className={`text-sm ${
+                selectedAnswers[currentQuestion] === currentQ.correctAnswer
+                  ? 'text-emerald-800'
+                  : 'text-amber-800'
+              }`}>
+                <span className="font-semibold">
+                  {selectedAnswers[currentQuestion] === currentQ.correctAnswer ? '✓ Correct! ' : '✗ Incorrect. '}
+                </span>
+                {currentQ.explanation}
               </p>
             </motion.div>
           )}
@@ -263,28 +473,42 @@ export default function FoundationExam({
           ← Previous
         </button>
 
-        {currentQuestion === questions.length - 1 ? (
-          <button
-            onClick={handleSubmit}
-            disabled={answeredCount < questions.length || submitted}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition"
-          >
-            {submitted ? 'Submitted' : 'Submit Answers'}
-          </button>
-        ) : (
-          <button
-            onClick={handleNext}
-            className="px-4 py-2 text-amber-600 hover:text-amber-700 font-medium transition"
-          >
-            Next →
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Running Score */}
+          {answeredQuestions.size > 0 && (
+            <div className="text-sm text-gray-500">
+              <span className="text-emerald-600 font-semibold">
+                {calculateScore().correct}
+              </span>
+              /{answeredQuestions.size} correct
+            </div>
+          )}
+
+          {currentQuestion === questions.length - 1 && answeredQuestions.size === questions.length ? (
+            <button
+              onClick={handleFinish}
+              disabled={submitted}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition"
+            >
+              See Results
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              disabled={currentQuestion === questions.length - 1}
+              className="px-4 py-2 text-amber-600 hover:text-amber-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Question Dots Navigation */}
-      <div className="flex justify-center gap-2 mt-8">
-        {questions.map((_, index) => {
-          const isAnswered = selectedAnswers[index] !== undefined;
+      <div className="flex justify-center gap-2 mt-8 flex-wrap">
+        {questions.map((q, index) => {
+          const isAnswered = answeredQuestions.has(index);
+          const isCorrect = selectedAnswers[index] === q.correctAnswer;
           const isCurrent = currentQuestion === index;
 
           return (
@@ -293,15 +517,91 @@ export default function FoundationExam({
               onClick={() => setCurrentQuestion(index)}
               className={`w-3 h-3 rounded-full transition ${
                 isCurrent
-                  ? 'bg-amber-500'
-                  : isAnswered
-                    ? 'bg-amber-200'
-                    : 'bg-gray-200'
+                  ? 'ring-2 ring-amber-500 ring-offset-2'
+                  : ''
+              } ${
+                isAnswered
+                  ? isCorrect
+                    ? 'bg-emerald-500'
+                    : 'bg-red-400'
+                  : 'bg-gray-200'
               }`}
+              title={`Question ${index + 1}`}
             />
           );
         })}
       </div>
+
+      {/* Results Modal */}
+      {showResults && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-md w-full text-center"
+          >
+            {calculateScore().percentage >= passingScore ? (
+              <>
+                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="w-10 h-10 text-emerald-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Congratulations!</h2>
+                <p className="text-gray-600 mb-4">You passed the exam!</p>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <RotateCcw className="w-10 h-10 text-amber-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Keep Learning!</h2>
+                <p className="text-gray-600 mb-4">You need {passingScore}% to pass. Try again!</p>
+              </>
+            )}
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <div className="text-4xl font-bold text-gray-900 mb-1">
+                {calculateScore().correct}/{calculateScore().total}
+              </div>
+              <div className="text-sm text-gray-500">
+                {calculateScore().percentage}% correct
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                Passing score: {passingScore}%
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              {calculateScore().percentage >= passingScore ? (
+                <button
+                  onClick={onBack}
+                  className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition"
+                >
+                  Continue
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={onBack}
+                    className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-semibold transition"
+                  >
+                    Review Video
+                  </button>
+                  <button
+                    onClick={handleRetry}
+                    className="flex-1 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition"
+                  >
+                    Try Again
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

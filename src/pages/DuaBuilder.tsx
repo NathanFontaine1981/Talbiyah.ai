@@ -553,6 +553,23 @@ export default function DuaBuilder() {
               </div>
               <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
             </button>
+
+            {/* Janazah Practice Quick Link */}
+            <button
+              onClick={() => navigate('/janazah-practice')}
+              className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-500/20 rounded-lg flex items-center justify-center">
+                  <Heart className="text-slate-300" size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-white">Salatul Janazah</p>
+                  <p className="text-xs text-emerald-200">Learn the funeral prayer</p>
+                </div>
+              </div>
+              <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
+            </button>
           </div>
         </div>
 
