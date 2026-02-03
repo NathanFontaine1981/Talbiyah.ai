@@ -30,26 +30,38 @@ export const BiasBlur = ({ onComplete, onBack }: BiasBlurProps) => {
             <Scale className="w-8 h-8 text-amber-400" />
           </div>
           <h2 className="text-2xl font-serif text-white mb-2">
-            Before We Begin
+            Let's Clear Our Minds
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
             <p className="text-slate-300 leading-relaxed mb-4">
-              I was brought up with <span className="text-white font-medium">Christian values</span>. I went to Saturday school, Sunday school, and was part of the <span className="text-white font-medium">70th London Boys' Brigade</span> in Tooting, London. I learned a lot of good manners, respect, and values.
+              Before we look at any evidence, let's do something important: <span className="text-white font-medium">clear our minds</span>.
             </p>
             <p className="text-slate-300 leading-relaxed mb-4">
-              At the age of <span className="text-white font-medium">23</span>, I was told that I actually held certain beliefs that were in line with Islam — and went against my own religion. This prompted me to research both.
+              We all carry biases — from family, culture, media, past experiences. These shape how we see the world, often without us realising. <span className="text-white font-medium">I certainly had mine</span>.
             </p>
             <p className="text-slate-300 leading-relaxed">
-              I decided: <span className="text-white font-medium">"I'm an adult now. Surely I can work out for myself if Christianity is true, if Islam is true, or if religion is man-made after all."</span>
+              I was raised with <span className="text-white font-medium">Christian values</span>. I went to Saturday school, Sunday school, and was part of the <span className="text-white font-medium">70th London Boys' Brigade</span> in Tooting, London. I learned good manners, respect, and values I still hold today.
+            </p>
+          </div>
+
+          <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
+            <p className="text-slate-300 leading-relaxed mb-4">
+              At <span className="text-white font-medium">23</span>, I discovered that some of my beliefs actually aligned with Islam — and contradicted my own religion. This prompted me to research both.
+            </p>
+            <p className="text-slate-300 leading-relaxed">
+              I decided: <span className="text-white font-medium">"I'm an adult now. I can work out for myself what's true."</span> But first, I had to set aside what I'd been told my whole life and look at the evidence with fresh eyes.
             </p>
           </div>
 
           <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
+            <p className="text-amber-300 leading-relaxed text-center mb-3">
+              I'm not asking you to believe anything yet.
+            </p>
             <p className="text-amber-300 leading-relaxed text-center">
-              I took on the challenge. I didn't know how or what method I was going to use — but I got there in the end. When you keep probing, you will find evidence. <span className="text-white font-medium">Truth stands up in the face of falsehood</span>, because that's the nature of falsehood — it perishes when hurled at truth.
+              I'm asking you to <span className="text-white font-medium">temporarily set aside what you've been told</span> — just as I had to — and examine the evidence honestly. Not blind acceptance. Not stubborn rejection. Just <span className="text-white font-medium">honest consideration</span>.
             </p>
           </div>
         </div>

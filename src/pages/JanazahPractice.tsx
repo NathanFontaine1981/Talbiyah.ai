@@ -16,8 +16,9 @@ import {
   Check,
   Heart,
   Users,
+  User,
   Baby,
-  User
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -76,7 +77,14 @@ const JANAZAH_SECTIONS = [
   }
 ];
 
-// Dua for deceased child
+// Extra dua for the deceased
+const EXTRA_DECEASED_DUA = {
+  arabic: 'اللَّهُمَّ إِنَّ فُلَانَ بْنَ فُلَانٍ فِي ذِمَّتِكَ وَحَبْلِ جِوَارِكَ\nفَقِهِ مِنْ فِتْنَةِ الْقَبْرِ وَعَذَابِ النَّارِ\nوَأَنْتَ أَهْلُ الْوَفَاءِ وَالْحَقِّ\nفَاغْفِرْ لَهُ وَارْحَمْهُ\nإِنَّكَ أَنْتَ الْغَفُورُ الرَّحِيمُ',
+  transliteration: 'Allāhumma inna fulān ibna fulān fī dhimmatika wa ḥabli jiwārik\nfa qihi min fitnatil-qabri wa ʿadhābin-nār\nwa anta ahlul-wafāʾi wal-ḥaqq\nfagh-fir lahu warḥamh\ninnaka antal-Ghafūrur-Raḥīm',
+  english: 'O Allah, indeed [name] son of [name] is in Your protection and covenant of security\nSo protect him from the trial of the grave and the punishment of the Fire\nYou are the One who fulfills promises and grants truth\nSo forgive him and have mercy on him\nIndeed, You are the Forgiving, the Merciful'
+};
+
+// Dua for deceased child's parents
 const CHILD_DUA = {
   arabic: 'اللَّهُمَّ اجْعَلْهُ فَرَطًا وَذُخْرًا لِوَالِدَيْهِ\nوَشَفِيعًا مُجَابًا\nاللَّهُمَّ ثَقِّلْ بِهِ مَوَازِينَهُمَا\nوَأَعْظِمْ بِهِ أُجُورَهُمَا\nوَأَلْحِقْهُ بِصَالِحِ الْمُؤْمِنِينَ\nوَاجْعَلْهُ فِي كَفَالَةِ إِبْرَاهِيمَ\nوَقِهِ بِرَحْمَتِكَ عَذَابَ الْجَحِيمِ',
   transliteration: 'Allāhummajʿalhu faraṭan wa dhukhran liwālidayh\nwa shafīʿan mujābā\nAllāhumma thaqqil bihi mawāzīnahumā\nwa aʿẓim bihi ujūrahumā\nwa alḥiqhu biṣāliḥil-muʾminīn\nwajʿalhu fī kafālati Ibrāhīm\nwa qihi biraḥmatika ʿadhābal-jaḥīm',
@@ -95,12 +103,25 @@ const KEY_POINTS = [
 export default function JanazahPractice() {
   const navigate = useNavigate();
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
+  const [showAdultDua, setShowAdultDua] = useState(true);
+  const [showExtraDua, setShowExtraDua] = useState(false);
   const [showChildDua, setShowChildDua] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
 
   const toggleSection = (id: number) => {
-    setExpandedSection(expandedSection === id ? null : id);
+    const newExpanded = expandedSection === id ? null : id;
+    setExpandedSection(newExpanded);
+
+    // Scroll the section into view when expanding
+    if (newExpanded !== null) {
+      setTimeout(() => {
+        const element = document.getElementById(`section-${id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
   };
 
   const markSectionComplete = (id: number) => {
@@ -225,9 +246,9 @@ export default function JanazahPractice() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white px-4 py-6">
+      <div className="bg-gradient-to-r from-slate-700 to-slate-600 text-white px-4 py-6">
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate('/dua-builder')}
@@ -238,12 +259,12 @@ export default function JanazahPractice() {
           </button>
 
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-600/50 rounded-xl flex items-center justify-center">
-              <Users className="text-slate-300" size={28} />
+            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+              <Users className="text-white" size={28} />
             </div>
             <div>
               <h1 className="text-2xl font-bold">Salatul Janazah</h1>
-              <p className="text-slate-300">The Funeral Prayer</p>
+              <p className="text-slate-200">The Funeral Prayer</p>
             </div>
           </div>
 
@@ -252,7 +273,7 @@ export default function JanazahPractice() {
             <button
               onClick={generatePDF}
               disabled={generatingPdf}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
             >
               {generatingPdf ? (
                 <Loader2 className="animate-spin" size={18} />
@@ -267,15 +288,15 @@ export default function JanazahPractice() {
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Key Points */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <BookOpen className="text-amber-400" size={20} />
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            <BookOpen className="text-amber-500" size={20} />
             Key Points
           </h2>
           <ul className="space-y-2">
             {KEY_POINTS.map((point, index) => (
-              <li key={index} className="flex items-start gap-2 text-slate-300 text-sm">
-                <Check className="text-emerald-400 flex-shrink-0 mt-0.5" size={16} />
+              <li key={index} className="flex items-start gap-2 text-slate-600 text-sm">
+                <Check className="text-emerald-500 flex-shrink-0 mt-0.5" size={16} />
                 <span>{point}</span>
               </li>
             ))}
@@ -283,14 +304,14 @@ export default function JanazahPractice() {
         </div>
 
         {/* Progress indicator */}
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex items-center justify-between text-sm text-slate-500">
           <span>Progress: {completedSections.size} of 4 sections</span>
           <div className="flex gap-1">
             {[1, 2, 3, 4].map(i => (
               <div
                 key={i}
                 className={`w-8 h-2 rounded-full transition-colors ${
-                  completedSections.has(i) ? 'bg-emerald-500' : 'bg-slate-700'
+                  completedSections.has(i) ? 'bg-emerald-500' : 'bg-slate-300'
                 }`}
               />
             ))}
@@ -306,28 +327,29 @@ export default function JanazahPractice() {
             return (
               <div
                 key={section.id}
-                className={`bg-slate-800/50 border rounded-xl overflow-hidden transition-colors ${
-                  isComplete ? 'border-emerald-500/50' : 'border-slate-700'
+                id={`section-${section.id}`}
+                className={`bg-white border rounded-xl overflow-hidden transition-colors shadow-sm ${
+                  isComplete ? 'border-emerald-500' : 'border-slate-200'
                 }`}
               >
                 {/* Section Header */}
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors"
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      isComplete ? 'bg-emerald-500/20' : 'bg-slate-700'
+                      isComplete ? 'bg-emerald-100' : 'bg-slate-100'
                     }`}>
                       {isComplete ? (
-                        <Check className="text-emerald-400" size={20} />
+                        <Check className="text-emerald-600" size={20} />
                       ) : (
-                        <span className="text-white font-bold">{section.id}</span>
+                        <span className="text-slate-700 font-bold">{section.id}</span>
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-white">{section.takbeerEnglish}</p>
-                      <p className="text-sm text-slate-400">{section.content.name}</p>
+                      <p className="font-semibold text-slate-800">{section.takbeerEnglish}</p>
+                      <p className="text-sm text-slate-500">{section.content.name}</p>
                     </div>
                   </div>
                   {isExpanded ? (
@@ -339,36 +361,185 @@ export default function JanazahPractice() {
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-slate-700">
+                  <div className="px-4 pb-4 border-t border-slate-200">
                     {/* Instruction */}
-                    <div className="py-3 bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 mt-4">
-                      <p className="text-amber-200 text-sm">{section.instruction}</p>
+                    <div className="py-3 bg-amber-50 border border-amber-200 rounded-lg px-4 mt-4">
+                      <p className="text-amber-800 text-sm">{section.instruction}</p>
                     </div>
 
-                    {/* Arabic */}
-                    <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
-                      <p className="text-xl text-white font-arabic text-right leading-loose" dir="rtl">
-                        {section.content.arabic}
-                      </p>
-                    </div>
+                    {/* For Third Takbeer, show duas as expandable options */}
+                    {section.id === 3 ? (
+                      <div className="mt-4 space-y-3">
+                        {/* Option 1: Dua for Deceased (Adult) */}
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => setShowAdultDua(!showAdultDua)}
+                            className="w-full p-3 flex items-center justify-between text-left bg-slate-50 hover:bg-slate-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <User className="text-emerald-500" size={18} />
+                              <span className="text-slate-700 text-sm font-medium">Dua for the Deceased</span>
+                            </div>
+                            {showAdultDua ? (
+                              <ChevronUp className="text-slate-400" size={18} />
+                            ) : (
+                              <ChevronDown className="text-slate-400" size={18} />
+                            )}
+                          </button>
 
-                    {/* Transliteration */}
-                    <div className="mt-3">
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Transliteration</p>
-                      <p className="text-slate-300 whitespace-pre-line">{section.content.transliteration}</p>
-                    </div>
+                          {showAdultDua && (
+                            <div className="p-4 border-t border-slate-200">
+                              {/* Arabic */}
+                              <div className="p-3 bg-slate-800 rounded-lg">
+                                <p className="text-lg text-white font-arabic text-right leading-loose" dir="rtl">
+                                  {section.content.arabic}
+                                </p>
+                              </div>
 
-                    {/* English */}
-                    <div className="mt-3">
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Translation</p>
-                      <p className="text-slate-400 italic whitespace-pre-line">{section.content.english}</p>
-                    </div>
+                              {/* Transliteration */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Transliteration</p>
+                                <p className="text-slate-700 text-sm whitespace-pre-line">{section.content.transliteration}</p>
+                              </div>
 
-                    {/* Note */}
-                    {section.content.note && (
-                      <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <p className="text-blue-200 text-sm">{section.content.note}</p>
+                              {/* English */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Translation</p>
+                                <p className="text-slate-600 italic text-sm whitespace-pre-line">{section.content.english}</p>
+                              </div>
+
+                              {/* Note */}
+                              {section.content.note && (
+                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <p className="text-blue-800 text-sm">{section.content.note}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Optional: Extra Dua for the Deceased */}
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => setShowExtraDua(!showExtraDua)}
+                            className="w-full p-3 flex items-center justify-between text-left bg-slate-50 hover:bg-slate-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Plus className="text-purple-500" size={18} />
+                              <span className="text-slate-700 text-sm font-medium">Optional: Extra Dua for the Deceased</span>
+                            </div>
+                            {showExtraDua ? (
+                              <ChevronUp className="text-slate-400" size={18} />
+                            ) : (
+                              <ChevronDown className="text-slate-400" size={18} />
+                            )}
+                          </button>
+
+                          {showExtraDua && (
+                            <div className="p-4 border-t border-slate-200">
+                              <div className="py-2 bg-purple-50 border border-purple-200 rounded-lg px-3 mb-4">
+                                <p className="text-purple-800 text-sm">
+                                  An additional dua that can be recited for the deceased. Replace "[name] son of [name]" with the actual name.
+                                </p>
+                              </div>
+
+                              {/* Arabic */}
+                              <div className="p-3 bg-slate-800 rounded-lg">
+                                <p className="text-lg text-white font-arabic text-right leading-loose" dir="rtl">
+                                  {EXTRA_DECEASED_DUA.arabic}
+                                </p>
+                              </div>
+
+                              {/* Transliteration */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Transliteration</p>
+                                <p className="text-slate-700 text-sm whitespace-pre-line">{EXTRA_DECEASED_DUA.transliteration}</p>
+                              </div>
+
+                              {/* English */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Translation</p>
+                                <p className="text-slate-600 italic text-sm whitespace-pre-line">{EXTRA_DECEASED_DUA.english}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Optional: Dua for Deceased Child's Parents */}
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => setShowChildDua(!showChildDua)}
+                            className="w-full p-3 flex items-center justify-between text-left bg-slate-50 hover:bg-slate-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Baby className="text-pink-500" size={18} />
+                              <span className="text-slate-700 text-sm font-medium">Optional: Dua for Deceased Child's Parents</span>
+                            </div>
+                            {showChildDua ? (
+                              <ChevronUp className="text-slate-400" size={18} />
+                            ) : (
+                              <ChevronDown className="text-slate-400" size={18} />
+                            )}
+                          </button>
+
+                          {showChildDua && (
+                            <div className="p-4 border-t border-slate-200">
+                              <div className="py-2 bg-pink-50 border border-pink-200 rounded-lg px-3 mb-4">
+                                <p className="text-pink-800 text-sm">
+                                  When praying for a child who has not reached puberty, use this dua instead. It asks Allah to make the child a source of reward for the parents.
+                                </p>
+                              </div>
+
+                              {/* Arabic */}
+                              <div className="p-3 bg-slate-800 rounded-lg">
+                                <p className="text-lg text-white font-arabic text-right leading-loose" dir="rtl">
+                                  {CHILD_DUA.arabic}
+                                </p>
+                              </div>
+
+                              {/* Transliteration */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Transliteration</p>
+                                <p className="text-slate-700 text-sm whitespace-pre-line">{CHILD_DUA.transliteration}</p>
+                              </div>
+
+                              {/* English */}
+                              <div className="mt-3">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Translation</p>
+                                <p className="text-slate-600 italic text-sm whitespace-pre-line">{CHILD_DUA.english}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        {/* Arabic */}
+                        <div className="mt-4 p-4 bg-slate-800 rounded-lg">
+                          <p className="text-xl text-white font-arabic text-right leading-loose" dir="rtl">
+                            {section.content.arabic}
+                          </p>
+                        </div>
+
+                        {/* Transliteration */}
+                        <div className="mt-3">
+                          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Transliteration</p>
+                          <p className="text-slate-700 whitespace-pre-line">{section.content.transliteration}</p>
+                        </div>
+
+                        {/* English */}
+                        <div className="mt-3">
+                          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Translation</p>
+                          <p className="text-slate-600 italic whitespace-pre-line">{section.content.english}</p>
+                        </div>
+
+                        {/* Note */}
+                        {section.content.note && (
+                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-blue-800 text-sm">{section.content.note}</p>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {/* Mark Complete Button */}
@@ -376,7 +547,7 @@ export default function JanazahPractice() {
                       onClick={() => markSectionComplete(section.id)}
                       className={`mt-4 w-full py-2 rounded-lg font-medium transition-colors ${
                         isComplete
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                           : 'bg-slate-700 text-white hover:bg-slate-600'
                       }`}
                     >
@@ -389,68 +560,16 @@ export default function JanazahPractice() {
           })}
         </div>
 
-        {/* Child Dua Section */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowChildDua(!showChildDua)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                <Baby className="text-pink-400" size={20} />
-              </div>
-              <div>
-                <p className="font-semibold text-white">Dua for Deceased Child</p>
-                <p className="text-sm text-slate-400">Alternative dua after 3rd takbeer</p>
-              </div>
-            </div>
-            {showChildDua ? (
-              <ChevronUp className="text-slate-400" size={20} />
-            ) : (
-              <ChevronDown className="text-slate-400" size={20} />
-            )}
-          </button>
-
-          {showChildDua && (
-            <div className="px-4 pb-4 border-t border-slate-700">
-              <div className="py-3 bg-pink-500/10 border border-pink-500/20 rounded-lg px-4 mt-4">
-                <p className="text-pink-200 text-sm">
-                  When praying Janazah for a child who has not reached puberty, this dua is recited instead of the main dua after the third takbeer.
-                </p>
-              </div>
-
-              {/* Arabic */}
-              <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
-                <p className="text-xl text-white font-arabic text-right leading-loose" dir="rtl">
-                  {CHILD_DUA.arabic}
-                </p>
-              </div>
-
-              {/* Transliteration */}
-              <div className="mt-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Transliteration</p>
-                <p className="text-slate-300 whitespace-pre-line">{CHILD_DUA.transliteration}</p>
-              </div>
-
-              {/* English */}
-              <div className="mt-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Translation</p>
-                <p className="text-slate-400 italic whitespace-pre-line">{CHILD_DUA.english}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Gender Note */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-          <h3 className="font-semibold text-blue-200 mb-2 flex items-center gap-2">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
             <User size={18} />
             Gender Adjustments
           </h3>
-          <p className="text-blue-100/80 text-sm">
+          <p className="text-blue-700 text-sm">
             When praying for a female, change the masculine pronouns to feminine:
           </p>
-          <ul className="mt-2 text-sm text-blue-100/70 space-y-1">
+          <ul className="mt-2 text-sm text-blue-600 space-y-1">
             <li>• "lahu" (له) becomes "lahā" (لها)</li>
             <li>• "ʿanhu" (عنه) becomes "ʿanhā" (عنها)</li>
             <li>• "warḥamhu" becomes "warḥamhā"</li>
@@ -460,12 +579,12 @@ export default function JanazahPractice() {
 
         {/* Completion Message */}
         {completedSections.size === 4 && (
-          <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-6 text-center">
-            <div className="w-16 h-16 bg-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="text-emerald-400" size={32} />
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Heart className="text-emerald-600" size={32} />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">May Allah reward you</h3>
-            <p className="text-slate-300">
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">May Allah reward you</h3>
+            <p className="text-slate-600">
               You have learned the complete Janazah prayer. May Allah accept your efforts and make you a means of mercy for the deceased.
             </p>
           </div>

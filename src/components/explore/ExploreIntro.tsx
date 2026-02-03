@@ -73,7 +73,7 @@ const introScenes = [
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            So something must have brought us into existence. Because it's <span className="text-white font-medium">impossible</span> for nothingness to create something.
+            So something must have brought us into existence. Because it's <span className="text-white font-medium">impossible</span> for nothing to create something.
           </p>
 
           <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 text-center">
@@ -131,7 +131,7 @@ const introScenes = [
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            That something is what we call the <span className="text-emerald-400 font-semibold">Creator</span>.
+            Whatever that something is, must be the <span className="text-emerald-400 font-semibold">Creator</span>.
           </p>
         </div>
       </>
@@ -149,7 +149,7 @@ const introScenes = [
           </p>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            But this question misunderstands what "Creator" means. Let me define two words:
+            But I came to the conclusion that this question misunderstands what "Creator" means. Let me define two words:
           </p>
 
           <div className="grid gap-4">

@@ -497,7 +497,7 @@ export default function DuaBuilder() {
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard')}
               className="flex items-center gap-1 text-emerald-100 hover:text-white"
             >
               <ChevronLeft size={20} />

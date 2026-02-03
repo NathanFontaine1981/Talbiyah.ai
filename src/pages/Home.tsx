@@ -140,10 +140,10 @@ export default function Home() {
           </button>
 
           {/* Desktop navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => navigate('/features')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Features</button>
-            <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
-            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Unshakable Foundations</button>
+          <div className="hidden md:flex items-center space-x-3">
+            <button onClick={() => navigate('/features')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Features</button>
+            <button onClick={() => navigate('/explore')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Exploring Islam</button>
+            <button onClick={() => navigate('/new-muslim')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Core Foundations</button>
 
             {user ? (
               <>
@@ -199,21 +199,21 @@ export default function Home() {
             <div className="px-4 py-4 space-y-2">
               <button
                 onClick={() => { navigate('/features'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
+                className="block w-full text-center px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition font-medium"
               >
                 Features
               </button>
               <button
                 onClick={() => { navigate('/explore'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
+                className="block w-full text-center px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition font-medium"
               >
                 Exploring Islam
               </button>
               <button
                 onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition font-medium"
+                className="block w-full text-center px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition font-medium"
               >
-                Unshakable Foundations
+                Core Foundations
               </button>
 
               <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
@@ -250,7 +250,7 @@ export default function Home() {
                       onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
                       className="block w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition text-center"
                     >
-                      Sign Up Free
+                      Sign Up
                     </button>
                   </>
                 )}
