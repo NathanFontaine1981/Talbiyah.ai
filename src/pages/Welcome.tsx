@@ -176,8 +176,8 @@ export default function Welcome() {
       const userRole = user.user_metadata?.selected_role || profile?.role;
 
       if (userRole === 'teacher') {
-        // Teacher profile is auto-created by signup trigger — go straight to dashboard
-        navigate('/dashboard');
+        // Teacher profile is auto-created by signup trigger with pending_approval status
+        navigate('/teacher/pending-approval');
         return;
       } else {
         let referrerUserId = null;
