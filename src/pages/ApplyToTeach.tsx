@@ -389,16 +389,16 @@ export default function ApplyToTeach() {
       // Auto-assign tier based on qualifications
       const assignedTier = calculateTier();
 
-      // Insert teacher profile with only core columns that definitely exist
+      // Upsert teacher profile (may already exist from signup trigger)
       const { error: profileError } = await supabase
         .from('teacher_profiles')
-        .insert({
+        .upsert({
           user_id: user.id,
           bio: formData.about_me || null,
           hourly_rate: assignedTier.rate,
           video_intro_url: videoIntroUrl,
           status: 'pending_approval'
-        });
+        }, { onConflict: 'user_id' });
 
       if (profileError) {
         console.error('Profile insertion error:', profileError);

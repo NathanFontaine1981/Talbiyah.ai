@@ -173,10 +173,12 @@ export default function Welcome() {
         if (updateError) throw updateError;
       }
 
-      const userRole = user.user_metadata?.selected_role;
+      const userRole = user.user_metadata?.selected_role || profile?.role;
 
       if (userRole === 'teacher') {
-        navigate('/apply-to-teach');
+        // Teacher profile is auto-created by signup trigger — go straight to dashboard
+        navigate('/dashboard');
+        return;
       } else {
         let referrerUserId = null;
         let referrerCode = null;
