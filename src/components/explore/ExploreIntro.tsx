@@ -324,6 +324,19 @@ const introScenes = [
               All of this... by <span className="text-white font-medium">accident</span>? Or by <span className="text-emerald-400 font-semibold">design</span>?
             </p>
           </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Who—or what—is <span className="text-amber-400 font-medium">in control</span> of all of this?
+          </p>
+
+          <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
+            <p className="text-amber-200 leading-relaxed">
+              The evidence points to a <span className="text-white font-semibold">system</span>. Order. Precision. Purpose.
+            </p>
+            <p className="text-amber-300 mt-2">
+              Something—or <span className="text-white font-medium">Someone</span>—put all of this in place.
+            </p>
+          </div>
         </div>
       </>
     ),
@@ -366,11 +379,14 @@ const introScenes = [
           </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              This life is <span className="text-white font-semibold">exactly the same</span>.
+            <p className="text-emerald-200 leading-relaxed text-lg">
+              <span className="text-white font-semibold">This is us.</span>
             </p>
-            <p className="text-emerald-300 mt-2">
-              We're on a journey. We need to know where it's heading and why we're here.
+            <p className="text-emerald-300 mt-3 leading-relaxed">
+              We're on a journey we didn't choose, heading towards an end we can't escape. Our parts have <span className="text-white font-medium">clear purpose</span>—but the whole? We don't know why we're here.
+            </p>
+            <p className="text-emerald-200 mt-3 leading-relaxed">
+              If the parts were designed, so was the whole. The answer <span className="text-white font-semibold">must exist</span>.
             </p>
           </div>
 

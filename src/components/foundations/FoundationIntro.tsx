@@ -69,7 +69,7 @@ export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
           </motion.p>
 
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-            Unshakable Foundations
+            Unshakeable Foundations
           </h1>
 
           <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">

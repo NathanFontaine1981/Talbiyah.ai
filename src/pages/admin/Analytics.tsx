@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle, LayoutDashboard, Activity, GraduationCap } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays } from 'date-fns';
+import UserActivityTab from '../../components/admin/analytics/UserActivityTab';
+import FinancialTab from '../../components/admin/analytics/FinancialTab';
+import LearningProgressTab from '../../components/admin/analytics/LearningProgressTab';
 
 interface Metrics {
   newUsers: { value: number; change: number };
@@ -31,6 +34,14 @@ interface DailyActivity {
 }
 
 type TimePeriod = '7days' | '30days' | '90days' | 'thisMonth' | 'lastMonth' | 'thisYear' | 'custom';
+type TabType = 'overview' | 'activity' | 'financial' | 'learning';
+
+const tabs = [
+  { id: 'overview' as TabType, label: 'Overview', icon: LayoutDashboard },
+  { id: 'activity' as TabType, label: 'User Activity', icon: Activity },
+  { id: 'financial' as TabType, label: 'Financial', icon: DollarSign },
+  { id: 'learning' as TabType, label: 'Learning Progress', icon: GraduationCap },
+];
 
 export default function Analytics() {
   const [loading, setLoading] = useState(true);
@@ -38,6 +49,7 @@ export default function Analytics() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('7days');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   // Metrics
   const [metrics, setMetrics] = useState<Metrics>({
@@ -58,8 +70,10 @@ export default function Analytics() {
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [timePeriod, customDateRange]);
+    if (activeTab === 'overview') {
+      fetchAnalytics();
+    }
+  }, [timePeriod, customDateRange, activeTab]);
 
   function getDateRange() {
     const now = new Date();
@@ -114,7 +128,6 @@ export default function Analytics() {
       const { start, end } = getDateRange();
       const { start: prevStart, end: prevEnd } = getPreviousDateRange();
 
-      // Fetch all data in parallel
       await Promise.all([
         fetchMetrics(start, end, prevStart, prevEnd),
         fetchSubjectStats(start, end),
@@ -132,14 +145,12 @@ export default function Analytics() {
 
   async function fetchMetrics(start: Date, end: Date, prevStart: Date, prevEnd: Date) {
     try {
-      // New Users - Current Period
       const { count: newUsersCurrent } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      // New Users - Previous Period
       const { count: newUsersPrev } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -148,14 +159,12 @@ export default function Analytics() {
 
       const newUsersChange = newUsersPrev ? ((newUsersCurrent || 0) - newUsersPrev) / newUsersPrev * 100 : 0;
 
-      // Total Sessions - Current Period
       const { count: sessionsCurrent } = await supabase
         .from('lessons')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      // Total Sessions - Previous Period
       const { count: sessionsPrev } = await supabase
         .from('lessons')
         .select('*', { count: 'exact', head: true })
@@ -164,26 +173,23 @@ export default function Analytics() {
 
       const sessionsChange = sessionsPrev ? ((sessionsCurrent || 0) - sessionsPrev) / sessionsPrev * 100 : 0;
 
-      // Revenue - Current Period (from credit_purchases and lessons)
       const { data: creditPurchasesCurrent } = await supabase
         .from('credit_purchases')
-        .select('amount')
+        .select('pack_price')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      const revenueCurrentTotal = (creditPurchasesCurrent || []).reduce((sum, p) => sum + (p.amount / 100), 0);
+      const revenueCurrentTotal = (creditPurchasesCurrent || []).reduce((sum, p) => sum + (p.pack_price || 0), 0);
 
-      // Revenue - Previous Period
       const { data: creditPurchasesPrev } = await supabase
         .from('credit_purchases')
-        .select('amount')
+        .select('pack_price')
         .gte('created_at', prevStart.toISOString())
         .lte('created_at', prevEnd.toISOString());
 
-      const revenuePrevTotal = (creditPurchasesPrev || []).reduce((sum, p) => sum + (p.amount / 100), 0);
+      const revenuePrevTotal = (creditPurchasesPrev || []).reduce((sum, p) => sum + (p.pack_price || 0), 0);
       const revenueChange = revenuePrevTotal ? (revenueCurrentTotal - revenuePrevTotal) / revenuePrevTotal * 100 : 0;
 
-      // Average Duration
       const { data: durations } = await supabase
         .from('lessons')
         .select('duration_minutes')
@@ -215,7 +221,6 @@ export default function Analytics() {
 
       if (!data) return;
 
-      // Count by subject
       const subjectCounts: { [key: string]: number } = {};
       data.forEach((lesson: any) => {
         const subjectName = lesson.subjects?.name || 'Unknown';
@@ -238,13 +243,11 @@ export default function Analytics() {
 
   async function fetchTeacherPerformance(start: Date, end: Date) {
     try {
-      // Total approved teachers
       const { count: totalTeachers } = await supabase
         .from('teacher_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'approved');
 
-      // Teachers active in period
       const { data: activeLessons } = await supabase
         .from('lessons')
         .select('teacher_id')
@@ -253,18 +256,11 @@ export default function Analytics() {
 
       const uniqueTeachers = new Set(activeLessons?.map(s => s.teacher_id) || []);
 
-      // Get teacher profiles and their lessons
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
-        .select(`
-          id,
-          user_id,
-          profiles!inner(full_name),
-          teacher_ratings(rating)
-        `)
+        .select(`id, user_id, profiles!inner(full_name), average_rating`)
         .eq('status', 'approved');
 
-      // Get lesson counts per teacher
       const { data: lessonCounts } = await supabase
         .from('lessons')
         .select('teacher_id')
@@ -272,31 +268,20 @@ export default function Analytics() {
         .lte('created_at', end.toISOString())
         .eq('status', 'completed');
 
-      // Count lessons per teacher
       const teacherLessonCounts: { [key: string]: number } = {};
       lessonCounts?.forEach((lesson: any) => {
         teacherLessonCounts[lesson.teacher_id] = (teacherLessonCounts[lesson.teacher_id] || 0) + 1;
       });
 
-      // Build top performers list
       const topPerformers: TeacherPerformance[] = (teacherData || [])
-        .map((teacher: any) => {
-          // Calculate average rating
-          const ratings = teacher.teacher_ratings || [];
-          const avgRating = ratings.length > 0
-            ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length
-            : 4.5; // Default rating
-
-          return {
-            id: teacher.id,
-            name: teacher.profiles?.full_name || 'Unknown',
-            rating: avgRating,
-            sessionCount: teacherLessonCounts[teacher.id] || 0,
-          };
-        })
-        .filter(t => t.sessionCount > 0) // Only teachers with sessions in period
+        .map((teacher: any) => ({
+          id: teacher.id,
+          name: teacher.profiles?.full_name || 'Unknown',
+          rating: teacher.average_rating || 4.5,
+          sessionCount: teacherLessonCounts[teacher.id] || 0,
+        }))
+        .filter(t => t.sessionCount > 0)
         .sort((a, b) => {
-          // Sort by session count primarily, then by rating
           if (b.sessionCount !== a.sessionCount) return b.sessionCount - a.sessionCount;
           return b.rating - a.rating;
         })
@@ -328,7 +313,6 @@ export default function Analytics() {
 
       if (!lessons) return;
 
-      // Group by date
       const dailyData: { [key: string]: { sessions: number; users: Set<string> } } = {};
 
       lessons.forEach((lesson: any) => {
@@ -341,7 +325,6 @@ export default function Analytics() {
         if (lesson.teacher_id) dailyData[date].users.add(lesson.teacher_id);
       });
 
-      // Fill in missing dates
       const days = differenceInDays(end, start);
       const activity: DailyActivity[] = [];
       for (let i = 0; i <= days; i++) {
@@ -361,12 +344,14 @@ export default function Analytics() {
 
   async function handleRefresh() {
     setRefreshing(true);
-    await fetchAnalytics();
+    if (activeTab === 'overview') {
+      await fetchAnalytics();
+    }
     setRefreshing(false);
+    toast.success('Data refreshed');
   }
 
-  function handleExport(format: 'csv' | 'pdf' | 'excel') {
-    // Prepare export data
+  function handleExport(formatType: 'csv' | 'pdf' | 'excel') {
     const exportData = {
       period: timePeriod,
       dateRange: getDateRange(),
@@ -377,12 +362,12 @@ export default function Analytics() {
       generatedAt: new Date().toISOString(),
     };
 
-    if (format === 'csv') {
-      // Simple CSV export
+    if (formatType === 'csv') {
       const csv = generateCSV(exportData);
       downloadFile(csv, 'analytics-report.csv', 'text/csv');
+      toast.success('CSV exported successfully');
     } else {
-      toast.info(`Export as ${format.toUpperCase()} - Coming soon!`);
+      toast.info(`Export as ${formatType.toUpperCase()} - Coming soon!`);
     }
   }
 
@@ -424,26 +409,19 @@ export default function Analytics() {
     URL.revokeObjectURL(url);
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  const { start, end } = getDateRange();
 
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400">
             Last updated: {format(lastUpdated, 'h:mm a')}
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          {/* Time Period Selector */}
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={timePeriod}
             onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
@@ -458,7 +436,6 @@ export default function Analytics() {
             <option value="custom">Custom Range</option>
           </select>
 
-          {/* Refresh */}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -468,7 +445,6 @@ export default function Analytics() {
             <span>Refresh</span>
           </button>
 
-          {/* Export */}
           <div className="relative group">
             <button className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition flex items-center space-x-2">
               <Download className="w-4 h-4" />
@@ -500,7 +476,7 @@ export default function Analytics() {
 
       {/* Custom Date Range */}
       {timePeriod === 'custom' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Start Date</label>
@@ -524,136 +500,149 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Key Metrics */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Key Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            icon={Users}
-            label="New Users"
-            value={metrics.newUsers.value}
-            change={metrics.newUsers.change}
-            color="cyan"
-          />
-          <MetricCard
-            icon={BookOpen}
-            label="Total Sessions"
-            value={metrics.totalSessions.value}
-            change={metrics.totalSessions.change}
-            color="emerald"
-          />
-          <MetricCard
-            icon={DollarSign}
-            label="Revenue"
-            value={`£${metrics.revenue.value.toFixed(2)}`}
-            change={metrics.revenue.change}
-            color="green"
-          />
-          <MetricCard
-            icon={Clock}
-            label="Avg Session Duration"
-            value={`${metrics.avgDuration.value} min`}
-            subtitle={`Target: ${metrics.avgDuration.target} min`}
-            warning={metrics.avgDuration.value < 55}
-            color="purple"
-          />
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === tab.id
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Subject Popularity */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Subject Popularity</h2>
-        <div className="space-y-4">
-          {subjectStats.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No data available for this period</p>
-          ) : (
-            subjectStats.map((subject, index) => (
-              <SubjectBar key={index} subject={subject} />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Teacher Performance */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Teacher Performance</h2>
-
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Total Teachers</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.total}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Active This Period</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.activeThisPeriod}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Average Rating</p>
-            <div className="flex items-center space-x-2">
-              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.avgRating.toFixed(1)}</p>
-              <span className="text-gray-600 dark:text-gray-400">/ 5.0</span>
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Top Performers</h3>
-          {teacherPerformance.topPerformers.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No teacher data available</p>
           ) : (
-            <div className="space-y-2">
-              {teacherPerformance.topPerformers.map((teacher, index) => (
-                <div key={teacher.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center">
-                      <span className="text-emerald-600 font-bold text-sm">{index + 1}</span>
-                    </div>
-                    <div>
-                      <p className="text-gray-900 dark:text-white font-medium">{teacher.name}</p>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{teacher.sessionCount} sessions</p>
-                    </div>
+            <>
+              {/* Key Metrics */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Key Metrics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <MetricCard icon={Users} label="New Users" value={metrics.newUsers.value} change={metrics.newUsers.change} color="cyan" />
+                  <MetricCard icon={BookOpen} label="Total Sessions" value={metrics.totalSessions.value} change={metrics.totalSessions.change} color="emerald" />
+                  <MetricCard icon={DollarSign} label="Revenue" value={`£${metrics.revenue.value.toFixed(2)}`} change={metrics.revenue.change} color="green" />
+                  <MetricCard icon={Clock} label="Avg Session Duration" value={`${metrics.avgDuration.value} min`} subtitle={`Target: ${metrics.avgDuration.target} min`} warning={metrics.avgDuration.value < 55} color="purple" />
+                </div>
+              </div>
+
+              {/* Subject Popularity */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Subject Popularity</h2>
+                <div className="space-y-4">
+                  {subjectStats.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400">No data available for this period</p>
+                  ) : (
+                    subjectStats.map((subject, index) => (
+                      <SubjectBar key={index} subject={subject} />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Teacher Performance */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Teacher Performance</h2>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Total Teachers</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.total}</p>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-gray-900 dark:text-white font-medium">{teacher.rating.toFixed(1)}</span>
+                  <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Active This Period</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.activeThisPeriod}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Average Rating</p>
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherPerformance.avgRating.toFixed(1)}</p>
+                      <span className="text-gray-600 dark:text-gray-400">/ 5.0</span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Top Performers</h3>
+                  {teacherPerformance.topPerformers.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400">No teacher data available</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {teacherPerformance.topPerformers.map((teacher, index) => (
+                        <div key={teacher.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-8 h-8 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center">
+                              <span className="text-emerald-600 font-bold text-sm">{index + 1}</span>
+                            </div>
+                            <div>
+                              <p className="text-gray-900 dark:text-white font-medium">{teacher.name}</p>
+                              <p className="text-gray-600 dark:text-gray-400 text-sm">{teacher.sessionCount} sessions</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                            <span className="text-gray-900 dark:text-white font-medium">{teacher.rating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Daily Activity Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sessions per Day</h2>
+                  <LineChart data={dailyActivity.map(d => d.sessions)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="cyan" />
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Users per Day</h2>
+                  <BarChart data={dailyActivity.map(d => d.activeUsers)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="emerald" />
+                </div>
+              </div>
+            </>
           )}
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* Daily Activity Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Sessions per Day */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sessions per Day</h2>
-          <LineChart data={dailyActivity.map(d => d.sessions)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="cyan" />
-        </div>
+      {activeTab === 'activity' && (
+        <UserActivityTab startDate={start} endDate={end} />
+      )}
 
-        {/* Active Users per Day */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Users per Day</h2>
-          <BarChart data={dailyActivity.map(d => d.activeUsers)} labels={dailyActivity.map(d => format(new Date(d.date), 'MMM d'))} color="emerald" />
-        </div>
-      </div>
+      {activeTab === 'financial' && (
+        <FinancialTab startDate={start} endDate={end} />
+      )}
+
+      {activeTab === 'learning' && (
+        <LearningProgressTab startDate={start} endDate={end} />
+      )}
     </div>
   );
 }
 
 // Metric Card Component
 function MetricCard({ icon: Icon, label, value, change, subtitle, warning, color }: any) {
-  const colors = {
-    cyan: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    green: 'bg-green-500/10 border-green-500/20 text-green-400',
-    purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+  const colors: Record<string, string> = {
+    cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-600 dark:text-cyan-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+    green: 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400',
+    purple: 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400',
   };
 
   return (
-    <div className={`${colors[color as keyof typeof colors]} border rounded-xl p-6`}>
+    <div className={`${colors[color]} border rounded-xl p-6`}>
       <div className="flex items-center justify-between mb-3">
         <Icon className="w-8 h-8" />
         {warning && <AlertTriangle className="w-5 h-5 text-yellow-400" />}
@@ -663,11 +652,11 @@ function MetricCard({ icon: Icon, label, value, change, subtitle, warning, color
       {change !== undefined && (
         <div className="flex items-center space-x-1">
           {change >= 0 ? (
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
           ) : (
-            <TrendingDown className="w-4 h-4 text-red-400" />
+            <TrendingDown className="w-4 h-4 text-red-500" />
           )}
-          <span className={`text-sm font-medium ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-sm font-medium ${change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {change >= 0 ? '+' : ''}{change.toFixed(1)}%
           </span>
         </div>
@@ -712,72 +701,42 @@ function SubjectBar({ subject }: { subject: SubjectStats }) {
 function LineChart({ data, labels, color }: { data: number[]; labels: string[]; color: string }) {
   const maxValue = Math.max(...data, 1);
   const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * 100;
+    const x = (index / (data.length - 1 || 1)) * 100;
     const y = 100 - (value / maxValue) * 80;
     return `${x},${y}`;
   }).join(' ');
 
-  const colors = {
+  const colors: Record<string, { line: string; fill: string }> = {
     cyan: { line: '#06b6d4', fill: 'rgba(6, 182, 212, 0.1)' },
     emerald: { line: '#10b981', fill: 'rgba(16, 185, 129, 0.1)' },
   };
 
-  const colorScheme = colors[color as keyof typeof colors];
+  const colorScheme = colors[color] || colors.cyan;
 
   return (
     <div>
       <div className="relative h-48 mb-4">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {/* Grid lines */}
           <line x1="0" y1="20" x2="100" y2="20" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
           <line x1="0" y1="40" x2="100" y2="40" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
           <line x1="0" y1="60" x2="100" y2="60" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
           <line x1="0" y1="80" x2="100" y2="80" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.2" />
-
-          {/* Area fill */}
-          <polygon
-            points={`0,100 ${points} 100,100`}
-            fill={colorScheme.fill}
-          />
-
-          {/* Line */}
-          <polyline
-            points={points}
-            fill="none"
-            stroke={colorScheme.line}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Points */}
+          <polygon points={`0,100 ${points} 100,100`} fill={colorScheme.fill} />
+          <polyline points={points} fill="none" stroke={colorScheme.line} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           {data.map((value, index) => {
-            const x = (index / (data.length - 1)) * 100;
+            const x = (index / (data.length - 1 || 1)) * 100;
             const y = 100 - (value / maxValue) * 80;
-            return (
-              <circle
-                key={index}
-                cx={x}
-                cy={y}
-                r="1.5"
-                fill={colorScheme.line}
-              />
-            );
+            return <circle key={index} cx={x} cy={y} r="1.5" fill={colorScheme.line} />;
           })}
         </svg>
-
-        {/* Y-axis labels */}
         <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 -translate-x-8">
           <span>{maxValue}</span>
           <span>{Math.round(maxValue * 0.5)}</span>
           <span>0</span>
         </div>
       </div>
-
-      {/* X-axis labels */}
       <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         {labels.map((label, index) => {
-          // Show every nth label to avoid crowding
           const showEvery = Math.ceil(labels.length / 7);
           if (index % showEvery === 0 || index === labels.length - 1) {
             return <span key={index}>{label}</span>;
@@ -793,12 +752,12 @@ function LineChart({ data, labels, color }: { data: number[]; labels: string[]; 
 function BarChart({ data, labels, color }: { data: number[]; labels: string[]; color: string }) {
   const maxValue = Math.max(...data, 1);
 
-  const colors = {
-    cyan: 'bg-emerald-500',
+  const colors: Record<string, string> = {
+    cyan: 'bg-cyan-500',
     emerald: 'bg-emerald-500',
   };
 
-  const barColor = colors[color as keyof typeof colors];
+  const barColor = colors[color] || colors.emerald;
 
   return (
     <div>
@@ -810,7 +769,6 @@ function BarChart({ data, labels, color }: { data: number[]; labels: string[]; c
                 className={`${barColor} rounded-t transition-all duration-500`}
                 style={{ height: `${(value / maxValue) * 192}px` }}
               >
-                {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                   {value}
                 </div>
@@ -819,8 +777,6 @@ function BarChart({ data, labels, color }: { data: number[]; labels: string[]; c
           </div>
         ))}
       </div>
-
-      {/* X-axis labels */}
       <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         {labels.map((label, index) => {
           const showEvery = Math.ceil(labels.length / 7);

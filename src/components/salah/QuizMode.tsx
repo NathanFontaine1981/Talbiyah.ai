@@ -159,14 +159,14 @@ export default function QuizMode({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 px-4 py-8"
+      className="min-h-screen bg-gray-50 px-4 py-8"
     >
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
@@ -178,10 +178,10 @@ export default function QuizMode({
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-amber-900/50 border-2 border-amber-500/50 flex items-center justify-center">
             <Brain className="w-10 h-10 text-amber-400" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
             Test Your Knowledge
           </h1>
-          <p className="text-slate-300 text-lg">
+          <p className="text-gray-600 text-lg">
             Choose a quiz type to challenge yourself
           </p>
         </div>
@@ -190,15 +190,15 @@ export default function QuizMode({
         <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <button
             onClick={() => startQuiz('match-meaning')}
-            className="group bg-slate-900/70 hover:bg-slate-800/70 rounded-2xl p-6 border border-slate-700 hover:border-amber-500/50 transition-all text-left"
+            className="group bg-white hover:bg-gray-50 rounded-2xl p-6 border border-gray-200 hover:border-amber-500/50 transition-all text-left"
           >
             <div className="w-14 h-14 rounded-xl bg-amber-900/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Target className="w-7 h-7 text-amber-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Match the Meaning
             </h3>
-            <p className="text-slate-300 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               See an Arabic word and select its correct English meaning
             </p>
             <div className="flex items-center gap-2 text-amber-400 text-sm">
@@ -210,15 +210,15 @@ export default function QuizMode({
 
           <button
             onClick={() => startQuiz('complete-phrase')}
-            className="group bg-slate-900/70 hover:bg-slate-800/70 rounded-2xl p-6 border border-slate-700 hover:border-emerald-500/50 transition-all text-left"
+            className="group bg-white hover:bg-gray-50 rounded-2xl p-6 border border-gray-200 hover:border-emerald-500/50 transition-all text-left"
           >
             <div className="w-14 h-14 rounded-xl bg-emerald-900/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Shuffle className="w-7 h-7 text-emerald-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Complete the Phrase
             </h3>
-            <p className="text-slate-300 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               Fill in the missing Arabic word to complete the recitation
             </p>
             <div className="flex items-center gap-2 text-emerald-400 text-sm">
@@ -231,7 +231,7 @@ export default function QuizMode({
 
         {/* Tip */}
         <div className="mt-8 text-center">
-          <p className="text-slate-300 text-sm">
+          <p className="text-gray-600 text-sm">
             Tip: Build a streak of correct answers for bonus XP!
           </p>
         </div>
@@ -255,7 +255,7 @@ export default function QuizMode({
         className={`min-h-screen px-4 py-8 ${
           isMatchMeaning
             ? 'bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950'
-            : 'bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950'
+            : 'bg-gray-50'
         }`}
       >
         <div className="max-w-2xl mx-auto">
@@ -263,7 +263,7 @@ export default function QuizMode({
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => setQuizType('select')}
-              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               Exit Quiz
@@ -283,7 +283,7 @@ export default function QuizMode({
 
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="flex justify-between text-sm text-slate-300 mb-2">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
               <span>Question {currentIndex + 1} of {questions.length}</span>
               <span>{Math.round(((currentIndex + 1) / questions.length) * 100)}%</span>
             </div>
@@ -301,16 +301,16 @@ export default function QuizMode({
             key={question.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-6"
+            className="bg-white rounded-2xl p-8 border border-gray-200 mb-6"
           >
             <div className="text-center mb-6">
-              <p className="text-slate-300 text-sm mb-4">
+              <p className="text-gray-600 text-sm mb-4">
                 {isMatchMeaning ? 'What does this word mean?' : 'Complete the phrase:'}
               </p>
-              <p className="font-arabic text-4xl md:text-5xl text-white leading-loose" dir="rtl">
+              <p className="font-arabic text-4xl md:text-5xl text-gray-900 leading-loose" dir="rtl">
                 {question.arabic}
               </p>
-              <p className="text-slate-300 italic mt-2">
+              <p className="text-gray-600 italic mt-2">
                 {question.transliteration}
               </p>
               {question.context && (
@@ -339,8 +339,8 @@ export default function QuizMode({
                         : showWrong
                         ? 'bg-red-900/50 border-red-500 text-red-100'
                         : isSelected
-                        ? 'bg-slate-700 border-slate-500 text-white'
-                        : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600'
+                        ? 'bg-slate-700 border-slate-500 text-gray-900'
+                        : 'bg-slate-800/50 border-gray-200 text-gray-600 hover:bg-slate-700/50 hover:border-slate-600'
                     } ${isAnswered && !showCorrect && !showWrong ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center justify-between">
@@ -413,24 +413,24 @@ export default function QuizMode({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 px-4 py-8 flex items-center justify-center"
+        className="min-h-screen bg-gray-50 px-4 py-8 flex items-center justify-center"
       >
         <div className="max-w-md w-full">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 text-center"
+            className="bg-white rounded-2xl p-8 border border-gray-200 text-center"
           >
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-amber-900/50 border-2 border-amber-500/50 flex items-center justify-center">
               <Trophy className="w-10 h-10 text-amber-400" />
             </div>
 
-            <h2 className="text-3xl font-bold text-white mb-2">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
               {grade}
             </h2>
 
-            <p className="text-slate-300 mb-6">
+            <p className="text-gray-600 mb-6">
               Quiz Complete
             </p>
 
@@ -438,10 +438,10 @@ export default function QuizMode({
               <div className="text-5xl font-bold text-amber-400 mb-2">
                 {score}
               </div>
-              <div className="text-slate-300">
+              <div className="text-gray-600">
                 XP Earned
               </div>
-              <div className="mt-4 text-sm text-slate-300">
+              <div className="mt-4 text-sm text-gray-600">
                 {percentage}% accuracy
               </div>
             </div>
@@ -456,7 +456,7 @@ export default function QuizMode({
               </button>
               <button
                 onClick={onBack}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-medium transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-gray-900 rounded-full font-medium transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Back to Menu

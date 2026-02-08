@@ -19,6 +19,7 @@ interface LearnModeProps {
   onPositionComplete: (positionId: string) => void;
   onBack: () => void;
   onComplete: () => void;
+  initialPositionId?: string;
 }
 
 type ViewMode = 'grid' | 'detail' | 'conversation';
@@ -36,15 +37,21 @@ export default function LearnMode({
   completedPositions,
   onPositionComplete,
   onBack,
-  onComplete
+  onComplete,
+  initialPositionId
 }: LearnModeProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [selectedPosition, setSelectedPosition] = useState<SalahPosition | null>(null);
+  const positions = getPositionsByOrder();
+
+  // Find initial position if provided
+  const initialPosition = initialPositionId
+    ? positions.find(p => p.id === initialPositionId) || null
+    : null;
+
+  const [viewMode, setViewMode] = useState<ViewMode>(initialPosition ? 'detail' : 'grid');
+  const [selectedPosition, setSelectedPosition] = useState<SalahPosition | null>(initialPosition);
   const [expandedRecitation, setExpandedRecitation] = useState<string | null>(null);
   const [revealedWords, setRevealedWords] = useState<Record<string, number>>({});
   const [showConversation, setShowConversation] = useState(false);
-
-  const positions = getPositionsByOrder();
   const progress = Math.round((completedPositions.length / positions.length) * 100);
 
   const handlePositionSelect = (position: SalahPosition) => {
@@ -87,24 +94,24 @@ export default function LearnMode({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 px-4 py-8"
+      className="min-h-screen bg-gray-50 px-4 py-8"
     >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
           </button>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-sm text-slate-300">Progress</div>
-              <div className="text-emerald-400 font-semibold">{progress}%</div>
+              <div className="text-sm text-gray-500">Progress</div>
+              <div className="text-emerald-600 font-semibold">{progress}%</div>
             </div>
-            <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
@@ -115,10 +122,10 @@ export default function LearnMode({
 
         {/* Title */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
             Positions of Prayer
           </h1>
-          <p className="text-slate-300 text-lg">
+          <p className="text-gray-600 text-lg">
             Tap on any position to learn what you recite and what it means
           </p>
         </div>
@@ -134,31 +141,31 @@ export default function LearnMode({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => handlePositionSelect(position)}
-                className={`group relative bg-slate-900/70 hover:bg-slate-800/70 rounded-2xl p-5 border transition-all text-left ${
+                className={`group relative bg-white hover:bg-gray-50 rounded-2xl p-5 border transition-all text-left shadow-sm ${
                   isCompleted
-                    ? 'border-emerald-500/50 hover:border-emerald-400/70'
-                    : 'border-slate-700 hover:border-slate-600'
+                    ? 'border-emerald-300 bg-emerald-50/50'
+                    : 'border-gray-200 hover:border-emerald-300'
                 }`}
               >
                 {isCompleted && (
                   <div className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                   </div>
                 )}
                 <div className="text-3xl mb-3">
                   {positionIcons[position.iconType] || '🕌'}
                 </div>
-                <div className="text-sm text-slate-300 mb-1">
+                <div className="text-sm text-gray-500 mb-1">
                   {position.order}. {position.transliteration}
                 </div>
-                <h3 className="text-white font-semibold mb-1 group-hover:text-emerald-300 transition-colors">
+                <h3 className="text-gray-900 font-semibold mb-1 group-hover:text-emerald-600 transition-colors">
                   {position.name}
                 </h3>
-                <p className="text-xs text-slate-300 line-clamp-2">
+                <p className="text-xs text-gray-500 line-clamp-2">
                   {position.description}
                 </p>
                 {position.id === 'standing-fatiha' && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-400 bg-amber-900/30 px-2 py-1 rounded-full">
+                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
                     <MessageCircle className="w-3 h-3" />
                     Conversation
                   </div>
@@ -175,9 +182,9 @@ export default function LearnMode({
             animate={{ opacity: 1, y: 0 }}
             className="mt-8 text-center"
           >
-            <div className="inline-flex items-center gap-2 bg-emerald-900/30 px-6 py-3 rounded-full border border-emerald-700/50">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
-              <span className="text-emerald-300 font-medium">
+            <div className="inline-flex items-center gap-2 bg-emerald-100 px-6 py-3 rounded-full border border-emerald-200">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
+              <span className="text-emerald-700 font-medium">
                 Amazing! You've learned all positions!
               </span>
             </div>
@@ -196,14 +203,14 @@ export default function LearnMode({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 px-4 py-8"
+        className="min-h-screen bg-gray-50 px-4 py-8"
       >
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={handleBackToGrid}
-              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               All Positions
@@ -217,7 +224,7 @@ export default function LearnMode({
                 Mark as Learned
               </button>
             ) : (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm">
+              <div className="flex items-center gap-2 text-emerald-600 text-sm">
                 <CheckCircle2 className="w-4 h-4" />
                 Completed
               </div>
@@ -225,33 +232,33 @@ export default function LearnMode({
           </div>
 
           {/* Position Header */}
-          <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-700 mb-6">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 mb-6 shadow-sm">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-xl bg-emerald-900/50 flex items-center justify-center text-4xl">
+              <div className="w-16 h-16 rounded-xl bg-emerald-100 flex items-center justify-center text-4xl">
                 {positionIcons[selectedPosition.iconType] || '🕌'}
               </div>
               <div className="flex-1">
-                <div className="text-emerald-400 text-sm mb-1">
+                <div className="text-emerald-600 text-sm mb-1">
                   Position {selectedPosition.order}
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
                   {selectedPosition.name}
                 </h1>
-                <div className="text-lg text-slate-300 font-arabic">
+                <div className="text-lg text-gray-600 font-arabic">
                   {selectedPosition.arabicName}
                 </div>
               </div>
             </div>
-            <p className="text-slate-300 mt-4">
+            <p className="text-gray-600 mt-4">
               {selectedPosition.description}
             </p>
             {selectedPosition.physicalDescription && (
-              <p className="text-slate-400 text-sm mt-2 italic">
+              <p className="text-gray-500 text-sm mt-2 italic">
                 {selectedPosition.physicalDescription}
               </p>
             )}
             {selectedPosition.transitionSaying && (
-              <div className="mt-4 inline-flex items-center gap-2 text-sm text-amber-400 bg-amber-900/30 px-3 py-1.5 rounded-full">
+              <div className="mt-4 inline-flex items-center gap-2 text-sm text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full">
                 <span>Say "{selectedPosition.transitionSaying}" when entering this position</span>
               </div>
             )}
@@ -261,28 +268,28 @@ export default function LearnMode({
           {isFatiha && (
             <button
               onClick={() => setShowConversation(true)}
-              className="w-full mb-6 bg-gradient-to-r from-amber-900/40 to-amber-800/40 hover:from-amber-900/60 hover:to-amber-800/60 rounded-2xl p-5 border border-amber-700/50 transition-all flex items-center justify-between group"
+              className="w-full mb-6 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 rounded-2xl p-5 border border-amber-300 transition-all flex items-center justify-between group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-800/50 flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-amber-400" />
+                <div className="w-12 h-12 rounded-xl bg-amber-200 flex items-center justify-center">
+                  <MessageCircle className="w-6 h-6 text-amber-600" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-lg font-semibold text-amber-300">
+                  <h3 className="text-lg font-semibold text-amber-800">
                     View as Conversation with Allah
                   </h3>
-                  <p className="text-amber-400/70 text-sm">
+                  <p className="text-amber-600 text-sm">
                     See how Allah responds to each verse you recite
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 text-amber-600 group-hover:translate-x-1 transition-transform" />
             </button>
           )}
 
           {/* Recitations */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-gray-900">
               What You Recite
             </h2>
             {selectedPosition.recitations.map((recitation, index) => (
@@ -299,14 +306,14 @@ export default function LearnMode({
           </div>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-800">
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
             {selectedPosition.order > 1 ? (
               <button
                 onClick={() => {
                   const prev = positions.find(p => p.order === selectedPosition.order - 1);
                   if (prev) handlePositionSelect(prev);
                 }}
-                className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Previous
@@ -320,7 +327,7 @@ export default function LearnMode({
                   const next = positions.find(p => p.order === selectedPosition.order + 1);
                   if (next) handlePositionSelect(next);
                 }}
-                className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors"
+                className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors"
               >
                 Next
                 <ArrowRight className="w-5 h-5" />
@@ -383,14 +390,14 @@ function RecitationCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="bg-slate-900/70 rounded-2xl border border-slate-700 overflow-hidden"
+      className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm"
     >
       {/* Main Content */}
       <div className="p-6">
         {/* Arabic Text */}
         <div className="text-center mb-4">
           <p
-            className="font-arabic text-3xl md:text-4xl text-emerald-200"
+            className="font-arabic text-3xl md:text-4xl text-emerald-700"
             dir="rtl"
             style={{ lineHeight: '2.2' }}
           >
@@ -399,18 +406,18 @@ function RecitationCard({
         </div>
 
         {/* Transliteration */}
-        <p className="text-center text-slate-300 italic mb-2">
+        <p className="text-center text-gray-500 italic mb-2">
           {recitation.transliteration}
         </p>
 
         {/* Translation */}
-        <p className="text-center text-amber-100">
+        <p className="text-center text-gray-900 font-medium">
           {recitation.translation}
         </p>
 
         {/* Reference */}
         {recitation.reference && (
-          <p className="text-center text-slate-300 text-xs mt-2">
+          <p className="text-center text-gray-400 text-xs mt-2">
             {recitation.reference}
           </p>
         )}
@@ -418,7 +425,7 @@ function RecitationCard({
         {/* Repeat indicator */}
         {recitation.timesToRepeat && recitation.timesToRepeat > 1 && (
           <div className="text-center mt-3">
-            <span className="text-xs text-amber-400 bg-amber-900/30 px-2 py-1 rounded-full">
+            <span className="text-xs text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
               Repeat {recitation.timesToRepeat} times
             </span>
           </div>
@@ -427,7 +434,7 @@ function RecitationCard({
         {/* Word-by-Word Expand Button */}
         <button
           onClick={onToggleExpand}
-          className="w-full mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors"
+          className="w-full mt-4 pt-4 border-t border-gray-200 flex items-center justify-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors"
         >
           <Eye className="w-4 h-4" />
           {isExpanded ? 'Hide' : 'Show'} Word-by-Word Breakdown
@@ -445,7 +452,7 @@ function RecitationCard({
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="px-6 pb-6 border-t border-slate-700/50 pt-4">
+            <div className="px-6 pb-6 border-t border-gray-200 pt-4 bg-gray-50">
               {/* Word-by-Word Grid - Tap to reveal meanings */}
               <button
                 onClick={onRevealAll}
@@ -466,24 +473,24 @@ function RecitationCard({
                         }}
                         className={`text-center p-3 rounded-xl transition-all ${
                           isRevealed
-                            ? 'bg-emerald-900/40 border border-emerald-700/50'
-                            : 'bg-slate-800/50 border border-slate-700/30 hover:bg-slate-700/50'
+                            ? 'bg-emerald-100 border border-emerald-300'
+                            : 'bg-white border border-gray-200 hover:bg-gray-100'
                         }`}
                       >
-                        <div className="font-arabic text-xl text-emerald-200 mb-1">
+                        <div className="font-arabic text-xl text-emerald-700 mb-1">
                           {word.arabic}
                         </div>
                         {isRevealed ? (
                           <>
-                            <div className="text-xs text-slate-300 italic mb-0.5">
+                            <div className="text-xs text-gray-500 italic mb-0.5">
                               {word.transliteration}
                             </div>
-                            <div className="text-sm text-amber-100 font-medium">
+                            <div className="text-sm text-gray-900 font-medium">
                               {word.meaning}
                             </div>
                           </>
                         ) : (
-                          <div className="text-xs text-slate-300">
+                          <div className="text-xs text-gray-400">
                             ?
                           </div>
                         )}
@@ -496,11 +503,11 @@ function RecitationCard({
               {/* Reveal prompt or completion indicator */}
               <div className="flex justify-center">
                 {!allWordsRevealed ? (
-                  <p className="text-slate-300 text-sm">
+                  <p className="text-gray-500 text-sm">
                     Tap to reveal word meanings
                   </p>
                 ) : (
-                  <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                  <div className="flex items-center gap-2 text-emerald-600 text-sm">
                     <CheckCircle2 className="w-4 h-4" />
                     All words revealed
                   </div>
@@ -512,13 +519,13 @@ function RecitationCard({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 p-4 bg-amber-900/20 rounded-xl border border-amber-700/30"
+                  className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200"
                 >
-                  <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+                  <h4 className="text-amber-700 font-medium mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
                     Spiritual Context
                   </h4>
-                  <p className="text-slate-300 text-sm leading-relaxed">
+                  <p className="text-gray-700 text-sm leading-relaxed">
                     {recitation.spiritualContext}
                   </p>
                 </motion.div>
@@ -549,29 +556,29 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-slate-700"
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-200 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Conversation with Allah</h2>
-            <p className="text-sm text-slate-300">
+            <h2 className="text-lg font-semibold text-gray-900">Conversation with Allah</h2>
+            <p className="text-sm text-gray-500">
               Based on Sahih Muslim 395
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-slate-300" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
@@ -585,10 +592,10 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
                 onClick={() => setCurrentIndex(i)}
                 className={`w-2.5 h-2.5 rounded-full transition-all ${
                   i === currentIndex
-                    ? 'bg-emerald-400 scale-125'
+                    ? 'bg-emerald-500 scale-125'
                     : i < currentIndex
-                    ? 'bg-emerald-600'
-                    : 'bg-slate-600'
+                    ? 'bg-emerald-300'
+                    : 'bg-gray-300'
                 }`}
               />
             ))}
@@ -601,12 +608,12 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
             animate={{ opacity: 1, x: 0 }}
             className="mb-6"
           >
-            <div className="text-sm text-emerald-400 mb-2">You say:</div>
-            <div className="bg-emerald-900/30 rounded-2xl rounded-br-md p-4 border border-emerald-700/50 ml-8">
-              <p className="font-arabic text-2xl text-emerald-200 mb-2 text-right" dir="rtl">
+            <div className="text-sm text-emerald-600 mb-2">You say:</div>
+            <div className="bg-emerald-50 rounded-2xl rounded-br-md p-4 border border-emerald-200 ml-8">
+              <p className="font-arabic text-2xl text-emerald-700 mb-2 text-right" dir="rtl">
                 {current.arabic}
               </p>
-              <p className="text-amber-100 text-sm">
+              <p className="text-gray-700 text-sm">
                 "{current.translation}"
               </p>
             </div>
@@ -620,13 +627,13 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="text-sm text-amber-400 mb-2">Allah responds:</div>
-              <div className="bg-amber-900/30 rounded-2xl rounded-bl-md p-4 border border-amber-700/50 mr-8">
-                <p className="text-amber-100 text-lg leading-relaxed">
+              <div className="text-sm text-amber-600 mb-2">Allah responds:</div>
+              <div className="bg-amber-50 rounded-2xl rounded-bl-md p-4 border border-amber-200 mr-8">
+                <p className="text-gray-900 text-lg leading-relaxed">
                   {current.divinePerspective.text}
                 </p>
                 {current.divinePerspective.hadithSource && (
-                  <p className="text-amber-400/60 text-xs mt-2">
+                  <p className="text-amber-600 text-xs mt-2">
                     — {current.divinePerspective.hadithSource}
                   </p>
                 )}
@@ -640,9 +647,9 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-6 p-4 bg-slate-800/50 rounded-xl"
+              className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200"
             >
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 {current.spiritualContext}
               </p>
             </motion.div>
@@ -650,11 +657,11 @@ function ConversationModal({ recitations, onClose }: ConversationModalProps) {
         </div>
 
         {/* Navigation */}
-        <div className="sticky bottom-0 bg-slate-900 border-t border-slate-700 p-4 flex justify-between">
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-between">
           <button
             onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0}
-            className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Previous

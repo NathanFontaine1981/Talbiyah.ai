@@ -186,7 +186,7 @@ export default function ExplorerDashboard() {
             )}
           </motion.button>
 
-          {/* Unshakable Foundations */}
+          {/* Unshakeable Foundations */}
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -199,7 +199,7 @@ export default function ExplorerDashboard() {
                 <User className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-1">Unshakable Foundations</h3>
+                <h3 className="text-xl font-semibold text-white mb-1">Unshakeable Foundations</h3>
                 <p className="text-slate-300">
                   Build your Islamic knowledge from the ground up
                 </p>

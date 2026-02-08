@@ -130,9 +130,9 @@ export default function HomeLandingV2() {
           </button>
 
           <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => navigate('/features')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Features</button>
-            <button onClick={() => navigate('/explore')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Exploring Islam</button>
-            <button onClick={() => navigate('/new-muslim')} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition font-medium">Foundations</button>
+            <button onClick={() => navigate('/features')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Features</button>
+            <button onClick={() => navigate('/explore')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Exploring Islam</button>
+            <button onClick={() => navigate('/new-muslim')} className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition font-medium">Unshakeable Foundations</button>
 
             {user ? (
               <>
@@ -187,7 +187,7 @@ export default function HomeLandingV2() {
                 onClick={() => { navigate('/new-muslim'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition font-medium"
               >
-                Foundations
+                Unshakeable Foundations
               </button>
               <div className="border-t border-gray-100 pt-3 mt-3">
                 {user ? (
@@ -278,6 +278,20 @@ export default function HomeLandingV2() {
             </div>
 
             <p className="text-sm text-gray-500 mt-6">Free courses available - no credit card required</p>
+
+            {/* Social Proof */}
+            <div className="flex items-center justify-center space-x-4 mt-8">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-emerald-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">AK</div>
+                <div className="w-8 h-8 rounded-full bg-amber-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">SM</div>
+                <div className="w-8 h-8 rounded-full bg-blue-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">FR</div>
+                <div className="w-8 h-8 rounded-full bg-pink-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">YH</div>
+                <div className="w-8 h-8 rounded-full bg-purple-400 border-2 border-gray-900 flex items-center justify-center text-xs font-semibold text-gray-900">+</div>
+              </div>
+              <p className="text-gray-300 text-sm">
+                <strong className="text-white">2,500+</strong> students learning with us
+              </p>
+            </div>
           </div>
         </div>
 
@@ -840,6 +854,67 @@ export default function HomeLandingV2() {
         </div>
       </section>
 
+      {/* Our Story Section */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-emerald-600 font-semibold text-sm tracking-wider uppercase mb-4">Our Story</p>
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              From the Premier League to
+            </h2>
+            <p className="text-4xl sm:text-5xl font-serif italic text-emerald-500">
+              Serving Your Learning
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            {/* Photo */}
+            <div className="relative">
+              <div className="aspect-[3/4] bg-gray-200 rounded-3xl overflow-hidden">
+                <img
+                  src="/nathan-ellington.jpg"
+                  alt="Nathan Ellington - Founder of Talbiyah.ai"
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
+            </div>
+
+            {/* Story Content */}
+            <div className="space-y-6">
+              <p className="text-lg text-gray-600 leading-relaxed">
+                My journey began on the football pitch—playing for Bristol Rovers, Wigan Athletic, and West Bromwich Albion. But the most important goal I ever scored was finding Islam.
+              </p>
+
+              <blockquote className="border-l-4 border-emerald-500 pl-6 py-4 bg-white rounded-r-xl">
+                <p className="text-xl text-gray-900 italic leading-relaxed">
+                  "I embraced Islam the year of promotion to the Premier League with Wigan—a journey of enlightenment that transformed my life forever."
+                </p>
+              </blockquote>
+
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Over 20 years as a Muslim, I've dedicated my life to learning and sharing Islamic knowledge. After retiring from football, I founded Talbiyah.ai to make authentic Islamic education accessible to everyone, anywhere in the world.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <button
+                  onClick={() => navigate('/signup')}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition inline-flex items-center justify-center gap-2"
+                >
+                  <span>Start Learning Today</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => navigate('/apply-to-teach')}
+                  className="px-6 py-3 border border-gray-300 hover:border-gray-400 text-gray-700 rounded-full font-semibold transition inline-flex items-center justify-center gap-2"
+                >
+                  <span>Join Our Teaching Team</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing - Same as original */}
       <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -998,6 +1073,91 @@ export default function HomeLandingV2() {
                   <Heart className="w-4 h-4" />
                   Start Earning Rewards
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              What Our Students
+            </h2>
+            <p className="text-4xl sm:text-5xl font-serif italic text-emerald-500">
+              Are Saying
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "Finally found a platform that tracks my actual progress. The AI study notes after each lesson are incredible — it's like having a personal assistant."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-semibold">
+                  AK
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Ahmed K.</p>
+                  <p className="text-sm text-gray-500">Learning Quran for 6 months</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "As a parent, I love seeing exactly what my children are learning. The progress reports give me peace of mind that they're on the right track."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-semibold">
+                  SM
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Sarah M.</p>
+                  <p className="text-sm text-gray-500">Parent of 3 students</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "The homework generated after each lesson targets exactly what I struggled with. I'm learning faster than I ever did in traditional classes."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                  YH
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Yusuf H.</p>
+                  <p className="text-sm text-gray-500">Arabic language student</p>
+                </div>
               </div>
             </div>
           </div>

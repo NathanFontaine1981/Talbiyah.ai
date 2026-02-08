@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Mail, Phone, MapPin, Calendar, Clock, CreditCard, User, Users, GraduationCap, BookOpen, Award, Star, Gift, Shield, AlertTriangle, Copy, Check, ExternalLink, RefreshCw, MessageSquare } from 'lucide-react';
+import { X, Mail, Phone, MapPin, Calendar, Clock, CreditCard, User, Users, GraduationCap, BookOpen, Award, Star, Gift, Shield, AlertTriangle, Copy, Check, ExternalLink, RefreshCw, MessageSquare, Activity, MousePointer, Eye, Smartphone, Monitor, Tablet } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -9,15 +9,45 @@ interface UserProfileModalProps {
   onClose: () => void;
 }
 
+interface UserActivity {
+  id: string;
+  event_type: string;
+  event_category: string;
+  page_path: string;
+  page_title: string;
+  component: string | null;
+  action: string | null;
+  device_type: string;
+  browser: string;
+  created_at: string;
+  duration_ms: number | null;
+}
+
 export default function UserProfileModal({ userId, onClose }: UserProfileModalProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'lessons' | 'credits' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'lessons' | 'credits' | 'activity'>('overview');
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [activityData, setActivityData] = useState<UserActivity[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityStats, setActivityStats] = useState<{
+    totalPageViews: number;
+    totalFeatureUses: number;
+    topPages: { page: string; count: number }[];
+    topFeatures: { feature: string; count: number }[];
+    deviceBreakdown: { device: string; count: number }[];
+    lastActive: string | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchUserProfile();
   }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchUserActivity();
+    }
+  }, [activeTab, userId]);
 
   async function fetchUserProfile() {
     setLoading(true);
@@ -33,6 +63,75 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
       toast.error('Failed to load user profile');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchUserActivity() {
+    setActivityLoading(true);
+    try {
+      // Fetch recent activity
+      const { data: activities, error } = await supabase
+        .from('user_activity')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setActivityData(activities || []);
+
+      // Calculate stats from activities
+      if (activities && activities.length > 0) {
+        const pageViews = activities.filter(a => a.event_type === 'page_view');
+        const featureUses = activities.filter(a => a.event_type === 'feature_use');
+
+        // Top pages
+        const pageCounts: Record<string, number> = {};
+        pageViews.forEach(pv => {
+          const page = pv.page_path || '/unknown';
+          pageCounts[page] = (pageCounts[page] || 0) + 1;
+        });
+        const topPages = Object.entries(pageCounts)
+          .map(([page, count]) => ({ page, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        // Top features
+        const featureCounts: Record<string, number> = {};
+        featureUses.forEach(fu => {
+          const feature = fu.component || 'unknown';
+          featureCounts[feature] = (featureCounts[feature] || 0) + 1;
+        });
+        const topFeatures = Object.entries(featureCounts)
+          .map(([feature, count]) => ({ feature, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        // Device breakdown
+        const deviceCounts: Record<string, number> = {};
+        activities.forEach(a => {
+          const device = a.device_type || 'unknown';
+          deviceCounts[device] = (deviceCounts[device] || 0) + 1;
+        });
+        const deviceBreakdown = Object.entries(deviceCounts)
+          .map(([device, count]) => ({ device, count }))
+          .sort((a, b) => b.count - a.count);
+
+        setActivityStats({
+          totalPageViews: pageViews.length,
+          totalFeatureUses: featureUses.length,
+          topPages,
+          topFeatures,
+          deviceBreakdown,
+          lastActive: activities[0]?.created_at || null
+        });
+      } else {
+        setActivityStats(null);
+      }
+    } catch (err) {
+      console.error('Error fetching user activity:', err);
+    } finally {
+      setActivityLoading(false);
     }
   }
 
@@ -155,6 +254,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
             { id: 'overview', label: 'Overview' },
             { id: 'lessons', label: 'Lessons' },
             { id: 'credits', label: 'Credits' },
+            { id: 'activity', label: 'Activity' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -472,6 +572,166 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'activity' && (
+            <div className="space-y-6">
+              {activityLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
+                  <span className="ml-2 text-gray-500">Loading activity...</span>
+                </div>
+              ) : activityStats ? (
+                <>
+                  {/* Activity Stats Cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+                      <Eye className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-blue-600">{activityStats.totalPageViews}</p>
+                      <p className="text-xs text-gray-500">Page Views</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center">
+                      <MousePointer className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-purple-600">{activityStats.totalFeatureUses}</p>
+                      <p className="text-xs text-gray-500">Feature Uses</p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center">
+                      <Activity className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-emerald-600">{activityData.length}</p>
+                      <p className="text-xs text-gray-500">Total Events</p>
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 text-center">
+                      <Clock className="w-6 h-6 text-orange-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-orange-600">
+                        {activityStats.lastActive
+                          ? formatDistanceToNow(new Date(activityStats.lastActive), { addSuffix: true })
+                          : 'Never'}
+                      </p>
+                      <p className="text-xs text-gray-500">Last Active</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Top Pages */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <Eye className="w-5 h-5 text-blue-500" />
+                        Most Visited Pages
+                      </h4>
+                      {activityStats.topPages.length > 0 ? (
+                        <div className="space-y-2">
+                          {activityStats.topPages.map((page, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3">
+                              <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                                {page.page}
+                              </span>
+                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                                {page.count}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center py-4">No page views recorded</p>
+                      )}
+                    </div>
+
+                    {/* Top Features */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <MousePointer className="w-5 h-5 text-purple-500" />
+                        Most Used Features
+                      </h4>
+                      {activityStats.topFeatures.length > 0 ? (
+                        <div className="space-y-2">
+                          {activityStats.topFeatures.map((feature, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3">
+                              <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                                {feature.feature}
+                              </span>
+                              <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                {feature.count}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center py-4">No feature usage recorded</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Device Breakdown */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Devices Used</h4>
+                    <div className="flex gap-4 flex-wrap">
+                      {activityStats.deviceBreakdown.map((device, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg px-4 py-2">
+                          {device.device === 'mobile' ? (
+                            <Smartphone className="w-4 h-4 text-emerald-500" />
+                          ) : device.device === 'tablet' ? (
+                            <Tablet className="w-4 h-4 text-blue-500" />
+                          ) : (
+                            <Monitor className="w-4 h-4 text-purple-500" />
+                          )}
+                          <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{device.device}</span>
+                          <span className="text-xs text-gray-500">({device.count})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recent Activity Timeline */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-orange-500" />
+                      Recent Activity
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {activityData.slice(0, 20).map((activity, idx) => (
+                        <div key={idx} className="flex items-start gap-3 bg-white dark:bg-gray-800 rounded-lg p-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            activity.event_type === 'page_view' ? 'bg-blue-100' :
+                            activity.event_type === 'feature_use' ? 'bg-purple-100' :
+                            activity.event_type === 'click' ? 'bg-emerald-100' :
+                            'bg-gray-100'
+                          }`}>
+                            {activity.event_type === 'page_view' ? (
+                              <Eye className="w-4 h-4 text-blue-600" />
+                            ) : activity.event_type === 'feature_use' ? (
+                              <MousePointer className="w-4 h-4 text-purple-600" />
+                            ) : (
+                              <Activity className="w-4 h-4 text-gray-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {activity.event_type === 'page_view' ? (
+                                <>Visited <span className="font-medium">{activity.page_path}</span></>
+                              ) : activity.event_type === 'feature_use' ? (
+                                <>Used <span className="font-medium">{activity.component}</span> - {activity.action}</>
+                              ) : (
+                                <>{activity.event_type}: {activity.component || activity.page_path}</>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {format(new Date(activity.created_at), 'dd MMM yyyy, HH:mm')}
+                              {activity.duration_ms && ` • ${Math.round(activity.duration_ms / 1000)}s`}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No activity recorded for this user yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Activity will appear once the user starts using the app</p>
+                </div>
+              )}
             </div>
           )}
         </div>

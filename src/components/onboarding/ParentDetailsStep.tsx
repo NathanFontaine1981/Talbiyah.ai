@@ -30,7 +30,10 @@ const COUNTRY_CODES = [
 ];
 
 export default function ParentDetailsStep({ data, onChange, onNext }: ParentDetailsStepProps) {
-  const isValid = data.fullName.trim().length >= 2 && data.phoneNumber.trim().length >= 6;
+  const isValid =
+    data.fullName.trim().length >= 2 &&
+    data.phoneNumber.trim().length >= 6 &&
+    data.howHeardAboutUs.trim().length > 0;
 
   return (
     <div className="max-w-md mx-auto">

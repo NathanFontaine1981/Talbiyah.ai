@@ -407,7 +407,7 @@ export default function CategoryGrid({
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3"
           >
-            Core Foundations
+            Unshakeable Foundations
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}

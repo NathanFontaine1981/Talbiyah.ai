@@ -199,11 +199,20 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     // Log detailed error server-side
-    console.error("Error sending notification email:", error instanceof Error ? error.message : "Unknown error");
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error sending notification email:", errorMessage);
 
-    // Return generic error to client
+    // Return detailed error for debugging (can be made generic in production)
     return new Response(
-      JSON.stringify({ error: "Failed to send notification" }),
+      JSON.stringify({
+        error: "Failed to send notification",
+        details: errorMessage,
+        hint: errorMessage.includes("RESEND_API_KEY")
+          ? "Check that RESEND_API_KEY is set in Supabase Edge Function secrets"
+          : errorMessage.includes("domain") || errorMessage.includes("403")
+          ? "Check that the domain is verified in Resend and the from email is authorized"
+          : undefined
+      }),
       {
         status: 500,
         headers: { ...responseHeaders, "Content-Type": "application/json" },

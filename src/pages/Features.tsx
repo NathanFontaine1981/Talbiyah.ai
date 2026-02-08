@@ -374,13 +374,13 @@ export default function Features() {
                 </div>
               </div>
 
-              {/* Unshakable Foundations */}
+              {/* Unshakeable Foundations */}
               <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-amber-200 dark:border-amber-800">
                 <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
                   <div className="flex items-center justify-between">
                     <div>
                       <PricingBadge type="free" />
-                      <h3 className="text-2xl font-semibold mt-2">Unshakable Foundations</h3>
+                      <h3 className="text-2xl font-semibold mt-2">Unshakeable Foundations</h3>
                       <p className="text-amber-100">6 complete modules</p>
                     </div>
                     <GraduationCap className="w-12 h-12 text-amber-200" />

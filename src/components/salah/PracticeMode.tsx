@@ -284,7 +284,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950/20 to-slate-950 px-4 py-8 flex items-center justify-center"
+        className="min-h-screen bg-gray-50 px-4 py-8 flex items-center justify-center"
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -296,11 +296,11 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             <CheckCircle2 className="w-12 h-12 text-emerald-400" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-3">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
             Prayer Complete!
           </h2>
 
-          <p className="text-slate-300 mb-6">
+          <p className="text-gray-600 mb-6">
             You've completed a full 2-rakah prayer practice.
             May Allah accept your prayers.
           </p>
@@ -313,14 +313,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
           <div className="space-y-3">
             <button
               onClick={handleRestart}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-gray-900 rounded-full font-medium transition-colors"
             >
               <RotateCcw className="w-5 h-5" />
               Practice Again
             </button>
             <button
               onClick={onBack}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-gray-900 rounded-full font-medium transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               Back to Menu
@@ -337,14 +337,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950/20 to-slate-950 px-4 py-8"
+      className="min-h-screen bg-gray-50 px-4 py-8"
     >
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Exit Practice
@@ -354,14 +354,14 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 hover:bg-slate-800 rounded-full transition-colors"
             >
-              <Settings className="w-5 h-5 text-slate-300" />
+              <Settings className="w-5 h-5 text-gray-600" />
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-6">
-          <div className="flex justify-between text-sm text-slate-300 mb-2">
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>Rakah {currentStep.rakah} of 2</span>
             <span>{progress}% complete</span>
           </div>
@@ -386,17 +386,17 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             >
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-medium">Settings</h3>
+                  <h3 className="text-gray-900 font-medium">Settings</h3>
                   <button
                     onClick={() => setShowSettings(false)}
                     className="p-1 hover:bg-slate-700 rounded-full"
                   >
-                    <X className="w-4 h-4 text-slate-300" />
+                    <X className="w-4 h-4 text-gray-600" />
                   </button>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-300">Show Translation</span>
+                    <span className="text-gray-600">Show Translation</span>
                     <button
                       onClick={() => setShowTranslation(!showTranslation)}
                       className={`w-12 h-6 rounded-full transition-colors ${
@@ -411,7 +411,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
                     </button>
                   </div>
                   <div>
-                    <span className="text-slate-300 block mb-2">Auto-advance Speed</span>
+                    <span className="text-gray-600 block mb-2">Auto-advance Speed</span>
                     <div className="flex gap-2">
                       {[
                         { label: 'Slow', value: 8000 },
@@ -423,8 +423,8 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
                           onClick={() => setAutoAdvanceDelay(option.value)}
                           className={`flex-1 py-2 px-3 rounded-lg text-sm transition-colors ${
                             autoAdvanceDelay === option.value
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                              ? 'bg-blue-600 text-gray-900'
+                              : 'bg-slate-700 text-gray-600 hover:bg-slate-600'
                           }`}
                         >
                           {option.label}
@@ -447,10 +447,10 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             <div className="text-blue-400 text-sm font-medium">
               {currentStep.position.transliteration}
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-gray-900">
               {currentStep.position.name}
             </div>
-            <div className="text-slate-300 font-arabic text-lg">
+            <div className="text-gray-600 font-arabic text-lg">
               {currentStep.position.arabicName}
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
           </div>
 
           {/* Transliteration */}
-          <p className="text-center text-slate-300 italic text-lg mb-4">
+          <p className="text-center text-gray-600 italic text-lg mb-4">
             {recitation.transliteration}
           </p>
 
@@ -526,7 +526,7 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             disabled={currentStepIndex === 0}
             className="p-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full transition-colors"
           >
-            <ArrowLeft className="w-6 h-6 text-white" />
+            <ArrowLeft className="w-6 h-6 text-gray-900" />
           </button>
 
           <button
@@ -538,9 +538,9 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             }`}
           >
             {isPlaying ? (
-              <Pause className="w-8 h-8 text-white" />
+              <Pause className="w-8 h-8 text-gray-900" />
             ) : (
-              <Play className="w-8 h-8 text-white" />
+              <Play className="w-8 h-8 text-gray-900" />
             )}
           </button>
 
@@ -549,21 +549,21 @@ export default function PracticeMode({ onComplete, onBack }: PracticeModeProps) 
             disabled={currentStepIndex === practiceSteps.length - 1}
             className="p-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full transition-colors"
           >
-            <ArrowRight className="w-6 h-6 text-white" />
+            <ArrowRight className="w-6 h-6 text-gray-900" />
           </button>
         </div>
 
         {/* Auto-play indicator */}
         {isPlaying && (
           <div className="text-center">
-            <p className="text-slate-300 text-sm">
+            <p className="text-gray-600 text-sm">
               Auto-advancing in {autoAdvanceDelay / 1000}s...
             </p>
           </div>
         )}
 
         {/* Step Counter */}
-        <div className="text-center text-slate-300 text-sm">
+        <div className="text-center text-gray-600 text-sm">
           Step {currentStepIndex + 1} of {practiceSteps.length}
         </div>
       </div>

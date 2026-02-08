@@ -19,7 +19,11 @@ import {
   Languages,
   Heart,
   ChevronDown,
-  X
+  X,
+  ArrowLeft,
+  Send,
+  Search,
+  Users
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -49,6 +53,12 @@ interface Teacher {
   profiles: {
     full_name: string;
   };
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
 }
 
 const TEMPLATE_INFO = {
@@ -129,10 +139,35 @@ export default function InsightsGenerator() {
   const [history, setHistory] = useState<GeneratedInsight[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // User selection state for sending insights
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [sendingToUser, setSendingToUser] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Modal state for viewing/sending from history
+  const [viewingInsight, setViewingInsight] = useState<GeneratedInsight | null>(null);
+  const [sendingInsight, setSendingInsight] = useState<GeneratedInsight | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchTeachers();
+    fetchUsers();
+  }, []);
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   async function fetchTeachers() {
@@ -144,6 +179,21 @@ export default function InsightsGenerator() {
     if (data) {
       setTeachers(data as unknown as Teacher[]);
     }
+  }
+
+  async function fetchUsers() {
+    setLoadingUsers(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .order('full_name');
+
+    if (error) {
+      console.error('Error fetching users:', error);
+    } else {
+      setUsers(data || []);
+    }
+    setLoadingUsers(false);
   }
 
   async function fetchHistory() {
@@ -333,6 +383,139 @@ export default function InsightsGenerator() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function sendInsightToUser() {
+    if (!selectedUser) {
+      setError('Please select a user');
+      return;
+    }
+
+    if (!pdfUrl && !generatedContent) {
+      setError('Please generate an insight first');
+      return;
+    }
+
+    setSendingToUser(true);
+    setError('');
+
+    try {
+      // Create a notification for the user with the PDF link
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: selectedUser.id,
+        title: `New Lesson Insight: ${title}`,
+        message: `A new lesson insight has been shared with you for "${title}" by ${teacherName}.`,
+        type: 'insight',
+        data: {
+          pdf_url: pdfUrl || null,
+          lesson_title: title,
+          teacher_name: teacherName,
+          lesson_date: lessonDate,
+          template_type: templateType,
+          content: generatedContent?.markdown || null,
+        },
+      });
+
+      if (notifError) throw notifError;
+
+      setSuccess(`Insight sent successfully to ${selectedUser.full_name}!`);
+      setSelectedUser(null);
+      setUserSearchQuery('');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error sending insight:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send insight');
+    } finally {
+      setSendingToUser(false);
+    }
+  }
+
+  function resetForm() {
+    setGeneratedContent(null);
+    setHtmlContent(null);
+    setPdfUrl(null);
+    setSelectedUser(null);
+    setUserSearchQuery('');
+  }
+
+  // Filter users based on search query
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(userSearchQuery.toLowerCase())
+  );
+
+  async function sendHistoryInsightToUser() {
+    if (!selectedUser || !sendingInsight) {
+      setError('Please select a user');
+      return;
+    }
+
+    setSendingToUser(true);
+    setError('');
+
+    try {
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: selectedUser.id,
+        title: `New Lesson Insight: ${sendingInsight.title}`,
+        message: `A new lesson insight has been shared with you for "${sendingInsight.title}" by ${sendingInsight.teacher_name}.`,
+        type: 'insight',
+        data: {
+          pdf_url: sendingInsight.pdf_url || null,
+          lesson_title: sendingInsight.title,
+          teacher_name: sendingInsight.teacher_name,
+          lesson_date: sendingInsight.lesson_date,
+          template_type: sendingInsight.template_type,
+          content: sendingInsight.generated_content?.markdown || null,
+        },
+      });
+
+      if (notifError) throw notifError;
+
+      setSuccess(`Insight sent successfully to ${selectedUser.full_name}!`);
+      setSelectedUser(null);
+      setUserSearchQuery('');
+      setSendingInsight(null);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error sending insight:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send insight');
+    } finally {
+      setSendingToUser(false);
+    }
+  }
+
+  function viewInsightInNewWindow(insight: GeneratedInsight) {
+    if (insight.pdf_url) {
+      window.open(insight.pdf_url, '_blank');
+    } else if (insight.generated_content?.markdown) {
+      // Create a simple HTML preview from markdown
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${insight.title} - Talbiyah Insight</title>
+            <style>
+              body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+              h1, h2, h3 { color: #10b981; }
+              pre { background: #f3f4f6; padding: 16px; border-radius: 8px; overflow-x: auto; }
+            </style>
+          </head>
+          <body>
+            <h1>${insight.title}</h1>
+            <p><strong>Teacher:</strong> ${insight.teacher_name}</p>
+            ${insight.student_name ? `<p><strong>Student:</strong> ${insight.student_name}</p>` : ''}
+            <p><strong>Date:</strong> ${new Date(insight.lesson_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            <hr />
+            <pre>${insight.generated_content.markdown}</pre>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+    }
+  }
+
   const templateInfo = TEMPLATE_INFO[templateType];
   const TemplateIcon = templateInfo.icon;
 
@@ -429,6 +612,13 @@ export default function InsightsGenerator() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => viewInsightInNewWindow(insight)}
+                          className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition"
+                          title="View Insight"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
                         {insight.pdf_url && (
                           <a
                             href={insight.pdf_url}
@@ -440,6 +630,17 @@ export default function InsightsGenerator() {
                             <Download className="w-5 h-5" />
                           </a>
                         )}
+                        <button
+                          onClick={() => {
+                            setSendingInsight(insight);
+                            setSelectedUser(null);
+                            setUserSearchQuery('');
+                          }}
+                          className="p-2 text-cyan-500 hover:bg-cyan-500/10 rounded-lg transition"
+                          title="Send to User"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
                         <button
                           onClick={() => regenerateInsight(insight)}
                           className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition"
@@ -784,11 +985,251 @@ export default function InsightsGenerator() {
                   )}
                 </div>
 
+                {/* Send to User Section */}
+                {(pdfUrl || generatedContent) && (
+                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                      <Send className="w-4 h-4" />
+                      Send to User
+                    </h4>
+
+                    <div className="relative" ref={userDropdownRef}>
+                      <div
+                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center gap-2 cursor-pointer"
+                        onClick={() => setShowUserDropdown(!showUserDropdown)}
+                      >
+                        <Search className="w-4 h-4 text-gray-400" />
+                        {selectedUser ? (
+                          <div className="flex-1 flex items-center justify-between">
+                            <div>
+                              <span className="text-gray-900 dark:text-white">{selectedUser.full_name}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({selectedUser.email})</span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUser(null);
+                                setUserSearchQuery('');
+                              }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={userSearchQuery}
+                            onChange={(e) => {
+                              setUserSearchQuery(e.target.value);
+                              setShowUserDropdown(true);
+                            }}
+                            placeholder="Search users by name or email..."
+                            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                      </div>
+
+                      {showUserDropdown && !selectedUser && (
+                        <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                          {loadingUsers ? (
+                            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                            </div>
+                          ) : filteredUsers.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                              No users found
+                            </div>
+                          ) : (
+                            filteredUsers.slice(0, 10).map((user) => (
+                              <button
+                                key={user.id}
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setShowUserDropdown(false);
+                                  setUserSearchQuery('');
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                  <Users className="w-4 h-4 text-emerald-500" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user.full_name || 'No name'}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={sendInsightToUser}
+                      disabled={!selectedUser || sendingToUser || (!pdfUrl && !generatedContent)}
+                      className="w-full mt-3 px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition flex items-center justify-center gap-2"
+                    >
+                      {sendingToUser ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          Send Insight to User
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-4 text-center">
                   Use browser print (Ctrl/Cmd + P) to save as PDF
                 </p>
+
+                {/* Back Button */}
+                <button
+                  onClick={resetForm}
+                  className="w-full mt-4 px-4 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Generate New Insight
+                </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Send Insight Modal */}
+      {sendingInsight && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Send className="w-5 h-5 text-cyan-500" />
+                Send Insight
+              </h3>
+              <button
+                onClick={() => {
+                  setSendingInsight(null);
+                  setSelectedUser(null);
+                  setUserSearchQuery('');
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <p className="font-medium text-gray-900 dark:text-white">{sendingInsight.title}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {sendingInsight.teacher_name} • {new Date(sendingInsight.lesson_date).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select User
+              </label>
+              <div className="relative">
+                <div className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center gap-2">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  {selectedUser ? (
+                    <div className="flex-1 flex items-center justify-between">
+                      <div>
+                        <span className="text-gray-900 dark:text-white">{selectedUser.full_name}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({selectedUser.email})</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setUserSearchQuery('');
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      placeholder="Search users by name or email..."
+                      className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                {!selectedUser && userSearchQuery && (
+                  <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {filteredUsers.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No users found
+                      </div>
+                    ) : (
+                      filteredUsers.slice(0, 8).map((user) => (
+                        <button
+                          key={user.id}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setUserSearchQuery('');
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user.full_name || 'No name'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSendingInsight(null);
+                  setSelectedUser(null);
+                  setUserSearchQuery('');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendHistoryInsightToUser}
+                disabled={!selectedUser || sendingToUser}
+                className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition flex items-center justify-center gap-2"
+              >
+                {sendingToUser ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Send
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

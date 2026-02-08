@@ -1990,15 +1990,19 @@ function FlashcardGame({
       setMasteredInSession(newMastered);
     }
 
-    if (currentIndex + 1 >= vocabulary.length) {
-      const finalScore = newScores.filter(Boolean).length;
-      if (onMasteredWords && newMastered.length > 0) {
-        onMasteredWords(newMastered);
+    // Delay advancing to next card until flip-back animation completes
+    // so the next word's answer isn't visible during the animation
+    setTimeout(() => {
+      if (currentIndex + 1 >= vocabulary.length) {
+        const finalScore = newScores.filter(Boolean).length;
+        if (onMasteredWords && newMastered.length > 0) {
+          onMasteredWords(newMastered);
+        }
+        onComplete(finalScore);
+      } else {
+        setCurrentIndex(currentIndex + 1);
       }
-      onComplete(finalScore);
-    } else {
-      setCurrentIndex(currentIndex + 1);
-    }
+    }, 400);
   }
 
   if (isComplete) {

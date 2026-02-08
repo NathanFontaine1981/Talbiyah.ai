@@ -170,7 +170,7 @@ Important:
       .upsert({
         video_id,
         questions,
-        passing_score: 70,
+        passing_score: 90,
         generated_by: 'ai',
         created_at: new Date().toISOString(),
       }, {

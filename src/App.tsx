@@ -7,6 +7,7 @@ import CartExpiryNotifications from './components/CartExpiryNotifications';
 import CookieConsent from './components/CookieConsent';
 import FeedbackButton from './components/FeedbackButton';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { useActivityTracker } from './hooks/useActivityTracker';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -16,6 +17,12 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  return null;
+}
+
+// Activity tracker component - tracks page views automatically
+function ActivityTracker() {
+  useActivityTracker();
   return null;
 }
 
@@ -179,6 +186,7 @@ function App() {
       <ErrorBoundary>
         <BrowserRouter>
         <ScrollToTop />
+        <ActivityTracker />
         <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<HomeLandingV2 />} />

@@ -50,7 +50,7 @@ interface UserStats {
 type RoleFilter = 'all' | 'student' | 'teacher' | 'parent' | 'admin';
 type StatusFilter = 'all' | 'active' | 'inactive' | 'pending';
 type TierFilter = 'all' | 'legacy' | 'standard';
-type SortOption = 'newest' | 'oldest' | 'name';
+type SortOption = 'newest' | 'oldest' | 'name' | 'last_active';
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
@@ -206,6 +206,12 @@ export default function UserManagement() {
       filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     } else if (sortOption === 'name') {
       filtered.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+    } else if (sortOption === 'last_active') {
+      filtered.sort((a, b) => {
+        const aTime = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0;
+        const bTime = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0;
+        return bTime - aTime; // Most recently active first
+      });
     }
 
     setFilteredUsers(filtered);
@@ -812,6 +818,7 @@ export default function UserManagement() {
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="name">Name (A-Z)</option>
+              <option value="last_active">Last Active</option>
             </select>
           </div>
         </div>

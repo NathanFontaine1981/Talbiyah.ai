@@ -86,47 +86,47 @@ export default function TeacherProfileModal({
     setError(null);
 
     try {
-      // Fetch teacher profile with tier stats
+      // Fetch teacher profile - only columns that exist on teacher_profiles
       const { data: profileData, error: profileError } = await supabase
         .from('teacher_profiles')
         .select(`
           id,
           user_id,
-          full_name,
           bio,
-          avatar_url,
           tier,
-          tier_name,
-          student_hourly_price,
           video_intro_url,
           is_talbiyah_certified,
-          specializations,
-          vetting_badges,
-          bio_extended,
-          teaching_philosophy,
-          qualifications,
-          years_experience,
-          subjects_taught,
-          age_groups
+          hourly_rate,
+          hours_taught,
+          average_rating,
+          completed_lessons,
+          retention_rate
         `)
         .eq('id', teacherId)
         .single();
 
       if (profileError) throw profileError;
 
-      // Fetch tier stats
+      // Fetch user profile for name and avatar
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', profileData.user_id)
+        .single();
+
+      // Fetch tier stats for tier_name and student_hourly_price
       const { data: tierStats } = await supabase
         .from('teacher_tier_stats')
         .select('*')
         .eq('teacher_id', teacherId)
-        .single();
+        .maybeSingle();
 
       // Fetch rating summary
       const { data: ratingData } = await supabase
         .from('teacher_rating_summary')
         .select('*')
         .eq('teacher_id', teacherId)
-        .single();
+        .maybeSingle();
 
       // Fetch testimonials
       const { data: testimonialData } = await supabase
@@ -139,11 +139,20 @@ export default function TeacherProfileModal({
 
       // Combine data
       const fullTeacherData: TeacherData = {
-        ...profileData,
-        hours_taught: tierStats?.hours_taught || 0,
-        completed_lessons: tierStats?.completed_lessons || 0,
-        average_rating: tierStats?.average_rating || 0,
-        retention_rate: tierStats?.retention_rate || 0,
+        id: profileData.id,
+        user_id: profileData.user_id,
+        full_name: userProfile?.full_name || 'Teacher',
+        bio: profileData.bio,
+        avatar_url: userProfile?.avatar_url || null,
+        tier: profileData.tier || 'newcomer',
+        tier_name: tierStats?.tier_name || (profileData.tier ? profileData.tier.charAt(0).toUpperCase() + profileData.tier.slice(1) : 'Newcomer'),
+        student_hourly_price: tierStats?.student_hourly_price || (profileData.hourly_rate ? profileData.hourly_rate * 2 : 15),
+        video_intro_url: profileData.video_intro_url,
+        is_talbiyah_certified: profileData.is_talbiyah_certified,
+        hours_taught: tierStats?.hours_taught || profileData.hours_taught || 0,
+        completed_lessons: tierStats?.completed_lessons || profileData.completed_lessons || 0,
+        average_rating: tierStats?.average_rating || profileData.average_rating || 0,
+        retention_rate: profileData.retention_rate || 0,
         rating_avg: ratingData?.rating_avg || tierStats?.average_rating || 0,
         rating_count: ratingData?.rating_count || 0,
         thumbs_up_percentage: ratingData?.thumbs_up_percentage,

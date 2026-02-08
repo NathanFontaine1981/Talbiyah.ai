@@ -59,6 +59,7 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
   const [scale, setScale] = useState<number>(1.0);
   const [loading, setLoading] = useState<boolean>(false);
   const [pageInput, setPageInput] = useState<string>('1');
+  const [pdfError, setPdfError] = useState<boolean>(false);
 
   const textbooks = [
     {
@@ -80,6 +81,13 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setLoading(false);
+    setPdfError(false);
+  };
+
+  const onDocumentLoadError = (error: Error) => {
+    console.error('PDF load error:', error);
+    setLoading(false);
+    setPdfError(true);
   };
 
   const goToPage = (page: number) => {
@@ -116,6 +124,7 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
     setPageNumber(1);
     setPageInput('1');
     setLoading(true);
+    setPdfError(false);
   };
 
   return (
@@ -212,29 +221,44 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
 
           {/* PDF Display */}
           <div className="flex-1 overflow-auto p-4 flex justify-center">
-            {loading && (
+            {loading && !pdfError && (
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
-            <Document
-              file={selectedPdf}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={(error) => console.error('PDF load error:', error)}
-              loading={
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            {pdfError ? (
+              // Fallback: iframe embed when react-pdf fails
+              <div className="w-full h-full flex flex-col">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-sm text-amber-800">
+                  <p className="font-medium">Using embedded viewer</p>
+                  <p className="text-xs mt-1">PDF viewer fallback mode - all features available</p>
                 </div>
-              }
-            >
-              <Page
-                pageNumber={pageNumber}
-                scale={scale}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                className="shadow-lg"
-              />
-            </Document>
+                <iframe
+                  src={`${selectedPdf}#page=${pageNumber}`}
+                  className="flex-1 w-full rounded-lg border border-gray-200"
+                  title="PDF Viewer"
+                />
+              </div>
+            ) : (
+              <Document
+                file={selectedPdf}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={onDocumentLoadError}
+                loading={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                }
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  scale={scale}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  className="shadow-lg"
+                />
+              </Document>
+            )}
           </div>
         </div>
       ) : (
@@ -248,8 +272,13 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
             {textbooks.map((book) => (
               <button
                 key={book.id}
-                onClick={() => selectBook(book)}
-                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:shadow-md ${
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  selectBook(book);
+                }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:shadow-md cursor-pointer ${
                   book.color === 'emerald'
                     ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/50'
                     : 'border-blue-200 hover:border-blue-400 bg-blue-50/50'

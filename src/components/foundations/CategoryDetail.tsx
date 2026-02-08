@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
-import { Play, CheckCircle, Clock, Star, BookOpen } from 'lucide-react';
+import { Play, CheckCircle, Clock, Star, BookOpen, FileQuestion } from 'lucide-react';
 import { type FoundationCategory, type FoundationVideo } from '../../data/foundationCategories';
 
 interface CategoryDetailProps {
   category: FoundationCategory;
   videos: FoundationVideo[];
   onVideoSelect: (video: FoundationVideo) => void;
+  onTakeExam?: (video: FoundationVideo) => void;
   isVideoWatched: (videoId: string) => boolean;
   isVideoCompleted: (videoId: string) => boolean;
 }
@@ -14,6 +15,7 @@ export default function CategoryDetail({
   category,
   videos,
   onVideoSelect,
+  onTakeExam,
   isVideoWatched,
   isVideoCompleted
 }: CategoryDetailProps) {
@@ -83,13 +85,21 @@ export default function CategoryDetail({
             const completed = isVideoCompleted(video.id);
 
             return (
-              <motion.button
+              <motion.div
                 key={video.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onVideoSelect(video)}
-                className={`w-full text-left bg-white rounded-xl border transition-all hover:shadow-md ${
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onVideoSelect(video);
+                  }
+                }}
+                className={`w-full text-left bg-white rounded-xl border transition-all hover:shadow-md cursor-pointer ${
                   completed
                     ? 'border-emerald-200 bg-emerald-50/50'
                     : watched
@@ -145,7 +155,7 @@ export default function CategoryDetail({
                       </p>
                     )}
 
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                    <div className="flex items-center gap-3 mt-3 text-sm text-gray-500">
                       {video.durationMinutes && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
@@ -153,10 +163,30 @@ export default function CategoryDetail({
                         </span>
                       )}
 
-                      {!completed && (
-                        <span className={`font-medium ${watched ? 'text-amber-600' : 'text-emerald-600'}`}>
-                          {watched ? 'Take Exam →' : 'Start Learning →'}
+                      {!watched && !completed && (
+                        <span className="text-emerald-600 font-medium">
+                          Start Learning →
                         </span>
+                      )}
+
+                      {watched && !completed && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-gray-500">
+                            Review →
+                          </span>
+                          {onTakeExam && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTakeExam(video);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-xs transition shadow-sm"
+                            >
+                              <FileQuestion className="w-3.5 h-3.5" />
+                              Take Test
+                            </button>
+                          )}
+                        </div>
                       )}
 
                       {completed && (
@@ -167,7 +197,7 @@ export default function CategoryDetail({
                     </div>
                   </div>
                 </div>
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>

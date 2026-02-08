@@ -13,6 +13,7 @@ export interface FoundationCategory {
   isComingSoon: boolean;
   color: string; // Tailwind color for theming
   gradient: string; // Gradient classes for cards
+  audioUrl?: string; // Spotify or podcast link for audio version
 }
 
 export interface FoundationVideo {
@@ -56,12 +57,14 @@ export interface FoundationProgress {
 }
 
 // Static category data for UI (before DB fetch)
+// These are categories within the 6 Pillars
 export const FOUNDATION_CATEGORIES: FoundationCategory[] = [
+  // Pillar 1: Allah
   {
     slug: 'tawheed',
     name: 'Tawheed',
     arabicName: 'التوحيد',
-    description: 'Understanding who Allah is - the foundation of everything. Know your Creator before anything else.',
+    description: 'Understanding who Allah is - the foundation of everything.',
     icon: 'Sun',
     orderIndex: 1,
     isActive: true,
@@ -70,52 +73,112 @@ export const FOUNDATION_CATEGORIES: FoundationCategory[] = [
     gradient: 'from-amber-500 to-orange-600'
   },
   {
-    slug: 'how-to-pray',
-    name: 'How to Pray',
-    arabicName: 'كيفية الصلاة',
-    description: 'Learn the physical movements and words of the five daily prayers.',
-    icon: 'Moon',
-    orderIndex: 2,
-    isActive: true,
-    isComingSoon: false,
-    color: 'emerald',
-    gradient: 'from-emerald-500 to-teal-600'
-  },
-  {
-    slug: 'comparative-religion',
-    name: 'Comparative Religion',
-    arabicName: 'مقارنة الأديان',
-    description: 'Understanding Islam in context - for those coming from other faiths or no faith.',
-    icon: 'BookOpen',
-    orderIndex: 3,
-    isActive: true,
-    isComingSoon: true,
-    color: 'blue',
-    gradient: 'from-blue-500 to-indigo-600'
-  },
-  {
-    slug: 'history-of-islam',
-    name: 'History of Islam',
-    arabicName: 'تاريخ الإسلام',
-    description: 'The prophets, companions, and the golden age of Islamic civilization.',
-    icon: 'History',
-    orderIndex: 4,
-    isActive: true,
-    isComingSoon: true,
-    color: 'purple',
-    gradient: 'from-purple-500 to-violet-600'
-  },
-  {
     slug: 'names-of-allah',
     name: '99 Names of Allah',
     arabicName: 'أسماء الله الحسنى',
     description: 'Learn the beautiful names and attributes of your Creator.',
     icon: 'Star',
-    orderIndex: 5,
+    orderIndex: 2,
+    isActive: true,
+    isComingSoon: false,
+    color: 'amber',
+    gradient: 'from-amber-500 to-orange-600'
+  },
+  // Pillar 2: Muhammad ﷺ
+  {
+    slug: 'seerah-meccan',
+    name: 'Meccan Period',
+    arabicName: 'العهد المكي',
+    description: 'The early years of revelation and persecution.',
+    icon: 'Moon',
+    orderIndex: 1,
     isActive: true,
     isComingSoon: true,
-    color: 'yellow',
-    gradient: 'from-yellow-500 to-amber-600'
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-600',
+    audioUrl: 'https://open.spotify.com/show/3cHN4rbGsV0L2GNtieT99c'
+  },
+  {
+    slug: 'seerah-medinan',
+    name: 'Medinan Period',
+    arabicName: 'العهد المدني',
+    description: 'The establishment of the Islamic state.',
+    icon: 'Moon',
+    orderIndex: 2,
+    isActive: true,
+    isComingSoon: true,
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-600',
+    audioUrl: 'https://open.spotify.com/show/3cHN4rbGsV0L2GNtieT99c'
+  },
+  // Pillar 3: Prophets
+  {
+    slug: 'lives-of-prophets',
+    name: 'Lives of the Prophets',
+    arabicName: 'قصص الأنبياء',
+    description: 'The inspiring stories from Allah\'s messengers.',
+    icon: 'BookOpen',
+    orderIndex: 1,
+    isActive: true,
+    isComingSoon: true,
+    color: 'blue',
+    gradient: 'from-blue-500 to-indigo-600',
+    audioUrl: 'https://open.spotify.com/playlist/53naeAXtGSAhTGSArju0qW'
+  },
+  // Pillar 4: Angels
+  {
+    slug: 'angels-series',
+    name: 'The Angels',
+    arabicName: 'الملائكة',
+    description: 'Understanding the noble servants of Allah.',
+    icon: 'Sparkles',
+    orderIndex: 1,
+    isActive: true,
+    isComingSoon: true,
+    color: 'purple',
+    gradient: 'from-purple-500 to-violet-600'
+  },
+  // Pillar 5: Hereafter
+  {
+    slug: 'hereafter-series',
+    name: 'The Hereafter',
+    arabicName: 'الآخرة',
+    description: 'Day of Judgment, Paradise, Hell, and life after death.',
+    icon: 'Scale',
+    orderIndex: 1,
+    isActive: true,
+    isComingSoon: true,
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-600'
+  },
+  // Pillar 6: History
+  {
+    slug: 'history-of-islam',
+    name: 'History of Islam',
+    arabicName: 'تاريخ الإسلام',
+    description: 'The golden age of Islamic civilization.',
+    icon: 'Landmark',
+    orderIndex: 1,
+    isActive: true,
+    isComingSoon: true,
+    color: 'cyan',
+    gradient: 'from-cyan-500 to-blue-600'
+  }
+];
+
+// Standalone sections (not part of Unshakable Foundations)
+export const STANDALONE_SECTIONS: FoundationCategory[] = [
+  {
+    slug: 'how-to-pray',
+    name: 'How to Pray',
+    arabicName: 'كيفية الصلاة',
+    description: 'Learn the physical movements and words of the five daily prayers.',
+    icon: 'Moon',
+    orderIndex: 1,
+    isActive: true,
+    isComingSoon: false,
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-600'
   },
   {
     slug: 'fiqh-basics',
@@ -123,7 +186,7 @@ export const FOUNDATION_CATEGORIES: FoundationCategory[] = [
     arabicName: 'أساسيات الفقه',
     description: 'The five pillars, wudu, fasting, and essential rulings.',
     icon: 'Scale',
-    orderIndex: 6,
+    orderIndex: 2,
     isActive: true,
     isComingSoon: true,
     color: 'rose',
@@ -135,7 +198,7 @@ export const FOUNDATION_CATEGORIES: FoundationCategory[] = [
     arabicName: 'أساسيات العربية',
     description: 'Basic Arabic to help you connect with the Quran directly.',
     icon: 'Languages',
-    orderIndex: 7,
+    orderIndex: 3,
     isActive: true,
     isComingSoon: true,
     color: 'cyan',

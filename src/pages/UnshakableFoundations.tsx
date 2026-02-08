@@ -123,11 +123,12 @@ export default function UnshakableFoundations() {
         }
       }
 
-      // Load categories from DB (fallback to static data)
+      // Load categories from DB - only those with a pillar_id (part of Foundations)
       const { data: dbCategories } = await supabase
         .from('foundation_categories')
         .select('*')
         .eq('is_active', true)
+        .not('pillar_id', 'is', null)
         .order('order_index');
 
       if (dbCategories && dbCategories.length > 0) {
@@ -169,12 +170,6 @@ export default function UnshakableFoundations() {
 
   // Handle category selection
   async function handleCategorySelect(category: FoundationCategory) {
-    // Special case: How to Pray links to existing Salah page
-    if (category.slug === 'how-to-pray') {
-      navigate('/salah');
-      return;
-    }
-
     if (category.isComingSoon) {
       // Show coming soon toast or modal
       return;
@@ -287,7 +282,7 @@ export default function UnshakableFoundations() {
     setViewMode('results');
   }
 
-  // Go back handler
+  // Go back handler - always navigate within Unshakeable Foundations
   function handleBack() {
     if (viewMode === 'results' || viewMode === 'exam') {
       setViewMode('video');
@@ -299,11 +294,26 @@ export default function UnshakableFoundations() {
       setViewMode('categories');
       setSelectedCategory(null);
       setSearchParams({});
-    } else if (viewMode === 'categories' && showIntro) {
-      setViewMode('intro');
-    } else {
+    } else if (viewMode === 'categories') {
+      // From main categories view, go back to previous page (landing or dashboard)
       navigate(-1);
+    } else {
+      navigate('/new-muslim');
     }
+  }
+
+  // Get back button text based on current view
+  function getBackButtonText(): string {
+    if (viewMode === 'categories') {
+      return 'Back';
+    } else if (viewMode === 'category-detail') {
+      return 'All Categories';
+    } else if (viewMode === 'video') {
+      return selectedCategory?.name || 'Back';
+    } else if (viewMode === 'exam' || viewMode === 'results') {
+      return 'Back to Video';
+    }
+    return 'Back';
   }
 
   // Check if video is completed
@@ -362,15 +372,15 @@ export default function UnshakableFoundations() {
             <div className="flex items-center justify-between">
               <button
                 onClick={handleBack}
-                aria-label="Go back"
+                aria-label={getBackButtonText()}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
+                <span>{getBackButtonText()}</span>
               </button>
 
               <div className="text-center">
-                <h1 className="text-lg font-bold text-gray-900">Unshakable Foundations</h1>
+                <h1 className="text-lg font-bold text-gray-900">Unshakeable Foundations</h1>
                 {selectedCategory && viewMode !== 'categories' && (
                   <p className="text-sm text-gray-500">{selectedCategory.name}</p>
                 )}
@@ -426,6 +436,11 @@ export default function UnshakableFoundations() {
               category={selectedCategory}
               videos={categoryVideos}
               onVideoSelect={handleVideoSelect}
+              onTakeExam={(video) => {
+                setSelectedVideo(video);
+                setSearchParams({ category: selectedCategory?.slug || '', video: video.id });
+                setViewMode('exam');
+              }}
               isVideoWatched={isVideoWatched}
               isVideoCompleted={isVideoCompleted}
             />
@@ -503,7 +518,7 @@ export default function UnshakableFoundations() {
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Keep Learning!</h2>
                   <p className="text-gray-600 mb-6">
-                    You scored {localProgress.examScores[selectedVideo.id]}%. You need 70% to pass.
+                    You scored {localProgress.examScores[selectedVideo.id]}%. You need 90% to pass.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button

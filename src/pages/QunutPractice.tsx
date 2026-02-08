@@ -399,29 +399,29 @@ export default function QunutPractice() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Skip Link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-slate-900 focus:rounded-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg"
       >
         Skip to dua content
       </a>
 
       {/* Header */}
-      <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-10">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-slate-300 hover:text-white"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
             >
               <ChevronLeft size={20} />
               Back
             </button>
             <div className="flex items-center gap-2">
-              <Moon className="text-amber-400" size={20} />
-              <span className="font-semibold text-white">Witr Prayer</span>
+              <Moon className="text-amber-600" size={20} />
+              <span className="font-semibold text-gray-900">Witr Prayer</span>
             </div>
             <div className="w-16" /> {/* Spacer */}
           </div>
@@ -431,17 +431,17 @@ export default function QunutPractice() {
       <main id="main-content" className="max-w-4xl mx-auto px-4 py-8">
         {/* Title Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-1 rounded-full text-sm mb-4">
+          <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-1 rounded-full text-sm mb-4">
             <Star size={14} />
             Essential Dua for Witr Prayer
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">{QUNUT_DUA.title}</h1>
-          <p className="text-2xl font-arabic text-amber-400 mb-4">{QUNUT_DUA.titleArabic}</p>
-          <p className="text-slate-400 max-w-2xl mx-auto">{QUNUT_DUA.description}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{QUNUT_DUA.title}</h1>
+          <p className="text-2xl font-arabic text-amber-600 mb-4">{QUNUT_DUA.titleArabic}</p>
+          <p className="text-gray-500 max-w-2xl mx-auto">{QUNUT_DUA.description}</p>
         </div>
 
         {/* Controls */}
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700">
+        <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Mode Toggle */}
             <div className="flex gap-2" role="group" aria-label="Practice mode">
@@ -450,8 +450,8 @@ export default function QunutPractice() {
                 aria-pressed={practiceMode === 'full'}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   practiceMode === 'full'
-                    ? 'bg-amber-500 text-slate-900'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 <BookOpen size={16} className="inline mr-2" />
@@ -462,8 +462,8 @@ export default function QunutPractice() {
                 aria-pressed={practiceMode === 'line-by-line'}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   practiceMode === 'line-by-line'
-                    ? 'bg-amber-500 text-slate-900'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 <Repeat size={16} className="inline mr-2" />
@@ -473,30 +473,30 @@ export default function QunutPractice() {
 
             {/* Options */}
             <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showTransliteration}
                   onChange={(e) => setShowTransliteration(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-700 text-amber-500 focus:ring-amber-500"
+                  className="rounded border-gray-300 bg-white text-amber-500 focus:ring-amber-500"
                 />
                 Transliteration
               </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showTranslation}
                   onChange={(e) => setShowTranslation(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-700 text-amber-500 focus:ring-amber-500"
+                  className="rounded border-gray-300 bg-white text-amber-500 focus:ring-amber-500"
                 />
                 Translation
               </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeAdditions}
                   onChange={(e) => setIncludeAdditions(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-700 text-amber-500 focus:ring-amber-500"
+                  className="rounded border-gray-300 bg-white text-amber-500 focus:ring-amber-500"
                 />
                 Include Salawat
               </label>
@@ -524,7 +524,7 @@ export default function QunutPractice() {
           {isPlaying && (
             <button
               onClick={stopPlayback}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
             >
               Stop
             </button>
@@ -550,26 +550,26 @@ export default function QunutPractice() {
             {allSections.map((section, index) => (
               <div
                 key={section.id}
-                className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-colors"
+                className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-colors shadow-sm"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <span className="flex-shrink-0 w-8 h-8 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center text-sm font-medium">
+                  <span className="flex-shrink-0 w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-sm font-medium">
                     {index + 1}
                   </span>
                   <div className="flex-1 space-y-3">
                     {/* Arabic */}
-                    <p className="text-2xl font-arabic text-white text-right leading-loose" dir="rtl">
+                    <p className="text-2xl font-arabic text-gray-900 text-right leading-loose" dir="rtl">
                       {section.arabic}
                     </p>
 
                     {/* Transliteration */}
                     {showTransliteration && (
-                      <p className="text-slate-400 italic">{section.transliteration}</p>
+                      <p className="text-gray-500 italic">{section.transliteration}</p>
                     )}
 
                     {/* Translation */}
                     {showTranslation && (
-                      <p className="text-slate-300">{section.english}</p>
+                      <p className="text-gray-700">{section.english}</p>
                     )}
 
                     {/* Note toggle */}
@@ -577,7 +577,7 @@ export default function QunutPractice() {
                       <button
                         onClick={() => toggleNote(section.id as number)}
                         aria-expanded={expandedNotes.includes(section.id as number)}
-                        className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                        className="text-sm text-amber-600 hover:text-amber-500 flex items-center gap-1"
                       >
                         {expandedNotes.includes(section.id as number) ? (
                           <>
@@ -592,7 +592,7 @@ export default function QunutPractice() {
                     )}
 
                     {expandedNotes.includes(section.id as number) && 'note' in section && (
-                      <p className="text-sm text-slate-500 bg-slate-700/50 rounded-lg p-3">
+                      <p className="text-sm text-gray-600 bg-amber-50 rounded-lg p-3">
                         {section.note}
                       </p>
                     )}
@@ -602,13 +602,13 @@ export default function QunutPractice() {
                   <button
                     onClick={() => handleGenerateAudio(section.arabic, section.id as number)}
                     disabled={generatingAudio}
-                    className="flex-shrink-0 p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+                    className="flex-shrink-0 p-2 text-gray-400 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     aria-label={`Play line ${index + 1} audio`}
                   >
                     {generatingAudio && currentPlayingSection === section.id ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : currentPlayingSection === section.id && isPlaying ? (
-                      <Pause size={18} className="text-emerald-400" />
+                      <Pause size={18} className="text-emerald-600" />
                     ) : (
                       <Volume2 size={18} />
                     )}
@@ -621,10 +621,10 @@ export default function QunutPractice() {
 
         {/* Line by Line Mode */}
         {practiceMode === 'line-by-line' && (
-          <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-700">
+          <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
             {/* Progress */}
             <div className="flex items-center justify-between mb-6">
-              <span className="text-slate-400 text-sm">
+              <span className="text-gray-500 text-sm">
                 Line {currentLine + 1} of {allSections.length}
               </span>
               <div className="flex gap-1" role="group" aria-label="Line navigation">
@@ -639,7 +639,7 @@ export default function QunutPractice() {
                         ? 'bg-amber-500'
                         : i < currentLine
                         ? 'bg-emerald-500'
-                        : 'bg-slate-600'
+                        : 'bg-gray-300'
                     }`}
                   />
                 ))}
@@ -648,18 +648,18 @@ export default function QunutPractice() {
 
             {/* Current Line */}
             <div className="text-center space-y-6 py-8">
-              <p className="text-3xl md:text-4xl font-arabic text-white leading-loose" dir="rtl">
+              <p className="text-3xl md:text-4xl font-arabic text-gray-900 leading-loose" dir="rtl">
                 {allSections[currentLine].arabic}
               </p>
 
               {showTransliteration && (
-                <p className="text-xl text-slate-400 italic">
+                <p className="text-xl text-gray-500 italic">
                   {allSections[currentLine].transliteration}
                 </p>
               )}
 
               {showTranslation && (
-                <p className="text-lg text-slate-300">
+                <p className="text-lg text-gray-700">
                   {allSections[currentLine].english}
                 </p>
               )}
@@ -680,25 +680,25 @@ export default function QunutPractice() {
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between pt-6 border-t border-slate-700">
+            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
               <button
                 onClick={goToPrevLine}
                 disabled={currentLine === 0}
-                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={20} />
                 Previous
               </button>
 
               {currentLine === allSections.length - 1 ? (
-                <div className="flex items-center gap-2 text-emerald-400">
+                <div className="flex items-center gap-2 text-emerald-600">
                   <Check size={20} />
                   Complete!
                 </div>
               ) : (
                 <button
                   onClick={goToNextLine}
-                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400"
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-400"
                 >
                   Next
                   <ChevronLeft size={20} className="rotate-180" />
@@ -709,21 +709,21 @@ export default function QunutPractice() {
         )}
 
         {/* Source & Info */}
-        <div className="mt-8 p-6 bg-slate-800/30 rounded-xl border border-slate-700">
-          <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-            <FileText size={18} className="text-amber-400" />
+        <div className="mt-8 p-6 bg-amber-50 rounded-xl border border-amber-200">
+          <h3 className="text-gray-900 font-semibold mb-3 flex items-center gap-2">
+            <FileText size={18} className="text-amber-600" />
             About Dua al-Qunut
           </h3>
-          <div className="space-y-3 text-sm text-slate-400">
+          <div className="space-y-3 text-sm text-gray-600">
             <p>
-              <strong className="text-slate-300">When to recite:</strong> The Qunut dua is recited during Witr prayer,
+              <strong className="text-gray-800">When to recite:</strong> The Qunut dua is recited during Witr prayer,
               either before or after the ruku' (bowing) in the final rak'ah. Most scholars recommend raising the hands while reciting it.
             </p>
             <p>
-              <strong className="text-slate-300">Source:</strong> {QUNUT_DUA.source}
+              <strong className="text-gray-800">Source:</strong> {QUNUT_DUA.source}
             </p>
             <p>
-              <strong className="text-slate-300">Tip:</strong> Start by memorizing one line at a time.
+              <strong className="text-gray-800">Tip:</strong> Start by memorizing one line at a time.
               Use the "Line by Line" mode to practice each phrase with its meaning.
             </p>
           </div>
