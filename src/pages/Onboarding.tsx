@@ -89,7 +89,7 @@ export default function Onboarding() {
         // Check if already completed onboarding
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('onboarding_completed, full_name, role')
+          .select('onboarding_completed, full_name, phone, phone_number, phone_country_code, role')
           .eq('id', session.user.id)
           .single();
 
@@ -124,9 +124,22 @@ export default function Onboarding() {
           return;
         }
 
-        // Pre-fill name if available
-        if (profile?.full_name) {
-          setParentData(prev => ({ ...prev, fullName: profile.full_name || prev.fullName }));
+        // Pre-fill name and phone if available from signup
+        if (profile) {
+          setParentData(prev => {
+            const updated = { ...prev };
+            if (profile.full_name) updated.fullName = profile.full_name;
+            if (profile.phone_country_code) updated.phoneCountryCode = profile.phone_country_code;
+            // Use phone_number first, then parse from phone (full number from signup)
+            if (profile.phone_number) {
+              updated.phoneNumber = profile.phone_number;
+            } else if (profile.phone) {
+              // Parse: "+44 7123456789" → extract number part
+              const match = profile.phone.match(/^\+\d{1,3}\s*(.+)/);
+              if (match) updated.phoneNumber = match[1].trim();
+            }
+            return updated;
+          });
         }
 
         setLoading(false);

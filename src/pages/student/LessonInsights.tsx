@@ -1398,7 +1398,7 @@ function InteractiveQuiz({
 
         return (
           <div key={qIndex} className={`bg-white rounded-xl p-4 border border-gray-200 ${isDisabled ? 'opacity-60' : ''}`}>
-            <p className="font-semibold text-gray-900 mb-4">
+            <p className={`font-semibold text-gray-900 mb-4 ${/[\u0600-\u06FF]/.test(q.question) ? 'font-arabic text-2xl leading-relaxed' : ''}`}>
               <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm mr-2 ${
                 isAnswered
                   ? isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
@@ -1436,7 +1436,7 @@ function InteractiveQuiz({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <span className="font-medium mr-2 text-gray-500">{String.fromCharCode(65 + oIndex)})</span>
-                        <span className="text-gray-700">{option.text}</span>
+                        <span className={`text-gray-700 ${/[\u0600-\u06FF]/.test(option.text) ? 'font-arabic text-2xl leading-relaxed' : ''}`} dir={/[\u0600-\u06FF]/.test(option.text) ? 'rtl' : undefined}>{option.text}</span>
                         {option.transliteration && (
                           <span className="text-gray-500 italic ml-2">({option.transliteration})</span>
                         )}
@@ -2872,7 +2872,7 @@ export default function LessonInsights() {
                   <div className="relative bg-slate-100 rounded-full p-1 flex items-center">
                     <button
                       onClick={() => setViewMode('deep-study')}
-                      className={`relative z-10 px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${
+                      className={`relative z-10 px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                         viewMode === 'deep-study'
                           ? 'text-white'
                           : 'text-slate-500 hover:text-slate-700'
@@ -2882,7 +2882,7 @@ export default function LessonInsights() {
                     </button>
                     <button
                       onClick={() => setViewMode('memorization')}
-                      className={`relative z-10 px-3.5 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${
+                      className={`relative z-10 px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                         viewMode === 'memorization'
                           ? 'text-white'
                           : 'text-slate-500 hover:text-slate-700'
@@ -2893,7 +2893,7 @@ export default function LessonInsights() {
                     {/* Sliding pill indicator */}
                     <div
                       className={`absolute top-1 bottom-1 bg-emerald-600 rounded-full transition-all duration-300 ease-out ${
-                        viewMode === 'deep-study' ? 'left-1 w-[92px]' : 'left-[98px] w-[106px]'
+                        viewMode === 'deep-study' ? 'left-1 right-[calc(50%+2px)]' : 'left-[calc(50%-2px)] right-1'
                       }`}
                     />
                   </div>

@@ -90,25 +90,28 @@ export default function Welcome() {
         return;
       }
 
-      // Get role from metadata
-      const role = user.user_metadata?.selected_role || 'student';
-      setUserRole(role);
-
       // Try to get name from user metadata (signup) or profile
       const nameFromSignup = user.user_metadata?.full_name || '';
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone_number, timezone')
+        .select('full_name, phone, phone_number, role, timezone')
         .eq('id', user.id)
         .maybeSingle();
+
+      // Get role from profile first (source of truth), fall back to metadata
+      const role = profile?.role || user.user_metadata?.selected_role || 'student';
+      setUserRole(role);
 
       // Auto-detect timezone
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+      // Use phone_number first, fall back to phone (set by signup trigger)
+      const phoneFromProfile = profile?.phone_number || profile?.phone || '';
+
       setFormData({
         full_name: profile?.full_name || nameFromSignup,
-        phone_number: profile?.phone_number || '',
+        phone_number: phoneFromProfile,
         timezone: profile?.timezone || detectedTimezone,
         learner_name: ''
       });
