@@ -18,7 +18,7 @@ export default function EditProfile() {
   const [teacherProfileId, setTeacherProfileId] = useState<string | null>(null);
   const [bio, setBio] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
-  const [, setHourlyRate] = useState('10');
+  const [hourlyRate, setHourlyRate] = useState('10');
   const [videoUrl, setVideoUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
 
@@ -315,9 +315,9 @@ export default function EditProfile() {
         return;
       }
 
-      // Only approved teachers can access this page
-      if (teacherProfile.status !== 'approved') {
-        navigate('/teacher/pending-approval');
+      // Only approved or pending teachers can access this page
+      if (teacherProfile.status === 'rejected') {
+        navigate('/teacher/rejected');
         return;
       }
 
@@ -406,20 +406,18 @@ export default function EditProfile() {
       return;
     }
 
-    // Note: hourly_rate is NOT updated here - it's managed by the tier system
-
     try {
       setSaving(true);
       setError(null);
       setSuccessMessage(null);
 
-      // Update teacher profile
+      // Update teacher profile including hourly rate
       const { error: updateError } = await supabase
         .from('teacher_profiles')
         .update({
           bio: finalBio.trim(),
           education_level: educationLevel.trim() || null,
-          // hourly_rate is NOT updated - managed by tier system
+          hourly_rate: parseFloat(hourlyRate) || 7,
           video_intro_url: introType === 'video' ? (videoUrl.trim() || currentIntroUrl) : null,
           youtube_intro_url: introType === 'youtube' ? (youtubeUrl.trim() || currentIntroUrl) : null,
         })
@@ -712,8 +710,29 @@ export default function EditProfile() {
             </div>
           </div>
 
-          {/* Hourly Rate - REMOVED: Teachers cannot edit their rate */}
-          {/* Rate is automatically determined by teacher tier system based on qualifications */}
+          {/* Hourly Rate */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Your Hourly Rate (£) <span className="text-red-500">*</span>
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              Set the rate you charge per hour for your lessons.
+            </p>
+            <div className="relative w-48">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">£</span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                step="0.50"
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="7"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">/hour</span>
+            </div>
+          </div>
 
           {/* Video/Audio Introduction */}
           <div className="border-2 border-blue-200 rounded-xl p-6 bg-blue-50">
