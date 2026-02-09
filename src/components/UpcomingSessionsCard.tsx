@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
 import { getSubjectGradientClasses } from '../lib/subjectColors';
@@ -36,6 +36,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   const [loading, setLoading] = useState(true);
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState<string>('');
+  const [showCancelModal, setShowCancelModal] = useState<{ lessonId: string; canCancel: boolean; hoursUntil: number } | null>(null);
+  const [cancellingLessonId, setCancellingLessonId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUpcomingSessions();
@@ -334,6 +336,54 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   function closeMessage() {
     setViewingMessage(null);
     setMessageContent('');
+  }
+
+  function handleCancelClick(lessonId: string, scheduledTime: string) {
+    const lessonTime = new Date(scheduledTime);
+    const hoursUntil = (lessonTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    const canCancel = hoursUntil >= 2;
+    setShowCancelModal({ lessonId, canCancel, hoursUntil });
+  }
+
+  async function handleCancelLesson() {
+    if (!showCancelModal) return;
+
+    setCancellingLessonId(showCancelModal.lessonId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-lesson`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            lesson_id: showCancelModal.lessonId,
+            reason: 'Cancelled by student'
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+        throw new Error(errorMsg || 'Failed to cancel lesson');
+      }
+
+      toast.success(`Lesson cancelled successfully. ${data.credits_refunded} credit(s) have been refunded to your account.`);
+      setShowCancelModal(null);
+      loadUpcomingSessions();
+    } catch (error) {
+      console.error('Error cancelling lesson:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel lesson');
+    } finally {
+      setCancellingLessonId(null);
+    }
   }
 
   if (loading) {
@@ -677,13 +727,23 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     </button>
 
                     {!lessonIsPast && canReschedule && (
-                      <button
-                        onClick={handleReschedule}
-                        className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium transition flex items-center space-x-2"
-                      >
-                        <CalendarClock className="w-4 h-4" />
-                        <span>Reschedule</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleCancelClick(lesson.id, lesson.scheduled_time)}
+                          disabled={cancellingLessonId === lesson.id}
+                          className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-200 rounded-lg font-medium transition flex items-center space-x-2"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          <span>{cancellingLessonId === lesson.id ? 'Cancelling...' : 'Cancel'}</span>
+                        </button>
+                        <button
+                          onClick={handleReschedule}
+                          className="px-4 py-2 bg-gray-200 hover:bg-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium transition flex items-center space-x-2"
+                        >
+                          <CalendarClock className="w-4 h-4" />
+                          <span>Reschedule</span>
+                        </button>
+                      </>
                     )}
 
                     {!lessonIsPast && (
@@ -831,6 +891,76 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Cancel Lesson Modal */}
+      {showCancelModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={() => setShowCancelModal(null)}
+          ></div>
+
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Cancel Lesson</h3>
+                </div>
+
+                {showCancelModal.canCancel ? (
+                  <>
+                    <p className="text-gray-600 mb-6">
+                      Are you sure you want to cancel this lesson? Your credit will be refunded to your account.
+                    </p>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setShowCancelModal(null)}
+                        className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+                      >
+                        Keep Lesson
+                      </button>
+                      <button
+                        onClick={handleCancelLesson}
+                        disabled={cancellingLessonId !== null}
+                        className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition disabled:opacity-50"
+                      >
+                        {cancellingLessonId ? 'Cancelling...' : 'Yes, Cancel'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-600 mb-4">
+                      Lessons can only be cancelled 2+ hours before start time. You can still reschedule this lesson.
+                    </p>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setShowCancelModal(null)}
+                        className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate(`/reschedule-lesson?lessonId=${showCancelModal.lessonId}`);
+                          setShowCancelModal(null);
+                        }}
+                        className="flex-1 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                      >
+                        <CalendarClock className="w-4 h-4" />
+                        <span>Reschedule Instead</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
