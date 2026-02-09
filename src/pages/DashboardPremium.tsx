@@ -244,14 +244,7 @@ export default function DashboardPremium() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (teacherProfile) {
-        if (teacherProfile.status === 'pending_approval') {
-          navigate('/teacher/pending-approval');
-          return;
-        } else if (teacherProfile.status === 'rejected') {
-          navigate('/teacher/rejected');
-          return;
-        }
+      if (teacherProfile?.status === 'approved') {
         roles.push('Teacher');
 
         const { data: availabilityData } = await supabase
@@ -264,7 +257,9 @@ export default function DashboardPremium() {
         setHasAvailability((availabilityData?.length || 0) > 0);
       }
 
-      const isStudent = profileData?.roles?.includes('student') || (!teacherProfile && !isAdmin);
+      // Pending/rejected teachers are still students
+      const isApprovedTeacher = teacherProfile?.status === 'approved';
+      const isStudent = profileData?.roles?.includes('student') || (!isApprovedTeacher && !isAdmin);
       if (isStudent) {
         roles.push('Student');
       }

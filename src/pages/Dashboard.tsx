@@ -274,13 +274,7 @@ export default function Dashboard() {
         .maybeSingle();
 
       if (teacherProfile) {
-        if (teacherProfile.status === 'pending_approval') {
-          navigate('/teacher/pending-approval');
-          return;
-        } else if (teacherProfile.status === 'rejected') {
-          navigate('/teacher/rejected');
-          return;
-        } else if (teacherProfile.status === 'approved') {
+        if (teacherProfile.status === 'approved') {
           roles.push('Teacher');
 
           const { data: availabilityData } = await supabase
@@ -294,8 +288,9 @@ export default function Dashboard() {
         }
       }
 
-      // Check for student role (either explicitly in roles array or as default)
-      const isStudent = profileData?.roles?.includes('student') || (!teacherProfile && !isAdmin);
+      // Check for student role — pending/rejected teachers are still students
+      const isApprovedTeacher = teacherProfile?.status === 'approved';
+      const isStudent = profileData?.roles?.includes('student') || (!isApprovedTeacher && !isAdmin);
       if (isStudent) {
         roles.push('Student');
       }
