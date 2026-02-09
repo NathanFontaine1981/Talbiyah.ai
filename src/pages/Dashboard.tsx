@@ -300,6 +300,11 @@ export default function Dashboard() {
         roles.push('Student');
       }
 
+      // Add Parent as a switchable role
+      if (userIsParent) {
+        roles.push('Parent');
+      }
+
       setAvailableRoles(roles);
 
       // Set primary role (for display) - Admin takes precedence, then Teacher, then Student
@@ -311,8 +316,7 @@ export default function Dashboard() {
       }
       setUserRole(primaryRole);
 
-      // Set selected view role - if user has multiple roles, default to Admin view; they can switch
-      // But if they explicitly have student role alongside admin, start with Student view for familiar UX
+      // Set selected view role - default to Student if available, then primary
       if (roles.length > 1 && roles.includes('Student')) {
         setSelectedViewRole('Student');
       } else {
@@ -614,6 +618,7 @@ export default function Dashboard() {
                     <span className={`w-2 h-2 rounded-full ${
                       selectedViewRole === 'Admin' ? 'bg-amber-500' :
                       selectedViewRole === 'Teacher' ? 'bg-blue-500' :
+                      selectedViewRole === 'Parent' ? 'bg-purple-500' :
                       'bg-emerald-500'
                     }`}></span>
                     <span className="text-sm font-medium text-gray-700 hidden sm:inline">{selectedViewRole} View</span>
@@ -635,13 +640,17 @@ export default function Dashboard() {
                           }}
                           className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
                             selectedViewRole === role
-                              ? role === 'Admin' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+                              ? role === 'Admin' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
+                              : role === 'Teacher' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600'
+                              : role === 'Parent' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600'
+                              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
                               : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
                           <span className={`w-2.5 h-2.5 rounded-full ${
                             role === 'Admin' ? 'bg-amber-500' :
                             role === 'Teacher' ? 'bg-blue-500' :
+                            role === 'Parent' ? 'bg-purple-500' :
                             'bg-emerald-500'
                           }`}></span>
                           <span className="font-medium">{role} View</span>
@@ -672,10 +681,10 @@ export default function Dashboard() {
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">{profile?.full_name || 'Student'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{isParent ? 'Parent' : (availableRoles.length > 1 ? availableRoles.join(' & ') : userRole)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{availableRoles.length > 1 ? availableRoles.join(' & ') : userRole}</p>
                 </div>
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
-                  isParent ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
+                  selectedViewRole === 'Parent' ? 'bg-gradient-to-br from-purple-400 to-purple-600' :
                   selectedViewRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
                   selectedViewRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
                   selectedViewRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
@@ -705,17 +714,17 @@ export default function Dashboard() {
               <div className="lg:col-span-2">
                 <DashboardHeader
                   userName={profile?.full_name?.split(' ')[0] || 'Student'}
-                  userRole={isParent ? 'Parent' : selectedViewRole}
+                  userRole={selectedViewRole}
                 />
               </div>
 
               <div className="lg:col-span-1">
-                <PrayerTimesWidget userRole={isParent ? 'Parent' : selectedViewRole} />
+                <PrayerTimesWidget userRole={selectedViewRole} />
               </div>
             </div>
 
             {/* New User Welcome Banner */}
-            {showWelcomeBanner && (selectedViewRole === 'Student' || isParent) && (
+            {showWelcomeBanner && (selectedViewRole === 'Student' || selectedViewRole === 'Parent') && (
               <div className="mb-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                 {/* Background pattern */}
                 <div className="absolute inset-0 opacity-10">
@@ -817,142 +826,155 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Connect Referrer - Only shows if eligible (no referrer, no completed lessons) */}
-            {(selectedViewRole === 'Student' || isParent) && userId && (
-              <div className="mb-6">
-                <ConnectReferrerWidget userId={userId} />
-              </div>
-            )}
-
-            {/* PRIORITY 1: Your Progress - Students want to see immediate stats */}
-            {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6">
-                <ProgressOverview />
-              </div>
-            )}
-
-            {/* PRIORITY 2: Credits & Booking */}
-            {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6 grid md:grid-cols-2 gap-4">
-                <CreditBalanceWidget />
-                <TokenBalanceWidget />
-              </div>
-            )}
-
-            {/* PRIORITY 2: Upcoming Sessions - What's coming next */}
-            {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6">
-                <UpcomingSessionsCard />
-              </div>
-            )}
-
-            {/* PRIORITY 4: My Learning Journey - Recent recordings/insights */}
-            {(selectedViewRole === 'Student' || isParent) && (
-              <div className="mb-6">
-                <MyLearningJourneyCard />
-              </div>
-            )}
-
-            
-            {/* PRIORITY 6: Diagnostic Assessment - One-time, not daily priority */}
-            {(selectedViewRole === 'Student' && userId) && (
-              <div className="mb-6">
-                <DiagnosticCTACard userId={userId} />
-              </div>
-            )}
-
-            {isParent && !hasChildren && (
-              <div className="mb-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-white" />
+            {/* ===== STUDENT VIEW ===== */}
+            {selectedViewRole === 'Student' && (
+              <>
+                {/* Connect Referrer - Only shows if eligible */}
+                {userId && (
+                  <div className="mb-6">
+                    <ConnectReferrerWidget userId={userId} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-2">Add Your First Child</h3>
-                    <p className="text-purple-50 mb-4 text-sm">
-                      Create student accounts for your children to manage their learning journey, book lessons on their behalf, and track their progress all in one place.
-                    </p>
-                    <button
-                      onClick={() => navigate('/my-children')}
-                      className="px-6 py-3 bg-white hover:bg-purple-50 text-purple-600 rounded-xl font-bold transition shadow-lg flex items-center space-x-2"
-                    >
-                      <Users className="w-5 h-5" />
-                      <span>Add Child Now</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
-                  </div>
+                )}
+
+                {/* Your Progress */}
+                <div className="mb-6">
+                  <ProgressOverview />
                 </div>
-              </div>
+
+                {/* Credits & Tokens */}
+                <div className="mb-6 grid md:grid-cols-2 gap-4">
+                  <CreditBalanceWidget />
+                  <TokenBalanceWidget />
+                </div>
+
+                {/* Upcoming Sessions */}
+                <div className="mb-6">
+                  <UpcomingSessionsCard />
+                </div>
+
+                {/* My Learning Journey */}
+                <div className="mb-6">
+                  <MyLearningJourneyCard />
+                </div>
+
+                {/* Diagnostic Assessment */}
+                {userId && (
+                  <div className="mb-6">
+                    <DiagnosticCTACard userId={userId} />
+                  </div>
+                )}
+              </>
             )}
 
-            {isParent && hasChildren && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Users className="w-6 h-6 text-purple-600" />
-                    My Children
-                  </h2>
-                  <button
-                    onClick={() => navigate('/my-children')}
-                    className="text-purple-600 hover:text-purple-700 font-semibold text-sm flex items-center gap-1"
-                  >
-                    Manage All
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {children.map((child) => (
-                    <div
-                      key={child.id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            {child.child_name?.[0] || '?'}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{child.child_name}</h3>
-                            {child.child_age && (
-                              <p className="text-sm text-gray-500">Age {child.child_age}</p>
-                            )}
-                          </div>
-                        </div>
+            {/* ===== PARENT VIEW ===== */}
+            {selectedViewRole === 'Parent' && (
+              <>
+                {!hasChildren ? (
+                  <div className="mb-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Users className="w-6 h-6 text-white" />
                       </div>
-
-                      <div className="mb-3">
-                        {child.has_account ? (
-                          <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-                            Full Account
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
-                            No account yet
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-white mb-2">Add Your First Child</h3>
+                        <p className="text-purple-50 mb-4 text-sm">
+                          Create student accounts for your children to manage their learning journey, book lessons on their behalf, and track their progress all in one place.
+                        </p>
                         <button
-                          onClick={() => navigate(`/child/${child.id}/dashboard`)}
-                          className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition text-sm"
+                          onClick={() => navigate('/my-children')}
+                          className="px-6 py-3 bg-white hover:bg-purple-50 text-purple-600 rounded-xl font-bold transition shadow-lg flex items-center space-x-2"
                         >
-                          View Dashboard
+                          <Users className="w-5 h-5" />
+                          <span>Add Child Now</span>
+                          <ArrowRight className="w-5 h-5" />
                         </button>
-                        {!child.has_account && (
-                          <button
-                            onClick={() => navigate('/my-children')}
-                            className="w-full px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-1"
-                          >
-                            <span>🔓</span>
-                            Create Login
-                          </button>
-                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Children Cards */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Users className="w-6 h-6 text-purple-600" />
+                          My Children
+                        </h2>
+                        <button
+                          onClick={() => navigate('/my-children')}
+                          className="text-purple-600 hover:text-purple-700 font-semibold text-sm flex items-center gap-1"
+                        >
+                          Manage All
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {children.map((child) => (
+                          <div
+                            key={child.id}
+                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition"
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                  {child.child_name?.[0] || '?'}
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">{child.child_name}</h3>
+                                  {child.child_age && (
+                                    <p className="text-sm text-gray-500">Age {child.child_age}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mb-3">
+                              {child.has_account ? (
+                                <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                                  Full Account
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
+                                  No account yet
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => navigate(`/child/${child.id}/dashboard`)}
+                                className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition text-sm"
+                              >
+                                View Dashboard
+                              </button>
+                              {!child.has_account && (
+                                <button
+                                  onClick={() => navigate('/my-children')}
+                                  className="w-full px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-1"
+                                >
+                                  <span>🔓</span>
+                                  Create Login
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Credits (parents buy credits for children) */}
+                    <div className="mb-6 grid md:grid-cols-2 gap-4">
+                      <CreditBalanceWidget />
+                      <TokenBalanceWidget />
+                    </div>
+
+                    {/* Upcoming sessions across all children */}
+                    <div className="mb-6">
+                      <UpcomingSessionsCard />
+                    </div>
+                  </>
+                )}
+              </>
             )}
 
             
@@ -1011,7 +1033,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {selectedViewRole === 'Teacher' ? (
+            {selectedViewRole === 'Teacher' && (
               <>
                 <div className="mb-6">
                   <button
@@ -1042,7 +1064,9 @@ export default function Dashboard() {
                   </div>
                 </div>
               </>
-            ) : (
+            )}
+
+            {selectedViewRole === 'Student' && (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
@@ -1055,6 +1079,21 @@ export default function Dashboard() {
                     <LearningStatsWidget />
                     <ReferralWidget />
                     <RecommendedActionsCard />
+                    <AnnouncementsCard />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedViewRole === 'Parent' && (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-3 space-y-6">
+                    <RecentMessagesCard />
+                  </div>
+
+                  <div className="lg:col-span-1 space-y-6">
+                    <ReferralWidget />
                     <AnnouncementsCard />
                   </div>
                 </div>

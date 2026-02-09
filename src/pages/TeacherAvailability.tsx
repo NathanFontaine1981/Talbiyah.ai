@@ -858,7 +858,7 @@ export default function TeacherAvailability() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 text-gray-500 hover:text-white transition"
+                className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back to Dashboard</span>
@@ -868,7 +868,7 @@ export default function TeacherAvailability() {
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Set Your Availability</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Set Your Availability</h1>
                   <p className="text-sm text-gray-500">Manage your teaching schedule</p>
                 </div>
               </div>

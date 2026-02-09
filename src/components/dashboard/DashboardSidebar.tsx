@@ -96,6 +96,7 @@ export default function DashboardSidebar({
     {
       title: 'Teach',
       items: [
+        { icon: GraduationCap, label: 'Apply to Teach', path: '/apply-to-teach', active: false, roles: ['Student'] },
         { icon: Briefcase, label: 'Teacher Hub', path: '/teacher/hub', active: false, roles: ['Teacher'] },
         { icon: Users, label: 'My Students', path: '/teacher/my-students', active: false, roles: ['Teacher'] },
         { icon: Calendar, label: 'My Calendar', path: '/teacher/schedule', active: false, roles: ['Teacher'] },
@@ -160,11 +161,7 @@ export default function DashboardSidebar({
   // Filter sections based on selected view role
   const filteredSections = menuSections.map(section => ({
     ...section,
-    items: section.items.filter(item => {
-      if (item.roles.includes(selectedViewRole)) return true;
-      if (item.label === 'My Children' && profileRoles?.includes('parent')) return true;
-      return false;
-    })
+    items: section.items.filter(item => item.roles.includes(selectedViewRole))
   })).filter(section => section.items.length > 0);
 
   return (
@@ -198,7 +195,7 @@ export default function DashboardSidebar({
         {/* Mobile close button */}
         <button
           onClick={() => setMobileMenuOpen(false)}
-          className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition rounded-lg hover:bg-gray-100"
+          className="lg:hidden p-2 text-gray-500 hover:text-gray-700 transition rounded-lg hover:bg-gray-100"
           aria-label="Close sidebar"
         >
           <X className="w-5 h-5" />
@@ -210,7 +207,7 @@ export default function DashboardSidebar({
         {filteredSections.map((section, sectionIdx) => (
           <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
             {section.title && !sidebarCollapsed && (
-              <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {section.title}
               </p>
             )}
@@ -288,7 +285,7 @@ export default function DashboardSidebar({
       {/* Desktop collapse button */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full items-center justify-center text-gray-400 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
+        className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full items-center justify-center text-gray-500 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {sidebarCollapsed ? (

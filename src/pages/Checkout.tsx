@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
-import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles, Shield, Lock } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles, Shield, Lock, Zap } from 'lucide-react';
+import { INSIGHTS_ADDON } from '../constants/insightsAddonPricing';
 import { format } from 'date-fns';
 
 interface Child {
@@ -39,6 +40,12 @@ export default function Checkout() {
   const [freeFirstLessonDiscount, setFreeFirstLessonDiscount] = useState(0);
   const [isLegacyStudent, setIsLegacyStudent] = useState(false);
   const [isFirstLegacyLesson, setIsFirstLegacyLesson] = useState(false);
+  // Independent teacher state
+  const [isIndependentTeacher, setIsIndependentTeacher] = useState(false);
+  const [independentPaymentCollection, setIndependentPaymentCollection] = useState<'external' | 'platform'>('external');
+  const [independentTeacherRate, setIndependentTeacherRate] = useState(0);
+  const [insightsAddonSelected, setInsightsAddonSelected] = useState(false);
+  const [isFirstInsightsLesson, setIsFirstInsightsLesson] = useState(false);
 
   // Check if all cart items are legacy (standard tier)
   const isLegacyBooking = isLegacyStudent && cartItems.every(item => item.lesson_tier === 'standard');
@@ -48,7 +55,64 @@ export default function Checkout() {
     loadReferralBalance();
     loadCreditBalance();
     checkFreeFirstLesson();
+    checkIndependentTeacher();
   }, []);
+
+  // Check if cart items are from an independent teacher
+  async function checkIndependentTeacher() {
+    if (cartItems.length === 0) return;
+    const teacherId = cartItems[0]?.teacher_id;
+    if (!teacherId) return;
+
+    try {
+      const { data: teacherProfile } = await supabase
+        .from('teacher_profiles')
+        .select('teacher_type, independent_rate, payment_collection')
+        .eq('user_id', teacherId)
+        .maybeSingle();
+
+      if (teacherProfile?.teacher_type === 'independent') {
+        setIsIndependentTeacher(true);
+        setIndependentPaymentCollection(teacherProfile.payment_collection || 'external');
+        setIndependentTeacherRate(teacherProfile.independent_rate || 0);
+
+        // Check if this is first insights lesson (for free trial)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: learners } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', user.id);
+
+        const learnerIds = learners?.map(l => l.id) || [];
+
+        if (learnerIds.length > 0) {
+          const { data: existingInsightsLesson } = await supabase
+            .from('lessons')
+            .select('id')
+            .in('learner_id', learnerIds)
+            .eq('is_independent', true)
+            .eq('insights_addon', true)
+            .not('status', 'in', '("cancelled_by_teacher","cancelled_by_student")')
+            .limit(1)
+            .maybeSingle();
+
+          const isFirst = !existingInsightsLesson;
+          setIsFirstInsightsLesson(isFirst);
+          // Auto-select insights addon if it's the free trial
+          if (isFirst) {
+            setInsightsAddonSelected(true);
+          }
+        } else {
+          setIsFirstInsightsLesson(true);
+          setInsightsAddonSelected(true);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking independent teacher:', err);
+    }
+  }
 
   useEffect(() => {
     // Auto-calculate referral discount based on available balance
@@ -435,6 +499,99 @@ export default function Checkout() {
           use_free_session: false
         };
       });
+
+      // Handle independent teacher booking (external payment)
+      if (isIndependentTeacher && independentPaymentCollection === 'external') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
+
+        let learnerId: string;
+        if (isParent && selectedChildId) {
+          const selectedChild = children.find(c => c.id === selectedChildId);
+          if (!selectedChild?.learner_id) throw new Error('Selected child has no learner profile');
+          learnerId = selectedChild.learner_id;
+        } else {
+          const { data: existingLearner } = await supabase
+            .from('learners')
+            .select('id')
+            .eq('parent_id', session.user.id)
+            .maybeSingle();
+
+          if (existingLearner) {
+            learnerId = existingLearner.id;
+          } else {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .single();
+
+            const { data: newLearner } = await supabase
+              .from('learners')
+              .insert({ parent_id: session.user.id, name: profile?.full_name || 'Student', gamification_points: 0 })
+              .select('id')
+              .single();
+
+            if (!newLearner) throw new Error('Failed to create learner profile');
+            learnerId = newLearner.id;
+          }
+        }
+
+        const insightsPrice = insightsAddonSelected && !isFirstInsightsLesson
+          ? INSIGHTS_ADDON.pricePerLessonPence
+          : 0;
+
+        if (insightsAddonSelected && insightsPrice > 0) {
+          // Charge only the insights addon via Stripe
+          const response = await initiateBookingCheckout(
+            bookings.map(b => ({
+              ...b,
+              price: INSIGHTS_ADDON.pricePerLesson,
+              is_independent: true,
+              insights_addon: true,
+              insights_addon_price: insightsPrice,
+              independent_teacher_rate: Math.round(independentTeacherRate * 100),
+              learner_id: learnerId,
+            })),
+            { is_independent_insights_only: true }
+          );
+
+          if (response.checkout_url) {
+            window.location.href = response.checkout_url;
+          } else {
+            throw new Error('No checkout URL received');
+          }
+        } else {
+          // No payment needed - create booking directly
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                cart_items: cartItems,
+                learner_id: learnerId,
+                is_independent_booking: true,
+                insights_addon: insightsAddonSelected,
+                insights_addon_price: isFirstInsightsLesson ? 0 : (insightsAddonSelected ? INSIGHTS_ADDON.pricePerLessonPence : 0),
+                independent_teacher_rate: Math.round(independentTeacherRate * 100),
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create booking');
+          }
+
+          await clearCart();
+          navigate(`/dashboard?booking_success=true&payment=${insightsAddonSelected ? 'insights_trial' : 'external'}`);
+        }
+        return;
+      }
 
       // Handle legacy booking (monthly invoice)
       if (isLegacyBooking) {
@@ -865,6 +1022,78 @@ export default function Checkout() {
               </div>
             </div>
 
+            {/* Independent Teacher - External Payment */}
+            {isIndependentTeacher && independentPaymentCollection === 'external' && (
+              <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <span className="text-2xl">🎓</span>
+                  <span>Independent Teacher Booking</span>
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  Arrange payment directly with your teacher{independentTeacherRate > 0 && (
+                    <span> at <span className="font-bold text-blue-600">£{independentTeacherRate.toFixed(2)}/hour</span></span>
+                  )}.
+                </p>
+
+                {/* Insights Addon */}
+                <div className={`rounded-xl p-4 border-2 transition cursor-pointer ${
+                  insightsAddonSelected
+                    ? 'bg-emerald-50 border-emerald-500'
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                }`}
+                  onClick={() => !isFirstInsightsLesson && setInsightsAddonSelected(!insightsAddonSelected)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        insightsAddonSelected ? 'bg-emerald-500' : 'bg-gray-100'
+                      }`}>
+                        <Zap className={`w-5 h-5 ${insightsAddonSelected ? 'text-white' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-semibold text-gray-900">{INSIGHTS_ADDON.displayName}</p>
+                          {isFirstInsightsLesson && (
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+                              FREE TRIAL
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">{INSIGHTS_ADDON.shortDescription}</p>
+                        <ul className="mt-2 space-y-1">
+                          {INSIGHTS_ADDON.features.slice(0, 4).map((feature, i) => (
+                            <li key={i} className="text-xs text-gray-500 flex items-center space-x-1">
+                              <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      {isFirstInsightsLesson ? (
+                        <div>
+                          <span className="text-sm text-gray-400 line-through">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</span>
+                          <p className="text-lg font-bold text-emerald-600">FREE</p>
+                        </div>
+                      ) : (
+                        <p className="text-lg font-bold text-gray-900">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</p>
+                      )}
+                      <p className="text-xs text-gray-500">per lesson</p>
+                    </div>
+                  </div>
+                  {insightsAddonSelected && (
+                    <div className="mt-3 flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                      <span className="text-sm text-emerald-600 font-medium">
+                        {isFirstInsightsLesson ? 'Free trial included!' : 'Added to your booking'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Legacy Booking - No Payment Required */}
             {isLegacyBooking && (
               <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
@@ -1090,10 +1319,28 @@ export default function Checkout() {
               )}
               <h3 className="text-lg font-bold text-gray-900 mb-4">Price Breakdown</h3>
               <div className="space-y-3 mb-6">
+                {isIndependentTeacher && independentPaymentCollection === 'external' ? (
+                  <>
+                    <div className="flex items-center justify-between text-gray-500">
+                      <span>Lesson fee</span>
+                      <span className="text-sm italic">Paid directly to teacher</span>
+                    </div>
+                    {insightsAddonSelected && (
+                      <div className="flex items-center justify-between text-gray-600">
+                        <span className="flex items-center space-x-1">
+                          <Zap className="w-4 h-4 text-emerald-500" />
+                          <span>AI Insights Addon {cartCount > 1 ? `(${cartCount} lessons)` : ''}</span>
+                        </span>
+                        <span>{isFirstInsightsLesson ? <span className="text-emerald-600 font-bold">FREE</span> : `£${(INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2)}`}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
                 <div className="flex items-center justify-between text-gray-600">
                   <span>Lessons ({cartCount})</span>
                   <span>£{totalPrice.toFixed(2)}</span>
                 </div>
+                )}
                 {discount > 0 && (
                   <div className="flex items-center justify-between text-emerald-600">
                     <span>Block Discount</span>
@@ -1120,7 +1367,12 @@ export default function Checkout() {
                 )}
                 <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
-                  <span>£{Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}</span>
+                  <span>
+                    {isIndependentTeacher && independentPaymentCollection === 'external'
+                      ? `£${insightsAddonSelected && !isFirstInsightsLesson ? (INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2) : '0.00'}`
+                      : `£${Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}`
+                    }
+                  </span>
                 </div>
               </div>
 
@@ -1170,9 +1422,11 @@ export default function Checkout() {
 
               <button
                 onClick={handleCheckout}
-                disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits && !isLegacyBooking)}
+                disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits && !isLegacyBooking && !isIndependentTeacher)}
                 className={`w-full px-6 py-4 text-white rounded-full text-lg font-bold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
-                  isLegacyBooking
+                  isIndependentTeacher
+                    ? 'bg-blue-500 hover:bg-blue-600'
+                    : isLegacyBooking
                     ? 'bg-amber-500 hover:bg-amber-600'
                     : hasUnlimitedCredits
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600'
@@ -1184,6 +1438,18 @@ export default function Checkout() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
                   </>
+                ) : isIndependentTeacher && independentPaymentCollection === 'external' ? (
+                  insightsAddonSelected && !isFirstInsightsLesson ? (
+                    <>
+                      <Zap className="w-5 h-5" />
+                      <span>Pay £{INSIGHTS_ADDON.pricePerLesson.toFixed(2)} for Insights</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Confirm Booking</span>
+                    </>
+                  )
                 ) : isLegacyBooking ? (
                   <>
                     <FileText className="w-5 h-5" />
@@ -1246,6 +1512,15 @@ export default function Checkout() {
               {isLegacyBooking && (
                 <p className="text-xs text-center text-amber-600 mt-4">
                   Legacy Account - Lessons billed monthly at £12/hour
+                </p>
+              )}
+              {isIndependentTeacher && independentPaymentCollection === 'external' && (
+                <p className="text-xs text-center text-blue-600 mt-4">
+                  {insightsAddonSelected
+                    ? isFirstInsightsLesson
+                      ? 'Free AI Insights trial included with this lesson!'
+                      : 'Only the AI Insights addon is charged through Talbiyah'
+                    : 'Arrange lesson payment directly with your teacher'}
                 </p>
               )}
             </div>

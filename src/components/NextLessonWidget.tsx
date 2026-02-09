@@ -150,7 +150,7 @@ export default function NextLessonWidget() {
 
           <div className="flex-1">
             <p className="text-sm text-emerald-600 font-medium mb-1">{nextLesson.subject_name}</p>
-            <p className="text-lg font-semibold text-white dark:text-gray-200">with {nextLesson.teacher_name}</p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-gray-200">with {nextLesson.teacher_name}</p>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function NextLessonWidget() {
               <Calendar className="w-4 h-4" />
               <span className="text-xs font-medium">Date</span>
             </div>
-            <p className="text-white dark:text-gray-200 font-semibold">
+            <p className="text-gray-900 dark:text-gray-200 font-semibold">
               {format(lessonDate, 'MMM d, yyyy')}
             </p>
           </div>
@@ -170,7 +170,7 @@ export default function NextLessonWidget() {
               <Clock className="w-4 h-4" />
               <span className="text-xs font-medium">Time</span>
             </div>
-            <p className="text-white dark:text-gray-200 font-semibold">
+            <p className="text-gray-900 dark:text-gray-200 font-semibold">
               {format(lessonDate, 'h:mm a')}
             </p>
           </div>

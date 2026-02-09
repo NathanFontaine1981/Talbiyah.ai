@@ -76,9 +76,15 @@ export default function TeacherEarnings() {
 
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id, status')
+        .select('id, status, teacher_type, payment_collection')
         .eq('user_id', user.id)
         .single();
+
+      // Independent teachers with external payment should not see this page
+      if (teacherProfile?.teacher_type === 'independent' && teacherProfile?.payment_collection === 'external') {
+        navigate('/teacher/hub');
+        return;
+      }
 
       if (profileError || !teacherProfile) {
         setIsTeacher(false);
@@ -327,7 +333,7 @@ export default function TeacherEarnings() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Teacher Access Required</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Teacher Access Required</h2>
           <p className="text-gray-500 mb-6">
             You need to be registered as a teacher to view earnings. If you believe this is an error, please contact support.
           </p>
@@ -348,7 +354,7 @@ export default function TeacherEarnings() {
         {/* Back Button */}
         <button
           onClick={() => navigate('/teacher/hub')}
-          className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-6"
+          className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-800 transition mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Teacher Account</span>
@@ -357,7 +363,7 @@ export default function TeacherEarnings() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">My Earnings</h1>
+            <h1 className="text-3xl font-bold text-gray-900">My Earnings</h1>
             <p className="text-gray-500 mt-1">Track your lesson earnings and payouts</p>
           </div>
           <button
@@ -382,13 +388,13 @@ export default function TeacherEarnings() {
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
-              <p className={payoutMessage.type === 'success' ? 'text-emerald-300' : 'text-red-300'}>
+              <p className={payoutMessage.type === 'success' ? 'text-emerald-700' : 'text-red-700'}>
                 {payoutMessage.text}
               </p>
             </div>
             <button
               onClick={() => setPayoutMessage(null)}
-              className="text-gray-500 hover:text-white"
+              className="text-gray-500 hover:text-gray-900"
             >
               &times;
             </button>
@@ -409,7 +415,7 @@ export default function TeacherEarnings() {
                 </span>
               </div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Pending</h3>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(summary.pending_amount)}
               </p>
               <p className="text-xs text-gray-500 mt-2">Not yet completed</p>
@@ -426,7 +432,7 @@ export default function TeacherEarnings() {
                 </span>
               </div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">On Hold</h3>
-              <p className="text-2xl font-bold text-amber-400">
+              <p className="text-2xl font-bold text-amber-600">
                 {formatCurrency(summary.held_amount)}
               </p>
               <p className="text-xs text-gray-500 mt-2">7-day hold period</p>
@@ -443,7 +449,7 @@ export default function TeacherEarnings() {
                 </span>
               </div>
               <h3 className="text-sm font-medium text-gray-600 mb-1">Ready for Payout</h3>
-              <p className="text-2xl font-bold text-cyan-300">
+              <p className="text-2xl font-bold text-emerald-700">
                 {formatCurrency(summary.cleared_amount)}
               </p>
               {summary.cleared_amount > 0 && !hasPendingRequest ? (
@@ -665,7 +671,7 @@ export default function TeacherEarnings() {
           <div className="flex gap-4">
             <AlertCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-white mb-2">How earnings work</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">How earnings work</h3>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Earnings are created when a lesson is marked as complete</li>
                 <li>• Funds are held for 7 days to allow for disputes or refunds</li>

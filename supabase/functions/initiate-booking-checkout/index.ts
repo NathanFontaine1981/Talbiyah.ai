@@ -133,6 +133,9 @@ serve(async (req) => {
       })
     );
 
+    // Check if this is an independent teacher insights-only checkout
+    const isIndependentInsightsOnly = body.metadata?.is_independent_insights_only || body.is_independent_insights_only || false;
+
     const totalAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
       return sum + Math.round(booking.price * 100);
     }, 0);
@@ -461,10 +464,14 @@ serve(async (req) => {
     }
 
     const sessionText = sessionCount === 1 ? 'Session' : 'Sessions';
-    const productName = `${sessionCount} Learning ${sessionText}`;
-    const sessionDescription = requestedBookings
-      .map((b: BookingRequest) => `${b.duration || 60}min ${b.subject}`)
-      .join(', ');
+    const productName = isIndependentInsightsOnly
+      ? `Talbiyah AI Insights (${sessionCount} ${sessionText})`
+      : `${sessionCount} Learning ${sessionText}`;
+    const sessionDescription = isIndependentInsightsOnly
+      ? 'AI-powered study notes, quizzes & revision materials from your lesson recording'
+      : requestedBookings
+        .map((b: BookingRequest) => `${b.duration || 60}min ${b.subject}`)
+        .join(', ');
 
     const checkoutData = new URLSearchParams({
       'payment_method_types[]': 'card',
@@ -481,6 +488,7 @@ serve(async (req) => {
       'metadata[user_id]': user.id,
       'metadata[session_count]': sessionCount.toString(),
       'metadata[total_amount]': totalAmount.toString(),
+      ...(isIndependentInsightsOnly ? { 'metadata[is_independent_insights]': 'true' } : {}),
       'payment_intent_data[metadata][pending_booking_id]': pendingBooking.id,
       'payment_intent_data[metadata][user_id]': user.id,
       'customer_email': user.email || ''

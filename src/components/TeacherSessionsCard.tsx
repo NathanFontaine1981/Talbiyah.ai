@@ -632,7 +632,7 @@ export default function TeacherSessionsCard() {
                                   href={session.recording_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 hover:text-cyan-300 rounded-lg border border-emerald-500/30 hover:border-emerald-500/50 transition text-sm flex items-center space-x-1"
+                                  className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 hover:text-emerald-700 rounded-lg border border-emerald-500/30 hover:border-emerald-500/50 transition text-sm flex items-center space-x-1"
                                 >
                                   <Play className="w-4 h-4" />
                                   <span>Watch</span>

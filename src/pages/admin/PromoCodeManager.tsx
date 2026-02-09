@@ -410,7 +410,7 @@ export default function PromoCodeManager() {
             <p className="text-gray-600 dark:text-gray-400">No promo codes yet</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="mt-4 text-emerald-600 hover:text-cyan-300 font-medium"
+              className="mt-4 text-emerald-600 hover:text-emerald-700 font-medium"
             >
               Create your first promo code
             </button>

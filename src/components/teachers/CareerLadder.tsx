@@ -116,7 +116,7 @@ export default function CareerLadder({
                     relative z-10 w-10 h-10 rounded-full flex items-center justify-center
                     ${isPast ? 'bg-emerald-500 text-white' : ''}
                     ${isCurrent ? 'bg-gradient-to-br from-emerald-500 to-green-500 text-white ring-4 ring-emerald-200' : ''}
-                    ${isFuture ? 'bg-gray-100 text-gray-400 border-2 border-dashed border-gray-300' : ''}
+                    ${isFuture ? 'bg-gray-100 text-gray-500 border-2 border-dashed border-gray-300' : ''}
                   `}>
                     {isPast ? (
                       <Check className="w-5 h-5" />
@@ -130,7 +130,7 @@ export default function CareerLadder({
                   {/* Content */}
                   <div className="flex-1 pb-2">
                     <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${isFuture ? 'text-gray-400' : 'text-gray-900'}`}>
+                      <span className={`font-semibold ${isFuture ? 'text-gray-500' : 'text-gray-900'}`}>
                         {tierInfo.icon} {tierInfo.name}
                       </span>
                       {isCurrent && (
@@ -139,7 +139,7 @@ export default function CareerLadder({
                         </span>
                       )}
                     </div>
-                    <p className={`text-sm ${isFuture ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${isFuture ? 'text-gray-500' : 'text-gray-600'}`}>
                       {tier === 'newcomer'
                         ? 'Starting tier'
                         : `${reqs.minHours}+ hours, ${reqs.minRetention}%+ retention`
@@ -249,7 +249,7 @@ export default function CareerLadder({
                   relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all
                   ${isPast ? 'bg-emerald-500 text-white' : ''}
                   ${isCurrent ? 'bg-gradient-to-br from-emerald-500 to-green-500 text-white ring-4 ring-emerald-200 scale-110' : ''}
-                  ${isFuture ? 'bg-white text-gray-400 border-2 border-dashed border-gray-300' : ''}
+                  ${isFuture ? 'bg-white text-gray-500 border-2 border-dashed border-gray-300' : ''}
                 `}>
                   {isPast ? (
                     <Check className="w-5 h-5" />
@@ -260,7 +260,7 @@ export default function CareerLadder({
 
                 {/* Label */}
                 <span className={`mt-2 text-xs font-medium ${
-                  isCurrent ? 'text-emerald-600' : isFuture ? 'text-gray-400' : 'text-gray-600'
+                  isCurrent ? 'text-emerald-600' : isFuture ? 'text-gray-500' : 'text-gray-600'
                 }`}>
                   {tierInfo.name}
                 </span>

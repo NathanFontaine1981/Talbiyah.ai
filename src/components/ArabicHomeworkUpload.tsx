@@ -378,7 +378,7 @@ export default function ArabicHomeworkUpload({
                       href={file.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-emerald-600 hover:text-cyan-300 truncate max-w-[200px]"
+                      className="text-sm text-emerald-600 hover:text-emerald-700 truncate max-w-[200px]"
                     >
                       {file.name}
                     </a>

@@ -177,7 +177,7 @@ export default function TierDiagnostic() {
                       <p className="text-gray-600 mb-3">{result.message}</p>
                       {result.details && (
                         <details className="mt-3">
-                          <summary className="text-sm text-emerald-600 cursor-pointer hover:text-cyan-300">
+                          <summary className="text-sm text-emerald-600 cursor-pointer hover:text-emerald-700">
                             View Details
                           </summary>
                           <pre className="mt-2 text-xs text-gray-500 bg-gray-50 p-4 rounded-lg overflow-x-auto">

@@ -352,7 +352,7 @@ export default function GroupClasses() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-4"
+            className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>

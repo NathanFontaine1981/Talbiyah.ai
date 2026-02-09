@@ -782,7 +782,7 @@ export default function StudentArabicTracker({
                               setEditingNotes(unit.id);
                               setNotesText(unitProgress?.teacher_notes || '');
                             }}
-                            className="text-emerald-600 hover:text-cyan-300 text-xs"
+                            className="text-emerald-600 hover:text-emerald-700 text-xs"
                           >
                             {unitProgress?.teacher_notes ? 'Edit' : 'Add Notes'}
                           </button>
@@ -858,7 +858,7 @@ export default function StudentArabicTracker({
                                   className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition"
                                 >
                                   {getFileIcon(file.type)}
-                                  <span className="text-sm text-emerald-600 hover:text-cyan-300 truncate flex-1">
+                                  <span className="text-sm text-emerald-600 hover:text-emerald-700 truncate flex-1">
                                     {file.name}
                                   </span>
                                   <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>

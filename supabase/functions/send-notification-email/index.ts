@@ -660,10 +660,19 @@ function getLessonDeclinedEmail(payload: NotificationPayload) {
 }
 
 function getTeacherApplicationEmail(payload: NotificationPayload) {
-  const { applicant_name, applicant_email, subjects, education_level } = payload.data;
+  const { applicant_name, applicant_email, subjects, education_level, teacher_type, hourly_rate } = payload.data;
+
+  const isIndependent = teacher_type === 'independent';
+  const typeBadge = isIndependent
+    ? '<span style="background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;">🎓 Independent</span>'
+    : '<span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;">🏫 Platform</span>';
+
+  const rateRow = hourly_rate
+    ? `<p style="margin: 0 0 8px 0; color: #6b21a8;">Hourly Rate: <strong>&pound;${hourly_rate}</strong></p>`
+    : '';
 
   return {
-    subject: `📝 New Teacher Application - ${applicant_name}`,
+    subject: `📝 New Teacher Application - ${applicant_name}${isIndependent ? ' (Independent)' : ''}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -679,6 +688,8 @@ function getTeacherApplicationEmail(payload: NotificationPayload) {
               <h3 style="margin: 0 0 12px 0; color: #5b21b6; font-size: 16px;">👤 Applicant Details:</h3>
               <p style="margin: 0 0 8px 0; color: #6b21a8;">Name: <strong>${applicant_name}</strong></p>
               <p style="margin: 0 0 8px 0; color: #6b21a8;">Email: <strong>${applicant_email}</strong></p>
+              <p style="margin: 0 0 8px 0; color: #6b21a8;">Type: ${typeBadge}</p>
+              ${rateRow}
               <p style="margin: 0 0 8px 0; color: #6b21a8;">Education: <strong>${education_level || 'Not specified'}</strong></p>
               <p style="margin: 0; color: #6b21a8;">Subjects: <strong>${subjects?.join(', ') || 'Not specified'}</strong></p>
             </div>

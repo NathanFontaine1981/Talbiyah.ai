@@ -398,7 +398,7 @@ export default function StudentQuranTracker({
           {!editingGeneralNotes && (
             <button
               onClick={() => setEditingGeneralNotes(true)}
-              className="text-emerald-600 hover:text-cyan-300 text-sm flex items-center gap-1"
+              className="text-emerald-600 hover:text-emerald-700 text-sm flex items-center gap-1"
             >
               <Edit3 className="w-4 h-4" />
               Edit

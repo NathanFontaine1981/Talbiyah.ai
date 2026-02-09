@@ -508,7 +508,7 @@ export default function Recordings() {
         </p>
         <button
           onClick={selectAllRecordings}
-          className="text-sm text-emerald-600 hover:text-cyan-300 transition"
+          className="text-sm text-emerald-600 hover:text-emerald-700 transition"
         >
           {selectedRecordings.length === filteredRecordings.length && filteredRecordings.length > 0
             ? 'Deselect All'

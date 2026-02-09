@@ -459,62 +459,39 @@ function UpgradeToAccountModal({ child, onClose, onSuccess }: UpgradeToAccountMo
     setSaving(true);
 
     try {
-      const { data: { user: parentUser } } = await supabase.auth.getUser();
-      if (!parentUser) throw new Error('Not authenticated');
+      // Call edge function to create child account server-side
+      // This uses admin API so the parent's session stays intact
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-      // Create child account
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: {
-          data: {
-            full_name: child.child_name,
-            date_of_birth: child.child_dob,
-          }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-child-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+            childRecordId: child.id,
+            childName: child.child_name,
+            childDob: child.child_dob,
+            childAge: child.child_age,
+            childGender: child.child_gender,
+          }),
         }
-      });
+      );
 
-      if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error('Failed to create child account');
+      const result = await response.json();
 
-      // Update child's profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: child.child_name,
-          date_of_birth: child.child_dob,
-          roles: ['student'],
-          linked_parent_id: parentUser.id
-        })
-        .eq('id', authData.user.id);
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create account');
+      }
 
-      if (profileError) throw profileError;
-
-      // Create learner entry
-      const { error: learnerError } = await supabase
-        .from('learners')
-        .insert({
-          parent_id: authData.user.id,
-          name: child.child_name,
-          age: child.child_age,
-          gender: child.child_gender,
-          gamification_points: 0
-        });
-
-      if (learnerError) console.error('Error creating learner entry:', learnerError);
-
-      // Update parent_children record
-      const { error: updateError } = await supabase
-        .from('parent_children')
-        .update({
-          has_account: true,
-          account_id: authData.user.id,
-          child_id: authData.user.id
-        })
-        .eq('id', child.id);
-
-      if (updateError) throw updateError;
-
+      toast.success(result.message || `Account created for ${child.child_name}`);
       onSuccess();
     } catch (err: any) {
       console.error('Error upgrading to account:', err);

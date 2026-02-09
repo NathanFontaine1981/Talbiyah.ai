@@ -182,13 +182,20 @@ export default function MyClasses() {
             .from('lesson_insights')
             .select('lesson_id, title, summary, key_topics, ai_model')
             .in('lesson_id', lessonIds);
+          // Prefer real AI insights over auto_generated placeholders per lesson
           insightsData?.forEach(insight => {
-            insightsMap.set(insight.lesson_id, {
-              title: insight.title,
-              summary: insight.summary,
-              key_topics: insight.key_topics,
-              ai_model: insight.ai_model || 'unknown'
-            });
+            const existing = insightsMap.get(insight.lesson_id);
+            const isReal = insight.ai_model && insight.ai_model !== 'auto_generated';
+            const existingIsReal = existing && existing.ai_model !== 'auto_generated';
+            // Only overwrite if we don't have one yet, or this is real and existing is placeholder
+            if (!existing || (isReal && !existingIsReal)) {
+              insightsMap.set(insight.lesson_id, {
+                title: insight.title,
+                summary: insight.summary,
+                key_topics: insight.key_topics,
+                ai_model: insight.ai_model || 'unknown'
+              });
+            }
           });
         }
 

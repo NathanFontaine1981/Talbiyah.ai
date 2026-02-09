@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Upload, User, ArrowLeft, Award, FileText, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
+import { TEACHER_TYPES, type TeacherType } from '../constants/teacherConstants';
+import { INSIGHTS_ADDON } from '../constants/insightsAddonPricing';
+
+const UK_PATTERNS = [
+  'manchester', 'london', 'birmingham', 'leeds', 'bradford', 'sheffield',
+  'liverpool', 'leicester', 'nottingham', 'coventry', 'luton', 'bolton',
+  'blackburn', 'glasgow', 'edinburgh', 'cardiff', 'bristol', 'newcastle',
+  'uk', 'united kingdom', 'england', 'scotland', 'wales', 'northern ireland'
+];
 
 export default function ApplyToTeach() {
   const navigate = useNavigate();
@@ -14,6 +23,9 @@ export default function ApplyToTeach() {
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+
+  const [selectedTemplateIndex, setSelectedTemplateIndex] = useState<number | null>(null);
+  const [bioManuallyEdited, setBioManuallyEdited] = useState(false);
 
   // Qualifications state
   const [hasIjazah, setHasIjazah] = useState(false);
@@ -34,7 +46,9 @@ export default function ApplyToTeach() {
     education_level: '',
     years_experience: '0',
     english_level: '',
-    degree_type: ''
+    degree_type: '',
+    teacher_type: 'platform' as TeacherType,
+    independent_rate: ''
   });
 
   const islamicInterests = [
@@ -45,7 +59,9 @@ export default function ApplyToTeach() {
     'Fiqh',
     'Hadith Studies',
     'Islamic History',
-    'Aqeedah'
+    'Aqeedah',
+    'New Muslims',
+    'Dawah'
   ];
 
   const educationLevels = [
@@ -57,6 +73,43 @@ export default function ApplyToTeach() {
     'Ijazah Certification',
     'Other'
   ];
+
+  function generateBioTemplates(interests: string[], yearsExp: string): string[] {
+    const expMap: Record<string, string> = {
+      '0': 'fresh enthusiasm',
+      '1': 'over a year',
+      '3': 'several years',
+      '6': 'extensive experience',
+      '11': 'over a decade',
+    };
+    const expText = expMap[yearsExp] || 'experience';
+
+    const joinInterests = (items: string[]): string => {
+      if (items.length === 0) return 'Islamic studies';
+      if (items.length === 1) return items[0];
+      if (items.length === 2) return `${items[0]} and ${items[1]}`;
+      return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+    };
+    const subjectText = joinInterests(interests);
+
+    return [
+      `I'm passionate about teaching ${subjectText}. With ${expText} in teaching, I focus on building a strong connection with each student and making learning enjoyable and accessible for all levels.`,
+      `As an experienced educator specialising in ${subjectText}, I bring a structured and patient approach to my teaching. I believe in building strong foundations and helping students progress at their own pace.`,
+      `My goal is to make ${subjectText} accessible and engaging for every learner. I tailor my teaching to each student's needs, whether they're complete beginners or looking to deepen their existing knowledge.`,
+    ];
+  }
+
+  const bioTemplates = useMemo(
+    () => generateBioTemplates(selectedInterests, formData.years_experience),
+    [selectedInterests, formData.years_experience]
+  );
+
+  // Auto-update textarea when templates change (only if user hasn't manually edited)
+  useEffect(() => {
+    if (!bioManuallyEdited && selectedTemplateIndex !== null) {
+      setFormData(prev => ({ ...prev, about_me: bioTemplates[selectedTemplateIndex] }));
+    }
+  }, [bioTemplates, bioManuallyEdited, selectedTemplateIndex]);
 
   useEffect(() => {
     loadUserProfile();
@@ -96,6 +149,19 @@ export default function ApplyToTeach() {
       setLoading(false);
     }
   }
+
+  // Auto-suggest independent for UK-based locations
+  const [teacherTypeManuallySet, setTeacherTypeManuallySet] = useState(false);
+
+  useEffect(() => {
+    if (teacherTypeManuallySet) return;
+    const loc = formData.location.toLowerCase().trim();
+    if (!loc) return;
+    const isUK = UK_PATTERNS.some(p => loc.includes(p));
+    if (isUK) {
+      setFormData(prev => ({ ...prev, teacher_type: 'independent' }));
+    }
+  }, [formData.location, teacherTypeManuallySet]);
 
   // File validation constants
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -246,11 +312,19 @@ export default function ApplyToTeach() {
     }
 
     if (selectedInterests.length === 0) {
-      setError('Please select at least one Islamic learning interest.');
+      setError('Please select at least one Islamic teaching interest.');
       return;
     }
 
-    if (!formData.education_level) {
+    if (formData.teacher_type === 'independent') {
+      const rate = parseFloat(formData.independent_rate);
+      if (!rate || rate <= 0) {
+        setError('Please enter a valid hourly rate.');
+        return;
+      }
+    }
+
+    if (formData.teacher_type === 'platform' && !formData.education_level) {
       setError('Please select your education level.');
       return;
     }
@@ -386,29 +460,49 @@ export default function ApplyToTeach() {
         }
       }
 
-      // Auto-assign tier based on qualifications
-      const assignedTier = calculateTier();
+      // Build teacher profile fields based on type
+      const isIndependent = formData.teacher_type === 'independent';
+      const assignedTier = isIndependent ? null : calculateTier();
+
+      const teacherProfileData: Record<string, unknown> = {
+        user_id: user.id,
+        bio: formData.about_me || null,
+        video_intro_url: videoIntroUrl,
+        status: 'pending_approval',
+        teacher_type: formData.teacher_type,
+      };
+
+      if (isIndependent) {
+        const rate = parseFloat(formData.independent_rate) || 0;
+        teacherProfileData.independent_rate = rate;
+        teacherProfileData.hourly_rate = rate;
+        teacherProfileData.tier = null;
+        teacherProfileData.payment_collection = 'external';
+      } else {
+        teacherProfileData.hourly_rate = assignedTier!.rate;
+        teacherProfileData.tier = assignedTier!.tier;
+      }
 
       // Upsert teacher profile (may already exist from signup trigger)
       const { error: profileError } = await supabase
         .from('teacher_profiles')
-        .upsert({
-          user_id: user.id,
-          bio: formData.about_me || null,
-          hourly_rate: assignedTier.rate,
-          video_intro_url: videoIntroUrl,
-          status: 'pending_approval'
-        }, { onConflict: 'user_id' });
+        .upsert(teacherProfileData, { onConflict: 'user_id' });
 
       if (profileError) {
         console.error('Profile insertion error:', profileError);
         throw profileError;
       }
 
-      // Build success message with interview/induction info
+      // Build success message
       let message = `Success! Your application has been submitted.\n\n`;
 
-      if (assignedTier.requiresInterview) {
+      if (isIndependent) {
+        message += `📋 Next Steps:\nWe'll review your profile and be in touch to arrange a quick onboarding session where we'll:\n`;
+        message += `• Set up your account and walk you through the platform\n`;
+        message += `• Review the terms and conditions\n`;
+        message += `• Answer any questions you may have\n\n`;
+        message += `Please keep an eye on your email for our invitation!`;
+      } else if (assignedTier!.requiresInterview) {
         message += `📞 Next Steps:\nWe will be in touch shortly to arrange an interview and induction. During this session, we'll:\n`;
         message += `• Verify your certificates and qualifications\n`;
         message += `• Go through our teaching methodology and platform\n`;
@@ -639,20 +733,67 @@ export default function ApplyToTeach() {
                   </div>
                 </fieldset>
 
-                <div>
-                  <label htmlFor="about-me" className="block text-sm font-medium text-gray-900 mb-2">
-                    About Me
-                  </label>
-                  <textarea
-                    id="about-me"
-                    value={formData.about_me}
-                    onChange={(e) => setFormData({ ...formData, about_me: e.target.value })}
-                    rows={5}
-                    placeholder="Tell us about yourself, your teaching experience, and what makes you passionate about teaching Islamic studies..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                  />
-                </div>
               </div>
+            </section>
+
+            {/* Teacher Type Selection */}
+            <section>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+                How would you like to teach?
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(Object.keys(TEACHER_TYPES) as TeacherType[]).map(type => {
+                  const info = TEACHER_TYPES[type];
+                  const isSelected = formData.teacher_type === type;
+                  const borderColor = type === 'platform'
+                    ? 'border-emerald-500 bg-emerald-50/50'
+                    : 'border-blue-500 bg-blue-50/50';
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setTeacherTypeManuallySet(true);
+                        setFormData(prev => ({ ...prev, teacher_type: type }));
+                      }}
+                      className={`text-left p-5 rounded-xl border-2 transition hover:shadow-md ${
+                        isSelected ? borderColor : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="text-2xl">{info.icon}</span>
+                        <span className="text-lg font-semibold text-gray-900">{info.name}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{info.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {formData.teacher_type === 'independent' && (
+                <div className="mt-5 p-5 bg-blue-50 border border-blue-200 rounded-xl space-y-4">
+                  <div>
+                    <label htmlFor="independent-rate" className="block text-sm font-medium text-gray-900 mb-2">
+                      Your hourly rate (&pound;) *
+                    </label>
+                    <input
+                      id="independent-rate"
+                      type="number"
+                      min="1"
+                      step="0.50"
+                      value={formData.independent_rate}
+                      onChange={(e) => setFormData({ ...formData, independent_rate: e.target.value })}
+                      placeholder="e.g. 16"
+                      className="w-full max-w-xs px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Students can optionally add Talbiyah AI Insights (+&pound;{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}/lesson) for recordings, AI-generated notes, and quizzes
+                  </p>
+                </div>
+              )}
             </section>
 
             <section>
@@ -670,7 +811,7 @@ export default function ApplyToTeach() {
                     value={formData.education_level}
                     onChange={(e) => setFormData({ ...formData, education_level: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
+                    required={formData.teacher_type === 'platform'}
                   >
                     <option value="">Select your highest education level</option>
                     {educationLevels.map(level => (
@@ -681,7 +822,7 @@ export default function ApplyToTeach() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Islamic Learning Interests
+                    Islamic Teaching Interests
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {islamicInterests.map(interest => (
@@ -698,6 +839,73 @@ export default function ApplyToTeach() {
                         <span className="text-gray-700">{interest}</span>
                       </label>
                     ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
+                About You
+              </h3>
+              <p className="text-sm text-gray-500 mb-4 -mt-4">
+                Choose a template based on your interests, then personalise it
+              </p>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {bioTemplates.map((template, idx) => {
+                    const labels = ['Warm & Personal', 'Credentials-Focused', 'Student-Centred'];
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTemplateIndex(idx);
+                          setBioManuallyEdited(false);
+                          setFormData(prev => ({ ...prev, about_me: template }));
+                        }}
+                        className={`text-left p-4 rounded-lg border-2 transition hover:shadow-sm ${
+                          selectedTemplateIndex === idx
+                            ? 'border-emerald-500 bg-emerald-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-gray-900 mb-1">{labels[idx]}</span>
+                        <span className="block text-xs text-gray-500 line-clamp-3">{template}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <textarea
+                    id="about-me"
+                    value={formData.about_me}
+                    onChange={(e) => {
+                      setBioManuallyEdited(true);
+                      setFormData({ ...formData, about_me: e.target.value });
+                    }}
+                    rows={5}
+                    maxLength={500}
+                    placeholder="Select a template above or write your own bio..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, about_me: '' }));
+                        setSelectedTemplateIndex(null);
+                        setBioManuallyEdited(true);
+                      }}
+                      className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+                    >
+                      Or write your own
+                    </button>
+                    <span className="text-xs text-gray-400">
+                      {formData.about_me.length} / 500
+                    </span>
                   </div>
                 </div>
               </div>
@@ -751,139 +959,144 @@ export default function ApplyToTeach() {
                   </select>
                 </div>
 
-                {/* Ijazah Section */}
-                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                  <label className="flex items-center space-x-3 mb-4">
-                    <input
-                      type="checkbox"
-                      checked={hasIjazah}
-                      onChange={(e) => setHasIjazah(e.target.checked)}
-                      className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
-                    />
-                    <span className="text-lg font-semibold text-gray-900">
-                      I have Ijazah (Quranic certification)
-                    </span>
-                  </label>
+                {/* Ijazah, Degree, Certificate sections — platform teachers only */}
+                {formData.teacher_type === 'platform' && (
+                  <>
+                    {/* Ijazah Section */}
+                    <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                      <label className="flex items-center space-x-3 mb-4">
+                        <input
+                          type="checkbox"
+                          checked={hasIjazah}
+                          onChange={(e) => setHasIjazah(e.target.checked)}
+                          className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
+                        />
+                        <span className="text-lg font-semibold text-gray-900">
+                          I have Ijazah (Quranic certification)
+                        </span>
+                      </label>
 
-                  {hasIjazah && (
-                    <div className="ml-8 space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-3">
-                          Ijazah Type (select all that apply):
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {['Hafs', 'Warsh', 'Qalun', 'Other'].map(type => (
-                            <label
-                              key={type}
-                              className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-white cursor-pointer transition"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={ijazahTypes.includes(type)}
-                                onChange={() => handleIjazahTypeToggle(type)}
-                                className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 rounded"
-                              />
-                              <span className="text-gray-700">{type}</span>
+                      {hasIjazah && (
+                        <div className="ml-8 space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-3">
+                              Ijazah Type (select all that apply):
                             </label>
-                          ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {['Hafs', 'Warsh', 'Qalun', 'Other'].map(type => (
+                                <label
+                                  key={type}
+                                  className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-white cursor-pointer transition"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={ijazahTypes.includes(type)}
+                                    onChange={() => handleIjazahTypeToggle(type)}
+                                    className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 rounded"
+                                  />
+                                  <span className="text-gray-700">{type}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                              <FileText className="w-4 h-4" />
+                              <span>Upload Ijazah Certificate(s) *</span>
+                            </label>
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              multiple
+                              onChange={(e) => handleFileUpload(e, setIjazahFiles)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Accepted formats: PDF, JPG, PNG (max 10MB per file)
+                            </p>
+                          </div>
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
-                          <FileText className="w-4 h-4" />
-                          <span>Upload Ijazah Certificate(s) *</span>
-                        </label>
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          multiple
-                          onChange={(e) => handleFileUpload(e, setIjazahFiles)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Accepted formats: PDF, JPG, PNG (max 10MB per file)
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Degree Section */}
-                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                  <label className="flex items-center space-x-3 mb-4">
-                    <input
-                      type="checkbox"
-                      checked={hasDegree}
-                      onChange={(e) => setHasDegree(e.target.checked)}
-                      className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
-                    />
-                    <span className="text-lg font-semibold text-gray-900">
-                      I have a degree in Islamic Studies or Arabic
-                    </span>
-                  </label>
-
-                  {hasDegree && (
-                    <div className="ml-8 space-y-4">
-                      <div>
-                        <label htmlFor="degree-type" className="block text-sm font-medium text-gray-900 mb-2">
-                          Degree Type *
-                        </label>
-                        <select
-                          id="degree-type"
-                          value={formData.degree_type}
-                          onChange={(e) => setFormData({ ...formData, degree_type: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          required
-                        >
-                          <option value="">Select degree type</option>
-                          <option value="al-azhar">Al-Azhar University</option>
-                          <option value="islamic_studies">Islamic Studies Degree</option>
-                          <option value="arabic_language">Arabic Language Degree</option>
-                          <option value="sharia">Sharia Law Degree</option>
-                          <option value="quran_tafsir">Quran & Tafsir</option>
-                          <option value="hadith">Hadith Studies</option>
-                          <option value="other">Other Islamic Studies</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
-                          <FileText className="w-4 h-4" />
-                          <span>Upload Degree Certificate *</span>
-                        </label>
+                    {/* Degree Section */}
+                    <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                      <label className="flex items-center space-x-3 mb-4">
                         <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          multiple
-                          onChange={(e) => handleFileUpload(e, setDegreeFiles)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          type="checkbox"
+                          checked={hasDegree}
+                          onChange={(e) => setHasDegree(e.target.checked)}
+                          className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 rounded"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Accepted formats: PDF, JPG, PNG (max 10MB per file)
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                        <span className="text-lg font-semibold text-gray-900">
+                          I have a degree in Islamic Studies or Arabic
+                        </span>
+                      </label>
 
-                {/* Other Certificates */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
-                    <FileText className="w-4 h-4" />
-                    <span>Other Teaching Certificates (Optional)</span>
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    multiple
-                    onChange={(e) => handleFileUpload(e, setCertificateFiles)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Any additional certificates, diplomas, or training qualifications
-                  </p>
-                </div>
+                      {hasDegree && (
+                        <div className="ml-8 space-y-4">
+                          <div>
+                            <label htmlFor="degree-type" className="block text-sm font-medium text-gray-900 mb-2">
+                              Degree Type *
+                            </label>
+                            <select
+                              id="degree-type"
+                              value={formData.degree_type}
+                              onChange={(e) => setFormData({ ...formData, degree_type: e.target.value })}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                              required
+                            >
+                              <option value="">Select degree type</option>
+                              <option value="al-azhar">Al-Azhar University</option>
+                              <option value="islamic_studies">Islamic Studies Degree</option>
+                              <option value="arabic_language">Arabic Language Degree</option>
+                              <option value="sharia">Sharia Law Degree</option>
+                              <option value="quran_tafsir">Quran & Tafsir</option>
+                              <option value="hadith">Hadith Studies</option>
+                              <option value="other">Other Islamic Studies</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                              <FileText className="w-4 h-4" />
+                              <span>Upload Degree Certificate *</span>
+                            </label>
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              multiple
+                              onChange={(e) => handleFileUpload(e, setDegreeFiles)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Accepted formats: PDF, JPG, PNG (max 10MB per file)
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Other Certificates */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center space-x-2">
+                        <FileText className="w-4 h-4" />
+                        <span>Other Teaching Certificates (Optional)</span>
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        multiple
+                        onChange={(e) => handleFileUpload(e, setCertificateFiles)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Any additional certificates, diplomas, or training qualifications
+                      </p>
+                    </div>
+                  </>
+                )}
 
               </div>
             </section>

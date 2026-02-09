@@ -21,6 +21,7 @@ interface User {
     id: string;
     status: string;
     is_legacy_teacher?: boolean;
+    teacher_type?: string;
   };
 }
 
@@ -49,7 +50,7 @@ interface UserStats {
 
 type RoleFilter = 'all' | 'student' | 'teacher' | 'parent' | 'admin';
 type StatusFilter = 'all' | 'active' | 'inactive' | 'pending';
-type TierFilter = 'all' | 'legacy' | 'standard';
+type TierFilter = 'all' | 'legacy' | 'standard' | 'independent';
 type SortOption = 'newest' | 'oldest' | 'name' | 'last_active';
 
 export default function UserManagement() {
@@ -121,6 +122,7 @@ export default function UserManagement() {
           id: u.teacher_profile_id,
           status: u.teacher_status,
           is_legacy_teacher: u.is_legacy_teacher,
+          teacher_type: u.teacher_type || 'platform',
         } : null,
       }));
 
@@ -195,7 +197,12 @@ export default function UserManagement() {
       );
     } else if (tierFilter === 'standard') {
       filtered = filtered.filter(user =>
-        !user.is_legacy_student && !user.teacher_profile?.is_legacy_teacher
+        !user.is_legacy_student && !user.teacher_profile?.is_legacy_teacher &&
+        user.teacher_profile?.teacher_type !== 'independent'
+      );
+    } else if (tierFilter === 'independent') {
+      filtered = filtered.filter(user =>
+        user.teacher_profile?.teacher_type === 'independent'
       );
     }
 
@@ -240,7 +247,6 @@ export default function UserManagement() {
             user_id: userId,
             status: 'approved',
             bio: '',
-            specializations: [],
           }]);
 
         if (teacherError) throw teacherError;
@@ -805,6 +811,7 @@ export default function UserManagement() {
               <option value="all">All Tiers</option>
               <option value="legacy">Legacy Only</option>
               <option value="standard">Standard Only</option>
+              <option value="independent">Independent Only</option>
             </select>
           </div>
 
@@ -1191,6 +1198,10 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 -mt-0.5">{tierInfo.sublabel}</span>
               )}
             </div>
+          </div>
+        ) : user.teacher_profile?.teacher_type === 'independent' ? (
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border bg-blue-500/10 border-blue-500/20">
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">Independent</span>
           </div>
         ) : (
           <span className="text-sm text-gray-400 dark:text-gray-500">Standard</span>
@@ -1986,6 +1997,7 @@ function UserDetailsModal({ user, onClose }: any) {
   const [loading, setLoading] = useState(true);
   const [userCredits, setUserCredits] = useState<number | null>(null);
   const [learners, setLearners] = useState<any[]>([]);
+  const [teacherDetails, setTeacherDetails] = useState<any>(null);
 
   useEffect(() => {
     fetchUserDetails();
@@ -2023,6 +2035,17 @@ function UserDetailsModal({ user, onClose }: any) {
 
         setLearners(learnersData || []);
       }
+
+      // Fetch full teacher profile if teacher
+      if (user.teacher_profile?.id) {
+        const { data: tp } = await supabase
+          .from('teacher_profiles')
+          .select('bio, hourly_rate, status, education_level, is_accepting_bookings, current_tier, hours_taught, average_rating, total_lessons, completed_lessons, total_unique_students, returning_students, retention_rate, teacher_type, independent_rate, payment_collection, is_legacy_teacher, created_at')
+          .eq('id', user.teacher_profile.id)
+          .single();
+
+        if (tp) setTeacherDetails(tp);
+      }
     } catch (error) {
       console.error('Error fetching user details:', error);
     } finally {
@@ -2059,6 +2082,11 @@ function UserDetailsModal({ user, onClose }: any) {
                 {user.teacher_profile?.is_legacy_teacher && (
                   <span className="px-2 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded text-xs">
                     Legacy Teacher
+                  </span>
+                )}
+                {user.teacher_profile?.teacher_type === 'independent' && (
+                  <span className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-xs">
+                    Independent
                   </span>
                 )}
               </div>
@@ -2158,6 +2186,97 @@ function UserDetailsModal({ user, onClose }: any) {
             </div>
           )}
         </div>
+
+        {/* Teacher Profile (if teacher) */}
+        {teacherDetails && (
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+              <GraduationCap className="w-5 h-5 text-emerald-500" />
+              <span>Teacher Profile</span>
+            </h4>
+            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-4">
+              {/* Status & Type Row */}
+              <div className="flex flex-wrap gap-2">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                  teacherDetails.status === 'approved' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : teacherDetails.status === 'pending' || teacherDetails.status === 'pending_approval' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400'
+                  : 'bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400'
+                }`}>
+                  {teacherDetails.status === 'pending_approval' ? 'Pending Approval' : teacherDetails.status?.charAt(0).toUpperCase() + teacherDetails.status?.slice(1)}
+                </span>
+                {teacherDetails.teacher_type === 'independent' ? (
+                  <span className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium">
+                    Independent Teacher
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-medium">
+                    Platform Teacher {teacherDetails.current_tier ? `(${teacherDetails.current_tier})` : ''}
+                  </span>
+                )}
+                {teacherDetails.is_accepting_bookings ? (
+                  <span className="px-2.5 py-1 bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 rounded-full text-xs font-medium">Accepting Bookings</span>
+                ) : (
+                  <span className="px-2.5 py-1 bg-gray-500/10 border border-gray-500/20 text-gray-500 dark:text-gray-400 rounded-full text-xs font-medium">Not Accepting</span>
+                )}
+              </div>
+
+              {/* Rate & Payment */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Hourly Rate</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {teacherDetails.teacher_type === 'independent'
+                      ? `£${Number(teacherDetails.independent_rate || 0).toFixed(2)}`
+                      : `£${Number(teacherDetails.hourly_rate || 0).toFixed(2)}`
+                    }
+                  </p>
+                </div>
+                {teacherDetails.teacher_type === 'independent' && (
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Payment Collection</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {teacherDetails.payment_collection === 'external' ? 'Direct (external)' : 'Via Talbiyah'}
+                    </p>
+                  </div>
+                )}
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Education</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{teacherDetails.education_level || 'Not set'}</p>
+                </div>
+              </div>
+
+              {/* Teaching Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{Number(teacherDetails.hours_taught || 0).toFixed(1)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Hours Taught</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherDetails.completed_lessons || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Lessons Done</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{teacherDetails.total_unique_students || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {teacherDetails.average_rating ? `${Number(teacherDetails.average_rating).toFixed(1)} ★` : '-'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Rating</p>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {teacherDetails.bio && (
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bio</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">{teacherDetails.bio}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Learners (if parent) */}
         {user.roles?.includes('parent') && learners.length > 0 && (

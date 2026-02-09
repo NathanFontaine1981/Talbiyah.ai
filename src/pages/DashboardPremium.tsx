@@ -445,7 +445,7 @@ export default function DashboardPremium() {
             <button
               onClick={() => setShowBookingSuccess(false)}
               aria-label="Dismiss notification"
-              className="text-gray-400 hover:text-gray-600 ml-2"
+              className="text-gray-500 hover:text-gray-700 ml-2"
             >
               <X className="w-5 h-5" />
             </button>
@@ -484,14 +484,14 @@ export default function DashboardPremium() {
                 <h1 className="text-xl font-bold text-gray-800 group-hover:text-emerald-600 transition whitespace-nowrap">
                   Talbiyah<span className="text-emerald-500">.ai</span>
                 </h1>
-                <p className="text-xs text-gray-400 whitespace-nowrap">Islamic Learning</p>
+                <p className="text-xs text-gray-500 whitespace-nowrap">Islamic Learning</p>
               </div>
             )}
           </button>
           <button
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
-            className="lg:hidden p-2 text-gray-400 hover:text-gray-600 transition rounded-xl hover:bg-gray-100/80"
+            className="lg:hidden p-2 text-gray-500 hover:text-gray-700 transition rounded-xl hover:bg-gray-100/80"
           >
             <X className="w-5 h-5" />
           </button>
@@ -502,7 +502,7 @@ export default function DashboardPremium() {
           <div className="px-4 py-4">
             <div className="relative">
               <label htmlFor="sidebar-search" className="sr-only">Search</label>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
                 id="sidebar-search"
                 type="text"
@@ -517,7 +517,7 @@ export default function DashboardPremium() {
           {filteredSections.map((section, sectionIdx) => (
             <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
               {section.title && !sidebarCollapsed && (
-                <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   {section.title}
                 </p>
               )}
@@ -568,7 +568,7 @@ export default function DashboardPremium() {
                       <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[10px] font-bold rounded-lg">NEW</span>
                     )}
                     {!sidebarCollapsed && item.comingSoon && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-medium rounded-lg">SOON</span>
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded-lg">SOON</span>
                     )}
                   </button>
                 ))}
@@ -595,7 +595,7 @@ export default function DashboardPremium() {
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-400 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
+          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-emerald-500 hover:border-emerald-300 transition shadow-md"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -639,13 +639,13 @@ export default function DashboardPremium() {
                       'bg-emerald-500'
                     }`}></span>
                     <span className="text-sm font-medium text-gray-700 hidden sm:inline">{selectedViewRole}</span>
-                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${showRoleSwitcher ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`w-4 h-4 text-gray-500 transition-transform ${showRoleSwitcher ? 'rotate-90' : ''}`} />
                   </button>
 
                   {showRoleSwitcher && (
                     <GlassCard className="absolute right-0 top-full mt-2 w-48 overflow-hidden z-50 p-0">
                       <div className="px-3 py-2 border-b border-gray-200/60">
-                        <p className="text-xs font-semibold text-gray-400 uppercase">Switch View</p>
+                        <p className="text-xs font-semibold text-gray-500 uppercase">Switch View</p>
                       </div>
                       {availableRoles.map(role => (
                         <button
@@ -679,7 +679,7 @@ export default function DashboardPremium() {
               <div className="flex items-center space-x-3 pl-3 border-l border-gray-200/60">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-gray-800">{profile?.full_name || 'Student'}</p>
-                  <p className="text-xs text-gray-400">{isParent ? 'Parent' : selectedViewRole}</p>
+                  <p className="text-xs text-gray-500">{isParent ? 'Parent' : selectedViewRole}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
                   isParent ? 'bg-gradient-to-br from-purple-400 to-purple-600 shadow-purple-500/20' :

@@ -1056,6 +1056,33 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Check if this is an independent teacher lesson without insights addon
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseCheck = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: lessonCheck } = await supabaseCheck
+      .from('lessons')
+      .select('is_independent, insights_addon')
+      .eq('id', lesson_id)
+      .single();
+
+    if (lessonCheck?.is_independent === true && lessonCheck?.insights_addon !== true) {
+      console.log(`Independent lesson ${lesson_id} does not have insights addon - skipping generation`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          skipped: true,
+          reason: 'insights_addon_not_purchased',
+          message: 'Insights addon not purchased for this independent teacher lesson',
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Try to parse surah info from lesson_title if not in metadata
     if (!metadata.surah_number && lesson_title) {
       const parsedInfo = parseSurahInfoFromTitle(lesson_title);
@@ -1498,11 +1525,15 @@ Generate the insights following the exact format specified in the system prompt.
     console.log("Lesson data fetched:", { teacher_id: lessonData.teacher_id, learner_id: lessonData.learner_id });
 
     // Check if insight already exists for this lesson
-    const { data: existingInsight } = await supabase
+    // Use order + limit instead of .single() to avoid errors when duplicates exist
+    const { data: existingInsights } = await supabase
       .from('lesson_insights')
       .select('id')
       .eq('lesson_id', lesson_id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const existingInsight = existingInsights?.[0] || null;
 
     let savedInsight;
     let saveError;

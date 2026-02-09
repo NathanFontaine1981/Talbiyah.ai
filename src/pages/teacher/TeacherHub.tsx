@@ -15,7 +15,10 @@ import {
   Loader2,
   ClipboardCheck,
   XCircle,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
+import { TEACHER_TYPES, type TeacherType } from '../../constants/teacherConstants';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
 import WeeklyCalendar from '../../components/teacher/WeeklyCalendar';
 import DiagnosticSessionsCard from '../../components/teacher/DiagnosticSessionsCard';
@@ -67,6 +70,10 @@ export default function TeacherHub() {
   const [cancellingLesson, setCancellingLesson] = useState<UpcomingLesson | null>(null);
   const [acknowledgingLesson, setAcknowledgingLesson] = useState<UpcomingLesson | null>(null);
   const [decliningLesson, setDecliningLesson] = useState<UpcomingLesson | null>(null);
+  const [teacherType, setTeacherType] = useState<TeacherType>('platform');
+  const [independentRate, setIndependentRate] = useState<number>(0);
+  const [paymentCollection, setPaymentCollection] = useState<'external' | 'platform'>('external');
+  const [insightsStats, setInsightsStats] = useState({ total: 0, withInsights: 0 });
 
   useEffect(() => {
     loadDashboardData();
@@ -80,10 +87,10 @@ export default function TeacherHub() {
         return;
       }
 
-      // Get teacher profile with retention data
+      // Get teacher profile with retention data and teacher type
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id, status, retention_rate, returning_students, total_unique_students')
+        .select('id, status, retention_rate, returning_students, total_unique_students, teacher_type, independent_rate, payment_collection')
         .eq('user_id', user.id)
         .single();
 
@@ -93,6 +100,30 @@ export default function TeacherHub() {
       }
 
       setTeacherProfileId(teacherProfile.id);
+      setTeacherType(teacherProfile.teacher_type || 'platform');
+      setIndependentRate(teacherProfile.independent_rate || 0);
+      setPaymentCollection(teacherProfile.payment_collection || 'external');
+
+      // For independent teachers, fetch insights usage stats
+      if (teacherProfile.teacher_type === 'independent') {
+        const { count: totalLessons } = await supabase
+          .from('lessons')
+          .select('id', { count: 'exact', head: true })
+          .eq('teacher_id', teacherProfile.id)
+          .eq('is_independent', true);
+
+        const { count: insightsLessons } = await supabase
+          .from('lessons')
+          .select('id', { count: 'exact', head: true })
+          .eq('teacher_id', teacherProfile.id)
+          .eq('is_independent', true)
+          .eq('insights_addon', true);
+
+        setInsightsStats({
+          total: totalLessons || 0,
+          withInsights: insightsLessons || 0,
+        });
+      }
 
       // Get tier stats
       const { data: tierStats } = await supabase
@@ -200,6 +231,9 @@ export default function TeacherHub() {
     }
   }
 
+  const isIndependent = teacherType === 'independent';
+  const isExternalPayment = isIndependent && paymentCollection === 'external';
+
   const navItems = [
     {
       icon: Calendar,
@@ -222,13 +256,14 @@ export default function TeacherHub() {
       iconBg: 'bg-blue-500/20',
       iconColor: 'text-blue-600'
     },
-    {
+    // Only show earnings for platform teachers or independent with platform payment
+    ...(!isExternalPayment ? [{
       icon: DollarSign,
       label: 'My Earnings',
       path: '/teacher/earnings',
       iconBg: 'bg-emerald-500/20',
       iconColor: 'text-emerald-600'
-    },
+    }] : []),
     {
       icon: ClipboardCheck,
       label: 'Homework Review',
@@ -243,13 +278,14 @@ export default function TeacherHub() {
       iconBg: 'bg-purple-500/20',
       iconColor: 'text-purple-600'
     },
-    {
+    // Only show payment settings for platform teachers or independent with platform payment
+    ...(!isExternalPayment ? [{
       icon: CreditCard,
       label: 'Payment Settings',
       path: '/teacher/payment-settings',
       iconBg: 'bg-amber-500/20',
       iconColor: 'text-amber-400'
-    },
+    }] : []),
     {
       icon: Settings,
       label: 'Edit Profile',
@@ -285,8 +321,39 @@ export default function TeacherHub() {
           <p className="text-gray-500">Manage your teaching activities and track your performance.</p>
         </div>
 
-        {/* Current Tier Badge */}
-        {stats && (
+        {/* Current Tier Badge / Independent Teacher Badge */}
+        {isIndependent ? (
+          <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-5xl">🎓</div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Independent Teacher</h2>
+                  <p className="text-gray-400">
+                    {independentRate > 0 ? `£${independentRate.toFixed(2)}/hour` : 'Rate set by you'}
+                    {' · '}
+                    {paymentCollection === 'external' ? 'Direct payment' : 'Platform payment'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <div className="flex items-center space-x-2 text-blue-400">
+                    <Zap className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {insightsStats.withInsights}/{insightsStats.total} lessons with Insights
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {insightsStats.total > 0
+                      ? `${Math.round((insightsStats.withInsights / insightsStats.total) * 100)}% adoption rate`
+                      : 'No lessons yet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : stats && (
           <div className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -348,7 +415,7 @@ export default function TeacherHub() {
               <div>
                 <p className="text-sm text-gray-400">Hours Taught</p>
                 <p className="text-2xl font-bold text-white">
-                  {stats?.hours_taught.toFixed(1) || '0.0'}h
+                  {stats?.hours_taught?.toFixed(1) || '0.0'}h
                 </p>
               </div>
             </div>
@@ -364,7 +431,7 @@ export default function TeacherHub() {
               <div>
                 <p className="text-sm text-gray-400">Average Rating</p>
                 <p className="text-2xl font-bold text-white">
-                  {stats?.average_rating.toFixed(1) || '0.0'} ★
+                  {stats?.average_rating?.toFixed(1) || '0.0'} ★
                 </p>
               </div>
             </div>
@@ -567,92 +634,176 @@ export default function TeacherHub() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
-            <h3 className="text-xl font-bold text-white mb-3">💰 Earnings Overview</h3>
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Cleared</span>
-                <span className="font-semibold text-emerald-400">
-                  £{earnings?.cleared_amount.toFixed(2) || '0.00'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">On Hold</span>
-                <span className="font-semibold text-amber-400">
-                  £{earnings?.held_amount.toFixed(2) || '0.00'}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/teacher/earnings')}
-              className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
-            >
-              View Full Earnings
-            </button>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
-            <h3 className="text-xl font-bold text-white mb-3">🎯 Tier Progress</h3>
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Current Tier</span>
-                <span className="font-semibold text-emerald-400">{stats?.tier_name}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Hours Taught</span>
-                <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Student Retention</span>
-                <span className="font-semibold text-emerald-400">
-                  {(stats?.total_unique_students || 0) >= 5
-                    ? `${(stats?.retention_rate || 0).toFixed(0)}%`
-                    : 'Need 5+ students'}
-                </span>
-              </div>
-              {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
-                <>
+          {isIndependent ? (
+            <>
+              {/* Insights Stats for Independent Teachers */}
+              <div className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30">
+                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-blue-400" />
+                  Insights Stats
+                </h3>
+                <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Next Tier</span>
-                    <span className="font-semibold text-blue-400 capitalize">
-                      {stats.next_auto_tier}
-                    </span>
+                    <span className="text-gray-400">Total Lessons</span>
+                    <span className="font-semibold text-white">{insightsStats.total}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Hours to Promotion</span>
-                    <span className="font-semibold text-amber-400">
-                      {stats.hours_to_next_tier.toFixed(1)}h remaining
+                    <span className="text-gray-400">With AI Insights</span>
+                    <span className="font-semibold text-blue-400">{insightsStats.withInsights}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Adoption Rate</span>
+                    <span className="font-semibold text-emerald-400">
+                      {insightsStats.total > 0
+                        ? `${Math.round((insightsStats.withInsights / insightsStats.total) * 100)}%`
+                        : '-'}
                     </span>
                   </div>
-                  {stats.min_retention_for_next && stats.min_retention_for_next > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Retention Required</span>
-                      <span className="font-semibold text-emerald-400">
-                        {stats.min_retention_for_next}% ({stats.min_students_for_next}+ students)
-                      </span>
+                  {/* Progress bar */}
+                  {insightsStats.total > 0 && (
+                    <div className="mt-3">
+                      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+                          style={{
+                            width: `${Math.min(100, (insightsStats.withInsights / insightsStats.total) * 100)}%`
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
-                  {/* Progress bar */}
-                  <div className="mt-3">
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
-                        style={{
-                          width: `${Math.min(100, ((stats.hours_taught || 0) / ((stats.hours_taught || 0) + stats.hours_to_next_tier)) * 100)}%`
-                        }}
-                      />
-                    </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Students who add AI Insights get study notes, quizzes & revision materials after each lesson
+                </p>
+              </div>
+
+              {/* Teaching Summary for Independent Teachers */}
+              <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
+                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-400" />
+                  Teaching Summary
+                </h3>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Hours Taught</span>
+                    <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
                   </div>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => navigate('/teacher/tiers')}
-              className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
-            >
-              View Tier Details
-            </button>
-          </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Total Students</span>
+                    <span className="font-semibold text-white">{stats?.total_students || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Average Rating</span>
+                    <span className="font-semibold text-amber-400">
+                      {stats?.average_rating ? `${stats.average_rating.toFixed(1)} ★` : 'No reviews yet'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Your Rate</span>
+                    <span className="font-semibold text-emerald-400">
+                      £{independentRate.toFixed(2)}/hour
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/teacher/edit-profile')}
+                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
+                >
+                  Edit Profile
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
+                <h3 className="text-xl font-bold text-white mb-3">💰 Earnings Overview</h3>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Cleared</span>
+                    <span className="font-semibold text-emerald-400">
+                      £{earnings?.cleared_amount.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">On Hold</span>
+                    <span className="font-semibold text-amber-400">
+                      £{earnings?.held_amount.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/teacher/earnings')}
+                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
+                >
+                  View Full Earnings
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
+                <h3 className="text-xl font-bold text-white mb-3">🎯 Tier Progress</h3>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Current Tier</span>
+                    <span className="font-semibold text-emerald-400">{stats?.tier_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Hours Taught</span>
+                    <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Student Retention</span>
+                    <span className="font-semibold text-emerald-400">
+                      {(stats?.total_unique_students || 0) >= 5
+                        ? `${(stats?.retention_rate || 0).toFixed(0)}%`
+                        : 'Need 5+ students'}
+                    </span>
+                  </div>
+                  {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Next Tier</span>
+                        <span className="font-semibold text-blue-400 capitalize">
+                          {stats.next_auto_tier}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Hours to Promotion</span>
+                        <span className="font-semibold text-amber-400">
+                          {stats.hours_to_next_tier.toFixed(1)}h remaining
+                        </span>
+                      </div>
+                      {stats.min_retention_for_next && stats.min_retention_for_next > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Retention Required</span>
+                          <span className="font-semibold text-emerald-400">
+                            {stats.min_retention_for_next}% ({stats.min_students_for_next}+ students)
+                          </span>
+                        </div>
+                      )}
+                      {/* Progress bar */}
+                      <div className="mt-3">
+                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
+                            style={{
+                              width: `${Math.min(100, ((stats.hours_taught || 0) / ((stats.hours_taught || 0) + stats.hours_to_next_tier)) * 100)}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => navigate('/teacher/tiers')}
+                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
+                >
+                  View Tier Details
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Cancel Lesson Modal */}

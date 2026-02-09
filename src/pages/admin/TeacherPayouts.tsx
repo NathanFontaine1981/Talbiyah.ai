@@ -501,7 +501,7 @@ export default function TeacherPayouts() {
               <div className="mt-4">
                 <button
                   onClick={selectAllEligible}
-                  className="text-sm text-emerald-600 hover:text-cyan-300 font-medium"
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                 >
                   Select all eligible teachers
                 </button>

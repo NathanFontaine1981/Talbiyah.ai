@@ -95,12 +95,15 @@ export default function RecordingWithInsights() {
       if (recordingError) throw recordingError;
       setRecording(recordingData);
 
-      // Try to get insights for this lesson
-      const { data: insightData } = await supabase
+      // Try to get insights for this lesson - prefer real AI over auto_generated
+      const { data: insightResults } = await supabase
         .from('lesson_insights')
         .select('*')
         .eq('lesson_id', recordingData.lesson_id)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
+
+      const realInsight = insightResults?.find(i => i.ai_model && i.ai_model !== 'auto_generated');
+      const insightData = realInsight || insightResults?.[0] || null;
 
       if (insightData) {
         setInsight(insightData);
@@ -170,7 +173,7 @@ export default function RecordingWithInsights() {
           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
             {error || 'Recording not found'}
           </h2>
           <button
@@ -193,10 +196,10 @@ export default function RecordingWithInsights() {
         <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
                 <span>{recording.lessons.subjects.name} Session - Recording</span>
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 {recording.lessons.subjects.name} • {format(new Date(recording.lessons.scheduled_time), 'MMMM d, yyyy')}
               </p>
             </div>
@@ -233,28 +236,28 @@ export default function RecordingWithInsights() {
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Interactive Study Notes</h2>
-                <p className="text-sm text-emerald-400">Talbiyah Insights AI</p>
+                <h2 className="text-xl font-bold text-gray-900">Interactive Study Notes</h2>
+                <p className="text-sm text-emerald-600">Talbiyah Insights AI</p>
               </div>
             </div>
 
             {insight ? (
               <>
                 {/* Lesson Info Card */}
-                <div className="bg-gradient-to-r from-gray-700/50 to-gray-800/50 rounded-xl p-4 mb-6 border border-gray-300">
-                  <h3 className="text-sm font-semibold text-emerald-400 mb-3">Lesson Information</h3>
+                <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
+                  <h3 className="text-sm font-semibold text-emerald-700 mb-3">Lesson Information</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start">
                       <span className="text-gray-500 w-24">Lesson:</span>
-                      <span className="text-white font-medium">{recording.lessons.subjects.name} Session</span>
+                      <span className="text-gray-900 font-medium">{recording.lessons.subjects.name} Session</span>
                     </div>
                     <div className="flex items-start">
                       <span className="text-gray-500 w-24">Date:</span>
-                      <span className="text-white">{format(new Date(recording.lessons.scheduled_time), 'MMMM d, yyyy')}</span>
+                      <span className="text-gray-900">{format(new Date(recording.lessons.scheduled_time), 'MMMM d, yyyy')}</span>
                     </div>
                     <div className="flex items-start">
                       <span className="text-gray-500 w-24">Class Type:</span>
-                      <span className="text-white">Qur'an with Tadabbur (Understanding & Reflection)</span>
+                      <span className="text-gray-900">Qur'an with Tadabbur (Understanding & Reflection)</span>
                     </div>
                   </div>
                 </div>
@@ -272,9 +275,9 @@ export default function RecordingWithInsights() {
                       >
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/20 to-emerald-500/20 rounded-lg flex items-center justify-center">
-                            <BookOpen className="w-4 h-4 text-emerald-400" />
+                            <BookOpen className="w-4 h-4 text-emerald-600" />
                           </div>
-                          <h3 className="text-left font-semibold text-white">
+                          <h3 className="text-left font-semibold text-gray-900">
                             {section.title}
                           </h3>
                         </div>
@@ -287,7 +290,7 @@ export default function RecordingWithInsights() {
 
                       {expandedSections.has(index) && (
                         <div className="px-4 pb-4 pt-2">
-                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-emerald-400 prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-white">
+                          <div className="prose prose-sm max-w-none prose-headings:text-emerald-700 prose-p:text-gray-700 prose-li:text-gray-700 prose-strong:text-gray-900">
                             <ReactMarkdown>{section.content}</ReactMarkdown>
                           </div>
                         </div>

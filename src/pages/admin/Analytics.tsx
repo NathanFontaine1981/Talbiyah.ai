@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle, LayoutDashboard, Activity, GraduationCap } from 'lucide-react';
+import { RefreshCw, Download, TrendingUp, TrendingDown, Users, BookOpen, DollarSign, Clock, Star, AlertTriangle, LayoutDashboard, Activity, GraduationCap, Zap } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays } from 'date-fns';
@@ -69,6 +69,15 @@ export default function Analytics() {
   });
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
 
+  // Independent teacher & insights metrics
+  const [independentMetrics, setIndependentMetrics] = useState({
+    totalIndependentTeachers: 0,
+    independentLessons: 0,
+    lessonsWithInsights: 0,
+    insightsAdoptionRate: 0,
+    insightsRevenue: 0,
+  });
+
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchAnalytics();
@@ -133,6 +142,7 @@ export default function Analytics() {
         fetchSubjectStats(start, end),
         fetchTeacherPerformance(start, end),
         fetchDailyActivity(start, end),
+        fetchIndependentMetrics(start, end),
       ]);
 
       setLastUpdated(new Date());
@@ -339,6 +349,39 @@ export default function Analytics() {
       setDailyActivity(activity);
     } catch (error) {
       console.error('Error fetching daily activity:', error);
+    }
+  }
+
+  async function fetchIndependentMetrics(start: Date, end: Date) {
+    try {
+      const { count: totalIndependentTeachers } = await supabase
+        .from('teacher_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('teacher_type', 'independent')
+        .eq('status', 'approved');
+
+      const { data: independentLessons } = await supabase
+        .from('lessons')
+        .select('id, insights_addon, insights_addon_price')
+        .eq('is_independent', true)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
+
+      const total = independentLessons?.length || 0;
+      const withInsights = independentLessons?.filter(l => l.insights_addon)?.length || 0;
+      const insightsRevenuePence = independentLessons
+        ?.filter(l => l.insights_addon)
+        ?.reduce((sum, l) => sum + (l.insights_addon_price || 250), 0) || 0;
+
+      setIndependentMetrics({
+        totalIndependentTeachers: totalIndependentTeachers || 0,
+        independentLessons: total,
+        lessonsWithInsights: withInsights,
+        insightsAdoptionRate: total > 0 ? Math.round((withInsights / total) * 100) : 0,
+        insightsRevenue: insightsRevenuePence / 100,
+      });
+    } catch (error) {
+      console.error('Error fetching independent metrics:', error);
     }
   }
 
@@ -600,6 +643,38 @@ export default function Analytics() {
                   )}
                 </div>
               </div>
+
+              {/* Independent Teachers & Insights Addon */}
+              {(independentMetrics.totalIndependentTeachers > 0 || independentMetrics.independentLessons > 0) && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Zap className="w-5 h-5 text-blue-500" />
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Independent Teachers & Insights Addon</h2>
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-blue-600 dark:text-blue-400 text-sm mb-1">Independent Teachers</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{independentMetrics.totalIndependentTeachers}</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-blue-600 dark:text-blue-400 text-sm mb-1">Lessons (Period)</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{independentMetrics.independentLessons}</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-blue-600 dark:text-blue-400 text-sm mb-1">With Insights Addon</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{independentMetrics.lessonsWithInsights}</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-blue-600 dark:text-blue-400 text-sm mb-1">Adoption Rate</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{independentMetrics.insightsAdoptionRate}%</p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                      <p className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">Insights Revenue</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">&pound;{independentMetrics.insightsRevenue.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Daily Activity Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

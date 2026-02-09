@@ -764,7 +764,7 @@ export default function StudentProgressPanel({
                                   setEditingNotes(true);
                                   setNotesText(surahProgress?.teacher_notes || '');
                                 }}
-                                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-cyan-300 transition"
+                                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition"
                               >
                                 <Edit3 className="w-3 h-3" />
                                 Edit

@@ -1105,7 +1105,7 @@ function FlipCard({ word }: { word: VocabWord }) {
   return (
     <div
       onClick={() => setIsFlipped(!isFlipped)}
-      className="cursor-pointer h-40 perspective-1000"
+      className="cursor-pointer h-48 perspective-1000"
       style={{ perspective: '1000px' }}
     >
       <div
@@ -2408,12 +2408,16 @@ export default function LessonInsights() {
 
       // Query by lesson_id only - RLS handles access control
       // Don't filter by learner_id as it can cause mismatches when parent has multiple learners
-      let insightQuery = supabase.from('lesson_insights').select('*').eq('lesson_id', lessonId);
-      // Order by most recent
-      insightQuery = insightQuery.order('created_at', { ascending: false }).limit(1);
+      // Fetch all insights for this lesson, then prefer real AI insights over auto_generated placeholders
+      const { data: insightResults, error: insightError } = await supabase
+        .from('lesson_insights')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('created_at', { ascending: false });
 
-      const { data: insightResults, error: insightError } = await insightQuery;
-      const insightData = insightResults?.[0] || null;
+      // Prefer real AI insights (with processing_time_ms) over auto_generated placeholders
+      const realInsight = insightResults?.find(i => i.ai_model && i.ai_model !== 'auto_generated');
+      const insightData = realInsight || insightResults?.[0] || null;
       if (insightError?.code === 'PGRST116' || !insightData) {
         setError('Insights not yet generated for this lesson');
         setLoading(false);

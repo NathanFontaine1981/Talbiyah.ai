@@ -165,7 +165,7 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
           </button>
           <button
             onClick={() => navigate('/recordings/history')}
-            className="text-sm text-emerald-600 hover:text-cyan-300 font-medium transition flex items-center space-x-1"
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition flex items-center space-x-1"
           >
             <span>View All</span>
             <ChevronRight className="w-4 h-4" />

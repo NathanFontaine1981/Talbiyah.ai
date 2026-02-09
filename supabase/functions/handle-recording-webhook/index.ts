@@ -350,10 +350,10 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find lesson by 100ms room_id - include tier info for conditional processing
+    // Find lesson by 100ms room_id - include tier info and independent teacher flags
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
-      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status, lesson_tier, free_insights_trial")
+      .select("id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status, lesson_tier, free_insights_trial, is_independent, insights_addon")
       .eq("100ms_room_id", roomId)
       .single();
 
@@ -381,25 +381,31 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Determine what to generate based on tier
+    // Determine what to generate based on tier and independent teacher status
     // Premium tier OR free_insights_trial gets full features
+    // Independent teachers: only if insights_addon is true
     // Standard tier (legacy billing) gets no insights or recording saved
     // Default to premium behavior if tier not set (backwards compatibility)
     const lessonTier = lesson.lesson_tier || 'premium';
     const freeInsightsTrial = lesson.free_insights_trial || false;
+    const isIndependent = lesson.is_independent || false;
+    const hasInsightsAddon = lesson.insights_addon || false;
 
-    const shouldGenerateInsights =
-      lessonTier === 'premium' ||
-      freeInsightsTrial === true;
+    const shouldGenerateInsights = isIndependent
+      ? hasInsightsAddon  // Independent: only generate if addon purchased
+      : (lessonTier === 'premium' || freeInsightsTrial === true);
 
-    const shouldSaveRecording =
-      lessonTier === 'premium' ||
-      freeInsightsTrial === true;
+    // Always save recording for independent teachers (they use the platform for video)
+    const shouldSaveRecording = isIndependent
+      ? true
+      : (lessonTier === 'premium' || freeInsightsTrial === true);
 
     console.log("Tier-based processing:", {
       lesson_id: lesson.id,
       lesson_tier: lessonTier,
       free_insights_trial: freeInsightsTrial,
+      is_independent: isIndependent,
+      insights_addon: hasInsightsAddon,
       shouldGenerateInsights,
       shouldSaveRecording,
     });
@@ -834,16 +840,20 @@ Deno.serve(async (req: Request) => {
     }
 
     // Check if insight was created - if not, create a basic one
-    const { data: existingInsight } = await supabase
+    // Use limit(1) instead of .single() to avoid errors when duplicates exist
+    const { data: existingInsights } = await supabase
       .from("lesson_insights")
       .select("id")
       .eq("lesson_id", lesson.id)
-      .single();
+      .limit(1);
+
+    const existingInsight = existingInsights && existingInsights.length > 0 ? existingInsights[0] : null;
 
     // Only create basic insight for Premium tier or free trial
     if (!existingInsight && shouldGenerateInsights) {
       console.log("No AI insight created, generating basic insight...");
 
+      // Use upsert with lesson_id to prevent race condition duplicates
       const { error: insightError } = await supabase
         .from("lesson_insights")
         .insert({

@@ -113,7 +113,7 @@ export default function DashboardHeaderWidget() {
               {carouselType === 'names' && 'arabic' in currentContent && 'transliteration' in currentContent && 'meaning' in currentContent && (
                 <div>
                   <p className="text-2xl font-arabic text-emerald-600 mb-1">{currentContent.arabic}</p>
-                  <p className="text-sm text-white font-semibold">{currentContent.transliteration}</p>
+                  <p className="text-sm text-gray-700 font-semibold">{currentContent.transliteration}</p>
                   <p className="text-xs text-gray-500">{currentContent.meaning}</p>
                 </div>
               )}
@@ -139,7 +139,7 @@ export default function DashboardHeaderWidget() {
             <div className="flex items-center space-x-3">
               <Calendar className="w-5 h-5 text-emerald-600 flex-shrink-0" />
               <div className="text-sm">
-                <p className="text-white font-semibold">{gregorianDate}</p>
+                <p className="text-gray-900 font-semibold">{gregorianDate}</p>
                 <p className="text-gray-500 text-xs">{islamicDate}</p>
               </div>
             </div>

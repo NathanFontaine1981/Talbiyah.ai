@@ -517,13 +517,13 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
               className="group bg-slate-900/50 hover:bg-slate-800/70 rounded-2xl p-6 border border-slate-800 hover:border-emerald-500/50 transition-all text-center"
             >
               <div className="text-4xl mb-3">{prayer.icon}</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-emerald-300 transition-colors">
+              <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-emerald-300 transition-colors">
                 {prayer.name}
               </h3>
               <p className="text-sm text-slate-400 font-arabic">
                 {prayer.arabicName}
               </p>
-              <div className="mt-2 text-xs text-gray-600">
+              <div className="mt-2 text-xs text-slate-400">
                 {prayer.rakahs} rakahs
               </div>
             </motion.button>
@@ -572,11 +572,11 @@ export default function PrayNowMode({ onBack }: PrayNowModeProps) {
             onClick={handleExitPrayer}
             className="p-2 hover:bg-slate-800 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-slate-300" />
           </button>
 
           <div className="text-center">
-            <div className="text-gray-900 font-medium text-sm">
+            <div className="text-white font-medium text-sm">
               {selectedPrayer.name} • Rakah {currentStep.rakah}/{currentStep.totalRakahs}
             </div>
           </div>

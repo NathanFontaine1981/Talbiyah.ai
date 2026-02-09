@@ -100,7 +100,7 @@ export default function LearningHistoryWidget() {
           <span>My Learning History</span>
         </h3>
         {lessons.length > 0 && (
-          <button className="text-sm text-emerald-600 hover:text-cyan-300 font-medium transition">
+          <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition">
             View All
           </button>
         )}

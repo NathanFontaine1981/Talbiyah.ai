@@ -20,6 +20,18 @@ interface TeacherApplication {
   education_level: string | null;
   islamic_learning_interests: string[] | null;
   video_intro_url: string | null;
+  teacher_type: string;
+  independent_rate: number | null;
+  payment_collection: string;
+  current_tier: string | null;
+  hours_taught: number;
+  total_lessons: number;
+  completed_lessons: number;
+  average_rating: number | null;
+  total_unique_students: number;
+  returning_students: number;
+  retention_rate: number | null;
+  is_accepting_bookings: boolean;
 }
 
 export default function TeacherManagement() {
@@ -41,7 +53,7 @@ export default function TeacherManagement() {
       // Fetch teacher profiles
       const { data: teacherProfilesData, error: teacherError } = await supabase
         .from('teacher_profiles')
-        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_learning_interests, video_intro_url')
+        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_learning_interests, video_intro_url, teacher_type, independent_rate, payment_collection, current_tier, hours_taught, total_lessons, completed_lessons, average_rating, total_unique_students, returning_students, retention_rate, is_accepting_bookings')
         .order('created_at', { ascending: false });
 
       if (teacherError) {
@@ -90,6 +102,18 @@ export default function TeacherManagement() {
           timezone: profile?.timezone || null,
           date_of_birth: profile?.date_of_birth || null,
           gender: profile?.gender || null,
+          teacher_type: teacher.teacher_type || 'platform',
+          independent_rate: teacher.independent_rate,
+          payment_collection: teacher.payment_collection || 'external',
+          current_tier: teacher.current_tier,
+          hours_taught: teacher.hours_taught || 0,
+          total_lessons: teacher.total_lessons || 0,
+          completed_lessons: teacher.completed_lessons || 0,
+          average_rating: teacher.average_rating,
+          total_unique_students: teacher.total_unique_students || 0,
+          returning_students: teacher.returning_students || 0,
+          retention_rate: teacher.retention_rate,
+          is_accepting_bookings: teacher.is_accepting_bookings ?? false,
         };
       }) || [];
 
@@ -114,6 +138,23 @@ export default function TeacherManagement() {
         .eq('id', teacherId);
 
       if (updateError) throw updateError;
+
+      // Add 'teacher' to the user's roles array in profiles
+      if (teacher?.user_id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('roles')
+          .eq('id', teacher.user_id)
+          .single();
+
+        const currentRoles: string[] = profileData?.roles || [];
+        if (!currentRoles.includes('teacher')) {
+          await supabase
+            .from('profiles')
+            .update({ roles: [...currentRoles, 'teacher'] })
+            .eq('id', teacher.user_id);
+        }
+      }
 
       // Send approval email notification
       if (teacher) {
@@ -164,9 +205,15 @@ export default function TeacherManagement() {
 
   const TeacherCard = ({ teacher }: { teacher: TeacherApplication }) => {
     const isExpanded = expandedId === teacher.id;
+    const isIndependent = teacher.teacher_type === 'independent';
+    const displayRate = isIndependent
+      ? Number(teacher.independent_rate || 0)
+      : Number(teacher.hourly_rate || 0);
 
     return (
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition">
+      <div className={`bg-white dark:bg-gray-800 border rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition ${
+        isIndependent ? 'border-blue-200 dark:border-blue-800' : 'border-gray-200 dark:border-gray-700'
+      }`}>
         {/* Header - Always visible */}
         <div
           className="p-6 cursor-pointer"
@@ -174,26 +221,68 @@ export default function TeacherManagement() {
         >
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-4 flex-1">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                isIndependent ? 'bg-gradient-to-br from-blue-400 to-indigo-500' : 'bg-gradient-to-br from-emerald-400 to-blue-500'
+              }`}>
                 <User className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center flex-wrap gap-2 mb-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{teacher.full_name}</h3>
+                  {isIndependent && (
+                    <span className="text-xs px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full font-medium">
+                      Independent
+                    </span>
+                  )}
                   {teacher.gender && (
-                    <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
                       {teacher.gender}
                     </span>
                   )}
+                  {teacher.is_accepting_bookings ? (
+                    <span className="text-xs px-2 py-0.5 bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 rounded-full">Accepting</span>
+                  ) : teacher.status === 'approved' ? (
+                    <span className="text-xs px-2 py-0.5 bg-gray-500/10 border border-gray-500/20 text-gray-500 dark:text-gray-400 rounded-full">Not Accepting</span>
+                  ) : null}
                 </div>
-                <div className="flex items-center space-x-4 text-sm">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">£{teacher.hourly_rate}/hr</span>
-                  <span className="text-gray-500 dark:text-gray-400">•</span>
-                  <span className="text-gray-500 dark:text-gray-400">Applied {new Date(teacher.created_at).toLocaleDateString()}</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-1.5">{teacher.email}</p>
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    £{displayRate.toFixed(2)}/hr
+                    {isIndependent && <span className="text-gray-400 font-normal ml-1">(own rate)</span>}
+                  </span>
+                  {!isIndependent && teacher.current_tier && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
+                      <span className="text-gray-500 dark:text-gray-400 capitalize">{teacher.current_tier} tier</span>
+                    </>
+                  )}
+                  {isIndependent && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {teacher.payment_collection === 'external' ? 'Direct payment' : 'Via Talbiyah'}
+                      </span>
+                    </>
+                  )}
+                  {teacher.completed_lessons > 0 && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
+                      <span className="text-gray-500 dark:text-gray-400">{teacher.completed_lessons} lessons</span>
+                    </>
+                  )}
+                  {teacher.average_rating && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
+                      <span className="text-amber-500">{Number(teacher.average_rating).toFixed(1)} ★</span>
+                    </>
+                  )}
+                  <span className="text-gray-300 dark:text-gray-600">|</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">Joined {new Date(teacher.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3 ml-4">
+            <div className="flex items-center space-x-3 ml-4 flex-shrink-0">
               <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
                 teacher.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-500 dark:text-amber-400' :
                 teacher.status === 'approved' ? 'bg-green-500/20 text-green-500 dark:text-green-400' :
@@ -214,6 +303,36 @@ export default function TeacherManagement() {
         {isExpanded && (
           <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-700">
             <div className="pt-6 space-y-6">
+              {/* Teaching Stats */}
+              {teacher.status === 'approved' && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{Number(teacher.hours_taught || 0).toFixed(1)}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Hours Taught</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{teacher.completed_lessons}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Lessons Done</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{teacher.total_unique_students}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {teacher.average_rating ? `${Number(teacher.average_rating).toFixed(1)} ★` : '-'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {teacher.retention_rate != null ? `${Number(teacher.retention_rate).toFixed(0)}%` : '-'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Retention</p>
+                  </div>
+                </div>
+              )}
+
               {/* Contact Information */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
@@ -222,37 +341,35 @@ export default function TeacherManagement() {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <span className="text-gray-500 dark:text-gray-400">Email:</span>
-                    <a href={`mailto:${teacher.email}`} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500">
+                    <a href={`mailto:${teacher.email}`} className="text-emerald-600 dark:text-emerald-400 hover:underline truncate">
                       {teacher.email}
                     </a>
                   </div>
-                  {teacher.phone_number && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-gray-500 dark:text-gray-400">Phone:</span>
-                      <span className="text-gray-900 dark:text-white">{teacher.phone_number}</span>
-                    </div>
-                  )}
-                  {teacher.location && (
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-gray-500 dark:text-gray-400">Location:</span>
-                      <span className="text-gray-900 dark:text-white">{teacher.location}</span>
-                    </div>
-                  )}
-                  {teacher.timezone && (
-                    <div className="flex items-center space-x-2">
-                      <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-gray-500 dark:text-gray-400">Timezone:</span>
-                      <span className="text-gray-900 dark:text-white">{teacher.timezone}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-500 dark:text-gray-400">Phone:</span>
+                    {teacher.phone_number ? (
+                      <a href={`tel:${teacher.phone_number}`} className="text-emerald-600 dark:text-emerald-400 hover:underline">{teacher.phone_number}</a>
+                    ) : (
+                      <span className="text-gray-400 italic">Not provided</span>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-500 dark:text-gray-400">Location:</span>
+                    <span className="text-gray-900 dark:text-white">{teacher.location || 'Not set'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-500 dark:text-gray-400">Timezone:</span>
+                    <span className="text-gray-900 dark:text-white">{teacher.timezone || 'Not set'}</span>
+                  </div>
                   {teacher.date_of_birth && (
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-gray-500 dark:text-gray-400">Date of Birth:</span>
+                      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <span className="text-gray-500 dark:text-gray-400">DOB:</span>
                       <span className="text-gray-900 dark:text-white">{new Date(teacher.date_of_birth).toLocaleDateString()}</span>
                     </div>
                   )}
@@ -266,12 +383,10 @@ export default function TeacherManagement() {
                   <span>Education & Qualifications</span>
                 </h4>
                 <div className="space-y-3 text-sm">
-                  {teacher.education_level && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-500 dark:text-gray-400">Education Level:</span>
-                      <span className="text-gray-900 dark:text-white">{teacher.education_level}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-500 dark:text-gray-400">Education Level:</span>
+                    <span className="text-gray-900 dark:text-white">{teacher.education_level || 'Not set'}</span>
+                  </div>
                   {teacher.islamic_learning_interests && teacher.islamic_learning_interests.length > 0 && (
                     <div>
                       <span className="text-gray-500 dark:text-gray-400 block mb-2">Teaching Subjects:</span>
@@ -314,14 +429,33 @@ export default function TeacherManagement() {
               )}
 
               {/* Actions */}
-              <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <a
                   href={`mailto:${teacher.email}`}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition flex items-center justify-center space-x-2"
+                  className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg font-medium transition flex items-center space-x-2"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>Contact Teacher</span>
+                  <span>Email</span>
                 </a>
+                {teacher.phone_number && (
+                  <a
+                    href={`tel:${teacher.phone_number}`}
+                    className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium transition flex items-center space-x-2"
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>Call</span>
+                  </a>
+                )}
+                {teacher.phone_number && (
+                  <a
+                    href={`https://wa.me/${teacher.phone_number.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-600 dark:text-green-400 rounded-lg font-medium transition flex items-center space-x-2"
+                  >
+                    <span>WhatsApp</span>
+                  </a>
+                )}
 
                 {teacher.status === 'pending_approval' && (
                   <>
@@ -331,7 +465,7 @@ export default function TeacherManagement() {
                         handleApprove(teacher.id);
                       }}
                       disabled={processingId === teacher.id}
-                      className="flex-1 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                      className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 rounded-lg font-medium transition flex items-center space-x-2 disabled:opacity-50"
                     >
                       {processingId === teacher.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -348,7 +482,7 @@ export default function TeacherManagement() {
                         handleReject(teacher.id);
                       }}
                       disabled={processingId === teacher.id}
-                      className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg font-medium transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg font-medium transition flex items-center space-x-2 disabled:opacity-50"
                     >
                       {processingId === teacher.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

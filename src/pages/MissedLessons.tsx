@@ -226,7 +226,7 @@ export default function MissedLessons() {
           <button
             onClick={() => navigate('/dashboard')}
             aria-label="Go back to dashboard"
-            className="flex items-center space-x-2 text-emerald-600 hover:text-cyan-300 transition mb-6"
+            className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>

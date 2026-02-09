@@ -295,3 +295,39 @@ export function getRatingDisplay(rating: number, count: number): { stars: number
     text: `${rating.toFixed(1)} (${count} ${count === 1 ? 'review' : 'reviews'})`
   };
 }
+
+// Teacher Types - platform (5-tier system) vs independent (own pricing)
+export type TeacherType = 'platform' | 'independent';
+export type PaymentCollection = 'external' | 'platform';
+
+export interface TeacherTypeInfo {
+  type: TeacherType;
+  name: string;
+  description: string;
+  icon: string;
+  badgeColor: string;
+  bgColor: string;
+}
+
+export const TEACHER_TYPES: Record<TeacherType, TeacherTypeInfo> = {
+  platform: {
+    type: 'platform',
+    name: 'Talbiyah Teacher',
+    description: 'Talbiyah finds you students and sets pricing through the tier system',
+    icon: '🏫',
+    badgeColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
+    bgColor: 'bg-emerald-50',
+  },
+  independent: {
+    type: 'independent',
+    name: 'Independent Teacher',
+    description: 'You bring your own students and set your own hourly rate',
+    icon: '🎓',
+    badgeColor: 'text-blue-700 bg-blue-100 border-blue-200',
+    bgColor: 'bg-blue-50',
+  },
+};
+
+export function getTeacherTypeInfo(type: TeacherType): TeacherTypeInfo {
+  return TEACHER_TYPES[type] || TEACHER_TYPES.platform;
+}

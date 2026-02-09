@@ -675,7 +675,7 @@ export default function HomeworkReview() {
                                     className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition"
                                   >
                                     {getFileIcon(file.type)}
-                                    <span className="text-sm text-emerald-600 hover:text-cyan-300 truncate flex-1">
+                                    <span className="text-sm text-emerald-600 hover:text-emerald-700 truncate flex-1">
                                       {file.name}
                                     </span>
                                     <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
@@ -1105,7 +1105,7 @@ export default function HomeworkReview() {
                     <div className="pt-4 border-t border-white/10">
                       <button
                         onClick={() => navigate(`/lesson/${submission.lesson_id}/insights`)}
-                        className="text-emerald-600 hover:text-cyan-300 text-sm flex items-center gap-2"
+                        className="text-emerald-600 hover:text-emerald-700 text-sm flex items-center gap-2"
                       >
                         <BookOpen className="w-4 h-4" />
                         View Full Lesson Insights

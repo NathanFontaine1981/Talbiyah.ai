@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2, Clock, AlertCircle, ArrowRight, Globe, Languages, X } from 'lucide-react';
+import { BookOpen, User, MapPin, Calendar, Award, FileText, Save, CheckCircle, Loader2, Clock, AlertCircle, ArrowRight, Globe, Languages, X, PoundSterling, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { COUNTRIES, UK_CITIES, LANGUAGES, isUKCountry, getCitiesForCountry } from '../data/locationConstants';
+import { TEACHER_TYPES, type TeacherType, type PaymentCollection } from '../constants/teacherConstants';
 
 export default function TeacherProfileSetup() {
   const navigate = useNavigate();
@@ -22,6 +23,9 @@ export default function TeacherProfileSetup() {
     timezone: 'UTC',
     bio: '',
     education_level: '',
+    teacher_type: 'platform' as TeacherType,
+    independent_rate: '',
+    payment_collection: 'external' as PaymentCollection,
   });
   const [hasAvailability, setHasAvailability] = useState(false);
   const [hasSubjects, setHasSubjects] = useState(false);
@@ -61,7 +65,7 @@ export default function TeacherProfileSetup() {
 
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
-        .select('id, bio, education_level')
+        .select('id, bio, education_level, teacher_type, independent_rate, payment_collection')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -70,6 +74,9 @@ export default function TeacherProfileSetup() {
           ...prev,
           bio: teacherProfile.bio || '',
           education_level: teacherProfile.education_level || '',
+          teacher_type: teacherProfile.teacher_type || 'platform',
+          independent_rate: teacherProfile.independent_rate ? String(teacherProfile.independent_rate) : '',
+          payment_collection: teacherProfile.payment_collection || 'external',
         }));
 
         // Check if teacher has set availability
@@ -141,6 +148,17 @@ export default function TeacherProfileSetup() {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      const teacherTypeFields = {
+        teacher_type: formData.teacher_type,
+        ...(formData.teacher_type === 'independent' ? {
+          independent_rate: formData.independent_rate ? parseFloat(formData.independent_rate) : null,
+          payment_collection: formData.payment_collection,
+        } : {
+          independent_rate: null,
+          payment_collection: 'external',
+        }),
+      };
+
       if (existingTeacher) {
         const { error: teacherError } = await supabase
           .from('teacher_profiles')
@@ -148,20 +166,21 @@ export default function TeacherProfileSetup() {
             bio: formData.bio || null,
             education_level: formData.education_level || null,
             status: 'pending_approval',
+            ...teacherTypeFields,
           })
           .eq('user_id', user.id);
 
         if (teacherError) throw teacherError;
       } else {
-        // New teachers start at 'newcomer' tier - hourly_rate is determined by tier
         const { error: teacherError } = await supabase
           .from('teacher_profiles')
           .insert({
             user_id: user.id,
             bio: formData.bio || null,
             education_level: formData.education_level || null,
-            current_tier: 'newcomer',
+            current_tier: formData.teacher_type === 'independent' ? undefined : 'newcomer',
             status: 'pending_approval',
+            ...teacherTypeFields,
           });
 
         if (teacherError) throw teacherError;
@@ -418,6 +437,147 @@ export default function TeacherProfileSetup() {
               </div>
             </div>
 
+            {/* Teacher Type Selection */}
+            <div className="bg-white backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <Users className="w-5 h-5 text-emerald-600" />
+                <span>How do you teach?</span>
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                {/* Platform Teacher */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, teacher_type: 'platform' })}
+                  className={`p-5 rounded-xl text-left transition border-2 ${
+                    formData.teacher_type === 'platform'
+                      ? 'bg-emerald-50 border-emerald-500'
+                      : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-2xl">{TEACHER_TYPES.platform.icon}</span>
+                    <span className="font-bold text-gray-900">{TEACHER_TYPES.platform.name}</span>
+                  </div>
+                  <p className="text-sm text-gray-500">{TEACHER_TYPES.platform.description}</p>
+                  {formData.teacher_type === 'platform' && (
+                    <div className="mt-3 flex items-center space-x-1 text-emerald-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">Selected</span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Independent Teacher */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, teacher_type: 'independent' })}
+                  className={`p-5 rounded-xl text-left transition border-2 ${
+                    formData.teacher_type === 'independent'
+                      ? 'bg-blue-50 border-blue-500'
+                      : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-2xl">{TEACHER_TYPES.independent.icon}</span>
+                    <span className="font-bold text-gray-900">{TEACHER_TYPES.independent.name}</span>
+                  </div>
+                  <p className="text-sm text-gray-500">{TEACHER_TYPES.independent.description}</p>
+                  {formData.teacher_type === 'independent' && (
+                    <div className="mt-3 flex items-center space-x-1 text-blue-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">Selected</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+
+              {/* Independent Teacher Settings */}
+              {formData.teacher_type === 'independent' && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <PoundSterling className="w-4 h-4 inline mr-1" />
+                      Your Hourly Rate (GBP) <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
+                      <input
+                        type="number"
+                        step="0.50"
+                        min="5"
+                        max="100"
+                        value={formData.independent_rate}
+                        onChange={(e) => setFormData({ ...formData, independent_rate: e.target.value })}
+                        className="w-full pl-8 pr-4 py-3 bg-white border border-blue-200 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="18.00"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">This is what your students pay you per hour</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      How do you collect payment?
+                    </label>
+                    <div className="space-y-2">
+                      <label className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
+                        formData.payment_collection === 'external'
+                          ? 'bg-white border-blue-400'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="payment_collection"
+                          value="external"
+                          checked={formData.payment_collection === 'external'}
+                          onChange={() => setFormData({ ...formData, payment_collection: 'external' })}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+                          formData.payment_collection === 'external' ? 'border-blue-500' : 'border-gray-300'
+                        }`}>
+                          {formData.payment_collection === 'external' && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">I collect payment directly</p>
+                          <p className="text-xs text-gray-500">Bank transfer, cash, or your own payment method</p>
+                        </div>
+                      </label>
+
+                      <label className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
+                        formData.payment_collection === 'platform'
+                          ? 'bg-white border-blue-400'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="payment_collection"
+                          value="platform"
+                          checked={formData.payment_collection === 'platform'}
+                          onChange={() => setFormData({ ...formData, payment_collection: 'platform' })}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
+                          formData.payment_collection === 'platform' ? 'border-blue-500' : 'border-gray-300'
+                        }`}>
+                          {formData.payment_collection === 'platform' && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Talbiyah collects and passes payment to me</p>
+                          <p className="text-xs text-gray-500">Students pay through Talbiyah, we transfer to you</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="bg-white backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                 <Award className="w-5 h-5 text-emerald-600" />
@@ -458,22 +618,24 @@ export default function TeacherProfileSetup() {
                   </select>
                 </div>
 
-                {/* Note: Hourly rate is determined by teacher tier, not set manually */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-semibold text-emerald-600">💡 Hourly Rate</span>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Your earnings rate is determined by your teacher tier. New teachers start at the Newcomer tier (£4/hour).
-                    As you teach more hours and maintain good ratings, you'll automatically progress through tiers with higher rates (up to £8/hour).
-                  </p>
-                  <a
-                    href="/teacher/tier-info"
-                    className="text-xs text-emerald-600 hover:text-cyan-300 mt-2 inline-block"
-                  >
-                    Learn about teacher tiers →
-                  </a>
-                </div>
+                {/* Hourly rate info - only for platform teachers */}
+                {formData.teacher_type === 'platform' && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <span className="font-semibold text-emerald-600">💡 Hourly Rate</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Your earnings rate is determined by your teacher tier. New teachers start at the Newcomer tier (£4/hour).
+                      As you teach more hours and maintain good ratings, you'll automatically progress through tiers with higher rates (up to £8/hour).
+                    </p>
+                    <a
+                      href="/teacher/tier-info"
+                      className="text-xs text-emerald-600 hover:text-emerald-700 mt-2 inline-block"
+                    >
+                      Learn about teacher tiers →
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
