@@ -18,7 +18,7 @@ interface TeacherApplication {
   date_of_birth: string | null;
   gender: string | null;
   education_level: string | null;
-  islamic_learning_interests: string[] | null;
+  islamic_teaching_interests: string[] | null;
   video_intro_url: string | null;
   teacher_type: string;
   independent_rate: number | null;
@@ -53,7 +53,7 @@ export default function TeacherManagement() {
       // Fetch teacher profiles
       const { data: teacherProfilesData, error: teacherError } = await supabase
         .from('teacher_profiles')
-        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_learning_interests, video_intro_url, teacher_type, independent_rate, payment_collection, current_tier, hours_taught, total_lessons, completed_lessons, average_rating, total_unique_students, returning_students, retention_rate, is_accepting_bookings')
+        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_teaching_interests, video_intro_url, teacher_type, independent_rate, payment_collection, current_tier, hours_taught, total_lessons, completed_lessons, average_rating, total_unique_students, returning_students, retention_rate, is_accepting_bookings')
         .order('created_at', { ascending: false });
 
       if (teacherError) {
@@ -93,7 +93,7 @@ export default function TeacherManagement() {
           status: teacher.status,
           created_at: teacher.created_at,
           education_level: teacher.education_level,
-          islamic_learning_interests: teacher.islamic_learning_interests,
+          islamic_teaching_interests: teacher.islamic_teaching_interests,
           video_intro_url: teacher.video_intro_url,
           full_name: profile?.full_name || 'Unknown',
           email: profile?.email || 'N/A',
@@ -387,11 +387,11 @@ export default function TeacherManagement() {
                     <span className="text-gray-500 dark:text-gray-400">Education Level:</span>
                     <span className="text-gray-900 dark:text-white">{teacher.education_level || 'Not set'}</span>
                   </div>
-                  {teacher.islamic_learning_interests && teacher.islamic_learning_interests.length > 0 && (
+                  {teacher.islamic_teaching_interests && teacher.islamic_teaching_interests.length > 0 && (
                     <div>
                       <span className="text-gray-500 dark:text-gray-400 block mb-2">Teaching Subjects:</span>
                       <div className="flex flex-wrap gap-2">
-                        {teacher.islamic_learning_interests.map((subject, idx) => (
+                        {teacher.islamic_teaching_interests.map((subject, idx) => (
                           <span key={idx} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs">
                             {subject}
                           </span>

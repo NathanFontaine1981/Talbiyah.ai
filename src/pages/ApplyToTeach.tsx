@@ -470,7 +470,7 @@ export default function ApplyToTeach() {
         video_intro_url: videoIntroUrl,
         status: 'pending_approval',
         teacher_type: formData.teacher_type,
-        islamic_learning_interests: selectedInterests,
+        islamic_teaching_interests: selectedInterests,
       };
 
       if (isIndependent) {

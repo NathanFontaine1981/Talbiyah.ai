@@ -27,7 +27,7 @@ interface TeacherData {
   hourly_rate: number;
   video_intro_url: string | null;
   education_level: string | null;
-  islamic_learning_interests: string[] | null;
+  islamic_teaching_interests: string[] | null;
   is_talbiyah_certified: boolean | null;
   profiles: ProfileData | ProfileData[];
   // Tier stats (from view)
@@ -81,7 +81,7 @@ export default function TeacherProfile() {
             hourly_rate,
             video_intro_url,
             education_level,
-            islamic_learning_interests,
+            islamic_teaching_interests,
             is_talbiyah_certified,
             profiles!teacher_profiles_user_id_fkey (
               full_name
@@ -479,11 +479,11 @@ export default function TeacherProfile() {
                 </div>
               )}
 
-              {teacher.islamic_learning_interests && teacher.islamic_learning_interests.length > 0 && (
+              {teacher.islamic_teaching_interests && teacher.islamic_teaching_interests.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Specializations</h3>
                   <div className="flex flex-wrap gap-2">
-                    {teacher.islamic_learning_interests.map((interest, index) => (
+                    {teacher.islamic_teaching_interests.map((interest, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"

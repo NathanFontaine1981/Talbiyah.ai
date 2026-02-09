@@ -125,7 +125,7 @@ export default function AccountSettings() {
               hourly_rate: teacherProfile.hourly_rate?.toString() || ''
             });
 
-            setSelectedInterests(teacherProfile.islamic_learning_interests || []);
+            setSelectedInterests(teacherProfile.islamic_teaching_interests || []);
             setExistingVideoUrl(teacherProfile.video_intro_url || null);
           }
         }
@@ -343,7 +343,7 @@ export default function AccountSettings() {
         .from('teacher_profiles')
         .update({
           education_level: teacherData.education_level || null,
-          islamic_learning_interests: selectedInterests,
+          islamic_teaching_interests: selectedInterests,
           hourly_rate: hourlyRateRounded,
           video_intro_url: videoIntroUrl
         })

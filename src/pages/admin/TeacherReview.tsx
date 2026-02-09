@@ -14,7 +14,7 @@ interface PendingTeacher {
   video_intro_url: string;
   intro_video_url: string;
   education_level: string;
-  islamic_learning_interests: string[];
+  islamic_teaching_interests: string[];
   status: string;
   created_at: string;
   years_experience: number;

@@ -1794,7 +1794,7 @@ export type Database = {
           id: string
           is_accepting_bookings: boolean | null
           is_talbiyah_certified: boolean | null
-          islamic_learning_interests: string[] | null
+          islamic_teaching_interests: string[] | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -1810,7 +1810,7 @@ export type Database = {
           id?: string
           is_accepting_bookings?: boolean | null
           is_talbiyah_certified?: boolean | null
-          islamic_learning_interests?: string[] | null
+          islamic_teaching_interests?: string[] | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -1826,7 +1826,7 @@ export type Database = {
           id?: string
           is_accepting_bookings?: boolean | null
           is_talbiyah_certified?: boolean | null
-          islamic_learning_interests?: string[] | null
+          islamic_teaching_interests?: string[] | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
