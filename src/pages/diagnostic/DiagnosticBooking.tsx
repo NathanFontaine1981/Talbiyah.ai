@@ -86,7 +86,7 @@ export default function DiagnosticBooking() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 
@@ -439,7 +439,7 @@ export default function DiagnosticBooking() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 
@@ -527,7 +527,7 @@ export default function DiagnosticBooking() {
       if (!accessToken) {
         // Force sign out and redirect to sign in
         await supabase.auth.signOut();
-        navigate('/signin');
+        navigate('/signup');
         throw new Error('Authentication session expired. Please sign in again.');
       }
 

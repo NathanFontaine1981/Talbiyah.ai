@@ -34,7 +34,7 @@ export default function DiagnosticAssessment() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 

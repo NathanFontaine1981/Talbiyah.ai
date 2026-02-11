@@ -29,7 +29,7 @@ export default function StartDiagnostic() {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
 
       if (!currentUser) {
-        navigate('/signin?redirect=/diagnostic/start');
+        navigate('/signup?redirect=/diagnostic/start');
         return;
       }
 

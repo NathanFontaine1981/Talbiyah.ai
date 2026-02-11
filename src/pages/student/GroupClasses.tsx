@@ -209,7 +209,7 @@ export default function GroupClasses() {
 
   function handleEnrollClick(session: GroupSession) {
     if (!currentUser) {
-      navigate('/signin?redirect=/group-classes');
+      navigate('/signup?redirect=/group-classes');
       return;
     }
     setSelectedSession(session);

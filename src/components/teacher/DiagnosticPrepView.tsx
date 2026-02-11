@@ -42,7 +42,7 @@ export default function DiagnosticPrepView({ assessmentId: propAssessmentId }: D
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 

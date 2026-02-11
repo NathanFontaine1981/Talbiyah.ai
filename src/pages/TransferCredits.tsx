@@ -64,7 +64,7 @@ export default function TransferCredits() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 
@@ -212,7 +212,7 @@ export default function TransferCredits() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 
@@ -274,7 +274,7 @@ export default function TransferCredits() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 

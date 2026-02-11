@@ -232,7 +232,7 @@ export default function DiagnosticQuestionnaire({ onComplete, onClose }: Diagnos
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/signup');
         return;
       }
 
