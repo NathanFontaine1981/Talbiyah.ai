@@ -43,6 +43,7 @@ export default function Checkout() {
   // Independent teacher state
   const [isIndependentTeacher, setIsIndependentTeacher] = useState(false);
   const [independentTeacherRate, setIndependentTeacherRate] = useState(0);
+  const [independentPaymentCollection, setIndependentPaymentCollection] = useState<string>('platform');
   const [insightsAddonSelected, setInsightsAddonSelected] = useState(false);
   const [isFirstInsightsLesson, setIsFirstInsightsLesson] = useState(false);
 
@@ -73,6 +74,7 @@ export default function Checkout() {
       if (teacherProfile?.teacher_type === 'independent') {
         setIsIndependentTeacher(true);
         setIndependentTeacherRate(teacherProfile.independent_rate || 0);
+        setIndependentPaymentCollection(teacherProfile.payment_collection || 'platform');
 
         // Check if this is first insights lesson (for free trial)
         const { data: { user } } = await supabase.auth.getUser();
@@ -605,6 +607,37 @@ export default function Checkout() {
           return;
         }
 
+        // Monthly/deferred payment — book now, teacher invoices later
+        if (independentPaymentCollection === 'monthly') {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authSession.access_token}`,
+              },
+              body: JSON.stringify({
+                cart_items: cartItems,
+                learner_id: resolvedLearnerId,
+                is_independent: true,
+                insights_addon: insightsAddonSelected,
+                payment_method: 'monthly',
+              })
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create booking');
+          }
+
+          await response.json();
+          await clearCart();
+          navigate('/dashboard?booking_success=true&payment=monthly');
+          return;
+        }
+
         // Charge lesson fee through Stripe, plus optional insights
         const response = await initiateBookingCheckout(
           bookings.map(b => ({
@@ -1011,6 +1044,29 @@ export default function Checkout() {
               </div>
             )}
 
+            {/* Independent Teacher - Monthly/Deferred Payment */}
+            {isIndependentTeacher && independentPaymentCollection === 'monthly' && (
+              <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-amber-600" />
+                  <span>Deferred Payment — Pay at Month End</span>
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  This teacher collects payment monthly. Your lessons will be invoiced at the end of the month at{' '}
+                  <span className="font-bold text-amber-600">£{independentTeacherRate.toFixed(2)}/hour</span>.
+                </p>
+                <div className="bg-white rounded-lg p-4 border border-amber-200">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-700">No upfront payment required</p>
+                      <p className="text-sm text-gray-600 mt-1">Click "Confirm Booking" to schedule your lessons. Payment is collected by the teacher at the end of the month.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Legacy Booking - No Payment Required */}
             {isLegacyBooking && (
               <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
@@ -1341,7 +1397,9 @@ export default function Checkout() {
                 onClick={handleCheckout}
                 disabled={processing || checkoutLoading || (isParent && !selectedChildId) || (paymentMethod === 'credits' && !hasEnoughCredits && !isLegacyBooking && !isIndependentTeacher)}
                 className={`w-full px-6 py-4 text-white rounded-full text-lg font-bold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
-                  isIndependentTeacher
+                  isIndependentTeacher && independentPaymentCollection === 'monthly'
+                    ? 'bg-amber-500 hover:bg-amber-600'
+                    : isIndependentTeacher
                     ? 'bg-blue-500 hover:bg-blue-600'
                     : isLegacyBooking
                     ? 'bg-amber-500 hover:bg-amber-600'
@@ -1354,6 +1412,11 @@ export default function Checkout() {
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
+                  </>
+                ) : isIndependentTeacher && independentPaymentCollection === 'monthly' ? (
+                  <>
+                    <FileText className="w-5 h-5" />
+                    <span>Confirm Booking</span>
                   </>
                 ) : isIndependentTeacher ? (
                   (() => {
@@ -1430,7 +1493,12 @@ export default function Checkout() {
                   Legacy Account - Lessons billed monthly at £12/hour
                 </p>
               )}
-              {isIndependentTeacher && (
+              {isIndependentTeacher && independentPaymentCollection === 'monthly' && (
+                <p className="text-xs text-center text-amber-600 mt-4">
+                  Deferred payment — teacher invoices at month end at £{independentTeacherRate.toFixed(2)}/hour
+                </p>
+              )}
+              {isIndependentTeacher && independentPaymentCollection !== 'monthly' && (
                 <p className="text-xs text-center text-blue-600 mt-4">
                   {insightsAddonSelected
                     ? isFirstInsightsLesson

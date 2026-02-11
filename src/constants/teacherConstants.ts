@@ -298,7 +298,7 @@ export function getRatingDisplay(rating: number, count: number): { stars: number
 
 // Teacher Types - platform (5-tier system) vs independent (own pricing)
 export type TeacherType = 'platform' | 'independent';
-export type PaymentCollection = 'external' | 'platform';
+export type PaymentCollection = 'external' | 'platform' | 'monthly';
 
 export interface TeacherTypeInfo {
   type: TeacherType;

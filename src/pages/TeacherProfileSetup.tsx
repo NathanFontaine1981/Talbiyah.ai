@@ -516,9 +516,36 @@ export default function TeacherProfileSetup() {
                     <p className="text-xs text-gray-500 mt-1">This is what your students pay you per hour</p>
                   </div>
 
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-medium text-blue-800">Payment collected via Talbiyah</p>
-                    <p className="text-xs text-blue-600 mt-1">Students pay through our platform and we transfer earnings to you</p>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Payment Collection
+                    </label>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, payment_collection: 'platform' })}
+                        className={`w-full p-3 rounded-lg text-left transition border-2 ${
+                          formData.payment_collection === 'platform'
+                            ? 'bg-blue-50 border-blue-500'
+                            : 'bg-white border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="text-sm font-medium text-gray-900">Per-lesson via Talbiyah</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Students pay through our platform before each lesson</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, payment_collection: 'monthly' })}
+                        className={`w-full p-3 rounded-lg text-left transition border-2 ${
+                          formData.payment_collection === 'monthly'
+                            ? 'bg-amber-50 border-amber-500'
+                            : 'bg-white border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="text-sm font-medium text-gray-900">Monthly / Deferred</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Students book now, you collect payment at the end of the month</p>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
