@@ -30,22 +30,24 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
     try {
       let targetLearnerId = learnerId;
       let learnerData;
+      let allLearnerIds: string[] = learnerId ? [learnerId] : [];
 
       // If no learnerId provided, get current user's learner
       if (!targetLearnerId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // First try to find learner by parent_id (parent viewing child)
-        const { data: learner } = await supabase
+        // Get all learners for this parent
+        const { data: learners } = await supabase
           .from('learners')
           .select('id, current_streak, total_xp, current_level')
-          .eq('parent_id', user.id)
-          .maybeSingle();
+          .eq('parent_id', user.id);
 
-        if (learner) {
-          targetLearnerId = learner.id;
-          learnerData = learner;
+        if (learners && learners.length > 0) {
+          // Use first learner for display data, but aggregate lessons across all
+          targetLearnerId = learners[0].id;
+          learnerData = learners[0];
+          allLearnerIds = learners.map(l => l.id);
         } else {
           // Fallback: check if user has completed lessons directly as learner_id
           // This handles student accounts where user.id is used as learner_id
@@ -77,7 +79,7 @@ export default function LearningStatsWidget({ learnerId }: LearningStatsWidgetPr
       const { data: lessons } = await supabase
         .from('lessons')
         .select('duration_minutes, status')
-        .eq('learner_id', targetLearnerId)
+        .in('learner_id', allLearnerIds.length > 0 ? allLearnerIds : [targetLearnerId])
         .eq('status', 'completed');
 
       const totalMinutes = lessons?.reduce((sum, lesson) => sum + lesson.duration_minutes, 0) || 0;

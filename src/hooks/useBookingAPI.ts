@@ -62,6 +62,7 @@ interface BulkBookingRequest {
   duration?: number;
   price: number;
   use_free_session?: boolean;
+  quran_focus?: 'understanding' | 'fluency' | 'memorisation' | null;
 }
 
 interface CheckoutResponse {

@@ -99,7 +99,7 @@ function generateFirstWordPrompterSection(verses: VerifiedVerse[]): string {
 
 **10. First Word Prompter (Verified from Quran.com)**
 
-Use this for memorization practice - see the first word and try to recall the complete ayah!
+Use this for memorisation practice - see the first word and try to recall the complete ayah!
 
 | Ayah | First Word | Transliteration | Translation Hint |
 |------|------------|-----------------|------------------|

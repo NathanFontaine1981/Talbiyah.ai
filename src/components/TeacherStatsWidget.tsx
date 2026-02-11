@@ -31,6 +31,8 @@ export default function TeacherStatsWidget() {
     teacherHourlyRate: 5.0
   });
   const [loading, setLoading] = useState(true);
+  const [isIndependent, setIsIndependent] = useState(false);
+  const [independentRate, setIndependentRate] = useState(0);
 
   useEffect(() => {
     loadStats();
@@ -43,7 +45,7 @@ export default function TeacherStatsWidget() {
 
       const { data: teacherProfile, error: profileError } = await supabase
         .from('teacher_profiles')
-        .select('id')
+        .select('id, teacher_type, independent_rate, payment_collection')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -56,6 +58,12 @@ export default function TeacherStatsWidget() {
       if (!teacherProfile) {
         setLoading(false);
         return;
+      }
+
+      const teacherIsIndependent = teacherProfile.teacher_type === 'independent';
+      setIsIndependent(teacherIsIndependent);
+      if (teacherIsIndependent) {
+        setIndependentRate(Number(teacherProfile.independent_rate) || 0);
       }
 
       // Get tier stats from the teacher_tier_stats view
@@ -77,19 +85,19 @@ export default function TeacherStatsWidget() {
         .gte('scheduled_time', new Date().toISOString());
 
       if (tierStats) {
-        const totalEarnings = tierStats.hours_taught * tierStats.teacher_hourly_rate;
-
         setStats({
           totalHours: Math.floor(tierStats.hours_taught || 0),
           totalStudents: tierStats.total_students || 0,
           completedLessons: tierStats.completed_lessons || 0,
           upcomingLessons: upcomingLessons?.length || 0,
           averageRating: tierStats.average_rating || 0,
-          totalEarnings,
+          totalEarnings: tierStats.hours_taught * (teacherIsIndependent ? (Number(teacherProfile.independent_rate) || 0) : tierStats.teacher_hourly_rate),
           tier: tierStats.tier || 'bronze',
           tierName: tierStats.tier_name || 'Bronze',
           tierIcon: tierStats.tier_icon || '🥉',
-          teacherHourlyRate: tierStats.teacher_hourly_rate || 15.0
+          teacherHourlyRate: teacherIsIndependent
+            ? (Number(teacherProfile.independent_rate) || 0)
+            : (tierStats.teacher_hourly_rate || 15.0)
         });
       }
     } catch (error) {
@@ -167,31 +175,49 @@ export default function TeacherStatsWidget() {
     <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
       <h3 className="text-xl font-bold text-white mb-6">Teaching Stats</h3>
 
-      {/* Teacher Tier Badge */}
-      <div
-        onClick={() => navigate('/teacher/tiers')}
-        className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 rounded-xl p-4 border border-emerald-500/30 mb-4 cursor-pointer hover:border-emerald-500/50 transition"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="text-3xl">{stats.tierIcon}</div>
-            <div>
-              <p className="text-xs text-gray-500">Current Tier</p>
-              <p className="text-lg font-bold text-white">{stats.tierName}</p>
+      {/* Teacher Badge */}
+      {isIndependent ? (
+        <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 rounded-xl p-4 border border-blue-500/30 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="text-3xl">🎓</div>
+              <div>
+                <p className="text-xs text-gray-500">Teacher Type</p>
+                <p className="text-lg font-bold text-white">Independent</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Your Rate</p>
+              <p className="text-lg font-bold text-blue-400">£{independentRate.toFixed(2)}/hr</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Hourly Rate</p>
-            <p className="text-lg font-bold text-emerald-400">£{stats.teacherHourlyRate.toFixed(2)}</p>
+        </div>
+      ) : (
+        <div
+          onClick={() => navigate('/teacher/tiers')}
+          className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 rounded-xl p-4 border border-emerald-500/30 mb-4 cursor-pointer hover:border-emerald-500/50 transition"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="text-3xl">{stats.tierIcon}</div>
+              <div>
+                <p className="text-xs text-gray-500">Current Tier</p>
+                <p className="text-lg font-bold text-white">{stats.tierName}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Hourly Rate</p>
+              <p className="text-lg font-bold text-emerald-400">£{stats.teacherHourlyRate.toFixed(2)}</p>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center justify-center">
+            <button className="text-xs text-emerald-600 hover:text-blue-400 font-medium flex items-center space-x-1">
+              <Award className="w-3 h-3" />
+              <span>View Tier Progress</span>
+            </button>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-center">
-          <button className="text-xs text-emerald-600 hover:text-blue-400 font-medium flex items-center space-x-1">
-            <Award className="w-3 h-3" />
-            <span>View Tier Progress</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       <div className="space-y-3">
         {statItems.map((item, index) => (

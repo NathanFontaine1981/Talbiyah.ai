@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Check, Star, Clock, User, ShoppingCart, Sparkles, FileText, Shield } from 'lucide-react';
+import { ChevronLeft, Check, Star, Clock, User, ShoppingCart, Sparkles, FileText, Shield, BookOpen, Mic, Brain } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { X } from 'lucide-react';
@@ -16,6 +16,8 @@ interface Teacher {
   hourly_rate: number;
   rating: number;
   is_legacy_assigned?: boolean;
+  teacher_type?: 'platform' | 'independent';
+  independent_rate?: number;
 }
 
 interface TimeSlot {
@@ -35,6 +37,8 @@ interface RawTeacherData {
     user_id: string;
     hourly_rate: string | number;
     rating: number | null;
+    teacher_type: string | null;
+    independent_rate: string | number | null;
     profiles: {
       full_name: string | null;
       avatar_url: string | null;
@@ -69,8 +73,10 @@ export default function BookSession() {
   const [isLegacyStudent, setIsLegacyStudent] = useState(false);
   const [isFirstLegacyLesson, setIsFirstLegacyLesson] = useState(false);
   const [assignedTeacherIds, setAssignedTeacherIds] = useState<string[]>([]);
+  const [quranFocus, setQuranFocus] = useState<'understanding' | 'fluency' | 'memorisation' | null>(null);
 
   const subjectId = searchParams.get('subject');
+  const isQuranSubject = subject?.name?.toLowerCase().includes('quran') ?? false;
 
   useEffect(() => {
     checkLegacyStatus();
@@ -167,6 +173,8 @@ export default function BookSession() {
             user_id,
             hourly_rate,
             rating,
+            teacher_type,
+            independent_rate,
             profiles!inner(
               full_name,
               avatar_url,
@@ -179,16 +187,22 @@ export default function BookSession() {
 
       if (error) throw error;
 
-      let formattedTeachers: Teacher[] = ((data || []) as RawTeacherData[]).map((item) => ({
-        id: item.teacher_profiles.id,
-        user_id: item.teacher_profiles.user_id,
-        full_name: item.teacher_profiles.profiles.full_name || 'Unknown Teacher',
-        avatar_url: item.teacher_profiles.profiles.avatar_url,
-        bio: item.teacher_profiles.profiles.bio,
-        hourly_rate: parseFloat(String(item.teacher_profiles.hourly_rate)),
-        rating: item.teacher_profiles.rating || 5,
-        is_legacy_assigned: assignedTeacherIds.includes(item.teacher_profiles.id),
-      }));
+      let formattedTeachers: Teacher[] = ((data || []) as RawTeacherData[]).map((item) => {
+        const isIndependent = item.teacher_profiles.teacher_type === 'independent';
+        const independentRate = item.teacher_profiles.independent_rate ? parseFloat(String(item.teacher_profiles.independent_rate)) : 0;
+        return {
+          id: item.teacher_profiles.id,
+          user_id: item.teacher_profiles.user_id,
+          full_name: item.teacher_profiles.profiles.full_name || 'Unknown Teacher',
+          avatar_url: item.teacher_profiles.profiles.avatar_url,
+          bio: item.teacher_profiles.profiles.bio,
+          hourly_rate: isIndependent ? independentRate : parseFloat(String(item.teacher_profiles.hourly_rate)),
+          rating: item.teacher_profiles.rating || 5,
+          is_legacy_assigned: assignedTeacherIds.includes(item.teacher_profiles.id),
+          teacher_type: isIndependent ? 'independent' as const : 'platform' as const,
+          independent_rate: independentRate || undefined,
+        };
+      });
 
       // For legacy students, only show their assigned teachers
       if (isLegacyStudent && assignedTeacherIds.length > 0) {
@@ -272,6 +286,12 @@ export default function BookSession() {
   async function handleSelectTimeSlot(slot: TimeSlot) {
     if (!slot.available || !selectedTeacher || !subject) return;
 
+    // Require focus selection for Qur'an lessons
+    if (isQuranSubject && !quranFocus) {
+      toast.warning('Please select a lesson focus (Understanding, Fluency, or Memorisation) first.');
+      return;
+    }
+
     // Check if this slot is already in the cart
     const existingCartItem = cartItems.find(item =>
       new Date(item.scheduled_time).getTime() === slot.time.getTime()
@@ -283,11 +303,16 @@ export default function BookSession() {
         await removeFromCart(existingCartItem.id);
       } else {
         // Add to cart if not already there
+        // Independent teachers: use their own rate
         // Legacy students: £6/30min, £12/60min (billed monthly)
         // Regular students: £7.50/30min, £15/60min (paid upfront)
-        const price = isLegacyStudent
-          ? (duration === 30 ? 6.00 : 12.00)
-          : (duration === 30 ? 7.50 : 15.00);
+        const isIndependentTeacher = selectedTeacher.teacher_type === 'independent';
+        const teacherHourlyRate = selectedTeacher.independent_rate || selectedTeacher.hourly_rate;
+        const price = isIndependentTeacher
+          ? (duration === 30 ? teacherHourlyRate / 2 : teacherHourlyRate)
+          : isLegacyStudent
+            ? (duration === 30 ? 6.00 : 12.00)
+            : (duration === 30 ? 7.50 : 15.00);
 
         await addToCart({
           teacher_id: selectedTeacher.id,
@@ -298,6 +323,7 @@ export default function BookSession() {
           duration_minutes: duration,
           price,
           lesson_tier: isLegacyStudent ? 'standard' : 'premium',
+          quran_focus: quranFocus || undefined,
         });
       }
     } catch (error) {
@@ -583,6 +609,62 @@ export default function BookSession() {
 
             {currentStep === 3 && selectedTeacher && (
               <div className="space-y-6">
+                {/* Qur'an Focus Selector */}
+                {isQuranSubject && (
+                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Lesson Focus</h2>
+                    <p className="text-sm text-gray-500 mb-4">What will this Qur'an lesson focus on?</p>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setQuranFocus('understanding')}
+                        className={`p-4 rounded-xl border-2 transition text-center ${
+                          quranFocus === 'understanding'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300'
+                        }`}
+                      >
+                        <BookOpen className={`w-6 h-6 mx-auto mb-2 ${quranFocus === 'understanding' ? 'text-emerald-600' : 'text-gray-400'}`} />
+                        <p className="text-sm font-semibold">Understanding</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Fahm</p>
+                        <p className="text-[10px] mt-1 leading-tight">Tafsir, meaning & reflection</p>
+                      </button>
+
+                      <button
+                        onClick={() => setQuranFocus('fluency')}
+                        className={`p-4 rounded-xl border-2 transition text-center ${
+                          quranFocus === 'fluency'
+                            ? 'bg-blue-50 border-blue-500 text-blue-700'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300'
+                        }`}
+                      >
+                        <Mic className={`w-6 h-6 mx-auto mb-2 ${quranFocus === 'fluency' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <p className="text-sm font-semibold">Fluency</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Itqan</p>
+                        <p className="text-[10px] mt-1 leading-tight">Tajweed, recitation & pronunciation</p>
+                      </button>
+
+                      <button
+                        onClick={() => setQuranFocus('memorisation')}
+                        className={`p-4 rounded-xl border-2 transition text-center ${
+                          quranFocus === 'memorisation'
+                            ? 'bg-purple-50 border-purple-500 text-purple-700'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-purple-300'
+                        }`}
+                      >
+                        <Brain className={`w-6 h-6 mx-auto mb-2 ${quranFocus === 'memorisation' ? 'text-purple-600' : 'text-gray-400'}`} />
+                        <p className="text-sm font-semibold">Memorisation</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Hifz</p>
+                        <p className="text-[10px] mt-1 leading-tight">Hifdh, revision & retention</p>
+                      </button>
+                    </div>
+
+                    {!quranFocus && (
+                      <p className="text-xs text-amber-600 mt-3 text-center">Please select a focus to continue</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Session Duration</h2>
 
@@ -751,7 +833,17 @@ export default function BookSession() {
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
-                        <p className="text-sm font-semibold text-gray-900 mb-1 pr-6">{item.subject_name}</p>
+                        <p className="text-sm font-semibold text-gray-900 mb-1 pr-6">
+                          {item.subject_name}
+                          {item.quran_focus && (
+                            <span className={`ml-1.5 text-xs font-medium ${
+                              item.quran_focus === 'understanding' ? 'text-emerald-600' :
+                              item.quran_focus === 'fluency' ? 'text-blue-600' : 'text-purple-600'
+                            }`}>
+                              · {item.quran_focus.charAt(0).toUpperCase() + item.quran_focus.slice(1)}
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-500 mb-2">with {item.teacher_name}</p>
                         <div className="flex items-center justify-between text-xs">
                           <div className="text-gray-500">

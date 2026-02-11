@@ -25,13 +25,14 @@ export default function LearningHistoryWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: learner } = await supabase
+      const { data: learners } = await supabase
         .from('learners')
         .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+        .eq('parent_id', user.id);
 
-      if (!learner) {
+      const learnerIds = learners?.map(l => l.id) || [];
+
+      if (learnerIds.length === 0) {
         setLoading(false);
         return;
       }
@@ -54,7 +55,7 @@ export default function LearningHistoryWidget() {
           ),
           talbiyah_insights(id)
         `)
-        .eq('learner_id', learner.id)
+        .in('learner_id', learnerIds)
         .in('status', ['completed', 'in_progress'])
         .order('scheduled_time', { ascending: false })
         .limit(6);

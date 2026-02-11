@@ -23,6 +23,7 @@ export default function MyTeachers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [studentId, setStudentId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -236,9 +237,25 @@ export default function MyTeachers() {
     }
   };
 
+  // Collect all unique subjects across all teachers
+  const allSubjects = Array.from(
+    new Set(teachers.flatMap(t => t.subjects))
+  ).sort();
+
+  const toggleSubject = (subject: string) => {
+    setSelectedSubjects(prev =>
+      prev.includes(subject)
+        ? prev.filter(s => s !== subject)
+        : [...prev, subject]
+    );
+  };
+
   const filteredTeachers = teachers.filter(t => {
     // Filter by bookmark status if enabled
     if (showBookmarkedOnly && !t.is_bookmarked) return false;
+
+    // Filter by selected subjects (teacher must teach at least one selected subject)
+    if (selectedSubjects.length > 0 && !t.subjects.some(s => selectedSubjects.includes(s))) return false;
 
     // Search filter
     return t.teacher_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -332,6 +349,40 @@ export default function MyTeachers() {
               <Bookmark className={`w-5 h-5 ${showBookmarkedOnly ? 'fill-current' : ''}`} />
               <span className="font-medium">Favorites{bookmarkedCount > 0 ? ` (${bookmarkedCount})` : ''}</span>
             </button>
+          </div>
+        )}
+
+        {/* Subject Filter Chips */}
+        {teachers.length > 0 && allSubjects.length > 1 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium text-gray-500 mr-1">
+                <Filter className="w-4 h-4 inline mr-1" />
+                Subjects:
+              </span>
+              {allSubjects.map(subject => (
+                <button
+                  key={subject}
+                  onClick={() => toggleSubject(subject)}
+                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                    selectedSubjects.includes(subject)
+                      ? 'bg-emerald-500 text-white border border-emerald-500'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                  {subject}
+                </button>
+              ))}
+              {selectedSubjects.length > 0 && (
+                <button
+                  onClick={() => setSelectedSubjects([])}
+                  className="text-xs text-gray-400 hover:text-gray-600 ml-1 transition"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         )}
 

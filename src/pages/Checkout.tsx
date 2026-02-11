@@ -42,7 +42,6 @@ export default function Checkout() {
   const [isFirstLegacyLesson, setIsFirstLegacyLesson] = useState(false);
   // Independent teacher state
   const [isIndependentTeacher, setIsIndependentTeacher] = useState(false);
-  const [independentPaymentCollection, setIndependentPaymentCollection] = useState<'external' | 'platform'>('external');
   const [independentTeacherRate, setIndependentTeacherRate] = useState(0);
   const [insightsAddonSelected, setInsightsAddonSelected] = useState(false);
   const [isFirstInsightsLesson, setIsFirstInsightsLesson] = useState(false);
@@ -68,12 +67,11 @@ export default function Checkout() {
       const { data: teacherProfile } = await supabase
         .from('teacher_profiles')
         .select('teacher_type, independent_rate, payment_collection')
-        .eq('user_id', teacherId)
+        .eq('id', teacherId)
         .maybeSingle();
 
       if (teacherProfile?.teacher_type === 'independent') {
         setIsIndependentTeacher(true);
-        setIndependentPaymentCollection(teacherProfile.payment_collection || 'external');
         setIndependentTeacherRate(teacherProfile.independent_rate || 0);
 
         // Check if this is first insights lesson (for free trial)
@@ -220,10 +218,34 @@ export default function Checkout() {
           })
         );
 
-        setChildren(childrenWithLearners);
+        // If user is also a student, add a "Myself" option so they can book for themselves
+        const allOptions: Child[] = [];
+        if (profile.roles.includes('student')) {
+          // Find the user's own learner record (not one of their children)
+          const childLearnerIds = childrenWithLearners.map(c => c.learner_id).filter(Boolean);
+          const { data: allLearners } = await supabase
+            .from('learners')
+            .select('id, name')
+            .eq('parent_id', user.id);
 
-        if (childrenWithLearners.length === 1) {
-          setSelectedChildId(childrenWithLearners[0].id);
+          const selfLearner = (allLearners || []).find(l => !childLearnerIds.includes(l.id));
+
+          if (selfLearner) {
+            allOptions.push({
+              id: 'self',
+              child_name: `${profile.full_name || 'Myself'} (Me)`,
+              child_age: null,
+              has_account: true,
+              learner_id: selfLearner.id,
+            });
+          }
+        }
+        allOptions.push(...childrenWithLearners);
+
+        setChildren(allOptions);
+
+        if (allOptions.length === 1) {
+          setSelectedChildId(allOptions[0].id);
         }
       } else {
         // Student booking for themselves
@@ -452,7 +474,45 @@ export default function Checkout() {
       }
 
       if (isParent && !selectedChildId) {
-        throw new Error('Please select which child these sessions are for');
+        throw new Error('Please select who these sessions are for');
+      }
+
+      // Resolve learner_id once for all checkout paths
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) throw new Error('Not authenticated');
+
+      let resolvedLearnerId: string;
+      if (isParent && selectedChildId) {
+        const selectedChild = children.find(c => c.id === selectedChildId);
+        if (!selectedChild?.learner_id) throw new Error('Selected learner has no profile');
+        resolvedLearnerId = selectedChild.learner_id;
+      } else {
+        // Student booking for themselves
+        const { data: existingLearner } = await supabase
+          .from('learners')
+          .select('id')
+          .eq('parent_id', authSession.user.id)
+          .limit(1)
+          .single();
+
+        if (existingLearner) {
+          resolvedLearnerId = existingLearner.id;
+        } else {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', authSession.user.id)
+            .single();
+
+          const { data: newLearner } = await supabase
+            .from('learners')
+            .insert({ parent_id: authSession.user.id, name: profile?.full_name || 'Student', gamification_points: 0 })
+            .select('id')
+            .single();
+
+          if (!newLearner) throw new Error('Failed to create learner profile');
+          resolvedLearnerId = newLearner.id;
+        }
       }
 
       // Get subject slugs from database
@@ -496,148 +556,44 @@ export default function Checkout() {
           subject: subjectMap.get(item.subject_id) || 'general',
           duration: item.duration_minutes,
           price: itemPrice,
-          use_free_session: false
+          use_free_session: false,
+          quran_focus: item.quran_focus || null,
+          learner_id: resolvedLearnerId,
         };
       });
 
-      // Handle independent teacher booking (external payment)
-      if (isIndependentTeacher && independentPaymentCollection === 'external') {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Not authenticated');
-
-        let learnerId: string;
-        if (isParent && selectedChildId) {
-          const selectedChild = children.find(c => c.id === selectedChildId);
-          if (!selectedChild?.learner_id) throw new Error('Selected child has no learner profile');
-          learnerId = selectedChild.learner_id;
-        } else {
-          const { data: existingLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', session.user.id)
-            .maybeSingle();
-
-          if (existingLearner) {
-            learnerId = existingLearner.id;
-          } else {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', session.user.id)
-              .single();
-
-            const { data: newLearner } = await supabase
-              .from('learners')
-              .insert({ parent_id: session.user.id, name: profile?.full_name || 'Student', gamification_points: 0 })
-              .select('id')
-              .single();
-
-            if (!newLearner) throw new Error('Failed to create learner profile');
-            learnerId = newLearner.id;
-          }
-        }
-
+      // Handle independent teacher booking (platform payment)
+      if (isIndependentTeacher) {
         const insightsPrice = insightsAddonSelected && !isFirstInsightsLesson
           ? INSIGHTS_ADDON.pricePerLessonPence
           : 0;
 
-        if (insightsAddonSelected && insightsPrice > 0) {
-          // Charge only the insights addon via Stripe
-          const response = await initiateBookingCheckout(
-            bookings.map(b => ({
-              ...b,
-              price: INSIGHTS_ADDON.pricePerLesson,
-              is_independent: true,
-              insights_addon: true,
-              insights_addon_price: insightsPrice,
-              independent_teacher_rate: Math.round(independentTeacherRate * 100),
-              learner_id: learnerId,
-            })),
-            { is_independent_insights_only: true }
-          );
-
-          if (response.checkout_url) {
-            window.location.href = response.checkout_url;
-          } else {
-            throw new Error('No checkout URL received');
+        // Always charge lesson fee through Stripe, plus optional insights
+        const response = await initiateBookingCheckout(
+          bookings.map(b => ({
+            ...b,
+            is_independent: true,
+            insights_addon: insightsAddonSelected,
+            insights_addon_price: insightsPrice,
+            independent_teacher_rate: Math.round(independentTeacherRate * 100),
+            learner_id: resolvedLearnerId,
+          })),
+          {
+            is_independent_booking: 'true',
+            insights_addon: insightsAddonSelected ? 'true' : 'false',
           }
+        );
+
+        if (response.checkout_url) {
+          window.location.href = response.checkout_url;
         } else {
-          // No payment needed - create booking directly
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({
-                cart_items: cartItems,
-                learner_id: learnerId,
-                is_independent_booking: true,
-                insights_addon: insightsAddonSelected,
-                insights_addon_price: isFirstInsightsLesson ? 0 : (insightsAddonSelected ? INSIGHTS_ADDON.pricePerLessonPence : 0),
-                independent_teacher_rate: Math.round(independentTeacherRate * 100),
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create booking');
-          }
-
-          await clearCart();
-          navigate(`/dashboard?booking_success=true&payment=${insightsAddonSelected ? 'insights_trial' : 'external'}`);
+          throw new Error('No checkout URL received');
         }
         return;
       }
 
       // Handle legacy booking (monthly invoice)
       if (isLegacyBooking) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Not authenticated');
-
-        // Determine learner_id
-        let learnerId: string;
-        if (isParent && selectedChildId) {
-          const selectedChild = children.find(c => c.id === selectedChildId);
-          if (!selectedChild?.learner_id) {
-            throw new Error('Selected child has no learner profile');
-          }
-          learnerId = selectedChild.learner_id;
-        } else {
-          // Student booking for themselves - get or create learner
-          const { data: existingLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', session.user.id)
-            .maybeSingle();
-
-          if (existingLearner) {
-            learnerId = existingLearner.id;
-          } else {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', session.user.id)
-              .single();
-
-            const { data: newLearner } = await supabase
-              .from('learners')
-              .insert({
-                parent_id: session.user.id,
-                name: profile?.full_name || 'Student',
-                gamification_points: 0
-              })
-              .select('id')
-              .single();
-
-            if (!newLearner) throw new Error('Failed to create learner profile');
-            learnerId = newLearner.id;
-          }
-        }
-
         // Call edge function to create bookings with 100ms rooms
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
@@ -645,11 +601,11 @@ export default function Checkout() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${authSession.access_token}`,
             },
             body: JSON.stringify({
               cart_items: cartItems,
-              learner_id: learnerId,
+              learner_id: resolvedLearnerId,
               is_legacy_booking: true
             })
           }
@@ -672,49 +628,6 @@ export default function Checkout() {
 
       // If 100% discount applied (actualPayable is 0), create bookings directly without Stripe
       if (actualPayable <= 0) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Not authenticated');
-
-        // Determine learner_id
-        let learnerId: string;
-        if (isParent && selectedChildId) {
-          const selectedChild = children.find(c => c.id === selectedChildId);
-          if (!selectedChild?.learner_id) {
-            throw new Error('Selected child has no learner profile');
-          }
-          learnerId = selectedChild.learner_id;
-        } else {
-          // Student booking for themselves - get or create learner
-          const { data: existingLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', session.user.id)
-            .maybeSingle();
-
-          if (existingLearner) {
-            learnerId = existingLearner.id;
-          } else {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', session.user.id)
-              .single();
-
-            const { data: newLearner } = await supabase
-              .from('learners')
-              .insert({
-                parent_id: session.user.id,
-                name: profile?.full_name || 'Student',
-                gamification_points: 0
-              })
-              .select('id')
-              .single();
-
-            if (!newLearner) throw new Error('Failed to create learner profile');
-            learnerId = newLearner.id;
-          }
-        }
-
         // Call edge function to create bookings with 100ms rooms
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
@@ -722,11 +635,11 @@ export default function Checkout() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${authSession.access_token}`,
             },
             body: JSON.stringify({
               cart_items: cartItems,
-              learner_id: learnerId,
+              learner_id: resolvedLearnerId,
               promo_code: promoCode,
               promo_code_id: promoCodeId,
               promo_discount: promoDiscount
@@ -746,7 +659,7 @@ export default function Checkout() {
           const { data: credits } = await supabase
             .from('referral_credits')
             .select('available_balance, available_hours, total_used')
-            .eq('user_id', session.user.id)
+            .eq('user_id', authSession.user.id)
             .single();
 
           if (credits) {
@@ -758,13 +671,13 @@ export default function Checkout() {
                 available_hours: Math.max(0, credits.available_hours - hoursUsed),
                 total_used: credits.total_used + referralDiscount
               })
-              .eq('user_id', session.user.id);
+              .eq('user_id', authSession.user.id);
 
             // Record transaction
             await supabase
               .from('referral_transactions')
               .insert({
-                user_id: session.user.id,
+                user_id: authSession.user.id,
                 type: 'used',
                 credit_amount: -referralDiscount,
                 hours_amount: -hoursUsed,
@@ -783,49 +696,6 @@ export default function Checkout() {
 
       // Handle credit payment
       if (paymentMethod === 'credits' && hasEnoughCredits) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Not authenticated');
-
-        // Determine learner_id
-        let learnerId: string;
-        if (isParent && selectedChildId) {
-          const selectedChild = children.find(c => c.id === selectedChildId);
-          if (!selectedChild?.learner_id) {
-            throw new Error('Selected child has no learner profile');
-          }
-          learnerId = selectedChild.learner_id;
-        } else {
-          // Student booking for themselves - get or create learner
-          const { data: existingLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', session.user.id)
-            .maybeSingle();
-
-          if (existingLearner) {
-            learnerId = existingLearner.id;
-          } else {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', session.user.id)
-              .single();
-
-            const { data: newLearner } = await supabase
-              .from('learners')
-              .insert({
-                parent_id: session.user.id,
-                name: profile?.full_name || 'Student',
-                gamification_points: 0
-              })
-              .select('id')
-              .single();
-
-            if (!newLearner) throw new Error('Failed to create learner profile');
-            learnerId = newLearner.id;
-          }
-        }
-
         // Call edge function to create bookings with 100ms rooms
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
@@ -833,11 +703,11 @@ export default function Checkout() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${authSession.access_token}`,
             },
             body: JSON.stringify({
               cart_items: cartItems,
-              learner_id: learnerId,
+              learner_id: resolvedLearnerId,
               payment_method: 'credits'
             })
           }
@@ -855,7 +725,7 @@ export default function Checkout() {
           // Deduct credits using the proper RPC function (handles transaction logging)
           const { error: creditError } = await supabase
             .rpc('deduct_user_credits', {
-              p_user_id: session.user.id,
+              p_user_id: authSession.user.id,
               p_credits: creditsNeeded,
               p_lesson_id: result.lessons?.[0]?.id || null,
               p_notes: `Used ${creditsNeeded} ${creditsNeeded === 1 ? 'credit' : 'credits'} for lesson booking`
@@ -1009,7 +879,17 @@ export default function Checkout() {
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h4 className="font-semibold text-gray-900">{item.teacher_name}</h4>
-                          <p className="text-sm text-gray-500">{item.subject_name}</p>
+                          <p className="text-sm text-gray-500">
+                            {item.subject_name}
+                            {item.quran_focus && (
+                              <span className={`ml-1.5 text-xs font-medium ${
+                                item.quran_focus === 'understanding' ? 'text-emerald-600' :
+                                item.quran_focus === 'fluency' ? 'text-blue-600' : 'text-purple-600'
+                              }`}>
+                                · {item.quran_focus.charAt(0).toUpperCase() + item.quran_focus.slice(1)}
+                              </span>
+                            )}
+                          </p>
                         </div>
                         <span className="font-bold text-gray-900">£{item.price.toFixed(2)}</span>
                       </div>
@@ -1022,17 +902,17 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Independent Teacher - External Payment */}
-            {isIndependentTeacher && independentPaymentCollection === 'external' && (
+            {/* Independent Teacher Booking */}
+            {isIndependentTeacher && (
               <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                   <span className="text-2xl">🎓</span>
                   <span>Independent Teacher Booking</span>
                 </h2>
                 <p className="text-gray-600 mb-4">
-                  Arrange payment directly with your teacher{independentTeacherRate > 0 && (
+                  Booking with an independent teacher{independentTeacherRate > 0 && (
                     <span> at <span className="font-bold text-blue-600">£{independentTeacherRate.toFixed(2)}/hour</span></span>
-                  )}.
+                  )}. Optionally add AI-powered insights to your lessons below.
                 </p>
 
                 {/* Insights Addon */}
@@ -1127,7 +1007,7 @@ export default function Checkout() {
               </div>
             )}
 
-            {!(promoApplied && promoDiscount >= finalPrice) && !hasUnlimitedCredits && !isLegacyBooking && (
+            {!(promoApplied && promoDiscount >= finalPrice) && !hasUnlimitedCredits && !isLegacyBooking && !isIndependentTeacher && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                   <CreditCard className="w-5 h-5" />
@@ -1319,11 +1199,11 @@ export default function Checkout() {
               )}
               <h3 className="text-lg font-bold text-gray-900 mb-4">Price Breakdown</h3>
               <div className="space-y-3 mb-6">
-                {isIndependentTeacher && independentPaymentCollection === 'external' ? (
+                {isIndependentTeacher ? (
                   <>
-                    <div className="flex items-center justify-between text-gray-500">
-                      <span>Lesson fee</span>
-                      <span className="text-sm italic">Paid directly to teacher</span>
+                    <div className="flex items-center justify-between text-gray-600">
+                      <span>Lessons ({cartCount})</span>
+                      <span>£{totalPrice.toFixed(2)}</span>
                     </div>
                     {insightsAddonSelected && (
                       <div className="flex items-center justify-between text-gray-600">
@@ -1368,8 +1248,8 @@ export default function Checkout() {
                 <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
                   <span>
-                    {isIndependentTeacher && independentPaymentCollection === 'external'
-                      ? `£${insightsAddonSelected && !isFirstInsightsLesson ? (INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2) : '0.00'}`
+                    {isIndependentTeacher
+                      ? `£${(totalPrice + (insightsAddonSelected && !isFirstInsightsLesson ? INSIGHTS_ADDON.pricePerLesson * cartCount : 0)).toFixed(2)}`
                       : `£${Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}`
                     }
                   </span>
@@ -1438,18 +1318,17 @@ export default function Checkout() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing...</span>
                   </>
-                ) : isIndependentTeacher && independentPaymentCollection === 'external' ? (
-                  insightsAddonSelected && !isFirstInsightsLesson ? (
-                    <>
-                      <Zap className="w-5 h-5" />
-                      <span>Pay £{INSIGHTS_ADDON.pricePerLesson.toFixed(2)} for Insights</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span>Confirm Booking</span>
-                    </>
-                  )
+                ) : isIndependentTeacher ? (
+                  (() => {
+                    const insightsTotal = insightsAddonSelected && !isFirstInsightsLesson ? INSIGHTS_ADDON.pricePerLesson * cartCount : 0;
+                    const independentTotal = totalPrice + insightsTotal;
+                    return (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        <span>Pay £{independentTotal.toFixed(2)}</span>
+                      </>
+                    );
+                  })()
                 ) : isLegacyBooking ? (
                   <>
                     <FileText className="w-5 h-5" />
@@ -1514,13 +1393,13 @@ export default function Checkout() {
                   Legacy Account - Lessons billed monthly at £12/hour
                 </p>
               )}
-              {isIndependentTeacher && independentPaymentCollection === 'external' && (
+              {isIndependentTeacher && (
                 <p className="text-xs text-center text-blue-600 mt-4">
                   {insightsAddonSelected
                     ? isFirstInsightsLesson
                       ? 'Free AI Insights trial included with this lesson!'
-                      : 'Only the AI Insights addon is charged through Talbiyah'
-                    : 'Arrange lesson payment directly with your teacher'}
+                      : 'Lesson fee + AI Insights charged securely via Stripe'
+                    : 'Independent teacher rate — paid securely via Stripe'}
                 </p>
               )}
             </div>

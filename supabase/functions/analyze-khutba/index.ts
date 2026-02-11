@@ -30,7 +30,7 @@ IMPORTANT GUIDELINES:
 - Only cite Sahih (authentic) hadith from Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah
 - ALL Arabic text MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
 - Provide accurate Quran references with surah name and verse numbers
-- Make the quiz comprehensive - test understanding, not just memorization
+- Make the quiz comprehensive - test understanding, not just memorisation
 - Homework should be practical, achievable within a week
 - Include reflection questions that encourage deep thinking
 

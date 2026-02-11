@@ -2004,6 +2004,8 @@ export default function LessonInsights() {
   const [lessonTime, setLessonTime] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [recordingExpiresAt, setRecordingExpiresAt] = useState<string | null>(null);
+  const [quranFocus, setQuranFocus] = useState<string | null>(null);
+  const [learnerId, setLearnerId] = useState<string | null>(null);
 
   // Homework tracking state
   const [completedTasks, setCompletedTasks] = useState<boolean[]>([]);
@@ -2387,14 +2389,30 @@ export default function LessonInsights() {
       let learnerId: string | null = null;
 
       if (!isTeacher) {
-        const { data: learner } = await supabase.from('learners').select('id').eq('parent_id', user.id).maybeSingle();
-        if (!learner) { setError('Learner profile not found'); setLoading(false); return; }
-        learnerId = learner.id;
+        // Get all learner IDs for this parent, then match against the lesson
+        const { data: learners } = await supabase.from('learners').select('id').eq('parent_id', user.id);
+        if (!learners || learners.length === 0) { setError('Learner profile not found'); setLoading(false); return; }
+        const learnerIds = learners.map(l => l.id);
+
+        // Get lesson data and find which learner it belongs to
+        const { data: lessonCheck } = await supabase
+          .from('lessons')
+          .select('learner_id')
+          .eq('id', lessonId)
+          .single();
+
+        if (lessonCheck && learnerIds.includes(lessonCheck.learner_id)) {
+          learnerId = lessonCheck.learner_id;
+        } else {
+          // Fallback to first learner
+          learnerId = learnerIds[0];
+        }
+        setLearnerId(learnerId);
       }
 
       const { data: lessonData } = await supabase
         .from('lessons')
-        .select('"100ms_room_id", scheduled_time, recording_url, recording_expires_at')
+        .select('"100ms_room_id", scheduled_time, recording_url, recording_expires_at, quran_focus')
         .eq('id', lessonId)
         .single();
 
@@ -2404,6 +2422,9 @@ export default function LessonInsights() {
       if (lessonData?.recording_url) {
         setRecordingUrl(lessonData.recording_url);
         setRecordingExpiresAt(lessonData.recording_expires_at);
+      }
+      if (lessonData?.quran_focus) {
+        setQuranFocus(lessonData.quran_focus);
       }
 
       // Query by lesson_id only - RLS handles access control
@@ -2489,20 +2510,13 @@ export default function LessonInsights() {
 
   // Submit homework
   async function submitHomework() {
-    if (!insight || !lessonId) return;
+    if (!insight || !lessonId || !learnerId) return;
 
     try {
       setSubmittingHomework(true);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      // Get learner ID
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
 
       // Get teacher ID from lesson
       const { data: lesson } = await supabase
@@ -2514,7 +2528,7 @@ export default function LessonInsights() {
       const submissionData = {
         lesson_id: lessonId,
         insight_id: insight.id,
-        learner_id: learner?.id,
+        learner_id: learnerId,
         teacher_id: lesson?.teacher_id,
         parent_id: user.id,
         quiz_answers: quizAnswers,
@@ -2552,20 +2566,11 @@ export default function LessonInsights() {
 
   // Handle quiz completion - saves attempt to database
   async function handleQuizComplete(score: number, total: number, isFirstAttempt: boolean) {
-    if (!insight || !lessonId) return;
+    if (!insight || !lessonId || !learnerId) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      // Get learner ID
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
-
-      if (!learner?.id) return;
 
       // Get teacher ID from lesson
       const { data: lesson } = await supabase
@@ -2582,7 +2587,7 @@ export default function LessonInsights() {
       const updateData: Record<string, any> = {
         lesson_id: lessonId,
         insight_id: insight.id,
-        learner_id: learner.id,
+        learner_id: learnerId,
         teacher_id: lesson?.teacher_id,
         parent_id: user.id,
         quiz_answers: quizAnswers,
@@ -2972,6 +2977,14 @@ export default function LessonInsights() {
                       <span>{metadata.teacher_name}</span>
                     </div>
                   )}
+                  {quranFocus && (
+                    <div className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium ${
+                      quranFocus === 'understanding' ? 'bg-emerald-400/30' :
+                      quranFocus === 'fluency' ? 'bg-blue-400/30' : 'bg-purple-400/30'
+                    }`}>
+                      <span>{quranFocus.charAt(0).toUpperCase() + quranFocus.slice(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -3287,8 +3300,8 @@ export default function LessonInsights() {
             )}
           </div>
 
-          {/* Homework Submission Section */}
-          {(homeworkTasks.length > 0 || quizQuestions.length > 0) && (
+          {/* Homework Submission Section - only for students/parents with a learner profile */}
+          {learnerId && (homeworkTasks.length > 0 || quizQuestions.length > 0) && (
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-10 mt-12 print:hidden">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-11 h-11 bg-emerald-100 rounded-xl flex items-center justify-center">

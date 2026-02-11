@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
                     <div style="background: #06b6d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 12px; font-weight: bold;">1</div>
                     <div>
                       <strong style="color: #0f172a;">AI-Powered Study Notes</strong>
-                      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">After each lesson, receive personalized Talbiyah Insights - study notes and quizzes generated from YOUR actual conversation with your teacher.</p>
+                      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">After each lesson, receive personalised Talbiyah Insights - study notes and quizzes generated from YOUR actual conversation with your teacher.</p>
                     </div>
                   </div>
                 </div>
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
                     <div style="background: #06b6d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 12px; font-weight: bold;">2</div>
                     <div>
                       <strong style="color: #0f172a;">3-Stage Quran Mastery</strong>
-                      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Understanding → Fluency → Memorization. We track all three stages so you truly master the Quran, not just memorize it.</p>
+                      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Understanding → Fluency → Memorisation. We track all three stages so you truly master the Quran, not just memorise it.</p>
                     </div>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
               <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
                 <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">🎁 Start Your Free Diagnostic Assessment!</h3>
                 <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
-                  Discover your current level and get a personalized learning plan - completely free, no credit card required
+                  Discover your current level and get a personalised learning plan - completely free, no credit card required
                 </p>
                 <a href="https://talbiyah.ai/diagnostic" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   Start Free Assessment
@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
                 <ol style="margin: 0; padding-left: 20px; color: #334155;">
                   <li style="margin-bottom: 12px; line-height: 1.6;">Take your FREE diagnostic assessment (20 mins, no payment needed)</li>
                   <li style="margin-bottom: 12px; line-height: 1.6;">Get matched with the perfect teacher for your level</li>
-                  <li style="margin-bottom: 12px; line-height: 1.6;">Receive your personalized learning plan (Understanding → Fluency → Memorisation)</li>
+                  <li style="margin-bottom: 12px; line-height: 1.6;">Receive your personalised learning plan (Understanding → Fluency → Memorisation)</li>
                   <li style="line-height: 1.6;">Start your journey with AI-powered study notes after every lesson!</li>
                 </ol>
               </div>

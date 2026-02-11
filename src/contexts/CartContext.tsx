@@ -14,6 +14,7 @@ export interface CartItem {
   created_at: string;
   expires_at: string;
   lesson_tier?: 'standard' | 'premium';
+  quran_focus?: 'understanding' | 'fluency' | 'memorisation';
 }
 
 interface ExpiryNotification {
@@ -123,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         created_at: item.created_at,
         expires_at: item.expires_at,
         lesson_tier: item.lesson_tier || 'premium',
+        quran_focus: item.quran_focus || undefined,
       }));
 
       setCartItems(formattedItems);
@@ -155,6 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           duration_minutes: item.duration_minutes,
           price: item.price,
           lesson_tier: item.lesson_tier || 'premium',
+          quran_focus: item.quran_focus || null,
         });
 
       if (error) throw error;

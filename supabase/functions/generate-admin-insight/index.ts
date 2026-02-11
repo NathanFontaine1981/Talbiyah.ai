@@ -654,14 +654,14 @@ function generateQuranContent(data: any): string {
     </div>`;
   }
 
-  // Memorization Progress
+  // Memorisation Progress
   const memorizationProgress = data.memorizationProgress || data.memorization_progress;
   if (memorizationProgress) {
     const versesReviewed = memorizationProgress.versesReviewed || memorizationProgress.verses_reviewed;
     const newVerses = memorizationProgress.newVerses || memorizationProgress.new_verses;
     html += `
     <div class="section">
-      <h2 class="section-title"><span class="section-icon">&#128200;</span> Memorization Progress</h2>
+      <h2 class="section-title"><span class="section-icon">&#128200;</span> Memorisation Progress</h2>
       <div class="card-grid">
         <div class="card">
           <div class="card-title">Verses Reviewed</div>

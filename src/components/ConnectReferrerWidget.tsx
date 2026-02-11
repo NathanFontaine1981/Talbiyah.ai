@@ -49,19 +49,18 @@ export default function ConnectReferrerWidget({ userId, onConnected }: ConnectRe
         return;
       }
 
-      // Check if the user's learner has a referrer (from signup via referral link)
-      const { data: learner } = await supabase
+      // Check if any of the user's learners have a referrer
+      const { data: learners } = await supabase
         .from('learners')
         .select('id, referred_by')
-        .eq('parent_id', userId)
-        .maybeSingle();
+        .eq('parent_id', userId);
 
-      if (learner?.referred_by) {
-        // learner.referred_by is a profile ID, fetch referrer's name directly
+      const referredLearner = learners?.find(l => l.referred_by);
+      if (referredLearner) {
         const { data: referrerProfile } = await supabase
           .from('profiles')
           .select('full_name')
-          .eq('id', learner.referred_by)
+          .eq('id', referredLearner.referred_by)
           .single();
 
         setReferrerInfo({ name: referrerProfile?.full_name || 'Someone' });
@@ -70,12 +69,13 @@ export default function ConnectReferrerWidget({ userId, onConnected }: ConnectRe
         return;
       }
 
-      if (learner) {
-        // Check if user has completed any lessons
+      const learnerIds = learners?.map(l => l.id) || [];
+      if (learnerIds.length > 0) {
+        // Check if any learner has completed lessons
         const { data: completedLessons } = await supabase
           .from('lessons')
           .select('id')
-          .eq('learner_id', learner.id)
+          .in('learner_id', learnerIds)
           .eq('status', 'completed')
           .limit(1);
 

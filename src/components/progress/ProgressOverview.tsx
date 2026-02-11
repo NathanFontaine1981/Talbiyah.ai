@@ -163,15 +163,14 @@ export default function ProgressOverview({ studentId, variant = 'student' }: Pro
           return;
         }
 
-        // First try to find learner by parent_id (parent viewing child)
-        const { data: learner } = await supabase
+        // Get all learners for this parent
+        const { data: learners } = await supabase
           .from('learners')
           .select('id')
-          .eq('parent_id', user.id)
-          .maybeSingle();
+          .eq('parent_id', user.id);
 
-        if (learner) {
-          targetId = learner.id;
+        if (learners && learners.length > 0) {
+          targetId = learners[0].id;
         } else {
           // Fallback: check if user has lessons directly as learner_id
           // This handles student accounts where user.id is used as learner_id

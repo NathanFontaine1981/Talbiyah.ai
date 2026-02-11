@@ -241,6 +241,7 @@ serve(async (req) => {
           student_room_code: studentRoomCode,
           lesson_tier: lessonTier,
           free_insights_trial: freeInsightsTrial,
+          quran_focus: item.quran_focus || null,
         })
         .select()
         .single()

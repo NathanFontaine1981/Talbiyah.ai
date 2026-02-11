@@ -23,6 +23,7 @@ interface UpcomingLesson {
   unread_messages: number;
   confirmation_status: string;
   teacher_acknowledgment_message: string | null;
+  quran_focus?: 'understanding' | 'fluency' | 'memorisation' | null;
 }
 
 interface UpcomingSessionsCardProps {
@@ -118,6 +119,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           status,
           teacher_id,
           subject_id,
+          quran_focus,
           "100ms_room_id",
           confirmation_status,
           teacher_acknowledgment_message,
@@ -196,7 +198,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
             has_insights: lessonsWithInsights.has(lesson.id),
             unread_messages: unreadMessageCounts.get(lesson.id) || 0,
             confirmation_status: lesson.confirmation_status || 'pending',
-            teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
+            teacher_acknowledgment_message: lesson.teacher_acknowledgment_message,
+            quran_focus: lesson.quran_focus || null,
           }))
           .filter((lesson) => {
             // Calculate lesson end time (scheduled_time + duration)
@@ -222,6 +225,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           status,
           teacher_id,
           subject_id,
+          quran_focus,
           "100ms_room_id",
           confirmation_status,
           teacher_acknowledgment_message,
@@ -280,7 +284,8 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
               insight_title: insightData?.title,
               unread_messages: 0,
               confirmation_status: lesson.confirmation_status || 'completed',
-              teacher_acknowledgment_message: lesson.teacher_acknowledgment_message
+              teacher_acknowledgment_message: lesson.teacher_acknowledgment_message,
+              quran_focus: lesson.quran_focus || null,
             };
           });
 
@@ -509,6 +514,14 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                       <div className="flex-1 min-w-0">
                         <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
                           {lesson.subject_name}
+                          {lesson.quran_focus && (
+                            <span className={`ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                              lesson.quran_focus === 'understanding' ? 'bg-emerald-100 text-emerald-700' :
+                              lesson.quran_focus === 'fluency' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {lesson.quran_focus.charAt(0).toUpperCase() + lesson.quran_focus.slice(1)}
+                            </span>
+                          )}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
@@ -622,7 +635,17 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{lesson.subject_name}</h4>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {lesson.subject_name}
+                        {lesson.quran_focus && (
+                          <span className={`ml-2 text-xs font-medium px-2 py-0.5 rounded-full ${
+                            lesson.quran_focus === 'understanding' ? 'bg-emerald-100 text-emerald-700' :
+                            lesson.quran_focus === 'fluency' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {lesson.quran_focus.charAt(0).toUpperCase() + lesson.quran_focus.slice(1)}
+                          </span>
+                        )}
+                      </h4>
                       {isToday && (
                         <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 text-xs font-bold rounded-full">
                           TODAY
@@ -805,6 +828,14 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                       <div className="flex-1 min-w-0">
                         <h5 className="text-sm font-semibold text-gray-900 dark:text-white">
                           {lesson.subject_name}
+                          {lesson.quran_focus && (
+                            <span className={`ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                              lesson.quran_focus === 'understanding' ? 'bg-emerald-100 text-emerald-700' :
+                              lesson.quran_focus === 'fluency' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {lesson.quran_focus.charAt(0).toUpperCase() + lesson.quran_focus.slice(1)}
+                            </span>
+                          )}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}

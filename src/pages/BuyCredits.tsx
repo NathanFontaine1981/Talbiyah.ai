@@ -295,7 +295,7 @@ export default function BuyCredits() {
         <div className="flex items-center justify-center gap-6 mb-6 flex-wrap">
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <Shield className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm">7-day money-back guarantee</span>
+            <span className="text-sm">14-day money-back guarantee</span>
           </div>
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <Lock className="w-5 h-5 text-emerald-500" />
@@ -427,7 +427,7 @@ export default function BuyCredits() {
                     </div>
                     <div className="flex items-start space-x-2">
                       <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">7-day refund policy</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">14-day refund policy</span>
                     </div>
                   </div>
 
@@ -471,10 +471,10 @@ export default function BuyCredits() {
                 <div>
                   <h4 className="text-emerald-600 dark:text-emerald-400 font-semibold mb-2">Refund & Transfer Policy</h4>
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li>• 7-day refund for unused credits</li>
-                    <li>• After 7 days, transfer credits to others</li>
+                    <li>• 14-day refund for unused credits</li>
+                    <li>• After 14 days, transfer credits or give as Sadaqah</li>
                     <li>• Partial refunds for unused portions</li>
-                    <li>• Refunds processed within 5-7 days</li>
+                    <li>• Refunds processed within 5-7 business days</li>
                   </ul>
                   <Link
                     to="/transfer-credits"
@@ -634,7 +634,7 @@ export default function BuyCredits() {
                 <span className="text-emerald-500 group-open:rotate-180 transition-transform">▼</span>
               </summary>
               <p className="mt-2 px-4 pb-4 text-gray-600 dark:text-gray-300 text-sm">
-                Yes! We offer a 7-day money-back guarantee for unused credits. After 7 days, you can transfer credits to family or friends instead.
+                Yes! We offer a 14-day money-back guarantee for unused credits (in line with UK consumer law). After 14 days, you can transfer credits to family or friends, or donate them as Sadaqah for new Muslims.
               </p>
             </details>
 

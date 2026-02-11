@@ -37,14 +37,15 @@ export default function MissedLessons() {
         return;
       }
 
-      // Get the user's learner profile
-      const { data: learner } = await supabase
+      // Get the user's learner profiles (parent may have multiple children)
+      const { data: learners } = await supabase
         .from('learners')
         .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+        .eq('parent_id', user.id);
 
-      if (!learner) {
+      const learnerIds = learners?.map(l => l.id) || [];
+
+      if (learnerIds.length === 0) {
         setLoading(false);
         return;
       }
@@ -73,7 +74,7 @@ export default function MissedLessons() {
             name
           )
         `)
-        .eq('learner_id', learner.id)
+        .in('learner_id', learnerIds)
         .in('status', ['missed', 'cancelled_by_student', 'cancelled_by_teacher'])
         .order('scheduled_time', { ascending: false });
 

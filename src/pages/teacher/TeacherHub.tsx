@@ -332,7 +332,7 @@ export default function TeacherHub() {
                   <p className="text-gray-400">
                     {independentRate > 0 ? `£${independentRate.toFixed(2)}/hour` : 'Rate set by you'}
                     {' · '}
-                    {paymentCollection === 'external' ? 'Direct payment' : 'Platform payment'}
+                    Platform payment
                   </p>
                 </div>
               </div>

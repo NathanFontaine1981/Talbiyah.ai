@@ -318,13 +318,13 @@ export default function Dashboard() {
         setSelectedViewRole(primaryRole);
       }
 
-      const { data: learnerData } = await supabase
+      const { data: learnersData } = await supabase
         .from('learners')
         .select('id, total_xp, current_level, current_streak, referral_code, learning_credits')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+        .eq('parent_id', user.id);
 
-      setLearner(learnerData);
+      // Use first learner for dashboard display
+      setLearner(learnersData?.[0] || null);
 
       // Check if user is new (no lessons completed, account created within last 7 days)
       const { count: lessonCount } = await supabase

@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Get all completed lessons with teacher profile info (including tier)
+    // 1. Get all completed lessons with teacher profile info (including tier and type)
     const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
       .select(`
@@ -31,6 +31,8 @@ Deno.serve(async (req: Request) => {
         scheduled_time,
         teacher_profiles!inner(
           tier,
+          teacher_type,
+          independent_rate,
           profiles!inner(full_name)
         )
       `)
@@ -70,15 +72,28 @@ Deno.serve(async (req: Request) => {
     const earningsToUpdate = [];
 
     for (const lesson of lessons || []) {
-      // Get teacher's tier and calculate earnings based on tier rate
-      const teacherTier = (lesson.teacher_profiles as any)?.tier || 'newcomer';
-      const tierInfo = tierRates[teacherTier] || { teacherRate: 5, studentPrice: 15 };
-
-      // Calculate based on duration (30 min = half rate, 60 min = full rate)
+      const teacherProfile = lesson.teacher_profiles as any;
+      const isIndependent = teacherProfile?.teacher_type === 'independent';
       const durationHours = (lesson.duration_minutes || 60) / 60;
-      const amountEarned = tierInfo.teacherRate * durationHours;
-      const lessonPrice = tierInfo.studentPrice * durationHours;
-      const platformFee = lessonPrice - amountEarned;
+
+      let amountEarned: number;
+      let lessonPrice: number;
+      let platformFee: number;
+
+      if (isIndependent) {
+        // Independent teachers: 100% of their rate, £0 platform fee
+        const independentRate = parseFloat(teacherProfile?.independent_rate) || 0;
+        amountEarned = independentRate * durationHours;
+        lessonPrice = independentRate * durationHours;
+        platformFee = 0;
+      } else {
+        // Platform teachers: tier-based split
+        const teacherTier = teacherProfile?.tier || 'newcomer';
+        const tierInfo = tierRates[teacherTier] || { teacherRate: 5, studentPrice: 15 };
+        amountEarned = tierInfo.teacherRate * durationHours;
+        lessonPrice = tierInfo.studentPrice * durationHours;
+        platformFee = lessonPrice - amountEarned;
+      }
 
       const scheduledTime = new Date(lesson.scheduled_time);
       const now = new Date();

@@ -30,25 +30,24 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
 
   async function loadRecentRecordings() {
     try {
-      let targetLearnerId = learnerId;
+      let targetLearnerIds: string[] = learnerId ? [learnerId] : [];
 
-      // If no learnerId provided, get current user's learner
-      if (!targetLearnerId) {
+      // If no learnerId provided, get current user's learners
+      if (targetLearnerIds.length === 0) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: learner } = await supabase
+        const { data: learners } = await supabase
           .from('learners')
           .select('id')
-          .eq('parent_id', user.id)
-          .maybeSingle();
+          .eq('parent_id', user.id);
 
-        if (!learner) {
+        targetLearnerIds = learners?.map(l => l.id) || [];
+
+        if (targetLearnerIds.length === 0) {
           setLoading(false);
           return;
         }
-
-        targetLearnerId = learner.id;
       }
 
       const { data: lessonsData, error } = await supabase
@@ -69,7 +68,7 @@ export default function RecentRecordingsCard({ learnerId }: RecentRecordingsCard
             name
           )
         `)
-        .eq('learner_id', targetLearnerId)
+        .in('learner_id', targetLearnerIds)
         .eq('status', 'completed')
         .order('scheduled_time', { ascending: false })
         .limit(10);

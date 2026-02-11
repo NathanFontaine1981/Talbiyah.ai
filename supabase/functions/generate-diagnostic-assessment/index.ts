@@ -86,11 +86,11 @@ serve(async (req) => {
       throw new Error("AI API key not configured");
     }
 
-    const prompt = `You are an experienced Islamic education advisor at Talbiyah.ai. We teach Quran using the Understanding → Fluency → Memorization methodology:
+    const prompt = `You are an experienced Islamic education advisor at Talbiyah.ai. We teach Quran using the Understanding → Fluency → Memorisation methodology:
 
-UNDERSTANDING (Fahm): Know the meaning before memorizing
-FLUENCY (Itqan): Read correctly with Tajweed before memorizing
-MEMORIZATION (Hifz): Built on understanding and fluency
+UNDERSTANDING (Fahm): Know the meaning before memorising
+FLUENCY (Itqan): Read correctly with Tajweed before memorising
+MEMORISATION (Hifz): Built on understanding and fluency
 
 Based on the following student questionnaire responses, provide a preliminary assessment to help the teacher prepare for a 20-minute diagnostic lesson.
 

@@ -68,7 +68,7 @@ const CATEGORY_GUIDANCE: Record<string, string> = {
     Focus on: divine help, good outcomes, blessings in endeavors, ease in affairs.`
 };
 
-const SYSTEM_PROMPT = `You are an expert Islamic scholar helping Muslims craft sincere, personalized duas.
+const SYSTEM_PROMPT = `You are an expert Islamic scholar helping Muslims craft sincere, personalised duas.
 
 STRICT REQUIREMENTS:
 
@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
       ? `Use these Names of Allah which are most appropriate for this type of dua: ${suggestedNames.join(', ')}`
       : 'Choose appropriate Names of Allah based on the nature of the request.';
 
-    const userPrompt = `Generate a personalized dua for someone seeking: ${category.toUpperCase()}
+    const userPrompt = `Generate a personalised dua for someone seeking: ${category.toUpperCase()}
 ${subcategory ? `Specific focus: ${subcategory}` : ''}
 
 CATEGORY GUIDANCE:

@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
               <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
                 <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 16px;">💡 What to Expect</h3>
                 <p style="margin: 0 0 12px 0; color: #334155; font-size: 14px; line-height: 1.6;">
-                  After your lesson, you'll automatically receive personalized Talbiyah Insights - AI-generated study notes and quizzes based on YOUR actual conversation with ${payload.teacher_name}.
+                  After your lesson, you'll automatically receive personalised Talbiyah Insights - AI-generated study notes and quizzes based on YOUR actual conversation with ${payload.teacher_name}.
                 </p>
                 <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">
                   This helps reinforce what you learned and makes review easier!

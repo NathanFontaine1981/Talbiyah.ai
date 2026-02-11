@@ -25,6 +25,7 @@ interface Lesson {
   has_recording?: boolean;
   recording_url?: string;
   recording_expires_at?: string;
+  quran_focus?: 'understanding' | 'fluency' | 'memorisation' | null;
   // Insight details for lesson summary
   insight_title?: string;
   insight_summary?: string;
@@ -41,6 +42,7 @@ interface RawLessonData {
   teacher_id: string;
   subject_id: string;
   '100ms_room_id': string | null;
+  quran_focus?: string | null;
   confirmation_status?: string;
   learners?: { name: string };
   teacher_profiles?: {
@@ -85,10 +87,21 @@ export default function MyClasses() {
       const userIsTeacher = teacherProfile?.status === 'approved';
       setIsTeacher(userIsTeacher);
 
+      // Always check for student lessons (user may be both teacher and student)
+      const { data: learners } = await supabase
+        .from('learners')
+        .select('id')
+        .eq('parent_id', user.id);
+
+      const learnerIds = learners?.map(l => l.id) || [];
+      const hasStudentLessons = learnerIds.length > 0;
+
+      // If user is only a teacher with no learner records, query teacher lessons
+      // If user has learner records, always show student lessons (primary use case)
       let query;
 
-      if (userIsTeacher) {
-        // Load lessons as teacher
+      if (userIsTeacher && !hasStudentLessons) {
+        // Pure teacher account — load lessons as teacher
         query = supabase
           .from('lessons')
           .select(`
@@ -99,6 +112,7 @@ export default function MyClasses() {
             status,
             teacher_id,
             subject_id,
+            quran_focus,
             "100ms_room_id",
             confirmation_status,
             learners!inner(
@@ -109,21 +123,8 @@ export default function MyClasses() {
             )
           `)
           .eq('teacher_id', teacherProfile.id);
-      } else {
-        // Load lessons as student
-        const { data: learner } = await supabase
-          .from('learners')
-          .select('id')
-          .eq('parent_id', user.id)
-          .maybeSingle();
-
-        const learnerId = learner?.id;
-
-        if (!learnerId) {
-          setLoading(false);
-          return;
-        }
-
+      } else if (hasStudentLessons) {
+        // User has learner records — show student lessons
         query = supabase
           .from('lessons')
           .select(`
@@ -133,6 +134,7 @@ export default function MyClasses() {
             status,
             teacher_id,
             subject_id,
+            quran_focus,
             "100ms_room_id",
             recording_url,
             recording_expires_at,
@@ -147,7 +149,10 @@ export default function MyClasses() {
               name
             )
           `)
-          .eq('learner_id', learnerId);
+          .in('learner_id', learnerIds);
+      } else {
+        setLoading(false);
+        return;
       }
 
       // Apply filter
@@ -238,6 +243,7 @@ export default function MyClasses() {
             insights_processing: !!isProcessingInsight,
             unread_messages: unreadMessageCounts.get(lesson.id) || 0,
             confirmation_status: lesson.confirmation_status,
+            quran_focus: lesson.quran_focus || null,
             has_recording: !!recording,
             recording_url: recording?.url,
             recording_expires_at: recording?.expires_at,
@@ -630,7 +636,17 @@ export default function MyClasses() {
 
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="text-xl font-bold text-gray-900 dark:text-white">{lesson.subject_name}</h4>
+                          <h4 className="text-xl font-bold text-gray-900 dark:text-white">
+                            {lesson.subject_name}
+                            {lesson.quran_focus && (
+                              <span className={`ml-2 text-xs font-medium px-2 py-0.5 rounded-full ${
+                                lesson.quran_focus === 'understanding' ? 'bg-emerald-100 text-emerald-700' :
+                                lesson.quran_focus === 'fluency' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {lesson.quran_focus.charAt(0).toUpperCase() + lesson.quran_focus.slice(1)}
+                              </span>
+                            )}
+                          </h4>
                           {isToday && !lessonIsPast && (
                             <span className="px-2 py-1 bg-emerald-100 text-emerald-600 text-xs font-bold rounded-full">
                               TODAY

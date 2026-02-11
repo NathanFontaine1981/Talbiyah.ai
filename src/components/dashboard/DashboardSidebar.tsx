@@ -80,6 +80,7 @@ export default function DashboardSidebar({
       title: null,
       items: [
         { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
+        { icon: HelpCircle, label: 'How To', path: '/how-to', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
       ]
     },
     {
@@ -127,7 +128,6 @@ export default function DashboardSidebar({
         { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
         { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
         { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: HelpCircle, label: 'How To', path: '/how-to', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
       ]
     },
     {

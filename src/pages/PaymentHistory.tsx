@@ -12,6 +12,7 @@ import {
   Receipt,
   Send,
   Download,
+  Heart,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -168,6 +169,10 @@ export default function PaymentHistory() {
         return <Send className="w-4 h-4 text-red-500" />;
       case 'transfer_in':
         return <Send className="w-4 h-4 text-emerald-500 transform rotate-180" />;
+      case 'sadaqah':
+        return <Heart className="w-4 h-4 text-rose-500" />;
+      case 'sadaqah_received':
+        return <Heart className="w-4 h-4 text-emerald-500" />;
       default:
         return <Receipt className="w-4 h-4 text-gray-500" />;
     }

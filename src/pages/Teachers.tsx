@@ -27,6 +27,9 @@ interface Teacher {
   rating_count: number;
   thumbs_up_percentage: number;
   total_feedback: number;
+  teacher_type?: 'platform' | 'independent';
+  independent_rate?: number;
+  payment_collection?: string;
 }
 
 interface Subject {
@@ -224,6 +227,9 @@ export default function Teachers() {
           user_id,
           bio,
           status,
+          teacher_type,
+          independent_rate,
+          payment_collection,
           profiles!teacher_profiles_user_id_fkey (
             full_name,
             gender,
@@ -252,25 +258,30 @@ export default function Teachers() {
         .map((teacher: any) => {
           const tierStats = teachersMap.get(teacher.id);
           const ratingStats = ratingsMap.get(teacher.id);
+          const isIndependent = teacher.teacher_type === 'independent';
+          const independentRate = teacher.independent_rate ? parseFloat(teacher.independent_rate) : 0;
           return {
             id: teacher.id,
             user_id: teacher.user_id,
             bio: teacher.bio,
-            hourly_rate: tierStats?.teacher_hourly_rate || 0,
+            hourly_rate: isIndependent ? independentRate : (tierStats?.teacher_hourly_rate || 0),
             full_name: teacher.profiles?.full_name || 'Unknown Teacher',
             gender: teacher.profiles?.gender || null,
             avatar_url: teacher.profiles?.avatar_url || null,
             tier: tierStats?.tier || 'newcomer',
             tier_name: tierStats?.tier_name || 'Newcomer',
             tier_icon: tierStats?.tier_icon || '🥉',
-            student_hourly_price: tierStats?.student_hourly_price || 15,
+            student_hourly_price: isIndependent ? independentRate : (tierStats?.student_hourly_price || 15),
             hours_taught: tierStats?.hours_taught || 0,
             average_rating: tierStats?.average_rating || 0,
             completed_lessons: tierStats?.completed_lessons || 0,
             rating_avg: ratingStats?.avg_rating || 0,
             rating_count: ratingStats?.total_detailed_ratings || 0,
             thumbs_up_percentage: ratingStats?.thumbs_up_percentage || 0,
-            total_feedback: ratingStats?.total_quick_feedback || 0
+            total_feedback: ratingStats?.total_quick_feedback || 0,
+            teacher_type: isIndependent ? 'independent' as const : 'platform' as const,
+            independent_rate: independentRate || undefined,
+            payment_collection: teacher.payment_collection || undefined,
           };
         }) || [];
 
@@ -623,168 +634,242 @@ export default function Teachers() {
                 </div>
               ) : (
                 <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginatedTeachers.map((teacher) => {
-                    // Helper function to get tier color
-                    const getTierColor = (tier: string) => {
-                      switch (tier) {
-                        case 'master': return 'from-purple-500 to-pink-500';
-                        case 'expert': return 'from-yellow-500 to-amber-500';
-                        case 'skilled': return 'from-blue-500 to-emerald-500';
-                        case 'apprentice': return 'from-gray-400 to-gray-500';
-                        default: return 'from-amber-700 to-amber-800';
-                      }
-                    };
+                {(() => {
+                  const platformTeachers = paginatedTeachers.filter(t => t.teacher_type !== 'independent');
+                  const independentTeachers = paginatedTeachers.filter(t => t.teacher_type === 'independent');
 
-                    const getTierBg = (tier: string) => {
-                      switch (tier) {
-                        case 'master': return 'bg-purple-50 border-purple-200';
-                        case 'expert': return 'bg-yellow-50 border-yellow-200';
-                        case 'skilled': return 'bg-blue-50 border-blue-200';
-                        case 'apprentice': return 'bg-gray-50 border-gray-200';
-                        default: return 'bg-amber-50 border-amber-200';
-                      }
-                    };
+                  const getTierColor = (tier: string) => {
+                    switch (tier) {
+                      case 'master': return 'from-purple-500 to-pink-500';
+                      case 'expert': return 'from-yellow-500 to-amber-500';
+                      case 'skilled': return 'from-blue-500 to-emerald-500';
+                      case 'apprentice': return 'from-gray-400 to-gray-500';
+                      default: return 'from-amber-700 to-amber-800';
+                    }
+                  };
 
-                    return (
-                      <div
-                        key={teacher.id}
-                        className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
-                      >
-                        {/* Tier Badge Header */}
-                        <div className={`px-4 py-2 ${getTierBg(teacher.tier)} border-b`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-2xl">{teacher.tier_icon}</span>
-                              <span className="font-semibold text-sm text-gray-700">{teacher.tier_name}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {teacher.rating_avg > 0 && (
-                                <div className="flex items-center space-x-1">
-                                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                  <span className="text-sm font-semibold text-gray-700">
-                                    {teacher.rating_avg.toFixed(1)}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    ({teacher.rating_count})
-                                  </span>
-                                </div>
-                              )}
-                              {teacher.total_feedback > 0 && (
-                                <div className="flex items-center space-x-1 bg-green-500 px-2 py-0.5 rounded-full">
-                                  <ThumbsUp className="w-3 h-3 text-white" />
-                                  <span className="text-xs font-bold text-white">
-                                    {teacher.thumbs_up_percentage}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                  const getTierBg = (tier: string) => {
+                    switch (tier) {
+                      case 'master': return 'bg-purple-50 border-purple-200';
+                      case 'expert': return 'bg-yellow-50 border-yellow-200';
+                      case 'skilled': return 'bg-blue-50 border-blue-200';
+                      case 'apprentice': return 'bg-gray-50 border-gray-200';
+                      default: return 'bg-amber-50 border-amber-200';
+                    }
+                  };
+
+                  const renderTeacherActions = (teacher: Teacher) => (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedTeacherForProfile(teacher.id);
+                            setProfileModalOpen(true);
+                          }}
+                          className="px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-semibold transition"
+                        >
+                          Profile
+                        </button>
+                        <button
+                          onClick={() => {
+                            const subjectParam = searchParams.get('subject');
+                            navigate(`/teacher/${teacher.id}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
+                          }}
+                          className={`px-4 py-2.5 bg-gradient-to-r ${teacher.teacher_type === 'independent' ? 'from-slate-600 to-indigo-600' : getTierColor(teacher.tier)} text-white rounded-lg font-semibold transition hover:opacity-90 shadow-md`}
+                        >
+                          Book Now
+                        </button>
+                      </div>
+                      {user && studentProfileId && !myTeacherIds.has(teacher.id) && (
+                        <button
+                          onClick={() => openAddTeacherModal(teacher)}
+                          className="w-full px-4 py-2.5 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          <span>Add to My Teachers</span>
+                        </button>
+                      )}
+                      {user && studentProfileId && myTeacherIds.has(teacher.id) && (
+                        <div className="w-full px-4 py-2.5 bg-green-50 border-2 border-green-300 text-green-700 rounded-lg font-semibold flex items-center justify-center space-x-2">
+                          <Check className="w-4 h-4" />
+                          <span>In My Teachers</span>
                         </div>
+                      )}
+                    </div>
+                  );
 
-                        <div className="p-6">
-                          {/* Teacher Info */}
-                          <div className="flex items-start space-x-4 mb-4">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100 to-cyan-100 flex-shrink-0 border-2 border-emerald-200">
-                              {teacher.avatar_url ? (
-                                <img
-                                  src={teacher.avatar_url}
-                                  alt={teacher.full_name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User className="w-8 h-8 text-emerald-600" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">
-                                {teacher.full_name}
-                              </h3>
-                              <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-300">
-                                {teacher.hours_taught > 0 && (
-                                  <div className="flex items-center space-x-1">
-                                    <Clock className="w-3 h-3" />
-                                    <span>{teacher.hours_taught}h taught</span>
-                                  </div>
-                                )}
-                                {teacher.completed_lessons > 0 && (
-                                  <div className="flex items-center space-x-1">
-                                    <Award className="w-3 h-3" />
-                                    <span>{teacher.completed_lessons} lessons</span>
-                                  </div>
-                                )}
+                  const renderTeacherInfo = (teacher: Teacher) => (
+                    <>
+                      <div className="flex items-start space-x-4 mb-4">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100 to-cyan-100 flex-shrink-0 border-2 border-emerald-200">
+                          {teacher.avatar_url ? (
+                            <img
+                              src={teacher.avatar_url}
+                              alt={teacher.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-8 h-8 text-emerald-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">
+                            {teacher.full_name}
+                          </h3>
+                          <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-300">
+                            {teacher.hours_taught > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{teacher.hours_taught}h taught</span>
                               </div>
-                            </div>
-                          </div>
-
-                          {/* Gentleness Badge */}
-                          <div className="mb-3">
-                            <GentlenessBadge />
-                          </div>
-
-                          {/* Bio */}
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                            {teacher.bio || 'Experienced teacher ready to help you learn.'}
-                          </p>
-
-                          {/* Pricing and Actions */}
-                          <div className="pt-4 border-t border-gray-100">
-                            <div className="mb-4">
-                              <div className="text-xs text-gray-500 mb-1">Starting from</div>
-                              <div className="flex items-baseline space-x-2">
-                                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 bg-clip-text text-transparent">
-                                  £{(teacher.student_hourly_price / 2).toFixed(2)}
-                                </span>
-                                <span className="text-sm text-gray-500">/ 30 min</span>
+                            )}
+                            {teacher.completed_lessons > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <Award className="w-3 h-3" />
+                                <span>{teacher.completed_lessons} lessons</span>
                               </div>
-                              <div className="text-xs text-gray-400 mt-1">
-                                £{teacher.student_hourly_price.toFixed(2)}/hour
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedTeacherForProfile(teacher.id);
-                                    setProfileModalOpen(true);
-                                  }}
-                                  className="px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-lg font-semibold transition"
-                                >
-                                  Profile
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const subjectParam = searchParams.get('subject');
-                                    navigate(`/teacher/${teacher.id}/book${subjectParam ? `?subject=${subjectParam}` : ''}`);
-                                  }}
-                                  className={`px-4 py-2.5 bg-gradient-to-r ${getTierColor(teacher.tier)} text-white rounded-lg font-semibold transition hover:opacity-90 shadow-md`}
-                                >
-                                  Book Now
-                                </button>
-                              </div>
-                              {/* Add to My Teachers button - only for logged-in students who don't have this teacher yet */}
-                              {user && studentProfileId && !myTeacherIds.has(teacher.id) && (
-                                <button
-                                  onClick={() => openAddTeacherModal(teacher)}
-                                  className="w-full px-4 py-2.5 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition flex items-center justify-center space-x-2"
-                                >
-                                  <UserPlus className="w-4 h-4" />
-                                  <span>Add to My Teachers</span>
-                                </button>
-                              )}
-                              {user && studentProfileId && myTeacherIds.has(teacher.id) && (
-                                <div className="w-full px-4 py-2.5 bg-green-50 border-2 border-green-300 text-green-700 rounded-lg font-semibold flex items-center justify-center space-x-2">
-                                  <Check className="w-4 h-4" />
-                                  <span>In My Teachers</span>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="mb-3">
+                        <GentlenessBadge />
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+                        {teacher.bio || 'Experienced teacher ready to help you learn.'}
+                      </p>
+                    </>
+                  );
+
+                  return (
+                    <>
+                      {/* Platform Teachers Section */}
+                      {platformTeachers.length > 0 && (
+                        <>
+                          {independentTeachers.length > 0 && (
+                            <div className="mb-6">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Our Teachers</h2>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Platform teachers with structured pricing tiers</p>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {platformTeachers.map((teacher) => (
+                              <div
+                                key={teacher.id}
+                                className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
+                              >
+                                <div className={`px-4 py-2 ${getTierBg(teacher.tier)} border-b`}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-2xl">{teacher.tier_icon}</span>
+                                      <span className="font-semibold text-sm text-gray-700">{teacher.tier_name}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {teacher.rating_avg > 0 && (
+                                        <div className="flex items-center space-x-1">
+                                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                          <span className="text-sm font-semibold text-gray-700">{teacher.rating_avg.toFixed(1)}</span>
+                                          <span className="text-xs text-gray-500">({teacher.rating_count})</span>
+                                        </div>
+                                      )}
+                                      {teacher.total_feedback > 0 && (
+                                        <div className="flex items-center space-x-1 bg-green-500 px-2 py-0.5 rounded-full">
+                                          <ThumbsUp className="w-3 h-3 text-white" />
+                                          <span className="text-xs font-bold text-white">{teacher.thumbs_up_percentage}%</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="p-6">
+                                  {renderTeacherInfo(teacher)}
+                                  <div className="pt-4 border-t border-gray-100">
+                                    <div className="mb-4">
+                                      <div className="text-xs text-gray-500 mb-1">Starting from</div>
+                                      <div className="flex items-baseline space-x-2">
+                                        <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 bg-clip-text text-transparent">
+                                          £{(teacher.student_hourly_price / 2).toFixed(2)}
+                                        </span>
+                                        <span className="text-sm text-gray-500">/ 30 min</span>
+                                      </div>
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        £{teacher.student_hourly_price.toFixed(2)}/hour
+                                      </div>
+                                    </div>
+                                    {renderTeacherActions(teacher)}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Independent Teachers Section */}
+                      {independentTeachers.length > 0 && (
+                        <>
+                          <div className={platformTeachers.length > 0 ? 'mt-12 mb-6' : 'mb-6'}>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Independent Teachers</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Experienced teachers who manage their own pricing</p>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {independentTeachers.map((teacher) => (
+                              <div
+                                key={teacher.id}
+                                className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
+                              >
+                                <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-full">Independent</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {teacher.rating_avg > 0 && (
+                                        <div className="flex items-center space-x-1">
+                                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{teacher.rating_avg.toFixed(1)}</span>
+                                          <span className="text-xs text-gray-500">({teacher.rating_count})</span>
+                                        </div>
+                                      )}
+                                      {teacher.total_feedback > 0 && (
+                                        <div className="flex items-center space-x-1 bg-green-500 px-2 py-0.5 rounded-full">
+                                          <ThumbsUp className="w-3 h-3 text-white" />
+                                          <span className="text-xs font-bold text-white">{teacher.thumbs_up_percentage}%</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="p-6">
+                                  {renderTeacherInfo(teacher)}
+                                  <div className="pt-4 border-t border-gray-100">
+                                    <div className="mb-4">
+                                      <div className="text-xs text-gray-500 mb-1">Teacher's rate</div>
+                                      <div className="flex items-baseline space-x-2">
+                                        <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-600 bg-clip-text text-transparent">
+                                          £{(teacher.student_hourly_price / 2).toFixed(2)}
+                                        </span>
+                                        <span className="text-sm text-gray-500">/ 30 min</span>
+                                      </div>
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        £{teacher.student_hourly_price.toFixed(2)}/hour
+                                      </div>
+                                      <div className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">
+                                        Independent teacher rate
+                                      </div>
+                                    </div>
+                                    {renderTeacherActions(teacher)}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (

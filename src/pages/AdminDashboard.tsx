@@ -26,7 +26,8 @@ import {
   ClipboardCheck,
   Shield,
   FileText,
-  Mail
+  Mail,
+  Heart
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -60,6 +61,7 @@ export default function AdminDashboard() {
         { icon: Award, label: 'Teacher Tiers', path: '/admin/teacher-tiers' },
         { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
         { icon: FileText, label: 'Legacy Billing', path: '/admin/legacy-billing' },
+        { icon: Heart, label: 'Sadaqah Fund', path: '/admin/sadaqah' },
       ]
     },
     {

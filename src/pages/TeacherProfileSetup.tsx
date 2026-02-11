@@ -516,63 +516,9 @@ export default function TeacherProfileSetup() {
                     <p className="text-xs text-gray-500 mt-1">This is what your students pay you per hour</p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      How do you collect payment?
-                    </label>
-                    <div className="space-y-2">
-                      <label className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
-                        formData.payment_collection === 'external'
-                          ? 'bg-white border-blue-400'
-                          : 'bg-gray-50 border-gray-200'
-                      }`}>
-                        <input
-                          type="radio"
-                          name="payment_collection"
-                          value="external"
-                          checked={formData.payment_collection === 'external'}
-                          onChange={() => setFormData({ ...formData, payment_collection: 'external' })}
-                          className="sr-only"
-                        />
-                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          formData.payment_collection === 'external' ? 'border-blue-500' : 'border-gray-300'
-                        }`}>
-                          {formData.payment_collection === 'external' && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">I collect payment directly</p>
-                          <p className="text-xs text-gray-500">Bank transfer, cash, or your own payment method</p>
-                        </div>
-                      </label>
-
-                      <label className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
-                        formData.payment_collection === 'platform'
-                          ? 'bg-white border-blue-400'
-                          : 'bg-gray-50 border-gray-200'
-                      }`}>
-                        <input
-                          type="radio"
-                          name="payment_collection"
-                          value="platform"
-                          checked={formData.payment_collection === 'platform'}
-                          onChange={() => setFormData({ ...formData, payment_collection: 'platform' })}
-                          className="sr-only"
-                        />
-                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          formData.payment_collection === 'platform' ? 'border-blue-500' : 'border-gray-300'
-                        }`}>
-                          {formData.payment_collection === 'platform' && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Talbiyah collects and passes payment to me</p>
-                          <p className="text-xs text-gray-500">Students pay through Talbiyah, we transfer to you</p>
-                        </div>
-                      </label>
-                    </div>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800">Payment collected via Talbiyah</p>
+                    <p className="text-xs text-blue-600 mt-1">Students pay through our platform and we transfer earnings to you</p>
                   </div>
                 </div>
               )}

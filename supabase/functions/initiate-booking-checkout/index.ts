@@ -19,6 +19,7 @@ interface BookingRequest {
   duration?: number;
   price: number;
   use_free_session?: boolean;
+  quran_focus?: 'understanding' | 'fluency' | 'memorisation' | null;
 }
 
 serve(async (req) => {
@@ -133,12 +134,20 @@ serve(async (req) => {
       })
     );
 
-    // Check if this is an independent teacher insights-only checkout
-    const isIndependentInsightsOnly = body.metadata?.is_independent_insights_only || body.is_independent_insights_only || false;
+    // Check independent booking flags
+    const isIndependentBooking = body.metadata?.is_independent_booking === 'true' || body.metadata?.is_independent_booking === true;
+    const hasInsightsAddon = body.metadata?.insights_addon === 'true' || body.metadata?.insights_addon === true;
 
-    const totalAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
+    const lessonAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
       return sum + Math.round(booking.price * 100);
     }, 0);
+
+    // Add insights addon price if selected (stored in pence on each booking)
+    const insightsAmount = bookingsWithLearner.reduce((sum: number, booking: any) => {
+      return sum + (booking.insights_addon_price || 0);
+    }, 0);
+
+    const totalAmount = lessonAmount + insightsAmount;
 
     const sessionCount = requestedBookings.length;
 
@@ -169,6 +178,21 @@ serve(async (req) => {
           throw new Error(`Failed to deduct credits: ${deductError.message}`);
         }
 
+        // Look up teacher profiles for rate calculation
+        const uniqueTeacherIds = [...new Set(bookingsWithLearner.map((b: any) => b.teacher_id))];
+        const { data: teacherProfilesData } = await supabaseClient
+          .from('teacher_profiles')
+          .select('id, teacher_type, independent_rate, tier')
+          .in('id', uniqueTeacherIds);
+
+        const teacherProfileMap = new Map((teacherProfilesData || []).map((tp: any) => [tp.id, tp]));
+
+        // Look up tier rates for platform teachers
+        const { data: tierData } = await supabaseClient
+          .from('teacher_tiers')
+          .select('tier, teacher_hourly_rate, student_hourly_price');
+        const tierRates = new Map((tierData || []).map((t: any) => [t.tier, t]));
+
         const lessonsToCreate = bookingsWithLearner.map((booking: any) => {
           let scheduledTime: string;
 
@@ -185,13 +209,38 @@ serve(async (req) => {
             throw new Error(`Invalid timestamp format: ${scheduledTime}`);
           }
 
+          // Calculate teacher rate and platform fee
+          const tp = teacherProfileMap.get(booking.teacher_id);
+          const isIndependent = tp?.teacher_type === 'independent';
+          let teacherRate: number;
+          let platformFee: number;
+          let totalCost: number;
+
+          if (isIndependent) {
+            teacherRate = parseFloat(tp?.independent_rate) || booking.price || 0;
+            platformFee = 0;
+            totalCost = teacherRate;
+          } else {
+            const tier = tierRates.get(tp?.tier || 'newcomer');
+            teacherRate = parseFloat(tier?.teacher_hourly_rate) || 5;
+            const studentPrice = parseFloat(tier?.student_hourly_price) || 15;
+            platformFee = studentPrice - teacherRate;
+            totalCost = studentPrice;
+          }
+
+          const durationHours = (booking.duration || 60) / 60;
+
           return {
             learner_id: booking.learner_id,
             teacher_id: booking.teacher_id,
             subject_id: booking.subject,
             scheduled_time: scheduledTime,
             duration_minutes: booking.duration || 60,
-            status: 'booked'
+            status: 'booked',
+            quran_focus: booking.quran_focus || null,
+            teacher_rate_at_booking: teacherRate,
+            platform_fee: platformFee * durationHours,
+            total_cost_paid: totalCost * durationHours,
           };
         });
 
@@ -464,14 +513,13 @@ serve(async (req) => {
     }
 
     const sessionText = sessionCount === 1 ? 'Session' : 'Sessions';
-    const productName = isIndependentInsightsOnly
-      ? `Talbiyah AI Insights (${sessionCount} ${sessionText})`
+    const productName = isIndependentBooking && hasInsightsAddon
+      ? `${sessionCount} Learning ${sessionText} + AI Insights`
       : `${sessionCount} Learning ${sessionText}`;
-    const sessionDescription = isIndependentInsightsOnly
-      ? 'AI-powered study notes, quizzes & revision materials from your lesson recording'
-      : requestedBookings
-        .map((b: BookingRequest) => `${b.duration || 60}min ${b.subject}`)
-        .join(', ');
+    const sessionDescription = requestedBookings
+      .map((b: BookingRequest) => `${b.duration || 60}min ${b.subject}`)
+      .join(', ')
+      + (hasInsightsAddon ? ' + AI-powered study insights' : '');
 
     const checkoutData = new URLSearchParams({
       'payment_method_types[]': 'card',
@@ -488,7 +536,8 @@ serve(async (req) => {
       'metadata[user_id]': user.id,
       'metadata[session_count]': sessionCount.toString(),
       'metadata[total_amount]': totalAmount.toString(),
-      ...(isIndependentInsightsOnly ? { 'metadata[is_independent_insights]': 'true' } : {}),
+      ...(isIndependentBooking ? { 'metadata[is_independent_booking]': 'true' } : {}),
+      ...(hasInsightsAddon ? { 'metadata[insights_addon]': 'true' } : {}),
       'payment_intent_data[metadata][pending_booking_id]': pendingBooking.id,
       'payment_intent_data[metadata][user_id]': user.id,
       'customer_email': user.email || ''

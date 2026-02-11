@@ -478,7 +478,7 @@ export default function ApplyToTeach() {
         teacherProfileData.independent_rate = rate;
         teacherProfileData.hourly_rate = rate;
         teacherProfileData.tier = null;
-        teacherProfileData.payment_collection = 'external';
+        teacherProfileData.payment_collection = 'platform';
       } else {
         teacherProfileData.hourly_rate = assignedTier!.rate;
         teacherProfileData.tier = assignedTier!.tier;

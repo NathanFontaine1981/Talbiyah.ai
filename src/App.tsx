@@ -179,6 +179,7 @@ const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessm
 const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
 const LegacyBilling = lazy(() => import('./pages/admin/LegacyBilling'));
 const AdminEmail = lazy(() => import('./pages/admin/AdminEmail'));
+const SadaqahManagement = lazy(() => import('./pages/admin/SadaqahManagement'));
 
 function App() {
   return (
@@ -382,6 +383,7 @@ function App() {
           <Route path="content-moderation" element={<ContentModeration />} />
           <Route path="legacy-billing" element={<LegacyBilling />} />
           <Route path="email" element={<AdminEmail />} />
+          <Route path="sadaqah" element={<SadaqahManagement />} />
         </Route>
         <Route
           path="/apply-to-teach"

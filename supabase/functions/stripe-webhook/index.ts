@@ -246,7 +246,7 @@ serve(async (req) => {
               stripe_payment_id: session.payment_intent,
               stripe_checkout_session_id: session.id,
               purchase_date: new Date().toISOString(),
-              refund_deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+              refund_deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days (UK Consumer Contracts Regulations 2013)
             })
             .select()
             .single()
@@ -438,7 +438,17 @@ serve(async (req) => {
 
         const createdLessons = []
 
+        // Look up teacher profiles for independent teacher detection
+        const teacherIds = [...new Set(pendingBooking.booking_data.map((b: any) => b.teacher_id))];
+        const { data: teacherProfiles } = await supabaseClient
+          .from('teacher_profiles')
+          .select('id, teacher_type, independent_rate, tier')
+          .in('id', teacherIds);
+        const teacherProfileMap = new Map((teacherProfiles || []).map((tp: any) => [tp.id, tp]));
+
         for (const bookingData of pendingBooking.booking_data) {
+          const teacherProfile = teacherProfileMap.get(bookingData.teacher_id);
+          const isIndependentTeacher = teacherProfile?.teacher_type === 'independent';
 
           // Create 100ms room
           let roomId = `room_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -511,7 +521,34 @@ serve(async (req) => {
           // Combine date and time into scheduled_time
           const scheduledTime = `${bookingData.date}T${bookingData.time}:00`
 
-          // Create lesson (exactly like free sessions do)
+          // Calculate correct teacher rate and platform fee
+          const durationHours = (bookingData.duration || 60) / 60;
+          let teacherRateAtBooking = bookingData.price;
+          let platformFee = 0;
+          let totalCostPaid = bookingData.price;
+
+          if (isIndependentTeacher) {
+            const independentRate = parseFloat(teacherProfile?.independent_rate) || bookingData.price / durationHours || 0;
+            teacherRateAtBooking = independentRate;
+            platformFee = 0;
+            totalCostPaid = independentRate * durationHours;
+          } else if (teacherProfile) {
+            // Look up tier rates
+            const { data: tierData } = await supabaseClient
+              .from('teacher_tiers')
+              .select('teacher_hourly_rate, student_hourly_price')
+              .eq('tier', teacherProfile.tier || 'newcomer')
+              .single();
+
+            if (tierData) {
+              teacherRateAtBooking = parseFloat(tierData.teacher_hourly_rate) || 5;
+              const studentPrice = parseFloat(tierData.student_hourly_price) || 15;
+              platformFee = (studentPrice - teacherRateAtBooking) * durationHours;
+              totalCostPaid = studentPrice * durationHours;
+            }
+          }
+
+          // Create lesson
           const { data: lesson, error: lessonError} = await supabaseClient
             .from('lessons')
             .insert({
@@ -522,9 +559,13 @@ serve(async (req) => {
               duration_minutes: bookingData.duration || 60,
               status: 'booked',
               is_free_trial: false,
-              teacher_rate_at_booking: bookingData.price,
-              platform_fee: 0,
-              total_cost_paid: bookingData.price,
+              teacher_rate_at_booking: teacherRateAtBooking,
+              platform_fee: platformFee,
+              total_cost_paid: totalCostPaid,
+              is_independent: isIndependentTeacher || false,
+              insights_addon: bookingData.insights_addon || false,
+              insights_addon_price: bookingData.insights_addon_price || 0,
+              independent_teacher_rate: bookingData.independent_teacher_rate || 0,
               payment_id: session.payment_intent,
               stripe_checkout_session_id: session.id,
               stripe_payment_intent_id: session.payment_intent,
@@ -534,6 +575,7 @@ serve(async (req) => {
               '100ms_room_id': roomId,
               teacher_room_code: teacherRoomCode,
               student_room_code: studentRoomCode,
+              quran_focus: bookingData.quran_focus || null,
             })
             .select()
             .single()

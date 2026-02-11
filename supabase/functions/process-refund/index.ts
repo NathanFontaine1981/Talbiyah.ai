@@ -72,13 +72,13 @@ serve(async (req) => {
       );
     }
 
-    // Check if within refund window (7 days)
+    // Check if within refund window (14 days - UK Consumer Contracts Regulations 2013)
     const refundDeadline = new Date(purchase.refund_deadline);
     if (new Date() > refundDeadline) {
       return new Response(
         JSON.stringify({
           error: 'Refund window has expired',
-          message: 'Refunds must be requested within 7 days of purchase'
+          message: 'Refunds must be requested within 14 days of purchase'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

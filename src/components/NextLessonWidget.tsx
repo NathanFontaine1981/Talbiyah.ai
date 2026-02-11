@@ -27,13 +27,14 @@ export default function NextLessonWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: learner } = await supabase
+      const { data: learners } = await supabase
         .from('learners')
         .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
+        .eq('parent_id', user.id);
 
-      if (!learner) {
+      const learnerIds = learners?.map(l => l.id) || [];
+
+      if (learnerIds.length === 0) {
         setLoading(false);
         return;
       }
@@ -56,7 +57,7 @@ export default function NextLessonWidget() {
             name
           )
         `)
-        .eq('learner_id', learner.id)
+        .in('learner_id', learnerIds)
         .eq('status', 'booked')
         .gte('scheduled_time', new Date().toISOString())
         .order('scheduled_time', { ascending: true })
