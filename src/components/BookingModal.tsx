@@ -56,6 +56,7 @@ export default function BookingModal({
   const [oneOffAvailability, setOneOffAvailability] = useState<OneOffAvailability[]>([]);
   const [existingBookings, setExistingBookings] = useState<Array<{scheduled_time: string, duration_minutes: number}>>([]);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [teacherHourlyPrice, setTeacherHourlyPrice] = useState(15);
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }), i)
@@ -68,15 +69,27 @@ export default function BookingModal({
     timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
   }
 
-  const price = duration === 30 ? 7.50 : 15.00;
+  const price = duration === 30 ? teacherHourlyPrice / 2 : teacherHourlyPrice;
 
   useEffect(() => {
     if (isOpen) {
       fetchLearners();
       fetchTeacherAvailability();
+      fetchTeacherRate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  async function fetchTeacherRate() {
+    const { data } = await supabase
+      .from('teacher_profiles')
+      .select('teacher_type, independent_rate')
+      .eq('user_id', teacherId)
+      .single();
+    if (data?.teacher_type === 'independent' && data.independent_rate) {
+      setTeacherHourlyPrice(parseFloat(data.independent_rate));
+    }
+  }
 
   useEffect(() => {
     if (selectedLearner && learners.length > 0) {
@@ -478,7 +491,7 @@ export default function BookingModal({
                     >
                       <div className="text-center">
                         <p className="font-bold text-gray-900 text-lg">30 Minutes</p>
-                        <p className="text-emerald-600 font-semibold">£7.50</p>
+                        <p className="text-emerald-600 font-semibold">£{(teacherHourlyPrice / 2).toFixed(2)}</p>
                       </div>
                     </button>
                     <button
@@ -491,7 +504,7 @@ export default function BookingModal({
                     >
                       <div className="text-center">
                         <p className="font-bold text-gray-900 text-lg">60 Minutes</p>
-                        <p className="text-emerald-600 font-semibold">£15.00</p>
+                        <p className="text-emerald-600 font-semibold">£{teacherHourlyPrice.toFixed(2)}</p>
                       </div>
                     </button>
                   </div>

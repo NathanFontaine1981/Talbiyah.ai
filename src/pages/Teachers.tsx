@@ -788,12 +788,12 @@ export default function Teachers() {
                                       <div className="text-xs text-gray-500 mb-1">Starting from</div>
                                       <div className="flex items-baseline space-x-2">
                                         <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-600 bg-clip-text text-transparent">
-                                          £{(teacher.student_hourly_price / 2).toFixed(2)}
+                                          £{teacher.student_hourly_price.toFixed(2)}
                                         </span>
-                                        <span className="text-sm text-gray-500">/ 30 min</span>
+                                        <span className="text-sm text-gray-500">/ hour</span>
                                       </div>
                                       <div className="text-xs text-gray-400 mt-1">
-                                        £{teacher.student_hourly_price.toFixed(2)}/hour
+                                        £{(teacher.student_hourly_price / 2).toFixed(2)} / 30 min
                                       </div>
                                     </div>
                                     {renderTeacherActions(teacher)}
@@ -847,12 +847,12 @@ export default function Teachers() {
                                       <div className="text-xs text-gray-500 mb-1">Teacher's rate</div>
                                       <div className="flex items-baseline space-x-2">
                                         <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-600 bg-clip-text text-transparent">
-                                          £{(teacher.student_hourly_price / 2).toFixed(2)}
+                                          £{teacher.student_hourly_price.toFixed(2)}
                                         </span>
-                                        <span className="text-sm text-gray-500">/ 30 min</span>
+                                        <span className="text-sm text-gray-500">/ hour</span>
                                       </div>
                                       <div className="text-xs text-gray-400 mt-1">
-                                        £{teacher.student_hourly_price.toFixed(2)}/hour
+                                        £{(teacher.student_hourly_price / 2).toFixed(2)} / 30 min
                                       </div>
                                       <div className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">
                                         Independent teacher rate

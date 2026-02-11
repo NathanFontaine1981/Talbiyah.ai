@@ -87,7 +87,9 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userRole, setUserRole] = useState<string>('Student');
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
-  const [selectedViewRole, setSelectedViewRole] = useState<string>('Student');
+  const [selectedViewRole, setSelectedViewRole] = useState<string>(() => {
+    return localStorage.getItem('talbiyah_view_role') || 'Student';
+  });
   const [referralCopied, setReferralCopied] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(true);
   const [hasChildren, setHasChildren] = useState(true);
@@ -311,9 +313,10 @@ export default function Dashboard() {
       }
       setUserRole(primaryRole);
 
-      // Set selected view role - default to Student if available, then primary
-      if (roles.length > 1 && roles.includes('Student')) {
-        setSelectedViewRole('Student');
+      // Set selected view role - restore from localStorage if valid, otherwise use primary
+      const savedRole = localStorage.getItem('talbiyah_view_role');
+      if (savedRole && roles.includes(savedRole)) {
+        setSelectedViewRole(savedRole);
       } else {
         setSelectedViewRole(primaryRole);
       }
@@ -631,6 +634,7 @@ export default function Dashboard() {
                           key={role}
                           onClick={() => {
                             setSelectedViewRole(role);
+                            localStorage.setItem('talbiyah_view_role', role);
                             setShowRoleSwitcher(false);
                           }}
                           className={`w-full px-4 py-3 flex items-center space-x-3 transition ${

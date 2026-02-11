@@ -120,9 +120,13 @@ export default function AccountSettings() {
             .maybeSingle();
 
           if (teacherProfile) {
+            // For independent teachers, show independent_rate as their hourly rate
+            const displayRate = teacherProfile.teacher_type === 'independent' && teacherProfile.independent_rate
+              ? teacherProfile.independent_rate.toString()
+              : teacherProfile.hourly_rate?.toString() || '';
             setTeacherData({
               education_level: teacherProfile.education_level || '',
-              hourly_rate: teacherProfile.hourly_rate?.toString() || ''
+              hourly_rate: displayRate
             });
 
             setSelectedInterests(teacherProfile.islamic_teaching_interests || []);
@@ -339,14 +343,28 @@ export default function AccountSettings() {
         ? Math.round(parseFloat(teacherData.hourly_rate) * 100) / 100
         : null;
 
+      // Check if independent teacher to also update independent_rate
+      const { data: currentProfile } = await supabase
+        .from('teacher_profiles')
+        .select('teacher_type')
+        .eq('user_id', user.id)
+        .single();
+
+      const updateData: Record<string, any> = {
+        education_level: teacherData.education_level || null,
+        islamic_teaching_interests: selectedInterests,
+        hourly_rate: hourlyRateRounded,
+        video_intro_url: videoIntroUrl
+      };
+
+      // For independent teachers, sync independent_rate with hourly_rate
+      if (currentProfile?.teacher_type === 'independent') {
+        updateData.independent_rate = hourlyRateRounded;
+      }
+
       const { error: updateError } = await supabase
         .from('teacher_profiles')
-        .update({
-          education_level: teacherData.education_level || null,
-          islamic_teaching_interests: selectedInterests,
-          hourly_rate: hourlyRateRounded,
-          video_intro_url: videoIntroUrl
-        })
+        .update(updateData)
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;

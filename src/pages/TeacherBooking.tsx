@@ -12,6 +12,9 @@ interface Teacher {
   full_name: string;
   bio: string | null;
   hourly_rate: number;
+  teacher_type?: string;
+  independent_rate?: number;
+  student_hourly_price: number;
 }
 
 interface TimeSlot {
@@ -71,6 +74,8 @@ export default function TeacherBooking() {
           user_id,
           bio,
           hourly_rate,
+          teacher_type,
+          independent_rate,
           profiles!inner(full_name)
         `)
         .eq('id', id)
@@ -78,12 +83,18 @@ export default function TeacherBooking() {
 
       if (error) throw error;
 
+      const isIndependent = data.teacher_type === 'independent';
+      const independentRate = data.independent_rate ? parseFloat(data.independent_rate) : 0;
+
       setTeacher({
         id: data.id,
         user_id: data.user_id,
         full_name: data.profiles.full_name,
         bio: data.bio,
-        hourly_rate: data.hourly_rate
+        hourly_rate: data.hourly_rate,
+        teacher_type: data.teacher_type,
+        independent_rate: independentRate,
+        student_hourly_price: isIndependent ? independentRate : 15,
       });
     } catch (error) {
       console.error('Error loading teacher:', error);
@@ -358,8 +369,9 @@ export default function TeacherBooking() {
         // Remove from cart if already added
         await removeFromCart(existingCartItem.id);
       } else {
-        // Add to cart if not already there
-        const price = duration === 30 ? 7.50 : 15.00;
+        // Add to cart if not already there — use teacher's actual rate
+        const hourlyPrice = teacher.student_hourly_price;
+        const price = duration === 30 ? hourlyPrice / 2 : hourlyPrice;
 
         await addToCart({
           teacher_id: teacher.id,
@@ -446,9 +458,9 @@ export default function TeacherBooking() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{teacher.full_name}</h2>
                   <p className="text-gray-600 mb-4">{teacher.bio || 'Experienced teacher'}</p>
                   <div className="flex items-center space-x-4 text-sm">
-                    <span className="text-emerald-400 font-semibold">£7.50 / 30 min</span>
+                    <span className="text-emerald-400 font-semibold">£{(teacher.student_hourly_price / 2).toFixed(2)} / 30 min</span>
                     <span className="text-gray-500">•</span>
-                    <span className="text-emerald-400 font-semibold">£15.00 / 60 min</span>
+                    <span className="text-emerald-400 font-semibold">£{teacher.student_hourly_price.toFixed(2)} / 60 min</span>
                   </div>
                 </div>
               </div>
@@ -525,13 +537,13 @@ export default function TeacherBooking() {
                     <div className="text-center">
                       <div className="text-2xl font-bold mb-1">30</div>
                       <div className="text-sm">minutes</div>
-                      <div className="text-xs mt-2 opacity-75">£7.50</div>
+                      <div className="text-xs mt-2 opacity-75">£{teacher ? (teacher.student_hourly_price / 2).toFixed(2) : '7.50'}</div>
                     </div>
                   </button>
                   <button
                     onClick={() => setDuration(60)}
                     aria-pressed={duration === 60}
-                    aria-label="60 minute session, £15.00"
+                    aria-label={`60 minute session, £${teacher ? teacher.student_hourly_price.toFixed(2) : '15.00'}`}
                     className={`p-4 rounded-lg transition ${
                       duration === 60
                         ? 'bg-emerald-500 text-gray-900'
@@ -541,7 +553,7 @@ export default function TeacherBooking() {
                     <div className="text-center">
                       <div className="text-2xl font-bold mb-1">60</div>
                       <div className="text-sm">minutes</div>
-                      <div className="text-xs mt-2 opacity-75">£15.00</div>
+                      <div className="text-xs mt-2 opacity-75">£{teacher ? teacher.student_hourly_price.toFixed(2) : '15.00'}</div>
                     </div>
                   </button>
                 </div>

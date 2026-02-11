@@ -679,7 +679,7 @@ export default function BookSession() {
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">30 Minutes</p>
-                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '6.00' : '7.50'}</p>
+                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '6.00' : (selectedTeacher?.teacher_type === 'independent' && selectedTeacher?.independent_rate ? (selectedTeacher.independent_rate / 2).toFixed(2) : '7.50')}</p>
                       <p className="text-xs text-gray-400 mt-2">30-min slots</p>
                     </button>
 
@@ -693,7 +693,7 @@ export default function BookSession() {
                     >
                       <Clock className="w-6 h-6 mx-auto mb-2" />
                       <p className="text-base font-semibold">60 Minutes</p>
-                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '12.00' : '15.00'}</p>
+                      <p className="text-xl font-bold mt-1">£{isLegacyStudent ? '12.00' : (selectedTeacher?.teacher_type === 'independent' && selectedTeacher?.independent_rate ? selectedTeacher.independent_rate.toFixed(2) : '15.00')}</p>
                       <p className="text-xs text-gray-400 mt-2">Hourly slots</p>
                     </button>
                   </div>

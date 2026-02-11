@@ -1014,8 +1014,8 @@ export default function Checkout() {
                   <span>Payment Method</span>
                 </h2>
 
-                {/* Credit Balance Info */}
-                {creditBalance > 0 && (
+                {/* Credit Balance Info — credits only for platform teachers */}
+                {creditBalance > 0 && !isIndependentTeacher && (
                   <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -1031,8 +1031,8 @@ export default function Checkout() {
                 )}
 
                 <div className="space-y-3">
-                  {/* Credits Option */}
-                  {creditBalance > 0 && (
+                  {/* Credits Option — not available for independent teachers */}
+                  {creditBalance > 0 && !isIndependentTeacher && (
                     <button
                       onClick={() => setPaymentMethod('credits')}
                       disabled={!hasEnoughCredits}
