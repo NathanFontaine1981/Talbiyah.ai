@@ -87,7 +87,7 @@ serve(async (req) => {
     // Get user's current credit balance
     const { data: userCredits, error: creditsError } = await supabase
       .from('user_credits')
-      .select('balance')
+      .select('credits_remaining')
       .eq('user_id', user.id)
       .single();
 
@@ -100,7 +100,7 @@ serve(async (req) => {
 
     // Calculate refundable credits (user must have enough credits)
     const creditsToRefund = purchase.credits_added;
-    const currentBalance = userCredits?.balance || 0;
+    const currentBalance = userCredits?.credits_remaining || 0;
 
     if (currentBalance < creditsToRefund) {
       // Partial refund - user has used some credits
@@ -127,12 +127,20 @@ serve(async (req) => {
       });
 
       // Deduct credits
-      await supabase.rpc('deduct_user_credits', {
+      const { error: deductError } = await supabase.rpc('deduct_user_credits', {
         p_user_id: user.id,
         p_credits: refundableCredits,
         p_lesson_id: null,
         p_notes: `Partial refund: ${refundableCredits} credits (${usedCredits} were used)`
       });
+
+      if (deductError) {
+        console.error('Failed to deduct credits after partial refund:', deductError.message);
+        return new Response(
+          JSON.stringify({ error: 'Refund processed but credit deduction failed. Contact support.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Update purchase record
       await supabase
@@ -169,12 +177,20 @@ serve(async (req) => {
     });
 
     // Deduct all credits
-    await supabase.rpc('deduct_user_credits', {
+    const { error: deductError } = await supabase.rpc('deduct_user_credits', {
       p_user_id: user.id,
       p_credits: creditsToRefund,
       p_lesson_id: null,
       p_notes: `Full refund: ${creditsToRefund} credits`
     });
+
+    if (deductError) {
+      console.error('Failed to deduct credits after full refund:', deductError.message);
+      return new Response(
+        JSON.stringify({ error: 'Refund processed but credit deduction failed. Contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Update purchase record
     await supabase
@@ -200,9 +216,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error processing refund:', error);
+    console.error('Error processing refund:', error instanceof Error ? error.message : error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to process refund' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Failed to process refund' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

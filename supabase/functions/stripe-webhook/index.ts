@@ -450,6 +450,21 @@ serve(async (req) => {
           const teacherProfile = teacherProfileMap.get(bookingData.teacher_id);
           const isIndependentTeacher = teacherProfile?.teacher_type === 'independent';
 
+          // IDEMPOTENCY: Check if lesson already exists for this payment + learner + timeslot
+          const { data: existingLesson } = await supabaseClient
+            .from('lessons')
+            .select('id')
+            .eq('stripe_payment_intent_id', session.payment_intent)
+            .eq('learner_id', bookingData.learner_id)
+            .eq('teacher_id', bookingData.teacher_id)
+            .single();
+
+          if (existingLesson) {
+            console.log(`Lesson already exists for payment ${session.payment_intent}, learner ${bookingData.learner_id}, teacher ${bookingData.teacher_id} — skipping`);
+            createdLessons.push(existingLesson);
+            continue;
+          }
+
           // Create 100ms room
           let roomId = `room_${Date.now()}_${Math.random().toString(36).substring(7)}`
           let teacherRoomCode = null
@@ -522,18 +537,21 @@ serve(async (req) => {
           const scheduledTime = `${bookingData.date}T${bookingData.time}:00`
 
           // Calculate correct teacher rate and platform fee
+          // bookingData.price is the actual amount charged at checkout — always use as source of truth
           const durationHours = (bookingData.duration || 60) / 60;
-          let teacherRateAtBooking = bookingData.price;
+          let teacherRateAtBooking = bookingData.price / durationHours;
           let platformFee = 0;
           let totalCostPaid = bookingData.price;
 
           if (isIndependentTeacher) {
-            const independentRate = parseFloat(teacherProfile?.independent_rate) || bookingData.price / durationHours || 0;
-            teacherRateAtBooking = independentRate;
+            // Independent teachers: use the rate stored at booking time, no platform fee
+            teacherRateAtBooking = bookingData.independent_teacher_rate
+              ? bookingData.independent_teacher_rate / 100  // stored in pence
+              : bookingData.price / durationHours;
             platformFee = 0;
-            totalCostPaid = independentRate * durationHours;
+            totalCostPaid = bookingData.price;
           } else if (teacherProfile) {
-            // Look up tier rates
+            // Platform teachers: look up tier rates for teacher pay split
             const { data: tierData } = await supabaseClient
               .from('teacher_tiers')
               .select('teacher_hourly_rate, student_hourly_price')
@@ -544,7 +562,8 @@ serve(async (req) => {
               teacherRateAtBooking = parseFloat(tierData.teacher_hourly_rate) || 5;
               const studentPrice = parseFloat(tierData.student_hourly_price) || 15;
               platformFee = (studentPrice - teacherRateAtBooking) * durationHours;
-              totalCostPaid = studentPrice * durationHours;
+              // Always use the actual amount charged, not recalculated tier price
+              totalCostPaid = bookingData.price;
             }
           }
 
