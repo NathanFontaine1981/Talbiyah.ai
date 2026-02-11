@@ -567,8 +567,45 @@ export default function Checkout() {
         const insightsPrice = insightsAddonSelected && !isFirstInsightsLesson
           ? INSIGHTS_ADDON.pricePerLessonPence
           : 0;
+        const insightsTotal = insightsAddonSelected && !isFirstInsightsLesson
+          ? INSIGHTS_ADDON.pricePerLesson * cartCount
+          : 0;
+        const independentPayable = actualPayable + insightsTotal;
 
-        // Always charge lesson fee through Stripe, plus optional insights
+        // If 100% discount (promo/referral makes it free), skip Stripe
+        if (independentPayable <= 0) {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking-with-room`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authSession.access_token}`,
+              },
+              body: JSON.stringify({
+                cart_items: cartItems,
+                learner_id: resolvedLearnerId,
+                promo_code: promoCode,
+                promo_code_id: promoCodeId,
+                promo_discount: promoDiscount,
+                is_independent: true,
+                insights_addon: insightsAddonSelected,
+              })
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create booking');
+          }
+
+          await response.json();
+          await clearCart();
+          navigate('/dashboard?booking_success=true');
+          return;
+        }
+
+        // Charge lesson fee through Stripe, plus optional insights
         const response = await initiateBookingCheckout(
           bookings.map(b => ({
             ...b,

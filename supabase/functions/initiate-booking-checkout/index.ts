@@ -16,6 +16,7 @@ interface BookingRequest {
   date: string;
   time: string;
   subject: string;
+  subject_id?: string;
   duration?: number;
   price: number;
   use_free_session?: boolean;
@@ -163,8 +164,8 @@ serve(async (req) => {
       return sum + hours;
     }, 0);
 
-    // If parent has sufficient credits, use them
-    if (parentCredits && parentCredits.credits_remaining >= totalCreditsNeeded) {
+    // If parent has sufficient credits, use them (not for independent teacher bookings)
+    if (!isIndependentBooking && parentCredits && parentCredits.credits_remaining >= totalCreditsNeeded) {
       try {
         const { data: newBalance, error: deductError } = await supabaseClient
           .rpc('deduct_user_credits', {
@@ -233,7 +234,7 @@ serve(async (req) => {
           return {
             learner_id: booking.learner_id,
             teacher_id: booking.teacher_id,
-            subject_id: booking.subject,
+            subject_id: booking.subject_id || booking.subject,
             scheduled_time: scheduledTime,
             duration_minutes: booking.duration || 60,
             status: 'booked',
@@ -529,7 +530,6 @@ serve(async (req) => {
       'line_items[0][price_data][product_data][description]': sessionDescription,
       'line_items[0][quantity]': '1',
       mode: 'payment',
-      allow_promotion_codes: 'true',
       success_url: `${req.headers.get('origin') || 'https://talbiyah.ai'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin') || 'https://talbiyah.ai'}/cart`,
       'metadata[pending_booking_id]': pendingBooking.id,
