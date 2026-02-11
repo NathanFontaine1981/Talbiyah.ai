@@ -40,6 +40,9 @@ export function QuickPricing() {
             <br />• 1 khutbah = 20 tokens (£1.00)
             <br />• 500 tokens = 50 duas or 25 khutbahs
           </p>
+          <p className="text-xs text-violet-600 dark:text-violet-400 mt-2 font-medium">
+            One-time purchase — tokens never expire.
+          </p>
         </div>
       </div>
 
@@ -78,6 +81,9 @@ export function QuickPricing() {
             <br />• 1 hour live lesson with qualified teacher
             <br />• AI-generated study notes
             <br />• Lesson recording for review
+          </p>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-medium">
+            No subscription — buy credits when you need them. Credits never expire.
           </p>
         </div>
       </div>

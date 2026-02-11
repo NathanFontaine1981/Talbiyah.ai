@@ -92,8 +92,11 @@ export default function Features() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Talbiyah.ai" className="h-8 w-auto" />
-              <span className="font-serif text-xl font-semibold text-gray-900 dark:text-white">Talbiyah.ai</span>
+              <img src="/images/logo.png" alt="Talbiyah.ai" className="h-9 w-auto" />
+              <span className="text-xl font-bold">
+                <span className="text-gray-900 dark:text-white">Talbiyah</span>
+                <span className="text-emerald-500">.ai</span>
+              </span>
             </Link>
 
             {/* Desktop Nav */}
@@ -105,7 +108,7 @@ export default function Features() {
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/login" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">Sign In</Link>
+              <Link to="/signup" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">Sign In</Link>
               <Link
                 to="/signup"
                 className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-medium transition shadow-lg shadow-emerald-500/25"
@@ -134,7 +137,7 @@ export default function Features() {
               <span className="block text-emerald-600 dark:text-emerald-400 font-semibold">Features</span>
               <Link to="/explore" className="block text-gray-600 dark:text-gray-300">Exploring Islam</Link>
               <Link to="/teachers" className="block text-gray-600 dark:text-gray-300">Teachers</Link>
-              <Link to="/login" className="block text-gray-600 dark:text-gray-300">Sign In</Link>
+              <Link to="/signup" className="block text-gray-600 dark:text-gray-300">Sign In</Link>
               <Link
                 to="/signup"
                 className="block w-full text-center px-6 py-2.5 bg-emerald-500 text-white rounded-full font-medium"
@@ -270,11 +273,41 @@ export default function Features() {
         >
           <div className="max-w-4xl mx-auto">
             <SectionHeader
-              badge="Transparent Pricing"
+              badge="Pay As You Go"
               badgeColor="emerald"
-              title="FREE vs Premium — At a Glance"
-              subtitle="See exactly what's included free and what's premium"
+              title="No Subscriptions — Pay Only for Live Lessons"
+              subtitle="All courses, tools, and games are completely free. You only purchase credits when you want a live 1-on-1 lesson with a teacher."
             />
+
+            {/* How it works */}
+            <div className="mt-8 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 text-center">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                How it works
+              </p>
+              <div className="grid sm:grid-cols-3 gap-6 text-sm text-gray-600 dark:text-gray-400">
+                <div>
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <BookOpen className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <strong className="text-gray-900 dark:text-white block mb-1">Learn for free</strong>
+                  <p>Courses, games, duas, and progress tracking — all free, forever</p>
+                </div>
+                <div>
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Video className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <strong className="text-gray-900 dark:text-white block mb-1">Book a live lesson</strong>
+                  <p>Buy lesson credits only when you're ready for 1-on-1 teaching</p>
+                </div>
+                <div>
+                  <div className="w-10 h-10 bg-violet-100 dark:bg-violet-800/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <strong className="text-gray-900 dark:text-white block mb-1">Optional AI extras</strong>
+                  <p>Tokens for audio downloads and extra khutbahs — completely optional</p>
+                </div>
+              </div>
+            </div>
 
             {/* Comparison Table */}
             <div className="mt-12 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -284,7 +317,7 @@ export default function Features() {
             {/* Quick Pricing Summary */}
             <div className="mt-12">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white text-center mb-6">
-                Premium Pricing (Only When You Need It)
+                Lesson Credits & AI Tokens — Buy As You Go
               </h3>
               <QuickPricing />
             </div>
@@ -292,7 +325,7 @@ export default function Features() {
             {/* Guarantee */}
             <div className="mt-8 flex items-center justify-center space-x-2 text-emerald-600 dark:text-emerald-400">
               <Shield className="w-5 h-5" />
-              <span className="text-sm font-medium">Cancel anytime • No hidden fees • 7-day refund on credits</span>
+              <span className="text-sm font-medium">No subscriptions • No hidden fees • 14-day refund on unused credits</span>
             </div>
 
             {/* CTA */}
@@ -1310,8 +1343,11 @@ export default function Features() {
         <div className="max-w-7xl mx-auto grid md:grid-cols-5 gap-8">
           <div className="md:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/logo.png" alt="Talbiyah.ai" className="h-8 w-auto" />
-              <span className="font-serif text-xl font-semibold text-white">Talbiyah.ai</span>
+              <img src="/images/logo.png" alt="Talbiyah.ai" className="h-9 w-auto" />
+              <span className="text-xl font-bold">
+                <span className="text-white">Talbiyah</span>
+                <span className="text-emerald-500">.ai</span>
+              </span>
             </div>
             <p className="text-sm">At Your Service — AI-powered Islamic learning for the modern Muslim.</p>
             {/* Trust Badges */}
