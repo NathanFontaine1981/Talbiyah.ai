@@ -85,10 +85,6 @@ const ReferralLeaderboard = lazy(() => import('./pages/ReferralLeaderboard'));
 const RescheduleLesson = lazy(() => import('./pages/RescheduleLesson'));
 const MyClasses = lazy(() => import('./pages/MyClasses'));
 const MissedLessons = lazy(() => import('./pages/MissedLessons'));
-const DashboardPreview = lazy(() => import('./pages/DashboardPreview'));
-const DashboardPreview2 = lazy(() => import('./pages/DashboardPreview2'));
-const DashboardPreview3 = lazy(() => import('./pages/DashboardPreview3'));
-const DashboardPreview4 = lazy(() => import('./pages/DashboardPreview4'));
 const DashboardPremium = lazy(() => import('./pages/DashboardPremium'));
 const TierDiagnostic = lazy(() => import('./pages/TierDiagnostic'));
 const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceReferenceAbout'));
@@ -277,38 +273,6 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard-preview"
-          element={
-            <ProtectedRoute>
-              <DashboardPreview />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard-preview-2"
-          element={
-            <ProtectedRoute>
-              <DashboardPreview2 />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard-preview-3"
-          element={
-            <ProtectedRoute>
-              <DashboardPreview3 />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard-preview-4"
-          element={
-            <ProtectedRoute>
-              <DashboardPreview4 />
             </ProtectedRoute>
           }
         />
