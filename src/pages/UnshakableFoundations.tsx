@@ -67,6 +67,7 @@ export default function UnshakableFoundations() {
   // Categories and videos from DB
   const [categories, setCategories] = useState<FoundationCategory[]>(FOUNDATION_CATEGORIES);
   const [categoryVideos, setCategoryVideos] = useState<FoundationVideo[]>([]);
+  const [allVideos, setAllVideos] = useState<FoundationVideo[]>([]);
 
   // Load user and progress on mount
   useEffect(() => {
@@ -146,6 +147,31 @@ export default function UnshakableFoundations() {
           gradient: FOUNDATION_CATEGORIES.find(fc => fc.slug === c.slug)?.gradient || 'from-gray-500 to-gray-600'
         }));
         setCategories(mappedCategories);
+
+        // Load ALL videos upfront for progress tracking on the pillars grid
+        const categoryIds = mappedCategories.map(c => c.id).filter(Boolean);
+        if (categoryIds.length > 0) {
+          const { data: allVids } = await supabase
+            .from('foundation_videos')
+            .select('*')
+            .in('category_id', categoryIds)
+            .eq('is_active', true)
+            .order('order_index');
+
+          if (allVids) {
+            setAllVideos(allVids.map(v => ({
+              id: v.id,
+              categoryId: v.category_id,
+              title: v.title,
+              description: v.description || '',
+              youtubeUrl: v.youtube_url || '',
+              duration: v.duration || '',
+              orderIndex: v.order_index,
+              isActive: v.is_active,
+              hasExam: v.has_exam
+            })));
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -295,8 +321,9 @@ export default function UnshakableFoundations() {
       setSelectedCategory(null);
       setSearchParams({});
     } else if (viewMode === 'categories') {
-      // From main categories view, go back to previous page (landing or dashboard)
-      navigate(-1);
+      // From main categories view, go back to intro/how it works
+      setShowIntro(true);
+      setViewMode('intro');
     } else {
       navigate('/new-muslim');
     }
@@ -332,12 +359,12 @@ export default function UnshakableFoundations() {
     return localProgress.watchedVideos.includes(videoId);
   }
 
-  // Get category progress
+  // Get category progress (uses allVideos for pillar grid, falls back to categoryVideos for detail view)
   function getCategoryProgress(categorySlug: string): { watched: number; passed: number; total: number } {
     const categoryData = categories.find(c => c.slug === categorySlug);
     if (!categoryData?.id) return { watched: 0, passed: 0, total: 0 };
 
-    const videos = categoryVideos.filter(v => v.categoryId === categoryData.id);
+    const videos = allVideos.filter(v => v.categoryId === categoryData.id);
     const watched = videos.filter(v => isVideoWatched(v.id)).length;
     const passed = videos.filter(v => isVideoCompleted(v.id)).length;
 

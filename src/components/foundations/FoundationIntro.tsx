@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { BookOpen, Shield, Star, ArrowRight, CheckCircle, Play, Trophy, GraduationCap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, ArrowRight, ArrowLeft, CheckCircle, Play, Trophy, GraduationCap } from 'lucide-react';
 
 interface FoundationIntroProps {
   onComplete: () => void;
@@ -16,6 +17,7 @@ const pillars = [
 ];
 
 export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
+  const navigate = useNavigate();
   const features = [
     {
       icon: Play,
@@ -44,6 +46,17 @@ export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-16 relative">
+        {/* Back Button */}
+        <motion.button
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors mb-8 group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </motion.button>
+
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

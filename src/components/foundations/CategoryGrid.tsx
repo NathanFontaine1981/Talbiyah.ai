@@ -178,7 +178,7 @@ export default function CategoryGrid({
       if (pillar.slug === 'prophets') return c.slug === 'lives-of-prophets';
       if (pillar.slug === 'angels') return c.slug === 'angels-series';
       if (pillar.slug === 'hereafter') return c.slug === 'hereafter-series';
-      if (pillar.slug === 'history') return c.slug === 'history-of-islam';
+      if (pillar.slug === 'history') return ['history-of-islam', 'umar-series'].includes(c.slug);
       return false;
     });
 
