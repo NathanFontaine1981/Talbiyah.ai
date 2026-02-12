@@ -116,6 +116,11 @@ export default function CategoryGrid({
     }
   }
 
+  // Cross-referenced categories that should appear under multiple pillars
+  const crossReferencedCategories: Record<string, string[]> = {
+    'muhammad': ['umar-series'] // Umar Series also relevant to Muhammad ﷺ
+  };
+
   async function handlePillarSelect(pillar: Pillar) {
     setSelectedPillar(pillar);
 
@@ -127,22 +132,39 @@ export default function CategoryGrid({
       .eq('is_active', true)
       .order('order_index');
 
-    if (cats) {
-      const mappedCats = cats.map(c => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.name,
-        arabicName: c.arabic_name || '',
-        description: c.description || '',
-        icon: c.icon || 'BookOpen',
-        orderIndex: c.order_index,
-        isActive: c.is_active,
-        isComingSoon: c.is_coming_soon,
-        color: pillarColors[pillar.slug]?.text.replace('text-', '') || 'gray',
-        gradient: pillarColors[pillar.slug]?.gradient || 'from-gray-500 to-gray-600'
-      }));
-      setPillarCategories(mappedCats);
+    let allCats = cats || [];
+
+    // Load cross-referenced categories for this pillar
+    const crossRefSlugs = crossReferencedCategories[pillar.slug];
+    if (crossRefSlugs && crossRefSlugs.length > 0) {
+      const { data: extraCats } = await supabase
+        .from('foundation_categories')
+        .select('*')
+        .in('slug', crossRefSlugs)
+        .eq('is_active', true);
+
+      if (extraCats) {
+        // Avoid duplicates
+        const existingSlugs = new Set(allCats.map(c => c.slug));
+        const newCats = extraCats.filter(c => !existingSlugs.has(c.slug));
+        allCats = [...allCats, ...newCats];
+      }
     }
+
+    const mappedCats = allCats.map(c => ({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      arabicName: c.arabic_name || '',
+      description: c.description || '',
+      icon: c.icon || 'BookOpen',
+      orderIndex: c.order_index,
+      isActive: c.is_active,
+      isComingSoon: c.is_coming_soon,
+      color: pillarColors[pillar.slug]?.text.replace('text-', '') || 'gray',
+      gradient: pillarColors[pillar.slug]?.gradient || 'from-gray-500 to-gray-600'
+    }));
+    setPillarCategories(mappedCats);
 
     // Load external resources for this pillar
     const { data: resources } = await supabase
@@ -174,7 +196,7 @@ export default function CategoryGrid({
 
       // Known mappings
       if (pillar.slug === 'allah') return ['tawheed', 'names-of-allah'].includes(c.slug);
-      if (pillar.slug === 'muhammad') return ['seerah-meccan', 'seerah-medinan'].includes(c.slug);
+      if (pillar.slug === 'muhammad') return ['seerah-meccan', 'seerah-medinan', 'umar-series'].includes(c.slug);
       if (pillar.slug === 'prophets') return c.slug === 'lives-of-prophets';
       if (pillar.slug === 'angels') return c.slug === 'angels-series';
       if (pillar.slug === 'hereafter') return c.slug === 'hereafter-series';

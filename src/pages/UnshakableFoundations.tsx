@@ -164,11 +164,14 @@ export default function UnshakableFoundations() {
               categoryId: v.category_id,
               title: v.title,
               description: v.description || '',
-              youtubeUrl: v.youtube_url || '',
-              duration: v.duration || '',
+              videoUrl: v.video_url || '',
+              videoId: v.video_id || '',
+              thumbnailUrl: v.thumbnail_url || '',
+              durationMinutes: v.duration_minutes,
+              transcript: v.transcript,
+              transcriptSource: v.transcript_source,
               orderIndex: v.order_index,
-              isActive: v.is_active,
-              hasExam: v.has_exam
+              isActive: v.is_active
             })));
           }
         }
