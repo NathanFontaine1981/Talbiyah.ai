@@ -91,7 +91,7 @@ export function CTABanner() {
           className="px-6 py-3 bg-white text-emerald-700 rounded-full font-semibold hover:bg-gray-100 transition whitespace-nowrap flex items-center space-x-2"
         >
           <Gift className="w-4 h-4" />
-          <span>Start Free</span>
+          <span>Sign Up</span>
         </Link>
       </div>
     </div>

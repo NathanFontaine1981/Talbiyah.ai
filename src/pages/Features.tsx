@@ -113,7 +113,7 @@ export default function Features() {
                 to="/signup"
                 className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-medium transition shadow-lg shadow-emerald-500/25"
               >
-                Start Free
+                Sign Up
               </Link>
             </div>
 
@@ -142,7 +142,7 @@ export default function Features() {
                 to="/signup"
                 className="block w-full text-center px-6 py-2.5 bg-emerald-500 text-white rounded-full font-medium"
               >
-                Start Free
+                Sign Up
               </Link>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function Features() {
                 className="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-lg font-bold transition-all shadow-lg hover:shadow-emerald-500/25 flex items-center space-x-2"
               >
                 <Gift className="w-5 h-5" />
-                <span>Start Free — No Card Required</span>
+                <span>Sign Up — No Card Required</span>
               </Link>
               <button
                 onClick={() => scrollToSection('comparison')}
@@ -335,7 +335,7 @@ export default function Features() {
                 className="inline-flex items-center space-x-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition shadow-lg"
               >
                 <Gift className="w-5 h-5" />
-                <span>Start Free Today</span>
+                <span>Sign Up Today</span>
               </Link>
               <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No credit card required</p>
             </div>
@@ -1306,7 +1306,7 @@ export default function Features() {
                 className="px-10 py-5 bg-white text-emerald-700 rounded-full text-lg font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center space-x-2"
               >
                 <Gift className="w-5 h-5" />
-                <span>Start Free — No Card Required</span>
+                <span>Sign Up — No Card Required</span>
               </Link>
               <Link
                 to="/explore"

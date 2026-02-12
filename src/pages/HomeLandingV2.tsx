@@ -166,7 +166,7 @@ export default function HomeLandingV2() {
                   onClick={() => navigate('/signup')}
                   className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition"
                 >
-                  Start Free
+                  Sign Up
                 </button>
               </>
             )}
@@ -221,7 +221,7 @@ export default function HomeLandingV2() {
                       onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
                       className="block w-full px-4 py-3 bg-emerald-500 text-white rounded-full font-semibold text-center"
                     >
-                      Start Free
+                      Sign Up
                     </button>
                   </>
                 )}
