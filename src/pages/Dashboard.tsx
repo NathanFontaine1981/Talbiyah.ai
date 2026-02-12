@@ -52,7 +52,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import CompleteProfileModal from '../components/CompleteProfileModal';
-import { DashboardSidebar } from '../components/dashboard';
+import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
 
 interface UserProfile {
   full_name: string | null;
@@ -1106,6 +1106,16 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Bottom spacer for mobile nav */}
+      <div className="h-16 lg:hidden" />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        selectedViewRole={selectedViewRole}
+        unreadMessageCount={unreadMessageCount}
+        onMenuOpen={() => setMobileMenuOpen(true)}
+      />
 
       {/* Profile Completion Modal - shows on each login until profile is complete */}
       <CompleteProfileModal />

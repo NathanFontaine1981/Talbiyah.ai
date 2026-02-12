@@ -26,4 +26,9 @@
     -webkit-font-smoothing: antialiased;
     line-height: 1.8;
   }
+
+  /* Safe area for notched phones (iPhone X+) */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

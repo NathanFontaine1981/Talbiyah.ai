@@ -227,7 +227,7 @@ export default function CompleteProfileModal() {
                 <Users className="w-4 h-4 text-gray-400" />
                 Gender
               </label>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {[
                   { value: 'male', label: 'Male' },
                   { value: 'female', label: 'Female' },
@@ -237,7 +237,7 @@ export default function CompleteProfileModal() {
                     key={opt.value}
                     type="button"
                     onClick={() => setForm({ ...form, gender: opt.value })}
-                    className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition ${
+                    className={`flex-1 min-w-[80px] py-2.5 px-3 rounded-lg border text-sm font-medium transition ${
                       form.gender === opt.value
                         ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                         : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400'

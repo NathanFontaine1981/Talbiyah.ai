@@ -651,7 +651,7 @@ export default function SignUp() {
                   </div>
                   {/* Dropdown */}
                   {showCountryDropdown && filteredCountries.length > 0 && (
-                    <div className="absolute z-50 mt-1 w-72 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="absolute z-50 mt-1 w-full sm:w-72 max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
                       {filteredCountries.slice(0, 10).map((c) => (
                         <button
                           key={c.code}
