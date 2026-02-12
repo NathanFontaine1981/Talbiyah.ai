@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function AuthCallback() {
@@ -29,13 +30,20 @@ export default function AuthCallback() {
         if (error) throw error;
 
         setStatus('success');
-        setMessage('Email verified successfully! Redirecting...');
+        setMessage('Email verified successfully!');
 
         // Check user role to determine redirect
         const { data: { user } } = await supabase.auth.getUser();
         const userRole = user?.user_metadata?.selected_role;
+        const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
-        // Wait 2 seconds before redirecting
+        // Show persistent toast that stays after redirect
+        toast.success(`Welcome${userName ? `, ${userName}` : ''}! Your email has been verified.`, {
+          description: 'Your account is ready to use.',
+          duration: 6000,
+        });
+
+        // Wait 3 seconds so user sees the confirmation
         setTimeout(() => {
           if (userRole === 'parent') {
             // Check if parent has completed onboarding (has children)
@@ -55,7 +63,7 @@ export default function AuthCallback() {
           } else {
             navigate('/dashboard');
           }
-        }, 2000);
+        }, 3000);
       } else if (type === 'recovery') {
         // Password reset
         navigate('/reset-password');
@@ -98,11 +106,12 @@ export default function AuthCallback() {
 
         {status === 'success' && (
           <>
-            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-12 h-12 text-emerald-400" />
+            <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+              <CheckCircle className="w-14 h-14 text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Verified!</h2>
-            <p className="text-gray-500">{message}</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Email Verified!</h2>
+            <p className="text-lg text-gray-600 mb-1">{message}</p>
+            <p className="text-sm text-gray-400">Redirecting to your dashboard...</p>
             <div className="mt-6">
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div className="bg-emerald-500 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
