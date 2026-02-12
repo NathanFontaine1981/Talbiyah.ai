@@ -92,6 +92,18 @@ serve(async (req) => {
 
       accountId = account.id
 
+      // Set monthly payout schedule (Stripe pays teacher's bank on the 1st)
+      await stripe.accounts.update(accountId, {
+        settings: {
+          payouts: {
+            schedule: {
+              interval: 'monthly',
+              monthly_anchor: 1,
+            },
+          },
+        },
+      })
+
       // Save account ID to database
       await supabaseClient
         .from('teacher_payment_settings')

@@ -80,6 +80,7 @@ serve(async (req) => {
     let event: Stripe.Event
 
     // Verify webhook signature if secret is configured
+    const connectWebhookSecret = Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET')
     const signature = req.headers.get('stripe-signature')
 
     // SECURITY: Always require webhook signature verification in production
@@ -99,8 +100,20 @@ serve(async (req) => {
       )
     }
 
-    // Verify webhook signature
-    event = await verifyStripeSignature(body, signature, webhookSecret)
+    // Try platform webhook secret first, then Connect webhook secret
+    try {
+      event = await verifyStripeSignature(body, signature, webhookSecret)
+    } catch (platformErr) {
+      if (connectWebhookSecret) {
+        try {
+          event = await verifyStripeSignature(body, signature, connectWebhookSecret)
+        } catch (connectErr) {
+          throw platformErr // Re-throw original error
+        }
+      } else {
+        throw platformErr
+      }
+    }
 
     // IDEMPOTENCY CHECK: Prevent duplicate event processing
     // Check if this event has already been processed
@@ -724,6 +737,114 @@ serve(async (req) => {
           )
         }
 
+        break
+      }
+
+      case 'transfer.created': {
+        // Confirmation that transfer to connected account succeeded
+        const transfer = event.data.object
+        const transferTeacherId = transfer.metadata?.teacher_id
+        const transferPayoutId = transfer.metadata?.payout_id
+
+        if (transferTeacherId && transferPayoutId) {
+          // Update payout record with the transfer ID
+          const { error: updateError } = await supabaseClient
+            .from('teacher_payouts')
+            .update({
+              external_payout_id: transfer.id,
+            })
+            .eq('id', transferPayoutId)
+
+          if (updateError) {
+            console.error('Failed to update payout with transfer ID:', updateError.message)
+          } else {
+            console.log(`Transfer ${transfer.id} confirmed for payout ${transferPayoutId} (teacher: ${transferTeacherId})`)
+          }
+        }
+        break
+      }
+
+      case 'transfer.reversed': {
+        // Transfer was reversed (e.g., insufficient platform balance)
+        const reversedTransfer = event.data.object
+        const reversalTransferId = reversedTransfer.id
+
+        // Find the payout by external_payout_id
+        const { data: reversedPayout, error: findError } = await supabaseClient
+          .from('teacher_payouts')
+          .select('id, teacher_id')
+          .eq('external_payout_id', reversalTransferId)
+          .single()
+
+        if (findError || !reversedPayout) {
+          console.error('Could not find payout for reversed transfer:', reversalTransferId)
+          break
+        }
+
+        // Mark payout as failed
+        await supabaseClient
+          .from('teacher_payouts')
+          .update({
+            status: 'failed',
+            failed_at: new Date().toISOString(),
+            failure_reason: `Transfer reversed: ${reversedTransfer.reversed_at ? 'reversed by Stripe' : 'unknown reason'}`,
+          })
+          .eq('id', reversedPayout.id)
+
+        // Revert linked earnings back to 'cleared'
+        await supabaseClient
+          .from('teacher_earnings')
+          .update({
+            status: 'cleared',
+            payout_id: null,
+            paid_at: null,
+          })
+          .eq('payout_id', reversedPayout.id)
+
+        // Send failure notification
+        try {
+          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-payout-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              payout_id: reversedPayout.id,
+              teacher_id: reversedPayout.teacher_id,
+              type: 'failed',
+            }),
+          })
+        } catch (emailErr) {
+          console.error('Failed to send reversal notification:', emailErr.message)
+        }
+
+        console.log(`Transfer ${reversalTransferId} reversed — payout ${reversedPayout.id} marked failed, earnings reverted to cleared`)
+        break
+      }
+
+      case 'account.updated': {
+        // Connected account status changed
+        const account = event.data.object
+        const stripeAccountId = account.id
+        const chargesEnabled = account.charges_enabled
+        const payoutsEnabled = account.payouts_enabled
+
+        // Update onboarding status based on account capabilities
+        const onboardingCompleted = chargesEnabled === true && payoutsEnabled === true
+
+        const { error: accountUpdateError } = await supabaseClient
+          .from('teacher_payment_settings')
+          .update({
+            stripe_onboarding_completed: onboardingCompleted,
+          })
+          .eq('stripe_account_id', stripeAccountId)
+
+        if (accountUpdateError) {
+          console.error('Failed to update teacher payment settings for account:', stripeAccountId, accountUpdateError.message)
+        } else {
+          console.log(`Account ${stripeAccountId} updated: charges_enabled=${chargesEnabled}, payouts_enabled=${payoutsEnabled}, onboarding_completed=${onboardingCompleted}`)
+        }
         break
       }
 

@@ -372,7 +372,7 @@ export default function SignUp() {
         // Check if email confirmation is required (user not confirmed yet)
         if (!data.user.email_confirmed_at) {
           // Show toast before redirecting
-          toast.success('Account created! Check your email for the verification code.', {
+          toast.success('Account created! Check your email for the verification link.', {
             description: 'Be sure to check your spam/junk folder too.',
             duration: 5000
           });
