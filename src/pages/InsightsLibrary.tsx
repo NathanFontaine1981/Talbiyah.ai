@@ -528,7 +528,7 @@ export default function InsightsLibrary() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Talbiyah Insights Library</h1>
-                <p className="text-xs text-gray-500">Weekly Khutba Study Notes</p>
+                <p className="text-xs text-gray-500">Weekly Khutbah Study Notes</p>
               </div>
             </div>
 
@@ -557,10 +557,10 @@ export default function InsightsLibrary() {
         {/* Hero */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Explore Khutba Insights
+            Explore Khutbah Insights
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Access comprehensive study materials from weekly khutbas. Each insight includes
+            Access comprehensive study materials from weekly khutbahs. Each insight includes
             Quranic vocabulary, hadith, quizzes, homework, and family discussion guides.
           </p>
         </div>
@@ -641,7 +641,7 @@ export default function InsightsLibrary() {
             <p className="text-gray-500">
               {searchQuery || filterSpeaker
                 ? 'Try adjusting your search or filters.'
-                : 'Check back soon for new khutba insights.'}
+                : 'Check back soon for new khutbah insights.'}
             </p>
           </div>
         )}
@@ -788,7 +788,7 @@ export default function InsightsLibrary() {
               {/* 1. Full Khutba Summary */}
               {selectedInsight.insights?.cleaned_transcript && (
                 <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Full Khutba Summary</h3>
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Full Khutbah Summary</h3>
                   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
                     <p className="text-gray-700 whitespace-pre-line">
                       {selectedInsight.insights.cleaned_transcript}

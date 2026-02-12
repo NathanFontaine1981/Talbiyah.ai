@@ -1002,7 +1002,7 @@ export async function generateTalbiyahInsightsPDF(data: TalbiyahInsightsData): P
   doc.text('TALBIYAH INSIGHTS', margin, 15);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Khutba Study Notes', margin, 22);
+  doc.text('Khutbah Study Notes', margin, 22);
 
   // Title on right
   doc.setFontSize(11);
@@ -1031,7 +1031,7 @@ export async function generateTalbiyahInsightsPDF(data: TalbiyahInsightsData): P
 
   // 1. Full Khutba Summary
   if (data.cleaned_transcript) {
-    drawSectionHeader('Full Khutba Summary', EMERALD);
+    drawSectionHeader('Full Khutbah Summary', EMERALD);
     const paragraphs = data.cleaned_transcript.split('\n\n').filter(p => p.trim());
     paragraphs.forEach(para => {
       drawParagraph(para.trim());
