@@ -43,13 +43,16 @@ type NotificationType =
   | "student_booking_confirmation"
   | "admin_new_signup"
   | "lesson_insight_ready"
-  | "admin_notification";
+  | "admin_notification"
+  | "custom";
 
 interface NotificationPayload {
   type: NotificationType;
   recipient_email: string;
   recipient_name: string;
   data: any;
+  subject?: string;
+  html?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -163,6 +166,12 @@ Deno.serve(async (req: Request) => {
         break;
       case "admin_notification":
         emailContent = getAdminNotificationEmail(payload);
+        break;
+      case "custom":
+        if (!payload.subject || !payload.html) {
+          throw new Error("Custom email type requires subject and html fields");
+        }
+        emailContent = { subject: payload.subject, html: payload.html };
         break;
       default:
         throw new Error(`Unknown notification type: ${payload.type}`);
