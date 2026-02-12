@@ -27,6 +27,7 @@ import {
   CTABanner,
   TeacherPreviewCard,
 } from '../components/features';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 
 // Feature category definitions - reordered to lead with free content
 const featureCategories = [
@@ -91,13 +92,7 @@ export default function Features() {
       <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-50 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <img src="/images/logo.png" alt="Talbiyah.ai" className="h-9 w-auto" />
-              <span className="text-xl font-bold">
-                <span className="text-gray-900 dark:text-white">Talbiyah</span>
-                <span className="text-emerald-500">.ai</span>
-              </span>
-            </Link>
+            <TalbiyahLogo linkTo="/" />
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-8">
@@ -1342,13 +1337,7 @@ export default function Features() {
       <footer className="bg-gray-900 text-gray-400 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto grid md:grid-cols-5 gap-8">
           <div className="md:col-span-1">
-            <div className="flex items-center space-x-2 mb-4">
-              <img src="/images/logo.png" alt="Talbiyah.ai" className="h-9 w-auto" />
-              <span className="text-xl font-bold">
-                <span className="text-white">Talbiyah</span>
-                <span className="text-emerald-500">.ai</span>
-              </span>
-            </div>
+            <TalbiyahLogo dark linkTo={null} className="mb-4" />
             <p className="text-sm">At Your Service — AI-powered Islamic learning for the modern Muslim.</p>
             {/* Trust Badges */}
             <div className="flex items-center space-x-3 mt-4">

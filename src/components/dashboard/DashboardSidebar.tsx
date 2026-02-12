@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  BookOpen,
   User as UserIcon,
   LogOut,
   LayoutDashboard,
@@ -33,6 +32,7 @@ import {
   MessageCircle,
   HelpCircle,
 } from 'lucide-react';
+import TalbiyahLogo from '../TalbiyahLogo';
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -173,25 +173,7 @@ export default function DashboardSidebar({
     >
       {/* Logo Header */}
       <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <button
-          onClick={() => {
-            navigate('/');
-            setMobileMenuOpen(false);
-          }}
-          className="flex items-center space-x-3 group flex-1"
-        >
-          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-            <span className="text-white font-bold text-lg">T</span>
-          </div>
-          {!sidebarCollapsed && (
-            <div className="overflow-hidden">
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition whitespace-nowrap">
-                Talbiyah<span className="text-emerald-500">.ai</span>
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Islamic Learning</p>
-            </div>
-          )}
-        </button>
+        <TalbiyahLogo size={sidebarCollapsed ? 'sm' : 'md'} showText={!sidebarCollapsed} linkTo="/dashboard" />
         {/* Mobile close button */}
         <button
           onClick={() => setMobileMenuOpen(false)}

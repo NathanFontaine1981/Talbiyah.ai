@@ -9,33 +9,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { getDashboardRoute } from '../lib/authHelpers';
-
-// Custom Talbiyah Logo Component
-const TalbiyahLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
-  <svg viewBox="0 0 40 40" className={className} fill="none">
-    <path
-      d="M20 4C11.16 4 4 11.16 4 20s7.16 16 16 16c1.48 0 2.92-.2 4.28-.58-5.88-1.86-10.14-7.32-10.14-13.78s4.26-11.92 10.14-13.78C22.92 4.2 21.48 4 20 4z"
-      fill="url(#gradient1)"
-    />
-    <path
-      d="M22 14v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V14c0-1.1-.9-2-2-2H24c-1.1 0-2 .9-2 2z"
-      fill="url(#gradient2)"
-      opacity="0.9"
-    />
-    <path d="M27 12v16" stroke="#047857" strokeWidth="1.5"/>
-    <path d="M29 16h4M29 19h4M29 22h3" stroke="#047857" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
-    <defs>
-      <linearGradient id="gradient1" x1="4" y1="4" x2="24" y2="36" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#10b981"/>
-        <stop offset="1" stopColor="#047857"/>
-      </linearGradient>
-      <linearGradient id="gradient2" x1="22" y1="12" x2="36" y2="28" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#fbbf24"/>
-        <stop offset="1" stopColor="#f59e0b"/>
-      </linearGradient>
-    </defs>
-  </svg>
-);
+import TalbiyahLogo from '../components/TalbiyahLogo';
 
 export default function HomeLandingV2() {
   const navigate = useNavigate();
@@ -112,13 +86,7 @@ export default function HomeLandingV2() {
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm z-50 border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-90 transition">
-            <img src="/images/logo.png" alt="Talbiyah.ai" className="h-9 w-auto" />
-            <span className="text-xl font-bold">
-              <span className="text-gray-900 dark:text-white">Talbiyah</span>
-              <span className="text-emerald-500">.ai</span>
-            </span>
-          </button>
+          <TalbiyahLogo linkTo="/" />
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1197,13 +1165,7 @@ export default function HomeLandingV2() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
-                <TalbiyahLogo className="w-9 h-9" />
-                <span className="text-xl font-bold">
-                  <span className="text-gray-900">Talbiyah</span>
-                  <span className="text-emerald-500">.ai</span>
-                </span>
-              </div>
+              <TalbiyahLogo linkTo={null} className="mb-4" />
               <p className="text-sm text-gray-500">
                 Your complete Islamic learning hub.
               </p>
@@ -1259,7 +1221,9 @@ export default function HomeLandingV2() {
             </button>
 
             <div className="text-center mb-6">
-              <TalbiyahLogo className="w-12 h-12 mx-auto mb-4" />
+              <div className="flex justify-center mb-4">
+                <TalbiyahLogo size="lg" showText={false} linkTo={null} />
+              </div>
               <h2 id="signin-modal-title" className="text-2xl font-serif font-semibold text-gray-900 mb-2">
                 Welcome Back
               </h2>

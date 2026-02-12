@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { BookOpen, LogOut, User, ShoppingCart, ChevronLeft, ChevronRight, Star, Clock, Award, ThumbsUp, UserPlus, X, Check, Shield } from 'lucide-react';
+import { LogOut, User, ShoppingCart, ChevronLeft, ChevronRight, Star, Clock, Award, ThumbsUp, UserPlus, X, Check, Shield } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../contexts/CartContext';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 import CartDrawer from '../components/CartDrawer';
 import { TeacherProfileModal, GentlenessBadge } from '../components/teachers';
 
@@ -465,15 +466,7 @@ export default function Teachers() {
                 <span>Back to Subjects</span>
               </button>
             ) : null}
-            <button
-              type="button"
-              className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition"
-              onClick={() => navigate('/')}
-              aria-label="Go to home page"
-            >
-              <BookOpen className="w-7 h-7 text-emerald-500" />
-              <span className="text-2xl font-semibold text-gray-900 dark:text-white">Talbiyah.ai</span>
-            </button>
+            <TalbiyahLogo linkTo="/" />
           </div>
 
           <div className="flex items-center space-x-4">

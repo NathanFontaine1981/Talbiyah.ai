@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import TalbiyahLogo from '../../components/TalbiyahLogo';
 import {
   BookOpen,
   Download,
@@ -165,13 +166,7 @@ export default function DiagnosticReport() {
           {/* Header Banner */}
           <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-6 text-white">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Talbiyah.ai</h1>
-                <p className="text-emerald-100">Diagnostic Assessment Report</p>
-              </div>
+              <TalbiyahLogo size="lg" dark linkTo={null} />
             </div>
 
             <div className="grid grid-cols-3 gap-4 mt-6">

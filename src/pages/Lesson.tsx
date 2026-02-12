@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
 import { HMSRoomProvider, useHMSStore, useHMSActions, selectPeerCount, selectIsConnectedToRoom, selectLocalMediaSettings, selectConnectionQuality, selectRoom } from '@100mslive/react-sdk';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 import {
   AlertTriangle,
   RefreshCw,
@@ -807,8 +808,7 @@ function LessonContent() {
           {/* Header */}
           <div className="text-center text-white mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <BookOpen className="w-10 h-10 text-emerald-400" />
-              <h1 className="text-3xl font-bold">Talbiyah.ai</h1>
+              <TalbiyahLogo size="lg" dark linkTo={null} />
             </div>
             <h2 className="text-2xl font-semibold mb-2">Join {lesson.subject_name}</h2>
             <p className="text-emerald-200">with {userRole === 'teacher' ? lesson.learner_name : lesson.teacher_name} • {lesson.duration_minutes} minutes</p>
@@ -1105,10 +1105,7 @@ function LessonContent() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center space-x-2">
-              <BookOpen className="w-6 h-6 text-emerald-400" />
-              <span className="text-xl font-semibold text-white">Talbiyah.ai</span>
-            </div>
+            <TalbiyahLogo size="sm" dark linkTo={null} />
             <div className="h-6 w-px bg-emerald-700/50 mx-2"></div>
             <div>
               <h3 className="font-semibold text-white">{lesson.subject_name}</h3>

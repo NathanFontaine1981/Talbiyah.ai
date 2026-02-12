@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, TrendingUp } from 'lucide-react';
 import TalbiyahInsightsShowcase from '../components/TalbiyahInsightsShowcase';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 import { supabase } from '../lib/supabaseClient';
 
 export default function CourseQuranExplanation() {
@@ -96,10 +97,7 @@ export default function CourseQuranExplanation() {
 
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-lg z-50 border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-            <BookOpen className="w-7 h-7 text-emerald-400" />
-            <span className="text-2xl font-bold text-gray-900">Talbiyah.ai</span>
-          </div>
+          <TalbiyahLogo linkTo="/" />
 
           <div className="flex items-center space-x-4">
             <button

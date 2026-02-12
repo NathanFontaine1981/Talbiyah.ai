@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, User, ArrowLeft, Check, Bell, Mail, Eye, EyeOff } from 'lucide-react';
+import { Upload, User, ArrowLeft, Check, Bell, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
@@ -32,7 +33,10 @@ export default function AccountSettings() {
     date_of_birth: '',
     location: '',
     timezone: '',
-    about_me: ''
+    about_me: '',
+    gender: '',
+    phone_number: '',
+    phone_country_code: '+44'
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -98,7 +102,10 @@ export default function AccountSettings() {
           date_of_birth: profile.date_of_birth || '',
           location: profile.location || '',
           timezone: profile.timezone || '',
-          about_me: profile.bio || ''
+          about_me: profile.bio || '',
+          gender: profile.gender || '',
+          phone_number: profile.phone_number || '',
+          phone_country_code: profile.phone_country_code || '+44'
         });
 
         if (profile.avatar_url) {
@@ -238,7 +245,10 @@ export default function AccountSettings() {
         .update({
           date_of_birth: personalData.date_of_birth || null,
           location: personalData.location || null,
-          timezone: personalData.timezone || null
+          timezone: personalData.timezone || null,
+          gender: personalData.gender || null,
+          phone_number: personalData.phone_number || null,
+          phone_country_code: personalData.phone_country_code || null
         })
         .eq('id', user.id);
 
@@ -468,13 +478,7 @@ export default function AccountSettings() {
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-emerald-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Talbiyah.ai</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Account Settings</p>
-            </div>
+            <TalbiyahLogo linkTo={null} />
           </div>
 
           <button
@@ -589,9 +593,62 @@ export default function AccountSettings() {
             </h3>
 
             <form onSubmit={handleSaveDetails} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="phone_number" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      value={personalData.phone_country_code}
+                      onChange={(e) => setPersonalData({ ...personalData, phone_country_code: e.target.value })}
+                      className="w-24 px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="+44">+44</option>
+                      <option value="+1">+1</option>
+                      <option value="+91">+91</option>
+                      <option value="+92">+92</option>
+                      <option value="+966">+966</option>
+                      <option value="+971">+971</option>
+                      <option value="+20">+20</option>
+                      <option value="+90">+90</option>
+                      <option value="+60">+60</option>
+                      <option value="+62">+62</option>
+                      <option value="+33">+33</option>
+                      <option value="+49">+49</option>
+                    </select>
+                    <input
+                      id="phone_number"
+                      type="tel"
+                      value={personalData.phone_number}
+                      onChange={(e) => setPersonalData({ ...personalData, phone_number: e.target.value })}
+                      placeholder="7700 900000"
+                      className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
+                    Gender
+                  </label>
+                  <select
+                    id="gender"
+                    value={personalData.gender}
+                    onChange={(e) => setPersonalData({ ...personalData, gender: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
                     Date of Birth
                   </label>
                   <input
@@ -599,12 +656,12 @@ export default function AccountSettings() {
                     type="date"
                     value={personalData.date_of_birth}
                     onChange={(e) => setPersonalData({ ...personalData, date_of_birth: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
                     Location
                   </label>
                   <input
@@ -613,12 +670,12 @@ export default function AccountSettings() {
                     value={personalData.location}
                     onChange={(e) => setPersonalData({ ...personalData, location: e.target.value })}
                     placeholder="City, Country"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="timezone" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="timezone" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
                     Timezone
                   </label>
                   <input
@@ -626,8 +683,8 @@ export default function AccountSettings() {
                     type="text"
                     value={personalData.timezone}
                     onChange={(e) => setPersonalData({ ...personalData, timezone: e.target.value })}
-                    placeholder="e.g. UTC, EST"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="e.g. Europe/London, America/New_York"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>

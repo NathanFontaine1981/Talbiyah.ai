@@ -18,6 +18,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 
 // Foundation pillars for preview
 const foundationPillars = [
@@ -62,12 +63,7 @@ export default function NewMuslimLanding() {
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">ت</span>
-            </div>
-            <span className="text-lg font-semibold text-white">Talbiyah.ai</span>
-          </div>
+          <TalbiyahLogo size="sm" dark linkTo="/" />
           <div className="w-20" /> {/* Spacer for centering */}
         </div>
       </nav>

@@ -50,6 +50,8 @@ import {
 } from '../components/progress';
 import ThemeToggle from '../components/ThemeToggle';
 import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
+import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
+import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar } from '../components/dashboard';
 
 interface UserProfile {
@@ -800,6 +802,9 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* Profile Completion Banner */}
+            <ProfileCompletionBanner />
+
             {/* Teacher Availability Warning Banner */}
             {selectedViewRole === 'Teacher' && !hasAvailability && (
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 mb-6 border border-amber-400/30 shadow-xl">
@@ -1101,6 +1106,9 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Profile Completion Modal - shows on each login until profile is complete */}
+      <CompleteProfileModal />
     </div>
   );
 }

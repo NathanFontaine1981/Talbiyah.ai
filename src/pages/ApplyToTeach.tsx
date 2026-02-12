@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, User, ArrowLeft, Award, FileText, Globe } from 'lucide-react';
+import { Upload, User, ArrowLeft, Award, FileText, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import VideoRecorder from '../components/VideoRecorder';
 import { TEACHER_TYPES, type TeacherType } from '../constants/teacherConstants';
 import { INSIGHTS_ADDON } from '../constants/insightsAddonPricing';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 
 const UK_PATTERNS = [
   'manchester', 'london', 'birmingham', 'leeds', 'bradford', 'sheffield',
@@ -553,13 +554,7 @@ export default function ApplyToTeach() {
       <nav className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-emerald-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Talbiyah.ai</h1>
-              <p className="text-sm text-gray-500">Teacher Application</p>
-            </div>
+            <TalbiyahLogo linkTo={null} />
           </div>
 
           <button

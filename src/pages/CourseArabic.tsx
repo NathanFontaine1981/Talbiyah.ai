@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { CheckCircle, Star, Users, ArrowLeft, ArrowRight, Play, BookOpen } from 'lucide-react';
 import TalbiyahInsightsShowcase from '../components/TalbiyahInsightsShowcase';
+import TalbiyahLogo from '../components/TalbiyahLogo';
 import { supabase } from '../lib/supabaseClient';
 
 export default function CourseArabic() {
@@ -77,10 +78,7 @@ export default function CourseArabic() {
 
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-lg z-50 border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/images/icons/icon-arabic.png" alt="Arabic" className="w-8 h-8 object-contain" />
-            <span className="text-2xl font-bold text-gray-900">Talbiyah.ai</span>
-          </div>
+          <TalbiyahLogo linkTo="/" />
 
           <button
             onClick={() => navigate('/courses-overview')}
