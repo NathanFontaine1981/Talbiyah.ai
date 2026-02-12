@@ -946,74 +946,125 @@ function getWelcomeEmail(payload: NotificationPayload): { subject: string; html:
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
 
           <!-- Header with gradient -->
-          <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
-            <h1 style="color: white; margin: 0 0 10px 0; font-size: 32px;">As-salamu alaykum ${payload.recipient_name}! 🌙</h1>
+          <div style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%); border-radius: 16px; padding: 40px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 56px; margin-bottom: 10px;">🌙</div>
+            <h1 style="color: white; margin: 0 0 10px 0; font-size: 30px;">As-salamu alaykum ${payload.recipient_name}!</h1>
             <p style="color: rgba(255, 255, 255, 0.95); font-size: 18px; margin: 0;">Welcome to Talbiyah.ai</p>
           </div>
 
           <!-- Founder introduction -->
-          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="margin-bottom: 20px;">
-              <h2 style="margin: 0 0 10px 0; color: #0f172a; font-size: 24px;">From Premier League to At Your Service</h2>
-              <p style="margin: 0; color: #64748b; font-size: 16px;">A Personal Message from Nathan Fontaine, Founder</p>
-            </div>
+          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="margin: 0 0 10px 0; color: #0f172a; font-size: 22px;">From Premier League to At Your Service</h2>
+            <p style="margin: 0 0 4px 0; color: #64748b; font-size: 14px;">A Personal Message from Nathan Fontaine, Founder</p>
 
-            <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
-              I'm Nathan Fontaine, and I want to personally welcome you to Talbiyah.ai. My journey from playing football for Bristol Rovers, Wigan Athletic, and West Bromwich Albion to founding this platform has been guided by my love for Islam.
+            <p style="margin: 16px 0; color: #334155; line-height: 1.8; font-size: 15px;">
+              I embraced Islam during my time in the Premier League with Wigan Athletic — a moment that transformed my life forever. For over 20 years, I've been dedicated to learning and sharing Islamic knowledge. Talbiyah.ai represents that commitment to serving the Muslim community through technology.
             </p>
 
-            <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
-              I embraced Islam during my time in the Premier League with Wigan Athletic - a moment that transformed my life forever. For over 20 years, I've been dedicated to learning and sharing Islamic knowledge.
-            </p>
-
-            <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 8px; padding: 20px; margin: 20px 0;">
-              <p style="margin: 0; color: white; font-size: 16px; line-height: 1.7; font-style: italic;">
-                "Talbiyah.ai represents everything I've learned about combining dedication, discipline, and technology to serve the Muslim community. At Your Service isn't just our tagline - it's my personal commitment to you."
+            <div style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%); border-radius: 8px; padding: 16px; margin: 16px 0;">
+              <p style="margin: 0; color: white; font-size: 15px; line-height: 1.7; font-style: italic;">
+                "At Your Service isn't just our tagline — it's my personal commitment to you."
               </p>
-              <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px; text-align: right;">- Nathan Fontaine</p>
+              <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 13px; text-align: right;">— Nathan Fontaine</p>
             </div>
           </div>
 
+          <!-- Live Lessons -->
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 16px 0; color: #0f172a; font-size: 20px;">📚 Live 1-to-1 Lessons</h3>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #10b981;">
+              <strong style="color: #0f172a; font-size: 15px;">Quran Lessons</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Learn tajweed, recitation, and memorisation with qualified teachers via HD video. 3-stage mastery: Understanding → Fluency → Memorisation.</p>
+            </div>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #0ea5e9;">
+              <strong style="color: #0f172a; font-size: 15px;">Arabic Language</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Structured Arabic courses covering grammar (Nahw &amp; Sarf), vocabulary, and conversation across 4 proficiency levels.</p>
+            </div>
+            <div style="padding-left: 8px; border-left: 3px solid #8b5cf6;">
+              <strong style="color: #0f172a; font-size: 15px;">AI Lesson Insights</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">After every lesson, receive personalised study notes, quizzes, and homework generated from your actual conversation with your teacher.</p>
+            </div>
+          </div>
+
+          <!-- Free Courses -->
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 4px 0; color: #0f172a; font-size: 20px;">🎓 Free Courses &amp; Guides</h3>
+            <p style="margin: 0 0 16px 0; color: #10b981; font-size: 13px; font-weight: 600;">100% FREE — No subscription needed</p>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #f59e0b;">
+              <strong style="color: #0f172a; font-size: 15px;">Unshakeable Foundations</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">6 comprehensive modules covering the core pillars of belief — perfect for new Muslims building a solid understanding of Islam.</p>
+            </div>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #10b981;">
+              <strong style="color: #0f172a; font-size: 15px;">Salah Tutorial</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Complete step-by-step interactive guide to perfecting your prayer, with audio and transliteration.</p>
+            </div>
+            <div style="padding-left: 8px; border-left: 3px solid #6366f1;">
+              <strong style="color: #0f172a; font-size: 15px;">Exploring Islam</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">13 episodes exploring Islamic concepts — a safe, judgement-free space for non-Muslims and those curious about Islam.</p>
+            </div>
+          </div>
+
+          <!-- AI Tools -->
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 4px 0; color: #0f172a; font-size: 20px;">🤖 Free AI-Powered Tools</h3>
+            <p style="margin: 0 0 16px 0; color: #10b981; font-size: 13px; font-weight: 600;">Built to support your daily practice</p>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #ec4899;">
+              <strong style="color: #0f172a; font-size: 15px;">Dua Builder</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Build personalised supplications using the 99 Names of Allah, with transliteration and audio.</p>
+            </div>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #f97316;">
+              <strong style="color: #0f172a; font-size: 15px;">Khutbah Creator</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Generate sermon outlines with authentic Islamic sources — perfect for imams and community leaders.</p>
+            </div>
+            <div style="margin-bottom: 14px; padding-left: 8px; border-left: 3px solid #14b8a6;">
+              <strong style="color: #0f172a; font-size: 15px;">Daily Practice</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Guided daily spiritual exercises and review — build consistent habits with streak tracking.</p>
+            </div>
+            <div style="padding-left: 8px; border-left: 3px solid #a855f7;">
+              <strong style="color: #0f172a; font-size: 15px;">Supplication Practice</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Qunut, Istikhara, and Janazah practice guides with full audio and step-by-step guidance.</p>
+            </div>
+          </div>
+
+          <!-- Gamification & Learning -->
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 4px 0; color: #0f172a; font-size: 20px;">🎮 Gamified Learning</h3>
+            <p style="margin: 0 0 16px 0; color: #10b981; font-size: 13px; font-weight: 600;">8 game types — all FREE</p>
+            <p style="margin: 0 0 12px 0; color: #334155; font-size: 14px; line-height: 1.7;">Flashcards, multiple choice, matching, fill-in-the-blank, translation, type recall, word ordering, and first word recall — all designed to reinforce your Quran and Islamic knowledge.</p>
+            <p style="margin: 0; color: #64748b; font-size: 14px;">Earn XP, unlock badges, build streaks, and climb the global leaderboard as you learn.</p>
+          </div>
+
           <!-- What makes us different -->
-          <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">What Makes Talbiyah.ai Different</h3>
-
-            <div style="margin-bottom: 16px;">
-              <strong style="color: #0f172a;">1. AI-Powered Study Notes</strong>
-              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">After each lesson, receive personalised Talbiyah Insights - study notes and quizzes generated from YOUR actual conversation with your teacher.</p>
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 16px 0; color: #0f172a; font-size: 20px;">✨ What Makes Us Different</h3>
+            <div style="margin-bottom: 12px;">
+              <strong style="color: #0f172a; font-size: 14px;">🧑‍🏫 Hand-Picked Teachers</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Every teacher is qualified, vetted, and monitored for the highest quality.</p>
             </div>
-
-            <div style="margin-bottom: 16px;">
-              <strong style="color: #0f172a;">2. 3-Stage Quran Mastery</strong>
-              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Understanding → Fluency → Memorisation. We track all three stages so you truly master the Quran, not just memorise it.</p>
+            <div style="margin-bottom: 12px;">
+              <strong style="color: #0f172a; font-size: 14px;">👨‍👩‍👧‍👦 Family Accounts</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Parents can manage multiple children, track progress, and share lesson credits.</p>
             </div>
-
-            <div style="margin-bottom: 16px;">
-              <strong style="color: #0f172a;">3. Hand-Picked Teachers</strong>
-              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Every teacher is qualified, background-checked, and monitored to ensure the highest quality Islamic education.</p>
-            </div>
-
             <div>
-              <strong style="color: #0f172a;">4. Sadaqah Jariyah Built-In</strong>
-              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Our referral system means every person you invite earns you ongoing rewards - even after you pass away.</p>
+              <strong style="color: #0f172a; font-size: 14px;">🤲 Sadaqah Jariyah Built-In</strong>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Every person you refer earns you ongoing rewards — even after you pass away.</p>
             </div>
           </div>
 
           <!-- Get started CTA -->
-          <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
-            <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">Start Your Free Diagnostic Assessment!</h3>
-            <p style="margin: 0 0 24px 0; color: rgba(255,255,255,0.95); font-size: 16px;">
-              Discover your current level and get a personalised learning plan - completely free
+          <div style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%); border-radius: 12px; padding: 30px; margin-bottom: 24px; text-align: center;">
+            <h3 style="margin: 0 0 12px 0; color: white; font-size: 22px;">Ready to Begin?</h3>
+            <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.95); font-size: 15px;">
+              Start your free diagnostic assessment and get a personalised learning plan
             </p>
-            <a href="https://talbiyah.ai/diagnostic" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-              Start Free Assessment
+            <a href="https://talbiyah.ai/dashboard" style="display: inline-block; background: white; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Go to Dashboard
             </a>
           </div>
 
           <!-- Footer -->
           <div style="text-align: center; padding: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 13px;">
-            <p style="margin: 0;">Talbiyah.ai - At Your Service</p>
-            <p style="margin: 5px 0 0 0;">AI-Powered Islamic Learning</p>
+            <p style="margin: 0;">Talbiyah.ai — At Your Service</p>
           </div>
 
         </body>
