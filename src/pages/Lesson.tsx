@@ -387,6 +387,14 @@ function LessonContent() {
   const [connectionWarning, setConnectionWarning] = useState<string | null>(null);
   const [lastConnectionCheck, setLastConnectionCheck] = useState<number>(Date.now());
 
+  // Cleanup media tracks on unmount (safety net)
+  useEffect(() => {
+    return () => {
+      stopAllMediaTracks();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Monitor connection quality and detect issues
   useEffect(() => {
     if (!isConnectedToRoom) return;
@@ -588,10 +596,34 @@ function LessonContent() {
     }
   }
 
+  // Stop all camera/microphone tracks to turn off the camera light
+  function stopAllMediaTracks() {
+    try {
+      // Leave HMS room properly
+      hmsActions.leave();
+    } catch (e) {
+      // May already be left via HMSPrebuilt
+    }
+    // Fallback: stop all active media tracks on the page
+    try {
+      const tracks = document.querySelectorAll('video, audio');
+      tracks.forEach((el: any) => {
+        if (el.srcObject) {
+          el.srcObject.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+          el.srcObject = null;
+        }
+      });
+    } catch (e) {
+      // Best effort
+    }
+  }
+
   async function handleLessonEnd() {
     // When someone leaves the room (via onLeaveRoom callback)
     // For teachers: just navigate to dashboard (don't auto-mark as completed)
     // For students: show feedback if lesson is already completed
+
+    stopAllMediaTracks();
 
     if (userRole === 'teacher') {
       // Teacher just left - don't mark as completed automatically
@@ -668,6 +700,7 @@ function LessonContent() {
   }
 
   function handleLeave() {
+    stopAllMediaTracks();
     navigate('/dashboard');
   }
 
