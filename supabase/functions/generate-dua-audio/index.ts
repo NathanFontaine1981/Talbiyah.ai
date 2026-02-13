@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,8 +16,35 @@ const VOICES = {
   arabic_alt: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - multilingual
 };
 
-serve(async (req) => {
-  // Handle CORS preflight
+async function callElevenLabs(
+  text: string,
+  voiceId: string,
+  apiKey: string
+): Promise<Response> {
+  return fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.75,
+          similarity_boost: 0.75,
+          style: 0.5,
+          use_speaker_boost: true
+        }
+      }),
+    }
+  );
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -34,14 +61,20 @@ serve(async (req) => {
       body = await req.json();
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      throw new Error('Invalid JSON in request body');
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { text, voice, language } = body;
     console.log(`Received text length: ${text?.length || 0} chars, language: ${language || 'not specified'}`);
 
     if (!text || text.trim().length === 0) {
-      throw new Error('Text is required');
+      return new Response(
+        JSON.stringify({ error: 'Text is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // ElevenLabs has a 5000 character limit for the standard plan
@@ -66,58 +99,47 @@ serve(async (req) => {
       } else if (language === 'english') {
         selectedVoiceId = VOICES.english;
       } else {
-        selectedVoiceId = VOICES.arabic; // Default for Islamic content
+        selectedVoiceId = VOICES.arabic;
       }
     }
 
     console.log(`Using ElevenLabs with voice: ${selectedVoiceId}`);
 
-    // Call ElevenLabs API
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': ELEVENLABS_API_KEY,
-        },
-        body: JSON.stringify({
-          text: processedText,
-          model_id: 'eleven_multilingual_v2', // Best for Arabic
-          voice_settings: {
-            stability: 0.75, // Higher stability for clear recitation
-            similarity_boost: 0.75,
-            style: 0.5, // Some expressiveness
-            use_speaker_boost: true
-          }
-        }),
-      }
-    );
+    // Call ElevenLabs API with retry on rate limit
+    let response = await callElevenLabs(processedText, selectedVoiceId, ELEVENLABS_API_KEY);
 
     console.log(`ElevenLabs response status: ${response.status}`);
+
+    // Retry once after 3s on rate limit
+    if (response.status === 429) {
+      console.log('Rate limited, retrying after 3 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      response = await callElevenLabs(processedText, selectedVoiceId, ELEVENLABS_API_KEY);
+      console.log(`ElevenLabs retry response status: ${response.status}`);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('ElevenLabs API error:', response.status, errorText);
 
-      // Check for specific error types
       if (response.status === 401) {
         throw new Error('ElevenLabs API key is invalid');
       } else if (response.status === 429) {
-        throw new Error('ElevenLabs rate limit exceeded. Please try again later.');
+        return new Response(
+          JSON.stringify({ error: 'Audio generation is busy. Please wait a moment and try again.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       } else if (response.status === 400) {
         throw new Error('Invalid request to ElevenLabs');
       }
 
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
     }
 
     // Get the audio as a buffer
     const audioBuffer = await response.arrayBuffer();
     console.log(`Generated audio size: ${audioBuffer.byteLength} bytes`);
 
-    // Return the audio directly
     return new Response(audioBuffer, {
       headers: {
         ...corsHeaders,

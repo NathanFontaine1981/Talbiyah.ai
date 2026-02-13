@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   BookOpen,
-  Bell,
   User as UserIcon,
   LogOut,
   LayoutDashboard,
@@ -53,6 +52,7 @@ import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 interface UserProfile {
   full_name: string | null;
@@ -600,13 +600,7 @@ export default function Dashboard() {
 
             <div className="flex items-center space-x-2 sm:space-x-6">
               <ThemeToggle variant="dropdown" />
-              <button
-                className="relative p-2 text-gray-500 hover:text-gray-700 transition"
-                aria-label="Notifications (new notifications available)"
-              >
-                <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
-              </button>
+              <NotificationDropdown />
 
               {/* Role Switcher for users with multiple roles */}
               {availableRoles.length > 1 && (

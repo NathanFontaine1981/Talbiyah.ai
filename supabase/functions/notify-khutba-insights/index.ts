@@ -41,14 +41,15 @@ Deno.serve(async (req: Request) => {
       }
 
       // Create notifications table entry for each user
-      // First check if notifications table exists, if not we'll use a simple approach
       const notifications = users?.map(user => ({
         user_id: user.id,
         type: 'khutba_insight',
         title: `New Talbiyah Insights: ${body.title}`,
         message: body.speaker ? `By ${body.speaker}` : 'New reflections available',
-        link: '/insights-library',
-        insight_id: body.insight_id,
+        data: {
+          link: '/insights-library',
+          insight_id: body.insight_id
+        },
         read: false,
         created_at: new Date().toISOString()
       })) || [];
