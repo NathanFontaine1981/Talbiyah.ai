@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Users, Calendar, Clock, X, Edit, UserPlus, Mail, Check, Video, Copy, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Users, Calendar, Clock, X, Edit, UserPlus, Mail, Check, Video, Copy, ExternalLink, BookOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -28,6 +29,8 @@ interface GroupSession {
   '100ms_room_id'?: string;
   teacher_room_code?: string;
   student_room_code?: string;
+  course_type?: string;
+  slug?: string;
 }
 
 interface Participant {
@@ -336,6 +339,7 @@ export default function GroupSessions() {
 
 // Group Session Card Component
 function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRefresh }: any) {
+  const navigate = useNavigate();
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -507,6 +511,15 @@ function GroupSessionCard({ session, status, onManageParticipants, onEdit, onRef
       )}
 
       <div className="flex items-center flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        {session.course_type === 'course' && (
+          <button
+            onClick={() => navigate(`/teacher/course/${session.id}`)}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition text-sm flex items-center space-x-1"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Manage Course</span>
+          </button>
+        )}
         {!hasRoom && (
           <button
             onClick={handleCreateRoom}
@@ -702,7 +715,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
               min="2"
               max="20"
               value={formData.max_participants}
-              onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) || 0 })}
               className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
@@ -737,7 +750,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
               <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Duration (minutes)</label>
               <select
                 value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="30">30 minutes</option>
@@ -874,10 +887,10 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
     name: session.name,
     subject_id: session.subject_id,
     level: session.level,
-    max_participants: session.max_participants,
+    max_participants: session.max_participants || 10,
     schedule_day: session.schedule_day,
     schedule_time: session.schedule_time,
-    duration_minutes: session.duration_minutes,
+    duration_minutes: session.duration_minutes || 60,
     start_date: session.start_date,
     end_date: session.end_date || '',
     is_free: session.is_free,
@@ -950,7 +963,7 @@ function EditGroupSessionModal({ session, onClose, onSuccess }: any) {
               min="2"
               max="20"
               value={formData.max_participants}
-              onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) || 0 })}
               className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>

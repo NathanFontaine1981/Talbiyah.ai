@@ -367,12 +367,104 @@ Deno.serve(async (req: Request) => {
     }
 
     if (lessonError || !lesson) {
-      console.error("Lesson not found for room_id:", roomId);
-      // Return 200 OK even if lesson not found (for webhook verification tests)
+      console.log("No lesson found for room_id:", roomId, "- checking course_sessions...");
+
+      // Check if this is a course session room
+      const { data: courseSession, error: courseError } = await supabase
+        .from("course_sessions")
+        .select("id, group_session_id, session_number, title, room_id, live_status, status")
+        .eq("room_id", roomId)
+        .single();
+
+      if (courseSession) {
+        console.log("Found course session:", courseSession.id, "session #", courseSession.session_number);
+
+        if (isTranscriptionEvent || transcriptUrl) {
+          // Transcription event - save transcript to course session
+          let courseTranscriptText = "";
+
+          if (transcriptUrl) {
+            try {
+              const transcriptResponse = await fetch(transcriptUrl);
+              if (transcriptResponse.ok) {
+                const contentType = transcriptResponse.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json') || transcriptUrl.includes('.json')) {
+                  const transcriptData = await transcriptResponse.json();
+                  if (Array.isArray(transcriptData)) {
+                    courseTranscriptText = transcriptData.map((seg: any) => {
+                      const speaker = seg.speaker_name || seg.peer_name || 'Speaker';
+                      const text = seg.text || seg.transcript || '';
+                      return `${speaker}: ${text}`;
+                    }).join('\n');
+                  } else if (transcriptData.transcript) {
+                    courseTranscriptText = transcriptData.transcript;
+                  } else if (transcriptData.text) {
+                    courseTranscriptText = transcriptData.text;
+                  } else if (typeof transcriptData === 'string') {
+                    courseTranscriptText = transcriptData;
+                  } else {
+                    courseTranscriptText = JSON.stringify(transcriptData);
+                  }
+                } else {
+                  courseTranscriptText = await transcriptResponse.text();
+                }
+
+                console.log("Course transcript fetched, length:", courseTranscriptText.length);
+              }
+            } catch (e) {
+              console.error("Error fetching course transcript:", e);
+            }
+          }
+
+          if (courseTranscriptText.length > 100) {
+            await supabase
+              .from("course_sessions")
+              .update({
+                transcript: courseTranscriptText,
+                transcript_source: '100ms',
+                status: 'transcript_added',
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", courseSession.id);
+
+            console.log("Course session transcript saved, status -> transcript_added");
+          }
+        } else if (recordingUrl) {
+          // Recording event - save recording URL and mark ended
+          await supabase
+            .from("course_sessions")
+            .update({
+              recording_url: recordingUrl,
+              recording_asset_id: (rawData as HMS100msWebhook).data?.recording_id || null,
+              live_status: 'ended',
+              status: 'recording',
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", courseSession.id);
+
+          console.log("Course session recording saved, live_status -> ended, status -> recording");
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            course_session_id: courseSession.id,
+            message: "Course session webhook processed",
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Neither lesson nor course session found
+      console.error("No lesson or course session found for room_id:", roomId);
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Webhook received but lesson not found (this is OK for test webhooks)"
+          message: "Webhook received but no matching lesson or course session found (OK for test webhooks)"
         }),
         {
           status: 200,

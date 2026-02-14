@@ -82,7 +82,7 @@ export default function ProgressOverview({ studentId, variant = 'student' }: Pro
   const [loading, setLoading] = useState(true);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
 
-  // Fetch stats function - extracted so it can be called on demand
+  // Fetch stats function
   const fetchStats = async (targetId: string) => {
     try {
       // Fetch lesson stats
@@ -163,17 +163,31 @@ export default function ProgressOverview({ studentId, variant = 'student' }: Pro
           return;
         }
 
-        // Get all learners for this parent
+        // Get user's name to match the correct learner
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        const userName = profile?.full_name?.toLowerCase().trim();
+
+        // Get all learners for this parent/user
         const { data: learners } = await supabase
           .from('learners')
-          .select('id')
+          .select('id, name')
           .eq('parent_id', user.id);
 
-        if (learners && learners.length > 0) {
-          targetId = learners[0].id;
-        } else {
-          // Fallback: check if user has lessons directly as learner_id
-          // This handles student accounts where user.id is used as learner_id
+        if (learners && learners.length > 0 && userName) {
+          // Find the learner matching the logged-in user's name
+          const selfLearner = learners.find(l => l.name?.toLowerCase().trim() === userName);
+          if (selfLearner) {
+            targetId = selfLearner.id;
+          }
+        }
+
+        // Fallback: check if user has lessons directly with user.id as learner_id
+        if (!targetId) {
           const { data: directLessons } = await supabase
             .from('lessons')
             .select('id')
@@ -183,12 +197,26 @@ export default function ProgressOverview({ studentId, variant = 'student' }: Pro
 
           if (directLessons && directLessons.length > 0) {
             targetId = user.id;
-          } else {
-            setLoading(false);
-            return;
+          }
+        }
+
+        // Final fallback: first learner with any completed lessons
+        if (!targetId && learners && learners.length > 0) {
+          for (const learner of learners) {
+            const { data: ll } = await supabase
+              .from('lessons')
+              .select('id')
+              .eq('learner_id', learner.id)
+              .eq('status', 'completed')
+              .limit(1);
+            if (ll && ll.length > 0) {
+              targetId = learner.id;
+              break;
+            }
           }
         }
       }
+
       if (!targetId) {
         setLoading(false);
         return;

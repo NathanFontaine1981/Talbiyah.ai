@@ -108,6 +108,13 @@ const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 const Suggestions = lazy(() => import('./pages/Suggestions'));
 const HowToPage = lazy(() => import('./pages/HowToPage'));
 
+// Course pages
+const CoursePage = lazy(() => import('./pages/dawra/DawraCoursePage'));
+const CourseSessionInsights = lazy(() => import('./pages/dawra/DawraSessionInsights'));
+const CourseTeacherDashboard = lazy(() => import('./pages/dawra/DawraTeacherDashboard'));
+const CourseLiveRoom = lazy(() => import('./pages/dawra/DawraLiveRoom'));
+const TeacherCourses = lazy(() => import('./pages/dawra/TeacherCourses'));
+
 // Diagnostic Assessment pages
 const StartDiagnostic = lazy(() => import('./pages/diagnostic/StartDiagnostic'));
 const DiagnosticBooking = lazy(() => import('./pages/diagnostic/DiagnosticBooking'));
@@ -200,6 +207,16 @@ function App() {
         <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/how-to" element={<HowToPage />} />
+        <Route path="/course/:slug" element={<CoursePage />} />
+        <Route path="/course/:slug/session/:sessionNumber" element={<CourseSessionInsights />} />
+        <Route
+          path="/course/:slug/live/:sessionNumber"
+          element={
+            <ProtectedRoute>
+              <CourseLiveRoom />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/explorer"
           element={
@@ -410,6 +427,22 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherGroupHomework />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/course/:id"
+          element={
+            <ProtectedRoute>
+              <CourseTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/courses"
+          element={
+            <ProtectedRoute>
+              <TeacherCourses />
             </ProtectedRoute>
           }
         />

@@ -14,7 +14,11 @@ import {
   AlertCircle,
   Video,
   ExternalLink,
-  CreditCard
+  CreditCard,
+  MapPin,
+  Monitor,
+  Radio,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -42,6 +46,10 @@ interface GroupSession {
   '100ms_room_id'?: string;
   teacher_room_code?: string;
   student_room_code?: string;
+  course_type?: 'live' | 'course' | 'workshop';
+  slug?: string;
+  delivery_mode?: 'online' | 'in_person' | 'hybrid';
+  location?: string;
 }
 
 interface Learner {
@@ -115,7 +123,11 @@ export default function GroupClasses() {
           teacher:profiles!teacher_id(full_name, avatar_url),
           "100ms_room_id",
           teacher_room_code,
-          student_room_code
+          student_room_code,
+          course_type,
+          slug,
+          delivery_mode,
+          location
         `)
         .in('status', ['open', 'full'])
         .order('start_date', { ascending: true });
@@ -213,7 +225,6 @@ export default function GroupClasses() {
       return;
     }
     setSelectedSession(session);
-    setSelectedLearner(learners[0]?.id || '');
     setShowEnrollModal(true);
   }
 
@@ -316,34 +327,34 @@ export default function GroupClasses() {
 
   function getLevelBadge(level: string) {
     const styles = {
-      beginner: 'bg-green-500/10 border-green-500/30 text-green-400',
-      intermediate: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
-      advanced: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
+      beginner: 'bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-400',
+      intermediate: 'bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400',
+      advanced: 'bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-400',
     };
     return styles[level as keyof typeof styles] || styles.beginner;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading group classes...</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading group classes...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Success Message */}
         {showSuccessMessage && (
-          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center space-x-3">
-            <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+          <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center space-x-3">
+            <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <div>
-              <p className="text-emerald-400 font-medium">Successfully enrolled!</p>
-              <p className="text-gray-500 text-sm">You can now join the class when the session starts.</p>
+              <p className="text-emerald-700 dark:text-emerald-400 font-medium">Successfully enrolled!</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">You can now join the class when the session starts.</p>
             </div>
           </div>
         )}
@@ -357,29 +368,29 @@ export default function GroupClasses() {
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Group Classes</h1>
-          <p className="text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Group Classes</h1>
+          <p className="text-gray-500 dark:text-gray-400">
             Join group learning sessions with other students. Learn together, grow together.
           </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-8">
           <div className="flex items-center space-x-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-500" />
-            <h3 className="text-lg font-semibold text-gray-900">Filter Classes</h3>
+            <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filter Classes</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search classes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -387,7 +398,7 @@ export default function GroupClasses() {
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-emerald-500"
+              className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Subjects</option>
               {subjects.map(subject => (
@@ -399,7 +410,7 @@ export default function GroupClasses() {
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value as LevelFilter)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-emerald-500"
+              className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="all">All Levels</option>
               <option value="beginner">Beginner</option>
@@ -414,55 +425,105 @@ export default function GroupClasses() {
                 setSubjectFilter('all');
                 setLevelFilter('all');
               }}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-lg transition"
             >
               Reset Filters
             </button>
           </div>
         </div>
 
-        {/* Classes Grid */}
-        {filteredSessions.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center">
-            <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Classes Found</h3>
-            <p className="text-gray-500">
-              {sessions.length === 0
-                ? "There are no group classes available at the moment. Check back soon!"
-                : "Try adjusting your filters to find more classes."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSessions.map((session) => (
-              <GroupClassCard
-                key={session.id}
-                session={session}
-                isEnrolled={enrolledSessions.has(session.id)}
-                hasAccess={sessionsWithAccess.has(session.id)}
-                onEnroll={() => handleEnrollClick(session)}
-                getSubjectIcon={getSubjectIcon}
-                getLevelBadge={getLevelBadge}
-              />
-            ))}
-          </div>
-        )}
+        {/* My Enrolled Classes */}
+        {(() => {
+          const myClasses = filteredSessions.filter(s => enrolledSessions.has(s.id));
+          const browseClasses = filteredSessions.filter(s => !enrolledSessions.has(s.id));
+
+          return (
+            <>
+              {myClasses.length > 0 && (
+                <div className="mb-10">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Classes</h2>
+                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-full">
+                      {myClasses.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {myClasses.map((session) => (
+                      <GroupClassCard
+                        key={session.id}
+                        session={session}
+                        isEnrolled={true}
+                        hasAccess={sessionsWithAccess.has(session.id)}
+                        onEnroll={() => handleEnrollClick(session)}
+                        getSubjectIcon={getSubjectIcon}
+                        getLevelBadge={getLevelBadge}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Browse Classes */}
+              <div>
+                {myClasses.length > 0 && (
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Search className="w-5 h-5 text-gray-500" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Browse Classes</h2>
+                  </div>
+                )}
+
+                {browseClasses.length === 0 && myClasses.length === 0 ? (
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center">
+                    <Users className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Classes Found</h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {sessions.length === 0
+                        ? "There are no group classes available at the moment. Check back soon!"
+                        : "Try adjusting your filters to find more classes."}
+                    </p>
+                  </div>
+                ) : browseClasses.length === 0 ? (
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      You're enrolled in all available classes. Check back for new ones!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {browseClasses.map((session) => (
+                      <GroupClassCard
+                        key={session.id}
+                        session={session}
+                        isEnrolled={false}
+                        hasAccess={false}
+                        onEnroll={() => handleEnrollClick(session)}
+                        getSubjectIcon={getSubjectIcon}
+                        getLevelBadge={getLevelBadge}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Enrollment Modal */}
         {showEnrollModal && selectedSession && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-100 border border-gray-200 rounded-2xl p-6 max-w-md w-full">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Enroll in Class</h3>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Enroll in Class</h3>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+              <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-4 mb-6">
                 <div className="flex items-center space-x-3 mb-2">
                   <span className="text-2xl">{getSubjectIcon(selectedSession.subject?.name)}</span>
-                  <h4 className="text-lg font-semibold text-gray-900">{selectedSession.name}</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedSession.name}</h4>
                 </div>
-                <p className="text-gray-500 text-sm mb-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
                   with {selectedSession.teacher?.full_name}
                 </p>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                   <span className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
                     <span>{selectedSession.schedule_day}s</span>
@@ -475,12 +536,12 @@ export default function GroupClasses() {
               </div>
 
               {selectedSession.is_free ? (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-6">
-                  <p className="text-green-400 font-medium">This is a FREE class!</p>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-6">
+                  <p className="text-green-700 dark:text-green-400 font-medium">This is a FREE class!</p>
                 </div>
               ) : (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 mb-6">
-                  <p className="text-emerald-400">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 mb-6">
+                  <p className="text-emerald-700 dark:text-emerald-400">
                     Cost: <span className="font-bold">£{((selectedSession.price_per_session || 0) / 100).toFixed(2)}</span> per session
                   </p>
                 </div>
@@ -489,14 +550,14 @@ export default function GroupClasses() {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowEnrollModal(false)}
-                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition"
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEnroll}
                   disabled={enrolling}
-                  className="flex-1 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
                 >
                   {enrolling ? (
                     <span>Enrolling...</span>
@@ -532,67 +593,102 @@ function GroupClassCard({
   getSubjectIcon: (name?: string) => string;
   getLevelBadge: (level: string) => string;
 }) {
+  const navigate = useNavigate();
   const spotsLeft = session.max_participants - session.current_participants;
   const isFull = spotsLeft <= 0;
   const hasRoom = session['100ms_room_id'] && session.student_room_code;
+  const isCourse = session.course_type === 'course' && session.slug;
+
+  function getDeliveryBadge() {
+    const mode = session.delivery_mode || 'online';
+    const styles = {
+      online: { icon: Monitor, label: 'Online', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
+      in_person: { icon: MapPin, label: 'In Person', className: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' },
+      hybrid: { icon: Radio, label: 'Hybrid', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' },
+    };
+    return styles[mode] || styles.online;
+  }
+
+  const delivery = getDeliveryBadge();
+  const DeliveryIcon = delivery.icon;
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden hover:border-emerald-500/50 transition group">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden hover:border-emerald-400 dark:hover:border-emerald-600 transition group shadow-sm">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-500/20 to-emerald-500/20 p-4 border-b border-gray-200">
+      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-3xl">{getSubjectIcon(session.subject?.name)}</span>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition">
+          <div className="flex items-center space-x-3 min-w-0">
+            <span className="text-3xl flex-shrink-0">{getSubjectIcon(session.subject?.name)}</span>
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
                 {session.name}
               </h3>
-              <p className="text-gray-500 text-sm">{session.subject?.name}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{session.subject?.name}</p>
             </div>
           </div>
-          <span className={`px-3 py-1 ${getLevelBadge(session.level)} border rounded-full text-xs font-medium capitalize`}>
-            {session.level}
-          </span>
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0 ml-2">
+            <span className={`px-3 py-1 ${getLevelBadge(session.level)} border rounded-full text-xs font-medium capitalize`}>
+              {session.level}
+            </span>
+            {isCourse && (
+              <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-semibold flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Course
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-4">
         {/* Teacher */}
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            {session.teacher?.avatar_url ? (
-              <img
-                src={session.teacher.avatar_url}
-                alt={session.teacher.full_name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <User className="w-4 h-4 text-gray-500" />
-            )}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+              {session.teacher?.avatar_url ? (
+                <img
+                  src={session.teacher.avatar_url}
+                  alt={session.teacher.full_name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <User className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">{session.teacher?.full_name || 'TBA'}</span>
           </div>
-          <span className="text-gray-700 text-sm">{session.teacher?.full_name || 'TBA'}</span>
+          <span className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${delivery.className}`}>
+            <DeliveryIcon className="w-3 h-3" />
+            {delivery.label}
+          </span>
         </div>
 
         {/* Schedule */}
         <div className="space-y-2 mb-4">
-          <div className="flex items-center space-x-2 text-gray-600 text-sm">
-            <Calendar className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
+            <Calendar className="w-4 h-4 text-gray-400" />
             <span>Every {session.schedule_day}</span>
           </div>
-          <div className="flex items-center space-x-2 text-gray-600 text-sm">
-            <Clock className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
+            <Clock className="w-4 h-4 text-gray-400" />
             <span>{session.schedule_time} ({session.duration_minutes} min)</span>
           </div>
-          <div className="flex items-center space-x-2 text-gray-600 text-sm">
-            <BookOpen className="w-4 h-4 text-gray-500" />
+          {session.location && (
+            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
+              <MapPin className="w-4 h-4 text-gray-400" />
+              <span className="truncate">{session.location}</span>
+            </div>
+          )}
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
+            <BookOpen className="w-4 h-4 text-gray-400" />
             <span>Starts {format(new Date(session.start_date), 'MMM d, yyyy')}</span>
           </div>
         </div>
 
         {/* Description */}
         {session.description && (
-          <p className="text-gray-500 text-sm mb-4 line-clamp-2">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-2">
             {session.description}
           </p>
         )}
@@ -600,53 +696,70 @@ function GroupClassCard({
         {/* Spots & Price */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Users className="w-4 h-4 text-gray-500" />
-            <span className={`text-sm ${isFull ? 'text-red-400' : spotsLeft <= 2 ? 'text-yellow-400' : 'text-gray-600'}`}>
+            <Users className="w-4 h-4 text-gray-400" />
+            <span className={`text-sm font-medium ${isFull ? 'text-red-600 dark:text-red-400' : spotsLeft <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'}`}>
               {isFull ? 'Class Full' : `${spotsLeft} spots left`}
             </span>
           </div>
           {session.is_free ? (
-            <span className="px-3 py-1 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm font-medium">
+            <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium">
               FREE
             </span>
           ) : (
-            <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium">
+            <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 rounded-lg text-sm font-medium">
               £{((session.price_per_session || 0) / 100).toFixed(2)}/session
             </span>
           )}
         </div>
 
-        {/* Action Button */}
-        {isEnrolled && hasAccess && hasRoom ? (
+        {/* Action Buttons */}
+        {isCourse && isEnrolled ? (
+          <button
+            onClick={() => navigate(`/course/${session.slug}`)}
+            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Go to Course</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        ) : isCourse && !isEnrolled ? (
+          <button
+            onClick={() => navigate(`/course/${session.slug}`)}
+            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+          >
+            <span>View Course</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        ) : isEnrolled && hasAccess && hasRoom ? (
           <a
             href={`https://talbiyah.app.100ms.live/meeting/${session.student_room_code}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-500 hover:from-emerald-600 hover:to-emerald-600 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
           >
             <Video className="w-5 h-5" />
             <span>Join Class</span>
             <ExternalLink className="w-4 h-4" />
           </a>
         ) : isEnrolled && hasAccess ? (
-          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl">
+          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-xl">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">Enrolled - Room not ready yet</span>
           </div>
         ) : isEnrolled && !hasAccess && !session.is_free ? (
-          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-xl">
+          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 rounded-xl">
             <CreditCard className="w-5 h-5" />
             <span className="font-medium">Payment Pending</span>
           </div>
         ) : isEnrolled ? (
-          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl">
+          <div className="flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-xl">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">Enrolled</span>
           </div>
         ) : isFull ? (
           <button
             disabled
-            className="w-full px-4 py-3 bg-gray-200 text-gray-500 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2"
           >
             <AlertCircle className="w-5 h-5" />
             <span>Class Full</span>
@@ -654,7 +767,7 @@ function GroupClassCard({
         ) : (
           <button
             onClick={onEnroll}
-            className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
+            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition flex items-center justify-center space-x-2"
           >
             <span>{session.is_free ? 'Enroll Now' : 'Pay & Enroll'}</span>
             <ArrowRight className="w-4 h-4" />

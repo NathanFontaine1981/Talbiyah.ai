@@ -31,6 +31,7 @@ import {
   Lightbulb,
   MessageCircle,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -95,7 +96,7 @@ export default function DashboardSidebar({
       ]
     },
     {
-      title: 'Teach',
+      title: 'My Teaching',
       items: [
         { icon: GraduationCap, label: 'Apply to Teach', path: '/apply-to-teach', active: false, roles: ['Student'] },
         { icon: Briefcase, label: 'Teacher Hub', path: '/teacher/hub', active: false, roles: ['Teacher'] },
@@ -105,6 +106,7 @@ export default function DashboardSidebar({
         { icon: Calendar, label: 'Availability', path: '/teacher/availability', active: false, roles: ['Teacher'] },
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
+        { icon: BookOpen, label: 'My Courses', path: '/teacher/courses', active: false, roles: ['Teacher'] },
       ]
     },
     {
