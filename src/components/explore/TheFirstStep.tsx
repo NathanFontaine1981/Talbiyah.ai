@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Heart, BookOpen, Users, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Heart, BookOpen, Users, Sparkles, Phone, CheckCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
 
 interface TheFirstStepProps {
   onTakeStep: () => void;
@@ -9,9 +11,92 @@ interface TheFirstStepProps {
   onBack?: () => void;
 }
 
+const COUNTRY_CODES = [
+  { code: '+44', label: 'UK (+44)' },
+  { code: '+1', label: 'US (+1)' },
+  { code: '+966', label: 'SA (+966)' },
+  { code: '+971', label: 'UAE (+971)' },
+  { code: '+92', label: 'PK (+92)' },
+  { code: '+91', label: 'IN (+91)' },
+  { code: '+60', label: 'MY (+60)' },
+  { code: '+62', label: 'ID (+62)' },
+  { code: '+90', label: 'TR (+90)' },
+  { code: '+20', label: 'EG (+20)' },
+  { code: '+33', label: 'FR (+33)' },
+  { code: '+49', label: 'DE (+49)' },
+  { code: '+61', label: 'AU (+61)' },
+  { code: '+27', label: 'ZA (+27)' },
+  { code: '+234', label: 'NG (+234)' },
+];
+
 export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }: TheFirstStepProps) => {
-  const [stage, setStage] = useState<'intro' | 'acknowledgment' | 'paths'>('intro');
+  const navigate = useNavigate();
+  const [stage, setStage] = useState<'intro' | 'acknowledgment' | 'shahada' | 'paths'>('intro');
   const [acknowledged, setAcknowledged] = useState(false);
+
+  // Shahada form state
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+44');
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleShahadaSubmit = async () => {
+    setFormError('');
+
+    if (!fullName.trim()) {
+      setFormError('Please enter your name');
+      return;
+    }
+    if (!phoneNumber.trim()) {
+      setFormError('Please enter your phone number');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Insert into shahada_requests table
+      const { error: insertError } = await supabase
+        .from('shahada_requests')
+        .insert({
+          full_name: fullName.trim(),
+          phone_number: phoneNumber.trim(),
+          phone_country_code: countryCode,
+          email: email.trim() || null,
+        });
+
+      if (insertError) {
+        console.error('Error saving shahada request:', insertError);
+        setFormError('Something went wrong. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Send notification email
+      await supabase.functions.invoke('notify-shahada-request', {
+        body: {
+          full_name: fullName.trim(),
+          phone_number: phoneNumber.trim(),
+          phone_country_code: countryCode,
+          email: email.trim() || undefined,
+        },
+      });
+
+      setSubmitted(true);
+
+      // Navigate to Unshakeable Foundations after 3 seconds
+      setTimeout(() => {
+        navigate('/new-muslim');
+      }, 3000);
+    } catch (err) {
+      console.error('Error submitting shahada request:', err);
+      setFormError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <motion.div
@@ -143,9 +228,13 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 </div>
               </div>
 
-              <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50 mb-6">
-                <p className="text-amber-200 text-sm">
-                  If you believe these, you already have <span className="text-white font-semibold">Iman</span> (faith) in your heart. The shahada is simply the <span className="text-white font-semibold">declaration</span> of what you already believe.
+              <div className="bg-gradient-to-br from-emerald-900/40 to-amber-900/40 rounded-2xl p-6 border-2 border-emerald-500/40 mb-6">
+                <Heart className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+                <p className="text-white text-lg leading-relaxed text-center">
+                  If you believe these, you <span className="text-emerald-400 font-bold">already</span> have <span className="text-amber-300 font-bold">Iman</span> (faith) in your heart.
+                </p>
+                <p className="text-slate-300 text-base mt-2 text-center">
+                  The shahada is simply the <span className="text-white font-semibold">declaration</span> of what you already believe.
                 </p>
               </div>
 
@@ -153,7 +242,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 <button
                   onClick={() => {
                     setAcknowledged(true);
-                    setStage('paths');
+                    setStage('shahada');
                   }}
                   className="w-full px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-lg font-semibold transition"
                 >
@@ -170,7 +259,196 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
             </motion.div>
           )}
 
-          {/* Stage 3: Paths forward */}
+          {/* Stage 3: The Shahada */}
+          {stage === 'shahada' && (
+            <motion.div
+              key="shahada"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              {!submitted ? (
+                <>
+                  {/* Shahada display */}
+                  <div className="mb-8">
+                    <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="w-8 h-8 text-emerald-400" />
+                    </div>
+
+                    <h2 className="text-2xl font-serif text-white mb-6">
+                      The Shahada
+                    </h2>
+
+                    <div className="bg-gradient-to-br from-emerald-900/30 to-amber-900/30 rounded-2xl p-6 border-2 border-emerald-500/30 mb-6">
+                      {/* Arabic */}
+                      <p className="text-3xl md:text-4xl text-amber-300 leading-relaxed mb-4" dir="rtl" style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}>
+                        أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ
+                      </p>
+
+                      {/* Transliteration */}
+                      <p className="text-emerald-300 italic text-base mb-3">
+                        "Ash-hadu an la ilaha illa Allah, wa ash-hadu anna Muhammadan rasul Allah"
+                      </p>
+
+                      {/* Translation */}
+                      <p className="text-white text-base">
+                        "I bear witness that there is no god but Allah, and I bear witness that Muhammad is the Messenger of Allah"
+                      </p>
+                    </div>
+
+                    {/* What this means */}
+                    <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-700 mb-6 text-left">
+                      <h3 className="text-white font-semibold mb-3 text-center">What it means to be Muslim</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-300 text-sm">You are choosing to <span className="text-white font-medium">submit to the One Creator</span> who made you and everything around you</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-300 text-sm">You join a <span className="text-white font-medium">family of nearly 2 billion people</span> worldwide who share this declaration</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-300 text-sm">All your previous sins are <span className="text-white font-medium">completely wiped clean</span>—you start with a fresh slate</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-300 text-sm">You don't need to be perfect—Islam is a <span className="text-white font-medium">journey of growth</span>, one step at a time</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact form */}
+                  <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-700 mb-6">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <Phone className="w-5 h-5 text-emerald-400" />
+                      <h3 className="text-white font-semibold">Request a Guidance Call</h3>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-4">
+                      We'd love to speak with you personally and help you through this beautiful moment. Leave your details and we'll call you.
+                    </p>
+
+                    <div className="space-y-3 text-left">
+                      {/* Name */}
+                      <div>
+                        <label className="text-slate-300 text-sm mb-1 block">Your name *</label>
+                        <input
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="Full name"
+                          className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                        />
+                      </div>
+
+                      {/* Phone */}
+                      <div>
+                        <label className="text-slate-300 text-sm mb-1 block">Phone number *</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={countryCode}
+                            onChange={(e) => setCountryCode(e.target.value)}
+                            className="px-3 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition text-sm"
+                          >
+                            {COUNTRY_CODES.map(({ code, label }) => (
+                              <option key={code} value={code}>{label}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="Phone number"
+                            className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Email (optional) */}
+                      <div>
+                        <label className="text-slate-300 text-sm mb-1 block">Email <span className="text-slate-500">(optional)</span></label>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="your@email.com"
+                          className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                        />
+                      </div>
+                    </div>
+
+                    {formError && (
+                      <p className="text-red-400 text-sm mt-3">{formError}</p>
+                    )}
+
+                    <button
+                      onClick={handleShahadaSubmit}
+                      disabled={submitting}
+                      className="w-full mt-4 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-lg font-semibold transition flex items-center justify-center gap-2"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Phone className="w-5 h-5" />
+                          Request a Call
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Skip link */}
+                  <button
+                    onClick={() => navigate('/new-muslim')}
+                    className="text-slate-400 hover:text-slate-300 text-sm transition underline underline-offset-4"
+                  >
+                    I'd like to continue on my own
+                  </button>
+                </>
+              ) : (
+                /* Success state */
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-8"
+                >
+                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-10 h-10 text-emerald-400" />
+                  </div>
+
+                  <h2 className="text-2xl font-serif text-white mb-3">
+                    Welcome to Islam
+                  </h2>
+
+                  <p className="text-emerald-300 text-lg mb-2">
+                    May Allah bless your journey.
+                  </p>
+                  <p className="text-slate-300 mb-6">
+                    We'll be in touch very soon, {fullName.split(' ')[0]}.
+                  </p>
+
+                  <p className="text-slate-400 text-sm mb-4">
+                    Taking you to your first course...
+                  </p>
+
+                  <button
+                    onClick={() => navigate('/new-muslim')}
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition"
+                  >
+                    Go to Unshakeable Foundations
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Stage 4: Paths forward */}
           {stage === 'paths' && (
             <motion.div
               key="paths"
@@ -211,7 +489,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                       <h3 className="text-white font-semibold mb-1">
                         Learn About the Messenger
                       </h3>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-300 text-sm">
                         Continue to the curriculum and learn about Muhammad ﷺ and the complete path
                       </p>
                     </div>
@@ -231,7 +509,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                       <h3 className="text-white font-semibold mb-1">
                         Practical Life Guidance
                       </h3>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-300 text-sm">
                         See how the Quran's wisdom applies to everyday life challenges
                       </p>
                     </div>
@@ -243,13 +521,13 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                   onClick={onTakeStep}
                   className="w-full bg-slate-800/50 hover:bg-slate-800/70 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition text-center"
                 >
-                  <p className="text-slate-400">
+                  <p className="text-slate-300">
                     Return to Dashboard
                   </p>
                 </button>
               </div>
 
-              <p className="text-center text-slate-500 text-sm mt-6">
+              <p className="text-center text-white/80 text-sm mt-6">
                 When you're ready to learn about the full shahada, we'll be here.
               </p>
             </motion.div>
