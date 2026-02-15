@@ -118,8 +118,9 @@ export default function DashboardSidebar({
     {
       title: 'Tools & Resources',
       items: [
+        { icon: BookOpen, label: "Qur'an Tracker", path: '/progress/quran', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent'], isNew: true },
+        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },

@@ -26,6 +26,7 @@ import {
 import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
+import { useSelfLearner } from '../../hooks/useSelfLearner';
 import WordMatchingQuiz from '../../components/WordMatchingQuiz';
 import { getFirstWordsForAyahs, FirstWordData } from '../../utils/quranApi';
 
@@ -1194,6 +1195,7 @@ export default function SmartHomeworkPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const lessonId = searchParams.get('lesson');
+  const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
 
   const [loading, setLoading] = useState(true);
   const [learnerId, setLearnerId] = useState<string | null>(null);
@@ -1225,27 +1227,17 @@ export default function SmartHomeworkPage() {
   }, [gameStarted, isPaused, session?.status]);
 
   useEffect(() => {
-    loadData();
-  }, [lessonId]);
+    if (learnerLoading) return;
+    if (selfLearnerId) {
+      setLearnerId(selfLearnerId);
+      loadData(selfLearnerId);
+    } else {
+      setLoading(false);
+    }
+  }, [selfLearnerId, learnerLoading, lessonId]);
 
-  async function loadData() {
+  async function loadData(targetLearnerId: string) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Get learner
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
-
-      const targetLearnerId = learner?.id || user.id;
-      setLearnerId(targetLearnerId);
-
       // Load knowledge gaps
       const { data: gaps } = await supabase
         .from('knowledge_gaps')

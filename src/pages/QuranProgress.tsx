@@ -2,12 +2,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronDown, ChevronUp, Book, Check, BookOpen,
-  MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Edit3, Loader
+  MessageSquare, User, ChevronRight, Search, Brain, Volume2, Heart, Edit3, Loader,
+  Info, X, CheckCircle, Users
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { SURAHS_DATA, TOTAL_AYAHS, calculateOverallProgress } from '../lib/quranData';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { useSelfLearner } from '../hooks/useSelfLearner';
 
 // Juz (Para) mapping - which surahs are in each Juz
 const JUZ_RANGES = [
@@ -63,6 +65,7 @@ interface SurahProgress {
 
 export default function QuranProgress() {
   const navigate = useNavigate();
+  const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
   const [surahs, setSurahs] = useState<SurahProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [learnerId, setLearnerId] = useState<string | null>(null);
@@ -72,146 +75,98 @@ export default function QuranProgress() {
   const [selectedJuz, setSelectedJuz] = useState(30);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [showBanner, setShowBanner] = useState(() => {
+    return localStorage.getItem('talbiyah_quran_banner_dismissed') !== 'true';
+  });
 
+  // Child selector for parent view
+  const [children, setChildren] = useState<{ id: string; name: string }[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  // Once the hook resolves, set learnerId and load progress
   useEffect(() => {
-    loadProgress();
+    if (learnerLoading) return;
+    if (selfLearnerId) {
+      setLearnerId(selfLearnerId);
+      loadProgress(selfLearnerId);
+      loadChildren();
+    } else {
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selfLearnerId, learnerLoading]);
 
-  async function loadProgress() {
+  // When child is selected, load their progress instead
+  useEffect(() => {
+    if (selectedChildId) {
+      loadProgress(selectedChildId);
+    } else if (selfLearnerId) {
+      loadProgress(selfLearnerId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChildId]);
+
+  async function loadChildren() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/');
-        return;
-      }
+      if (!user) return;
 
-      // Try multiple ways to find the learner
-      let learner = null;
-
-      const { data: learnerAsParent } = await supabase
+      const { data: childLearners } = await supabase
         .from('learners')
-        .select('id')
+        .select('id, name')
         .eq('parent_id', user.id)
-        .maybeSingle();
+        .eq('is_self', false);
 
-      if (learnerAsParent) {
-        learner = learnerAsParent;
+      if (childLearners && childLearners.length > 0) {
+        setChildren(childLearners);
       }
+    } catch (err) {
+      console.error('Error loading children:', err);
+    }
+  }
 
-      if (!learner) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('linked_parent_id')
-          .eq('id', user.id)
-          .maybeSingle();
+  function dismissBanner() {
+    setShowBanner(false);
+    localStorage.setItem('talbiyah_quran_banner_dismissed', 'true');
+  }
 
-        if (profile?.linked_parent_id) {
-          const { data: childLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', user.id)
-            .maybeSingle();
-
-          if (childLearner) {
-            learner = childLearner;
-          }
-        }
-      }
-
-      if (!learner) {
-        const { data: parentChild } = await supabase
-          .from('parent_children')
-          .select('id, child_name, child_age, child_gender')
-          .eq('account_id', user.id)
-          .maybeSingle();
-
-        if (parentChild) {
-          const { data: existingLearner } = await supabase
-            .from('learners')
-            .select('id')
-            .eq('parent_id', user.id)
-            .maybeSingle();
-
-          if (existingLearner) {
-            learner = existingLearner;
-          } else {
-            const { data: newLearner } = await supabase
-              .from('learners')
-              .insert({
-                parent_id: user.id,
-                name: parentChild.child_name,
-                age: parentChild.child_age,
-                gender: parentChild.child_gender,
-                gamification_points: 0
-              })
-              .select('id')
-              .single();
-
-            if (newLearner) {
-              learner = newLearner;
-            }
-          }
-        }
-      }
-
-      if (!learner) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        const { data: newLearner } = await supabase
-          .from('learners')
-          .insert({
-            parent_id: user.id,
-            name: userProfile?.full_name || 'Student',
-            gamification_points: 0
-          })
-          .select('id')
-          .single();
-
-        if (newLearner) {
-          learner = newLearner;
-        }
-      }
+  async function loadProgress(targetLearnerId: string) {
+    setLoading(true);
+    try {
+      // Update active learnerId for save operations
+      setLearnerId(targetLearnerId);
 
       let ayahProgressData: any[] = [];
       let memorizedSurahs: Set<number> = new Set();
       let understoodSurahsSet: Set<number> = new Set();
       let fluentSurahsSet: Set<number> = new Set();
 
-      if (learner) {
-        setLearnerId(learner.id);
+      // Load ayah-level progress
+      const { data: progressData } = await supabase
+        .from('ayah_progress')
+        .select('*')
+        .eq('learner_id', targetLearnerId);
 
-        // Load ayah-level progress
-        const { data: progressData } = await supabase
-          .from('ayah_progress')
-          .select('*')
-          .eq('learner_id', learner.id);
+      ayahProgressData = progressData || [];
 
-        ayahProgressData = progressData || [];
+      // Also load surah-level progress from surah_retention_tracker
+      const { data: surahRetentionData } = await supabase
+        .from('surah_retention_tracker')
+        .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+        .eq('learner_id', targetLearnerId);
 
-        // Also load surah-level progress from surah_retention_tracker
-        const { data: surahRetentionData } = await supabase
-          .from('surah_retention_tracker')
-          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
-          .eq('learner_id', learner.id);
-
-        if (surahRetentionData) {
-          surahRetentionData.forEach((record: any) => {
-            if (record.memorization_status === 'memorized') {
-              memorizedSurahs.add(record.surah_number);
-            }
-            if (record.fluency_complete) {
-              fluentSurahsSet.add(record.surah_number);
-            }
-            if (record.understanding_complete) {
-              understoodSurahsSet.add(record.surah_number);
-            }
-          });
-        }
+      if (surahRetentionData) {
+        surahRetentionData.forEach((record: any) => {
+          if (record.memorization_status === 'memorized') {
+            memorizedSurahs.add(record.surah_number);
+          }
+          if (record.fluency_complete) {
+            fluentSurahsSet.add(record.surah_number);
+          }
+          if (record.understanding_complete) {
+            understoodSurahsSet.add(record.surah_number);
+          }
+        });
       }
 
       const surahsWithProgress: SurahProgress[] = SURAHS_DATA.map(surah => {
@@ -225,7 +180,6 @@ export default function QuranProgress() {
             p => p.surah_number === surah.number && p.ayah_number === i
           );
 
-          // Use ayah-level data if available, otherwise fall back to surah-level data
           ayahs.push({
             ayahNumber: i,
             understanding: progressRecord?.understanding_complete || isSurahUnderstood,
@@ -248,26 +202,27 @@ export default function QuranProgress() {
 
       setSurahs(surahsWithProgress);
 
-      // Load teacher notes if learner exists
-      if (learner) {
-        const { data: relationshipData } = await supabase
-          .from('student_teacher_relationships')
-          .select(`
-            teacher_general_notes,
-            teacher:teacher_profiles!student_teacher_relationships_teacher_id_fkey (
-              user:profiles!teacher_profiles_user_id_fkey (
-                full_name
-              )
+      // Load teacher notes
+      const { data: relationshipData } = await supabase
+        .from('student_teacher_relationships')
+        .select(`
+          teacher_general_notes,
+          teacher:teacher_profiles!student_teacher_relationships_teacher_id_fkey (
+            user:profiles!teacher_profiles_user_id_fkey (
+              full_name
             )
-          `)
-          .eq('student_id', learner.id)
-          .eq('status', 'active')
-          .maybeSingle();
+          )
+        `)
+        .eq('student_id', targetLearnerId)
+        .eq('status', 'active')
+        .maybeSingle();
 
-        if (relationshipData?.teacher_general_notes) {
-          setTeacherNotes(relationshipData.teacher_general_notes);
-          setTeacherName((relationshipData.teacher as any)?.user?.full_name || 'Your Teacher');
-        }
+      if (relationshipData?.teacher_general_notes) {
+        setTeacherNotes(relationshipData.teacher_general_notes);
+        setTeacherName((relationshipData.teacher as any)?.user?.full_name || 'Your Teacher');
+      } else {
+        setTeacherNotes(null);
+        setTeacherName(null);
       }
     } catch (error) {
       console.error('Error loading progress:', error);
@@ -327,7 +282,7 @@ export default function QuranProgress() {
     } catch (error) {
       console.error('Error updating ayah progress:', error);
       toast.error('Failed to save progress. Please try again.');
-      await loadProgress();
+      if (learnerId) await loadProgress(learnerId);
     } finally {
       setSavingAyah(null);
     }
@@ -383,7 +338,137 @@ export default function QuranProgress() {
     } catch (error) {
       console.error('Error updating all ayahs:', error);
       toast.error('Failed to update. Please try again.');
-      await loadProgress();
+      if (learnerId) await loadProgress(learnerId);
+    } finally {
+      setSavingAyah(null);
+    }
+  }
+
+  async function toggleAllAyahsInJuz(
+    field: 'understanding' | 'fluency' | 'memorization'
+  ) {
+    if (!learnerId || !currentJuz) return;
+
+    const juzSurahs = surahs.filter(s => currentJuz.surahs.includes(s.number));
+    if (juzSurahs.length === 0) return;
+
+    // Check if all ayahs in the juz already have this field set
+    const allSet = juzSurahs.every(surah => surah.ayahs.every(a => a[field]));
+    const newValue = !allSet;
+
+    setSavingAyah(`all-juz-${selectedJuz}-${field}`);
+
+    try {
+      // Update local state first
+      setSurahs(prev => prev.map(s => {
+        if (currentJuz.surahs.includes(s.number)) {
+          return {
+            ...s,
+            ayahs: s.ayahs.map(a => ({ ...a, [field]: newValue }))
+          };
+        }
+        return s;
+      }));
+
+      // Batch upsert all ayahs for all surahs in this juz
+      const upsertData: any[] = [];
+      for (const surah of juzSurahs) {
+        for (const ayah of surah.ayahs) {
+          upsertData.push({
+            learner_id: learnerId,
+            surah_number: surah.number,
+            ayah_number: ayah.ayahNumber,
+            understanding_complete: field === 'understanding' ? newValue : ayah.understanding,
+            fluency_complete: field === 'fluency' ? newValue : ayah.fluency,
+            memorization_complete: field === 'memorization' ? newValue : ayah.memorization,
+            teacher_notes: ayah.teacherNotes || null
+          });
+        }
+      }
+
+      // Upsert in batches to avoid payload limits
+      for (let i = 0; i < upsertData.length; i += 500) {
+        const batch = upsertData.slice(i, i + 500);
+        const { error } = await supabase
+          .from('ayah_progress')
+          .upsert(batch, {
+            onConflict: 'learner_id,surah_number,ayah_number'
+          });
+        if (error) throw error;
+      }
+
+      toast.success(`${newValue ? 'Marked' : 'Unmarked'} all ayahs in Juz ${selectedJuz} as ${field}`);
+    } catch (error) {
+      console.error('Error updating juz ayahs:', error);
+      toast.error('Failed to update. Please try again.');
+      if (learnerId) await loadProgress(learnerId);
+    } finally {
+      setSavingAyah(null);
+    }
+  }
+
+  async function toggleAllPillarsInJuz() {
+    if (!learnerId || !currentJuz) return;
+
+    const juzSurahs = surahs.filter(s => currentJuz.surahs.includes(s.number));
+    if (juzSurahs.length === 0) return;
+
+    // Check if all ayahs in the juz already have ALL 3 pillars set
+    const allSet = juzSurahs.every(surah =>
+      surah.ayahs.every(a => a.understanding && a.fluency && a.memorization)
+    );
+    const newValue = !allSet;
+
+    setSavingAyah(`all-juz-${selectedJuz}-all`);
+
+    try {
+      // Update local state first
+      setSurahs(prev => prev.map(s => {
+        if (currentJuz.surahs.includes(s.number)) {
+          return {
+            ...s,
+            ayahs: s.ayahs.map(a => ({
+              ...a,
+              understanding: newValue,
+              fluency: newValue,
+              memorization: newValue
+            }))
+          };
+        }
+        return s;
+      }));
+
+      // Batch upsert all ayahs for all surahs in this juz
+      const upsertData: any[] = [];
+      for (const surah of juzSurahs) {
+        for (const ayah of surah.ayahs) {
+          upsertData.push({
+            learner_id: learnerId,
+            surah_number: surah.number,
+            ayah_number: ayah.ayahNumber,
+            understanding_complete: newValue,
+            fluency_complete: newValue,
+            memorization_complete: newValue,
+            teacher_notes: ayah.teacherNotes || null
+          });
+        }
+      }
+
+      for (let i = 0; i < upsertData.length; i += 500) {
+        const batch = upsertData.slice(i, i + 500);
+        const { error } = await supabase
+          .from('ayah_progress')
+          .upsert(batch, {
+            onConflict: 'learner_id,surah_number,ayah_number'
+          });
+        if (error) throw error;
+      }
+
+      toast.success(`${newValue ? 'Marked' : 'Unmarked'} all 3 pillars for Juz ${selectedJuz}`);
+    } catch (error) {
+      console.error('Error updating juz ayahs:', error);
+      toast.error('Failed to update. Please try again.');
+      if (learnerId) await loadProgress(learnerId);
     } finally {
       setSavingAyah(null);
     }
@@ -495,13 +580,67 @@ export default function QuranProgress() {
       </header>
 
       <main id="main-content" className="max-w-4xl mx-auto px-4 py-6">
+        {/* System Learning Banner */}
+        {showBanner && (
+          <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl p-4 border border-emerald-500/20 mb-4 relative">
+            <button
+              onClick={dismissBanner}
+              className="absolute top-2 right-2 p-1 text-gray-400 hover:text-white transition"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-start gap-3 pr-6">
+              <Info className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-gray-300">
+                As you update your progress, Talbiyah learns what you know. Your <strong className="text-emerald-400">Daily Practice</strong> and <strong className="text-cyan-400">Homework</strong> are personalised based on the surahs you've marked as learned and memorised.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Child Selector (Parent View) */}
+        {children.length > 0 && (
+          <div className="bg-gray-800/60 rounded-xl p-3 border border-gray-700/50 mb-4">
+            <div className="flex items-center gap-3">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-400">Viewing:</span>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setSelectedChildId(null)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                    !selectedChildId
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
+                  }`}
+                >
+                  My Progress
+                </button>
+                {children.map(child => (
+                  <button
+                    key={child.id}
+                    onClick={() => setSelectedChildId(child.id)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      selectedChildId === child.id
+                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
+                    }`}
+                  >
+                    {child.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Progress Card - Similar to ArabicProgressTracker */}
         <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm shadow-xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
               <Book className="w-5 h-5 text-emerald-400" />
-              <span>Qur'an Progress Tracker</span>
+              <span>{selectedChildId ? `${children.find(c => c.id === selectedChildId)?.name}'s Progress` : "Qur'an Progress Tracker"}</span>
             </h3>
             {learnerId && (
               <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -704,6 +843,47 @@ export default function QuranProgress() {
           {currentJuz && !showAll && !searchQuery && (
             <div className="text-center text-gray-400 text-sm mb-4">
               <span className="font-semibold text-white">Juz {selectedJuz}:</span> {currentJuz.name}
+            </div>
+          )}
+
+          {/* Juz-level Select All */}
+          {currentJuz && !showAll && !searchQuery && learnerId && (
+            <div className="space-y-2 mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => toggleAllAyahsInJuz('understanding')}
+                  disabled={!!savingAyah?.startsWith('all-juz-')}
+                  className="bg-cyan-500/10 rounded-lg p-2 border border-cyan-500/20 hover:bg-cyan-500/20 transition text-center disabled:opacity-50"
+                >
+                  <p className="text-xs font-medium text-cyan-400">Select All Understanding</p>
+                  <p className="text-[10px] text-cyan-400/70">Juz {selectedJuz}</p>
+                </button>
+                <button
+                  onClick={() => toggleAllAyahsInJuz('fluency')}
+                  disabled={!!savingAyah?.startsWith('all-juz-')}
+                  className="bg-blue-500/10 rounded-lg p-2 border border-blue-500/20 hover:bg-blue-500/20 transition text-center disabled:opacity-50"
+                >
+                  <p className="text-xs font-medium text-blue-400">Select All Fluency</p>
+                  <p className="text-[10px] text-blue-400/70">Juz {selectedJuz}</p>
+                </button>
+                <button
+                  onClick={() => toggleAllAyahsInJuz('memorization')}
+                  disabled={!!savingAyah?.startsWith('all-juz-')}
+                  className="bg-orange-500/10 rounded-lg p-2 border border-orange-500/20 hover:bg-orange-500/20 transition text-center disabled:opacity-50"
+                >
+                  <p className="text-xs font-medium text-orange-400">Select All Memorised</p>
+                  <p className="text-[10px] text-orange-400/70">Juz {selectedJuz}</p>
+                </button>
+              </div>
+              <button
+                onClick={toggleAllPillarsInJuz}
+                disabled={!!savingAyah?.startsWith('all-juz-')}
+                className="w-full bg-emerald-500/10 rounded-lg p-2 border border-emerald-500/20 hover:bg-emerald-500/20 transition text-center disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <p className="text-xs font-medium text-emerald-400">Mark All Complete (U + F + M)</p>
+                <p className="text-[10px] text-emerald-400/70">Juz {selectedJuz}</p>
+              </button>
             </div>
           )}
 

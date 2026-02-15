@@ -24,6 +24,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import { getFirstWordsForAyahs, getChapterInfo, FirstWordData } from '../../utils/quranApi';
+import { useSelfLearner } from '../../hooks/useSelfLearner';
 
 interface SurahReview {
   surah: number;
@@ -289,6 +290,7 @@ const SURAH_NAMES: { [key: number]: { english: string; arabic: string } } = {
 
 export default function DailyMaintenancePage() {
   const navigate = useNavigate();
+  const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
   const [loading, setLoading] = useState(true);
   const [learnerId, setLearnerId] = useState<string | null>(null);
   const [learnerStats, setLearnerStats] = useState<LearnerStats>({
@@ -317,37 +319,31 @@ export default function DailyMaintenancePage() {
   const [testingMode, setTestingMode] = useState<'surah' | 'ayah'>('surah'); // surah = first ayah only, ayah = all fluent ayahs
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (learnerLoading) return;
+    if (selfLearnerId) {
+      setLearnerId(selfLearnerId);
+      loadData(selfLearnerId);
+    } else {
+      setLoading(false);
+    }
+  }, [selfLearnerId, learnerLoading]);
 
-  async function loadData() {
+  async function loadData(targetLearnerId: string) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Get learner
+      // Load learner stats
       const { data: learner } = await supabase
         .from('learners')
-        .select('id, current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date')
-        .eq('parent_id', user.id)
+        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date')
+        .eq('id', targetLearnerId)
         .maybeSingle();
 
-      let targetLearnerId = user.id;
-
       if (learner) {
-        targetLearnerId = learner.id;
-        setLearnerId(learner.id);
         setLearnerStats({
           currentStreak: learner.current_streak || 0,
           longestStreak: learner.longest_streak || 0,
           totalSessions: learner.total_maintenance_sessions || 0,
           lastMaintenanceDate: learner.last_maintenance_date
         });
-      } else {
-        setLearnerId(user.id);
       }
 
       // Load memorized surahs from surah_retention_tracker if available

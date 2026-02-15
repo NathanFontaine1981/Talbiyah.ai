@@ -19,6 +19,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import SurahUnderstandingQuiz from '../../components/SurahUnderstandingQuiz';
+import { useSelfLearner } from '../../hooks/useSelfLearner';
 
 type TabType = 'memorisation' | 'fluency' | 'understanding';
 
@@ -158,6 +159,7 @@ const QUICK_SELECTS = [
 
 export default function MemorizationSetupPage() {
   const navigate = useNavigate();
+  const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
   const [activeTab, setActiveTab] = useState<TabType>('memorisation');
   const [selectedSurahs, setSelectedSurahs] = useState<Set<number>>(new Set());
   const [fluencySurahs, setFluencySurahs] = useState<Set<number>>(new Set());
@@ -165,34 +167,23 @@ export default function MemorizationSetupPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [learnerId, setLearnerId] = useState<string | null>(null);
-  const [expandedJuz, setExpandedJuz] = useState<number | null>(30); // Start with Juz 30 expanded
+  const [expandedJuz, setExpandedJuz] = useState<number | null>(30);
   const [quizSurah, setQuizSurah] = useState<number | null>(null);
 
-  // Surahs that have quizzes available
   const SURAHS_WITH_QUIZZES = [1, 112, 113, 114, 36, 67, 18];
 
   useEffect(() => {
-    loadExistingData();
-  }, []);
+    if (learnerLoading) return;
+    if (selfLearnerId) {
+      setLearnerId(selfLearnerId);
+      loadExistingData(selfLearnerId);
+    } else {
+      setLoading(false);
+    }
+  }, [selfLearnerId, learnerLoading]);
 
-  async function loadExistingData() {
+  async function loadExistingData(targetLearnerId: string) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Get learner
-      const { data: learner } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .maybeSingle();
-
-      const targetLearnerId = learner?.id || user.id;
-      setLearnerId(targetLearnerId);
-
       // Load existing memorized surahs
       const { data: memorized } = await supabase
         .from('surah_retention_tracker')
