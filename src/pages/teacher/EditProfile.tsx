@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Video, Upload, PlayCircle, StopCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Video, Upload, PlayCircle, StopCircle, Trash2, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { INSIGHTS_ADDON } from '../../constants/insightsAddonPricing';
 
 interface Subject {
   id: string;
@@ -732,6 +733,30 @@ export default function EditProfile() {
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">/hour</span>
             </div>
+
+            {/* Platform Fee Breakdown */}
+            {hourlyRate && parseFloat(hourlyRate) > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3 max-w-sm">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Your rate:</span>
+                    <span className="font-medium">£{parseFloat(hourlyRate).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-700">
+                    <span>+ Platform fee:</span>
+                    <span className="font-medium">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-blue-200 pt-2 flex justify-between font-semibold text-gray-900">
+                    <span>Student pays:</span>
+                    <span>£{(parseFloat(hourlyRate) + INSIGHTS_ADDON.pricePerLesson).toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 mt-3 text-xs text-blue-700">
+                  <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>The £{INSIGHTS_ADDON.pricePerLesson.toFixed(2)} platform fee covers AI-powered study notes for your students. You receive £{parseFloat(hourlyRate).toFixed(2)}.</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Video/Audio Introduction */}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   BookOpen,
   ChevronLeft,
@@ -26,10 +26,14 @@ import {
   RotateCcw,
   Check,
   Circle,
+  Lock,
+  Loader2,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { useCourseNotesAccess } from '../../hooks/useCourseNotesAccess';
+import { COURSE_NOTES_PRICING } from '../../constants/courseNotesPricing';
 
 // ─── Types ──────────────────────────────────────────────
 interface InsightData {
@@ -611,6 +615,7 @@ function SectionContent({ section, onQuizComplete }: { section: Section; onQuizC
 export default function CourseSessionInsights() {
   const { slug, sessionNumber } = useParams<{ slug: string; sessionNumber: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [insight, setInsight] = useState<InsightData | null>(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState<number | null>(null);
@@ -618,8 +623,22 @@ export default function CourseSessionInsights() {
   const [totalSessions, setTotalSessions] = useState(0);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [courseSessionId, setCourseSessionId] = useState<string | null>(null);
+  const [groupSessionId, setGroupSessionId] = useState<string | null>(null);
+  const [purchasingNotes, setPurchasingNotes] = useState(false);
+  const [coursePosterUrl, setCoursePosterUrl] = useState<string | null>(null);
+
+  const { hasAccess: hasNotesAccess, loading: notesAccessLoading, notesPricePounds, isTeacherOrAdmin } = useCourseNotesAccess(groupSessionId);
+  const currentSessionNum = parseInt(sessionNumber || '1', 10);
+  const canViewNotes = currentSessionNum === 1 || hasNotesAccess || isTeacherOrAdmin;
 
   useEffect(() => { fetchInsight(); }, [slug, sessionNumber]);
+
+  // Handle return from Stripe with notes_unlocked=true
+  useEffect(() => {
+    if (searchParams.get('notes_unlocked') === 'true') {
+      toast.success('Study notes unlocked! You now have access to all session notes.');
+    }
+  }, [searchParams]);
 
   async function fetchInsight() {
     setLoading(true);
@@ -628,8 +647,10 @@ export default function CourseSessionInsights() {
       if (!user) { toast.error('Please sign up and enrol to view study notes'); navigate(`/signup?redirect=/course/${slug}/session/${sessionNumber}`); return; }
 
       const num = parseInt(sessionNumber || '1', 10);
-      const { data: course } = await supabase.from('group_sessions').select('id, name, slug, teacher_id, created_by').eq('slug', slug).single();
+      const { data: course } = await supabase.from('group_sessions').select('id, name, slug, teacher_id, created_by, poster_url').eq('slug', slug).single();
       if (!course) { toast.error('Course not found'); navigate('/'); return; }
+      setGroupSessionId(course.id);
+      setCoursePosterUrl(course.poster_url);
 
       const isTeacherOrAdmin = user.id === course.teacher_id || user.id === course.created_by;
       if (!isTeacherOrAdmin) {
@@ -676,6 +697,43 @@ export default function CourseSessionInsights() {
         { onConflict: 'course_session_id,student_id', ignoreDuplicates: false }
       );
     } catch (err) { console.error('Failed to save quiz progress:', err); }
+  }
+
+  async function handlePurchaseNotes() {
+    if (!groupSessionId) return;
+    setPurchasingNotes(true);
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) { toast.error('Please sign in to purchase study notes'); return; }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-notes-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authSession.access_token}`,
+          },
+          body: JSON.stringify({
+            group_session_id: groupSessionId,
+            success_url: `${window.location.origin}/course/${slug}/session/${sessionNumber}?notes_unlocked=true`,
+            cancel_url: `${window.location.origin}/course/${slug}/session/${sessionNumber}`,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create checkout');
+
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (err: any) {
+      console.error('Error purchasing notes:', err);
+      toast.error(err.message || 'Failed to start checkout');
+    } finally {
+      setPurchasingNotes(false);
+    }
   }
 
   const currentSession = parseInt(sessionNumber || '1', 10);
@@ -745,47 +803,131 @@ export default function CourseSessionInsights() {
           </div>
         )}
 
-        {/* Sections */}
-        <div className="space-y-5">
-          {sections.map(section => {
-            const isCollapsed = collapsedSections.has(section.id);
+        {canViewNotes ? (
+          <>
+            {/* Sections */}
+            <div className="space-y-5">
+              {sections.map(section => {
+                const isCollapsed = collapsedSections.has(section.id);
 
-            return (
-              <div key={section.id} id={section.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm scroll-mt-20">
-                <button onClick={() => toggleSection(section.id)} className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors hover:opacity-90`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${section.gradientFrom} ${section.gradientTo} flex items-center justify-center text-white`}>
-                      {section.icon}
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white text-left">{section.title}</h2>
+                return (
+                  <div key={section.id} id={section.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm scroll-mt-20">
+                    <button onClick={() => toggleSection(section.id)} className={`w-full flex items-center justify-between p-4 sm:p-5 transition-colors hover:opacity-90`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${section.gradientFrom} ${section.gradientTo} flex items-center justify-center text-white`}>
+                          {section.icon}
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white text-left">{section.title}</h2>
+                      </div>
+                      {isCollapsed ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronUp className="w-5 h-5 text-gray-400" />}
+                    </button>
+                    {!isCollapsed && (
+                      <div className="px-4 sm:px-6 pb-5 pt-1">
+                        <SectionContent section={section} onQuizComplete={handleQuizComplete} />
+                      </div>
+                    )}
                   </div>
-                  {isCollapsed ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronUp className="w-5 h-5 text-gray-400" />}
-                </button>
-                {!isCollapsed && (
-                  <div className="px-4 sm:px-6 pb-5 pt-1">
-                    <SectionContent section={section} onQuizComplete={handleQuizComplete} />
+                );
+              })}
+            </div>
+
+            {/* Rating */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-8 mt-6 text-center print:hidden">
+              <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">How useful were these study notes?</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your feedback helps us improve</p>
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button key={star} onClick={() => { setRating(star); toast.success('JazakAllahu khairan for your feedback!'); }}
+                    onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 transition-transform hover:scale-125">
+                    <Star className={`w-10 h-10 transition-colors ${star <= (hoverRating || rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-600'}`} />
+                  </button>
+                ))}
+              </div>
+              {rating && <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-3 font-medium">You rated this {rating}/5 — thank you!</p>}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Blurred preview of first section */}
+            {sections.length > 0 && (
+              <div className="relative mb-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${sections[0].gradientFrom} ${sections[0].gradientTo} flex items-center justify-center text-white`}>
+                        {sections[0].icon}
+                      </div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">{sections[0].title}</h2>
+                    </div>
+                    <div className="relative max-h-32 overflow-hidden">
+                      <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed blur-[6px] select-none pointer-events-none">
+                        <SectionContent section={sections[0]} onQuizComplete={() => {}} />
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/70 to-white dark:via-gray-800/70 dark:to-gray-800" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Paywall Card */}
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden text-center print:hidden">
+              {coursePosterUrl && (
+                <div className="relative h-40 sm:h-48 w-full">
+                  <img src={coursePosterUrl} alt={course.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-emerald-50 dark:to-emerald-900/20" />
+                </div>
+              )}
+              <div className="p-6 sm:p-8">
+                {!coursePosterUrl && (
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-7 h-7 text-white" />
                   </div>
                 )}
-              </div>
-            );
-          })}
-        </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Unlock All Study Notes</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-1">
+                Session 1 notes were free — get notes for every session in this course.
+              </p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-4">
+                £{notesPricePounds.toFixed(2)}
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-1">one-off</span>
+              </p>
 
-        {/* Rating */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-8 mt-6 text-center print:hidden">
-          <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">How useful were these study notes?</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your feedback helps us improve</p>
-          <div className="flex items-center justify-center gap-2">
-            {[1, 2, 3, 4, 5].map(star => (
-              <button key={star} onClick={() => { setRating(star); toast.success('JazakAllahu khairan for your feedback!'); }}
-                onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)}
-                className="p-1 transition-transform hover:scale-125">
-                <Star className={`w-10 h-10 transition-colors ${star <= (hoverRating || rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-600'}`} />
+              <ul className="text-left max-w-sm mx-auto space-y-2 mb-6">
+                {COURSE_NOTES_PRICING.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={handlePurchaseNotes}
+                disabled={purchasingNotes || notesAccessLoading}
+                className="w-full max-w-sm mx-auto px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {purchasingNotes ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Redirecting to checkout...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    <span>Get All Study Notes — £{notesPricePounds.toFixed(2)}</span>
+                  </>
+                )}
               </button>
-            ))}
-          </div>
-          {rating && <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-3 font-medium">You rated this {rating}/5 — thank you!</p>}
-        </div>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                Secure payment via Stripe. Lifetime access to all session notes.
+              </p>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Nav */}
         <div className="flex items-center justify-between mt-6 mb-12 print:hidden">

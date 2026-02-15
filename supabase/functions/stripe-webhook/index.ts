@@ -415,6 +415,47 @@ serve(async (req) => {
           break
         }
 
+        // Handle course study notes purchase
+        if (paymentType === 'course_notes_purchase' && groupSessionId) {
+          const studentId = session.metadata.student_id
+          const accessRecordId = session.metadata.access_record_id
+
+          if (accessRecordId) {
+            const { error: updateAccessError } = await supabaseClient
+              .from('course_notes_access')
+              .update({
+                status: 'completed',
+                stripe_payment_intent_id: session.payment_intent,
+                paid_at: new Date().toISOString()
+              })
+              .eq('id', accessRecordId)
+
+            if (updateAccessError) {
+              console.error('Failed to update course notes access:', updateAccessError.message)
+            }
+          } else {
+            // Fallback: upsert by group_session_id + student_id
+            const { error: upsertError } = await supabaseClient
+              .from('course_notes_access')
+              .upsert({
+                group_session_id: groupSessionId,
+                student_id: studentId,
+                amount: session.amount_total || 0,
+                status: 'completed',
+                stripe_payment_intent_id: session.payment_intent,
+                stripe_session_id: session.id,
+                paid_at: new Date().toISOString()
+              }, { onConflict: 'group_session_id,student_id' })
+
+            if (upsertError) {
+              console.error('Failed to upsert course notes access:', upsertError.message)
+            }
+          }
+
+          console.log(`Course notes access granted: student=${studentId}, course=${groupSessionId}`)
+          break
+        }
+
         if (!pendingBookingId) {
           // No pending booking - might be a different payment type
           break

@@ -76,38 +76,9 @@ export default function Checkout() {
         setIndependentTeacherRate(teacherProfile.independent_rate || 0);
         setIndependentPaymentCollection(teacherProfile.payment_collection || 'platform');
 
-        // Check if this is first insights lesson (for free trial)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: learners } = await supabase
-          .from('learners')
-          .select('id')
-          .eq('parent_id', user.id);
-
-        const learnerIds = learners?.map(l => l.id) || [];
-
-        if (learnerIds.length > 0) {
-          const { data: existingInsightsLesson } = await supabase
-            .from('lessons')
-            .select('id')
-            .in('learner_id', learnerIds)
-            .eq('is_independent', true)
-            .eq('insights_addon', true)
-            .not('status', 'in', '("cancelled_by_teacher","cancelled_by_student")')
-            .limit(1)
-            .maybeSingle();
-
-          const isFirst = !existingInsightsLesson;
-          setIsFirstInsightsLesson(isFirst);
-          // Auto-select insights addon if it's the free trial
-          if (isFirst) {
-            setInsightsAddonSelected(true);
-          }
-        } else {
-          setIsFirstInsightsLesson(true);
-          setInsightsAddonSelected(true);
-        }
+        // Insights are always included for independent teachers (mandatory £2 platform fee)
+        setInsightsAddonSelected(true);
+        setIsFirstInsightsLesson(false);
       }
     } catch (err) {
       console.error('Error checking independent teacher:', err);
@@ -566,12 +537,8 @@ export default function Checkout() {
 
       // Handle independent teacher booking (platform payment)
       if (isIndependentTeacher) {
-        const insightsPrice = insightsAddonSelected && !isFirstInsightsLesson
-          ? INSIGHTS_ADDON.pricePerLessonPence
-          : 0;
-        const insightsTotal = insightsAddonSelected && !isFirstInsightsLesson
-          ? INSIGHTS_ADDON.pricePerLesson * cartCount
-          : 0;
+        const insightsPrice = INSIGHTS_ADDON.pricePerLessonPence;
+        const insightsTotal = INSIGHTS_ADDON.pricePerLesson * cartCount;
         const independentPayable = actualPayable + insightsTotal;
 
         // If 100% discount (promo/referral makes it free), skip Stripe
@@ -979,67 +946,30 @@ export default function Checkout() {
                   <span className="text-2xl">🎓</span>
                   <span>Independent Teacher Booking</span>
                 </h2>
-                <p className="text-gray-600 mb-4">
-                  Booking with an independent teacher{independentTeacherRate > 0 && (
-                    <span> at <span className="font-bold text-blue-600">£{independentTeacherRate.toFixed(2)}/hour</span></span>
-                  )}. Optionally add AI-powered insights to your lessons below.
-                </p>
 
-                {/* Insights Addon */}
-                <div className={`rounded-xl p-4 border-2 transition cursor-pointer ${
-                  insightsAddonSelected
-                    ? 'bg-emerald-50 border-emerald-500'
-                    : 'bg-white border-gray-200 hover:border-gray-300'
-                }`}
-                  onClick={() => !isFirstInsightsLesson && setInsightsAddonSelected(!insightsAddonSelected)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        insightsAddonSelected ? 'bg-emerald-500' : 'bg-gray-100'
-                      }`}>
-                        <Zap className={`w-5 h-5 ${insightsAddonSelected ? 'text-white' : 'text-gray-400'}`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <p className="font-semibold text-gray-900">{INSIGHTS_ADDON.displayName}</p>
-                          {isFirstInsightsLesson && (
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
-                              FREE TRIAL
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">{INSIGHTS_ADDON.shortDescription}</p>
-                        <ul className="mt-2 space-y-1">
-                          {INSIGHTS_ADDON.features.slice(0, 4).map((feature, i) => (
-                            <li key={i} className="text-xs text-gray-500 flex items-center space-x-1">
-                              <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                {/* Mandatory platform fee breakdown */}
+                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-gray-700">
+                      <span>Teacher's rate</span>
+                      <span className="font-semibold">£{independentTeacherRate.toFixed(2)}</span>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      {isFirstInsightsLesson ? (
-                        <div>
-                          <span className="text-sm text-gray-400 line-through">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</span>
-                          <p className="text-lg font-bold text-emerald-600">FREE</p>
-                        </div>
-                      ) : (
-                        <p className="text-lg font-bold text-gray-900">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</p>
-                      )}
-                      <p className="text-xs text-gray-500">per lesson</p>
+                    <div className="flex items-center justify-between text-gray-700">
+                      <span className="flex items-center space-x-1.5">
+                        <Zap className="w-4 h-4 text-emerald-500" />
+                        <span>Platform fee</span>
+                      </span>
+                      <span className="font-semibold">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-gray-200 pt-3 flex items-center justify-between font-bold text-gray-900">
+                      <span>Per lesson total</span>
+                      <span>£{(independentTeacherRate + INSIGHTS_ADDON.pricePerLesson).toFixed(2)}</span>
                     </div>
                   </div>
-                  {insightsAddonSelected && (
-                    <div className="mt-3 flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-emerald-600 font-medium">
-                        {isFirstInsightsLesson ? 'Free trial included!' : 'Added to your booking'}
-                      </span>
-                    </div>
-                  )}
+                  <div className="mt-3 flex items-start space-x-2 text-xs text-blue-700 bg-blue-50 rounded-lg p-2.5">
+                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <span>The platform fee includes AI-powered study notes, quizzes & revision materials after every lesson.</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1298,15 +1228,13 @@ export default function Checkout() {
                       <span>Lessons ({cartCount})</span>
                       <span>£{totalPrice.toFixed(2)}</span>
                     </div>
-                    {insightsAddonSelected && (
-                      <div className="flex items-center justify-between text-gray-600">
-                        <span className="flex items-center space-x-1">
-                          <Zap className="w-4 h-4 text-emerald-500" />
-                          <span>AI Insights Addon {cartCount > 1 ? `(${cartCount} lessons)` : ''}</span>
-                        </span>
-                        <span>{isFirstInsightsLesson ? <span className="text-emerald-600 font-bold">FREE</span> : `£${(INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2)}`}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between text-gray-600">
+                      <span className="flex items-center space-x-1">
+                        <Zap className="w-4 h-4 text-emerald-500" />
+                        <span>Platform fee {cartCount > 1 ? `(${cartCount} lessons)` : ''}</span>
+                      </span>
+                      <span>£{(INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2)}</span>
+                    </div>
                   </>
                 ) : (
                 <div className="flex items-center justify-between text-gray-600">
@@ -1342,7 +1270,7 @@ export default function Checkout() {
                   <span>Total</span>
                   <span>
                     {isIndependentTeacher
-                      ? `£${(totalPrice + (insightsAddonSelected && !isFirstInsightsLesson ? INSIGHTS_ADDON.pricePerLesson * cartCount : 0)).toFixed(2)}`
+                      ? `£${(totalPrice + INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2)}`
                       : `£${Math.max(0, finalPrice - freeFirstLessonDiscount - promoDiscount - referralDiscount).toFixed(2)}`
                     }
                   </span>
@@ -1419,16 +1347,10 @@ export default function Checkout() {
                     <span>Confirm Booking</span>
                   </>
                 ) : isIndependentTeacher ? (
-                  (() => {
-                    const insightsTotal = insightsAddonSelected && !isFirstInsightsLesson ? INSIGHTS_ADDON.pricePerLesson * cartCount : 0;
-                    const independentTotal = totalPrice + insightsTotal;
-                    return (
-                      <>
-                        <CreditCard className="w-5 h-5" />
-                        <span>Pay £{independentTotal.toFixed(2)}</span>
-                      </>
-                    );
-                  })()
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    <span>Pay £{(totalPrice + INSIGHTS_ADDON.pricePerLesson * cartCount).toFixed(2)}</span>
+                  </>
                 ) : isLegacyBooking ? (
                   <>
                     <FileText className="w-5 h-5" />
@@ -1500,11 +1422,7 @@ export default function Checkout() {
               )}
               {isIndependentTeacher && independentPaymentCollection !== 'monthly' && (
                 <p className="text-xs text-center text-blue-600 mt-4">
-                  {insightsAddonSelected
-                    ? isFirstInsightsLesson
-                      ? 'Free AI Insights trial included with this lesson!'
-                      : 'Lesson fee + AI Insights charged securely via Stripe'
-                    : 'Independent teacher rate — paid securely via Stripe'}
+                  Lesson fee + platform fee (includes AI study notes) charged securely via Stripe
                 </p>
               )}
             </div>

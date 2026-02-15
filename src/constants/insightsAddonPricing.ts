@@ -2,12 +2,12 @@
 // This is the revenue model for independent teachers on Talbiyah
 
 export const INSIGHTS_ADDON = {
-  /** Price per lesson in pence */
-  pricePerLessonPence: 250,
+  /** Price per lesson in pence (platform fee for independent teachers) */
+  pricePerLessonPence: 200,
   /** Price per lesson in pounds */
-  pricePerLesson: 2.50,
-  /** First lesson is free (trial to create FOMO) */
-  firstLessonFree: true,
+  pricePerLesson: 2.00,
+  /** First lesson is free (trial to create FOMO) — legacy only, independent always pays */
+  firstLessonFree: false,
   /** Approximate cost to Talbiyah per lesson (Claude API + transcription) */
   costPerLesson: 0.25,
   /** Display label for checkout */

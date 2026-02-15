@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   BookOpen,
   Calendar,
@@ -21,9 +21,11 @@ import {
   Settings,
   Radio,
   Video,
+  Sparkles,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { useCourseNotesAccess } from '../../hooks/useCourseNotesAccess';
 
 interface CourseSession {
   id: string;
@@ -66,6 +68,7 @@ interface CourseData {
 export default function CoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [course, setCourse] = useState<CourseData | null>(null);
   const [sessions, setSessions] = useState<CourseSession[]>([]);
   const [insights, setInsights] = useState<CourseInsight[]>([]);
@@ -77,9 +80,17 @@ export default function CoursePage() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [userGender, setUserGender] = useState<string | null>(null);
 
+  const { hasAccess: hasNotesAccess, notesPricePounds, isTeacherOrAdmin: isNotesAdmin } = useCourseNotesAccess(course?.id || null);
+
   useEffect(() => {
     fetchCourse();
   }, [slug]);
+
+  useEffect(() => {
+    if (searchParams.get('notes_unlocked') === 'true') {
+      toast.success('Study notes unlocked! You now have access to all session notes.');
+    }
+  }, [searchParams]);
 
   async function fetchCourse() {
     try {
@@ -515,9 +526,19 @@ export default function CoursePage() {
                           {session.session_date
                             ? formatDate(session.session_date)
                             : 'Date TBC'}
-                          {hasInsights && isEnrolled && (
+                          {hasInsights && isEnrolled && session.session_number === 1 && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <Sparkles className="w-3 h-3" /> Free Study Notes
+                            </span>
+                          )}
+                          {hasInsights && isEnrolled && session.session_number > 1 && (hasNotesAccess || isNotesAdmin) && (
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400">
-                              Study notes available
+                              Study Notes Available
+                            </span>
+                          )}
+                          {hasInsights && isEnrolled && session.session_number > 1 && !hasNotesAccess && !isNotesAdmin && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                              <Lock className="w-3 h-3" /> Unlock Study Notes — £{notesPricePounds.toFixed(2)}
                             </span>
                           )}
                           {hasInsights && !isEnrolled && (
