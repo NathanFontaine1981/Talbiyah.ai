@@ -41,7 +41,8 @@ export default function VerifyEmail() {
       setUserEmail(stateEmail || user?.email || '');
 
       if (user?.email_confirmed_at) {
-        navigate('/dashboard');
+        const returnTo = (location.state as any)?.returnTo;
+        navigate(returnTo || '/dashboard');
         return;
       }
     } catch (error) {
@@ -118,6 +119,7 @@ export default function VerifyEmail() {
 
       const { data: { user } } = await supabase.auth.getUser();
       const userRole = user?.user_metadata?.selected_role;
+      const returnTo = (location.state as any)?.returnTo;
 
       setTimeout(() => {
         if (userRole === 'parent') {
@@ -130,8 +132,11 @@ export default function VerifyEmail() {
               navigate(data && data.length > 0 ? '/dashboard' : '/onboarding');
             })
             .catch(() => navigate('/onboarding'));
+        } else if (userRole === 'explorer') {
+          navigate(returnTo || '/explore');
         } else {
-          navigate('/dashboard');
+          // Go through Welcome for profile setup, passing returnTo
+          navigate('/welcome', { state: { returnTo } });
         }
       }, 2000);
     } catch (error: any) {

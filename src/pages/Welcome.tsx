@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { User, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -60,6 +60,7 @@ const TIMEZONES = [
 
 export default function Welcome() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -254,7 +255,8 @@ export default function Welcome() {
           }
         }
 
-        navigate('/dashboard');
+        const returnTo = (location.state as any)?.returnTo;
+        navigate(returnTo || '/dashboard');
       }
     } catch (err: any) {
       console.error('Error updating profile:', err);

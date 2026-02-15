@@ -15,6 +15,8 @@ import {
   Globe,
   ArrowLeft,
   Home,
+  ImagePlus,
+  X,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -35,6 +37,7 @@ interface Course {
   current_participants: number;
   max_participants: number;
   course_type: string;
+  poster_url: string | null;
 }
 
 function generateSlug(name: string): string {
@@ -83,7 +86,7 @@ export default function TeacherCourses() {
 
       const { data } = await supabase
         .from('group_sessions')
-        .select('id, name, slug, description, invite_code, location, delivery_mode, start_date, end_date, schedule_day, schedule_time, duration_minutes, current_participants, max_participants, course_type')
+        .select('id, name, slug, description, invite_code, location, delivery_mode, start_date, end_date, schedule_day, schedule_time, duration_minutes, current_participants, max_participants, course_type, poster_url')
         .or(`teacher_id.eq.${user.id},created_by.eq.${user.id}`)
         .eq('course_type', 'course')
         .order('created_at', { ascending: false });
@@ -367,7 +370,7 @@ export default function TeacherCourses() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {course.schedule_day}s at {course.schedule_time?.slice(0, 5)}
+                      {course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)}
                     </span>
                     {course.start_date && (
                       <span>{formatDate(course.start_date)}{course.end_date ? ` — ${formatDate(course.end_date)}` : ''}</span>

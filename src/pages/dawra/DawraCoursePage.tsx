@@ -302,7 +302,7 @@ export default function CoursePage() {
             )}
             <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
               <Clock className="w-4 h-4" />
-              <span>{course.schedule_day}s at {course.schedule_time?.slice(0, 5)} ({course.duration_minutes} min)</span>
+              <span>{course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)} ({course.duration_minutes} min)</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
               <Users className="w-4 h-4" />

@@ -369,6 +369,9 @@ export default function SignUp() {
           });
         });
 
+        // Determine where to send the user after the full signup flow completes
+        const redirectTo = searchParams.get('redirect') || undefined;
+
         // Check if email confirmation is required (user not confirmed yet)
         if (!data.user.email_confirmed_at) {
           // Show toast before redirecting
@@ -377,16 +380,17 @@ export default function SignUp() {
             duration: 5000
           });
           // Redirect to email verification page with email in state
-          navigate('/verify-email', { state: { email: authForm.email, returnTo: selectedRole === 'explorer' ? '/explore' : undefined } });
+          const returnTo = redirectTo || (selectedRole === 'explorer' ? '/explore' : undefined);
+          navigate('/verify-email', { state: { email: authForm.email, returnTo } });
         } else if (selectedRole === 'explorer') {
           // Explorers go directly to Exploring Islam
-          navigate('/explore');
+          navigate(redirectTo || '/explore');
         } else if (selectedRole === 'parent') {
           // Parents go through onboarding wizard to add children
           navigate('/onboarding');
         } else {
-          // Other users go through normal welcome flow
-          navigate('/welcome');
+          // Other users go through normal welcome flow (profile setup), then redirect
+          navigate('/welcome', { state: { returnTo: redirectTo } });
         }
       }
     } catch (err: any) {
