@@ -60,6 +60,7 @@ interface CourseData {
   teacher_id: string | null;
   created_by: string | null;
   teacher: { full_name: string; avatar_url?: string } | null;
+  gender_restriction: string | null;
 }
 
 export default function CoursePage() {
@@ -74,6 +75,7 @@ export default function CoursePage() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [userGender, setUserGender] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCourse();
@@ -92,7 +94,7 @@ export default function CoursePage() {
           id, name, description, slug, invite_code, poster_url, location,
           delivery_mode, is_public, start_date, end_date, schedule_day,
           schedule_time, duration_minutes, current_participants, max_participants,
-          teacher_id, created_by,
+          teacher_id, created_by, gender_restriction,
           teacher:profiles!group_sessions_teacher_id_fkey (full_name, avatar_url)
         `)
         .eq('slug', slug)
@@ -135,15 +137,14 @@ export default function CoursePage() {
         setIsEnrolled(enrollment !== null && enrollment.length > 0);
       }
 
-      // Check if user is teacher/admin
+      // Check if user is teacher/admin and get gender
       if (user) {
         const isOwner = user.id === courseData.teacher_id || user.id === courseData.created_by;
-        if (isOwner) {
+        const { data: profile } = await supabase.from('profiles').select('role, gender').eq('id', user.id).single();
+        if (isOwner || profile?.role === 'admin') {
           setIsTeacher(true);
-        } else {
-          const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-          if (profile?.role === 'admin') setIsTeacher(true);
         }
+        setUserGender(profile?.gender || null);
       }
     } catch (err) {
       console.error('Error loading course:', err);
@@ -237,6 +238,7 @@ export default function CoursePage() {
     (s) => s.status === 'draft' && s.session_date && s.session_date >= today
   );
   const liveSession = sessions.find((s) => s.live_status === 'live');
+  const canJoinLive = !course.gender_restriction || isTeacher || userGender === course.gender_restriction;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -308,6 +310,11 @@ export default function CoursePage() {
               <Users className="w-4 h-4" />
               <span>{course.current_participants} enrolled</span>
             </div>
+            {course.gender_restriction === 'female' && (
+              <div className="flex items-center gap-2 bg-pink-500/20 border border-pink-300/30 rounded-lg px-3 py-2">
+                <span>Sisters only — live sessions</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -358,7 +365,7 @@ export default function CoursePage() {
         </div>
 
         {/* Live class banner */}
-        {liveSession && isEnrolled && (
+        {liveSession && isEnrolled && canJoinLive && (
           <div
             onClick={() => navigate(`/course/${slug}/live/${liveSession.session_number}`)}
             className="bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl p-5 mb-6 cursor-pointer hover:from-red-600 hover:to-rose-700 transition-all shadow-lg shadow-red-500/20 animate-pulse-slow"
@@ -378,6 +385,21 @@ export default function CoursePage() {
               <div className="flex items-center gap-2 bg-white/20 rounded-lg px-4 py-2">
                 <Video className="w-5 h-5" />
                 <span className="font-semibold">Join</span>
+              </div>
+            </div>
+          </div>
+        )}
+        {liveSession && isEnrolled && !canJoinLive && (
+          <div className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 rounded-xl border border-pink-200 dark:border-pink-800 p-5 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/40 flex items-center justify-center">
+                <Radio className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">Class is Live — Sisters Only</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Live sessions are for sisters only. Study notes will be available after the session.
+                </p>
               </div>
             </div>
           </div>

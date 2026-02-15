@@ -48,7 +48,7 @@ export default function CourseLiveRoom() {
       // Get user profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, roles')
+        .select('full_name, roles, gender')
         .eq('id', user.id)
         .single();
 
@@ -61,7 +61,7 @@ export default function CourseLiveRoom() {
       // Find the course by slug
       const { data: course, error: courseError } = await supabase
         .from('group_sessions')
-        .select('id, name, slug, teacher_id, created_by')
+        .select('id, name, slug, teacher_id, created_by, gender_restriction')
         .eq('slug', slug)
         .single();
 
@@ -73,6 +73,16 @@ export default function CourseLiveRoom() {
       // Check if user is the teacher
       const userIsTeacher = isAdmin || user.id === course.teacher_id || user.id === course.created_by;
       setIsTeacher(userIsTeacher);
+
+      // Check gender restriction for live sessions
+      if (course.gender_restriction && !userIsTeacher) {
+        const userGender = profile?.gender || null;
+        if (userGender !== course.gender_restriction) {
+          const label = course.gender_restriction === 'female' ? 'sisters' : 'brothers';
+          setError(`Live sessions for this course are for ${label} only. Study notes are available to all enrolled students on the course page.`);
+          return;
+        }
+      }
 
       // Find the session
       const { data: courseSession, error: sessionError } = await supabase
