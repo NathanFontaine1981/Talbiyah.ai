@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HMSPrebuilt } from '@100mslive/roomkit-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import TalbiyahLogo from '../../components/TalbiyahLogo';
 import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 

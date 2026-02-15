@@ -20,6 +20,8 @@ import LearnMode from './LearnMode';
 import QuizMode from './QuizMode';
 import PracticeMode from './PracticeMode';
 import PrayNowMode from './PrayNowMode';
+import WuduMode from './WuduMode';
+import CommonMistakesMode from './CommonMistakesMode';
 
 interface SalahTutorialProps {
   onComplete?: () => void;
@@ -27,7 +29,7 @@ interface SalahTutorialProps {
   standalone?: boolean;
 }
 
-type GameMode = 'intro' | 'learn' | 'quiz' | 'practice' | 'pray' | 'complete';
+type GameMode = 'intro' | 'learn' | 'quiz' | 'practice' | 'pray' | 'complete' | 'wudu' | 'mistakes';
 
 const STORAGE_KEY = 'talbiyah_salah_progress';
 
@@ -309,6 +311,49 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
                 style={{ width: `${learnProgress}%` }}
               />
             </div>
+          </div>
+        </motion.div>
+
+        {/* Before You Pray Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">
+            Before You Pray
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Learn Wudu Card */}
+            <button
+              onClick={() => setMode('wudu')}
+              className="group bg-gradient-to-br from-cyan-50 to-teal-50 hover:from-cyan-100 hover:to-teal-100 rounded-2xl p-5 border border-cyan-200 hover:border-cyan-300 text-left flex items-center gap-4 transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                💧
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-cyan-800">Learn Wudu</h3>
+                <p className="text-cyan-600 text-sm">Ablution - required before prayer</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            {/* Common Mistakes Card */}
+            <button
+              onClick={() => setMode('mistakes')}
+              className="group bg-gradient-to-br from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 rounded-2xl p-5 border border-orange-200 hover:border-orange-300 text-left flex items-center gap-4 transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                ⚠️
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-orange-800">Common Mistakes</h3>
+                <p className="text-orange-600 text-sm">Avoid errors that affect your prayer</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-orange-400 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </motion.div>
 
@@ -731,6 +776,20 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
       {mode === 'pray' && (
         <PrayNowMode
           key="pray"
+          onBack={() => setMode('intro')}
+        />
+      )}
+
+      {mode === 'wudu' && (
+        <WuduMode
+          key="wudu"
+          onBack={() => setMode('intro')}
+        />
+      )}
+
+      {mode === 'mistakes' && (
+        <CommonMistakesMode
+          key="mistakes"
           onBack={() => setMode('intro')}
         />
       )}
