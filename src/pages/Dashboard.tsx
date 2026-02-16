@@ -1081,8 +1081,11 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <ReferralWidget />
-                    <AnnouncementsCard />
                   </div>
+                </div>
+
+                <div className="mb-6">
+                  <AnnouncementsCard />
                 </div>
               </>
             )}
