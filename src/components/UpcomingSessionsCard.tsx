@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle, XCircle, Radio, Users } from 'lucide-react';
+import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Sparkles, MessageCircle, X, ArrowRight, CheckCircle, AlertCircle, XCircle, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
 import { getSubjectGradientClasses } from '../lib/subjectColors';
@@ -26,10 +26,13 @@ interface UpcomingLesson {
   quran_focus?: 'understanding' | 'fluency' | 'memorisation' | null;
 }
 
-interface LiveCourseSession {
+interface UpcomingCourseSession {
   id: string;
   session_number: number;
   title: string | null;
+  session_date: string | null;
+  schedule_time: string | null;
+  duration_minutes: number;
   live_status: string | null;
   room_code_guest: string | null;
   course_name: string;
@@ -47,7 +50,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<UpcomingLesson[]>([]);
   const [recentLessons, setRecentLessons] = useState<UpcomingLesson[]>([]);
-  const [liveCourseSession, setLiveCourseSession] = useState<LiveCourseSession | null>(null);
+  const [courseSessions, setCourseSessions] = useState<UpcomingCourseSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingMessage, setViewingMessage] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState<string>('');
@@ -56,7 +59,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
   useEffect(() => {
     loadUpcomingSessions();
-    loadLiveCourseSession();
+    loadUpcomingCourseSessions();
 
     // Set up real-time subscription for lesson updates
     const channel = supabase
@@ -86,7 +89,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           table: 'course_sessions',
         },
         () => {
-          loadLiveCourseSession();
+          loadUpcomingCourseSessions();
         }
       )
       .subscribe();
@@ -94,7 +97,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
     // Polling fallback: refresh every 30 seconds to catch any missed updates
     const pollInterval = setInterval(() => {
       loadUpcomingSessions(false);
-      loadLiveCourseSession();
+      loadUpcomingCourseSessions();
     }, 30000); // 30 seconds
 
     // Cleanup subscription and polling on unmount
@@ -106,7 +109,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learnerId]);
 
-  async function loadLiveCourseSession() {
+  async function loadUpcomingCourseSessions() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -118,47 +121,55 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         .eq('student_id', user.id);
 
       if (!enrollments || enrollments.length === 0) {
-        setLiveCourseSession(null);
+        setCourseSessions([]);
         return;
       }
 
       const courseIds = enrollments.map((e) => e.group_session_id);
+      const today = new Date().toISOString().split('T')[0];
 
-      // Find any live session in enrolled courses
-      const { data: liveSession } = await supabase
+      // Fetch upcoming course sessions (today + future)
+      const { data: sessions } = await supabase
         .from('course_sessions')
         .select(`
-          id, session_number, title, live_status, room_code_guest,
+          id, session_number, title, session_date, live_status, room_code_guest,
           group_sessions!inner (
-            name, slug, gender_restriction,
+            name, slug, gender_restriction, schedule_time, duration_minutes,
             teacher:profiles!group_sessions_teacher_id_fkey (full_name, avatar_url)
           )
         `)
         .in('group_session_id', courseIds)
-        .eq('live_status', 'live')
-        .limit(1)
-        .single();
+        .gte('session_date', today)
+        .order('session_date', { ascending: true })
+        .limit(3);
 
-      if (liveSession) {
-        const gs = liveSession.group_sessions as any;
-        setLiveCourseSession({
-          id: liveSession.id,
-          session_number: liveSession.session_number,
-          title: liveSession.title,
-          live_status: liveSession.live_status,
-          room_code_guest: liveSession.room_code_guest,
-          course_name: gs.name,
-          course_slug: gs.slug,
-          teacher_name: gs.teacher?.full_name || 'Teacher',
-          teacher_avatar: gs.teacher?.avatar_url || null,
-          gender_restriction: gs.gender_restriction,
-        });
+      if (sessions && sessions.length > 0) {
+        setCourseSessions(
+          sessions.map((s: any) => {
+            const gs = s.group_sessions;
+            return {
+              id: s.id,
+              session_number: s.session_number,
+              title: s.title,
+              session_date: s.session_date,
+              schedule_time: gs.schedule_time,
+              duration_minutes: gs.duration_minutes,
+              live_status: s.live_status,
+              room_code_guest: s.room_code_guest,
+              course_name: gs.name,
+              course_slug: gs.slug,
+              teacher_name: gs.teacher?.full_name || 'Teacher',
+              teacher_avatar: gs.teacher?.avatar_url || null,
+              gender_restriction: gs.gender_restriction,
+            };
+          })
+        );
       } else {
-        setLiveCourseSession(null);
+        setCourseSessions([]);
       }
     } catch (err) {
-      // No live session found — that's fine
-      setLiveCourseSession(null);
+      console.error('Error loading course sessions:', err);
+      setCourseSessions([]);
     }
   }
 
@@ -492,7 +503,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
     );
   }
 
-  if (lessons.length === 0 && recentLessons.length === 0 && !liveCourseSession) {
+  if (lessons.length === 0 && recentLessons.length === 0 && courseSessions.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Upcoming Lessons</h3>
@@ -527,7 +538,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
   }
 
   // Show recent lessons even if no upcoming booked lessons
-  if (lessons.length === 0 && !liveCourseSession && recentLessons.length > 0) {
+  if (lessons.length === 0 && courseSessions.length === 0 && recentLessons.length > 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
@@ -679,58 +690,136 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       </div>
 
       <div className="space-y-4">
-        {/* Live Course Session */}
-        {liveCourseSession && liveCourseSession.room_code_guest && (
-          <div
-            className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 rounded-xl p-5 border border-red-300 dark:border-red-800 ring-1 ring-red-200 dark:ring-red-900 shadow-md shadow-red-100 dark:shadow-red-950/20 cursor-pointer hover:shadow-lg transition-all"
-            onClick={() => navigate(`/course/${liveCourseSession.course_slug}/live/${liveCourseSession.session_number}`)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center overflow-hidden border-2 border-red-300 dark:border-red-700">
-                  {liveCourseSession.teacher_avatar ? (
-                    <img
-                      src={liveCourseSession.teacher_avatar}
-                      alt={liveCourseSession.teacher_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Users className="w-6 h-6 text-red-600 dark:text-red-400" />
-                  )}
+        {/* Upcoming Course Sessions */}
+        {courseSessions.map((cs) => {
+          const isLive = cs.live_status === 'live';
+          const roomReady = isLive && !!cs.room_code_guest;
+          const isToday = cs.session_date === format(new Date(), 'yyyy-MM-dd');
+          const sessionDateFormatted = cs.session_date
+            ? format(new Date(cs.session_date + 'T00:00:00'), 'MMM d, yyyy')
+            : 'Date TBC';
+          const timeFormatted = cs.schedule_time ? cs.schedule_time.slice(0, 5) : '';
+
+          // Join window: 10 min before lesson start until lesson end
+          let canJoinByTime = false;
+          if (cs.session_date && cs.schedule_time) {
+            const sessionStart = new Date(`${cs.session_date}T${cs.schedule_time}`);
+            const sessionEnd = new Date(sessionStart.getTime() + cs.duration_minutes * 60000);
+            const joinOpens = new Date(sessionStart.getTime() - 10 * 60000);
+            const now = new Date();
+            canJoinByTime = now >= joinOpens && now <= sessionEnd;
+          }
+          const canJoin = roomReady && canJoinByTime;
+
+          return (
+            <div
+              key={cs.id}
+              className={`rounded-xl p-5 border transition-all cursor-pointer ${
+                isLive
+                  ? 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-300 dark:border-red-800 ring-1 ring-red-200 dark:ring-red-900 shadow-md shadow-red-100 dark:shadow-red-950/20 hover:shadow-lg'
+                  : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-emerald-500/30'
+              }`}
+              onClick={() => {
+                if (canJoin) {
+                  navigate(`/course/${cs.course_slug}/live/${cs.session_number}`);
+                } else {
+                  navigate(`/course/${cs.course_slug}`);
+                }
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 ${
+                    isLive
+                      ? 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700'
+                      : 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
+                  }`}>
+                    {cs.teacher_avatar ? (
+                      <img
+                        src={cs.teacher_avatar}
+                        alt={cs.teacher_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className={`w-6 h-6 ${isLive ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {cs.course_name}
+                      </h4>
+                      {isLive && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                          </span>
+                          LIVE
+                        </span>
+                      )}
+                      {isToday && !isLive && (
+                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 text-xs font-bold rounded-full">
+                          TODAY
+                        </span>
+                      )}
+                      {canJoinByTime && !isLive && (
+                        <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-bold rounded-full animate-pulse">
+                          READY
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {cs.title || `Session ${cs.session_number}`} — with {cs.teacher_name}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {liveCourseSession.course_name}
-                    </h4>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                <div className="flex items-center space-x-6">
+                  {!isLive && (
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2 text-gray-600 mb-1">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-sm font-medium">{sessionDateFormatted}</span>
+                      </div>
+                      {timeFormatted && (
+                        <div className="flex items-center space-x-2 text-emerald-600 mb-1">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-sm font-semibold">{timeFormatted}</span>
+                        </div>
+                      )}
+                      <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 text-sm font-semibold rounded-lg border border-emerald-500/20">
+                        {cs.duration_minutes} min
                       </span>
-                      LIVE
+                    </div>
+                  )}
+
+                  {canJoin ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/course/${cs.course_slug}/live/${cs.session_number}`);
+                      }}
+                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition shadow-lg shadow-red-500/20 flex items-center space-x-2"
+                    >
+                      <Video className="w-5 h-5" />
+                      <span>Join Class</span>
+                    </button>
+                  ) : isLive && !canJoinByTime ? (
+                    <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm font-medium rounded-lg">
+                      Outside join window
                     </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {liveCourseSession.title || `Session ${liveCourseSession.session_number}`} — with {liveCourseSession.teacher_name}
-                  </p>
+                  ) : canJoinByTime && !roomReady ? (
+                    <span className="px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-medium rounded-lg">
+                      Waiting for teacher...
+                    </span>
+                  ) : null}
                 </div>
               </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/course/${liveCourseSession.course_slug}/live/${liveCourseSession.session_number}`);
-                }}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition shadow-lg shadow-red-500/20 flex items-center space-x-2"
-              >
-                <Video className="w-5 h-5" />
-                <span>Join Class</span>
-              </button>
             </div>
-          </div>
-        )}
+          );
+        })}
 
         {lessons.map((lesson) => {
           const lessonDate = parseISO(lesson.scheduled_time);

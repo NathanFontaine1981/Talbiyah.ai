@@ -514,7 +514,17 @@ export default function CoursePage() {
               const isLive = session.live_status === 'live';
               const isToday = session.session_date === today;
               const roomReady = isLive && !!session.room_code_guest;
-              const canJoin = roomReady && (isEnrolled || isTeacher) && canJoinLive;
+
+              // Join window: 10 min before scheduled time until lesson end
+              let canJoinByTime = true; // default allow if no schedule info
+              if (session.session_date && course.schedule_time) {
+                const sessionStart = new Date(`${session.session_date}T${course.schedule_time}`);
+                const sessionEnd = new Date(sessionStart.getTime() + (course.duration_minutes || 120) * 60000);
+                const joinOpens = new Date(sessionStart.getTime() - 10 * 60000);
+                const now = new Date();
+                canJoinByTime = now >= joinOpens && now <= sessionEnd;
+              }
+              const canJoin = roomReady && (isEnrolled || isTeacher) && canJoinLive && canJoinByTime;
 
               return (
                 <div
