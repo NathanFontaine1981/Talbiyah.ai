@@ -240,6 +240,13 @@ export default function CoursePage() {
     });
   }
 
+  function formatTime(time: string) {
+    const [h, m] = time.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
   const deliveryIcon = {
     online: <Wifi className="w-4 h-4" />,
     in_person: <MapPin className="w-4 h-4" />,
@@ -330,7 +337,7 @@ export default function CoursePage() {
                 )}
                 <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
                   <Clock className="w-4 h-4" />
-                  <span>{course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)} ({course.duration_minutes} min)</span>
+                  <span>{course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {formatTime(course.schedule_time)} ({course.duration_minutes} min)</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
                   <Users className="w-4 h-4" />
@@ -479,7 +486,7 @@ export default function CoursePage() {
                   {course.schedule_time && (
                     <span className="ml-2">
                       <Clock className="w-3.5 h-3.5 inline mr-1" />
-                      {course.schedule_time?.slice(0, 5)}
+                      {formatTime(course.schedule_time)}
                     </span>
                   )}
                   {course.location && (
@@ -596,7 +603,7 @@ export default function CoursePage() {
                             : 'Date TBC'}
                           {hasInsights && (isEnrolled || isTeacher) && session.session_number === 1 && (
                             <span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                              <Sparkles className="w-3 h-3" /> Free Study Notes
+                              <Sparkles className="w-3 h-3" /> Study Notes
                             </span>
                           )}
                           {hasInsights && (isEnrolled || isTeacher) && session.session_number > 1 && (hasNotesAccess || isNotesAdmin) && (
@@ -652,6 +659,7 @@ export default function CoursePage() {
             })
           )}
         </div>
+
       </div>
     </div>
   );

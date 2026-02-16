@@ -34,13 +34,13 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) throw new Error('Unauthorized')
 
-    const { group_session_id, success_url, cancel_url } = await req.json()
+    const { group_session_id, success_url, cancel_url, discount_code } = await req.json()
     if (!group_session_id) throw new Error('group_session_id is required')
 
     // Get course details
     const { data: course, error: courseError } = await supabase
       .from('group_sessions')
-      .select('id, name, slug')
+      .select('id, name, slug, notes_discount_code, notes_discount_percent')
       .eq('id', group_session_id)
       .single()
 
@@ -68,16 +68,42 @@ serve(async (req) => {
       throw new Error('You already have access to study notes for this course')
     }
 
-    // Count total sessions to calculate price: £2/session, max £10
-    const { count: totalSessions } = await supabase
-      .from('course_sessions')
-      .select('id', { count: 'exact', head: true })
-      .eq('group_session_id', group_session_id)
+    // Handle discount code (100% off = free, skip Stripe)
+    if (discount_code && course.notes_discount_code) {
+      if (discount_code.toUpperCase().trim() === course.notes_discount_code.toUpperCase().trim()) {
+        if (course.notes_discount_percent === 100) {
+          // Grant free access directly — no Stripe needed
+          const { error: freeAccessError } = await supabase
+            .from('course_notes_access')
+            .upsert({
+              group_session_id,
+              student_id: user.id,
+              amount: 0,
+              status: 'completed',
+              discount_code: discount_code.toUpperCase().trim(),
+            }, { onConflict: 'group_session_id,student_id' })
 
-    const sessionCount = totalSessions || 0
-    const pricePence = Math.min(sessionCount * 200, 1000)
+          if (freeAccessError) {
+            console.error('Free access grant error:', freeAccessError)
+            throw new Error('Failed to grant free access')
+          }
 
-    if (pricePence <= 0) throw new Error('No sessions available for this course')
+          return new Response(
+            JSON.stringify({
+              success: true,
+              free_access_granted: true,
+              redirect_url: success_url || `${req.headers.get('origin')}/course/${course.slug}?notes_unlocked=true`,
+            }),
+            { headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      } else {
+        throw new Error('Invalid discount code')
+      }
+    }
+
+    // Flat £5 for all study notes
+    const pricePence = 500
 
     // Get or create Stripe customer
     const { data: profile } = await supabase
@@ -124,7 +150,7 @@ serve(async (req) => {
             currency: 'gbp',
             product_data: {
               name: `Study Notes: ${course.name}`,
-              description: `AI-powered study notes for all ${sessionCount} sessions`,
+              description: `AI-powered study notes for all sessions`,
               metadata: {
                 group_session_id,
                 type: 'course_notes',
@@ -136,6 +162,7 @@ serve(async (req) => {
         },
       ],
       mode: 'payment',
+      allow_promotion_codes: true,
       success_url: success_url || `${req.headers.get('origin')}/course/${course.slug}?notes_unlocked=true`,
       cancel_url: cancel_url || `${req.headers.get('origin')}/course/${course.slug}`,
       metadata: {

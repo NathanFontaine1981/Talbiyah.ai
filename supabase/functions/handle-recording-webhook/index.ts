@@ -161,6 +161,58 @@ async function transcribeWithElevenLabs(recordingUrl: string, maxFileSizeMB: num
   }
 }
 
+/**
+ * Trigger the full course insights pipeline:
+ * 1. Generate AI insights from transcript
+ * 2. Notify enrolled students via email
+ */
+async function triggerCourseInsightsPipeline(
+  courseSessionId: string,
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+): Promise<void> {
+  try {
+    console.log("Auto-triggering course insight generation for session:", courseSessionId);
+
+    const insightResp = await fetch(`${supabaseUrl}/functions/v1/generate-dawra-insights`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ course_session_id: courseSessionId }),
+    });
+
+    if (insightResp.ok) {
+      const insightData = await insightResp.json();
+      console.log("Course insights generated:", insightData.insight_id);
+
+      // Auto-notify enrolled students
+      if (insightData.insight_id) {
+        const notifyResp = await fetch(`${supabaseUrl}/functions/v1/notify-dawra-insights`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ course_insight_id: insightData.insight_id }),
+        });
+
+        if (notifyResp.ok) {
+          const notifyData = await notifyResp.json();
+          console.log("Student notifications sent:", notifyData.email_count);
+        } else {
+          console.error("Failed to notify students:", await notifyResp.text());
+        }
+      }
+    } else {
+      console.error("Failed to generate course insights:", await insightResp.text());
+    }
+  } catch (err) {
+    console.error("Error in course insights pipeline:", err);
+  }
+}
+
 // Legacy format for backwards compatibility
 interface RecordingWebhookPayload {
   room_id: string;
@@ -429,14 +481,21 @@ Deno.serve(async (req: Request) => {
               .eq("id", courseSession.id);
 
             console.log("Course session transcript saved, status -> transcript_added");
+
+            // Auto-generate insights and notify students
+            await triggerCourseInsightsPipeline(courseSession.id, supabaseUrl, supabaseServiceKey);
           }
         } else if (recordingUrl) {
           // Recording event - save recording URL and mark ended
+          const recordingExpiresAt = new Date();
+          recordingExpiresAt.setDate(recordingExpiresAt.getDate() + 7);
+
           await supabase
             .from("course_sessions")
             .update({
               recording_url: recordingUrl,
               recording_asset_id: (rawData as HMS100msWebhook).data?.recording_id || null,
+              recording_expires_at: recordingExpiresAt.toISOString(),
               live_status: 'ended',
               status: 'recording',
               updated_at: new Date().toISOString(),
@@ -444,6 +503,33 @@ Deno.serve(async (req: Request) => {
             .eq("id", courseSession.id);
 
           console.log("Course session recording saved, live_status -> ended, status -> recording");
+
+          // Auto-transcribe using ElevenLabs and generate insights
+          console.log("Auto-transcribing course session recording...");
+          try {
+            const courseAutoTranscript = await transcribeWithElevenLabs(recordingUrl);
+
+            if (courseAutoTranscript && courseAutoTranscript.length > 100) {
+              console.log("Course auto-transcription successful, length:", courseAutoTranscript.length);
+
+              await supabase
+                .from("course_sessions")
+                .update({
+                  transcript: courseAutoTranscript,
+                  transcript_source: 'elevenlabs',
+                  status: 'transcript_added',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", courseSession.id);
+
+              // Auto-generate insights and notify students
+              await triggerCourseInsightsPipeline(courseSession.id, supabaseUrl, supabaseServiceKey);
+            } else {
+              console.log("Course auto-transcription failed or too short, skipping insight generation");
+            }
+          } catch (transcribeErr) {
+            console.error("Error in course auto-transcription pipeline:", transcribeErr);
+          }
         }
 
         return new Response(

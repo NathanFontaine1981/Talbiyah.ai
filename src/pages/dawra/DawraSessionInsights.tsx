@@ -28,6 +28,10 @@ import {
   Circle,
   Lock,
   Loader2,
+  Play,
+  Download,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../lib/supabaseClient';
@@ -626,6 +630,10 @@ export default function CourseSessionInsights() {
   const [groupSessionId, setGroupSessionId] = useState<string | null>(null);
   const [purchasingNotes, setPurchasingNotes] = useState(false);
   const [coursePosterUrl, setCoursePosterUrl] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [recordingExpiresAt, setRecordingExpiresAt] = useState<string | null>(null);
+  const [recordingAssetId, setRecordingAssetId] = useState<string | null>(null);
+  const [refreshingRecording, setRefreshingRecording] = useState(false);
 
   const { hasAccess: hasNotesAccess, loading: notesAccessLoading, notesPricePounds, isTeacherOrAdmin } = useCourseNotesAccess(groupSessionId);
   const currentSessionNum = parseInt(sessionNumber || '1', 10);
@@ -661,9 +669,12 @@ export default function CourseSessionInsights() {
         }
       }
 
-      const { data: session } = await supabase.from('course_sessions').select('id, session_number').eq('group_session_id', course.id).eq('session_number', num).single();
+      const { data: session } = await supabase.from('course_sessions').select('id, session_number, recording_url, recording_expires_at, recording_asset_id').eq('group_session_id', course.id).eq('session_number', num).single();
       if (!session) { toast.error('Session not found'); navigate(`/course/${slug}`); return; }
       setCourseSessionId(session.id);
+      setRecordingUrl(session.recording_url || null);
+      setRecordingExpiresAt(session.recording_expires_at || null);
+      setRecordingAssetId(session.recording_asset_id || null);
 
       const { data: insightData, error } = await supabase.from('course_insights')
         .select(`id, title, summary, insights_content, processing_time_ms, created_at, course_sessions!inner (session_number, title, session_date), group_sessions!inner (name, slug, teacher:profiles!group_sessions_teacher_id_fkey (full_name))`)
@@ -736,6 +747,51 @@ export default function CourseSessionInsights() {
     }
   }
 
+  const isRecordingExpired = recordingExpiresAt ? new Date(recordingExpiresAt) < new Date() : false;
+  const recordingExpiresInDays = recordingExpiresAt
+    ? Math.max(0, Math.ceil((new Date(recordingExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  async function handleRefreshRecordingUrl() {
+    if (!recordingAssetId || !courseSessionId) return;
+    setRefreshingRecording(true);
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) return;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-recording-url`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authSession.access_token}`,
+          },
+          body: JSON.stringify({
+            recording_asset_id: recordingAssetId,
+            course_session_id: courseSessionId,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.recording_url) {
+          setRecordingUrl(data.recording_url);
+          setRecordingExpiresAt(data.expires_at || null);
+          toast.success('Recording URL refreshed!');
+        }
+      } else {
+        toast.error('Could not refresh recording URL');
+      }
+    } catch (err) {
+      console.error('Error refreshing recording URL:', err);
+      toast.error('Failed to refresh recording');
+    } finally {
+      setRefreshingRecording(false);
+    }
+  }
+
   const currentSession = parseInt(sessionNumber || '1', 10);
   const hasPrev = currentSession > 1;
   const hasNext = currentSession < totalSessions;
@@ -787,6 +843,83 @@ export default function CourseSessionInsights() {
             {session.session_date && <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {formatDate(session.session_date)}</span>}
           </div>
         </div>
+
+        {/* Session Recording Player */}
+        {recordingUrl && canViewNotes && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm mb-6">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+                    <Play className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Session Recording</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {recordingExpiresInDays !== null && recordingExpiresInDays > 0
+                        ? `Available for ${recordingExpiresInDays} more day${recordingExpiresInDays !== 1 ? 's' : ''}`
+                        : isRecordingExpired ? 'Recording link expired' : 'Watch the full session'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!isRecordingExpired && (
+                    <a
+                      href={recordingUrl}
+                      download
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Expiry warning */}
+              {recordingExpiresInDays !== null && recordingExpiresInDays <= 2 && recordingExpiresInDays > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-4 text-sm text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <p>This recording expires in {recordingExpiresInDays} day{recordingExpiresInDays !== 1 ? 's' : ''}. Download it now to keep a copy.</p>
+                </div>
+              )}
+
+              {isRecordingExpired ? (
+                <div className="text-center py-6">
+                  <Clock className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400 mb-3">The recording link has expired.</p>
+                  {recordingAssetId && (
+                    <button
+                      onClick={handleRefreshRecordingUrl}
+                      disabled={refreshingRecording}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+                    >
+                      {refreshingRecording ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          <span>Get Fresh Link</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <video
+                  src={recordingUrl}
+                  controls
+                  className="w-full rounded-xl bg-black"
+                  preload="metadata"
+                  controlsList="nodownload"
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Table of Contents */}
         {sections.length > 3 && (
@@ -889,6 +1022,7 @@ export default function CourseSessionInsights() {
               <p className="text-gray-600 dark:text-gray-400 mb-1">
                 Session 1 notes were free — get notes for every session in this course.
               </p>
+
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-4">
                 £{notesPricePounds.toFixed(2)}
                 <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-1">one-off</span>

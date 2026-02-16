@@ -318,6 +318,13 @@ export default function GroupClasses() {
     }
   }
 
+  function formatTime(time: string) {
+    const [h, m] = time.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
   function getSubjectIcon(name?: string) {
     if (!name) return '📚';
     if (name.toLowerCase().includes('quran')) return '📗';
@@ -537,7 +544,7 @@ export default function GroupClasses() {
                   </span>
                   <span className="flex items-center space-x-1">
                     <Clock className="w-4 h-4" />
-                    <span>{selectedSession.schedule_time}</span>
+                    <span>{formatTime(selectedSession.schedule_time)}</span>
                   </span>
                 </div>
               </div>
@@ -697,7 +704,7 @@ function GroupClassCard({
           </div>
           <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
             <Clock className="w-4 h-4 text-gray-400" />
-            <span>{session.schedule_time} ({session.duration_minutes} min)</span>
+            <span>{formatTime(session.schedule_time)} ({session.duration_minutes} min)</span>
           </div>
           {session.location && (
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 text-sm">
@@ -719,7 +726,7 @@ function GroupClassCard({
         )}
 
         {/* Spots & Price */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <Users className="w-4 h-4 text-gray-400" />
             <span className={`text-sm font-medium ${isFull ? 'text-red-600 dark:text-red-400' : spotsLeft <= 2 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'}`}>
@@ -736,6 +743,24 @@ function GroupClassCard({
             </span>
           )}
         </div>
+
+        {/* Study Notes add-on for courses */}
+        {isCourse && session.is_free && (
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-4">
+            <div className="flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-gray-600 dark:text-gray-300">
+                <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
+                  Free: 7-day video recordings + download
+                </p>
+                <p>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Optional:</span> AI Study Notes — <span className="font-bold">£5</span> one-off for all sessions.
+                  Session 1 notes free to preview.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         {isCourse && isEnrolled ? (

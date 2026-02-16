@@ -32,11 +32,58 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { lesson_id, room_id, session_id } = await req.json();
+    const { lesson_id, room_id, session_id, recording_asset_id, course_session_id } = await req.json();
+
+    // Quick path: if recording_asset_id is provided, just get a fresh presigned URL
+    if (recording_asset_id) {
+      let hmsToken: string;
+      try {
+        hmsToken = await getHMSManagementToken();
+      } catch (tokenError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to generate 100ms authentication token" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const presignedResponse = await fetch(
+        `https://api.100ms.live/v2/recording-assets/${recording_asset_id}/presigned-url?presign_duration=${7 * 24 * 60 * 60}`,
+        { headers: { "Authorization": `Bearer ${hmsToken}` } }
+      );
+
+      if (!presignedResponse.ok) {
+        return new Response(
+          JSON.stringify({ error: "Failed to get presigned URL for recording asset" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const presignedData = await presignedResponse.json();
+      const newUrl = presignedData.url;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      // Update course_sessions with fresh URL if course_session_id provided
+      if (course_session_id && newUrl) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, supabaseServiceKey);
+        await sb.from("course_sessions").update({
+          recording_url: newUrl,
+          recording_expires_at: expiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", course_session_id);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, recording_url: newUrl, expires_at: expiresAt.toISOString() }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!lesson_id && !room_id && !session_id) {
       return new Response(
-        JSON.stringify({ error: "Either lesson_id, room_id, or session_id is required" }),
+        JSON.stringify({ error: "Either lesson_id, room_id, session_id, or recording_asset_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

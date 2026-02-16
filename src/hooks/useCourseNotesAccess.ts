@@ -8,6 +8,8 @@ interface CourseNotesAccess {
   notesPricePence: number;
   notesPricePounds: number;
   isTeacherOrAdmin: boolean;
+  discountPercent: number;
+  hasDiscountCode: boolean;
   refetch: () => void;
 }
 
@@ -18,6 +20,8 @@ export function useCourseNotesAccess(groupSessionId: string | null): CourseNotes
   const [notesPricePence, setNotesPricePence] = useState(0);
   const [notesPricePounds, setNotesPricePounds] = useState(0);
   const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [hasDiscountCode, setHasDiscountCode] = useState(false);
 
   const fetchAccess = useCallback(async () => {
     if (!groupSessionId) {
@@ -30,14 +34,17 @@ export function useCourseNotesAccess(groupSessionId: string | null): CourseNotes
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      // Check if teacher or admin
+      // Check if teacher or admin + get discount info
       const { data: course } = await supabase
         .from('group_sessions')
-        .select('teacher_id, created_by')
+        .select('teacher_id, created_by, notes_discount_code, notes_discount_percent')
         .eq('id', groupSessionId)
         .single();
 
       if (course) {
+        setDiscountPercent(course.notes_discount_percent || 0);
+        setHasDiscountCode(!!course.notes_discount_code);
+
         const isOwner = user.id === course.teacher_id || user.id === course.created_by;
         if (isOwner) {
           setIsTeacherOrAdmin(true);
@@ -70,8 +77,8 @@ export function useCourseNotesAccess(groupSessionId: string | null): CourseNotes
       const sessionCount = count || 0;
       setTotalSessions(sessionCount);
 
-      // Calculate price: £2/session, max £10
-      const pence = Math.min(sessionCount * 200, 1000);
+      // Flat £5 for all study notes
+      const pence = 500;
       setNotesPricePence(pence);
       setNotesPricePounds(pence / 100);
 
@@ -110,6 +117,8 @@ export function useCourseNotesAccess(groupSessionId: string | null): CourseNotes
     notesPricePence,
     notesPricePounds,
     isTeacherOrAdmin,
+    discountPercent,
+    hasDiscountCode,
     refetch: fetchAccess,
   };
 }
