@@ -33,6 +33,7 @@ interface CourseSession {
   session_date: string | null;
   status: string;
   live_status: string | null;
+  room_code_guest: string | null;
 }
 
 interface CourseInsight {
@@ -85,6 +86,33 @@ export default function CoursePage() {
     fetchCourse();
   }, [slug]);
 
+  // Realtime subscription: auto-update when teacher starts/ends a live session
+  useEffect(() => {
+    if (!course?.id) return;
+    const channel = supabase
+      .channel(`course-sessions-${course.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'course_sessions',
+          filter: `group_session_id=eq.${course.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as CourseSession;
+          setSessions((prev) =>
+            prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [course?.id]);
+
   useEffect(() => {
     if (searchParams.get('notes_unlocked') === 'true') {
       toast.success('Study notes unlocked! You now have access to all session notes.');
@@ -121,7 +149,7 @@ export default function CoursePage() {
       // Fetch sessions
       const { data: sessionsData } = await supabase
         .from('course_sessions')
-        .select('id, session_number, title, session_date, status, live_status')
+        .select('id, session_number, title, session_date, status, live_status, room_code_guest')
         .eq('group_session_id', courseData.id)
         .order('session_number', { ascending: true });
 
@@ -483,19 +511,30 @@ export default function CoursePage() {
               const hasInsights = session.status === 'published' && insight;
               const isUpcoming = session.status === 'draft';
               const isGenerating = session.status === 'generating';
+              const isLive = session.live_status === 'live';
+              const isToday = session.session_date === today;
+              const roomReady = isLive && !!session.room_code_guest;
+              const canJoin = roomReady && (isEnrolled || isTeacher) && canJoinLive;
 
               return (
                 <div
                   key={session.id}
-                  className={`bg-white dark:bg-gray-800 rounded-xl border ${
-                    hasInsights
-                      ? 'border-emerald-200 dark:border-emerald-800'
-                      : 'border-gray-200 dark:border-gray-700'
-                  } p-4 sm:p-5 transition-all ${
+                  className={`rounded-xl border p-4 sm:p-5 transition-all ${
+                    isLive
+                      ? 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-300 dark:border-red-800 ring-1 ring-red-200 dark:ring-red-900 shadow-md shadow-red-100 dark:shadow-red-950/20'
+                      : isToday && isUpcoming
+                      ? 'bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-300 dark:border-amber-800'
+                      : hasInsights
+                      ? 'bg-white dark:bg-gray-800 border-emerald-200 dark:border-emerald-800'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                  } ${
+                    canJoin ? 'hover:shadow-lg cursor-pointer' :
                     hasInsights && (isEnrolled || isTeacher) ? 'hover:shadow-md cursor-pointer' : hasInsights ? 'cursor-pointer' : ''
                   }`}
                   onClick={() => {
-                    if (hasInsights && (isEnrolled || isTeacher)) {
+                    if (canJoin) {
+                      navigate(`/course/${slug}/live/${session.session_number}`);
+                    } else if (hasInsights && (isEnrolled || isTeacher)) {
                       navigate(`/course/${slug}/session/${session.session_number}`);
                     } else if (hasInsights && !userId) {
                       navigate(`/signup?redirect=/course/${slug}`);
@@ -508,7 +547,11 @@ export default function CoursePage() {
                     <div className="flex items-center gap-4">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                          hasInsights
+                          isLive
+                            ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
+                            : isToday && isUpcoming
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            : hasInsights
                             ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                             : isGenerating
                             ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
@@ -518,9 +561,25 @@ export default function CoursePage() {
                         {session.session_number}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {session.title || `Session ${session.session_number}`}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {session.title || `Session ${session.session_number}`}
+                          </h3>
+                          {isLive && (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                              </span>
+                              LIVE
+                            </span>
+                          )}
+                          {isToday && !isLive && isUpcoming && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                              Today
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {session.session_date
                             ? formatDate(session.session_date)
@@ -554,7 +613,22 @@ export default function CoursePage() {
                       </div>
                     </div>
                     <div>
-                      {hasInsights && (isEnrolled || isTeacher) ? (
+                      {canJoin ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/course/${slug}/live/${session.session_number}`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                        >
+                          <Video className="w-4 h-4" />
+                          Join Room
+                        </button>
+                      ) : isLive && isEnrolled && !canJoinLive ? (
+                        <span className="text-xs text-pink-600 dark:text-pink-400 font-medium">Sisters only</span>
+                      ) : isLive && !isEnrolled ? (
+                        <span className="text-xs text-gray-400">Enrol to join</span>
+                      ) : hasInsights && (isEnrolled || isTeacher) ? (
                         <ChevronRight className="w-5 h-5 text-emerald-500" />
                       ) : hasInsights && !isEnrolled ? (
                         <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
