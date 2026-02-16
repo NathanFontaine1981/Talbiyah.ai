@@ -25,6 +25,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { useCourseNotesAccess } from '../../hooks/useCourseNotesAccess';
+import { COURSE_NOTES_PRICING } from '../../constants/courseNotesPricing';
 
 interface CourseSession {
   id: string;
@@ -63,6 +64,9 @@ interface CourseData {
   created_by: string | null;
   teacher: { full_name: string; avatar_url?: string } | null;
   gender_restriction: string | null;
+  is_free: boolean;
+  price_per_session: number | null;
+  total_sessions: number | null;
 }
 
 export default function CoursePage() {
@@ -132,7 +136,7 @@ export default function CoursePage() {
           id, name, description, slug, poster_url, location,
           delivery_mode, is_public, start_date, end_date, schedule_day,
           schedule_time, duration_minutes, current_participants, max_participants,
-          teacher_id, created_by, gender_restriction,
+          teacher_id, created_by, gender_restriction, is_free, price_per_session, total_sessions,
           teacher:profiles!group_sessions_teacher_id_fkey (full_name, avatar_url)
         `)
         .eq('slug', slug)
@@ -350,6 +354,23 @@ export default function CoursePage() {
                   </div>
                 )}
               </div>
+
+              {/* Pricing */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3">
+                  <p className="text-xs text-emerald-200 uppercase tracking-wider font-medium mb-1">Course Price</p>
+                  <p className="text-xl font-bold">
+                    {course.is_free ? 'Free' : `£${course.price_per_session}/session`}
+                  </p>
+                </div>
+                <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3">
+                  <p className="text-xs text-emerald-200 uppercase tracking-wider font-medium mb-1">Study Notes Add-on</p>
+                  <p className="text-xl font-bold">
+                    £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} <span className="text-sm font-normal text-emerald-200">one-off</span>
+                  </p>
+                  <p className="text-xs text-emerald-200 mt-0.5">Session 1 free, then unlock all remaining</p>
+                </div>
+              </div>
             </div>
 
             {/* Right: poster */}
@@ -393,9 +414,12 @@ export default function CoursePage() {
           ) : (
             <>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Join this course — Free</p>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  Join this course — {course.is_free ? 'Free' : `£${course.price_per_session}/session`}
+                </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Get AI-generated study notes after each session
+                  {course.total_sessions ? `${course.total_sessions} sessions` : 'Ongoing'}
+                  {' · '}Study notes available as optional add-on (£{COURSE_NOTES_PRICING.flatPrice.toFixed(2)})
                 </p>
               </div>
               <button
