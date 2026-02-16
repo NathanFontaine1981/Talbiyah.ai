@@ -14,13 +14,7 @@ import {
   AlertCircle,
   Copy,
   Check,
-  ChevronRight,
-  Upload,
-  Trash2,
   ExternalLink,
-  Eye,
-  HelpCircle,
-  Star,
   ArrowLeft,
   Home,
   Video,
@@ -462,6 +456,13 @@ export default function CourseTeacherDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to={`/teacher/course/${course.id}/students`}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors font-medium"
+          >
+            <Users className="w-4 h-4" />
+            Students ({students.length})
+          </Link>
           <button
             onClick={copyInviteLink}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-300 transition-colors"
@@ -479,6 +480,57 @@ export default function CourseTeacherDashboard() {
             </Link>
           )}
         </div>
+      </div>
+
+      {/* Enrolled Students */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Users className="w-5 h-5 text-emerald-600" />
+            Enrolled Students ({students.length})
+          </h2>
+          <Link
+            to={`/teacher/course/${course.id}/students`}
+            className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
+          >
+            View All
+          </Link>
+        </div>
+        {students.length === 0 ? (
+          <div className="text-center py-4">
+            <Users className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">No students enrolled yet. Share the course link to get started.</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {students.map((student) => {
+              const stats = getStudentStats(student.student_id);
+              return (
+                <div
+                  key={student.student_id}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  {student.avatar_url ? (
+                    <img src={student.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs font-bold">
+                      {student.full_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{student.full_name}</p>
+                    {publishedSessions.length > 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {stats.viewed}/{publishedSessions.length} viewed
+                        {stats.quizzed > 0 && ` · ${stats.quizzed} quizzed`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Sessions */}
@@ -795,144 +847,6 @@ export default function CourseTeacherDashboard() {
         )}
       </div>
 
-      {/* Enrolled Students Section */}
-      <div className="mt-10">
-        <button
-          onClick={() => setShowStudents(!showStudents)}
-          className="flex items-center justify-between w-full mb-4"
-        >
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Enrolled Students ({students.length})
-          </h2>
-          <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${showStudents ? 'rotate-90' : ''}`} />
-        </button>
-
-        {showStudents && (
-          <div className="space-y-4">
-            {/* Summary stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-600">{students.length}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Enrolled</p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">{publishedSessions.length}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Notes Published</p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-                <p className="text-2xl font-bold text-purple-600">
-                  {progress.filter(p => p.viewed_at).length}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Views</p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-                <p className="text-2xl font-bold text-pink-600">
-                  {progress.filter(p => p.quiz_completed_at).length}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Quizzes Done</p>
-              </div>
-            </div>
-
-            {/* Student table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Student</th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300">Enrolled</th>
-                      {publishedSessions.map(s => (
-                        <th key={s.id} className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300 min-w-[80px]">
-                          <div className="text-xs">S{s.session_number}</div>
-                        </th>
-                      ))}
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                        <Eye className="w-3.5 h-3.5 mx-auto" />
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                        <HelpCircle className="w-3.5 h-3.5 mx-auto" />
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => {
-                      const stats = getStudentStats(student.student_id);
-                      return (
-                        <tr key={student.student_id} className="border-b border-gray-100 dark:border-gray-700/50 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 text-xs font-bold flex-shrink-0">
-                                {student.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-gray-900 dark:text-white truncate">{student.full_name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{student.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(student.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          </td>
-                          {publishedSessions.map(s => {
-                            const sp = getStudentProgress(student.student_id, s.id);
-                            return (
-                              <td key={s.id} className="px-3 py-3 text-center">
-                                {sp?.viewed_at ? (
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                                    {sp.quiz_score !== null && (
-                                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">{sp.quiz_score}%</span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="w-4 h-4 rounded-full border-2 border-gray-200 dark:border-gray-600 block mx-auto" />
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className="px-3 py-3 text-center">
-                            <span className={`text-xs font-medium ${stats.viewed > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
-                              {stats.viewed}/{publishedSessions.length}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <span className={`text-xs font-medium ${stats.quizzed > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
-                              {stats.quizzed}/{publishedSessions.length}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <button
-                              onClick={() => removeStudent(student.student_id, student.full_name)}
-                              disabled={removingStudentId === student.student_id}
-                              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-50"
-                              title={`Remove ${student.full_name}`}
-                            >
-                              {removingStudentId === student.student_id ? (
-                                <Loader className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {students.length === 0 && (
-                      <tr>
-                        <td colSpan={publishedSessions.length + 5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                          No students enrolled yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
