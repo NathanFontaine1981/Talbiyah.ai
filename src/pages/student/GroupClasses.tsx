@@ -62,7 +62,8 @@ interface Learner {
 type LevelFilter = 'all' | 'beginner' | 'intermediate' | 'advanced';
 type SubjectFilter = 'all' | string;
 
-function formatTime(time: string) {
+function formatTime(time: string | null | undefined) {
+  if (!time) return '';
   const [h, m] = time.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 || 12;

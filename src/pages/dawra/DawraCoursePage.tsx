@@ -240,7 +240,8 @@ export default function CoursePage() {
     });
   }
 
-  function formatTime(time: string) {
+  function formatTime(time: string | null | undefined) {
+    if (!time) return '';
     const [h, m] = time.split(':').map(Number);
     const ampm = h >= 12 ? 'PM' : 'AM';
     const hour12 = h % 12 || 12;
