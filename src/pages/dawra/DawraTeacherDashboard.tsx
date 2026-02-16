@@ -62,6 +62,7 @@ interface EnrolledStudent {
   enrolled_at: string;
   full_name: string;
   email: string;
+  phone_number: string | null;
   avatar_url: string | null;
 }
 
@@ -160,7 +161,7 @@ export default function CourseTeacherDashboard() {
       // Fetch enrolled students
       const { data: studentsData } = await supabase
         .from('group_session_participants')
-        .select('student_id, enrolled_at, profiles:profiles!group_session_participants_student_id_fkey (full_name, email, avatar_url)')
+        .select('student_id, enrolled_at, profiles:profiles!group_session_participants_student_id_fkey (full_name, email, phone_number, avatar_url)')
         .eq('group_session_id', courseData.id)
         .order('enrolled_at', { ascending: true });
 
@@ -169,6 +170,7 @@ export default function CourseTeacherDashboard() {
         enrolled_at: s.enrolled_at,
         full_name: s.profiles?.full_name || 'Unknown',
         email: s.profiles?.email || '',
+        phone_number: s.profiles?.phone_number || null,
         avatar_url: s.profiles?.avatar_url || null,
       }));
       setStudents(mappedStudents);
@@ -663,6 +665,11 @@ export default function CourseTeacherDashboard() {
                                 <Mail className="w-3 h-3" />
                                 {student.email}
                               </p>
+                              {student.phone_number && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {student.phone_number}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
