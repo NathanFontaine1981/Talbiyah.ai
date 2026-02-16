@@ -62,6 +62,13 @@ interface Learner {
 type LevelFilter = 'all' | 'beginner' | 'intermediate' | 'advanced';
 type SubjectFilter = 'all' | string;
 
+function formatTime(time: string) {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 export default function GroupClasses() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -316,13 +323,6 @@ export default function GroupClasses() {
     } finally {
       setEnrolling(false);
     }
-  }
-
-  function formatTime(time: string) {
-    const [h, m] = time.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
   }
 
   function getSubjectIcon(name?: string) {
