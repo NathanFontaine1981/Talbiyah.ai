@@ -795,48 +795,53 @@ export default function TeacherCourses() {
               ) : (
                 /* Read-only view */
                 <>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.name}</h3>
-                      {course.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{course.description}</p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          {course.current_participants} students
-                        </span>
-                        {course.location && (
+                  <div
+                    onClick={() => navigate(`/teacher/course/${course.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.name}</h3>
+                        {course.description && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{course.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
                           <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {course.location}
+                            <Users className="w-3.5 h-3.5" />
+                            {course.current_participants} students
                           </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          {deliveryIcon[course.delivery_mode]}
-                          {deliveryLabel[course.delivery_mode]}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)}
-                        </span>
-                        {course.start_date && (
-                          <span>{formatDate(course.start_date)}{course.end_date ? ` — ${formatDate(course.end_date)}` : ''}</span>
-                        )}
-                        {course.total_sessions && (
-                          <span>{course.total_sessions} sessions</span>
-                        )}
-                        <span className="font-medium">
-                          {course.is_free ? 'Free' : `£${course.price_per_session}/session`}
-                        </span>
-                        {course.total_sessions && (
-                          <span className="text-blue-600 dark:text-blue-400">
-                            Study Notes: £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)}/student
+                          {course.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5" />
+                              {course.location}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            {deliveryIcon[course.delivery_mode]}
+                            {deliveryLabel[course.delivery_mode]}
                           </span>
-                        )}
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)}
+                          </span>
+                          {course.start_date && (
+                            <span>{formatDate(course.start_date)}{course.end_date ? ` — ${formatDate(course.end_date)}` : ''}</span>
+                          )}
+                          {course.total_sessions && (
+                            <span>{course.total_sessions} sessions</span>
+                          )}
+                          <span className="font-medium">
+                            {course.is_free ? 'Free' : `£${course.price_per_session}/session`}
+                          </span>
+                          {course.total_sessions && (
+                            <span className="text-blue-600 dark:text-blue-400">
+                              Study Notes: £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)}/student
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
                   </div>
 
                   {/* Actions */}

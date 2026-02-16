@@ -20,6 +20,7 @@ import {
   Video,
   Radio,
   Pencil,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -508,7 +509,7 @@ export default function CourseTeacherDashboard() {
               return (
                 <div
                   key={student.student_id}
-                  className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
                 >
                   {student.avatar_url ? (
                     <img src={student.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
@@ -526,6 +527,18 @@ export default function CourseTeacherDashboard() {
                       </p>
                     )}
                   </div>
+                  <button
+                    onClick={() => removeStudent(student.student_id, student.full_name)}
+                    disabled={removingStudentId === student.student_id}
+                    className="ml-1 p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-100"
+                    title={`Remove ${student.full_name}`}
+                  >
+                    {removingStudentId === student.student_id ? (
+                      <Loader className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               );
             })}
