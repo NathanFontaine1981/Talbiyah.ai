@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Languages, Star, ArrowRight, Gamepad2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useSelfLearner } from '../hooks/useSelfLearner';
 
 interface CourseProgress {
   name: string;
@@ -19,16 +20,20 @@ interface MyLearningJourneyCardProps {
   learnerId?: string;
 }
 
-export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCardProps) {
+export default function MyLearningJourneyCard({ learnerId: propLearnerId }: MyLearningJourneyCardProps) {
   const navigate = useNavigate();
+  const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
   const [courses, setCourses] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProgress();
-  }, [learnerId]);
+  const resolvedLearnerId = propLearnerId || selfLearnerId;
 
-  async function loadProgress() {
+  useEffect(() => {
+    if (!propLearnerId && learnerLoading) return;
+    loadProgress(resolvedLearnerId);
+  }, [resolvedLearnerId, learnerLoading]);
+
+  async function loadProgress(targetLearnerId: string | null) {
     // Default courses to show even if no learner data exists
     const defaultCourses: CourseProgress[] = [
       {
@@ -60,51 +65,13 @@ export default function MyLearningJourneyCard({ learnerId }: MyLearningJourneyCa
       }
     ];
 
+    if (!targetLearnerId) {
+      setCourses(defaultCourses);
+      setLoading(false);
+      return;
+    }
+
     try {
-      let targetLearnerId = learnerId;
-
-      // If no learnerId provided, get current user's learner
-      if (!targetLearnerId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          // No user - still show default courses
-          setCourses(defaultCourses);
-          setLoading(false);
-          return;
-        }
-
-        // First try to find learner where user is the parent
-        const { data: learner } = await supabase
-          .from('learners')
-          .select('id')
-          .eq('parent_id', user.id)
-          .maybeSingle();
-
-        if (learner) {
-          targetLearnerId = learner.id;
-        } else {
-          // For parents with children in parent_children table, get first child's learner
-          const { data: children } = await supabase
-            .from('parent_children')
-            .select('child_id')
-            .eq('parent_id', user.id)
-            .limit(1);
-
-          if (children && children.length > 0) {
-            targetLearnerId = children[0].child_id;
-          } else {
-            // Fallback: check if user has memorization data directly (student account)
-            const { count: directCount } = await supabase
-              .from('surah_retention_tracker')
-              .select('id', { count: 'exact', head: true })
-              .eq('learner_id', user.id);
-
-            if (directCount && directCount > 0) {
-              targetLearnerId = user.id;
-            }
-          }
-        }
-      }
 
       let quranProgress = 0;
       let memorizedCount = 0;

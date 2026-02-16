@@ -24,7 +24,8 @@ export default function AccountSettings() {
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState({
-    full_name: '',
+    first_name: '',
+    surname: '',
     email: '',
     avatar_url: ''
   });
@@ -92,8 +93,12 @@ export default function AccountSettings() {
         .maybeSingle();
 
       if (profile) {
+        const nameParts = (profile.full_name || '').trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const surname = nameParts.slice(1).join(' ') || '';
         setProfileData({
-          full_name: profile.full_name || '',
+          first_name: firstName,
+          surname: surname,
           email: user.email || '',
           avatar_url: profile.avatar_url || ''
         });
@@ -206,18 +211,31 @@ export default function AccountSettings() {
         }
       }
 
+      const fullName = [profileData.first_name.trim(), profileData.surname.trim()].filter(Boolean).join(' ');
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          full_name: profileData.full_name,
+          full_name: fullName,
           avatar_url: avatarUrl
         })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      setSuccessMessage('Profile updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      // If email changed, update via Supabase Auth (sends confirmation to new email)
+      const emailChanged = profileData.email.trim().toLowerCase() !== (user.email || '').toLowerCase();
+      if (emailChanged) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: profileData.email.trim()
+        });
+        if (emailError) throw emailError;
+
+        setSuccessMessage('Profile saved! A confirmation link has been sent to your new email address. Please check your inbox to complete the email change.');
+        setTimeout(() => setSuccessMessage(''), 8000);
+      } else {
+        setSuccessMessage('Profile updated successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
     } catch (err: any) {
       console.error('Error saving profile:', err);
       setError(err.message || 'Failed to save profile.');
@@ -546,31 +564,45 @@ export default function AccountSettings() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label htmlFor="full_name" className="block text-sm font-medium text-gray-900 mb-2">
-                    Full Name
+                  <label htmlFor="first_name" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
+                    First Name
                   </label>
                   <input
-                    id="full_name"
+                    id="first_name"
                     type="text"
-                    value={profileData.full_name}
-                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    value={profileData.first_name}
+                    onChange={(e) => setProfileData({ ...profileData, first_name: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="surname" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
+                    Surname
+                  </label>
+                  <input
+                    id="surname"
+                    type="text"
+                    value={profileData.surname}
+                    onChange={(e) => setProfileData({ ...profileData, surname: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
                     Email Address
                   </label>
                   <input
                     id="email"
                     type="email"
                     value={profileData.email}
-                    disabled
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
                   />
                 </div>
               </div>

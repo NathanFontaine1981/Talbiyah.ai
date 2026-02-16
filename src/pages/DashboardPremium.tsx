@@ -59,8 +59,7 @@ import MyTeachersSection from '../components/student/MyTeachersSection';
 import { DiagnosticCTACard } from '../components/diagnostic';
 import {
   ProgressOverview,
-  CurriculumProgress,
-  SurahProgressMini,
+  SurahProgress,
   ProgressChartMini,
   HomeworkSummary,
   MilestoneVerification,
@@ -1030,19 +1029,14 @@ export default function DashboardPremium() {
                   </GlassCard>
                 </div>
 
-                {/* Curriculum & Surah Progress */}
+                {/* Qur'an & Study Progress */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                   <div className="lg:col-span-2">
                     <GlassCard className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Curriculum Progress</h3>
-                      <CurriculumProgress variant="compact" />
+                      <SurahProgress />
                     </GlassCard>
                   </div>
                   <div className="lg:col-span-1 space-y-4">
-                    <GlassCard className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Surah Progress</h3>
-                      <SurahProgressMini />
-                    </GlassCard>
                     <GlassCard className="p-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-3">Study Activity</h4>
                       <ProgressChartMini />

@@ -51,7 +51,7 @@ Deno.serve(async (req: Request) => {
             width: 0,
             height: 0
           },
-          presignDuration: 259200, // 3 days (like old template)
+          presignDuration: 604800, // 7 days
           autoStart: true, // CRITICAL: Auto-start recording when room starts
           autoStopTimeout: 0
         }

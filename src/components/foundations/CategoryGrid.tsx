@@ -118,7 +118,7 @@ export default function CategoryGrid({
 
   // Cross-referenced categories that should appear under multiple pillars
   const crossReferencedCategories: Record<string, string[]> = {
-    'muhammad': ['umar-series'] // Umar Series also relevant to Muhammad ﷺ
+    'muhammad': ['umar-series'] // Omar Ibn Khattab Series also relevant to Muhammad ﷺ
   };
 
   async function handlePillarSelect(pillar: Pillar) {

@@ -113,6 +113,7 @@ const CoursePage = lazy(() => import('./pages/dawra/DawraCoursePage'));
 const CourseSessionInsights = lazy(() => import('./pages/dawra/DawraSessionInsights'));
 const CourseTeacherDashboard = lazy(() => import('./pages/dawra/DawraTeacherDashboard'));
 const CourseLiveRoom = lazy(() => import('./pages/dawra/DawraLiveRoom'));
+const CourseStudents = lazy(() => import('./pages/dawra/DawraCourseStudents'));
 const TeacherCourses = lazy(() => import('./pages/dawra/TeacherCourses'));
 
 // Diagnostic Assessment pages
@@ -435,6 +436,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CourseTeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/course/:id/students"
+          element={
+            <ProtectedRoute>
+              <CourseStudents />
             </ProtectedRoute>
           }
         />

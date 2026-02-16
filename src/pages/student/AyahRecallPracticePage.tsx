@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useSelfLearner } from '../../hooks/useSelfLearner';
 import DashboardHeader from '../../components/DashboardHeader';
 import AyahFlashcard from '../../components/games/AyahFlashcard';
 import AyahMultipleChoice from '../../components/games/AyahMultipleChoice';
@@ -138,11 +139,11 @@ interface AyahResult {
 
 export default function AyahRecallPracticePage() {
   const navigate = useNavigate();
+  const { learnerId, loading: learnerLoading } = useSelfLearner();
 
   // State
   const [loading, setLoading] = useState(true);
   const [loadingAyahs, setLoadingAyahs] = useState(false);
-  const [learnerId, setLearnerId] = useState<string | null>(null);
   const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<number | null>(null);
   const [selectedGameMode, setSelectedGameMode] = useState<GameType | null>(null);
@@ -152,34 +153,20 @@ export default function AyahRecallPracticePage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load memorized surahs on mount
+  // Load memorized surahs when learner is resolved
   useEffect(() => {
-    loadMemorizedSurahs();
-  }, []);
+    if (learnerLoading) return;
+    if (learnerId) {
+      loadMemorizedSurahs(learnerId);
+    } else {
+      setLoading(false);
+    }
+  }, [learnerId, learnerLoading]);
 
-  async function loadMemorizedSurahs() {
+  async function loadMemorizedSurahs(targetLearnerId: string) {
     try {
       setLoading(true);
       setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/signup');
-        return;
-      }
-
-      // Check if user is a parent with learners
-      const { data: learners } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('parent_id', user.id)
-        .limit(1);
-
-      let targetLearnerId = user.id;
-      if (learners && learners.length > 0) {
-        targetLearnerId = learners[0].id;
-      }
-      setLearnerId(targetLearnerId);
 
       // Load memorized surahs
       const { data: tracked, error: trackError } = await supabase
