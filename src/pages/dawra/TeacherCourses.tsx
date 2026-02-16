@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { COURSE_NOTES_PRICING } from '../../constants/courseNotesPricing';
 
 interface Course {
   id: string;
@@ -45,9 +46,6 @@ interface Course {
   price_per_session: number | null;
 }
 
-function calculateInsightsPrice(totalSessions: number): number {
-  return Math.min(totalSessions * 1, 5);
-}
 
 function generateSlug(name: string): string {
   return name
@@ -548,10 +546,10 @@ export default function TeacherCourses() {
             <div className="sm:col-span-2">
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <span className="font-medium">AI Insights price:</span>{' '}
-                  £{calculateInsightsPrice(form.total_sessions)} per student
+                  <span className="font-medium">Study Notes:</span>{' '}
+                  £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} one-off per student
                   <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
-                    (£1/lesson, max £5)
+                    (Session 1 free, then flat £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} for all remaining sessions)
                   </span>
                 </p>
               </div>
@@ -774,10 +772,10 @@ export default function TeacherCourses() {
                     <div className="sm:col-span-2">
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                         <p className="text-sm text-blue-800 dark:text-blue-300">
-                          <span className="font-medium">AI Insights price:</span>{' '}
-                          £{calculateInsightsPrice(editForm.total_sessions)} per student
+                          <span className="font-medium">Study Notes:</span>{' '}
+                          £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} one-off per student
                           <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
-                            (£1/lesson, max £5)
+                            (Session 1 free, then flat £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} for all remaining sessions)
                           </span>
                         </p>
                       </div>
@@ -833,7 +831,7 @@ export default function TeacherCourses() {
                         </span>
                         {course.total_sessions && (
                           <span className="text-blue-600 dark:text-blue-400">
-                            Insights: £{calculateInsightsPrice(course.total_sessions)}/student
+                            Study Notes: £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)}/student
                           </span>
                         )}
                       </div>
