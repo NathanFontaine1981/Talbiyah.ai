@@ -1066,6 +1066,13 @@ export default function Dashboard() {
 
             {selectedViewRole === 'Student' && (
               <>
+                {/* Stats Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <DailyPracticeWidget />
+                  <LearningStatsWidget />
+                  <RecommendedActionsCard />
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <MyTeachersSection />
@@ -1073,10 +1080,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
-                    <DailyPracticeWidget />
-                    <LearningStatsWidget />
                     <ReferralWidget />
-                    <RecommendedActionsCard />
                     <AnnouncementsCard />
                   </div>
                 </div>
