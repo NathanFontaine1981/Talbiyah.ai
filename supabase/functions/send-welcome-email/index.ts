@@ -123,6 +123,46 @@ Deno.serve(async (req: Request) => {
                 </div>
               </div>
 
+              <!-- Group Sessions -->
+              <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">🎓 Live Group Sessions with Independent Teachers</h3>
+                <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
+                  Join live group courses (Dawra) taught by our independent, qualified teachers. Learn alongside other students in interactive sessions covering Qur'an, Tajweed, Islamic foundations, and more.
+                </p>
+                <div style="background: #f0fdfa; border-left: 4px solid #06b6d4; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px;">
+                  <p style="margin: 0 0 8px 0; color: #0f172a; font-weight: 600;">What you get:</p>
+                  <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 14px;">
+                    <li style="margin-bottom: 6px;">Live video lessons with qualified independent teachers</li>
+                    <li style="margin-bottom: 6px;">Small group sizes for personalised attention</li>
+                    <li style="margin-bottom: 6px;">Structured weekly sessions with clear progression</li>
+                    <li style="margin-bottom: 0;">Open to brothers and sisters</li>
+                  </ul>
+                </div>
+                <a href="https://talbiyah.ai/group-classes" style="display: inline-block; background: #06b6d4; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                  Browse Group Courses
+                </a>
+              </div>
+
+              <!-- AI Talbiyah Insights -->
+              <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">🤖 AI-Powered Talbiyah Insights Study Notes</h3>
+                <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
+                  After every lesson - whether 1-to-1 or group session - our AI automatically generates personalised study notes called <strong>Talbiyah Insights</strong>. These are created from the actual content of YOUR lesson, not generic material.
+                </p>
+                <div style="background: #faf5ff; border-left: 4px solid #8b5cf6; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px;">
+                  <p style="margin: 0 0 8px 0; color: #0f172a; font-weight: 600;">Each set of Talbiyah Insights includes:</p>
+                  <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 14px;">
+                    <li style="margin-bottom: 6px;">Key lesson summary and takeaways</li>
+                    <li style="margin-bottom: 6px;">Qur'anic vocabulary and references covered</li>
+                    <li style="margin-bottom: 6px;">Personalised revision quizzes to test your understanding</li>
+                    <li style="margin-bottom: 0;">Action points for self-study before your next session</li>
+                  </ul>
+                </div>
+                <p style="margin: 0; color: #64748b; font-size: 14px; font-style: italic;">
+                  Study notes are generated automatically within minutes of each lesson ending - no extra work required from you or your teacher!
+                </p>
+              </div>
+
               <!-- Get started CTA -->
               <div style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
                 <h3 style="margin: 0 0 16px 0; color: white; font-size: 22px;">🎁 Start Your Free Diagnostic Assessment!</h3>
@@ -139,9 +179,9 @@ Deno.serve(async (req: Request) => {
                 <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 20px;">📋 Your Next Steps:</h3>
                 <ol style="margin: 0; padding-left: 20px; color: #334155;">
                   <li style="margin-bottom: 12px; line-height: 1.6;">Take your FREE diagnostic assessment (20 mins, no payment needed)</li>
-                  <li style="margin-bottom: 12px; line-height: 1.6;">Get matched with the perfect teacher for your level</li>
+                  <li style="margin-bottom: 12px; line-height: 1.6;">Browse our live group courses or get matched with a 1-to-1 teacher</li>
                   <li style="margin-bottom: 12px; line-height: 1.6;">Receive your personalised learning plan (Understanding → Fluency → Memorisation)</li>
-                  <li style="line-height: 1.6;">Start your journey with AI-powered study notes after every lesson!</li>
+                  <li style="line-height: 1.6;">Get AI-powered Talbiyah Insights study notes automatically after every lesson!</li>
                 </ol>
               </div>
 
