@@ -1048,6 +1048,13 @@ export default function DashboardPremium() {
                   </div>
                 </div>
 
+                {/* Stats Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <GlassCard><CreditBalanceWidget /></GlassCard>
+                  <GlassCard><LearningStatsWidget /></GlassCard>
+                  <GlassCard><RecommendedActionsCard /></GlassCard>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                   <div className="lg:col-span-3 space-y-6">
                     <GlassCard><MyTeachersSection /></GlassCard>
@@ -1058,10 +1065,7 @@ export default function DashboardPremium() {
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
-                    <GlassCard><CreditBalanceWidget /></GlassCard>
-                    <GlassCard><LearningStatsWidget /></GlassCard>
                     <GlassCard><ReferralWidget /></GlassCard>
-                    <GlassCard><RecommendedActionsCard /></GlassCard>
                     <GlassCard><AnnouncementsCard /></GlassCard>
                   </div>
                 </div>
