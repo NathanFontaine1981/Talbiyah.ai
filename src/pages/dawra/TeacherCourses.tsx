@@ -63,6 +63,8 @@ export default function TeacherCourses() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterPreview, setPosterPreview] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -111,6 +113,26 @@ export default function TeacherCourses() {
       const slug = generateSlug(form.name);
       const invite_code = generateInviteCode();
 
+      // Upload poster if selected
+      let poster_url: string | null = null;
+      if (posterFile) {
+        const fileExt = posterFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const filePath = `posters/${user.id}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('course_assets')
+          .upload(filePath, posterFile);
+
+        if (uploadError) {
+          console.error('Poster upload error:', uploadError);
+          toast.error('Failed to upload poster, creating course without it');
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('course_assets')
+            .getPublicUrl(filePath);
+          poster_url = publicUrl;
+        }
+      }
+
       const { error } = await supabase.from('group_sessions').insert({
         name: form.name.trim(),
         description: form.description.trim() || null,
@@ -128,6 +150,7 @@ export default function TeacherCourses() {
         is_public: true,
         teacher_id: user.id,
         created_by: user.id,
+        poster_url,
       });
 
       if (error) {
@@ -140,6 +163,8 @@ export default function TeacherCourses() {
         toast.success('Course created! Share the link with your students.');
         setShowCreate(false);
         setForm({ name: '', description: '', location: '', delivery_mode: 'in_person', schedule_day: 'Monday', schedule_time: '10:00', duration_minutes: 60, max_participants: 30, start_date: '', end_date: '' });
+        setPosterFile(null);
+        setPosterPreview(null);
         fetchCourses();
       }
     } catch (err: any) {
@@ -232,6 +257,39 @@ export default function TeacherCourses() {
                 placeholder="What will students learn in this course?"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Poster</label>
+              {posterPreview ? (
+                <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                  <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setPosterFile(null); setPosterPreview(null); }}
+                    className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
+                  <ImagePlus className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload a poster image</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG or WebP (max 5MB)</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+                      setPosterFile(file);
+                      setPosterPreview(URL.createObjectURL(file));
+                    }}
+                  />
+                </label>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
