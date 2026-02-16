@@ -306,26 +306,26 @@ export default function ReferralDashboard() {
 
           <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
-              <Check className="w-6 h-6 text-emerald-400" />
+              <Check className="w-6 h-6 text-emerald-600" />
               <span className="text-gray-500">Completed</span>
             </div>
-            <p className="text-4xl font-bold text-emerald-400">{stats?.completed_referrals || 0}</p>
+            <p className="text-4xl font-bold text-emerald-600">{stats?.completed_referrals || 0}</p>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
-              <TrendingUp className="w-6 h-6 text-amber-400" />
+              <TrendingUp className="w-6 h-6 text-amber-600" />
               <span className="text-gray-500">Pending</span>
             </div>
-            <p className="text-4xl font-bold text-amber-400">{stats?.pending_referrals || 0}</p>
+            <p className="text-4xl font-bold text-amber-600">{stats?.pending_referrals || 0}</p>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-2">
-              <Gift className="w-6 h-6 text-purple-400" />
+              <Gift className="w-6 h-6 text-purple-600" />
               <span className="text-gray-500">Credits Earned</span>
             </div>
-            <p className="text-4xl font-bold text-purple-400">{stats?.total_rewards.toFixed(0) || '0'}</p>
+            <p className="text-4xl font-bold text-purple-600">{stats?.total_rewards.toFixed(0) || '0'}</p>
           </div>
         </div>
 
@@ -335,7 +335,7 @@ export default function ReferralDashboard() {
             {/* Current Tier & Progress */}
             <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-2xl font-bold mb-6 flex items-center space-x-2">
-                <Crown className="w-6 h-6 text-amber-400" />
+                <Crown className="w-6 h-6 text-amber-600" />
                 <span>Your Tier Progress</span>
               </h2>
 
@@ -380,7 +380,7 @@ export default function ReferralDashboard() {
                     <p className="text-gray-500">
                       {stats.next_tier.min_referrals - stats.completed_referrals} more referrals to unlock {stats.next_tier.tier_name}
                     </p>
-                    <p className="text-emerald-400 font-semibold">
+                    <p className="text-emerald-600 font-semibold">
                       → {stats.next_tier.initial_reward_hours} credits + {stats.next_tier.ongoing_reward_rate} per 10 lessons
                     </p>
                   </div>
@@ -396,7 +396,7 @@ export default function ReferralDashboard() {
               </p>
               <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
                 <p className="text-sm text-gray-600 mb-2">
-                  <strong className="text-emerald-400">How it works:</strong>
+                  <strong className="text-emerald-600">How it works:</strong>
                 </p>
                 <ol className="text-sm text-gray-600 space-y-1.5 ml-4 list-decimal">
                   <li>Friend signs up using your link</li>
@@ -500,7 +500,7 @@ export default function ReferralDashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-emerald-400">{tier.initial_reward_hours} credits</p>
+                          <p className="text-2xl font-bold text-emerald-600">{tier.initial_reward_hours} credits</p>
                           <p className="text-lg font-semibold text-emerald-600">+{tier.ongoing_reward_rate} per 10 lessons</p>
                           <p className="text-xs text-gray-900/50 mt-1">ongoing rewards</p>
                         </div>
@@ -527,7 +527,7 @@ export default function ReferralDashboard() {
             {/* Achievements */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h2 className="text-xl font-bold mb-4 flex items-center space-x-2">
-                <Award className="w-6 h-6 text-amber-400" />
+                <Award className="w-6 h-6 text-amber-600" />
                 <span>Achievements</span>
               </h2>
               <p className="text-sm text-gray-500 mb-4">
@@ -558,13 +558,13 @@ export default function ReferralDashboard() {
                               </span>
                             )}
                             {achievement.credits_reward > 0 && (
-                              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">
+                              <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded">
                                 +{achievement.credits_reward} credits
                               </span>
                             )}
                           </div>
                         </div>
-                        {earned && <Check className="w-5 h-5 text-emerald-400" />}
+                        {earned && <Check className="w-5 h-5 text-emerald-600" />}
                       </div>
                     </div>
                   );
@@ -591,9 +591,9 @@ export default function ReferralDashboard() {
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      referral.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                      referral.status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-emerald-500/20 text-emerald-600'
+                      referral.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                      referral.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      'bg-emerald-100 text-emerald-700'
                     }`}>
                       {referral.status}
                     </span>

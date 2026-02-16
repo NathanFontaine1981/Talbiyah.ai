@@ -751,12 +751,12 @@ export default function QuranProgress() {
             <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30 text-center">
               <Volume2 className="w-5 h-5 text-blue-400 mx-auto mb-1" />
               <p className="text-lg font-bold text-blue-400">{totalAyahsFluency}</p>
-              <p className="text-xs text-blue-300">Fluent</p>
+              <p className="text-xs text-blue-400">Fluent</p>
             </div>
             <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30 text-center">
               <Heart className="w-5 h-5 text-orange-400 mx-auto mb-1" />
               <p className="text-lg font-bold text-orange-400">{totalAyahsMemorized}</p>
-              <p className="text-xs text-orange-300">Memorised</p>
+              <p className="text-xs text-orange-400">Memorised</p>
             </div>
           </div>
 
@@ -770,7 +770,7 @@ export default function QuranProgress() {
                     <p className="text-sm font-medium text-purple-400">Notes from {teacherName}</p>
                     <User className="w-3 h-3 text-purple-400" />
                   </div>
-                  <p className="text-sm text-purple-200">{teacherNotes}</p>
+                  <p className="text-sm text-purple-300">{teacherNotes}</p>
                 </div>
               </div>
             </div>
@@ -872,7 +872,7 @@ export default function QuranProgress() {
                   className="bg-orange-500/10 rounded-lg p-2 border border-orange-500/20 hover:bg-orange-500/20 transition text-center disabled:opacity-50"
                 >
                   <p className="text-xs font-medium text-orange-400">Select All Memorised</p>
-                  <p className="text-[10px] text-orange-400/70">Juz {selectedJuz}</p>
+                  <p className="text-[10px] text-orange-400">Juz {selectedJuz}</p>
                 </button>
               </div>
               <button
@@ -882,7 +882,7 @@ export default function QuranProgress() {
               >
                 <CheckCircle className="w-4 h-4 text-emerald-400" />
                 <p className="text-xs font-medium text-emerald-400">Mark All Complete (U + F + M)</p>
-                <p className="text-[10px] text-emerald-400/70">Juz {selectedJuz}</p>
+                <p className="text-[10px] text-emerald-400">Juz {selectedJuz}</p>
               </button>
             </div>
           )}
@@ -1046,7 +1046,7 @@ export default function QuranProgress() {
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           <p className="text-lg font-bold text-blue-400">{stats.fluency}/{stats.total}</p>
-                          <p className="text-xs text-blue-300">Fluent</p>
+                          <p className="text-xs text-blue-400">Fluent</p>
                           <p className="text-[10px] text-blue-400/70 mt-1">
                             {stats.fluency === stats.total ? 'Tap to unselect all' : 'Tap to select all'}
                           </p>
@@ -1059,8 +1059,8 @@ export default function QuranProgress() {
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           <p className="text-lg font-bold text-orange-400">{stats.memorization}/{stats.total}</p>
-                          <p className="text-xs text-orange-300">Memorised</p>
-                          <p className="text-[10px] text-orange-400/70 mt-1">
+                          <p className="text-xs text-orange-400">Memorised</p>
+                          <p className="text-[10px] text-orange-400 mt-1">
                             {stats.memorization === stats.total ? 'Tap to unselect all' : 'Tap to select all'}
                           </p>
                         </button>

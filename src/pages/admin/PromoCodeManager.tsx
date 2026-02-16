@@ -283,8 +283,8 @@ export default function PromoCodeManager() {
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
-              <Gift className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+              <Gift className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -335,9 +335,9 @@ export default function PromoCodeManager() {
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      code.discount_type === 'free_lesson' ? 'bg-amber-500/20 text-amber-400' :
-                      code.discount_type === 'percentage' ? 'bg-emerald-500/20 text-emerald-600' :
-                      'bg-emerald-500/20 text-emerald-400'
+                      code.discount_type === 'free_lesson' ? 'bg-amber-100 text-amber-700' :
+                      code.discount_type === 'percentage' ? 'bg-emerald-100 text-emerald-700' :
+                      'bg-emerald-100 text-emerald-700'
                     }`}>
                       {getDiscountIcon(code.discount_type)}
                     </div>
@@ -355,17 +355,17 @@ export default function PromoCodeManager() {
                 <td className="px-6 py-4">
                   <div className="space-y-1">
                     {code.first_lesson_only && (
-                      <span className="inline-block px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">
+                      <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
                         First lesson only
                       </span>
                     )}
                     {code.min_cart_value > 0 && (
-                      <span className="inline-block px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">
+                      <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
                         Min £{code.min_cart_value}
                       </span>
                     )}
                     {code.valid_until && (
-                      <span className="inline-block px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full">
+                      <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
                         Expires {format(new Date(code.valid_until), 'MMM d')}
                       </span>
                     )}

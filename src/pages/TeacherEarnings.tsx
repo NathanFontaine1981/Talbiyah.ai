@@ -290,14 +290,14 @@ export default function TeacherEarnings() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-gray-200 text-gray-600',
-      held: 'bg-amber-500/20 text-amber-400 border border-amber-500/50',
-      cleared: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50',
-      paid: 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/50',
-      refunded: 'bg-red-500/20 text-red-400 border border-red-500/50',
-      processing: 'bg-blue-500/20 text-blue-400 border border-blue-500/50',
-      requested: 'bg-purple-500/20 text-purple-400 border border-purple-500/50',
-      completed: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50',
-      failed: 'bg-red-500/20 text-red-400 border border-red-500/50',
+      held: 'bg-amber-100 text-amber-700 border border-amber-300',
+      cleared: 'bg-emerald-100 text-emerald-700 border border-emerald-300',
+      paid: 'bg-emerald-100 text-emerald-700 border border-emerald-300',
+      refunded: 'bg-red-100 text-red-700 border border-red-300',
+      processing: 'bg-blue-100 text-blue-700 border border-blue-300',
+      requested: 'bg-purple-100 text-purple-700 border border-purple-300',
+      completed: 'bg-emerald-100 text-emerald-700 border border-emerald-300',
+      failed: 'bg-red-100 text-red-700 border border-red-300',
     };
     return colors[status] || 'bg-gray-200 text-gray-600';
   };
@@ -332,7 +332,7 @@ export default function TeacherEarnings() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+          <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Teacher Access Required</h2>
           <p className="text-gray-500 mb-6">
             You need to be registered as a teacher to view earnings. If you believe this is an error, please contact support.
@@ -383,9 +383,9 @@ export default function TeacherEarnings() {
               : 'bg-red-500/20 border border-red-500/50'
           }`}>
             {payoutMessage.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
               <p className={payoutMessage.type === 'success' ? 'text-emerald-700' : 'text-red-700'}>
@@ -425,7 +425,7 @@ export default function TeacherEarnings() {
             <div className="bg-gray-100 rounded-xl shadow-lg border border-amber-700/50 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-amber-500/20 rounded-lg">
-                  <AlertCircle className="w-6 h-6 text-amber-400" />
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
                 </div>
                 <span className="text-sm font-medium text-gray-500">
                   {summary.lessons_held} lessons
@@ -471,7 +471,7 @@ export default function TeacherEarnings() {
                   )}
                 </button>
               ) : hasPendingRequest ? (
-                <p className="text-xs text-purple-400 mt-2">Payout request pending</p>
+                <p className="text-xs text-purple-600 mt-2">Payout request pending</p>
               ) : (
                 <p className="text-xs text-gray-500 mt-2">Available now</p>
               )}
@@ -481,14 +481,14 @@ export default function TeacherEarnings() {
             <div className="bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-emerald-500/20 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-emerald-400" />
+                  <TrendingUp className="w-6 h-6 text-emerald-600" />
                 </div>
                 <span className="text-sm font-medium text-gray-500">
                   {summary.lessons_paid} lessons
                 </span>
               </div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Paid Out</h3>
-              <p className="text-2xl font-bold text-emerald-400">
+              <p className="text-2xl font-bold text-emerald-600">
                 {formatCurrency(summary.paid_amount)}
               </p>
               <p className="text-xs text-gray-500 mt-2">All time</p>

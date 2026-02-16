@@ -123,7 +123,7 @@ export default function DashboardSidebar({
         { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
-        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
+        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
         { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },

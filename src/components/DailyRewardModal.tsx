@@ -162,7 +162,7 @@ export default function DailyRewardModal({
                 <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <div className="flex items-center justify-center space-x-2">
                     <Flame className="w-6 h-6 text-orange-500" />
-                    <span className="text-2xl font-bold text-orange-400">
+                    <span className="text-2xl font-bold text-orange-600">
                       {result.streak || 0} Day Streak
                     </span>
                   </div>
@@ -187,21 +187,21 @@ export default function DailyRewardModal({
                 <p className="text-gray-600 mb-6">{getStreakMessage(result.newStreak || 1)}</p>
 
                 {/* XP Reward Card */}
-                <div className={`bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl p-6 mb-6 border border-amber-500/30 ${animatingXP ? 'animate-bounce' : ''}`}>
+                <div className={`bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl p-6 mb-6 border border-amber-300 ${animatingXP ? 'animate-bounce' : ''}`}>
                   <div className="flex items-center justify-center space-x-3 mb-4">
-                    <Star className="w-8 h-8 text-amber-400" />
-                    <span className="text-4xl font-bold text-amber-400">+{result.xpAwarded} XP</span>
+                    <Star className="w-8 h-8 text-amber-600" />
+                    <span className="text-4xl font-bold text-amber-700">+{result.xpAwarded} XP</span>
                   </div>
 
                   <div className="flex items-center justify-center space-x-4 text-sm">
                     <div className="bg-gray-50 px-3 py-1.5 rounded-lg">
                       <span className="text-gray-500">Base: </span>
-                      <span className="text-amber-400 font-semibold">{result.baseXP} XP</span>
+                      <span className="text-amber-700 font-semibold">{result.baseXP} XP</span>
                     </div>
                     {(result.streakBonus || 0) > 0 && (
                       <div className="bg-gray-50 px-3 py-1.5 rounded-lg">
                         <span className="text-gray-500">Streak Bonus: </span>
-                        <span className="text-orange-400 font-semibold">+{result.streakBonus} XP</span>
+                        <span className="text-orange-600 font-semibold">+{result.streakBonus} XP</span>
                       </div>
                     )}
                   </div>
@@ -211,7 +211,7 @@ export default function DailyRewardModal({
                 <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <div className="flex items-center justify-center space-x-2 mb-2">
                     <Flame className="w-6 h-6 text-orange-500" />
-                    <span className="text-2xl font-bold text-orange-400">
+                    <span className="text-2xl font-bold text-orange-600">
                       {result.newStreak} Day Streak
                     </span>
                   </div>
@@ -230,13 +230,13 @@ export default function DailyRewardModal({
 
                 {/* Level Up Notification */}
                 {result.levelUp && (
-                  <div className="bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-xl p-4 mb-6 border border-purple-500/30 animate-pulse">
+                  <div className="bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl p-4 mb-6 border border-purple-300 animate-pulse">
                     <div className="flex items-center justify-center space-x-2">
-                      <ChevronUp className="w-6 h-6 text-purple-400" />
-                      <span className="text-xl font-bold text-purple-400">
+                      <ChevronUp className="w-6 h-6 text-purple-700" />
+                      <span className="text-xl font-bold text-purple-700">
                         Level Up! You're now Level {result.level}
                       </span>
-                      <Trophy className="w-6 h-6 text-amber-400" />
+                      <Trophy className="w-6 h-6 text-amber-600" />
                     </div>
                   </div>
                 )}

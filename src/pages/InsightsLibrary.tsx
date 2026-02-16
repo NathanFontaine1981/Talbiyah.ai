@@ -67,11 +67,11 @@ function QuizQuestion({ question, index }: { question: any; index: number }) {
 
           if (showResult) {
             if (isThisCorrect) {
-              bgColor = 'bg-emerald-500/20';
-              textColor = 'text-emerald-400';
+              bgColor = 'bg-emerald-50';
+              textColor = 'text-emerald-700';
             } else if (isSelected && !isThisCorrect) {
-              bgColor = 'bg-red-500/20';
-              textColor = 'text-red-400';
+              bgColor = 'bg-red-50';
+              textColor = 'text-red-700';
             }
           }
 
@@ -90,7 +90,7 @@ function QuizQuestion({ question, index }: { question: any; index: number }) {
         })}
       </div>
       {showResult && (
-        <div className={`mt-3 p-2 rounded ${isCorrect ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+        <div className={`mt-3 p-2 rounded ${isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
           {isCorrect ? '✓ Correct!' : `✗ Incorrect. The correct answer is ${question.correct_answer}.`}
           {question.explanation && (
             <p className="text-gray-500 text-sm mt-1">{question.explanation}</p>
@@ -763,21 +763,21 @@ export default function InsightsLibrary() {
             className="bg-white border border-gray-200 rounded-2xl max-w-4xl w-full my-8"
           >
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 px-6 py-4 border-b border-amber-500/20 flex items-start justify-between sticky top-0 z-10">
+            <div className="bg-gradient-to-r from-teal-700 to-teal-800 px-6 py-4 border-b border-teal-600 rounded-t-2xl flex items-start justify-between sticky top-0 z-10">
               <div>
-                <p className="text-amber-400 text-sm font-medium">Talbiyah Insights</p>
+                <p className="text-teal-200 text-sm font-medium">Talbiyah Insights</p>
                 <h2 id="insight-modal-title" className="text-xl font-bold text-white">{selectedInsight.title}</h2>
                 {selectedInsight.speaker && (
-                  <p className="text-emerald-600 text-sm mt-1">By {selectedInsight.speaker}</p>
+                  <p className="text-emerald-300 text-sm mt-1">By {selectedInsight.speaker}</p>
                 )}
-                <p className="text-gray-500 text-sm">
+                <p className="text-teal-300 text-sm">
                   {formatDate(selectedInsight.khutba_date)}
                   {selectedInsight.location && ` | ${selectedInsight.location}`}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedInsight(null)}
-                className="text-gray-500 hover:text-white transition p-2"
+                className="text-teal-300 hover:text-white transition p-2"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -788,8 +788,8 @@ export default function InsightsLibrary() {
               {/* 1. Full Khutba Summary */}
               {selectedInsight.insights?.cleaned_transcript && (
                 <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Full Khutbah Summary</h3>
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-3">Full Khutbah Summary</h3>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                     <p className="text-gray-700 whitespace-pre-line">
                       {selectedInsight.insights.cleaned_transcript}
                     </p>
@@ -800,12 +800,12 @@ export default function InsightsLibrary() {
               {/* 2. Main Points */}
               {selectedInsight.insights?.main_points?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-amber-400 mb-3">Main Points to Reflect Upon</h3>
+                  <h3 className="text-lg font-semibold text-amber-700 mb-3">Main Points to Reflect Upon</h3>
                   <div className="space-y-2">
                     {selectedInsight.insights.main_points.map((point: any, idx: number) => (
-                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                        <p className="text-amber-400 font-medium">{idx + 1}. {point.point}</p>
-                        <p className="text-gray-500 text-sm mt-1">{point.reflection}</p>
+                      <div key={idx} className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-amber-700 font-medium">{idx + 1}. {point.point}</p>
+                        <p className="text-gray-600 text-sm mt-1">{point.reflection}</p>
                       </div>
                     ))}
                   </div>
@@ -815,10 +815,10 @@ export default function InsightsLibrary() {
               {/* 3. Key Themes */}
               {selectedInsight.insights?.key_themes?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-yellow-400 mb-3">Key Themes</h3>
+                  <h3 className="text-lg font-semibold text-yellow-700 mb-3">Key Themes</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedInsight.insights.key_themes.map((theme: any, idx: number) => (
-                      <span key={idx} className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
+                      <span key={idx} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
                         {theme.theme}
                       </span>
                     ))}
@@ -829,14 +829,14 @@ export default function InsightsLibrary() {
               {/* 4. Quranic Words & Phrases */}
               {selectedInsight.insights?.quranic_words_phrases?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Key Quranic Words & Phrases</h3>
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-3">Key Quranic Words & Phrases</h3>
                   <div className="space-y-4">
                     {selectedInsight.insights.quranic_words_phrases.map((word: any, idx: number) => (
-                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                      <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                         <p className="text-4xl text-center font-arabic text-gray-800 mb-3 leading-loose" dir="rtl">
                           {word.arabic}
                         </p>
-                        <p className="text-teal-400 font-semibold">{word.transliteration}</p>
+                        <p className="text-teal-700 font-semibold">{word.transliteration}</p>
                         <p className="text-gray-700 mt-1"><span className="text-gray-500">Meaning:</span> {word.meaning}</p>
                         <p className="text-gray-500 text-sm mt-2">{word.context}</p>
                       </div>
@@ -848,11 +848,11 @@ export default function InsightsLibrary() {
               {/* 5. Key Vocabulary */}
               {selectedInsight.insights?.key_vocabulary?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">Arabic Vocabulary</h3>
+                  <h3 className="text-lg font-semibold text-purple-700 mb-3">Arabic Vocabulary</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-purple-500/20 text-purple-300">
+                        <tr className="bg-purple-100 text-purple-700">
                           <th className="px-4 py-2 text-left rounded-tl-lg">Term</th>
                           <th className="px-4 py-2 text-right">Arabic</th>
                           <th className="px-4 py-2 text-left rounded-tr-lg">Definition</th>
@@ -875,17 +875,17 @@ export default function InsightsLibrary() {
               {/* 6. Quran References */}
               {selectedInsight.insights?.quran_references?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Quran References</h3>
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-3">Quran References</h3>
                   <div className="space-y-4">
                     {selectedInsight.insights.quran_references.map((ref: any, idx: number) => (
-                      <div key={idx} className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                      <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                         {ref.arabic && (
                           <p className="text-3xl text-center font-arabic text-gray-800 mb-3 leading-loose" dir="rtl">
                             {ref.arabic}
                           </p>
                         )}
                         <p className="text-gray-700 italic border-l-2 border-emerald-500 pl-4">"{ref.translation}"</p>
-                        <p className="text-emerald-400 font-semibold mt-2">{ref.reference}</p>
+                        <p className="text-emerald-700 font-semibold mt-2">{ref.reference}</p>
                         <p className="text-gray-500 text-sm mt-2 bg-emerald-500/10 p-2 rounded">Reflection: {ref.reflection}</p>
                       </div>
                     ))}
@@ -896,12 +896,12 @@ export default function InsightsLibrary() {
               {/* 7. Hadith References */}
               {selectedInsight.insights?.hadith_references?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-amber-400 mb-3">Hadith References</h3>
+                  <h3 className="text-lg font-semibold text-amber-700 mb-3">Hadith References</h3>
                   <div className="space-y-4">
                     {selectedInsight.insights.hadith_references.map((ref: any, idx: number) => (
-                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                      <div key={idx} className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                         <p className="text-gray-700 italic">"{ref.translation}"</p>
-                        <p className="text-amber-400 font-semibold mt-2">{ref.reference}</p>
+                        <p className="text-amber-700 font-semibold mt-2">{ref.reference}</p>
                         <p className="text-gray-500 text-sm mt-2">Reflection: {ref.reflection}</p>
                       </div>
                     ))}
@@ -912,11 +912,11 @@ export default function InsightsLibrary() {
               {/* 8. Action Items */}
               {selectedInsight.insights?.action_items?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-red-400 mb-3">Action Items</h3>
+                  <h3 className="text-lg font-semibold text-red-700 mb-3">Action Items</h3>
                   <div className="space-y-2">
                     {selectedInsight.insights.action_items.map((item: any, idx: number) => (
-                      <div key={idx} className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                        <p className="text-red-400 font-medium">{idx + 1}. {item.action}</p>
+                      <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-red-700 font-medium">{idx + 1}. {item.action}</p>
                         <p className="text-gray-500 text-sm mt-1">How: {item.how_to}</p>
                       </div>
                     ))}
@@ -927,7 +927,7 @@ export default function InsightsLibrary() {
               {/* 9. Quiz - Answers hidden until clicked */}
               {selectedInsight.insights?.quiz?.multiple_choice?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-400 mb-3">Quiz</h3>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-3">Quiz</h3>
                   <div className="space-y-4">
                     {selectedInsight.insights.quiz.multiple_choice.map((q: any, idx: number) => (
                       <QuizQuestion key={idx} question={q} index={idx} />
@@ -939,13 +939,13 @@ export default function InsightsLibrary() {
               {/* 10. Homework */}
               {selectedInsight.insights?.homework?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-orange-400 mb-3">Homework</h3>
+                  <h3 className="text-lg font-semibold text-orange-700 mb-3">Homework</h3>
                   <div className="space-y-2">
                     {selectedInsight.insights.homework.map((hw: any, idx: number) => (
-                      <div key={idx} className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                      <div key={idx} className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-orange-400 font-medium">{idx + 1}. {hw.task}</p>
-                          <span className="text-gray-500 text-sm">({hw.duration})</span>
+                          <p className="text-orange-700 font-medium">{idx + 1}. {hw.task}</p>
+                          <span className="text-gray-600 text-sm">({hw.duration})</span>
                         </div>
                         <p className="text-gray-500 text-sm mt-1">{hw.description}</p>
                       </div>
@@ -960,14 +960,14 @@ export default function InsightsLibrary() {
                   <h3 className="text-lg font-semibold text-emerald-600 mb-3">Age-Appropriate Summaries</h3>
                   <div className="space-y-4">
                     {selectedInsight.insights.summary_for_children && (
-                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
-                        <p className="text-emerald-600 font-semibold mb-2">For Children (5-10):</p>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                        <p className="text-emerald-700 font-semibold mb-2">For Children (5-10):</p>
                         <p className="text-gray-700">{selectedInsight.insights.summary_for_children}</p>
                       </div>
                     )}
                     {selectedInsight.insights.summary_for_teens && (
-                      <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-                        <p className="text-purple-400 font-semibold mb-2">For Teens (11-17):</p>
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <p className="text-purple-700 font-semibold mb-2">For Teens (11-17):</p>
                         <p className="text-gray-700">{selectedInsight.insights.summary_for_teens}</p>
                       </div>
                     )}
@@ -978,12 +978,12 @@ export default function InsightsLibrary() {
               {/* 12. Family Discussion Guide */}
               {selectedInsight.insights?.family_discussion_guide?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-3">Family Discussion Guide</h3>
-                  <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-teal-700 mb-3">Family Discussion Guide</h3>
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                     <ol className="space-y-2">
                       {selectedInsight.insights.family_discussion_guide.map((item: string, idx: number) => (
                         <li key={idx} className="text-gray-700">
-                          <span className="text-teal-400 font-medium mr-2">{idx + 1}.</span>
+                          <span className="text-teal-700 font-medium mr-2">{idx + 1}.</span>
                           {item}
                         </li>
                       ))}
