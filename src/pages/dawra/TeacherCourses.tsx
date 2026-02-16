@@ -17,6 +17,8 @@ import {
   Home,
   ImagePlus,
   X,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -26,7 +28,7 @@ interface Course {
   name: string;
   slug: string;
   description: string | null;
-  invite_code: string | null;
+
   location: string | null;
   delivery_mode: string;
   start_date: string | null;
@@ -38,6 +40,13 @@ interface Course {
   max_participants: number;
   course_type: string;
   poster_url: string | null;
+  total_sessions: number | null;
+  is_free: boolean;
+  price_per_session: number | null;
+}
+
+function calculateInsightsPrice(totalSessions: number): number {
+  return Math.min(totalSessions * 1, 5);
 }
 
 function generateSlug(name: string): string {
@@ -49,12 +58,6 @@ function generateSlug(name: string): string {
     .slice(0, 60);
 }
 
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
 
 export default function TeacherCourses() {
   const navigate = useNavigate();
@@ -65,6 +68,27 @@ export default function TeacherCourses() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
+
+  // Edit state
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    location: '',
+    delivery_mode: 'in_person',
+    schedule_day: 'Monday',
+    schedule_time: '10:00',
+    duration_minutes: 60,
+    max_participants: 30,
+    start_date: '',
+    end_date: '',
+    total_sessions: 10,
+    is_free: true,
+    price_per_session: 0,
+  });
+  const [editPosterFile, setEditPosterFile] = useState<File | null>(null);
+  const [editPosterPreview, setEditPosterPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -77,6 +101,9 @@ export default function TeacherCourses() {
     max_participants: 30,
     start_date: '',
     end_date: '',
+    total_sessions: 10,
+    is_free: true,
+    price_per_session: 0,
   });
 
   useEffect(() => { fetchCourses(); }, []);
@@ -88,7 +115,7 @@ export default function TeacherCourses() {
 
       const { data } = await supabase
         .from('group_sessions')
-        .select('id, name, slug, description, invite_code, location, delivery_mode, start_date, end_date, schedule_day, schedule_time, duration_minutes, current_participants, max_participants, course_type, poster_url')
+        .select('id, name, slug, description, location, delivery_mode, start_date, end_date, schedule_day, schedule_time, duration_minutes, current_participants, max_participants, course_type, poster_url, total_sessions, is_free, price_per_session')
         .or(`teacher_id.eq.${user.id},created_by.eq.${user.id}`)
         .eq('course_type', 'course')
         .order('created_at', { ascending: false });
@@ -111,7 +138,6 @@ export default function TeacherCourses() {
       if (!user) return;
 
       const slug = generateSlug(form.name);
-      const invite_code = generateInviteCode();
 
       // Upload poster if selected
       let poster_url: string | null = null;
@@ -137,7 +163,6 @@ export default function TeacherCourses() {
         name: form.name.trim(),
         description: form.description.trim() || null,
         slug,
-        invite_code,
         location: form.location.trim() || null,
         delivery_mode: form.delivery_mode,
         schedule_day: form.schedule_day,
@@ -146,6 +171,9 @@ export default function TeacherCourses() {
         max_participants: form.max_participants,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
+        total_sessions: form.total_sessions || null,
+        is_free: form.is_free,
+        price_per_session: form.is_free ? 0 : form.price_per_session,
         course_type: 'course',
         is_public: true,
         teacher_id: user.id,
@@ -162,7 +190,7 @@ export default function TeacherCourses() {
       } else {
         toast.success('Course created! Share the link with your students.');
         setShowCreate(false);
-        setForm({ name: '', description: '', location: '', delivery_mode: 'in_person', schedule_day: 'Monday', schedule_time: '10:00', duration_minutes: 60, max_participants: 30, start_date: '', end_date: '' });
+        setForm({ name: '', description: '', location: '', delivery_mode: 'in_person', schedule_day: 'Monday', schedule_time: '10:00', duration_minutes: 60, max_participants: 30, start_date: '', end_date: '', total_sessions: 10, is_free: true, price_per_session: 0 });
         setPosterFile(null);
         setPosterPreview(null);
         fetchCourses();
@@ -180,6 +208,104 @@ export default function TeacherCourses() {
     setCopiedId(course.id);
     toast.success('Course link copied!');
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function startEditing(course: Course) {
+    setEditingCourseId(course.id);
+    setEditForm({
+      name: course.name,
+      description: course.description || '',
+      location: course.location || '',
+      delivery_mode: course.delivery_mode,
+      schedule_day: course.schedule_day,
+      schedule_time: course.schedule_time,
+      duration_minutes: course.duration_minutes,
+      max_participants: course.max_participants,
+      start_date: course.start_date || '',
+      end_date: course.end_date || '',
+      total_sessions: course.total_sessions || 10,
+      is_free: course.is_free,
+      price_per_session: course.price_per_session || 0,
+    });
+    setEditPosterFile(null);
+    setEditPosterPreview(course.poster_url || null);
+  }
+
+  function cancelEditing() {
+    setEditingCourseId(null);
+    setEditPosterFile(null);
+    setEditPosterPreview(null);
+  }
+
+  async function handleSaveCourse(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCourseId) return;
+    if (!editForm.name.trim()) { toast.error('Course name is required'); return; }
+
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let poster_url: string | undefined;
+
+      // Upload new poster if selected
+      if (editPosterFile) {
+        const fileExt = editPosterFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const filePath = `posters/${user.id}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('course_assets')
+          .upload(filePath, editPosterFile);
+
+        if (uploadError) {
+          console.error('Poster upload error:', uploadError);
+          toast.error('Failed to upload poster');
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('course_assets')
+            .getPublicUrl(filePath);
+          poster_url = publicUrl;
+        }
+      } else if (editPosterPreview === null) {
+        // Poster was removed
+        poster_url = '';
+      }
+
+      const updates: Record<string, any> = {
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || null,
+        location: editForm.location.trim() || null,
+        delivery_mode: editForm.delivery_mode,
+        schedule_day: editForm.schedule_day,
+        schedule_time: editForm.schedule_time,
+        duration_minutes: editForm.duration_minutes,
+        max_participants: editForm.max_participants,
+        start_date: editForm.start_date || null,
+        end_date: editForm.end_date || null,
+        total_sessions: editForm.total_sessions || null,
+        is_free: editForm.is_free,
+        price_per_session: editForm.is_free ? 0 : editForm.price_per_session,
+      };
+
+      if (poster_url !== undefined) {
+        updates.poster_url = poster_url || null;
+      }
+
+      const { error } = await supabase
+        .from('group_sessions')
+        .update(updates)
+        .eq('id', editingCourseId);
+
+      if (error) throw error;
+
+      toast.success('Course updated!');
+      cancelEditing();
+      fetchCourses();
+    } catch (err: any) {
+      toast.error('Failed to update course: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function formatDate(d: string | null) {
@@ -261,8 +387,8 @@ export default function TeacherCourses() {
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Poster</label>
               {posterPreview ? (
-                <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                  <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
+                <div className="relative w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                  <img src={posterPreview} alt="Poster preview" className="w-full max-h-64 object-contain" />
                   <button
                     type="button"
                     onClick={() => { setPosterFile(null); setPosterPreview(null); }}
@@ -374,6 +500,62 @@ export default function TeacherCourses() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
+
+            {/* Sessions & Pricing */}
+            <div className="sm:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Sessions & Pricing</h3>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Number of Sessions</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={form.total_sessions}
+                onChange={(e) => setForm({ ...form, total_sessions: parseInt(e.target.value) || 1 })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Price</label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.is_free}
+                    onChange={(e) => setForm({ ...form, is_free: e.target.checked, price_per_session: e.target.checked ? 0 : form.price_per_session })}
+                    className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Free</span>
+                </label>
+                {!form.is_free && (
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">£</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={form.price_per_session}
+                      onChange={(e) => setForm({ ...form, price_per_session: parseInt(e.target.value) || 0 })}
+                      placeholder="per session"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">/ session</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  <span className="font-medium">AI Insights price:</span>{' '}
+                  £{calculateInsightsPrice(form.total_sessions)} per student
+                  <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
+                    (£1/lesson, max £5)
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -405,63 +587,293 @@ export default function TeacherCourses() {
         <div className="space-y-4">
           {courses.map(course => (
             <div key={course.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.name}</h3>
-                  {course.description && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{course.description}</p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {course.current_participants} students
-                    </span>
-                    {course.location && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" />
-                        {course.location}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      {deliveryIcon[course.delivery_mode]}
-                      {deliveryLabel[course.delivery_mode]}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)}
-                    </span>
-                    {course.start_date && (
-                      <span>{formatDate(course.start_date)}{course.end_date ? ` — ${formatDate(course.end_date)}` : ''}</span>
-                    )}
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
-              </div>
+              {editingCourseId === course.id ? (
+                /* Edit form */
+                <form onSubmit={handleSaveCourse}>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Course</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                      <textarea
+                        rows={2}
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Poster</label>
+                      {editPosterPreview ? (
+                        <div className="relative w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                          <img src={editPosterPreview} alt="Poster preview" className="w-full max-h-64 object-contain" />
+                          <button
+                            type="button"
+                            onClick={() => { setEditPosterFile(null); setEditPosterPreview(null); }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
+                          <ImagePlus className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload a poster image</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG or WebP (max 5MB)</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+                              setEditPosterFile(file);
+                              setEditPosterPreview(URL.createObjectURL(file));
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                      <input
+                        type="text"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delivery Mode</label>
+                      <select
+                        value={editForm.delivery_mode}
+                        onChange={(e) => setEditForm({ ...editForm, delivery_mode: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="in_person">In Person</option>
+                        <option value="online">Online</option>
+                        <option value="hybrid">Hybrid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Schedule Day</label>
+                      <select
+                        value={editForm.schedule_day}
+                        onChange={(e) => setEditForm({ ...editForm, schedule_day: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                      <input
+                        type="time"
+                        value={editForm.schedule_time}
+                        onChange={(e) => setEditForm({ ...editForm, schedule_time: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
+                      <input
+                        type="number"
+                        min={15}
+                        max={240}
+                        value={editForm.duration_minutes}
+                        onChange={(e) => setEditForm({ ...editForm, duration_minutes: parseInt(e.target.value) || 60 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Students</label>
+                      <input
+                        type="number"
+                        min={2}
+                        max={200}
+                        value={editForm.max_participants}
+                        onChange={(e) => setEditForm({ ...editForm, max_participants: parseInt(e.target.value) || 30 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={editForm.start_date}
+                        onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={editForm.end_date}
+                        onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
 
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button
-                  onClick={() => copyLink(course)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
-                >
-                  {copiedId === course.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedId === course.id ? 'Copied!' : 'Copy Student Link'}
-                </button>
-                <Link
-                  to={`/course/${course.slug}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  View Course Page
-                </Link>
-                <Link
-                  to={`/teacher/course/${course.id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Manage Sessions
-                </Link>
-              </div>
+                    {/* Sessions & Pricing */}
+                    <div className="sm:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Sessions & Pricing</h3>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Number of Sessions</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={editForm.total_sessions}
+                        onChange={(e) => setEditForm({ ...editForm, total_sessions: parseInt(e.target.value) || 1 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Price</label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editForm.is_free}
+                            onChange={(e) => setEditForm({ ...editForm, is_free: e.target.checked, price_per_session: e.target.checked ? 0 : editForm.price_per_session })}
+                            className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Free</span>
+                        </label>
+                        {!editForm.is_free && (
+                          <div className="flex items-center gap-1 flex-1">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">£</span>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={editForm.price_per_session}
+                              onChange={(e) => setEditForm({ ...editForm, price_per_session: parseInt(e.target.value) || 0 })}
+                              placeholder="per session"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                            <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">/ session</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                          <span className="font-medium">AI Insights price:</span>{' '}
+                          £{calculateInsightsPrice(editForm.total_sessions)} per student
+                          <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
+                            (£1/lesson, max £5)
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button type="button" onClick={cancelEditing} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={saving} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg disabled:opacity-50 flex items-center gap-2">
+                      {saving && <Loader className="w-4 h-4 animate-spin" />}
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* Read-only view */
+                <>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.name}</h3>
+                      {course.description && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{course.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {course.current_participants} students
+                        </span>
+                        {course.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {course.location}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          {deliveryIcon[course.delivery_mode]}
+                          {deliveryLabel[course.delivery_mode]}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)}
+                        </span>
+                        {course.start_date && (
+                          <span>{formatDate(course.start_date)}{course.end_date ? ` — ${formatDate(course.end_date)}` : ''}</span>
+                        )}
+                        {course.total_sessions && (
+                          <span>{course.total_sessions} sessions</span>
+                        )}
+                        <span className="font-medium">
+                          {course.is_free ? 'Free' : `£${course.price_per_session}/session`}
+                        </span>
+                        {course.total_sessions && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            Insights: £{calculateInsightsPrice(course.total_sessions)}/student
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button
+                      onClick={() => startEditing(course)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => copyLink(course)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                    >
+                      {copiedId === course.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedId === course.id ? 'Copied!' : 'Copy Student Link'}
+                    </button>
+                    <Link
+                      to={`/course/${course.slug}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View Course Page
+                    </Link>
+                    <Link
+                      to={`/teacher/course/${course.id}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Manage Sessions
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

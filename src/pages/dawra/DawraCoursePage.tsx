@@ -9,8 +9,7 @@ import {
   CheckCircle,
   Lock,
   Loader,
-  Copy,
-  Check,
+
   ChevronRight,
   User,
   Globe,
@@ -47,7 +46,7 @@ interface CourseData {
   name: string;
   description: string | null;
   slug: string;
-  invite_code: string | null;
+
   poster_url: string | null;
   location: string | null;
   delivery_mode: string;
@@ -77,7 +76,7 @@ export default function CoursePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
+
   const [userGender, setUserGender] = useState<string | null>(null);
 
   const { hasAccess: hasNotesAccess, notesPricePounds, isTeacherOrAdmin: isNotesAdmin } = useCourseNotesAccess(course?.id || null);
@@ -102,7 +101,7 @@ export default function CoursePage() {
       const { data: courseData, error: courseError } = await supabase
         .from('group_sessions')
         .select(`
-          id, name, description, slug, invite_code, poster_url, location,
+          id, name, description, slug, poster_url, location,
           delivery_mode, is_public, start_date, end_date, schedule_day,
           schedule_time, duration_minutes, current_participants, max_participants,
           teacher_id, created_by, gender_restriction,
@@ -198,14 +197,6 @@ export default function CoursePage() {
     }
   }
 
-  function copyInviteCode() {
-    if (course?.invite_code) {
-      navigator.clipboard.writeText(course.invite_code);
-      setCodeCopied(true);
-      toast.success('Invite code copied!');
-      setTimeout(() => setCodeCopied(false), 2000);
-    }
-  }
 
   function getInsightForSession(sessionId: string) {
     return insights.find((i) => i.course_session_id === sessionId);
@@ -268,62 +259,71 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* Hero / Poster */}
+      {/* Hero */}
       <div className="relative bg-gradient-to-br from-emerald-600 to-teal-700 text-white">
-        {course.poster_url && (
-          <img
-            src={course.poster_url}
-            alt={course.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-20"
-          />
-        )}
         <div className="relative max-w-4xl mx-auto px-4 py-12 sm:py-16">
-          <div className="flex items-center gap-2 text-emerald-100 text-sm mb-4">
-            <BookOpen className="w-4 h-4" />
-            <span>Course</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">{course.name}</h1>
-          {course.description && (
-            <p className="text-emerald-100 text-lg mb-6 max-w-2xl">{course.description}</p>
-          )}
+          <div className="flex flex-col md:flex-row md:items-center gap-8">
+            {/* Left: course info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-emerald-100 text-sm mb-4">
+                <BookOpen className="w-4 h-4" />
+                <span>Course</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-4">{course.name}</h1>
+              {course.description && (
+                <p className="text-emerald-100 text-lg mb-6 max-w-2xl">{course.description}</p>
+              )}
 
-          <div className="flex flex-wrap gap-4 text-sm">
-            {course.teacher && (
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                <User className="w-4 h-4" />
-                <span>{course.teacher.full_name}</span>
+              <div className="flex flex-wrap gap-4 text-sm">
+                {course.teacher && (
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                    <User className="w-4 h-4" />
+                    <span>{course.teacher.full_name}</span>
+                  </div>
+                )}
+                {course.location && (
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{course.location}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                  {deliveryIcon[course.delivery_mode as keyof typeof deliveryIcon]}
+                  <span>{deliveryLabel[course.delivery_mode as keyof typeof deliveryLabel]}</span>
+                </div>
+                {course.start_date && (
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {formatDate(course.start_date)}
+                      {course.end_date ? ` — ${formatDate(course.end_date)}` : ''}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)} ({course.duration_minutes} min)</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                  <Users className="w-4 h-4" />
+                  <span>{course.current_participants} enrolled</span>
+                </div>
+                {course.gender_restriction === 'female' && (
+                  <div className="flex items-center gap-2 bg-pink-500/20 border border-pink-300/30 rounded-lg px-3 py-2">
+                    <span>Sisters only — live sessions</span>
+                  </div>
+                )}
               </div>
-            )}
-            {course.location && (
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                <MapPin className="w-4 h-4" />
-                <span>{course.location}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-              {deliveryIcon[course.delivery_mode as keyof typeof deliveryIcon]}
-              <span>{deliveryLabel[course.delivery_mode as keyof typeof deliveryLabel]}</span>
             </div>
-            {course.start_date && (
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  {formatDate(course.start_date)}
-                  {course.end_date ? ` — ${formatDate(course.end_date)}` : ''}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-              <Clock className="w-4 h-4" />
-              <span>{course.schedule_day.includes(' - ') || course.schedule_day.includes(',') ? course.schedule_day : `${course.schedule_day}s`} at {course.schedule_time?.slice(0, 5)} ({course.duration_minutes} min)</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-              <Users className="w-4 h-4" />
-              <span>{course.current_participants} enrolled</span>
-            </div>
-            {course.gender_restriction === 'female' && (
-              <div className="flex items-center gap-2 bg-pink-500/20 border border-pink-300/30 rounded-lg px-3 py-2">
-                <span>Sisters only — live sessions</span>
+
+            {/* Right: poster */}
+            {course.poster_url && (
+              <div className="flex-shrink-0 w-full md:w-80 lg:w-[420px]">
+                <img
+                  src={course.poster_url}
+                  alt={course.name}
+                  className="w-full rounded-xl shadow-lg object-contain"
+                />
               </div>
             )}
           </div>
@@ -334,27 +334,26 @@ export default function CoursePage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Enrol / Status bar */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {isEnrolled ? (
-            <>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-emerald-600" />
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">You're enrolled</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {publishedCount} of {sessions.length} sessions have study notes available
-                  </p>
-                </div>
+          {isTeacher ? (
+            <div className="flex items-center gap-3">
+              <Settings className="w-6 h-6 text-emerald-600" />
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">You are the teacher of this course</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {sessions.length} sessions — {publishedCount} with study notes
+                </p>
               </div>
-              {course.invite_code && (
-                <button
-                  onClick={copyInviteCode}
-                  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition-colors"
-                >
-                  {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>Invite Code: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{course.invite_code}</code></span>
-                </button>
-              )}
-            </>
+            </div>
+          ) : isEnrolled ? (
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">You're enrolled</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {publishedCount} of {sessions.length} sessions have study notes available
+                </p>
+              </div>
+            </div>
           ) : (
             <>
               <div>
@@ -493,10 +492,10 @@ export default function CoursePage() {
                       ? 'border-emerald-200 dark:border-emerald-800'
                       : 'border-gray-200 dark:border-gray-700'
                   } p-4 sm:p-5 transition-all ${
-                    hasInsights && isEnrolled ? 'hover:shadow-md cursor-pointer' : hasInsights ? 'cursor-pointer' : ''
+                    hasInsights && (isEnrolled || isTeacher) ? 'hover:shadow-md cursor-pointer' : hasInsights ? 'cursor-pointer' : ''
                   }`}
                   onClick={() => {
-                    if (hasInsights && isEnrolled) {
+                    if (hasInsights && (isEnrolled || isTeacher)) {
                       navigate(`/course/${slug}/session/${session.session_number}`);
                     } else if (hasInsights && !userId) {
                       navigate(`/signup?redirect=/course/${slug}`);
@@ -526,22 +525,22 @@ export default function CoursePage() {
                           {session.session_date
                             ? formatDate(session.session_date)
                             : 'Date TBC'}
-                          {hasInsights && isEnrolled && session.session_number === 1 && (
+                          {hasInsights && (isEnrolled || isTeacher) && session.session_number === 1 && (
                             <span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                               <Sparkles className="w-3 h-3" /> Free Study Notes
                             </span>
                           )}
-                          {hasInsights && isEnrolled && session.session_number > 1 && (hasNotesAccess || isNotesAdmin) && (
+                          {hasInsights && (isEnrolled || isTeacher) && session.session_number > 1 && (hasNotesAccess || isNotesAdmin) && (
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400">
                               Study Notes Available
                             </span>
                           )}
-                          {hasInsights && isEnrolled && session.session_number > 1 && !hasNotesAccess && !isNotesAdmin && (
+                          {hasInsights && isEnrolled && !isTeacher && session.session_number > 1 && !hasNotesAccess && !isNotesAdmin && (
                             <span className="ml-2 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
                               <Lock className="w-3 h-3" /> Unlock Study Notes — £{notesPricePounds.toFixed(2)}
                             </span>
                           )}
-                          {hasInsights && !isEnrolled && (
+                          {hasInsights && !isEnrolled && !isTeacher && (
                             <span className="ml-2 text-gray-400 dark:text-gray-500">
                               Enrol to view study notes
                             </span>
@@ -555,7 +554,7 @@ export default function CoursePage() {
                       </div>
                     </div>
                     <div>
-                      {hasInsights && isEnrolled ? (
+                      {hasInsights && (isEnrolled || isTeacher) ? (
                         <ChevronRight className="w-5 h-5 text-emerald-500" />
                       ) : hasInsights && !isEnrolled ? (
                         <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500" />

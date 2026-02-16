@@ -50,6 +50,7 @@ interface GroupSession {
   slug?: string;
   delivery_mode?: 'online' | 'in_person' | 'hybrid';
   location?: string;
+  poster_url?: string;
 }
 
 interface Learner {
@@ -512,7 +513,13 @@ export default function GroupClasses() {
         {/* Enrollment Modal */}
         {showEnrollModal && selectedSession && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl max-w-md w-full shadow-xl overflow-hidden">
+              {selectedSession.poster_url && (
+                <div className="h-32 overflow-hidden">
+                  <img src={selectedSession.poster_url} alt={selectedSession.name} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Enroll in Class</h3>
 
               <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-4 mb-6">
@@ -570,6 +577,7 @@ export default function GroupClasses() {
                 </button>
               </div>
             </div>
+            </div>
           </div>
         )}
       </div>
@@ -614,8 +622,25 @@ function GroupClassCard({
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden hover:border-emerald-400 dark:hover:border-emerald-600 transition group shadow-sm">
+      {/* Poster */}
+      {session.poster_url ? (
+        <div className="relative bg-gray-100 dark:bg-gray-900 overflow-hidden">
+          <img
+            src={session.poster_url}
+            alt={session.name}
+            className="w-full max-h-56 object-contain mx-auto group-hover:scale-[1.02] transition-transform duration-300"
+          />
+        </div>
+      ) : (
+        <div className="h-24 bg-gradient-to-br from-emerald-500 to-teal-600 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-2 right-2 text-6xl font-bold text-white">{getSubjectIcon(session.subject?.name)}</div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <span className="text-3xl flex-shrink-0">{getSubjectIcon(session.subject?.name)}</span>

@@ -53,7 +53,7 @@ interface CourseData {
   id: string;
   name: string;
   slug: string;
-  invite_code: string | null;
+
   current_participants: number;
   teacher_id: string;
 }
@@ -105,6 +105,9 @@ export default function CourseTeacherDashboard() {
   const [editDate, setEditDate] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // Remove student state
+  const [removingStudentId, setRemovingStudentId] = useState<string | null>(null);
+
   // Generating/notifying state
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
@@ -118,7 +121,7 @@ export default function CourseTeacherDashboard() {
     try {
       const { data: courseData, error } = await supabase
         .from('group_sessions')
-        .select('id, name, slug, invite_code, current_participants, teacher_id')
+        .select('id, name, slug, current_participants, teacher_id')
         .eq('id', id)
         .single();
 
@@ -329,6 +332,35 @@ export default function CourseTeacherDashboard() {
     }
   }
 
+  async function removeStudent(studentId: string, studentName: string) {
+    if (!course) return;
+    if (!confirm(`Remove ${studentName} from this course? This cannot be undone.`)) return;
+
+    setRemovingStudentId(studentId);
+    try {
+      const { error } = await supabase
+        .from('group_session_participants')
+        .delete()
+        .eq('group_session_id', course.id)
+        .eq('student_id', studentId);
+
+      if (error) throw error;
+
+      // Decrement participant count
+      await supabase
+        .from('group_sessions')
+        .update({ current_participants: Math.max(0, (course.current_participants || 1) - 1) })
+        .eq('id', course.id);
+
+      toast.success(`${studentName} removed from the course`);
+      fetchData();
+    } catch (err: any) {
+      toast.error('Failed to remove student: ' + err.message);
+    } finally {
+      setRemovingStudentId(null);
+    }
+  }
+
   function formatDate(dateStr: string | null) {
     if (!dateStr) return 'No date';
     return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -448,19 +480,6 @@ export default function CourseTeacherDashboard() {
           )}
         </div>
       </div>
-
-      {/* Invite code */}
-      {course.invite_code && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
-          <p className="text-sm text-amber-800 dark:text-amber-300">
-            <strong>Invite Code:</strong>{' '}
-            <code className="bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded font-mono">
-              {course.invite_code}
-            </code>{' '}
-            — Share this with students so they can join the course
-          </p>
-        </div>
-      )}
 
       {/* Sessions */}
       <div className="flex items-center justify-between mb-4">
@@ -834,6 +853,7 @@ export default function CourseTeacherDashboard() {
                       <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300">
                         <HelpCircle className="w-3.5 h-3.5 mx-auto" />
                       </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-700 dark:text-gray-300 w-10"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -882,12 +902,26 @@ export default function CourseTeacherDashboard() {
                               {stats.quizzed}/{publishedSessions.length}
                             </span>
                           </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              onClick={() => removeStudent(student.student_id, student.full_name)}
+                              disabled={removingStudentId === student.student_id}
+                              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                              title={`Remove ${student.full_name}`}
+                            >
+                              {removingStudentId === student.student_id ? (
+                                <Loader className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
                     {students.length === 0 && (
                       <tr>
-                        <td colSpan={publishedSessions.length + 4} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                        <td colSpan={publishedSessions.length + 5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                           No students enrolled yet
                         </td>
                       </tr>
