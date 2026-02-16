@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
               <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">🎓 Live Group Sessions with Independent Teachers</h3>
                 <p style="margin: 0 0 16px 0; color: #334155; line-height: 1.8;">
-                  Join live group courses (Dawra) taught by our independent, qualified teachers. Learn alongside other students in interactive sessions covering Qur'an, Tajweed, Islamic foundations, and more.
+                  Join live group courses taught by our independent, qualified teachers. Learn alongside other students in interactive sessions covering Qur'an, Tajweed, Islamic foundations, and more.
                 </p>
                 <div style="background: #f0fdfa; border-left: 4px solid #06b6d4; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px;">
                   <p style="margin: 0 0 8px 0; color: #0f172a; font-weight: 600;">What you get:</p>
