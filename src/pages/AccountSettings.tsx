@@ -41,9 +41,11 @@ export default function AccountSettings() {
   });
 
   const [passwordData, setPasswordData] = useState({
+    current_password: '',
     new_password: '',
     confirm_password: ''
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -298,6 +300,11 @@ export default function AccountSettings() {
     setError('');
     setSuccessMessage('');
 
+    if (!passwordData.current_password) {
+      setError('Please enter your current password.');
+      return;
+    }
+
     if (passwordData.new_password !== passwordData.confirm_password) {
       setError('Passwords do not match.');
       return;
@@ -311,13 +318,30 @@ export default function AccountSettings() {
     try {
       setSavingPassword(true);
 
+      // Verify current password by re-authenticating
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        navigate('/');
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.current_password
+      });
+
+      if (signInError) {
+        setError('Current password is incorrect.');
+        return;
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({
         password: passwordData.new_password
       });
 
       if (updateError) throw updateError;
 
-      setPasswordData({ new_password: '', confirm_password: '' });
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
       setSuccessMessage('Password updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
@@ -753,9 +777,33 @@ export default function AccountSettings() {
             </h3>
 
             <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div>
+                <label htmlFor="current_password" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
+                  Current Password
+                </label>
+                <div className="relative max-w-md">
+                  <input
+                    id="current_password"
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordData.current_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="new_password" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="new_password" className="block text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">
                     New Password
                   </label>
                   <div className="relative">
