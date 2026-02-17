@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { MoreVertical, Mail, CalendarPlus, StickyNote } from 'lucide-react';
+import { MoreVertical, Mail, CalendarPlus, StickyNote, Pencil, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Candidate {
@@ -113,6 +113,21 @@ export default function CandidateCard({ candidate, onClick, onQuickAction }: Can
                 >
                   <StickyNote className="w-3.5 h-3.5" />
                   Add Note
+                </button>
+                <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                <button
+                  onClick={() => handleQuickAction('edit')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit Candidate
+                </button>
+                <button
+                  onClick={() => handleQuickAction('delete')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
                 </button>
               </div>
             </>

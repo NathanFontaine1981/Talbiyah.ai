@@ -15,6 +15,10 @@ import {
   ChevronDown,
   Loader2,
   ArrowLeft,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -138,6 +142,26 @@ export default function RecruitmentPipeline() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailCandidate, setEmailCandidate] = useState<Candidate | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Candidate | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [editCandidate, setEditCandidate] = useState<Candidate | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    nationality: '',
+    country: '',
+    city: '',
+    languages: '',
+    subjects: [] as string[],
+    expected_hourly_rate: '',
+    years_experience: '',
+    education_level: '',
+    bio: '',
+  });
+  const [saving, setSaving] = useState(false);
 
   // Stats
   const [interviewsThisWeek, setInterviewsThisWeek] = useState(0);
@@ -364,6 +388,98 @@ export default function RecruitmentPipeline() {
     } else if (action === 'add_note') {
       setSelectedCandidate(candidate);
       setIsDetailOpen(true);
+    } else if (action === 'edit') {
+      openEditModal(candidate);
+    } else if (action === 'delete') {
+      setDeleteCandidate(candidate);
+      setIsDeleteModalOpen(true);
+    }
+  }
+
+  function openEditModal(candidate: Candidate) {
+    setEditCandidate(candidate);
+    setEditForm({
+      full_name: candidate.full_name || '',
+      email: candidate.email || '',
+      phone: candidate.phone || '',
+      nationality: candidate.nationality || '',
+      country: candidate.country || '',
+      city: candidate.city || '',
+      languages: candidate.languages?.join(', ') || '',
+      subjects: candidate.subjects || [],
+      expected_hourly_rate: candidate.expected_hourly_rate?.toString() || '',
+      years_experience: candidate.years_experience?.toString() || '',
+      education_level: candidate.education_level || '',
+      bio: candidate.bio || '',
+    });
+    setIsEditModalOpen(true);
+  }
+
+  async function handleDeleteCandidate() {
+    if (!deleteCandidate) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('recruitment_pipeline')
+        .delete()
+        .eq('id', deleteCandidate.id);
+
+      if (error) throw error;
+
+      toast.success(`${deleteCandidate.full_name} has been removed`);
+      setIsDeleteModalOpen(false);
+      setDeleteCandidate(null);
+      fetchCandidates();
+    } catch (err: any) {
+      console.error('Error deleting candidate:', err);
+      toast.error('Failed to delete candidate');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleSaveEdit() {
+    if (!editCandidate) return;
+    setSaving(true);
+    try {
+      const updates: Record<string, any> = {
+        full_name: editForm.full_name,
+        email: editForm.email,
+        phone: editForm.phone || null,
+        nationality: editForm.nationality || null,
+        country: editForm.country || null,
+        city: editForm.city || null,
+        languages: editForm.languages
+          ? editForm.languages.split(',').map((l) => l.trim()).filter(Boolean)
+          : [],
+        subjects: editForm.subjects,
+        expected_hourly_rate: editForm.expected_hourly_rate
+          ? parseFloat(editForm.expected_hourly_rate)
+          : null,
+        years_experience: editForm.years_experience
+          ? parseInt(editForm.years_experience)
+          : null,
+        education_level: editForm.education_level || null,
+        bio: editForm.bio || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('recruitment_pipeline')
+        .update(updates)
+        .eq('id', editCandidate.id);
+
+      if (error) throw error;
+
+      toast.success(`${editForm.full_name} updated successfully`);
+      setIsEditModalOpen(false);
+      setEditCandidate(null);
+      fetchCandidates();
+    } catch (err: any) {
+      console.error('Error updating candidate:', err);
+      toast.error('Failed to update candidate');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -690,6 +806,24 @@ export default function RecruitmentPipeline() {
                           >
                             <Calendar className="w-4 h-4" />
                           </button>
+                          <button
+                            onClick={() =>
+                              handleQuickAction(candidate.id, 'edit')
+                            }
+                            className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors"
+                            title="Edit candidate"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleQuickAction(candidate.id, 'delete')
+                            }
+                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete candidate"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -748,6 +882,239 @@ export default function RecruitmentPipeline() {
           setEmailCandidate(null);
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deleteCandidate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Candidate</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-1">
+              Are you sure you want to delete <span className="font-semibold">{deleteCandidate.full_name}</span>?
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              This will permanently remove them from the pipeline. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteCandidate(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCandidate}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Candidate Modal */}
+      {isEditModalOpen && editCandidate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Candidate</h3>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditCandidate(null);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nationality</label>
+                <input
+                  type="text"
+                  value={editForm.nationality}
+                  onChange={(e) => setEditForm({ ...editForm, nationality: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={editForm.country}
+                  onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+                <input
+                  type="text"
+                  value={editForm.city}
+                  onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Languages (comma-separated)</label>
+                <input
+                  type="text"
+                  value={editForm.languages}
+                  onChange={(e) => setEditForm({ ...editForm, languages: e.target.value })}
+                  placeholder="English, Arabic, Urdu"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Hourly Rate (£)</label>
+                <input
+                  type="number"
+                  step="0.50"
+                  value={editForm.expected_hourly_rate}
+                  onChange={(e) => setEditForm({ ...editForm, expected_hourly_rate: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Years of Experience</label>
+                <input
+                  type="number"
+                  value={editForm.years_experience}
+                  onChange={(e) => setEditForm({ ...editForm, years_experience: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Education Level</label>
+                <select
+                  value={editForm.education_level}
+                  onChange={(e) => setEditForm({ ...editForm, education_level: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Select...</option>
+                  <option value="high_school">High School</option>
+                  <option value="bachelors">Bachelor's Degree</option>
+                  <option value="masters">Master's Degree</option>
+                  <option value="phd">PhD</option>
+                  <option value="islamic_studies">Islamic Studies Certificate</option>
+                  <option value="ijazah">Ijazah</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subjects</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Quran', 'Arabic', 'Quran Memorisation', 'Islamic Studies', 'Tajweed'].map(
+                    (subject) => (
+                      <button
+                        key={subject}
+                        type="button"
+                        onClick={() => {
+                          setEditForm((prev) => ({
+                            ...prev,
+                            subjects: prev.subjects.includes(subject)
+                              ? prev.subjects.filter((s) => s !== subject)
+                              : [...prev.subjects, subject],
+                          }));
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                          editForm.subjects.includes(subject)
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-300'
+                        }`}
+                      >
+                        {subject}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+                <textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditCandidate(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving || !editForm.full_name || !editForm.email}
+                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
