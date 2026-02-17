@@ -32,6 +32,9 @@ import {
   MessageCircle,
   HelpCircle,
   BookOpen,
+  ClipboardList,
+  UserSearch,
+  FileCheck,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -107,6 +110,7 @@ export default function DashboardSidebar({
         { icon: Video, label: 'Recordings', path: '/recordings/history', active: false, roles: ['Teacher'] },
         { icon: Edit, label: 'Edit Profile', path: '/teacher/edit-profile', active: false, roles: ['Teacher'] },
         { icon: BookOpen, label: 'My Courses', path: '/teacher/courses', active: false, roles: ['Teacher'] },
+        { icon: FileCheck, label: 'Resources', path: '/teacher/resources', active: false, roles: ['Teacher'] },
       ]
     },
     {
@@ -150,6 +154,10 @@ export default function DashboardSidebar({
         { icon: GraduationCap, label: 'Manage Teachers', path: '/admin/teachers', active: false, roles: ['Admin'] },
         { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator', active: false, roles: ['Admin'] },
         { icon: Lightbulb, label: 'User Suggestions', path: '/admin/suggestions', active: false, roles: ['Admin'] },
+        { icon: ClipboardList, label: 'Recruitment Pipeline', path: '/admin/recruitment-pipeline', active: false, roles: ['Admin'] },
+        { icon: UserSearch, label: 'Sourcing Tracker', path: '/admin/sourcing', active: false, roles: ['Admin'] },
+        { icon: Video, label: 'Interviews', path: '/admin/interviews', active: false, roles: ['Admin'] },
+        { icon: FileCheck, label: 'Onboarding Resources', path: '/admin/onboarding-resources', active: false, roles: ['Admin'] },
       ]
     },
     {
