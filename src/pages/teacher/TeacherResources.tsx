@@ -553,7 +553,7 @@ export default function TeacherResources() {
                 <button
                   onClick={() => markAsRead(selectedResource.id)}
                   disabled={markingRead}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-lg transition"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition"
                 >
                   {markingRead ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

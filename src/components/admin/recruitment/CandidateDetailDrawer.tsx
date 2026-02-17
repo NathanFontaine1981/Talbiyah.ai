@@ -1212,9 +1212,16 @@ export default function CandidateDetailDrawer({
                 ) : (
                   <div className="text-center py-12">
                     <AlertTriangle className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
                       Failed to load interview details
                     </p>
+                    <button
+                      onClick={() => fetchInterview(candidate.interview_id!)}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <Loader2 className={`w-4 h-4 ${interviewLoading ? 'animate-spin' : ''}`} />
+                      Retry
+                    </button>
                   </div>
                 )
               ) : (

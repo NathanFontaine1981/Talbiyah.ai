@@ -359,6 +359,8 @@ export default function RecruitmentPipeline() {
       setEmailCandidate(candidate);
       setIsEmailModalOpen(true);
     } else if (action === 'schedule_interview') {
+      navigate(`/admin/interviews?candidate=${candidate.id}&name=${encodeURIComponent(candidate.full_name)}`);
+    } else if (action === 'add_note') {
       setSelectedCandidate(candidate);
       setIsDetailOpen(true);
     }

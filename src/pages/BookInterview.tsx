@@ -291,10 +291,10 @@ export default function BookInterview() {
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-6">
                 If you believe this is an error, please contact us at{' '}
                 <a
-                  href="mailto:support@talbiyah.ai"
+                  href="mailto:salams@talbiyah.ai"
                   className="text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  support@talbiyah.ai
+                  salams@talbiyah.ai
                 </a>
               </p>
             </div>
@@ -403,16 +403,16 @@ export default function BookInterview() {
                 <p className="text-gray-400 dark:text-gray-500 text-sm">
                   Please check back later or contact us at{' '}
                   <a
-                    href="mailto:support@talbiyah.ai"
+                    href="mailto:salams@talbiyah.ai"
                     className="text-emerald-600 dark:text-emerald-400 hover:underline"
                   >
-                    support@talbiyah.ai
+                    salams@talbiyah.ai
                   </a>
                 </p>
               </div>
             ) : (
               <>
-                <div className="space-y-6 max-h-[28rem] overflow-y-auto pr-1">
+                <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-1">
                   {Object.entries(slotsByDate).map(([date, dateSlots]) => (
                     <div key={date}>
                       <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
