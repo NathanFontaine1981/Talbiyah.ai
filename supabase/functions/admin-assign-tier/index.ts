@@ -57,6 +57,8 @@ serve(async (req) => {
       reason,
       application_id,
       disable_auto_progression = false,
+      pay_region,
+      rate_override,
     } = await req.json();
 
     // Validate tier
@@ -93,16 +95,41 @@ serve(async (req) => {
 
     const old_tier = teacher.tier;
 
+    // Determine the hourly rate based on region and override
+    let effectiveRate = tierData.teacher_hourly_rate;
+    if (rate_override != null && rate_override !== '') {
+      effectiveRate = Number(rate_override);
+    } else if (pay_region === 'uk' && tierData.uk_teacher_hourly_rate) {
+      effectiveRate = tierData.uk_teacher_hourly_rate;
+    } else if (pay_region === 'international' && tierData.international_teacher_hourly_rate) {
+      effectiveRate = tierData.international_teacher_hourly_rate;
+    }
+
+    // Build update payload
+    const updatePayload: Record<string, unknown> = {
+      tier: new_tier,
+      tier_assigned_at: new Date().toISOString(),
+      tier_assigned_by: user.id,
+      manual_tier_override: true,
+      tier_progression_eligible: !disable_auto_progression,
+      hourly_rate: effectiveRate,
+    };
+
+    if (pay_region) {
+      updatePayload.pay_region = pay_region;
+    }
+
+    if (rate_override != null && rate_override !== '') {
+      updatePayload.rate_override = Number(rate_override);
+      updatePayload.rate_override_reason = reason;
+      updatePayload.rate_override_by = user.id;
+      updatePayload.rate_override_at = new Date().toISOString();
+    }
+
     // Update teacher tier
     const { error: updateError } = await supabaseClient
       .from("teacher_profiles")
-      .update({
-        tier: new_tier,
-        tier_assigned_at: new Date().toISOString(),
-        tier_assigned_by: user.id,
-        manual_tier_override: true,
-        tier_progression_eligible: !disable_auto_progression,
-      })
+      .update(updatePayload)
       .eq("id", teacher_id);
 
     if (updateError) {
@@ -133,7 +160,7 @@ serve(async (req) => {
           reviewed_at: new Date().toISOString(),
           review_notes: reason,
           assigned_tier: new_tier,
-          assigned_rate: tierData.teacher_hourly_rate,
+          assigned_rate: effectiveRate,
         })
         .eq("id", application_id);
     }
@@ -148,7 +175,8 @@ serve(async (req) => {
         teacher_email: teacherAuth?.user?.email,
         old_tier,
         new_tier,
-        new_hourly_rate: tierData.teacher_hourly_rate,
+        new_hourly_rate: effectiveRate,
+        pay_region: pay_region || 'international',
         new_student_price: tierData.student_hourly_price,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

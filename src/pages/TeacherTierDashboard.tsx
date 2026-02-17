@@ -22,6 +22,8 @@ interface TierInfo {
   tier_name: string;
   tier_icon: string;
   teacher_hourly_rate: number;
+  uk_teacher_hourly_rate: number;
+  international_teacher_hourly_rate: number;
   student_hourly_price: number;
   platform_margin: number;
   margin_percentage: number;

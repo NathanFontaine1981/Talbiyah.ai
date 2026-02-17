@@ -59,6 +59,8 @@ interface TierInfo {
   tier_name: string;
   tier_icon: string;
   teacher_hourly_rate: number;
+  uk_teacher_hourly_rate: number;
+  international_teacher_hourly_rate: number;
   student_hourly_price: number;
   platform_margin: number;
   margin_percentage: number;
@@ -80,6 +82,8 @@ export default function TeacherTiers() {
     new_tier: '',
     reason: '',
     disable_auto_progression: false,
+    pay_region: 'international' as 'uk' | 'international',
+    rate_override: '' as string | number,
   });
 
   useEffect(() => {
@@ -171,6 +175,8 @@ export default function TeacherTiers() {
             reason: assignData.reason,
             application_id: selectedApplication?.id,
             disable_auto_progression: assignData.disable_auto_progression,
+            pay_region: assignData.pay_region,
+            rate_override: assignData.rate_override ? Number(assignData.rate_override) : undefined,
           }),
         }
       );
@@ -439,6 +445,9 @@ export default function TeacherTiers() {
                       Rating
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      Region
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Earnings
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
@@ -483,6 +492,15 @@ export default function TeacherTiers() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-gray-900 dark:text-white">{teacher.average_rating.toFixed(1)} ★</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          (teacher as any).pay_region === 'uk'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                        }`}>
+                          {(teacher as any).pay_region === 'uk' ? 'UK' : 'International'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-emerald-400 font-semibold">
@@ -563,10 +581,73 @@ export default function TeacherTiers() {
                   <option value="">Select tier...</option>
                   {tiers.map((tier) => (
                     <option key={tier.tier} value={tier.tier}>
-                      {tier.tier_icon} {tier.tier_name} - £{tier.teacher_hourly_rate.toFixed(2)}/h
+                      {tier.tier_icon} {tier.tier_name} - UK: £{tier.uk_teacher_hourly_rate?.toFixed(2) || '?'}/h | Intl: £{tier.international_teacher_hourly_rate?.toFixed(2) || '?'}/h
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Pay Region */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Pay Region
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAssignData({ ...assignData, pay_region: 'international' })}
+                    className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition ${
+                      assignData.pay_region === 'international'
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-2 border-amber-500'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    International
+                    {assignData.new_tier && (
+                      <span className="block text-xs mt-1">
+                        £{tiers.find(t => t.tier === assignData.new_tier)?.international_teacher_hourly_rate?.toFixed(2) || '?'}/h
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignData({ ...assignData, pay_region: 'uk' })}
+                    className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition ${
+                      assignData.pay_region === 'uk'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-2 border-blue-500'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    UK
+                    {assignData.new_tier && (
+                      <span className="block text-xs mt-1">
+                        £{tiers.find(t => t.tier === assignData.new_tier)?.uk_teacher_hourly_rate?.toFixed(2) || '?'}/h
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Rate Override */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Rate Override (optional)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">£</span>
+                  <input
+                    type="number"
+                    step="0.50"
+                    min="0"
+                    value={assignData.rate_override}
+                    onChange={(e) => setAssignData({ ...assignData, rate_override: e.target.value })}
+                    className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Leave empty to use tier rate"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Use this to offer a higher rate as a recruitment incentive
+                </p>
               </div>
 
               {/* Reason */}
@@ -661,7 +742,7 @@ export default function TeacherTiers() {
                 >
                   {tiers.map((tier) => (
                     <option key={tier.tier} value={tier.tier}>
-                      {tier.tier_icon} {tier.tier_name} - £{tier.teacher_hourly_rate.toFixed(2)}/h
+                      {tier.tier_icon} {tier.tier_name} - UK: £{tier.uk_teacher_hourly_rate?.toFixed(2) || '?'}/h | Intl: £{tier.international_teacher_hourly_rate?.toFixed(2) || '?'}/h
                     </option>
                   ))}
                 </select>

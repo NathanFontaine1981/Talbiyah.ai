@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import OnboardingChecklist from '../../components/teacher/OnboardingChecklist';
 import {
   DollarSign,
   Clock,
@@ -64,6 +65,7 @@ export default function TeacherHub() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [teacherProfileId, setTeacherProfileId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [stats, setStats] = useState<TeacherStats | null>(null);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingLesson[]>([]);
@@ -100,6 +102,7 @@ export default function TeacherHub() {
       }
 
       setTeacherProfileId(teacherProfile.id);
+      setUserId(user.id);
       setTeacherType(teacherProfile.teacher_type || 'platform');
       setIndependentRate(teacherProfile.independent_rate || 0);
       setPaymentCollection(teacherProfile.payment_collection || 'external');
@@ -320,6 +323,11 @@ export default function TeacherHub() {
           <h1 className="text-4xl font-bold text-white mb-2">Teacher Account</h1>
           <p className="text-gray-500">Manage your teaching activities and track your performance.</p>
         </div>
+
+        {/* Onboarding Checklist - shown until complete */}
+        {teacherProfileId && userId && (
+          <OnboardingChecklist teacherProfileId={teacherProfileId} userId={userId} />
+        )}
 
         {/* Current Tier Badge / Independent Teacher Badge */}
         {isIndependent ? (

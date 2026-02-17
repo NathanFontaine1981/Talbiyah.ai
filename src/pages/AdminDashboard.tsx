@@ -27,7 +27,10 @@ import {
   Shield,
   FileText,
   Mail,
-  Heart
+  Heart,
+  UserPlus,
+  Search,
+  Video,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -62,6 +65,15 @@ export default function AdminDashboard() {
         { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
         { icon: FileText, label: 'Legacy Billing', path: '/admin/legacy-billing' },
         { icon: Heart, label: 'Sadaqah Fund', path: '/admin/sadaqah' },
+      ]
+    },
+    {
+      title: 'Recruitment',
+      items: [
+        { icon: UserPlus, label: 'Pipeline', path: '/admin/recruitment-pipeline' },
+        { icon: Search, label: 'Sourcing', path: '/admin/sourcing' },
+        { icon: Video, label: 'Interviews', path: '/admin/interviews' },
+        { icon: BookOpen, label: 'Onboarding', path: '/admin/onboarding-resources' },
       ]
     },
     {

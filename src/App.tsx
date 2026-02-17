@@ -185,6 +185,15 @@ const LegacyBilling = lazy(() => import('./pages/admin/LegacyBilling'));
 const AdminEmail = lazy(() => import('./pages/admin/AdminEmail'));
 const SadaqahManagement = lazy(() => import('./pages/admin/SadaqahManagement'));
 
+// Recruitment system pages
+const RecruitmentPipeline = lazy(() => import('./pages/admin/RecruitmentPipeline'));
+const SourcingTracker = lazy(() => import('./pages/admin/SourcingTracker'));
+const InterviewManagement = lazy(() => import('./pages/admin/InterviewManagement'));
+const InterviewRoom = lazy(() => import('./pages/admin/InterviewRoom'));
+const OnboardingResources = lazy(() => import('./pages/admin/OnboardingResources'));
+const BookInterview = lazy(() => import('./pages/BookInterview'));
+const TeacherResources = lazy(() => import('./pages/teacher/TeacherResources'));
+
 function App() {
   return (
     <ThemeProvider>
@@ -208,6 +217,7 @@ function App() {
         <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/how-to" element={<HowToPage />} />
+        <Route path="/book-interview/:token" element={<BookInterview />} />
         <Route path="/course/:slug" element={<CoursePage />} />
         <Route path="/course/:slug/session/:sessionNumber" element={<CourseSessionInsights />} />
         <Route
@@ -366,6 +376,11 @@ function App() {
           <Route path="legacy-billing" element={<LegacyBilling />} />
           <Route path="email" element={<AdminEmail />} />
           <Route path="sadaqah" element={<SadaqahManagement />} />
+          <Route path="recruitment-pipeline" element={<RecruitmentPipeline />} />
+          <Route path="sourcing" element={<SourcingTracker />} />
+          <Route path="interviews" element={<InterviewManagement />} />
+          <Route path="interview-room/:interviewId" element={<InterviewRoom />} />
+          <Route path="onboarding-resources" element={<OnboardingResources />} />
         </Route>
         <Route
           path="/apply-to-teach"
@@ -476,6 +491,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherEditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/resources"
+          element={
+            <ProtectedRoute requireTeacherOrAdmin={true}>
+              <TeacherResources />
             </ProtectedRoute>
           }
         />
