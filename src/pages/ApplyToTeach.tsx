@@ -495,6 +495,67 @@ export default function ApplyToTeach() {
         throw profileError;
       }
 
+      // Pipeline-to-account bridge: check if this email matches a recruitment pipeline candidate
+      try {
+        const { data: pipelineCandidate } = await supabase
+          .from('recruitment_pipeline')
+          .select('id, assigned_tier, pay_region, expected_hourly_rate, pipeline_stage')
+          .eq('email', user.email)
+          .is('user_id', null)
+          .single();
+
+        if (pipelineCandidate) {
+          // Get the teacher_profile id for linking
+          const { data: tp } = await supabase
+            .from('teacher_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          // Link the pipeline record to this user and teacher profile
+          await supabase
+            .from('recruitment_pipeline')
+            .update({
+              user_id: user.id,
+              teacher_profile_id: tp?.id || null,
+              pipeline_stage_updated_at: new Date().toISOString(),
+            })
+            .eq('id', pipelineCandidate.id);
+
+          // Override tier/rate from pipeline data if set by admin
+          const pipelineOverrides: Record<string, unknown> = {};
+          if (pipelineCandidate.assigned_tier) {
+            pipelineOverrides.tier = pipelineCandidate.assigned_tier;
+          }
+          if (pipelineCandidate.pay_region) {
+            pipelineOverrides.pay_region = pipelineCandidate.pay_region;
+          }
+          if (pipelineCandidate.expected_hourly_rate) {
+            pipelineOverrides.hourly_rate = pipelineCandidate.expected_hourly_rate;
+          }
+
+          if (Object.keys(pipelineOverrides).length > 0) {
+            await supabase
+              .from('teacher_profiles')
+              .update(pipelineOverrides)
+              .eq('user_id', user.id);
+          }
+
+          // Record the link in pipeline history
+          await supabase
+            .from('recruitment_pipeline_history')
+            .insert({
+              candidate_id: pipelineCandidate.id,
+              from_stage: pipelineCandidate.pipeline_stage,
+              to_stage: pipelineCandidate.pipeline_stage,
+              notes: `Account created and linked (user_id: ${user.id})`,
+            });
+        }
+      } catch (bridgeErr) {
+        // Non-blocking — don't fail the application if bridge fails
+        console.error('Pipeline bridge check error:', bridgeErr);
+      }
+
       // Build success message
       let message = `Success! Your application has been submitted.\n\n`;
 
