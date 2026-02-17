@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import {
@@ -44,15 +44,27 @@ export default function OnboardingChecklist({
   const [statuses, setStatuses] = useState<Map<string, CheckStatus>>(new Map());
   const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    const wasDismissed = localStorage.getItem(DISMISSED_KEY);
-    if (wasDismissed === 'true') {
+  const loadChecklistCb = useCallback(() => {
+    if (localStorage.getItem(DISMISSED_KEY) === 'true') {
       setDismissed(true);
       setLoading(false);
       return;
     }
     loadChecklist();
   }, [teacherProfileId, userId]);
+
+  useEffect(() => {
+    loadChecklistCb();
+  }, [loadChecklistCb]);
+
+  // Re-fetch when navigating back to this page (SPA focus)
+  useEffect(() => {
+    function handleFocus() {
+      if (!dismissed) loadChecklist();
+    }
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [dismissed, teacherProfileId, userId]);
 
   async function loadChecklist() {
     try {
@@ -113,6 +125,13 @@ export default function OnboardingChecklist({
         .select('id')
         .eq('teacher_id', teacherProfileId);
 
+      // Check if teacher has completed at least one lesson (trial lesson)
+      const { count: completedLessonsCount } = await supabase
+        .from('lessons')
+        .select('id', { count: 'exact', head: true })
+        .eq('teacher_id', teacherProfileId)
+        .eq('status', 'completed');
+
       for (const item of items) {
         let completed = false;
         let actionLabel: string | undefined;
@@ -154,7 +173,7 @@ export default function OnboardingChecklist({
             break;
 
           case 'trial_lesson_done':
-            completed = false;
+            completed = (completedLessonsCount || 0) > 0;
             actionLabel = 'View Schedule';
             actionPath = '/teacher/schedule';
             break;

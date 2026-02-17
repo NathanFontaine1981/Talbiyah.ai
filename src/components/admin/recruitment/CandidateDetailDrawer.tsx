@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Mail,
@@ -200,10 +200,15 @@ export default function CandidateDetailDrawer({
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // Debounce ref for admin notes auto-save
+  const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adminNotesRef = useRef(adminNotes);
+
   // Reset state when candidate changes
   useEffect(() => {
     if (candidate) {
       setAdminNotes(candidate.admin_notes || '');
+      adminNotesRef.current = candidate.admin_notes || '';
       setDbsStatus(candidate.dbs_status || 'not_started');
       setDbsReference(candidate.dbs_reference || '');
       setReferencesStatus(candidate.references_status || 'not_started');
@@ -214,6 +219,9 @@ export default function CandidateDetailDrawer({
       setEmails([]);
       setHistory([]);
     }
+    return () => {
+      if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+    };
   }, [candidate?.id]);
 
   // Fetch tab-specific data when tab changes
@@ -298,11 +306,12 @@ export default function CandidateDetailDrawer({
 
   async function saveAdminNotes() {
     if (!candidate) return;
+    const notes = adminNotesRef.current;
     setSaving(true);
     try {
       const { error } = await supabase
         .from('recruitment_pipeline')
-        .update({ admin_notes: adminNotes, updated_at: new Date().toISOString() })
+        .update({ admin_notes: notes, updated_at: new Date().toISOString() })
         .eq('id', candidate.id);
 
       if (error) throw error;
@@ -830,14 +839,22 @@ export default function CandidateDetailDrawer({
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <textarea
                     value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                    onBlur={saveAdminNotes}
+                    onChange={(e) => {
+                      setAdminNotes(e.target.value);
+                      adminNotesRef.current = e.target.value;
+                      if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+                      notesDebounceRef.current = setTimeout(() => saveAdminNotes(), 2000);
+                    }}
+                    onBlur={() => {
+                      if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+                      saveAdminNotes();
+                    }}
                     placeholder="Add private admin notes about this candidate..."
                     rows={4}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-y"
                   />
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Auto-saves when you click away
+                    {saving ? 'Saving...' : 'Auto-saves after 2s of idle or when you click away'}
                   </p>
                 </div>
               </section>
