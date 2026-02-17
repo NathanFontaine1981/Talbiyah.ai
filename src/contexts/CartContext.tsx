@@ -101,7 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           *,
           teacher_profiles!inner(
             id,
-            profiles!inner(full_name)
+            profiles!teacher_profiles_user_id_fkey(full_name)
           ),
           subjects!inner(name)
         `)

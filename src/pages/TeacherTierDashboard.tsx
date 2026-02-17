@@ -284,7 +284,7 @@ export default function TeacherTierDashboard() {
         <div className="text-white text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">Teacher Profile Required</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-400 mb-6">
             You need to be an approved teacher to view this page.
           </p>
           <div className="space-y-3">
@@ -323,7 +323,7 @@ export default function TeacherTierDashboard() {
         {/* Back Button */}
         <button
           onClick={() => navigate('/dashboard')}
-          className="mb-6 flex items-center space-x-2 text-gray-500 hover:text-emerald-600 transition"
+          className="mb-6 flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back to Dashboard</span>
@@ -343,12 +343,12 @@ export default function TeacherTierDashboard() {
                 <h1 className="text-4xl font-bold text-white mb-2">
                   {stats.tier_name} Teacher
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-gray-400">
                   Your current earnings rate and tier status
                 </p>
                 <button
                   onClick={() => navigate('/teacher/tier-info')}
-                  className="mt-3 inline-flex items-center space-x-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-600 text-sm font-medium transition"
+                  className="mt-3 inline-flex items-center space-x-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 text-sm font-medium transition"
                 >
                   <BookOpen className="w-4 h-4" />
                   <span>Learn About All Tiers</span>
@@ -437,7 +437,7 @@ export default function TeacherTierDashboard() {
               {/* Hours Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Hours Taught</span>
+                  <span className="text-sm text-gray-400">Hours Taught</span>
                   <span className="text-sm font-semibold text-white">
                     {stats.hours_taught.toFixed(1)} / {progress.nextTier.min_hours_taught}h
                   </span>
@@ -458,7 +458,7 @@ export default function TeacherTierDashboard() {
               {/* Retention Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Student Retention</span>
+                  <span className="text-sm text-gray-400">Student Retention</span>
                   <span className="text-sm font-semibold text-white">
                     {progress.hasEnoughStudents
                       ? `${stats.retention_rate.toFixed(0)}% / ${progress.nextTier.min_retention_rate}%`
@@ -626,7 +626,7 @@ export default function TeacherTierDashboard() {
                   className="bg-gray-50 backdrop-blur-sm rounded-xl p-6 border border-gray-200"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white capitalize">
+                    <h3 className="text-lg font-semibold text-gray-900 capitalize">
                       {app.requested_tier} Tier Application
                     </h3>
                     <span
@@ -665,7 +665,7 @@ export default function TeacherTierDashboard() {
                 >
                   <div className="flex items-center space-x-4 mb-2">
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-gray-900">
                       {item.from_tier} → {item.to_tier}
                     </h3>
                     <span
@@ -696,7 +696,7 @@ export default function TeacherTierDashboard() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div role="dialog" aria-modal="true" aria-labelledby="application-modal-title" className="bg-gray-100 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 id="application-modal-title" className="text-2xl font-bold text-white capitalize">
+              <h2 id="application-modal-title" className="text-2xl font-bold text-gray-900 capitalize">
                 Apply for {applicationTier} Tier
               </h2>
               <button

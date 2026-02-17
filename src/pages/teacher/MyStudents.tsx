@@ -291,7 +291,7 @@ export default function MyStudents() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/teacher/hub')}
-            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Teacher Hub</span>
@@ -303,7 +303,7 @@ export default function MyStudents() {
                 <Users className="w-10 h-10 text-emerald-600" />
                 My Students
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-400">
                 Manage your student relationships and track progress
               </p>
             </div>

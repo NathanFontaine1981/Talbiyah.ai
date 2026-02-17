@@ -466,7 +466,7 @@ export default function HomeworkReview() {
                 <ClipboardCheck className="w-10 h-10 text-emerald-400" />
                 Homework Review
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-400">
                 Review student homework submissions and provide feedback
               </p>
             </div>
@@ -707,7 +707,7 @@ export default function HomeworkReview() {
                           {submission.student_notes && (
                             <div className="bg-white/5 rounded-lg p-4">
                               <h5 className="font-medium mb-2">Student Notes</h5>
-                              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                              <p className="text-sm text-gray-300 whitespace-pre-wrap">
                                 {submission.student_notes}
                               </p>
                             </div>
@@ -791,7 +791,7 @@ export default function HomeworkReview() {
                                 </p>
                               )}
                               {submission.teacher_feedback && (
-                                <p className="text-sm text-gray-600 mt-2">{submission.teacher_feedback}</p>
+                                <p className="text-sm text-gray-300 mt-2">{submission.teacher_feedback}</p>
                               )}
                             </div>
                           )}
@@ -909,7 +909,7 @@ export default function HomeworkReview() {
                                       : 'bg-red-500/10 border border-red-500/30'
                                   }`}
                                 >
-                                  <p className="text-gray-600">{answer.question || `Question ${idx + 1}`}</p>
+                                  <p className="text-gray-300">{answer.question || `Question ${idx + 1}`}</p>
                                   <p className={answer.correct ? 'text-emerald-400' : 'text-red-400'}>
                                     Answer: {answer.selectedAnswer}
                                     {!answer.correct && answer.correctAnswer && (
@@ -992,7 +992,7 @@ export default function HomeworkReview() {
                               <AlertCircle className="w-4 h-4" />
                               Question for You
                             </h5>
-                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                            <p className="text-sm text-gray-300 whitespace-pre-wrap">
                               {submission.questions_for_teacher}
                             </p>
                           </div>

@@ -1058,7 +1058,7 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <TeacherStatsWidget />
-                    <AnnouncementsCard />
+                    <AnnouncementsCard userRole={selectedViewRole} />
                   </div>
                 </div>
               </>
@@ -1085,7 +1085,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="mb-6">
-                  <AnnouncementsCard />
+                  <AnnouncementsCard userRole={selectedViewRole} />
                 </div>
               </>
             )}
@@ -1099,7 +1099,7 @@ export default function Dashboard() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <ReferralWidget />
-                    <AnnouncementsCard />
+                    <AnnouncementsCard userRole={selectedViewRole} />
                   </div>
                 </div>
               </>

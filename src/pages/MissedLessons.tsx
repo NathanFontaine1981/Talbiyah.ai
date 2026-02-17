@@ -227,7 +227,7 @@ export default function MissedLessons() {
           <button
             onClick={() => navigate('/dashboard')}
             aria-label="Go back to dashboard"
-            className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition mb-6"
+            className="flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition mb-6"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Dashboard</span>
@@ -235,18 +235,18 @@ export default function MissedLessons() {
 
           <div className="mb-6">
             <h1 className="text-4xl font-bold text-white mb-2">Missed & Cancelled Lessons</h1>
-            <p className="text-gray-500 text-lg">Track your missed lessons and cancellations</p>
+            <p className="text-gray-400 text-lg">Track your missed lessons and cancellations</p>
           </div>
 
           {/* Cancellation Policy Info */}
           <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6">
             <div className="flex items-start space-x-3">
-              <Info className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
+              <Info className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-white font-bold text-lg mb-2">Cancellation Policy</h3>
-                <ul className="space-y-2 text-gray-600 text-sm">
+                <ul className="space-y-2 text-gray-300 text-sm">
                   <li className="flex items-start space-x-2">
-                    <span className="text-emerald-600 mt-1">•</span>
+                    <span className="text-emerald-400 mt-1">•</span>
                     <span>Cancel <span className="font-semibold text-white">more than 30 minutes</span> before your lesson to avoid charges</span>
                   </li>
                   <li className="flex items-start space-x-2">

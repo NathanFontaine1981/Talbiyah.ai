@@ -368,7 +368,7 @@ export default function TeacherHub() {
                 <div className="text-5xl">{stats.tier_icon}</div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{stats.tier_name} Teacher</h2>
-                  <p className="text-gray-600">£{stats.teacher_hourly_rate.toFixed(2)}/hour</p>
+                  <p className="text-gray-400">£{stats.teacher_hourly_rate.toFixed(2)}/hour</p>
                 </div>
               </div>
               {stats.next_auto_tier && (

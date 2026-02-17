@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Award, CheckCircle, XCircle, Clock, FileText, Video,
-  Mail, Calendar, Lock, Unlock, AlertCircle, ExternalLink
+  Mail, Calendar, Lock, Unlock, AlertCircle, ExternalLink, ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,6 +34,7 @@ interface PendingTeacher {
 }
 
 export default function TeacherReview() {
+  const navigate = useNavigate();
   const [pendingTeachers, setPendingTeachers] = useState<PendingTeacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -201,6 +203,14 @@ export default function TeacherReview() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-800 py-8">
       <div className="max-w-7xl mx-auto px-6">
+        <button
+          onClick={() => navigate('/admin/teachers')}
+          className="mb-6 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
+          <span>Back to Teachers</span>
+        </button>
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Pending Teacher Applications</h1>
           <p className="text-gray-600 dark:text-gray-400">{pendingTeachers.length} application(s) awaiting review</p>

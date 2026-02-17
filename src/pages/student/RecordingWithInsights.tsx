@@ -205,7 +205,7 @@ export default function RecordingWithInsights() {
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 text-gray-500 hover:text-white transition rounded-lg hover:bg-gray-100"
+              className="p-2 text-gray-500 hover:text-gray-900 transition rounded-lg hover:bg-gray-100"
             >
               <X className="w-6 h-6" />
             </button>

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Plus,
   ExternalLink,
   Edit2,
   ArrowRight,
+  ArrowLeft,
   Users,
   Globe,
   Mail,
@@ -141,6 +143,7 @@ function relativeTime(dateStr: string | null): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SourcingTracker() {
+  const navigate = useNavigate();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -425,6 +428,15 @@ export default function SourcingTracker() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/admin')}
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition group"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition" />
+        <span className="text-sm">Back to Admin Dashboard</span>
+      </button>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

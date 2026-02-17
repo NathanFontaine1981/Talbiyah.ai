@@ -59,7 +59,7 @@ export default function MySchedule() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/teacher/hub')}
-            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Teacher Hub</span>
@@ -67,11 +67,11 @@ export default function MySchedule() {
 
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
-              <Calendar className="w-7 h-7 text-emerald-600" />
+              <Calendar className="w-7 h-7 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">My Schedule</h1>
-              <p className="text-gray-500">View and manage your weekly lesson schedule</p>
+              <h1 className="text-3xl font-bold text-white">My Schedule</h1>
+              <p className="text-gray-400">View and manage your weekly lesson schedule</p>
             </div>
           </div>
         </div>

@@ -35,6 +35,7 @@ import {
   ClipboardList,
   UserSearch,
   FileCheck,
+  Megaphone,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -158,6 +159,7 @@ export default function DashboardSidebar({
         { icon: UserSearch, label: 'Sourcing Tracker', path: '/admin/sourcing', active: false, roles: ['Admin'] },
         { icon: Video, label: 'Interviews', path: '/admin/interviews', active: false, roles: ['Admin'] },
         { icon: FileCheck, label: 'Onboarding Resources', path: '/admin/onboarding-resources', active: false, roles: ['Admin'] },
+        { icon: Megaphone, label: 'Announcements', path: '/admin/announcements', active: false, roles: ['Admin'] },
       ]
     },
     {

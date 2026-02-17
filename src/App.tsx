@@ -194,6 +194,10 @@ const OnboardingResources = lazy(() => import('./pages/admin/OnboardingResources
 const BookInterview = lazy(() => import('./pages/BookInterview'));
 const CandidateInterviewRoom = lazy(() => import('./pages/CandidateInterviewRoom'));
 const TeacherResources = lazy(() => import('./pages/teacher/TeacherResources'));
+const AnnouncementsManagement = lazy(() => import('./pages/admin/AnnouncementsManagement'));
+
+// 404 page
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -383,6 +387,7 @@ function App() {
           <Route path="interviews" element={<InterviewManagement />} />
           <Route path="interview-room/:interviewId" element={<InterviewRoom />} />
           <Route path="onboarding-resources" element={<OnboardingResources />} />
+          <Route path="announcements" element={<AnnouncementsManagement />} />
         </Route>
         <Route
           path="/apply-to-teach"
@@ -883,6 +888,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
         <FeedbackButton />

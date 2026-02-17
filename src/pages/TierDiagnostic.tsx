@@ -154,7 +154,7 @@ export default function TierDiagnostic() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 shadow-xl">
-          <h1 className="text-3xl font-bold text-white mb-2">Teacher Tier System Diagnostics</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Teacher Tier System Diagnostics</h1>
           <p className="text-gray-500 mb-8">Checking database setup and permissions</p>
 
           {loading ? (
@@ -171,7 +171,7 @@ export default function TierDiagnostic() {
                   <div className="flex items-start space-x-4">
                     {getIcon(result.status)}
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
                         {result.name}
                       </h3>
                       <p className="text-gray-600 mb-3">{result.message}</p>

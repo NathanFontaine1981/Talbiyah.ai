@@ -102,7 +102,7 @@ export default function ArabicProgress() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">Arabic Language Progress</h1>
-              <p className="text-gray-500">Track your journey to Arabic fluency</p>
+              <p className="text-gray-400">Track your journey to Arabic fluency</p>
             </div>
           </div>
         </div>

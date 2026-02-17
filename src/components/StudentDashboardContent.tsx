@@ -242,7 +242,7 @@ export default function StudentDashboardContent({
           <LearningStatsWidget learnerId={learner.id} />
           <MyTeachersWidget learnerId={learner.id} />
           <RecommendedActionsCard />
-          <AnnouncementsCard />
+          <AnnouncementsCard userRole="Student" />
         </div>
       </div>
       </div>

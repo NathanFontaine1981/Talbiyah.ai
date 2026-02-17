@@ -64,7 +64,6 @@ export default function AdminHome() {
   // Modals
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showScheduleSession, setShowScheduleSession] = useState(false);
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -658,7 +657,7 @@ export default function AdminHome() {
           <ActionButton
             icon={Megaphone}
             label="Send Announcement"
-            onClick={() => setShowAnnouncement(true)}
+            onClick={() => navigate('/admin/announcements')}
             color="amber"
           />
           <ActionButton
@@ -724,7 +723,6 @@ export default function AdminHome() {
       {/* Modals */}
       {showCreateUser && <CreateUserModal onClose={() => setShowCreateUser(false)} />}
       {showScheduleSession && <ScheduleSessionModal onClose={() => setShowScheduleSession(false)} />}
-      {showAnnouncement && <AnnouncementModal onClose={() => setShowAnnouncement(false)} />}
     </div>
   );
 }
@@ -880,25 +878,3 @@ function ScheduleSessionModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// Announcement Modal (Placeholder)
-function AnnouncementModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Send Announcement</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Announcement modal - Coming soon!</p>
-        <button
-          onClick={onClose}
-          className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}

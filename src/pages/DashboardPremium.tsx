@@ -1016,7 +1016,7 @@ export default function DashboardPremium() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <GlassCard><TeacherStatsWidget /></GlassCard>
-                    <GlassCard><AnnouncementsCard /></GlassCard>
+                    <GlassCard><AnnouncementsCard userRole={selectedViewRole} /></GlassCard>
                   </div>
                 </div>
               </>
@@ -1066,7 +1066,7 @@ export default function DashboardPremium() {
 
                   <div className="lg:col-span-1 space-y-6">
                     <GlassCard><ReferralWidget /></GlassCard>
-                    <GlassCard><AnnouncementsCard /></GlassCard>
+                    <GlassCard><AnnouncementsCard userRole={selectedViewRole} /></GlassCard>
                   </div>
                 </div>
               </>
