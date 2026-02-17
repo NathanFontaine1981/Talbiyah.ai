@@ -25,6 +25,7 @@ import {
   Link,
   Video,
   AlertTriangle,
+  UserPlus,
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -63,6 +64,8 @@ interface Candidate {
   approval_date?: string;
   admin_notes?: string;
   source?: string;
+  user_id?: string;
+  teacher_profile_id?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -182,6 +185,7 @@ export default function CandidateDetailDrawer({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [saving, setSaving] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
 
   // Documents tab state
   const [dbsStatus, setDbsStatus] = useState('');
@@ -468,6 +472,41 @@ export default function CandidateDetailDrawer({
     }
   }
 
+  async function handleCreateAccount() {
+    if (!candidate) return;
+    setCreatingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('You must be logged in to create accounts');
+        return;
+      }
+
+      const res = await supabase.functions.invoke('create-teacher-account', {
+        body: { candidate_id: candidate.id },
+      });
+
+      if (res.error) {
+        throw new Error(res.error.message || 'Edge function error');
+      }
+
+      const result = res.data;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create account');
+      }
+
+      toast.success(
+        `Account created for ${candidate.full_name}${result.email_sent ? ' — welcome email sent' : ''}`
+      );
+      onUpdate();
+    } catch (err: any) {
+      console.error('Error creating teacher account:', err);
+      toast.error(err.message || 'Failed to create teacher account');
+    } finally {
+      setCreatingAccount(false);
+    }
+  }
+
   async function toggleCertificateVerified(index: number) {
     if (!candidate || !candidate.certificates) return;
     const updatedCerts = [...candidate.certificates];
@@ -611,6 +650,26 @@ export default function CandidateDetailDrawer({
                 )}
                 Approve
               </button>
+            )}
+            {candidate.pipeline_stage === 'approved' && !candidate.user_id && (
+              <button
+                onClick={handleCreateAccount}
+                disabled={creatingAccount}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-300 dark:hover:bg-cyan-900/50 transition-colors disabled:opacity-50"
+              >
+                {creatingAccount ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <UserPlus className="w-3.5 h-3.5" />
+                )}
+                {creatingAccount ? 'Creating Account...' : 'Create Account & Send Invite'}
+              </button>
+            )}
+            {candidate.user_id && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Account Created
+              </span>
             )}
             {canReject && (
               <button
