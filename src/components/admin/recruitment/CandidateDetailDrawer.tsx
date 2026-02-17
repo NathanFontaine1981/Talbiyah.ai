@@ -122,28 +122,28 @@ type TabId = 'overview' | 'documents' | 'interview' | 'emails' | 'history';
 
 const STAGE_LABELS: Record<string, string> = {
   initial_contact: 'Initial Contact',
-  application_review: 'Application Review',
+  application: 'Application',
   interview_scheduled: 'Interview Scheduled',
   interview_completed: 'Interview Completed',
   document_verification: 'Document Verification',
   trial_lesson: 'Trial Lesson',
   approved: 'Approved',
+  onboarding: 'Onboarding',
   active: 'Active',
   rejected: 'Rejected',
-  on_hold: 'On Hold',
 };
 
 const STAGE_COLORS: Record<string, string> = {
   initial_contact: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-  application_review: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  application: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   interview_scheduled: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
   interview_completed: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   document_verification: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
   trial_lesson: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  onboarding: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   active: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   rejected: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-  on_hold: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
 };
 
 const DBS_STATUS_COLORS: Record<string, string> = {
