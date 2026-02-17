@@ -192,6 +192,7 @@ const InterviewManagement = lazy(() => import('./pages/admin/InterviewManagement
 const InterviewRoom = lazy(() => import('./pages/admin/InterviewRoom'));
 const OnboardingResources = lazy(() => import('./pages/admin/OnboardingResources'));
 const BookInterview = lazy(() => import('./pages/BookInterview'));
+const CandidateInterviewRoom = lazy(() => import('./pages/CandidateInterviewRoom'));
 const TeacherResources = lazy(() => import('./pages/teacher/TeacherResources'));
 
 function App() {
@@ -218,6 +219,7 @@ function App() {
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/how-to" element={<HowToPage />} />
         <Route path="/book-interview/:token" element={<BookInterview />} />
+        <Route path="/interview/:interviewId" element={<CandidateInterviewRoom />} />
         <Route path="/course/:slug" element={<CoursePage />} />
         <Route path="/course/:slug/session/:sessionNumber" element={<CourseSessionInsights />} />
         <Route

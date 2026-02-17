@@ -370,12 +370,17 @@ export default function SourcingTracker() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Create recruitment_pipeline record
+      // Create recruitment_pipeline record with all available data
       const { data: pipelineRecord, error: pipelineError } = await supabase
         .from('recruitment_pipeline')
         .insert({
           full_name: prospect.full_name,
           email: prospect.email,
+          phone: prospect.phone || null,
+          nationality: prospect.nationality || null,
+          languages: prospect.languages || [],
+          subjects: prospect.subjects || [],
+          expected_hourly_rate: prospect.expected_hourly_rate || null,
           pipeline_stage: 'initial_contact',
           prospect_id: prospect.id,
           source: prospect.platform_source || 'direct',
@@ -402,7 +407,7 @@ export default function SourcingTracker() {
       toast.success(
         <span>
           Moved to pipeline.{' '}
-          <a href="/admin/recruitment" className="underline font-medium">
+          <a href="/admin/recruitment-pipeline" className="underline font-medium">
             View pipeline
           </a>
         </span>

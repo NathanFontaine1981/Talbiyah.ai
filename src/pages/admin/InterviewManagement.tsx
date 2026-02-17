@@ -395,8 +395,41 @@ export default function InterviewManagement() {
     }
   }
 
-  function sendReminder() {
-    toast.success('Reminder sent');
+  async function sendReminder(interview: Interview) {
+    if (!interview.candidate?.email || !interview.candidate?.full_name) {
+      toast.error('No candidate email found');
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('You must be signed in');
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            type: 'admin_notification',
+            recipientEmail: interview.candidate.email,
+            recipientName: interview.candidate.full_name,
+            subject: `Interview Reminder - ${format(parseISO(interview.scheduled_date), 'MMM d, yyyy')}`,
+            body: `As-salamu alaykum ${interview.candidate.full_name},\n\nThis is a reminder that your interview with Talbiyah.ai is scheduled for ${format(parseISO(interview.scheduled_date), 'EEEE, MMMM d, yyyy')} at ${formatTimeDisplay(interview.scheduled_time.slice(0, 5))} (London time).\n\nJoin the interview here: ${window.location.origin}/interview/${interview.id}\n\nPlease ensure you have a stable internet connection, working camera and microphone.\n\nJazakallahu khairan,\nNathan Fontaine\nFounder, Talbiyah.ai`,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to send reminder');
+      toast.success(`Reminder sent to ${interview.candidate.full_name}`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send reminder');
+    }
   }
 
   // ─── Calendar helpers ─────────────────────────────────────────────────────
@@ -911,7 +944,7 @@ function UpcomingTab({
   loading: boolean;
   navigate: ReturnType<typeof useNavigate>;
   generateInviteLink: (candidateId: string) => void;
-  sendReminder: () => void;
+  sendReminder: (interview: Interview) => void;
   cancelInterview: (id: string) => void;
   confirmCancelInterviewId: string | null;
   setConfirmCancelInterviewId: (id: string | null) => void;
@@ -985,7 +1018,7 @@ function UpcomingTab({
                         <Video className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={sendReminder}
+                        onClick={() => sendReminder(interview)}
                         className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors"
                         title="Send Reminder"
                       >

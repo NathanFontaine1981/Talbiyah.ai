@@ -185,18 +185,27 @@ Deno.serve(async (req: Request) => {
     console.log("Interview record created:", interview.id);
 
     // -----------------------------------------------
-    // 7. Update admin_interview_slots
+    // 7. Atomically claim the slot (prevents double-booking)
     // -----------------------------------------------
-    const { error: slotUpdateError } = await supabase
+    const { data: claimedSlot, error: slotUpdateError } = await supabase
       .from("admin_interview_slots")
       .update({
         is_booked: true,
         booked_by_candidate_id: candidate.id,
       })
-      .eq("id", slot.id);
+      .eq("id", slot.id)
+      .eq("is_booked", false)
+      .select("id")
+      .single();
 
-    if (slotUpdateError) {
-      console.error("Failed to update slot:", slotUpdateError);
+    if (slotUpdateError || !claimedSlot) {
+      // Another booking claimed this slot between our check and update
+      // Clean up the interview record we just created
+      await supabase.from("recruitment_interviews").delete().eq("id", interview.id);
+      return new Response(
+        JSON.stringify({ error: "This slot was just booked by someone else. Please choose another." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // -----------------------------------------------
@@ -267,7 +276,7 @@ Deno.serve(async (req: Request) => {
             subject: `Interview Confirmed - ${slot.date} at ${slot.start_time}`,
             html: `<p>As-salamu alaykum ${candidate.full_name},</p>
                <p>Your interview has been confirmed for <strong>${slot.date}</strong> at <strong>${slot.start_time}</strong> (London time).</p>
-               <p>Join the video call here: <a href="https://talbiyah.ai/lesson/interview?roomCode=${guestCode}">Join Interview</a></p>
+               <p>Join the video call here: <a href="https://talbiyah.ai/interview/${interview.id}">Join Interview</a></p>
                <p>Jazakallahu khairan,<br/>Nathan Ellington<br/>Founder, Talbiyah.ai</p>`,
           }),
         });

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   UserPlus,
   Search,
@@ -124,6 +125,7 @@ type SortField =
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function RecruitmentPipeline() {
+  const navigate = useNavigate();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -367,8 +369,9 @@ export default function RecruitmentPipeline() {
     setIsEmailModalOpen(true);
   }
 
-  function handleScheduleInterviewFromDrawer(_candidate: Candidate) {
-    // The drawer itself will handle interview scheduling UI
+  function handleScheduleInterviewFromDrawer(candidate: Candidate) {
+    // Navigate to interview management page with candidate context
+    navigate(`/admin/interviews?candidate=${candidate.id}&name=${encodeURIComponent(candidate.full_name)}`);
   }
 
   function handleSort(field: SortField) {
