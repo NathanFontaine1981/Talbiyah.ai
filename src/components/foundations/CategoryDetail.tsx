@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Play, CheckCircle, Clock, Star, BookOpen, FileQuestion } from 'lucide-react';
 import { type FoundationCategory, type FoundationVideo } from '../../data/foundationCategories';
+import TextToSpeechButton from '../shared/TextToSpeechButton';
 
 interface CategoryDetailProps {
   category: FoundationCategory;
@@ -42,7 +43,17 @@ export default function CategoryDetail({
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-1">{category.name}</h1>
             <p className="text-white/80 font-arabic text-lg">{category.arabicName}</p>
-            <p className="text-white/70 text-sm mt-2 max-w-lg">{category.description}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-white/70 text-sm max-w-lg">{category.description}</p>
+              {category.description && (
+                <TextToSpeechButton
+                  text={category.description}
+                  sectionId={`cat-desc-${category.slug}`}
+                  label={category.name}
+                  variant="mini"
+                />
+              )}
+            </div>
           </div>
 
           <div className="flex-shrink-0 text-center">

@@ -31,9 +31,11 @@ import CategoryGrid from '../components/foundations/CategoryGrid';
 import CategoryDetail from '../components/foundations/CategoryDetail';
 import VideoPlayer from '../components/foundations/VideoPlayer';
 import FoundationExam from '../components/foundations/FoundationExam';
+import InvestigationScenario from '../components/foundations/InvestigationScenario';
+import TTSProvider from '../components/shared/TTSProvider';
 
 // View types
-type ViewMode = 'intro' | 'categories' | 'category-detail' | 'video' | 'exam' | 'results';
+type ViewMode = 'intro' | 'categories' | 'category-detail' | 'video' | 'exam' | 'results' | 'investigation';
 
 // Icon mapping
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -59,6 +61,7 @@ export default function UnshakableFoundations() {
   // Selected content
   const [selectedCategory, setSelectedCategory] = useState<FoundationCategory | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<FoundationVideo | null>(null);
+  const [selectedPillarSlug, setSelectedPillarSlug] = useState<string | null>(null);
 
   // Progress
   const [localProgress, setLocalProgress] = useState<LocalFoundationProgress>(DEFAULT_LOCAL_PROGRESS);
@@ -275,6 +278,25 @@ export default function UnshakableFoundations() {
     }
   }
 
+  // Handle start investigation
+  function handleStartInvestigation(pillarSlug: string) {
+    setSelectedPillarSlug(pillarSlug);
+    setViewMode('investigation');
+  }
+
+  // Check if investigation is completed
+  function isInvestigationCompleted(pillarSlug: string): boolean {
+    return localProgress.completedInvestigations?.includes(pillarSlug) || false;
+  }
+
+  // Handle investigation complete — refresh local progress and go back
+  function handleInvestigationComplete() {
+    const saved = localStorage.getItem(FOUNDATION_PROGRESS_KEY);
+    if (saved) setLocalProgress(JSON.parse(saved));
+    setViewMode('categories');
+    setSelectedPillarSlug(null);
+  }
+
   // Handle exam complete
   async function handleExamComplete(score: number, passed: boolean) {
     if (!selectedVideo) return;
@@ -313,7 +335,10 @@ export default function UnshakableFoundations() {
 
   // Go back handler - always navigate within Unshakeable Foundations
   function handleBack() {
-    if (viewMode === 'results' || viewMode === 'exam') {
+    if (viewMode === 'investigation') {
+      setViewMode('categories');
+      setSelectedPillarSlug(null);
+    } else if (viewMode === 'results' || viewMode === 'exam') {
       setViewMode('video');
     } else if (viewMode === 'video') {
       setViewMode('category-detail');
@@ -334,7 +359,9 @@ export default function UnshakableFoundations() {
 
   // Get back button text based on current view
   function getBackButtonText(): string {
-    if (viewMode === 'categories') {
+    if (viewMode === 'investigation') {
+      return 'All Pillars';
+    } else if (viewMode === 'categories') {
       return 'Back';
     } else if (viewMode === 'category-detail') {
       return 'All Categories';
@@ -386,6 +413,7 @@ export default function UnshakableFoundations() {
   }
 
   return (
+    <TTSProvider>
     <div className="min-h-screen bg-gray-50">
       {/* Skip Link */}
       <a
@@ -450,6 +478,8 @@ export default function UnshakableFoundations() {
               iconMap={iconMap}
               onCategorySelect={handleCategorySelect}
               getCategoryProgress={getCategoryProgress}
+              onStartInvestigation={handleStartInvestigation}
+              isInvestigationCompleted={isInvestigationCompleted}
             />
           </motion.div>
         )}
@@ -508,6 +538,23 @@ export default function UnshakableFoundations() {
               videoTitle={selectedVideo.title}
               onComplete={handleExamComplete}
               onBack={() => setViewMode('video')}
+            />
+          </motion.div>
+        )}
+
+        {/* Investigation View */}
+        {viewMode === 'investigation' && selectedPillarSlug && (
+          <motion.div
+            key="investigation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <InvestigationScenario
+              pillarSlug={selectedPillarSlug}
+              onComplete={handleInvestigationComplete}
+              onBack={() => { setViewMode('categories'); setSelectedPillarSlug(null); }}
+              isCompleted={isInvestigationCompleted(selectedPillarSlug)}
             />
           </motion.div>
         )}
@@ -572,5 +619,6 @@ export default function UnshakableFoundations() {
       </AnimatePresence>
       </main>
     </div>
+    </TTSProvider>
   );
 }

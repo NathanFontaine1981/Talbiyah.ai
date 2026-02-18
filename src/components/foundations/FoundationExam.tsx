@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle, XCircle, Loader2, AlertCircle, Trophy, RotateCcw, Save, PlayCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { type ExamQuestion } from '../../data/foundationCategories';
+import TextToSpeechButton from '../shared/TextToSpeechButton';
 
 interface FoundationExamProps {
   videoId: string;
@@ -370,9 +371,17 @@ export default function FoundationExam({
           exit={{ opacity: 0, x: -20 }}
           className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm"
         >
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            {currentQ.question}
-          </h2>
+          <div className="flex items-start gap-3 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 flex-1">
+              {currentQ.question}
+            </h2>
+            <TextToSpeechButton
+              text={`${currentQ.question} ${currentQ.options.map((o, i) => `Option ${i + 1}: ${o}`).join('. ')}`}
+              sectionId={`exam-q-${currentQuestion}`}
+              label="Question"
+              variant="mini"
+            />
+          </div>
 
           <div className="space-y-3">
             {currentQ.options.map((option, index) => {

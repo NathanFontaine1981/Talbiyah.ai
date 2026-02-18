@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, CheckCircle, ChevronRight, Trophy, BookOpen, Play, ArrowLeft, Film, ExternalLink, Headphones } from 'lucide-react';
+import { Lock, CheckCircle, ChevronRight, Trophy, BookOpen, Play, ArrowLeft, Film, ExternalLink, Headphones, Search } from 'lucide-react';
 import { type FoundationCategory, type FoundationVideo } from '../../data/foundationCategories';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -30,6 +30,8 @@ interface CategoryGridProps {
   iconMap: Record<string, React.ComponentType<{ className?: string }>>;
   onCategorySelect: (category: FoundationCategory) => void;
   getCategoryProgress: (slug: string) => { watched: number; passed: number; total: number };
+  onStartInvestigation?: (pillarSlug: string) => void;
+  isInvestigationCompleted?: (pillarSlug: string) => boolean;
 }
 
 // Define pillar colors
@@ -86,7 +88,9 @@ export default function CategoryGrid({
   categories,
   iconMap,
   onCategorySelect,
-  getCategoryProgress
+  getCategoryProgress,
+  onStartInvestigation,
+  isInvestigationCompleted
 }: CategoryGridProps) {
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [selectedPillar, setSelectedPillar] = useState<Pillar | null>(null);
@@ -263,6 +267,53 @@ export default function CategoryGrid({
             </div>
             <p className="mt-3 text-white/90">{selectedPillar.description}</p>
           </div>
+
+          {/* Investigation Card */}
+          {onStartInvestigation && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => onStartInvestigation(selectedPillar.slug)}
+              className="w-full text-left mb-6"
+            >
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white hover:shadow-xl transition group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
+                  <div className="w-full h-full bg-white rounded-full transform translate-x-16 -translate-y-16" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    {isInvestigationCompleted?.(selectedPillar.slug) ? (
+                      <CheckCircle className="w-6 h-6 text-emerald-400" />
+                    ) : (
+                      <Search className="w-6 h-6 text-amber-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-white">Investigate Islam</h4>
+                      {isInvestigationCompleted?.(selectedPillar.slug) && (
+                        <span className="text-xs bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-full">Completed</span>
+                      )}
+                    </div>
+                    <p className="text-slate-300 text-sm mt-0.5">
+                      {(() => {
+                        const scenarios: Record<string, string> = {
+                          allah: 'Who wrote the Quran?',
+                          muhammad: 'How do we identify a true prophet?',
+                          prophets: 'Would God leave humanity without guidance?',
+                          angels: 'How did the universe come into existence?',
+                          hereafter: 'Is the complexity of life accidental or intentional?',
+                          history: 'Has any religious text survived unchanged?'
+                        };
+                        return scenarios[selectedPillar.slug] || 'Examine the evidence';
+                      })()}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </div>
+              </div>
+            </motion.button>
+          )}
 
           {/* Categories in this Pillar */}
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Courses</h3>

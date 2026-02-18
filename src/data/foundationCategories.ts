@@ -214,6 +214,7 @@ export interface LocalFoundationProgress {
   watchedVideos: string[];
   passedExams: string[];
   examScores: Record<string, number>;
+  completedInvestigations: string[];
   lastUpdated: string;
 }
 
@@ -221,5 +222,6 @@ export const DEFAULT_LOCAL_PROGRESS: LocalFoundationProgress = {
   watchedVideos: [],
   passedExams: [],
   examScores: {},
+  completedInvestigations: [],
   lastUpdated: new Date().toISOString()
 };

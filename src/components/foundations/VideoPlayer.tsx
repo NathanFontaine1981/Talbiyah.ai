@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, BookOpen, ChevronDown, ChevronUp, GraduationCap, Play } from 'lucide-react';
 import { type FoundationVideo } from '../../data/foundationCategories';
+import TextToSpeechButton from '../shared/TextToSpeechButton';
 
 interface VideoPlayerProps {
   video: FoundationVideo;
@@ -153,6 +154,14 @@ export default function VideoPlayer({
             <div className="flex items-center gap-3">
               <BookOpen className="w-5 h-5 text-gray-500" />
               <span className="font-semibold text-gray-900">Video Transcript</span>
+              {video.transcript && (
+                <TextToSpeechButton
+                  text={video.transcript}
+                  sectionId={`transcript-${video.id}`}
+                  label={video.transcript.length > 5000 ? 'Listen to summary' : 'Listen'}
+                  variant="icon"
+                />
+              )}
             </div>
             {showTranscript ? (
               <ChevronUp className="w-5 h-5 text-gray-500" />
