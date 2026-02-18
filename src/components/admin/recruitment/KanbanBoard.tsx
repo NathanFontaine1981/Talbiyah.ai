@@ -1,4 +1,4 @@
-import { DndContext, closestCorners, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, closestCorners, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useState } from 'react';
 import KanbanColumn from './KanbanColumn';
 import CandidateCard from './CandidateCard';
@@ -47,6 +47,15 @@ export default function KanbanBoard({
 }: KanbanBoardProps) {
   const [activeDragCandidate, setActiveDragCandidate] = useState<Candidate | null>(null);
 
+  // Require 8px of movement before starting a drag — allows clicks to pass through
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
   function getCandidatesByStage(stage: string): Candidate[] {
     return candidates.filter((c) => c.pipeline_stage === stage);
   }
@@ -79,6 +88,7 @@ export default function KanbanBoard({
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
