@@ -695,27 +695,46 @@ export default function DailyMaintenancePage() {
     111: 5, 112: 4, 113: 5, 114: 6
   };
 
-  // Increment listen count for a passage
-  async function incrementListen(passageIndex: number) {
+  // Toggle listen count for a passage (tap to mark done, tap again to undo)
+  async function toggleListen(passageIndex: number, n: number) {
     if (!todaySession) return;
     const passage = todaySession.surahsReviewed[passageIndex];
-    if (passage.listenCount >= 3) return;
 
-    const updatedSurahs = todaySession.surahsReviewed.map((s, i) =>
-      i === passageIndex ? { ...s, listenCount: s.listenCount + 1 } : s
-    );
+    // If tapping an already-done button, undo back to n-1
+    const newCount = passage.listenCount >= n ? n - 1 : n;
+
+    // If reducing listen count, also reset recite and assessment if they depend on it
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) => {
+      if (i !== passageIndex) return s;
+      const updated = { ...s, listenCount: newCount };
+      // If listen is no longer complete, reset recite and assessment
+      if (newCount < 3) {
+        updated.reciteCount = Math.min(updated.reciteCount, 0);
+        updated.selfAssessment = null;
+      }
+      return updated;
+    });
     await saveSession(updatedSurahs);
   }
 
-  // Increment recite count for a passage
-  async function incrementRecite(passageIndex: number) {
+  // Toggle recite count for a passage
+  async function toggleRecite(passageIndex: number, n: number) {
     if (!todaySession) return;
     const passage = todaySession.surahsReviewed[passageIndex];
-    if (passage.reciteCount >= 3 || passage.listenCount < 3) return;
+    if (passage.listenCount < 3) return;
 
-    const updatedSurahs = todaySession.surahsReviewed.map((s, i) =>
-      i === passageIndex ? { ...s, reciteCount: s.reciteCount + 1 } : s
-    );
+    // If tapping an already-done button, undo back to n-1
+    const newCount = passage.reciteCount >= n ? n - 1 : n;
+
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) => {
+      if (i !== passageIndex) return s;
+      const updated = { ...s, reciteCount: newCount };
+      // If recite is no longer complete, reset assessment
+      if (newCount < 3) {
+        updated.selfAssessment = null;
+      }
+      return updated;
+    });
     await saveSession(updatedSurahs);
   }
 
@@ -1075,11 +1094,15 @@ export default function DailyMaintenancePage() {
                         {[1, 2, 3].map(n => (
                           <button
                             key={n}
-                            onClick={() => { if (passage.listenCount < n && todaySession?.status !== 'completed') incrementListen(index); }}
-                            disabled={passage.listenCount >= n || todaySession?.status === 'completed'}
+                            onClick={() => {
+                              if (todaySession?.status === 'completed') return;
+                              if (passage.listenCount >= n) { toggleListen(index, n); }
+                              else if (passage.listenCount === n - 1) { toggleListen(index, n); }
+                            }}
+                            disabled={todaySession?.status === 'completed' || (passage.listenCount < n - 1)}
                             className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition ${
                               passage.listenCount >= n
-                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer'
                                 : passage.listenCount === n - 1
                                   ? 'border-blue-400 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer'
                                   : 'border-gray-200 dark:border-gray-600 text-gray-300 dark:text-gray-600'
@@ -1126,11 +1149,15 @@ export default function DailyMaintenancePage() {
                       {[1, 2, 3].map(n => (
                         <button
                           key={n}
-                          onClick={() => { if (listenDone && passage.reciteCount < n && todaySession?.status !== 'completed') incrementRecite(index); }}
-                          disabled={!listenDone || passage.reciteCount >= n || todaySession?.status === 'completed'}
+                          onClick={() => {
+                            if (todaySession?.status === 'completed') return;
+                            if (passage.reciteCount >= n) { toggleRecite(index, n); }
+                            else if (listenDone && passage.reciteCount === n - 1) { toggleRecite(index, n); }
+                          }}
+                          disabled={todaySession?.status === 'completed' || (!listenDone || (passage.reciteCount < n - 1))}
                           className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition ${
                             passage.reciteCount >= n
-                              ? 'bg-emerald-600 border-emerald-600 text-white'
+                              ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer'
                               : listenDone && passage.reciteCount === n - 1
                                 ? 'border-orange-400 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/30 cursor-pointer'
                                 : 'border-gray-200 dark:border-gray-600 text-gray-300 dark:text-gray-600'
