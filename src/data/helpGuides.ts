@@ -323,6 +323,36 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         ],
         relatedPage: '/qunut-practice',
       },
+      {
+        id: 'khutbah-creator',
+        title: 'Use the Khutbah Creator',
+        description: 'Build structured, meaningful khutbahs with AI-powered assistance',
+        steps: [
+          {
+            title: 'Open Khutbah Creator',
+            content: 'Navigate to Khutbah Creator from the sidebar under Tools & Resources. This tool helps you draft complete Friday sermons or short reminders.',
+          },
+          {
+            title: 'Choose Your Topic',
+            content: 'Select a topic or theme for your khutbah. You can choose from common themes like gratitude, patience, family, or enter your own custom topic.',
+            tip: 'Great for students practising public speaking - try writing khutbahs on topics you\'re studying to deepen your understanding!',
+          },
+          {
+            title: 'Build Your Structure',
+            content: 'The creator guides you through the traditional khutbah format: opening praise (hamd), Quranic ayahs, hadith references, main message, and closing dua. Each section has prompts to help you write.',
+          },
+          {
+            title: 'Get AI Suggestions',
+            content: 'Use AI assistance to find relevant Quran verses, authentic hadith, and scholarly quotes that support your theme. The AI helps with Arabic text, transliteration, and translations.',
+          },
+          {
+            title: 'Review & Save',
+            content: 'Preview your complete khutbah, make any edits, and save it to your library. You can revisit and refine it anytime before delivering.',
+            tip: 'Even if you\'re not a khateeb, writing khutbahs is an excellent way to organise your Islamic knowledge and practise articulating your faith.',
+          },
+        ],
+        relatedPage: '/khutbah-creator',
+      },
     ],
   },
   {
