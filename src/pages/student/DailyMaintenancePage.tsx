@@ -3,36 +3,60 @@ import { useNavigate } from 'react-router-dom';
 import {
   Flame,
   CheckCircle,
-  Square,
-  CheckSquare,
   Trophy,
   Calendar,
   ChevronRight,
   ChevronDown,
   Headphones,
-  Mic,
-  Star,
   Target,
   ArrowLeft,
-  Sparkles,
   ExternalLink,
   BookOpen,
   Eye,
-  EyeOff,
-  RefreshCw
+  RefreshCw,
+  Brain,
+  Lock,
+  Mic
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import { getFirstWordsForAyahs, getChapterInfo, FirstWordData } from '../../utils/quranApi';
 import { useSelfLearner } from '../../hooks/useSelfLearner';
+import WordMatchingQuiz from '../../components/WordMatchingQuiz';
+import { SURAH_VOCABULARY, SURAH_THEMES } from './SmartHomeworkPage';
+import { buildPassageList, PassageUnit } from '../../lib/quranPassages';
+import { SURAH_AYAH_COUNTS as FULL_SURAH_AYAH_COUNTS } from '../../lib/quranData';
+
+interface SelfAssessment {
+  smooth: boolean;
+  weakMemorisation: boolean;
+  weakFluency: boolean;
+  weakUnderstanding: boolean;
+}
 
 interface SurahReview {
   surah: number;
   surahName: string;
   surahNameArabic: string;
-  listeningCompleted: boolean;
-  recitingCompleted: boolean;
+  startAyah?: number;
+  endAyah?: number;
+  passageLabel?: string;
+  listenCount: number;
+  reciteCount: number;
+  selfAssessment: SelfAssessment | null;
+  memorisationPracticeDone: boolean;
+  fluencyPracticeDone: boolean;
+  understandingPracticeDone: boolean;
   quality: number;
+}
+
+function isPassageComplete(p: SurahReview): boolean {
+  return p.listenCount >= 3 && p.reciteCount >= 3 && p.selfAssessment !== null;
+}
+
+function hasWeakAreas(p: SurahReview): boolean {
+  if (!p.selfAssessment) return false;
+  return p.selfAssessment.weakMemorisation || p.selfAssessment.weakFluency || p.selfAssessment.weakUnderstanding;
 }
 
 interface DailySession {
@@ -288,6 +312,91 @@ const SURAH_NAMES: { [key: number]: { english: string; arabic: string } } = {
   114: { english: 'An-Nas', arabic: 'الناس' },
 };
 
+// Self-assessment multi-select card shown after reciting x3
+function SelfAssessmentCard({ passageIndex, onSubmit }: { passageIndex: number; onSubmit: (index: number, assessment: SelfAssessment) => void }) {
+  const [smooth, setSmooth] = useState(false);
+  const [weakMem, setWeakMem] = useState(false);
+  const [weakFlu, setWeakFlu] = useState(false);
+  const [weakUnd, setWeakUnd] = useState(false);
+
+  const anySelected = smooth || weakMem || weakFlu || weakUnd;
+
+  function handleSmooth() {
+    setSmooth(true);
+    setWeakMem(false);
+    setWeakFlu(false);
+    setWeakUnd(false);
+  }
+
+  function handleWeakness(setter: (v: boolean) => void, current: boolean) {
+    if (!current) setSmooth(false);
+    setter(!current);
+  }
+
+  return (
+    <div className="rounded-lg p-3 border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20">
+      <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100 mb-2">Step 3: How did it go?</p>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <button
+          onClick={handleSmooth}
+          className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
+            smooth
+              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-emerald-300'
+          }`}
+        >
+          {smooth ? <CheckCircle className="w-4 h-4 text-emerald-600 inline mr-1" /> : null}
+          Smooth — I'm confident
+        </button>
+        <button
+          onClick={() => handleWeakness(setWeakMem, weakMem)}
+          className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
+            weakMem
+              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+          }`}
+        >
+          {weakMem ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
+          Struggled to recall verses
+        </button>
+        <button
+          onClick={() => handleWeakness(setWeakFlu, weakFlu)}
+          className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
+            weakFlu
+              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+          }`}
+        >
+          {weakFlu ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
+          Struggled with pronunciation
+        </button>
+        <button
+          onClick={() => handleWeakness(setWeakUnd, weakUnd)}
+          className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
+            weakUnd
+              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+          }`}
+        >
+          {weakUnd ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
+          Didn't understand meaning
+        </button>
+      </div>
+      <button
+        onClick={() => onSubmit(passageIndex, { smooth, weakMemorisation: weakMem, weakFluency: weakFlu, weakUnderstanding: weakUnd })}
+        disabled={!anySelected}
+        className={`w-full py-2.5 rounded-lg font-medium text-sm transition ${
+          anySelected
+            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+        }`}
+      >
+        Continue
+      </button>
+    </div>
+  );
+}
+
 export default function DailyMaintenancePage() {
   const navigate = useNavigate();
   const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
@@ -300,23 +409,35 @@ export default function DailyMaintenancePage() {
     lastMaintenanceDate: null
   });
   const [todaySession, setTodaySession] = useState<DailySession | null>(null);
+  const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
+  const [passageList, setPassageList] = useState<PassageUnit[]>([]);
 
-  // Default surahs for daily review (can be customized based on learner's progress)
-  const [dailySurahs, setDailySurahs] = useState<number[]>([114, 113, 112, 1]);
+  // Expanded practice sections per passage (keyed by passage index)
+  const [expandedPractice, setExpandedPractice] = useState<{ [key: number]: Set<string> }>({});
 
-  // First Word Prompter state
+  // First Word Prompter bonus tool state
   const [showFirstWordPrompter, setShowFirstWordPrompter] = useState(false);
   const [selectedPromptSurah, setSelectedPromptSurah] = useState<number | null>(null);
   const [revealedAnswer, setRevealedAnswer] = useState(false);
   const [prompterScore, setPrompterScore] = useState<{ correct: number; total: number }>({ correct: 0, total: 0 });
-  const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
 
-  // Ayah-level testing state (for testing every fluent ayah in sequence)
-  const [fluencyAyahs, setFluencyAyahs] = useState<number[]>([]); // Ayah numbers that are fluent in selected surah
-  const [ayahFirstWords, setAyahFirstWords] = useState<FirstWordData[]>([]); // First word data from API
-  const [currentAyahIndex, setCurrentAyahIndex] = useState(0); // Current position in sequence
-  const [loadingAyahs, setLoadingAyahs] = useState(false); // Loading state for API call
-  const [testingMode, setTestingMode] = useState<'surah' | 'ayah'>('surah'); // surah = first ayah only, ayah = all fluent ayahs
+  // Ayah-level testing state (for First Word Prompter bonus + memorisation practice)
+  const [fluencyAyahs, setFluencyAyahs] = useState<number[]>([]);
+  const [ayahFirstWords, setAyahFirstWords] = useState<FirstWordData[]>([]);
+  const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
+  const [loadingAyahs, setLoadingAyahs] = useState(false);
+  const [testingMode, setTestingMode] = useState<'surah' | 'ayah'>('surah');
+
+  // Memorisation practice game state (inline per passage)
+  const [gameAyahFirstWords, setGameAyahFirstWords] = useState<FirstWordData[]>([]);
+  const [gameAyahIndex, setGameAyahIndex] = useState(0);
+  const [gameRevealed, setGameRevealed] = useState(false);
+  const [gameScore, setGameScore] = useState({ correct: 0, total: 0 });
+  const [loadingGame, setLoadingGame] = useState(false);
+  const [activeMemPracticeIndex, setActiveMemPracticeIndex] = useState<number | null>(null);
+
+  // Fluency read-along counts per passage
+  const [readAlongCounts, setReadAlongCounts] = useState<{ [key: number]: number }>({});
 
   useEffect(() => {
     if (learnerLoading) return;
@@ -330,10 +451,10 @@ export default function DailyMaintenancePage() {
 
   async function loadData(targetLearnerId: string) {
     try {
-      // Load learner stats
+      // Load learner stats + rotation index
       const { data: learner } = await supabase
         .from('learners')
-        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date')
+        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date, daily_review_rotation_index')
         .eq('id', targetLearnerId)
         .maybeSingle();
 
@@ -346,25 +467,25 @@ export default function DailyMaintenancePage() {
         });
       }
 
-      // Load memorized surahs from surah_retention_tracker if available
+      const rotationIndex = learner?.daily_review_rotation_index || 0;
+
+      // Load memorized surahs sorted by surah_number ascending
       const { data: trackedSurahs } = await supabase
         .from('surah_retention_tracker')
         .select('surah_number')
         .eq('learner_id', targetLearnerId)
-        .eq('memorization_status', 'memorized');
+        .eq('memorization_status', 'memorized')
+        .order('surah_number', { ascending: true });
 
-      if (trackedSurahs && trackedSurahs.length > 0) {
-        // Use memorised surahs for daily review
-        const surahNumbers = trackedSurahs.map(s => s.surah_number);
-        setMemorizedSurahs(surahNumbers); // Save all memorized surahs for First Word Prompter
-        // Shuffle and pick up to 4 surahs for daily review
-        const shuffled = [...surahNumbers].sort(() => Math.random() - 0.5);
-        const numToReview = Math.min(4, shuffled.length);
-        setDailySurahs(shuffled.slice(0, numToReview));
-      } else {
-        // Default to common short surahs if none memorized
-        setMemorizedSurahs([1, 112, 113, 114]);
-      }
+      const allMemorized = trackedSurahs && trackedSurahs.length > 0
+        ? trackedSurahs.map(s => s.surah_number)
+        : [1, 112, 113, 114];
+
+      setMemorizedSurahs(allMemorized);
+
+      // Build passage list (splits long surahs at juz boundaries)
+      const passages = buildPassageList(allMemorized, SURAH_NAMES);
+      setPassageList(passages);
 
       // Check for today's session
       const today = new Date().toISOString().split('T')[0];
@@ -376,61 +497,117 @@ export default function DailyMaintenancePage() {
         .eq('session_date', today)
         .maybeSingle();
 
-      if (existingSession) {
-        // Refresh surah names in case they were missing in old sessions
-        const refreshedSurahs = (existingSession.surahs_reviewed || []).map((s: SurahReview) => ({
-          ...s,
-          surahName: SURAH_NAMES[s.surah]?.english || s.surahName || `Surah ${s.surah}`,
-          surahNameArabic: SURAH_NAMES[s.surah]?.arabic || s.surahNameArabic || ''
-        }));
+      let needsNewSession = !existingSession;
 
-        setTodaySession({
-          id: existingSession.id,
-          sessionDate: existingSession.session_date,
-          surahsReviewed: refreshedSurahs,
-          tasksCompleted: existingSession.tasks_completed,
-          totalTasks: existingSession.total_tasks,
-          status: existingSession.status,
-          completedAt: existingSession.completed_at
-        });
-      } else {
-        // Create new session for today
-        // Shuffle memorised surahs and pick random ones for variety
-        let surahsToUse: number[];
-        if (trackedSurahs && trackedSurahs.length > 0) {
-          const allMemorised = trackedSurahs.map(s => s.surah_number);
-          // Shuffle using Fisher-Yates algorithm
-          const shuffled = [...allMemorised];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          surahsToUse = shuffled.slice(0, Math.min(4, shuffled.length));
+      if (existingSession) {
+        const isOldFormat = (existingSession.surahs_reviewed || []).some((s: any) => 'memorisation' in s && !('listenCount' in s));
+
+        if (isOldFormat && existingSession.status !== 'completed') {
+          // Old-format in-progress session: delete and recreate with new format
+          await supabase.from('daily_maintenance_sessions').delete().eq('id', existingSession.id);
+          needsNewSession = true;
+        } else if (isOldFormat) {
+          // Old-format completed session: map to new fields as done
+          const refreshedSurahs: SurahReview[] = (existingSession.surahs_reviewed || []).map((s: any) => ({
+            surah: s.surah,
+            surahName: SURAH_NAMES[s.surah]?.english || s.surahName || `Surah ${s.surah}`,
+            surahNameArabic: SURAH_NAMES[s.surah]?.arabic || s.surahNameArabic || '',
+            startAyah: s.startAyah ?? undefined,
+            endAyah: s.endAyah ?? undefined,
+            passageLabel: s.passageLabel ?? undefined,
+            listenCount: 3,
+            reciteCount: 3,
+            selfAssessment: {
+              smooth: s.memorisation === 'strong' && s.fluency === 'strong' && s.understanding === 'strong',
+              weakMemorisation: s.memorisation === 'weak',
+              weakFluency: s.fluency === 'weak',
+              weakUnderstanding: s.understanding === 'weak',
+            },
+            memorisationPracticeDone: s.memorisationDone ?? false,
+            fluencyPracticeDone: s.fluencyDone ?? false,
+            understandingPracticeDone: s.understandingDone ?? false,
+            quality: s.quality ?? 5,
+          }));
+
+          setTodaySession({
+            id: existingSession.id,
+            sessionDate: existingSession.session_date,
+            surahsReviewed: refreshedSurahs,
+            tasksCompleted: existingSession.tasks_completed,
+            totalTasks: existingSession.total_tasks,
+            status: existingSession.status,
+            completedAt: existingSession.completed_at
+          });
         } else {
-          surahsToUse = dailySurahs;
+          // New format session: resume as-is
+          const refreshedSurahs: SurahReview[] = (existingSession.surahs_reviewed || []).map((s: any) => ({
+            surah: s.surah,
+            surahName: SURAH_NAMES[s.surah]?.english || s.surahName || `Surah ${s.surah}`,
+            surahNameArabic: SURAH_NAMES[s.surah]?.arabic || s.surahNameArabic || '',
+            startAyah: s.startAyah ?? undefined,
+            endAyah: s.endAyah ?? undefined,
+            passageLabel: s.passageLabel ?? undefined,
+            listenCount: s.listenCount ?? 0,
+            reciteCount: s.reciteCount ?? 0,
+            selfAssessment: s.selfAssessment ?? null,
+            memorisationPracticeDone: s.memorisationPracticeDone ?? false,
+            fluencyPracticeDone: s.fluencyPracticeDone ?? false,
+            understandingPracticeDone: s.understandingPracticeDone ?? false,
+            quality: s.quality ?? 0,
+          }));
+
+          setTodaySession({
+            id: existingSession.id,
+            sessionDate: existingSession.session_date,
+            surahsReviewed: refreshedSurahs,
+            tasksCompleted: existingSession.tasks_completed,
+            totalTasks: existingSession.total_tasks,
+            status: existingSession.status,
+            completedAt: existingSession.completed_at
+          });
+        }
+      }
+
+      if (needsNewSession) {
+        // Create new session - pick 3 consecutive passages using ordered rotation
+        const numToReview = Math.min(3, passages.length);
+        const passagesToUse: PassageUnit[] = [];
+        for (let i = 0; i < numToReview; i++) {
+          passagesToUse.push(passages[(rotationIndex + i) % passages.length]);
         }
 
-        const initialSurahs = surahsToUse.map(surah => ({
-          surah,
-          surahName: SURAH_NAMES[surah]?.english || `Surah ${surah}`,
-          surahNameArabic: SURAH_NAMES[surah]?.arabic || '',
-          listeningCompleted: false,
-          recitingCompleted: false,
+        const initialSurahs: SurahReview[] = passagesToUse.map(p => ({
+          surah: p.surah,
+          surahName: p.surahName,
+          surahNameArabic: p.surahNameArabic,
+          startAyah: p.startAyah,
+          endAyah: p.endAyah,
+          passageLabel: p.passageLabel || undefined,
+          listenCount: 0,
+          reciteCount: 0,
+          selfAssessment: null,
+          memorisationPracticeDone: false,
+          fluencyPracticeDone: false,
+          understandingPracticeDone: false,
           quality: 0
         }));
 
-        const { data: newSession } = await supabase
+        const { data: newSession, error: insertError } = await supabase
           .from('daily_maintenance_sessions')
           .insert({
             learner_id: targetLearnerId,
             session_date: today,
             surahs_reviewed: initialSurahs,
             tasks_completed: 0,
-            total_tasks: surahsToUse.length * 2,
+            total_tasks: numToReview,
             status: 'in_progress'
           })
           .select()
           .single();
+
+        if (insertError) {
+          console.error('Failed to create session:', insertError);
+        }
 
         if (newSession) {
           setTodaySession({
@@ -438,7 +615,7 @@ export default function DailyMaintenancePage() {
             sessionDate: newSession.session_date,
             surahsReviewed: initialSurahs,
             tasksCompleted: 0,
-            totalTasks: surahsToUse.length * 2,
+            totalTasks: numToReview,
             status: 'in_progress',
             completedAt: null
           });
@@ -518,40 +695,138 @@ export default function DailyMaintenancePage() {
     111: 5, 112: 4, 113: 5, 114: 6
   };
 
-  async function toggleTask(surahNumber: number, taskType: 'listening' | 'reciting') {
-    if (!todaySession || !learnerId) return;
+  // Increment listen count for a passage
+  async function incrementListen(passageIndex: number) {
+    if (!todaySession) return;
+    const passage = todaySession.surahsReviewed[passageIndex];
+    if (passage.listenCount >= 3) return;
 
-    const currentSurah = todaySession.surahsReviewed.find(s => s.surah === surahNumber);
-    if (!currentSurah) return;
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) =>
+      i === passageIndex ? { ...s, listenCount: s.listenCount + 1 } : s
+    );
+    await saveSession(updatedSurahs);
+  }
 
-    const currentValue = taskType === 'listening' ? currentSurah.listeningCompleted : currentSurah.recitingCompleted;
-    const newValue = !currentValue;
+  // Increment recite count for a passage
+  async function incrementRecite(passageIndex: number) {
+    if (!todaySession) return;
+    const passage = todaySession.surahsReviewed[passageIndex];
+    if (passage.reciteCount >= 3 || passage.listenCount < 3) return;
 
-    const updatedSurahs = todaySession.surahsReviewed.map(s => {
-      if (s.surah === surahNumber) {
-        return {
-          ...s,
-          listeningCompleted: taskType === 'listening' ? newValue : s.listeningCompleted,
-          recitingCompleted: taskType === 'reciting' ? newValue : s.recitingCompleted
-        };
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) =>
+      i === passageIndex ? { ...s, reciteCount: s.reciteCount + 1 } : s
+    );
+    await saveSession(updatedSurahs);
+  }
+
+  // Submit self-assessment for a passage
+  async function submitAssessment(passageIndex: number, assessment: SelfAssessment) {
+    if (!todaySession) return;
+
+    // Determine quality: 5 if smooth, 3 if weak areas
+    const quality = assessment.smooth ? 5 : 3;
+
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) =>
+      i === passageIndex ? { ...s, selfAssessment: assessment, quality } : s
+    );
+
+    const completedCount = updatedSurahs.filter(s => isPassageComplete(s)).length;
+    await saveSession(updatedSurahs, completedCount);
+  }
+
+  // Mark a practice section as done and update quality
+  async function markPracticeDone(passageIndex: number, practiceType: 'memorisation' | 'fluency' | 'understanding') {
+    if (!todaySession) return;
+
+    const doneKey = `${practiceType}PracticeDone` as keyof SurahReview;
+
+    const updatedSurahs = todaySession.surahsReviewed.map((s, i) => {
+      if (i !== passageIndex) return s;
+      const updated = { ...s, [doneKey]: true };
+      // If any practice done, bump quality from 3 to 4
+      if (updated.memorisationPracticeDone || updated.fluencyPracticeDone || updated.understandingPracticeDone) {
+        updated.quality = Math.max(updated.quality, 4);
       }
-      return s;
+      return updated;
     });
 
-    const tasksCompleted = updatedSurahs.reduce((count, s) => {
-      return count + (s.listeningCompleted ? 1 : 0) + (s.recitingCompleted ? 1 : 0);
-    }, 0);
+    await saveSession(updatedSurahs);
+  }
 
-    const allComplete = tasksCompleted === todaySession.totalTasks;
-    const newStatus = allComplete ? 'completed' : 'in_progress';
+  // Toggle expanded practice section
+  function togglePracticeSection(passageIndex: number, section: string) {
+    setExpandedPractice(prev => {
+      const current = prev[passageIndex] || new Set<string>();
+      const next = new Set(current);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return { ...prev, [passageIndex]: next };
+    });
+  }
+
+  // Start memorisation practice for a passage
+  async function startMemPractice(passageIndex: number) {
+    if (!todaySession) return;
+    const passage = todaySession.surahsReviewed[passageIndex];
+
+    setActiveMemPracticeIndex(passageIndex);
+    setGameScore({ correct: 0, total: 0 });
+    setGameAyahIndex(0);
+    setGameRevealed(false);
+    setLoadingGame(true);
+    setGameAyahFirstWords([]);
+
+    try {
+      const totalAyahs = passage.endAyah ?? (FULL_SURAH_AYAH_COUNTS[passage.surah] || 7);
+      const firstWordsData = await getFirstWordsForAyahs(passage.surah, passage.startAyah ?? 1, totalAyahs);
+      if (firstWordsData.length > 0) {
+        setGameAyahFirstWords(firstWordsData);
+      }
+    } catch (error) {
+      console.error('Error loading game ayahs:', error);
+    } finally {
+      setLoadingGame(false);
+    }
+  }
+
+  // Finish the entire review session
+  async function finishReview() {
+    if (!todaySession || !learnerId) return;
+
+    const updatedSurahs = todaySession.surahsReviewed.map(s => ({ ...s }));
+    await saveSession(updatedSurahs, updatedSurahs.length, true);
+
+    // Update retention tracker for all surahs
+    for (const s of updatedSurahs) {
+      await supabase
+        .from('surah_retention_tracker')
+        .upsert({
+          learner_id: learnerId,
+          surah_number: s.surah,
+          last_reviewed_at: new Date().toISOString(),
+          memorization_status: 'memorized'
+        }, { onConflict: 'learner_id,surah_number' });
+    }
+  }
+
+  // Helper: save session to DB and update state
+  async function saveSession(updatedSurahs: SurahReview[], tasksCompleted?: number, allComplete?: boolean) {
+    if (!todaySession || !learnerId) return;
+
+    const completed = tasksCompleted ?? todaySession.tasksCompleted;
+    const isComplete = allComplete ?? false;
+    const newStatus = isComplete ? 'completed' : todaySession.status;
 
     const { error } = await supabase
       .from('daily_maintenance_sessions')
       .update({
         surahs_reviewed: updatedSurahs,
-        tasks_completed: tasksCompleted,
+        tasks_completed: completed,
         status: newStatus,
-        completed_at: allComplete ? new Date().toISOString() : null
+        completed_at: isComplete ? new Date().toISOString() : null
       })
       .eq('id', todaySession.id);
 
@@ -559,34 +834,29 @@ export default function DailyMaintenancePage() {
       setTodaySession({
         ...todaySession,
         surahsReviewed: updatedSurahs,
-        tasksCompleted,
+        tasksCompleted: completed,
         status: newStatus,
-        completedAt: allComplete ? new Date().toISOString() : null
+        completedAt: isComplete ? new Date().toISOString() : null
       });
 
-      // Update surah_retention_tracker last_reviewed_at when task is completed
-      if (newValue) {
-        await supabase
-          .from('surah_retention_tracker')
-          .upsert({
-            learner_id: learnerId,
-            surah_number: surahNumber,
-            last_reviewed_at: new Date().toISOString(),
-            memorization_status: 'memorized'
-          }, {
-            onConflict: 'learner_id,surah_number'
-          });
-      }
+      // If all complete, update streak and advance rotation
+      if (isComplete && todaySession.status !== 'completed') {
+        // Find the passage index of the last reviewed item for rotation advancement
+        const lastItem = updatedSurahs[updatedSurahs.length - 1];
+        const lastIdx = passageList.findIndex(p =>
+          p.surah === lastItem?.surah &&
+          p.startAyah === (lastItem?.startAyah ?? 1)
+        );
+        const newRotationIndex = ((lastIdx === -1 ? 0 : lastIdx) + 1) % (passageList.length || 1);
 
-      // If all complete, update streak
-      if (allComplete && todaySession.status !== 'completed') {
         await supabase
           .from('learners')
           .update({
             current_streak: learnerStats.currentStreak + 1,
             longest_streak: Math.max(learnerStats.longestStreak, learnerStats.currentStreak + 1),
             last_maintenance_date: new Date().toISOString().split('T')[0],
-            total_maintenance_sessions: learnerStats.totalSessions + 1
+            total_maintenance_sessions: learnerStats.totalSessions + 1,
+            daily_review_rotation_index: newRotationIndex
           })
           .eq('id', learnerId);
 
@@ -600,29 +870,14 @@ export default function DailyMaintenancePage() {
     }
   }
 
-  async function rateQuality(surahNumber: number, quality: number) {
-    if (!todaySession) return;
-
-    const updatedSurahs = todaySession.surahsReviewed.map(s => {
-      if (s.surah === surahNumber) {
-        return { ...s, quality };
-      }
-      return s;
-    });
-
-    await supabase
-      .from('daily_maintenance_sessions')
-      .update({ surahs_reviewed: updatedSurahs })
-      .eq('id', todaySession.id);
-
-    setTodaySession({
-      ...todaySession,
-      surahsReviewed: updatedSurahs
-    });
-  }
-
+  const completedCount = todaySession
+    ? todaySession.surahsReviewed.filter(s => isPassageComplete(s)).length
+    : 0;
+  const allPassagesDone = todaySession
+    ? todaySession.surahsReviewed.every(s => isPassageComplete(s))
+    : false;
   const progressPercent = todaySession
-    ? Math.round((todaySession.tasksCompleted / todaySession.totalTasks) * 100)
+    ? Math.round((completedCount / todaySession.totalTasks) * 100)
     : 0;
 
   if (loading) {
@@ -644,18 +899,14 @@ export default function DailyMaintenancePage() {
         {/* Back button */}
         <button
           onClick={() => {
-            // Step back through the flow instead of exiting completely
             if (selectedPromptSurah) {
-              // If in surah testing, go back to surah selection
               setSelectedPromptSurah(null);
               setRevealedAnswer(false);
               setCurrentAyahIndex(0);
               setAyahFirstWords([]);
             } else if (showFirstWordPrompter) {
-              // If First Word Prompter is expanded, collapse it
               setShowFirstWordPrompter(false);
             } else {
-              // Otherwise go to dashboard
               navigate('/dashboard');
             }
           }}
@@ -672,9 +923,7 @@ export default function DailyMaintenancePage() {
               <span className="text-3xl">📖</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                Daily Quran Review
-              </h1>
+              <h1 className="text-2xl font-bold text-white">Daily Quran Review</h1>
               <p className="text-white/80 text-sm">Keep your memorisation strong with daily practice</p>
             </div>
           </div>
@@ -701,12 +950,11 @@ export default function DailyMaintenancePage() {
             <div className="text-right">
               <p className="text-sm text-gray-500 dark:text-gray-400">Today's Progress</p>
               <p className="font-semibold text-gray-900 dark:text-white">
-                {todaySession?.tasksCompleted || 0}/{todaySession?.totalTasks || 0} tasks
+                {completedCount}/{todaySession?.totalTasks || 0} passages
               </p>
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-4">
             <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
@@ -732,7 +980,7 @@ export default function DailyMaintenancePage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
             <Target className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{todaySession?.surahsReviewed.length || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Surahs Today</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Passages Today</p>
           </div>
         </div>
 
@@ -750,7 +998,448 @@ export default function DailyMaintenancePage() {
           </div>
         )}
 
-        {/* External app recommendation */}
+        {/* Passage Review Cards */}
+        <div className="space-y-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Today's Passages
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Listen 3 times, recite 3 times from memory, then assess yourself.
+          </p>
+
+          {todaySession?.surahsReviewed.map((passage, index) => {
+            const complete = isPassageComplete(passage);
+            const listenDone = passage.listenCount >= 3;
+            const reciteDone = passage.reciteCount >= 3;
+            const assessed = passage.selfAssessment !== null;
+            const weakAreas = hasWeakAreas(passage);
+            const expanded = expandedPractice[index] || new Set<string>();
+
+            return (
+              <div
+                key={`${passage.surah}-${passage.startAyah ?? 1}`}
+                className={`rounded-xl border-2 transition-all ${
+                  complete
+                    ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                }`}
+              >
+                {/* Passage header */}
+                <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      complete ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-amber-100 dark:bg-amber-900/30'
+                    }`}>
+                      {complete ? (
+                        <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{passage.surah}</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {passage.surahName}
+                        <span className="text-lg font-arabic text-gray-500 dark:text-gray-400 ml-2" dir="rtl">
+                          {passage.surahNameArabic}
+                        </span>
+                      </p>
+                      {passage.passageLabel && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{passage.passageLabel}</p>
+                      )}
+                    </div>
+                    {complete && !weakAreas && (
+                      <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">Smooth</span>
+                    )}
+                    {complete && weakAreas && (
+                      <span className="px-3 py-1 bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">Reviewed</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-4">
+                  {/* Step 1: Listen x3 */}
+                  <div className={`rounded-lg p-3 border ${listenDone ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {listenDone ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <Headphones className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      )}
+                      <p className={`text-sm font-medium ${listenDone ? 'text-emerald-800 dark:text-emerald-200' : 'text-blue-900 dark:text-blue-100'}`}>
+                        Step 1: Listen to this passage 3 times
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2">
+                        {[1, 2, 3].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => { if (passage.listenCount < n && todaySession?.status !== 'completed') incrementListen(index); }}
+                            disabled={passage.listenCount >= n || todaySession?.status === 'completed'}
+                            className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition ${
+                              passage.listenCount >= n
+                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                : passage.listenCount === n - 1
+                                  ? 'border-blue-400 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer'
+                                  : 'border-gray-200 dark:border-gray-600 text-gray-300 dark:text-gray-600'
+                            }`}
+                          >
+                            {passage.listenCount >= n ? <CheckCircle className="w-4 h-4" /> : n}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2 ml-auto">
+                        <a href={`https://quran.com/${passage.surah}/${passage.startAyah ?? 1}`} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-full text-xs hover:bg-blue-100 dark:hover:bg-blue-800 transition border border-blue-200 dark:border-blue-600 flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" /> Quran.com
+                        </a>
+                        <a href="https://tarteel.ai" target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-full text-xs hover:bg-blue-100 dark:hover:bg-blue-800 transition border border-blue-200 dark:border-blue-600 flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" /> Tarteel AI
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Recite x3 */}
+                  <div className={`rounded-lg p-3 border ${
+                    reciteDone
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
+                      : listenDone
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {reciteDone ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : listenDone ? (
+                        <Mic className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                      )}
+                      <p className={`text-sm font-medium ${
+                        reciteDone ? 'text-emerald-800 dark:text-emerald-200' : listenDone ? 'text-orange-900 dark:text-orange-100' : 'text-gray-400 dark:text-gray-500'
+                      }`}>
+                        Step 2: Recite from memory 3 times (no mushaf)
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {[1, 2, 3].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => { if (listenDone && passage.reciteCount < n && todaySession?.status !== 'completed') incrementRecite(index); }}
+                          disabled={!listenDone || passage.reciteCount >= n || todaySession?.status === 'completed'}
+                          className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition ${
+                            passage.reciteCount >= n
+                              ? 'bg-emerald-600 border-emerald-600 text-white'
+                              : listenDone && passage.reciteCount === n - 1
+                                ? 'border-orange-400 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/30 cursor-pointer'
+                                : 'border-gray-200 dark:border-gray-600 text-gray-300 dark:text-gray-600'
+                          }`}
+                        >
+                          {passage.reciteCount >= n ? <CheckCircle className="w-4 h-4" /> : n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Self-Assessment */}
+                  {reciteDone && !assessed && todaySession?.status !== 'completed' && (
+                    <SelfAssessmentCard
+                      passageIndex={index}
+                      onSubmit={submitAssessment}
+                    />
+                  )}
+
+                  {/* Show assessment result */}
+                  {assessed && (
+                    <div className={`rounded-lg p-3 border ${
+                      passage.selfAssessment?.smooth
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
+                        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className={`w-4 h-4 ${passage.selfAssessment?.smooth ? 'text-emerald-600' : 'text-amber-600'}`} />
+                        <p className={`text-sm font-medium ${passage.selfAssessment?.smooth ? 'text-emerald-800 dark:text-emerald-200' : 'text-amber-800 dark:text-amber-200'}`}>
+                          {passage.selfAssessment?.smooth
+                            ? 'Smooth - confident!'
+                            : `Areas to work on: ${[
+                                passage.selfAssessment?.weakMemorisation && 'Memorisation',
+                                passage.selfAssessment?.weakFluency && 'Fluency',
+                                passage.selfAssessment?.weakUnderstanding && 'Understanding',
+                              ].filter(Boolean).join(', ')}`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 4: Weak Area Practice (optional, inline, collapsible) */}
+                  {assessed && weakAreas && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Recommended Practice (optional)
+                      </p>
+
+                      {/* Memorisation Practice */}
+                      {passage.selfAssessment?.weakMemorisation && (
+                        <div className="rounded-lg border border-purple-200 dark:border-purple-700 overflow-hidden">
+                          <button
+                            onClick={() => togglePracticeSection(index, 'memorisation')}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
+                          >
+                            <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            <span className="text-sm font-medium text-purple-900 dark:text-purple-100 flex-1 text-left">
+                              First Word Prompter
+                            </span>
+                            {passage.memorisationPracticeDone && (
+                              <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs">Done</span>
+                            )}
+                            <ChevronDown className={`w-4 h-4 text-purple-600 transition-transform ${expanded.has('memorisation') ? 'rotate-180' : ''}`} />
+                          </button>
+                          {expanded.has('memorisation') && (
+                            <div className="p-4 border-t border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
+                              {activeMemPracticeIndex === index && gameAyahFirstWords.length > 0 ? (
+                                <div className="text-center">
+                                  <div className="mb-3 flex items-center justify-between">
+                                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 rounded-full text-sm">
+                                      Ayah {gameAyahIndex + 1} of {gameAyahFirstWords.length}
+                                    </span>
+                                    <span className="text-sm text-gray-500">Score: {gameScore.correct}/{gameScore.total}</span>
+                                  </div>
+                                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-4">
+                                    <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-300" style={{ width: `${((gameAyahIndex + 1) / gameAyahFirstWords.length) * 100}%` }} />
+                                  </div>
+                                  <div className={`rounded-xl p-6 mb-4 transition-all ${gameRevealed ? 'bg-emerald-50 dark:bg-emerald-900/30 border-2 border-emerald-300' : 'bg-white dark:bg-gray-800 border-2 border-purple-200'}`}>
+                                    {!gameRevealed ? (
+                                      <div className="py-2">
+                                        <p className="text-sm text-purple-600 dark:text-purple-400 mb-3">First word of Ayah {gameAyahFirstWords[gameAyahIndex]?.ayahNumber}:</p>
+                                        <p className="text-4xl font-arabic text-purple-900 dark:text-purple-100 mb-2" dir="rtl" style={{ lineHeight: '1.8' }}>{gameAyahFirstWords[gameAyahIndex]?.firstWord}</p>
+                                        <p className="text-sm text-purple-700 italic">{gameAyahFirstWords[gameAyahIndex]?.transliteration}</p>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <p className="text-sm text-emerald-600 mb-3">Full ayah:</p>
+                                        <p className="text-2xl font-arabic text-gray-900 dark:text-white mb-3" dir="rtl" style={{ lineHeight: '2' }}>{gameAyahFirstWords[gameAyahIndex]?.fullVerseUthmani}</p>
+                                        {gameAyahFirstWords[gameAyahIndex]?.fullVerseTranslation && (
+                                          <p className="text-sm text-amber-700 dark:text-amber-200">"{gameAyahFirstWords[gameAyahIndex].fullVerseTranslation}"</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-3 justify-center flex-wrap">
+                                    {!gameRevealed ? (
+                                      <button onClick={() => setGameRevealed(true)} className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium">
+                                        <Eye className="w-5 h-5" /> Reveal Full Ayah
+                                      </button>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => {
+                                            const newScore = { correct: gameScore.correct + 1, total: gameScore.total + 1 };
+                                            setGameScore(newScore);
+                                            if (gameAyahIndex < gameAyahFirstWords.length - 1) { setGameAyahIndex(prev => prev + 1); setGameRevealed(false); }
+                                            else { markPracticeDone(index, 'memorisation'); setActiveMemPracticeIndex(null); setGameAyahFirstWords([]); }
+                                          }}
+                                          className="px-5 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition flex items-center gap-2"
+                                        >
+                                          <CheckCircle className="w-5 h-5" />
+                                          {gameAyahIndex < gameAyahFirstWords.length - 1 ? 'Correct - Next' : 'Correct - Finish'}
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            const newScore = { correct: gameScore.correct, total: gameScore.total + 1 };
+                                            setGameScore(newScore);
+                                            if (gameAyahIndex < gameAyahFirstWords.length - 1) { setGameAyahIndex(prev => prev + 1); setGameRevealed(false); }
+                                            else { markPracticeDone(index, 'memorisation'); setActiveMemPracticeIndex(null); setGameAyahFirstWords([]); }
+                                          }}
+                                          className="px-5 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition flex items-center gap-2"
+                                        >
+                                          <RefreshCw className="w-5 h-5" />
+                                          {gameAyahIndex < gameAyahFirstWords.length - 1 ? 'Need Practice - Next' : 'Need Practice - Finish'}
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : loadingGame && activeMemPracticeIndex === index ? (
+                                <div className="text-center py-6">
+                                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4" />
+                                  <p className="text-purple-700 dark:text-purple-300">Loading ayahs...</p>
+                                </div>
+                              ) : (
+                                <div className="text-center">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Test your recall: see the first word, try to finish the ayah.</p>
+                                  <button
+                                    onClick={() => startMemPractice(index)}
+                                    className="px-5 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-medium"
+                                  >
+                                    Start First Word Prompter
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Fluency Practice */}
+                      {passage.selfAssessment?.weakFluency && (
+                        <div className="rounded-lg border border-blue-200 dark:border-blue-700 overflow-hidden">
+                          <button
+                            onClick={() => togglePracticeSection(index, 'fluency')}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
+                          >
+                            <Headphones className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <span className="text-sm font-medium text-blue-900 dark:text-blue-100 flex-1 text-left">
+                              Listen + Read-Along
+                            </span>
+                            {passage.fluencyPracticeDone && (
+                              <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs">Done</span>
+                            )}
+                            <ChevronDown className={`w-4 h-4 text-blue-600 transition-transform ${expanded.has('fluency') ? 'rotate-180' : ''}`} />
+                          </button>
+                          {expanded.has('fluency') && (
+                            <div className="p-4 border-t border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 space-y-3">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Follow along with the audio while reading the Arabic text. Focus on flow and speed — try to match the reciter's pace.
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <a
+                                  href={`https://quran.com/${passage.surah}/${passage.startAyah ?? 1}?wbw=true`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-100 dark:hover:bg-blue-800 transition border border-blue-200 dark:border-blue-600 flex items-center gap-1"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" /> Quran.com Word-by-Word
+                                </a>
+                                <a
+                                  href="https://tarteel.ai"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-100 dark:hover:bg-blue-800 transition border border-blue-200 dark:border-blue-600 flex items-center gap-1"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" /> Tarteel AI
+                                </a>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Read-along attempts:</p>
+                                <div className="flex gap-2">
+                                  {[1, 2, 3, 4, 5].map(n => (
+                                    <button
+                                      key={n}
+                                      onClick={() => setReadAlongCounts(prev => ({ ...prev, [index]: Math.max(prev[index] || 0, n) }))}
+                                      disabled={(readAlongCounts[index] || 0) >= n}
+                                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition ${
+                                        (readAlongCounts[index] || 0) >= n
+                                          ? 'bg-blue-600 border-blue-600 text-white'
+                                          : (readAlongCounts[index] || 0) === n - 1
+                                            ? 'border-blue-400 text-blue-600 hover:bg-blue-100 cursor-pointer'
+                                            : 'border-gray-200 text-gray-300'
+                                      }`}
+                                    >
+                                      {(readAlongCounts[index] || 0) >= n ? <CheckCircle className="w-3.5 h-3.5" /> : n}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {!passage.fluencyPracticeDone && (
+                                <button
+                                  onClick={() => markPracticeDone(index, 'fluency')}
+                                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                                >
+                                  Mark Fluency Practice Done
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Understanding Practice */}
+                      {passage.selfAssessment?.weakUnderstanding && (
+                        <div className="rounded-lg border border-teal-200 dark:border-teal-700 overflow-hidden">
+                          <button
+                            onClick={() => togglePracticeSection(index, 'understanding')}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition"
+                          >
+                            <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                            <span className="text-sm font-medium text-teal-900 dark:text-teal-100 flex-1 text-left">
+                              Vocabulary + Translations
+                            </span>
+                            {passage.understandingPracticeDone && (
+                              <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs">Done</span>
+                            )}
+                            <ChevronDown className={`w-4 h-4 text-teal-600 transition-transform ${expanded.has('understanding') ? 'rotate-180' : ''}`} />
+                          </button>
+                          {expanded.has('understanding') && (
+                            <div className="p-4 border-t border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 space-y-3">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Learn the meaning of the words you just recited.
+                              </p>
+                              {SURAH_VOCABULARY[passage.surah] && SURAH_VOCABULARY[passage.surah].length >= 4 ? (
+                                <WordMatchingQuiz
+                                  words={SURAH_VOCABULARY[passage.surah].slice(0, 8).map(w => ({ arabic: w.arabic, english: w.english, transliteration: w.transliteration }))}
+                                  lessonId={`daily-review-${passage.surah}`}
+                                  onComplete={() => { if (!passage.understandingPracticeDone) markPracticeDone(index, 'understanding'); }}
+                                />
+                              ) : (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                                  No vocabulary data available for this surah yet.
+                                </p>
+                              )}
+                              {/* Key verse translations */}
+                              {SURAH_THEMES[passage.surah] && (
+                                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-teal-200 dark:border-teal-700">
+                                  <p className="text-xs font-medium text-teal-700 dark:text-teal-300 mb-1">Theme</p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">{SURAH_THEMES[passage.surah].theme}</p>
+                                  {SURAH_THEMES[passage.surah].keyTopics.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                      {SURAH_THEMES[passage.surah].keyTopics.map((topic, i) => (
+                                        <span key={i} className="px-2 py-0.5 bg-teal-100 dark:bg-teal-800 text-teal-700 dark:text-teal-300 rounded-full text-xs">{topic}</span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {!passage.understandingPracticeDone && (
+                                <button
+                                  onClick={() => markPracticeDone(index, 'understanding')}
+                                  className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm font-medium"
+                                >
+                                  Mark Understanding Practice Done
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Complete Review Button */}
+        {todaySession && todaySession.status !== 'completed' && (
+          <div className="mb-6">
+            <button
+              onClick={finishReview}
+              disabled={!allPassagesDone}
+              className={`w-full py-4 rounded-xl font-semibold text-lg transition flex items-center justify-center gap-2 ${
+                allPassagesDone
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-lg'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <CheckCircle className="w-6 h-6" />
+              {allPassagesDone ? "Complete Today's Review" : `Listen + Recite + Assess all passages first (${completedCount}/${todaySession.totalTasks})`}
+            </button>
+          </div>
+        )}
+
+        {/* Recommended Apps */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -758,40 +1447,17 @@ export default function DailyMaintenancePage() {
             </div>
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100">Recommended Apps</h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                Use these apps for listening and recitation practice:
-              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">Use these apps for listening and recitation:</p>
               <div className="flex flex-wrap gap-2">
-                <a
-                  href="https://tarteel.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-700 transition flex items-center gap-1"
-                >
-                  🎙️ Tarteel AI
-                </a>
-                <a
-                  href="https://quranic.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-700 transition flex items-center gap-1"
-                >
-                  📚 Quranic
-                </a>
-                <a
-                  href="https://quran.com/1?wbw=true"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-700 transition flex items-center gap-1"
-                >
-                  📖 Quran by Word
-                </a>
+                <a href="https://tarteel.ai" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 transition">Tarteel AI</a>
+                <a href="https://quranic.app" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 transition">Quranic</a>
+                <a href="https://quran.com/1?wbw=true" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 transition">Quran by Word</a>
               </div>
             </div>
           </div>
         </div>
 
-        {/* First Word Prompter */}
+        {/* First Word Prompter (bonus tool) */}
         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl border border-purple-200 dark:border-purple-700 overflow-hidden mb-6">
           <button
             onClick={() => setShowFirstWordPrompter(!showFirstWordPrompter)}
@@ -803,7 +1469,7 @@ export default function DailyMaintenancePage() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-purple-900 dark:text-purple-100">First Word Prompter</h3>
-                <p className="text-sm text-purple-700 dark:text-purple-300">Test your ability to start any surah</p>
+                <p className="text-sm text-purple-700 dark:text-purple-300">Bonus: Test your ability to start any surah</p>
               </div>
             </div>
             <ChevronDown className={`w-5 h-5 text-purple-600 transition-transform ${showFirstWordPrompter ? 'rotate-180' : ''}`} />
@@ -1107,141 +1773,6 @@ export default function DailyMaintenancePage() {
               )}
             </div>
           )}
-        </div>
-
-        {/* Surah Task Checklist */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-emerald-600" />
-            Today's Tasks
-          </h2>
-
-          {todaySession?.surahsReviewed.map((surah) => {
-            const isComplete = surah.listeningCompleted && surah.recitingCompleted;
-
-            return (
-              <div
-                key={surah.surah}
-                className={`bg-white dark:bg-gray-800 rounded-xl border-2 transition-all ${
-                  isComplete
-                    ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {/* Surah header */}
-                <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      isComplete ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      {isComplete ? (
-                        <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <span className="text-lg font-bold text-gray-600 dark:text-gray-300">{surah.surah}</span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{surah.surahName}</p>
-                      <p className="text-lg font-arabic text-gray-600 dark:text-gray-400" dir="rtl">
-                        {surah.surahNameArabic}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Task checklist */}
-                <div className="p-4 space-y-3">
-                  {/* Task A: Listening */}
-                  <button
-                    onClick={() => toggleTask(surah.surah, 'listening')}
-                    className={`w-full p-4 rounded-xl border-2 flex items-start gap-4 transition text-left ${
-                      surah.listeningCompleted
-                        ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700'
-                        : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-600'
-                    }`}
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      {surah.listeningCompleted ? (
-                        <CheckSquare className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <Square className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Headphones className="w-4 h-4 text-blue-500" />
-                        <p className={`font-medium ${
-                          surah.listeningCompleted
-                            ? 'text-emerald-800 dark:text-emerald-200'
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
-                          Listen to {surah.surahName} x3
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Use one of the recommended apps above.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Task B: Reciting */}
-                  <button
-                    onClick={() => toggleTask(surah.surah, 'reciting')}
-                    className={`w-full p-4 rounded-xl border-2 flex items-start gap-4 transition text-left ${
-                      surah.recitingCompleted
-                        ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700'
-                        : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-600'
-                    }`}
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      {surah.recitingCompleted ? (
-                        <CheckSquare className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <Square className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Mic className="w-4 h-4 text-purple-500" />
-                        <p className={`font-medium ${
-                          surah.recitingCompleted
-                            ? 'text-emerald-800 dark:text-emerald-200'
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
-                          Recite {surah.surahName} from memory
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Use Tarteel for mistake detection or recite on your own.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Quality rating (after both complete) */}
-                  {isComplete && (
-                    <div className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">How was your recitation?</p>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <button
-                            key={rating}
-                            onClick={() => rateQuality(surah.surah, rating)}
-                            className={`p-2 rounded-lg transition ${
-                              surah.quality >= rating
-                                ? 'bg-yellow-400 text-yellow-900'
-                                : 'bg-white dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-800'
-                            }`}
-                          >
-                            <Star className={`w-5 h-5 ${surah.quality >= rating ? 'fill-current' : ''}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* Link to homework */}

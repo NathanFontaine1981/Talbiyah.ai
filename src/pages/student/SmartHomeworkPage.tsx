@@ -67,7 +67,7 @@ interface KnowledgeGap {
   timesTargeted: number;
 }
 
-interface VocabularyWord {
+export interface VocabularyWord {
   arabic: string;
   english: string;
   transliteration: string;
@@ -85,7 +85,7 @@ interface HomeworkGame {
   maxScore: number;
 }
 
-interface SurahInfo {
+export interface SurahInfo {
   number: number;
   name: string;
   arabicName: string;
@@ -95,7 +95,7 @@ interface SurahInfo {
 }
 
 // Surah themes and information for exam questions - covers all 43 vocabulary surahs
-const SURAH_THEMES: { [key: number]: SurahInfo } = {
+export const SURAH_THEMES: { [key: number]: SurahInfo } = {
   1: { number: 1, name: 'Al-Fatihah', arabicName: 'الفاتحة', theme: 'The Opening - essence of the Quran, prayer for guidance', keyTopics: ['Praise of Allah', 'Seeking guidance', 'The straight path'], verseCount: 7 },
   18: { number: 18, name: 'Al-Kahf', arabicName: 'الكهف', theme: 'The Cave - protection from trials and tests of faith', keyTopics: ['People of the Cave', 'Wealth and knowledge tests', 'Dhul-Qarnayn'], verseCount: 110 },
   36: { number: 36, name: 'Ya-Sin', arabicName: 'يس', theme: 'Ya-Sin - the heart of the Quran, resurrection proof', keyTopics: ['Messengers rejected', 'Signs in creation', 'Day of Judgment'], verseCount: 83 },
@@ -213,7 +213,7 @@ interface ExternalPracticeTip {
 }
 
 // Comprehensive Surah vocabulary database - cumulative vocabulary pool
-const SURAH_VOCABULARY: { [key: number]: VocabularyWord[] } = {
+export const SURAH_VOCABULARY: { [key: number]: VocabularyWord[] } = {
   1: [ // Al-Fatihah
     { arabic: 'بِسْمِ', english: 'In the name of', transliteration: 'Bismi' },
     { arabic: 'اللَّهِ', english: 'Allah', transliteration: 'Allah' },
@@ -1276,7 +1276,7 @@ export default function SmartHomeworkPage() {
       }
 
       setAvailableSurahs(surahsWithVocab);
-      setSelectedSurahs(surahsWithVocab); // Select all by default
+      // Start with none selected - let user choose which surahs to practice
 
       // Build cumulative vocabulary pool from all memorized surahs
       let vocabularyPool: VocabularyWord[] = [];
