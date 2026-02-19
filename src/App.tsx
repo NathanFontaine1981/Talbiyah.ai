@@ -106,6 +106,7 @@ const NewMuslimLanding = lazy(() => import('./pages/NewMuslimLanding'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
 const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 const Suggestions = lazy(() => import('./pages/Suggestions'));
+const ComparePlans = lazy(() => import('./pages/ComparePlans'));
 const HowToPage = lazy(() => import('./pages/HowToPage'));
 
 // Course pages
@@ -221,6 +222,7 @@ function App() {
         <Route path="/new-muslim-landing" element={<NewMuslimLanding />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
         <Route path="/suggestions" element={<Suggestions />} />
+        <Route path="/compare-plans" element={<ComparePlans />} />
         <Route path="/how-to" element={<HowToPage />} />
         <Route path="/book-interview/:token" element={<BookInterview />} />
         <Route path="/interview/:interviewId" element={<CandidateInterviewRoom />} />

@@ -12,13 +12,15 @@ export default function SignUp() {
   const [searchParams] = useSearchParams();
   const autoRole = (location.state as any)?.autoRole;
   const referralCodeFromUrl = searchParams.get('ref');
-  const typeFromUrl = searchParams.get('type'); // Check for ?type=explorer
+  const typeFromUrl = searchParams.get('type'); // Check for ?type=explorer or ?type=new_muslim
 
-  // If type=explorer is in URL, auto-select explorer role and skip to form
+  // If type=explorer or type=new_muslim is in URL, auto-select role and skip to form
   const isExplorerSignup = typeFromUrl === 'explorer';
-  const [step, setStep] = useState<'role' | 'form'>(autoRole || isExplorerSignup ? 'form' : 'role');
-  const [selectedRole, setSelectedRole] = useState<'student' | 'parent' | 'teacher' | 'explorer'>(
-    isExplorerSignup ? 'explorer' : (autoRole || 'student')
+  const isNewMuslimSignup = typeFromUrl === 'new_muslim';
+  const isQuickSignup = isExplorerSignup || isNewMuslimSignup;
+  const [step, setStep] = useState<'role' | 'form'>(autoRole || isQuickSignup ? 'form' : 'role');
+  const [selectedRole, setSelectedRole] = useState<'student' | 'parent' | 'teacher' | 'explorer' | 'new_muslim'>(
+    isNewMuslimSignup ? 'new_muslim' : isExplorerSignup ? 'explorer' : (autoRole || 'student')
   );
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -380,11 +382,11 @@ export default function SignUp() {
             duration: 5000
           });
           // Redirect to email verification page with email in state
-          const returnTo = redirectTo || (selectedRole === 'explorer' ? '/explore' : undefined);
+          const returnTo = redirectTo || (selectedRole === 'explorer' || selectedRole === 'new_muslim' ? '/dashboard' : undefined);
           navigate('/verify-email', { state: { email: authForm.email, returnTo } });
-        } else if (selectedRole === 'explorer') {
-          // Explorers go directly to Exploring Islam
-          navigate(redirectTo || '/explore');
+        } else if (selectedRole === 'explorer' || selectedRole === 'new_muslim') {
+          // Explorers and new Muslims go to dashboard
+          navigate(redirectTo || '/dashboard');
         } else if (selectedRole === 'parent') {
           // Parents go through onboarding wizard to add children
           navigate('/onboarding');
@@ -440,7 +442,10 @@ export default function SignUp() {
             </button>
 
             <button
-              onClick={() => navigate('/new-muslim')}
+              onClick={() => {
+                setSelectedRole('new_muslim');
+                setStep('form');
+              }}
               className="group"
             >
               <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center h-full relative">
@@ -523,7 +528,7 @@ export default function SignUp() {
 
       <div className="w-full max-w-md">
         <button
-          onClick={() => (autoRole || isExplorerSignup) ? navigate(isExplorerSignup ? '/explore' : '/') : setStep('role')}
+          onClick={() => (autoRole || isQuickSignup) ? navigate(isExplorerSignup ? '/explore' : isNewMuslimSignup ? '/new-muslim' : '/') : setStep('role')}
           className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -544,6 +549,7 @@ export default function SignUp() {
               {selectedRole === 'student' ? 'Start your learning journey' :
                selectedRole === 'parent' ? 'Manage your children\'s learning' :
                selectedRole === 'explorer' ? 'Save your progress and explore at your own pace' :
+               selectedRole === 'new_muslim' ? 'Start your foundations journey' :
                'Apply to become a teacher'}
             </p>
           </div>
@@ -772,7 +778,7 @@ export default function SignUp() {
             </div>
 
             {/* Referral Code Field - Only for students and parents (not teachers or explorers) */}
-            {selectedRole !== 'teacher' && selectedRole !== 'explorer' && (
+            {selectedRole !== 'teacher' && selectedRole !== 'explorer' && selectedRole !== 'new_muslim' && (
             <>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

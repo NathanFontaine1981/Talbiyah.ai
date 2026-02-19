@@ -5,6 +5,9 @@ import {
   GraduationCap,
   MessageCircle,
   Menu,
+  Compass,
+  Moon,
+  UserPlus,
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -21,7 +24,33 @@ export default function MobileBottomNav({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
+  const navItems = selectedViewRole === 'Explorer' ? [
+    {
+      icon: Home,
+      label: 'Home',
+      path: '/dashboard',
+    },
+    {
+      icon: Compass,
+      label: 'Explore',
+      path: '/explore',
+    },
+    {
+      icon: Moon,
+      label: 'Salah',
+      path: '/salah',
+    },
+    {
+      icon: UserPlus,
+      label: 'Foundations',
+      path: '/new-muslim',
+    },
+    {
+      icon: Menu,
+      label: 'More',
+      path: '__menu__',
+    },
+  ] : [
     {
       icon: Home,
       label: 'Home',

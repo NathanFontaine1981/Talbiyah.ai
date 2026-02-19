@@ -84,8 +84,8 @@ export default function DashboardSidebar({
     {
       title: null,
       items: [
-        { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
-        { icon: HelpCircle, label: 'How To', path: '/how-to', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent', 'Explorer'] },
+        { icon: HelpCircle, label: 'How To', path: '/how-to', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
       ]
     },
     {
@@ -124,18 +124,18 @@ export default function DashboardSidebar({
       title: 'Tools & Resources',
       items: [
         { icon: BookOpen, label: "Qur'an Tracker", path: '/progress/quran', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
         { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
-        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
-        { icon: UserPlus, label: 'Unshakeable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: UserPlus, label: 'Unshakeable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
         { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
         { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
       ]
     },
     {
@@ -166,7 +166,7 @@ export default function DashboardSidebar({
       title: 'Account',
       items: [
         { icon: Baby, label: 'My Children', path: '/my-children', active: false, roles: ['Parent'] },
-        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin', 'Parent'] },
+        { icon: Settings, label: 'Settings', path: '/account/settings', active: false, roles: ['Student', 'Teacher', 'Admin', 'Parent', 'Explorer'] },
       ]
     },
   ];

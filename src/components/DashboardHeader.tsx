@@ -3,7 +3,7 @@ import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 interface DashboardHeaderProps {
   userName: string;
-  userRole?: 'Student' | 'Parent' | 'Teacher' | 'Admin';
+  userRole?: 'Student' | 'Parent' | 'Teacher' | 'Admin' | 'Explorer';
 }
 
 export default function DashboardHeader({ userName, userRole = 'Student' }: DashboardHeaderProps) {
@@ -100,6 +100,13 @@ export default function DashboardHeader({ userName, userRole = 'Student' }: Dash
           mainBg: 'bg-gradient-to-br from-amber-600 via-amber-500 to-amber-700',
           cardBg: 'bg-amber-900/30',
           cardBorder: 'border-amber-600/30',
+          textSecondary: 'text-white/80',
+        };
+      case 'Explorer':
+        return {
+          mainBg: 'bg-gradient-to-br from-indigo-700 via-indigo-600 to-indigo-800',
+          cardBg: 'bg-indigo-900/30',
+          cardBorder: 'border-indigo-600/30',
           textSecondary: 'text-white/80',
         };
       default:

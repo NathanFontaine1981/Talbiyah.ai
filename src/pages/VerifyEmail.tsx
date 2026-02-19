@@ -132,8 +132,8 @@ export default function VerifyEmail() {
               navigate(data && data.length > 0 ? '/dashboard' : '/onboarding');
             })
             .catch(() => navigate('/onboarding'));
-        } else if (userRole === 'explorer') {
-          navigate(returnTo || '/explore');
+        } else if (userRole === 'explorer' || userRole === 'new_muslim') {
+          navigate(returnTo || '/dashboard');
         } else {
           // Go through Welcome for profile setup, passing returnTo
           navigate('/welcome', { state: { returnTo } });

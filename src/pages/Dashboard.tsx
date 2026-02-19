@@ -23,6 +23,7 @@ import {
   X,
   Compass,
   Settings,
+  Moon,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import UpcomingSessionsCard from '../components/UpcomingSessionsCard';
@@ -292,9 +293,14 @@ export default function Dashboard() {
         }
       }
 
+      // Check for explorer/new_muslim role
+      const isExplorer = profileData?.roles?.includes('explorer') ||
+                         profileData?.roles?.includes('new_muslim') || false;
+
       // Check for student role — pending/rejected teachers are still students
       const isApprovedTeacher = teacherProfile?.status === 'approved';
-      const isStudent = profileData?.roles?.includes('student') || (!isApprovedTeacher && !isAdmin);
+      const isStudent = profileData?.roles?.includes('student') ||
+        (!isApprovedTeacher && !isAdmin && !isExplorer);
       if (isStudent) {
         roles.push('Student');
       }
@@ -304,14 +310,21 @@ export default function Dashboard() {
         roles.push('Parent');
       }
 
+      // Add Explorer as a switchable role
+      if (isExplorer) {
+        roles.push('Explorer');
+      }
+
       setAvailableRoles(roles);
 
-      // Set primary role (for display) - Admin takes precedence, then Teacher, then Student
+      // Set primary role (for display) - Admin takes precedence, then Teacher, then Student, then Explorer
       let primaryRole = 'Student';
       if (isAdmin) {
         primaryRole = 'Admin';
       } else if (teacherProfile && teacherProfile.status === 'approved') {
         primaryRole = 'Teacher';
+      } else if (isExplorer && !isStudent) {
+        primaryRole = 'Explorer';
       }
       setUserRole(primaryRole);
 
@@ -613,6 +626,7 @@ export default function Dashboard() {
                       selectedViewRole === 'Admin' ? 'bg-amber-500' :
                       selectedViewRole === 'Teacher' ? 'bg-blue-500' :
                       selectedViewRole === 'Parent' ? 'bg-purple-500' :
+                      selectedViewRole === 'Explorer' ? 'bg-indigo-500' :
                       'bg-emerald-500'
                     }`}></span>
                     <span className="text-sm font-medium text-gray-700 hidden sm:inline">{selectedViewRole} View</span>
@@ -638,6 +652,7 @@ export default function Dashboard() {
                               ? role === 'Admin' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
                               : role === 'Teacher' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600'
                               : role === 'Parent' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600'
+                              : role === 'Explorer' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600'
                               : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
                               : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
@@ -646,6 +661,7 @@ export default function Dashboard() {
                             role === 'Admin' ? 'bg-amber-500' :
                             role === 'Teacher' ? 'bg-blue-500' :
                             role === 'Parent' ? 'bg-purple-500' :
+                            role === 'Explorer' ? 'bg-indigo-500' :
                             'bg-emerald-500'
                           }`}></span>
                           <span className="font-medium">{role} View</span>
@@ -683,6 +699,7 @@ export default function Dashboard() {
                   selectedViewRole === 'Student' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
                   selectedViewRole === 'Teacher' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
                   selectedViewRole === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
+                  selectedViewRole === 'Explorer' ? 'bg-gradient-to-br from-indigo-400 to-indigo-600' :
                   'bg-gradient-to-br from-emerald-400 to-emerald-600'
                 }`}>
                   {profile?.avatar_url ? (
@@ -717,6 +734,73 @@ export default function Dashboard() {
                 <PrayerTimesWidget userRole={selectedViewRole} />
               </div>
             </div>
+
+            {/* ===== EXPLORER VIEW ===== */}
+            {selectedViewRole === 'Explorer' && (
+              <>
+                <div className="mb-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                  </div>
+                  <div className="relative">
+                    <h2 className="text-2xl font-bold text-white mb-2">Welcome to Your Journey</h2>
+                    <p className="text-indigo-100 mb-6">Start exploring Islam at your own pace with these free resources:</p>
+                    <div className="grid md:grid-cols-3 gap-4 mb-4">
+                      <button
+                        onClick={() => navigate('/explore')}
+                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
+                      >
+                        <Compass className="w-8 h-8 text-amber-300 mb-2" />
+                        <h3 className="font-semibold text-white">Exploring Islam</h3>
+                        <p className="text-indigo-100 text-sm mt-1">Discover the beauty of Islamic teachings</p>
+                      </button>
+                      <button
+                        onClick={() => navigate('/new-muslim')}
+                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
+                      >
+                        <BookOpen className="w-8 h-8 text-emerald-300 mb-2" />
+                        <h3 className="font-semibold text-white">Unshakeable Foundations</h3>
+                        <p className="text-indigo-100 text-sm mt-1">Build your core Islamic knowledge</p>
+                      </button>
+                      <button
+                        onClick={() => navigate('/salah')}
+                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
+                      >
+                        <Moon className="w-8 h-8 text-sky-300 mb-2" />
+                        <h3 className="font-semibold text-white">Learn Salah</h3>
+                        <p className="text-indigo-100 text-sm mt-1">Step-by-step prayer tutorial</p>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Ready for more?</h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
+                        Unlock 1-on-1 lessons, AI tools, Quran tracking, and much more with a Student account.
+                      </p>
+                      <button
+                        onClick={() => navigate('/compare-plans')}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold transition flex items-center gap-2"
+                      >
+                        <span>See What You're Missing</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <AnnouncementsCard userRole={selectedViewRole} />
+                </div>
+              </>
+            )}
 
             {/* New User Welcome Banner */}
             {showWelcomeBanner && (selectedViewRole === 'Student' || selectedViewRole === 'Parent') && (
