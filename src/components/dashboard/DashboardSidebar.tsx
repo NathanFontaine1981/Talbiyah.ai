@@ -202,7 +202,7 @@ export default function DashboardSidebar({
         {filteredSections.map((section, sectionIdx) => (
           <div key={sectionIdx} className={section.title ? 'mt-4 first:mt-0' : ''}>
             {section.title && !sidebarCollapsed && (
-              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <p className="px-4 pt-3 pb-1 text-[11px] font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest">
                 {section.title}
               </p>
             )}
