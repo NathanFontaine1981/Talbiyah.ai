@@ -72,22 +72,25 @@ export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
             <Shield className="w-10 h-10 text-white" />
           </motion.div>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-emerald-600 text-sm font-semibold uppercase tracking-widest mb-3"
+            transition={{ delay: 0.15 }}
+            className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4"
           >
-            Free Knowledge Course
-          </motion.p>
+            For new Muslims &amp; those building foundations
+          </motion.div>
 
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             Unshakeable Foundations
           </h1>
 
-          <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
-            Build your Islamic knowledge on solid ground. Master the essential pillars
-            that every Muslim needs to know.
+          <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed mb-2">
+            Welcome home. You've taken the biggest step &mdash; now let us walk with you.
+          </p>
+          <p className="text-slate-400 text-base max-w-xl mx-auto leading-relaxed">
+            Hand-picked videos from trusted scholars covering everything a new Muslim needs &mdash;
+            from who Allah is, to how to pray, all in one place.
           </p>
         </motion.div>
 
@@ -192,9 +195,9 @@ export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
             <div>
               <h3 className="font-semibold text-emerald-800 mb-2">Why Start Here?</h3>
               <p className="text-emerald-700 text-sm leading-relaxed">
-                Without understanding Tawheed (who Allah is), you cannot properly worship Him.
-                Without knowing how to pray, you miss the most important daily connection with your Creator.
-                Build strong foundations, and your entire faith will be unshakable.
+                As a new Muslim, you're like a newborn &mdash; everything is fresh and exciting, but you need direction.
+                This course gives you exactly that: who Allah is, how to pray, and the essentials of your faith,
+                all hand-picked so you don't have to search the internet alone.
               </p>
             </div>
           </div>
@@ -218,6 +221,17 @@ export default function FoundationIntro({ onComplete }: FoundationIntroProps) {
           <p className="text-slate-400 text-sm mt-4">
             100% Free • No payment required
           </p>
+
+          {/* Upgrade hint */}
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <p className="text-slate-400 text-sm mb-2">Once you're ready for live lessons, Quran reading, and daily practice tools:</p>
+            <button
+              onClick={() => navigate('/compare-plans')}
+              className="text-emerald-600 hover:text-emerald-700 text-sm font-medium underline underline-offset-2 transition"
+            >
+              See what the full Student experience includes
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>

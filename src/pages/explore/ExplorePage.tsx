@@ -461,11 +461,17 @@ export default function ExplorePage() {
             >
               Interactive Experience
             </motion.p>
+            <div className="inline-block px-4 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+              For non-Muslims &amp; anyone curious
+            </div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
               Exploring Islam
             </h1>
-            <p className="text-slate-500 text-lg mb-4 max-w-md mx-auto leading-relaxed">
-              A journey of discovery in {EPISODES.length} episodes
+            <p className="text-slate-500 text-lg mb-2 max-w-lg mx-auto leading-relaxed">
+              An honest, guided journey through what Muslims actually believe &mdash; no preaching, just discovery.
+            </p>
+            <p className="text-slate-400 text-base mb-6 max-w-md mx-auto">
+              {EPISODES.length} interactive episodes covering evidence, history, and what the Quran really says.
             </p>
             <div className="flex items-center justify-center gap-6 text-sm">
               <span className="flex items-center gap-2 text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-full">
@@ -784,11 +790,30 @@ export default function ExplorePage() {
             </motion.div>
           )}
 
+          {/* What's next hint */}
+          {!user && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3 }}
+              className="mt-8 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl text-center"
+            >
+              <p className="text-emerald-700 text-sm font-medium mb-1">Interested in going deeper?</p>
+              <p className="text-emerald-600 text-xs mb-3">Live lessons, Quran reading, and daily practice tools are available for Students.</p>
+              <button
+                onClick={() => navigate('/compare-plans')}
+                className="text-emerald-700 hover:text-emerald-800 text-sm font-medium underline underline-offset-2 transition"
+              >
+                Compare Explorer vs Student
+              </button>
+            </motion.div>
+          )}
+
           {/* Info about what this journey is */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 1.4 }}
             className="mt-10 text-center text-slate-400 text-sm space-y-1"
           >
             <p>Best experienced in order. Take your time with each episode.</p>

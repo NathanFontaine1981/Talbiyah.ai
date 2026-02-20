@@ -432,12 +432,17 @@ export default function SignUp() {
               onClick={() => navigate('/explore')}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-lg transition text-center h-full">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-lg transition text-left h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <Compass className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">I'm curious about Islam</h3>
-                <p className="text-gray-500 text-sm">Explore freely, no signup needed</p>
+                <p className="text-gray-500 text-sm mb-4">A guided journey for non-Muslims. Explore beliefs, practices, and common questions at your own pace.</p>
+                <ul className="space-y-1.5 text-sm text-gray-400">
+                  <li className="flex items-center gap-2"><span className="text-amber-500">&#10003;</span> No signup needed</li>
+                  <li className="flex items-center gap-2"><span className="text-amber-500">&#10003;</span> Learn what Muslims believe</li>
+                  <li className="flex items-center gap-2"><span className="text-amber-500">&#10003;</span> Ask questions freely</li>
+                </ul>
               </div>
             </button>
 
@@ -448,12 +453,17 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-center h-full relative">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-emerald-500 hover:shadow-lg transition text-left h-full relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <Gift className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">I'm new to Islam</h3>
-                <p className="text-gray-500 text-sm">Begin your foundations journey</p>
+                <p className="text-gray-500 text-sm mb-4">Welcome home. Hand-picked resources, foundations of faith, and a clear path for your first steps as a Muslim.</p>
+                <ul className="space-y-1.5 text-sm text-gray-400">
+                  <li className="flex items-center gap-2"><span className="text-emerald-500">&#10003;</span> Beginner-friendly foundations</li>
+                  <li className="flex items-center gap-2"><span className="text-emerald-500">&#10003;</span> Learn how to pray</li>
+                  <li className="flex items-center gap-2"><span className="text-emerald-500">&#10003;</span> Everything in one place</li>
+                </ul>
               </div>
             </button>
           </div>
@@ -467,12 +477,17 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition text-center h-full">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition text-left h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Student of Islam</h3>
-                <p className="text-gray-500 text-sm">Learn Quran & Arabic with teachers</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Student</h3>
+                <p className="text-gray-500 text-sm mb-4">1-on-1 Quran and Arabic lessons, daily practice tools, and structured courses with qualified teachers.</p>
+                <ul className="space-y-1.5 text-sm text-gray-400">
+                  <li className="flex items-center gap-2"><span className="text-blue-500">&#10003;</span> Live lessons with teachers</li>
+                  <li className="flex items-center gap-2"><span className="text-blue-500">&#10003;</span> Daily practice & Quran tracker</li>
+                  <li className="flex items-center gap-2"><span className="text-blue-500">&#10003;</span> AI tools & lesson insights</li>
+                </ul>
               </div>
             </button>
 
@@ -483,15 +498,20 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border-2 border-emerald-500 hover:shadow-lg transition text-center h-full relative">
+              <div className="bg-white p-8 rounded-2xl border-2 border-emerald-500 hover:shadow-lg transition text-left h-full relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
                 </div>
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <Users className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Parent</h3>
-                <p className="text-gray-500 text-sm">Manage your children's learning</p>
+                <p className="text-gray-500 text-sm mb-4">Manage your children's Islamic education. Book lessons, track progress, and stay involved in their learning.</p>
+                <ul className="space-y-1.5 text-sm text-gray-400">
+                  <li className="flex items-center gap-2"><span className="text-purple-500">&#10003;</span> Manage multiple children</li>
+                  <li className="flex items-center gap-2"><span className="text-purple-500">&#10003;</span> Book & monitor lessons</li>
+                  <li className="flex items-center gap-2"><span className="text-purple-500">&#10003;</span> Track their Quran progress</li>
+                </ul>
               </div>
             </button>
 
@@ -502,13 +522,28 @@ export default function SignUp() {
               }}
               className="group"
             >
-              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-rose-500 hover:shadow-lg transition text-center h-full">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-rose-500 to-red-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
+              <div className="bg-white p-8 rounded-2xl border border-gray-200 hover:border-rose-500 hover:shadow-lg transition text-left h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-rose-500 to-red-500 rounded-xl flex items-center justify-center mb-4 shadow-md">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">I want to Teach</h3>
-                <p className="text-gray-500 text-sm">Share your knowledge with others</p>
+                <p className="text-gray-500 text-sm mb-4">Share your knowledge of Quran and Arabic. Set your own schedule, manage students, and earn from teaching.</p>
+                <ul className="space-y-1.5 text-sm text-gray-400">
+                  <li className="flex items-center gap-2"><span className="text-rose-500">&#10003;</span> Flexible schedule</li>
+                  <li className="flex items-center gap-2"><span className="text-rose-500">&#10003;</span> Teaching tools & resources</li>
+                  <li className="flex items-center gap-2"><span className="text-rose-500">&#10003;</span> Grow your student base</li>
+                </ul>
               </div>
+            </button>
+          </div>
+
+          {/* Compare link */}
+          <div className="text-center mt-8">
+            <button
+              onClick={() => navigate('/compare-plans')}
+              className="text-sm text-gray-400 hover:text-emerald-600 transition underline underline-offset-2"
+            >
+              Compare Explorer vs Student features
             </button>
           </div>
         </div>

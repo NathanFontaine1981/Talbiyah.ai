@@ -738,43 +738,116 @@ export default function Dashboard() {
             {/* ===== EXPLORER VIEW ===== */}
             {selectedViewRole === 'Explorer' && (
               <>
+                {/* Personalised welcome */}
                 <div className="mb-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
                     <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
                   </div>
                   <div className="relative">
-                    <h2 className="text-2xl font-bold text-white mb-2">Welcome to Your Journey</h2>
-                    <p className="text-indigo-100 mb-6">Start exploring Islam at your own pace with these free resources:</p>
-                    <div className="grid md:grid-cols-3 gap-4 mb-4">
-                      <button
-                        onClick={() => navigate('/explore')}
-                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
-                      >
-                        <Compass className="w-8 h-8 text-amber-300 mb-2" />
-                        <h3 className="font-semibold text-white">Exploring Islam</h3>
-                        <p className="text-indigo-100 text-sm mt-1">Discover the beauty of Islamic teachings</p>
-                      </button>
-                      <button
-                        onClick={() => navigate('/new-muslim')}
-                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
-                      >
-                        <BookOpen className="w-8 h-8 text-emerald-300 mb-2" />
-                        <h3 className="font-semibold text-white">Unshakeable Foundations</h3>
-                        <p className="text-indigo-100 text-sm mt-1">Build your core Islamic knowledge</p>
-                      </button>
-                      <button
-                        onClick={() => navigate('/salah')}
-                        className="bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition"
-                      >
-                        <Moon className="w-8 h-8 text-sky-300 mb-2" />
-                        <h3 className="font-semibold text-white">Learn Salah</h3>
-                        <p className="text-indigo-100 text-sm mt-1">Step-by-step prayer tutorial</p>
-                      </button>
-                    </div>
+                    {profile?.roles?.includes('new_muslim') ? (
+                      <>
+                        <h2 className="text-2xl font-bold text-white mb-2">Welcome Home, {profile?.full_name?.split(' ')[0] || 'Friend'}</h2>
+                        <p className="text-indigo-100 mb-6">You've taken the biggest step. Here's your path to build strong foundations:</p>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-2xl font-bold text-white mb-2">Welcome, {profile?.full_name?.split(' ')[0] || 'Friend'}</h2>
+                        <p className="text-indigo-100 mb-6">Explore Islam at your own pace — no pressure, just discovery:</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
+                {/* Guided journey cards */}
+                <div className="mb-6 space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-widest px-1">Your Path</h3>
+
+                  {/* Step 1 - contextual based on role */}
+                  <button
+                    onClick={() => navigate(profile?.roles?.includes('new_muslim') ? '/new-muslim' : '/explore')}
+                    className="w-full bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition text-left flex items-center gap-4"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                      {profile?.roles?.includes('new_muslim') ? (
+                        <BookOpen className="w-6 h-6 text-white" />
+                      ) : (
+                        <Compass className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">STEP 1</span>
+                        <span className="text-xs text-gray-400">Start here</span>
+                      </div>
+                      {profile?.roles?.includes('new_muslim') ? (
+                        <>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Unshakeable Foundations</h4>
+                          <p className="text-gray-500 text-sm">Learn who Allah is, how to pray, and the essentials of your faith</p>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Exploring Islam</h4>
+                          <p className="text-gray-500 text-sm">An honest journey through what Muslims believe — evidence, history, and the Quran</p>
+                        </>
+                      )}
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                  </button>
+
+                  {/* Step 2 */}
+                  <button
+                    onClick={() => navigate('/salah')}
+                    className="w-full bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition text-left flex items-center gap-4"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                      <Moon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">STEP 2</span>
+                        <span className="text-xs text-gray-400">Learn to pray</span>
+                      </div>
+                      <h4 className="font-bold text-gray-900 dark:text-white">Learn Salah</h4>
+                      <p className="text-gray-500 text-sm">Step-by-step tutorial for the 5 daily prayers — the most important practice in Islam</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                  </button>
+
+                  {/* Step 3 - the other path */}
+                  <button
+                    onClick={() => navigate(profile?.roles?.includes('new_muslim') ? '/explore' : '/new-muslim')}
+                    className="w-full bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition text-left flex items-center gap-4"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                      {profile?.roles?.includes('new_muslim') ? (
+                        <Compass className="w-6 h-6 text-white" />
+                      ) : (
+                        <BookOpen className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">STEP 3</span>
+                        <span className="text-xs text-gray-400">Go deeper</span>
+                      </div>
+                      {profile?.roles?.includes('new_muslim') ? (
+                        <>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Exploring Islam</h4>
+                          <p className="text-gray-500 text-sm">Explore the evidence, history, and beauty behind the faith you've embraced</p>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Unshakeable Foundations</h4>
+                          <p className="text-gray-500 text-sm">Build your core Islamic knowledge with curated video lessons and quizzes</p>
+                        </>
+                      )}
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                  </button>
+                </div>
+
+                {/* Upgrade CTA */}
                 <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -783,13 +856,13 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Ready for more?</h3>
                       <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                        Unlock 1-on-1 lessons, AI tools, Quran tracking, and much more with a Student account.
+                        When you're ready, unlock 1-on-1 Quran lessons, daily practice tools, AI-powered learning, and much more.
                       </p>
                       <button
                         onClick={() => navigate('/compare-plans')}
                         className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold transition flex items-center gap-2"
                       >
-                        <span>See What You're Missing</span>
+                        <span>See What Students Get</span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
