@@ -81,7 +81,7 @@ export default function RamadanPlannerPage() {
   const [logQuranPages, setLogQuranPages] = useState(0);
   const [logSadaqah, setLogSadaqah] = useState(0);
   const [logTaraweeh, setLogTaraweeh] = useState(false);
-  const [logMasjidPrayers, setLogMasjidPrayers] = useState(0);
+  const [logMasjidPrayers, setLogMasjidPrayers] = useState<string[]>([]);
   const [logHabitsMaintained, setLogHabitsMaintained] = useState<string[]>([]);
   const [logFasted, setLogFasted] = useState(true);
 
@@ -200,7 +200,8 @@ export default function RamadanPlannerPage() {
       quran_pages_read: logQuranPages,
       sadaqah_given: logSadaqah,
       taraweeh_attended: logTaraweeh,
-      masjid_prayers: logMasjidPrayers,
+      masjid_prayers: logMasjidPrayers.length,
+      masjid_prayers_list: logMasjidPrayers,
       habits_maintained: logHabitsMaintained,
       fasted: logFasted,
       updated_at: new Date().toISOString(),
@@ -234,14 +235,14 @@ export default function RamadanPlannerPage() {
       setLogQuranPages(existingLog.quran_pages_read);
       setLogSadaqah(existingLog.sadaqah_given);
       setLogTaraweeh(existingLog.taraweeh_attended);
-      setLogMasjidPrayers(existingLog.masjid_prayers);
+      setLogMasjidPrayers((existingLog as any).masjid_prayers_list?.length ? (existingLog as any).masjid_prayers_list : []);
       setLogHabitsMaintained(existingLog.habits_maintained || []);
       setLogFasted(existingLog.fasted);
     } else {
       setLogQuranPages(0);
       setLogSadaqah(0);
       setLogTaraweeh(false);
-      setLogMasjidPrayers(0);
+      setLogMasjidPrayers([]);
       setLogHabitsMaintained([]);
       setLogFasted(true);
     }
@@ -789,26 +790,25 @@ export default function RamadanPlannerPage() {
               <div>
                 <label className="text-sm text-gray-700 dark:text-gray-300 block mb-2">Masjid prayers today</label>
                 <div className="flex flex-wrap gap-2">
-                  {PRAYER_NAMES.map((name, i) => (
-                    <button
-                      key={name}
-                      onClick={() => {
-                        if (logMasjidPrayers > i) {
-                          setLogMasjidPrayers(i);
-                        } else {
-                          setLogMasjidPrayers(i + 1);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                        logMasjidPrayers > i
-                          ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
-                      }`}
-                    >
-                      {logMasjidPrayers > i && <CheckCircle className="w-3 h-3 inline mr-1" />}
-                      {name}
-                    </button>
-                  ))}
+                  {PRAYER_NAMES.map(name => {
+                    const selected = logMasjidPrayers.includes(name);
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => setLogMasjidPrayers(prev =>
+                          selected ? prev.filter(p => p !== name) : [...prev, name]
+                        )}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                          selected
+                            ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        {selected && <CheckCircle className="w-3 h-3 inline mr-1" />}
+                        {name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
