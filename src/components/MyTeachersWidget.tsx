@@ -26,6 +26,7 @@ export default function MyTeachersWidget({ learnerId }: MyTeachersWidgetProps) {
         .from('learners')
         .select('id')
         .eq('parent_id', user.id)
+        .eq('is_self', true)
         .maybeSingle();
 
       if (!learnerData) return;

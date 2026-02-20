@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Search, MessageSquare, Star, Calendar, ChevronLeft, BookOpen, Clock, Video, UserPlus, Bookmark, Filter } from 'lucide-react';
+import { Users, Search, MessageSquare, Star, Calendar, ChevronLeft, BookOpen, Clock, Video, UserPlus, Bookmark, Filter, X, UserMinus } from 'lucide-react';
 
 interface TeacherRelationship {
   teacher_id: string;
@@ -25,6 +25,7 @@ export default function MyTeachers() {
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [removingTeacherId, setRemovingTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMyTeachers();
@@ -46,6 +47,7 @@ export default function MyTeachers() {
         .from('learners')
         .select('id')
         .eq('parent_id', user.id)
+        .eq('is_self', true)
         .maybeSingle();
 
       if (learnerData) {
@@ -236,6 +238,31 @@ export default function MyTeachers() {
       ));
     }
   };
+
+  const removeTeacher = async (teacherId: string) => {
+    if (!studentId) return;
+
+    try {
+      const { error } = await supabase
+        .from('student_teacher_relationships')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('student_id', studentId)
+        .eq('teacher_id', teacherId);
+
+      if (error) {
+        console.error('Error removing teacher:', error);
+        return;
+      }
+
+      setTeachers(prev => prev.filter(t => t.teacher_id !== teacherId));
+    } catch (error) {
+      console.error('Error removing teacher:', error);
+    } finally {
+      setRemovingTeacherId(null);
+    }
+  };
+
+  const teacherToRemove = teachers.find(t => t.teacher_id === removingTeacherId);
 
   // Collect all unique subjects across all teachers
   const allSubjects = Array.from(
@@ -449,21 +476,34 @@ export default function MyTeachers() {
                         <h3 className="text-lg font-bold text-gray-900 mb-1">
                           {teacher.teacher_name}
                         </h3>
-                        {/* Bookmark Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleBookmark(teacher.teacher_id);
-                          }}
-                          className={`p-2 rounded-lg transition ${
-                            teacher.is_bookmarked
-                              ? 'text-amber-500 hover:bg-amber-50'
-                              : 'text-gray-400 hover:text-amber-500 hover:bg-gray-50'
-                          }`}
-                          title={teacher.is_bookmarked ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Bookmark className={`w-5 h-5 ${teacher.is_bookmarked ? 'fill-current' : ''}`} />
-                        </button>
+                        <div className="flex items-center space-x-1">
+                          {/* Bookmark Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBookmark(teacher.teacher_id);
+                            }}
+                            className={`p-2 rounded-lg transition ${
+                              teacher.is_bookmarked
+                                ? 'text-amber-500 hover:bg-amber-50'
+                                : 'text-gray-400 hover:text-amber-500 hover:bg-gray-50'
+                            }`}
+                            title={teacher.is_bookmarked ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            <Bookmark className={`w-5 h-5 ${teacher.is_bookmarked ? 'fill-current' : ''}`} />
+                          </button>
+                          {/* Remove Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRemovingTeacherId(teacher.teacher_id);
+                            }}
+                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                            title="Remove teacher"
+                          >
+                            <UserMinus className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Rating */}
@@ -537,6 +577,40 @@ export default function MyTeachers() {
           </div>
         )}
       </main>
+
+      {/* Remove Confirmation Modal */}
+      {removingTeacherId && teacherToRemove && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Remove Teacher</h3>
+              <button
+                onClick={() => setRemovingTeacherId(null)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove <span className="font-semibold text-gray-900">{teacherToRemove.teacher_name}</span> from your teachers list? Your lesson history will be preserved.
+            </p>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setRemovingTeacherId(null)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => removeTeacher(removingTeacherId)}
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

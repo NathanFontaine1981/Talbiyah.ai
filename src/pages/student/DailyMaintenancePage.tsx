@@ -352,34 +352,34 @@ function SelfAssessmentCard({ passageIndex, onSubmit }: { passageIndex: number; 
           onClick={() => handleWeakness(setWeakMem, weakMem)}
           className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
             weakMem
-              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-300'
           }`}
         >
-          {weakMem ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
-          Struggled to recall verses
+          {weakMem ? <CheckCircle className="w-4 h-4 text-purple-600 inline mr-1" /> : null}
+          Struggled to recall verses (Memorisation)
         </button>
         <button
           onClick={() => handleWeakness(setWeakFlu, weakFlu)}
           className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
             weakFlu
-              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-300'
           }`}
         >
-          {weakFlu ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
-          Struggled with pronunciation
+          {weakFlu ? <CheckCircle className="w-4 h-4 text-blue-600 inline mr-1" /> : null}
+          Struggled with pronunciation (Fluency)
         </button>
         <button
           onClick={() => handleWeakness(setWeakUnd, weakUnd)}
           className={`p-2.5 rounded-lg border-2 text-sm text-left transition ${
             weakUnd
-              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-amber-300'
+              ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200'
+              : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-teal-300'
           }`}
         >
-          {weakUnd ? <CheckCircle className="w-4 h-4 text-amber-600 inline mr-1" /> : null}
-          Didn't understand meaning
+          {weakUnd ? <CheckCircle className="w-4 h-4 text-teal-600 inline mr-1" /> : null}
+          Didn't understand meaning (Understanding)
         </button>
       </div>
       <button
@@ -969,7 +969,7 @@ export default function DailyMaintenancePage() {
             <div className="text-right">
               <p className="text-sm text-gray-500 dark:text-gray-400">Today's Progress</p>
               <p className="font-semibold text-gray-900 dark:text-white">
-                {completedCount}/{todaySession?.totalTasks || 0} passages
+                {completedCount}/{todaySession?.totalTasks || 0} surahs
               </p>
             </div>
           </div>
@@ -999,7 +999,7 @@ export default function DailyMaintenancePage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
             <Target className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{todaySession?.surahsReviewed.length || 0}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Passages Today</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Surahs Today</p>
           </div>
         </div>
 
@@ -1021,7 +1021,7 @@ export default function DailyMaintenancePage() {
         <div className="space-y-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
-            Today's Passages
+            Today's Daily Tasks
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Listen 3 times, recite 3 times from memory, then assess yourself.
@@ -1086,7 +1086,7 @@ export default function DailyMaintenancePage() {
                         <Headphones className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       )}
                       <p className={`text-sm font-medium ${listenDone ? 'text-emerald-800 dark:text-emerald-200' : 'text-blue-900 dark:text-blue-100'}`}>
-                        Step 1: Listen to this passage 3 times
+                        Step 1: Listen to this surah 3 times
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1182,21 +1182,29 @@ export default function DailyMaintenancePage() {
                     <div className={`rounded-lg p-3 border ${
                       passage.selfAssessment?.smooth
                         ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
-                        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700'
+                        : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
                     }`}>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className={`w-4 h-4 ${passage.selfAssessment?.smooth ? 'text-emerald-600' : 'text-amber-600'}`} />
-                        <p className={`text-sm font-medium ${passage.selfAssessment?.smooth ? 'text-emerald-800 dark:text-emerald-200' : 'text-amber-800 dark:text-amber-200'}`}>
-                          {passage.selfAssessment?.smooth
-                            ? 'Smooth - confident!'
-                            : `Areas to work on: ${[
-                                passage.selfAssessment?.weakMemorisation && 'Memorisation',
-                                passage.selfAssessment?.weakFluency && 'Fluency',
-                                passage.selfAssessment?.weakUnderstanding && 'Understanding',
-                              ].filter(Boolean).join(', ')}`
-                          }
-                        </p>
-                      </div>
+                      {passage.selfAssessment?.smooth ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Smooth - confident!</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Areas to work on:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {passage.selfAssessment?.weakMemorisation && (
+                              <span className="px-2.5 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">Memorisation</span>
+                            )}
+                            {passage.selfAssessment?.weakFluency && (
+                              <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">Fluency</span>
+                            )}
+                            {passage.selfAssessment?.weakUnderstanding && (
+                              <span className="px-2.5 py-1 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded-full text-xs font-medium">Understanding</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1254,6 +1262,14 @@ export default function DailyMaintenancePage() {
                                     )}
                                   </div>
                                   <div className="flex gap-3 justify-center flex-wrap">
+                                    {gameAyahIndex > 0 && (
+                                      <button
+                                        onClick={() => { setGameAyahIndex(prev => prev - 1); setGameRevealed(false); }}
+                                        className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-1"
+                                      >
+                                        <ArrowLeft className="w-4 h-4" /> Back
+                                      </button>
+                                    )}
                                     {!gameRevealed ? (
                                       <button onClick={() => setGameRevealed(true)} className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex items-center gap-2 font-medium">
                                         <Eye className="w-5 h-5" /> Reveal Full Ayah
@@ -1461,7 +1477,7 @@ export default function DailyMaintenancePage() {
               }`}
             >
               <CheckCircle className="w-6 h-6" />
-              {allPassagesDone ? "Complete Today's Review" : `Listen + Recite + Assess all passages first (${completedCount}/${todaySession.totalTasks})`}
+              {allPassagesDone ? "Complete Today's Review" : `Listen + Recite + Assess all surahs first (${completedCount}/${todaySession.totalTasks})`}
             </button>
           </div>
         )}
@@ -1621,6 +1637,14 @@ export default function DailyMaintenancePage() {
                   {/* Action buttons */}
                   <div className="flex flex-col items-center gap-3">
                     <div className="flex gap-3 justify-center flex-wrap">
+                    {currentAyahIndex > 0 && (
+                      <button
+                        onClick={() => { setCurrentAyahIndex(prev => prev - 1); setRevealedAnswer(false); }}
+                        className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-1"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                    )}
                     {!revealedAnswer ? (
                       <button
                         onClick={() => setRevealedAnswer(true)}
