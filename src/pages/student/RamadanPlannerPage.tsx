@@ -65,8 +65,10 @@ export default function RamadanPlannerPage() {
   const [editingPlan, setEditingPlan] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Plan form state
-  const [pagesPerSalah, setPagesPerSalah] = useState(2);
+  // Plan form state — per-prayer Quran pages (before + after each salah)
+  const [salahPages, setSalahPages] = useState<Record<string, number>>({
+    fajr: 2, dhuhr: 2, asr: 2, maghrib: 2, isha: 2,
+  });
   const [sadaqahAmount, setSadaqahAmount] = useState(1);
   const [sadaqahCurrency, setSadaqahCurrency] = useState('GBP');
   const [taraweehTarget, setTaraweehTarget] = useState(30);
@@ -127,9 +129,18 @@ export default function RamadanPlannerPage() {
   }
 
   function populateFormFromPlan(p: RamadanPlan) {
-    // quran_reading_time stores pages-per-salah; fall back to deriving from daily total
-    const storedPps = parseInt(p.quran_reading_time) || 0;
-    setPagesPerSalah(storedPps > 0 ? storedPps : Math.round(p.quran_goal_pages_per_day / 10) || 2);
+    // quran_reading_time stores JSON of per-prayer pages; fall back to even split
+    try {
+      const parsed = JSON.parse(p.quran_reading_time);
+      if (parsed && typeof parsed === 'object' && 'fajr' in parsed) {
+        setSalahPages(parsed);
+      } else {
+        throw new Error('legacy format');
+      }
+    } catch {
+      const perPrayer = Math.round(p.quran_goal_pages_per_day / 10) || 2;
+      setSalahPages({ fajr: perPrayer, dhuhr: perPrayer, asr: perPrayer, maghrib: perPrayer, isha: perPrayer });
+    }
     setSadaqahAmount(p.sadaqah_daily_amount);
     setSadaqahCurrency(p.sadaqah_currency);
     setTaraweehTarget(p.taraweeh_target_nights);
@@ -144,8 +155,8 @@ export default function RamadanPlannerPage() {
     const planData = {
       user_id: userId,
       year: ramadanYear,
-      quran_goal_pages_per_day: pagesPerSalah * 10,
-      quran_reading_time: String(pagesPerSalah),
+      quran_goal_pages_per_day: Object.values(salahPages).reduce((sum, v) => sum + v * 2, 0),
+      quran_reading_time: JSON.stringify(salahPages),
       sadaqah_daily_amount: sadaqahAmount,
       sadaqah_currency: sadaqahCurrency,
       taraweeh_target_nights: taraweehTarget,
@@ -279,7 +290,7 @@ export default function RamadanPlannerPage() {
   }
 
   const quranCompletionPercent = Math.round((totalQuranPages / TOTAL_QURAN_PAGES) * 100);
-  const quranGoal = pagesPerSalah * 10; // 2 pages × (before + after) × 5 prayers
+  const quranGoal = Object.values(salahPages).reduce((sum, v) => sum + v * 2, 0); // pages before + after per prayer
   const projectedPages = quranGoal * RAMADAN_DAYS;
 
   if (view === 'loading') {
@@ -339,39 +350,41 @@ export default function RamadanPlannerPage() {
                 <h3 className="font-semibold text-gray-900 dark:text-white">Quran Reading</h3>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Read a set number of pages before and after each of the 5 daily prayers.
+                Set how many pages to read before & after each salah. Adjust per prayer — set 0 for prayers when you're busy (e.g. at work).
               </p>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Pages before & after each salah: <span className="font-bold text-gray-900 dark:text-white">{pagesPerSalah}</span>
-              </label>
-              <div className="flex items-center gap-3 mb-3">
-                <button
-                  onClick={() => setPagesPerSalah(Math.max(0, pagesPerSalah - 1))}
-                  className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-lg"
-                >
-                  -
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={6}
-                  value={pagesPerSalah}
-                  onChange={e => setPagesPerSalah(Number(e.target.value))}
-                  className="flex-1 accent-emerald-600"
-                />
-                <button
-                  onClick={() => setPagesPerSalah(Math.min(6, pagesPerSalah + 1))}
-                  className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-lg"
-                >
-                  +
-                </button>
+
+              <div className="space-y-2 mb-4">
+                {PRAYER_NAMES.map(name => {
+                  const key = name.toLowerCase();
+                  const val = salahPages[key] || 0;
+                  return (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="w-20 text-sm font-medium text-gray-700 dark:text-gray-300">{name}</span>
+                      <button
+                        onClick={() => setSalahPages(prev => ({ ...prev, [key]: Math.max(0, val - 1) }))}
+                        className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                      >
+                        -
+                      </button>
+                      <span className="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">{val}</span>
+                      <button
+                        onClick={() => setSalahPages(prev => ({ ...prev, [key]: Math.min(6, val + 1) }))}
+                        className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                      >
+                        +
+                      </button>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        = {val * 2} pages
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
+
               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3 text-sm text-emerald-800 dark:text-emerald-200">
                 <p>
-                  {pagesPerSalah} page{pagesPerSalah !== 1 ? 's' : ''} before + {pagesPerSalah} after = <span className="font-bold">{pagesPerSalah * 2} pages/salah</span>
-                </p>
-                <p>
-                  {pagesPerSalah * 2} pages x 5 prayers = <span className="font-bold">{quranGoal} pages/day</span>
+                  Total: <span className="font-bold">{quranGoal} pages/day</span>
+                  {' '}({Object.entries(salahPages).filter(([, v]) => v > 0).map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}×2`).join(', ')})
                 </p>
                 <p className="mt-1 font-medium">
                   {projectedPages >= TOTAL_QURAN_PAGES
