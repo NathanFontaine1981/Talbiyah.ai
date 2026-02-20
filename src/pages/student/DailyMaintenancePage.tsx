@@ -67,6 +67,7 @@ interface DailySession {
   totalTasks: number;
   status: 'in_progress' | 'completed' | 'partial';
   completedAt: string | null;
+  kahfCompleted: boolean;
 }
 
 interface LearnerStats {
@@ -402,6 +403,7 @@ export default function DailyMaintenancePage() {
   const { learnerId: selfLearnerId, loading: learnerLoading } = useSelfLearner();
   const [loading, setLoading] = useState(true);
   const [learnerId, setLearnerId] = useState<string | null>(null);
+  const isFriday = new Date().getDay() === 5;
   const [learnerStats, setLearnerStats] = useState<LearnerStats>({
     currentStreak: 0,
     longestStreak: 0,
@@ -536,7 +538,8 @@ export default function DailyMaintenancePage() {
             tasksCompleted: existingSession.tasks_completed,
             totalTasks: existingSession.total_tasks,
             status: existingSession.status,
-            completedAt: existingSession.completed_at
+            completedAt: existingSession.completed_at,
+            kahfCompleted: existingSession.kahf_completed ?? false
           });
         } else {
           // New format session: resume as-is
@@ -563,7 +566,8 @@ export default function DailyMaintenancePage() {
             tasksCompleted: existingSession.tasks_completed,
             totalTasks: existingSession.total_tasks,
             status: existingSession.status,
-            completedAt: existingSession.completed_at
+            completedAt: existingSession.completed_at,
+            kahfCompleted: existingSession.kahf_completed ?? false
           });
         }
       }
@@ -592,6 +596,9 @@ export default function DailyMaintenancePage() {
           quality: 0
         }));
 
+        const isFridaySession = new Date(today).getDay() === 5;
+        const totalTasks = isFridaySession ? numToReview + 1 : numToReview;
+
         const { data: newSession, error: insertError } = await supabase
           .from('daily_maintenance_sessions')
           .insert({
@@ -599,8 +606,9 @@ export default function DailyMaintenancePage() {
             session_date: today,
             surahs_reviewed: initialSurahs,
             tasks_completed: 0,
-            total_tasks: numToReview,
-            status: 'in_progress'
+            total_tasks: totalTasks,
+            status: 'in_progress',
+            kahf_completed: false
           })
           .select()
           .single();
@@ -615,9 +623,10 @@ export default function DailyMaintenancePage() {
             sessionDate: newSession.session_date,
             surahsReviewed: initialSurahs,
             tasksCompleted: 0,
-            totalTasks: numToReview,
+            totalTasks: totalTasks,
             status: 'in_progress',
-            completedAt: null
+            completedAt: null,
+            kahfCompleted: false
           });
         }
       }
@@ -832,12 +841,13 @@ export default function DailyMaintenancePage() {
   }
 
   // Helper: save session to DB and update state
-  async function saveSession(updatedSurahs: SurahReview[], tasksCompleted?: number, allComplete?: boolean) {
+  async function saveSession(updatedSurahs: SurahReview[], tasksCompleted?: number, allComplete?: boolean, kahfDone?: boolean) {
     if (!todaySession || !learnerId) return;
 
     const completed = tasksCompleted ?? todaySession.tasksCompleted;
     const isComplete = allComplete ?? false;
     const newStatus = isComplete ? 'completed' : todaySession.status;
+    const kahfCompleted = kahfDone ?? todaySession.kahfCompleted;
 
     const { error } = await supabase
       .from('daily_maintenance_sessions')
@@ -845,7 +855,8 @@ export default function DailyMaintenancePage() {
         surahs_reviewed: updatedSurahs,
         tasks_completed: completed,
         status: newStatus,
-        completed_at: isComplete ? new Date().toISOString() : null
+        completed_at: isComplete ? new Date().toISOString() : null,
+        kahf_completed: kahfCompleted
       })
       .eq('id', todaySession.id);
 
@@ -855,7 +866,8 @@ export default function DailyMaintenancePage() {
         surahsReviewed: updatedSurahs,
         tasksCompleted: completed,
         status: newStatus,
-        completedAt: isComplete ? new Date().toISOString() : null
+        completedAt: isComplete ? new Date().toISOString() : null,
+        kahfCompleted
       });
 
       // If all complete, update streak and advance rotation
@@ -889,11 +901,19 @@ export default function DailyMaintenancePage() {
     }
   }
 
-  const completedCount = todaySession
+  async function handleMarkKahfRead() {
+    if (!todaySession || !learnerId) return;
+    const updatedSurahs = todaySession.surahsReviewed.map(s => ({ ...s }));
+    await saveSession(updatedSurahs, undefined, undefined, true);
+  }
+
+  const completedPassageCount = todaySession
     ? todaySession.surahsReviewed.filter(s => isPassageComplete(s)).length
     : 0;
+  const kahfDoneForCount = isFriday && todaySession?.kahfCompleted ? 1 : 0;
+  const completedCount = completedPassageCount + kahfDoneForCount;
   const allPassagesDone = todaySession
-    ? todaySession.surahsReviewed.every(s => isPassageComplete(s))
+    ? todaySession.surahsReviewed.every(s => isPassageComplete(s)) && (!isFriday || todaySession.kahfCompleted)
     : false;
   const progressPercent = todaySession
     ? Math.round((completedCount / todaySession.totalTasks) * 100)
@@ -1014,6 +1034,78 @@ export default function DailyMaintenancePage() {
             <p className="text-sm text-yellow-600 dark:text-yellow-400">
               Come back tomorrow to keep your streak going!
             </p>
+          </div>
+        )}
+
+        {/* Friday Al-Kahf Card */}
+        {isFriday && todaySession && (
+          <div className={`rounded-xl border-2 mb-6 transition-all ${
+            todaySession.kahfCompleted
+              ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20'
+              : 'border-amber-300 dark:border-amber-600 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20'
+          }`}>
+            <div className="p-5">
+              <div className="flex items-center gap-4 mb-3">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                  todaySession.kahfCompleted ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-amber-100 dark:bg-amber-800'
+                }`}>
+                  {todaySession.kahfCompleted ? (
+                    <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <span className="text-2xl">📖</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                    Surah Al-Kahf
+                    <span className="text-lg font-arabic text-gray-500 dark:text-gray-400 ml-2" dir="rtl">الكهف</span>
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
+                    Friday Sunnah Reading
+                  </p>
+                </div>
+                {todaySession.kahfCompleted && (
+                  <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">Done</span>
+                )}
+              </div>
+
+              <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-3 mb-3 border border-amber-200/50 dark:border-amber-700/50">
+                <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+                  "Whoever reads Surah Al-Kahf on Friday, a light will shine for him between two Fridays."
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                  — Sahih al-Jaami 6470
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-3">
+                <a
+                  href="https://quran.com/18"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-700 transition flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Read on Quran.com
+                </a>
+                <a
+                  href="https://quran.com/18?audio=7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 rounded-full text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-700 transition flex items-center gap-1.5"
+                >
+                  <Headphones className="w-3.5 h-3.5" /> Listen on Quran.com
+                </a>
+              </div>
+
+              {!todaySession.kahfCompleted && todaySession.status !== 'completed' && (
+                <button
+                  onClick={handleMarkKahfRead}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-sm transition flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" /> Mark as Read
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -1477,7 +1569,7 @@ export default function DailyMaintenancePage() {
               }`}
             >
               <CheckCircle className="w-6 h-6" />
-              {allPassagesDone ? "Complete Today's Review" : `Listen + Recite + Assess all surahs first (${completedCount}/${todaySession.totalTasks})`}
+              {allPassagesDone ? "Complete Today's Review" : `Complete all tasks first (${completedCount}/${todaySession.totalTasks})`}
             </button>
           </div>
         )}

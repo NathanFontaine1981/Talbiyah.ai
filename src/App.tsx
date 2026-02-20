@@ -104,6 +104,7 @@ const ExplorePage = lazy(() => import('./pages/explore/ExplorePage'));
 const UnshakableFoundations = lazy(() => import('./pages/UnshakableFoundations'));
 const NewMuslimLanding = lazy(() => import('./pages/NewMuslimLanding'));
 const SalahTutorialPage = lazy(() => import('./pages/SalahTutorialPage'));
+const JummahGuidePage = lazy(() => import('./pages/JummahGuidePage'));
 const ExplorerDashboard = lazy(() => import('./pages/ExplorerDashboard'));
 const Suggestions = lazy(() => import('./pages/Suggestions'));
 const ComparePlans = lazy(() => import('./pages/ComparePlans'));
@@ -136,6 +137,7 @@ const DailyMaintenancePage = lazy(() => import('./pages/student/DailyMaintenance
 const SmartHomeworkPage = lazy(() => import('./pages/student/SmartHomeworkPage'));
 const MemorizationSetupPage = lazy(() => import('./pages/student/MemorizationSetupPage'));
 const AyahRecallPracticePage = lazy(() => import('./pages/student/AyahRecallPracticePage'));
+const RamadanPlannerPage = lazy(() => import('./pages/student/RamadanPlannerPage'));
 
 // Parent pages
 const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
@@ -221,6 +223,7 @@ function App() {
         <Route path="/new-muslim" element={<UnshakableFoundations />} />
         <Route path="/new-muslim-landing" element={<NewMuslimLanding />} />
         <Route path="/salah" element={<SalahTutorialPage />} />
+        <Route path="/jummah-guide" element={<JummahGuidePage />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/compare-plans" element={<ComparePlans />} />
         <Route path="/how-to" element={<HowToPage />} />
@@ -644,6 +647,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AyahRecallPracticePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ramadan-planner"
+          element={
+            <ProtectedRoute>
+              <RamadanPlannerPage />
             </ProtectedRoute>
           }
         />
