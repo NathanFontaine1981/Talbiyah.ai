@@ -514,8 +514,14 @@ export default function QuranProgress() {
     surah.ayahs.every(ayah => ayah.understanding)
   ).length;
 
+  const fluencySurahs = surahs.filter(surah =>
+    surah.ayahs.length > 0 &&
+    surah.ayahs.every(ayah => ayah.fluency)
+  ).length;
+
   const overallProgress = calculateOverallProgress(totalAyahsMemorized);
   const understandingProgress = calculateOverallProgress(totalAyahsUnderstanding);
+  const fluencyProgress = calculateOverallProgress(totalAyahsFluency);
 
   // Circular progress calculation
   const circumference = 2 * Math.PI * 120;
@@ -650,93 +656,87 @@ export default function QuranProgress() {
             )}
           </div>
 
-          {/* Dual Circular Progress */}
+          {/* Triple Circular Progress */}
           <div className="flex flex-col items-center mb-8">
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              {/* Memorisation Progress */}
-              <div className="flex flex-col items-center">
-                <div className="relative w-40 h-40 mb-2">
-                  <svg className="transform -rotate-90 w-40 h-40">
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="currentColor"
-                      strokeWidth="10"
-                      fill="transparent"
-                      className="text-gray-700"
-                    />
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="currentColor"
-                      strokeWidth="10"
-                      fill="transparent"
-                      strokeDasharray={2 * Math.PI * 70}
-                      strokeDashoffset={(2 * Math.PI * 70) - (overallProgress / 100) * (2 * Math.PI * 70)}
-                      className="text-emerald-400 transition-all duration-1000 ease-out"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-3xl font-bold text-emerald-400">{overallProgress}%</p>
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-emerald-400">Memorised</p>
-                <p className="text-xs text-gray-500">{completedSurahs} surahs complete</p>
-              </div>
-
+            <div className="grid grid-cols-3 gap-4 mb-6">
               {/* Understanding Progress */}
               <div className="flex flex-col items-center">
-                <div className="relative w-40 h-40 mb-2">
-                  <svg className="transform -rotate-90 w-40 h-40">
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="currentColor"
-                      strokeWidth="10"
-                      fill="transparent"
-                      className="text-gray-700"
-                    />
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="currentColor"
-                      strokeWidth="10"
-                      fill="transparent"
+                <div className="relative w-32 h-32 sm:w-36 sm:h-36 mb-2">
+                  <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-700" />
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent"
                       strokeDasharray={2 * Math.PI * 70}
                       strokeDashoffset={(2 * Math.PI * 70) - (understandingProgress / 100) * (2 * Math.PI * 70)}
-                      className="text-cyan-400 transition-all duration-1000 ease-out"
-                      strokeLinecap="round"
+                      className="text-cyan-400 transition-all duration-1000 ease-out" strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-3xl font-bold text-cyan-400">{understandingProgress}%</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-cyan-400">{understandingProgress}%</p>
                   </div>
                 </div>
                 <p className="text-sm font-medium text-cyan-400">Understood</p>
-                <p className="text-xs text-gray-500">{understoodSurahs} surahs complete</p>
+                <p className="text-xs text-gray-500">{understoodSurahs} surahs</p>
+              </div>
+
+              {/* Fluency Progress */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-32 h-32 sm:w-36 sm:h-36 mb-2">
+                  <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-700" />
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent"
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={(2 * Math.PI * 70) - (fluencyProgress / 100) * (2 * Math.PI * 70)}
+                      className="text-blue-400 transition-all duration-1000 ease-out" strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-blue-400">{fluencyProgress}%</p>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-blue-400">Fluent</p>
+                <p className="text-xs text-gray-500">{fluencySurahs} surahs</p>
+              </div>
+
+              {/* Memorisation Progress */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-32 h-32 sm:w-36 sm:h-36 mb-2">
+                  <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-700" />
+                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent"
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={(2 * Math.PI * 70) - (overallProgress / 100) * (2 * Math.PI * 70)}
+                      className="text-emerald-400 transition-all duration-1000 ease-out" strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-emerald-400">{overallProgress}%</p>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-emerald-400">Memorised</p>
+                <p className="text-xs text-gray-500">{completedSurahs} surahs</p>
               </div>
             </div>
 
             {/* Stats Row */}
-            <div className="flex items-center justify-center space-x-6 text-sm">
+            <div className="flex items-center justify-center space-x-4 sm:space-x-6 text-sm">
               <div className="text-center">
-                <p className="text-2xl font-bold text-emerald-400">{completedSurahs}</p>
-                <p className="text-gray-500">Surahs Memorised</p>
+                <p className="text-xl sm:text-2xl font-bold text-cyan-400">{understoodSurahs}</p>
+                <p className="text-gray-500 text-xs">Understood</p>
               </div>
-              <div className="w-px h-12 bg-gray-700"></div>
+              <div className="w-px h-10 bg-gray-700"></div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-cyan-400">{understoodSurahs}</p>
-                <p className="text-gray-500">Surahs Understood</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-400">{fluencySurahs}</p>
+                <p className="text-gray-500 text-xs">Fluent</p>
               </div>
-              <div className="w-px h-12 bg-gray-700"></div>
+              <div className="w-px h-10 bg-gray-700"></div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{114 - completedSurahs}</p>
-                <p className="text-gray-500">To Memorise</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-400">{completedSurahs}</p>
+                <p className="text-gray-500 text-xs">Memorised</p>
+              </div>
+              <div className="w-px h-10 bg-gray-700"></div>
+              <div className="text-center">
+                <p className="text-xl sm:text-2xl font-bold text-white">{114 - completedSurahs}</p>
+                <p className="text-gray-500 text-xs">To Memorise</p>
               </div>
             </div>
           </div>
