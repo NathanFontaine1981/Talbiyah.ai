@@ -26,7 +26,6 @@ import {
   TOTAL_QURAN_PAGES,
   RAMADAN_DAYS,
   MASJID_PRAYER_MULTIPLIER,
-  READING_TIME_OPTIONS,
   DEFAULT_HABITS,
   PRAYER_NAMES,
 } from '../../data/ramadanData';
@@ -67,8 +66,7 @@ export default function RamadanPlannerPage() {
   const [saving, setSaving] = useState(false);
 
   // Plan form state
-  const [quranGoal, setQuranGoal] = useState(4);
-  const [readingTime, setReadingTime] = useState('after_fajr');
+  const [pagesPerSalah, setPagesPerSalah] = useState(2);
   const [sadaqahAmount, setSadaqahAmount] = useState(1);
   const [sadaqahCurrency, setSadaqahCurrency] = useState('GBP');
   const [taraweehTarget, setTaraweehTarget] = useState(30);
@@ -129,8 +127,9 @@ export default function RamadanPlannerPage() {
   }
 
   function populateFormFromPlan(p: RamadanPlan) {
-    setQuranGoal(p.quran_goal_pages_per_day);
-    setReadingTime(p.quran_reading_time);
+    // quran_reading_time stores pages-per-salah; fall back to deriving from daily total
+    const storedPps = parseInt(p.quran_reading_time) || 0;
+    setPagesPerSalah(storedPps > 0 ? storedPps : Math.round(p.quran_goal_pages_per_day / 10) || 2);
     setSadaqahAmount(p.sadaqah_daily_amount);
     setSadaqahCurrency(p.sadaqah_currency);
     setTaraweehTarget(p.taraweeh_target_nights);
@@ -145,8 +144,8 @@ export default function RamadanPlannerPage() {
     const planData = {
       user_id: userId,
       year: ramadanYear,
-      quran_goal_pages_per_day: quranGoal,
-      quran_reading_time: readingTime,
+      quran_goal_pages_per_day: pagesPerSalah * 10,
+      quran_reading_time: String(pagesPerSalah),
       sadaqah_daily_amount: sadaqahAmount,
       sadaqah_currency: sadaqahCurrency,
       taraweeh_target_nights: taraweehTarget,
@@ -280,6 +279,7 @@ export default function RamadanPlannerPage() {
   }
 
   const quranCompletionPercent = Math.round((totalQuranPages / TOTAL_QURAN_PAGES) * 100);
+  const quranGoal = pagesPerSalah * 10; // 2 pages × (before + after) × 5 prayers
   const projectedPages = quranGoal * RAMADAN_DAYS;
 
   if (view === 'loading') {
@@ -338,38 +338,48 @@ export default function RamadanPlannerPage() {
                 <BookOpen className="w-5 h-5 text-emerald-600" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">Quran Reading</h3>
               </div>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Pages per day: <span className="font-bold text-gray-900 dark:text-white">{quranGoal}</span>
-              </label>
-              <input
-                type="range"
-                min={0}
-                max={40}
-                value={quranGoal}
-                onChange={e => setQuranGoal(Number(e.target.value))}
-                className="w-full accent-emerald-600"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>0</span>
-                <span>20 (1 juz)</span>
-                <span>40</span>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                {projectedPages >= TOTAL_QURAN_PAGES
-                  ? `You'll complete the Quran ${Math.floor(projectedPages / TOTAL_QURAN_PAGES)} time(s) in Ramadan!`
-                  : `That's ${projectedPages} pages — ${Math.round((projectedPages / TOTAL_QURAN_PAGES) * 100)}% of the Quran.`
-                }
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                Read a set number of pages before and after each of the 5 daily prayers.
               </p>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mt-3 mb-1">Preferred reading time</label>
-              <select
-                value={readingTime}
-                onChange={e => setReadingTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-              >
-                {READING_TIME_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Pages before & after each salah: <span className="font-bold text-gray-900 dark:text-white">{pagesPerSalah}</span>
+              </label>
+              <div className="flex items-center gap-3 mb-3">
+                <button
+                  onClick={() => setPagesPerSalah(Math.max(0, pagesPerSalah - 1))}
+                  className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-lg"
+                >
+                  -
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={6}
+                  value={pagesPerSalah}
+                  onChange={e => setPagesPerSalah(Number(e.target.value))}
+                  className="flex-1 accent-emerald-600"
+                />
+                <button
+                  onClick={() => setPagesPerSalah(Math.min(6, pagesPerSalah + 1))}
+                  className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-lg"
+                >
+                  +
+                </button>
+              </div>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3 text-sm text-emerald-800 dark:text-emerald-200">
+                <p>
+                  {pagesPerSalah} page{pagesPerSalah !== 1 ? 's' : ''} before + {pagesPerSalah} after = <span className="font-bold">{pagesPerSalah * 2} pages/salah</span>
+                </p>
+                <p>
+                  {pagesPerSalah * 2} pages x 5 prayers = <span className="font-bold">{quranGoal} pages/day</span>
+                </p>
+                <p className="mt-1 font-medium">
+                  {projectedPages >= TOTAL_QURAN_PAGES
+                    ? `You'll complete the Quran ${Math.floor(projectedPages / TOTAL_QURAN_PAGES)} time(s) in Ramadan!`
+                    : `That's ${projectedPages} pages over 30 days — ${Math.round((projectedPages / TOTAL_QURAN_PAGES) * 100)}% of the Quran.`
+                  }
+                </p>
+              </div>
             </div>
 
             {/* Habits to Cut */}
