@@ -6,6 +6,7 @@
 
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { generateTTSAudio } from '../lib/ttsHelper';
 import {
   ChevronLeft,
   Volume2,
@@ -283,18 +284,7 @@ export default function IstikharaPractice() {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ text, language: 'arabic' }),
-        }
-      );
+      const response = await generateTTSAudio(text, 'arabic');
 
       if (!response.ok) {
         throw new Error('Failed to generate audio');

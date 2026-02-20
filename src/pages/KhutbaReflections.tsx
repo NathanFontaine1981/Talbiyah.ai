@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { generateTTSAudio } from '../lib/ttsHelper';
 import {
   ChevronLeft,
   Loader2,
@@ -657,21 +658,7 @@ export default function KhutbaReflections() {
     setTtsPlaying(false);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            text,
-            language: 'english'
-          }),
-        }
-      );
+      const response = await generateTTSAudio(text, 'english');
 
       if (!response.ok) {
         const error = await response.json();

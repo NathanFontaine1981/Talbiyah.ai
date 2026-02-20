@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { generateTTSAudio } from '../../lib/ttsHelper';
 import {
   ChevronLeft,
   ChevronRight,
@@ -388,18 +389,7 @@ export default function DuaComposer({
     setGeneratingAudio(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ text, language }),
-        }
-      );
+      const response = await generateTTSAudio(text, language);
 
       if (!response.ok) {
         const error = await response.json();
@@ -468,18 +458,7 @@ export default function DuaComposer({
         ? getComposedArabicText(composition)
         : getComposedEnglish(composition);
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ text, language }),
-        }
-      );
+      const response = await generateTTSAudio(text, language);
 
       if (!response.ok) {
         throw new Error('Failed to generate audio');

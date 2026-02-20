@@ -6,14 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// ElevenLabs voice IDs - using multilingual voices that work well with Arabic
+// ElevenLabs voice IDs - gender-aware, multilingual voices
 const VOICES = {
-  // Arabic/Islamic content - deep, reverent male voice
-  arabic: 'onwK4e9ZLuTAKqWW03F9', // Daniel - works well with Arabic
-  // English translations - clear female voice
-  english: 'EXAVITQu4vr4xnSDxMaL', // Sarah - clear pronunciation
-  // Alternative Arabic voice
-  arabic_alt: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - multilingual
+  male: {
+    arabic: 'onwK4e9ZLuTAKqWW03F9',  // Daniel - deep, reverent male voice
+    english: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - clear male multilingual
+  },
+  female: {
+    arabic: 'EXAVITQu4vr4xnSDxMaL',  // Sarah - clear female multilingual
+    english: 'EXAVITQu4vr4xnSDxMaL',  // Sarah - clear female voice
+  },
 };
 
 async function callElevenLabs(
@@ -67,8 +69,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { text, voice, language } = body;
-    console.log(`Received text length: ${text?.length || 0} chars, language: ${language || 'not specified'}`);
+    const { text, voice, language, gender } = body;
+    console.log(`Received text length: ${text?.length || 0} chars, language: ${language || 'not specified'}, gender: ${gender || 'not specified'}`);
 
     if (!text || text.trim().length === 0) {
       return new Response(
@@ -91,16 +93,12 @@ Deno.serve(async (req: Request) => {
       console.log(`Text truncated from ${text.length} to ${processedText.length} characters`);
     }
 
-    // Voice selection
+    // Voice selection: explicit voice > gender + language > defaults
     let selectedVoiceId = voice;
     if (!selectedVoiceId) {
-      if (language === 'arabic') {
-        selectedVoiceId = VOICES.arabic;
-      } else if (language === 'english') {
-        selectedVoiceId = VOICES.english;
-      } else {
-        selectedVoiceId = VOICES.arabic;
-      }
+      const voiceGender = gender === 'female' ? 'female' : 'male';
+      const voiceLang = language === 'english' ? 'english' : 'arabic';
+      selectedVoiceId = VOICES[voiceGender][voiceLang];
     }
 
     console.log(`Using ElevenLabs with voice: ${selectedVoiceId}`);

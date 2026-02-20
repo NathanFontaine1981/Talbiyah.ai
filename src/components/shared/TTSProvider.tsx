@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { generateTTSAudio } from '../../lib/ttsHelper';
 import FloatingAudioPlayer from './FloatingAudioPlayer';
 
 interface TTSState {
@@ -86,18 +87,7 @@ export default function TTSProvider({ children }: { children: ReactNode }) {
     setState({ activeSectionId: sectionId, isLoading: true, isPlaying: false, activeLabel: label });
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-dua-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ text, language }),
-        }
-      );
+      const response = await generateTTSAudio(text, language);
 
       if (!response.ok) {
         const error = await response.json();
