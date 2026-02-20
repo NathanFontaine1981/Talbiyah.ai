@@ -76,7 +76,7 @@ export default function TeacherBooking() {
           hourly_rate,
           teacher_type,
           independent_rate,
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey(full_name)
         `)
         .eq('id', id)
         .single();

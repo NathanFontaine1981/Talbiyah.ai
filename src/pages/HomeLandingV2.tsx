@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen, Users, Heart, CheckCircle2, LogIn, LogOut, ArrowRight,
   Target, Mail, Lock, Loader2, Menu, X, Compass, GraduationCap,
-  BookMarked, Languages, Play, Brain, Sparkles, ChevronRight,
+  BookMarked, Play, Brain, Sparkles, ChevronRight,
   Star, Shield, Clock, Award
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -266,27 +266,176 @@ export default function HomeLandingV2() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent"></div>
       </section>
 
-      {/* Every Lesson Multiplied Banner */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-gradient-to-r from-emerald-600 to-emerald-500">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-normal text-white mb-4">
-            Every Lesson <span className="italic">Multiplied.</span>
-          </h2>
-          <p className="text-base sm:text-lg text-emerald-100 mb-6 max-w-3xl mx-auto">
-            With AI-powered study notes and interactive homework, one lesson here gives you the value of three.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-white text-sm sm:text-base">
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Personalised study notes</span>
+      {/* Choose Your Path Section - 3 Cards */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              Choose Your Path
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+              Everyone's journey is different. Start where it makes sense for you.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Card 1: Exploring Islam */}
+            <button
+              onClick={() => navigate('/explore')}
+              className="group text-left bg-gradient-to-br from-teal-500 to-emerald-600 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <Compass className="w-8 h-8" />
+                <span className="text-sm font-medium opacity-80">For the Curious</span>
+              </div>
+              <h3 className="text-2xl font-semibold mb-2">Exploring Islam</h3>
+              <p className="text-white/80 mb-4">
+                Not Muslim? Curious about what Muslims actually believe? Take our guided journey — evidence-based, no preaching, no pressure.
+              </p>
+              <div className="flex items-center space-x-2 text-white/90">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">~40 minutes total</span>
+              </div>
+            </button>
+
+            {/* Card 2: Unshakeable Foundations */}
+            <button
+              onClick={() => navigate('/new-muslim')}
+              className="group text-left bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <Target className="w-8 h-8" />
+                <span className="text-sm font-medium opacity-80">For New Muslims</span>
+              </div>
+              <h3 className="text-2xl font-semibold mb-2">Unshakeable Foundations</h3>
+              <p className="text-white/80 mb-4">
+                Welcome home. You need direction, not scattered YouTube videos. Hand-picked lessons covering who Allah is, how to pray, and the essentials of your faith.
+              </p>
+              <div className="flex items-center space-x-2 text-white/90">
+                <BookOpen className="w-4 h-4" />
+                <span className="text-sm">6 foundational modules</span>
+              </div>
+            </button>
+
+            {/* Card 3: Student (Combined Quran + Arabic) */}
+            <button
+              onClick={() => navigate('/signup')}
+              className="group text-left bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 ring-2 ring-blue-400/50"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <GraduationCap className="w-8 h-8" />
+                  <span className="text-sm font-medium opacity-80">For Serious Learners</span>
+                </div>
+                <span className="px-2.5 py-1 bg-white/20 text-xs font-semibold rounded-full">Full Access</span>
+              </div>
+              <h3 className="text-2xl font-semibold mb-2">Become a Student</h3>
+              <p className="text-white/80 mb-3">
+                Ready to commit? Quran reading, Arabic language, daily practice tools, and AI-powered learning — all with qualified teachers.
+              </p>
+              <ul className="space-y-2 mb-2">
+                <li className="flex items-center space-x-2 text-white/90 text-sm">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span>Live 1-on-1 Quran & Arabic lessons</span>
+                </li>
+                <li className="flex items-center space-x-2 text-white/90 text-sm">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span>AI study notes & homework after every lesson</span>
+                </li>
+                <li className="flex items-center space-x-2 text-white/90 text-sm">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span>Daily practice tools & Quran tracker</span>
+                </li>
+                <li className="flex items-center space-x-2 text-white/90 text-sm">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span>Lesson recordings to review anytime</span>
+                </li>
+              </ul>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              What Our Students
+            </h2>
+            <p className="text-4xl sm:text-5xl font-serif italic text-emerald-500">
+              Are Saying
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "Finally found a platform that tracks my actual progress. The AI study notes after each lesson are incredible — it's like having a personal assistant."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-semibold">
+                  AK
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Ahmed K.</p>
+                  <p className="text-sm text-gray-500">Learning Quran for 6 months</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Interactive homework</span>
+
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "As a parent, I love seeing exactly what my children are learning. The progress reports give me peace of mind that they're on the right track."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-semibold">
+                  SM
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Sarah M.</p>
+                  <p className="text-sm text-gray-500">Parent of 3 students</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Lesson recordings</span>
+
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                "The homework generated after each lesson targets exactly what I struggled with. I'm learning faster than I ever did in traditional classes."
+              </p>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                  YH
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Yusuf H.</p>
+                  <p className="text-sm text-gray-500">Arabic language student</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -630,17 +779,51 @@ export default function HomeLandingV2() {
         </div>
       </section>
 
-      {/* Smart-Track Engine Section */}
+      {/* How Your Lessons Work - AI Banner + Smart-Track Merged */}
       <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
         <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              How Your Lessons <span className="text-emerald-500 italic">Work</span>
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+              Every lesson is multiplied with AI-powered tools that help you learn faster
+            </p>
+          </div>
+
+          {/* Every Lesson Multiplied Banner */}
+          <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 p-8 sm:p-12 text-center mb-16">
+            <h3 className="text-2xl sm:text-3xl font-serif font-normal text-white mb-4">
+              Every Lesson <span className="italic">Multiplied.</span>
+            </h3>
+            <p className="text-base sm:text-lg text-emerald-100 mb-6 max-w-3xl mx-auto">
+              With AI-powered study notes and interactive homework, one lesson here gives you the value of three.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-white text-sm sm:text-base">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>Personalised study notes</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>Interactive homework</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>Lesson recordings</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Smart-Track Engine */}
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Side - Text Content */}
             <div>
-              <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif font-normal text-gray-900 mb-6 leading-tight">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal text-gray-900 mb-6 leading-tight">
                 Meet Your
                 <br />
                 <span className="text-emerald-500 italic">'Smart-Track' Engine.</span>
-              </h2>
+              </h3>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                 Whether you are memorizing Surahs or learning Arabic conversation, the engine listens. It tracks your mistakes and vocabulary retention, generating custom homework to fix your specific gaps.
               </p>
@@ -702,98 +885,6 @@ export default function HomeLandingV2() {
         </div>
       </section>
 
-      {/* Choose Your Path Section */}
-      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
-              Choose Your Path
-            </h2>
-            <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-              Everyone's journey is different. Start where it makes sense for you.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Path 1: Curious */}
-            <button
-              onClick={() => navigate('/explore')}
-              className="group text-left bg-gradient-to-br from-teal-500 to-emerald-600 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Compass className="w-8 h-8" />
-                <span className="text-sm font-medium opacity-80">For the Curious</span>
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Exploring Islam</h3>
-              <p className="text-white/80 mb-4">
-                Not sure about Islam? Take our 13-episode journey. Evidence-based, no commitment required.
-              </p>
-              <div className="flex items-center space-x-2 text-white/90">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm">~40 minutes total</span>
-              </div>
-            </button>
-
-            {/* Path 2: New Muslim */}
-            <button
-              onClick={() => navigate('/new-muslim')}
-              className="group text-left bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Target className="w-8 h-8" />
-                <span className="text-sm font-medium opacity-80">For New Muslims</span>
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Unshakeable Foundations</h3>
-              <p className="text-white/80 mb-4">
-                Build certainty in your faith. Learn the essentials every Muslim should know.
-              </p>
-              <div className="flex items-center space-x-2 text-white/90">
-                <BookOpen className="w-4 h-4" />
-                <span className="text-sm">6 foundational modules</span>
-              </div>
-            </button>
-
-            {/* Path 3: Quran Journey */}
-            <button
-              onClick={() => navigate('/signup')}
-              className="group text-left bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <BookOpen className="w-8 h-8" />
-                <span className="text-sm font-medium opacity-80">For Quran Students</span>
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Quran Mastery</h3>
-              <p className="text-white/80 mb-4">
-                Understand, recite, and memorise the Quran with our structured 3-level approach.
-              </p>
-              <div className="flex items-center space-x-2 text-white/90">
-                <Star className="w-4 h-4" />
-                <span className="text-sm">Track all 114 surahs</span>
-              </div>
-            </button>
-
-            {/* Path 4: Arabic */}
-            <button
-              onClick={() => navigate('/signup')}
-              className="group text-left bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Languages className="w-8 h-8" />
-                <span className="text-sm font-medium opacity-80">For Language Learners</span>
-              </div>
-              <h3 className="text-2xl font-semibold mb-2">Arabic Language</h3>
-              <p className="text-white/80 mb-4">
-                Unlock the original language of the Quran. From reading to conversation.
-              </p>
-              <div className="flex items-center space-x-2 text-white/90">
-                <GraduationCap className="w-4 h-4" />
-                <span className="text-sm">Self-paced + live tutoring</span>
-              </div>
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Quality Assurance - Condensed */}
       <section className="py-16 px-4 sm:px-6 bg-gray-50">
         <div className="max-w-5xl mx-auto">
@@ -816,6 +907,186 @@ export default function HomeLandingV2() {
                   <Users className="w-5 h-5 text-purple-500" />
                   <span className="text-sm text-gray-600">Supervised</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing - Live 1-on-1 Lesson Pricing */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
+              Live 1-on-1 Lesson Pricing
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+              All courses, tools, and self-paced content are free. Credits are only for live 1-on-1 lessons with a teacher.
+            </p>
+          </div>
+
+          {/* What's Free Callout */}
+          <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200 mb-12">
+            <div className="text-center">
+              <p className="text-emerald-800 font-semibold mb-3">Included free — no account needed:</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Exploring Islam</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Unshakeable Foundations</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Learn Salah</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Quran Tracker</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Daily Practice</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Dua Builder</span>
+                <span className="px-3 py-1.5 bg-white text-emerald-700 text-sm font-medium rounded-full border border-emerald-200">Khutbah Creator</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {/* Free Tier */}
+            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Free Forever</h3>
+              <p className="text-sm text-gray-500 mb-3">All self-paced tools & courses</p>
+              <div className="flex items-baseline space-x-2 mb-4">
+                <span className="text-3xl font-bold text-emerald-500">£0</span>
+              </div>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Exploring Islam</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Foundation videos</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Salah tutorial</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Quran tracker</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Single Lesson */}
+            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Single Lesson</h3>
+              <p className="text-sm text-gray-500 mb-3">1-on-1 with a teacher</p>
+              <div className="flex items-baseline space-x-2 mb-4">
+                <span className="text-3xl font-bold text-emerald-500">£15</span>
+                <span className="text-gray-500 text-sm">/ lesson</span>
+              </div>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Everything in Free</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>1 hour live lesson</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>AI study notes</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>No commitment</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Steady Progress - Most Popular */}
+            <div className="relative bg-emerald-50 rounded-3xl p-6 border-2 border-emerald-500">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full">
+                  BEST VALUE
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1 mt-2">Steady Progress</h3>
+              <p className="text-sm text-gray-500 mb-3">8 lesson credits</p>
+              <div className="flex items-baseline space-x-2 mb-1">
+                <span className="text-3xl font-bold text-emerald-500">£108</span>
+                <span className="text-gray-400 line-through text-sm">£120</span>
+              </div>
+              <p className="text-emerald-600 text-xs font-medium mb-4">£13.50/lesson - Save £12</p>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>8 hours of live lessons</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>AI notes & homework</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Lesson recordings</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Credits never expire</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Fast Track */}
+            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Fast-Track</h3>
+              <p className="text-sm text-gray-500 mb-3">16 lesson credits</p>
+              <div className="flex items-baseline space-x-2 mb-1">
+                <span className="text-3xl font-bold text-emerald-500">£208</span>
+                <span className="text-gray-400 line-through text-sm">£240</span>
+              </div>
+              <p className="text-emerald-600 text-xs font-medium mb-4">£13/lesson - Save £32</p>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>16 hours of live lessons</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Everything in Steady</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Best per-lesson rate</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Share with family</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
+            <p className="text-gray-600">
+              <span className="font-medium">Credits never expire</span> • Share with family • No subscriptions • First trial FREE
+            </p>
+          </div>
+
+          {/* Sadaqah Jariyah */}
+          <div className="mt-12 bg-emerald-50 rounded-3xl p-8 border border-emerald-200">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                <Heart className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Sadaqah Jariyah - Ongoing Reward</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  By referring others to Talbiyah.ai, you gain the rewards of every hour they learn.
+                  This blessing continues even after you pass away, continuously filling your book of deeds
+                  with ongoing rewards for facilitating Islamic education.
+                </p>
+                <button
+                  onClick={() => navigate('/referral-info')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition text-sm"
+                >
+                  <Heart className="w-4 h-4" />
+                  Start Earning Rewards
+                </button>
               </div>
             </div>
           </div>
@@ -877,255 +1148,6 @@ export default function HomeLandingV2() {
                 >
                   <span>Join Our Teaching Team</span>
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing - Same as original */}
-      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
-              Flexible Pricing
-            </h2>
-            <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-              Many features are free. Pay only for live teacher sessions when you need them.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {/* Free Tier */}
-            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Free Forever</h3>
-              <p className="text-sm text-gray-500 mb-3">Self-paced learning</p>
-              <div className="flex items-baseline space-x-2 mb-4">
-                <span className="text-3xl font-bold text-emerald-500">£0</span>
-              </div>
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Exploring Islam</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Foundation videos</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Salah tutorial</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Quran tracker</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Single Lesson */}
-            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Single Lesson</h3>
-              <p className="text-sm text-gray-500 mb-3">Pay as you go</p>
-              <div className="flex items-baseline space-x-2 mb-4">
-                <span className="text-3xl font-bold text-emerald-500">£15</span>
-                <span className="text-gray-500 text-sm">/ lesson</span>
-              </div>
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Everything in Free</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>1 hour live lesson</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>AI study notes</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>No commitment</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Steady Progress - Most Popular */}
-            <div className="relative bg-emerald-50 rounded-3xl p-6 border-2 border-emerald-500">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full">
-                  BEST VALUE
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1 mt-2">Steady Progress</h3>
-              <p className="text-sm text-gray-500 mb-3">8 lesson credits</p>
-              <div className="flex items-baseline space-x-2 mb-1">
-                <span className="text-3xl font-bold text-emerald-500">£108</span>
-                <span className="text-gray-400 line-through text-sm">£120</span>
-              </div>
-              <p className="text-emerald-600 text-xs font-medium mb-4">£13.50/lesson - Save £12</p>
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>8 hours of lessons</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>AI notes & homework</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Lesson recordings</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Credits never expire</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Fast Track */}
-            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Fast-Track</h3>
-              <p className="text-sm text-gray-500 mb-3">16 lesson credits</p>
-              <div className="flex items-baseline space-x-2 mb-1">
-                <span className="text-3xl font-bold text-emerald-500">£208</span>
-                <span className="text-gray-400 line-through text-sm">£240</span>
-              </div>
-              <p className="text-emerald-600 text-xs font-medium mb-4">£13/lesson - Save £32</p>
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>16 hours of lessons</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Everything in Steady</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Best per-lesson rate</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Share with family</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
-            <p className="text-gray-600">
-              <span className="font-medium">Credits never expire</span> • Share with family • No subscriptions • First trial FREE
-            </p>
-          </div>
-
-          {/* Sadaqah Jariyah */}
-          <div className="mt-12 bg-emerald-50 rounded-3xl p-8 border border-emerald-200">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                <Heart className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Sadaqah Jariyah - Ongoing Reward</h3>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  By referring others to Talbiyah.ai, you gain the rewards of every hour they learn.
-                  This blessing continues even after you pass away, continuously filling your book of deeds
-                  with ongoing rewards for facilitating Islamic education.
-                </p>
-                <button
-                  onClick={() => navigate('/referral-info')}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition text-sm"
-                >
-                  <Heart className="w-4 h-4" />
-                  Start Earning Rewards
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-serif font-normal text-gray-900 mb-4">
-              What Our Students
-            </h2>
-            <p className="text-4xl sm:text-5xl font-serif italic text-emerald-500">
-              Are Saying
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Testimonial 1 */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-1 mb-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                "Finally found a platform that tracks my actual progress. The AI study notes after each lesson are incredible — it's like having a personal assistant."
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-semibold">
-                  AK
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Ahmed K.</p>
-                  <p className="text-sm text-gray-500">Learning Quran for 6 months</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 2 */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-1 mb-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                "As a parent, I love seeing exactly what my children are learning. The progress reports give me peace of mind that they're on the right track."
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-semibold">
-                  SM
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Sarah M.</p>
-                  <p className="text-sm text-gray-500">Parent of 3 students</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center space-x-1 mb-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-5 h-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                "The homework generated after each lesson targets exactly what I struggled with. I'm learning faster than I ever did in traditional classes."
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                  YH
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Yusuf H.</p>
-                  <p className="text-sm text-gray-500">Arabic language student</p>
-                </div>
               </div>
             </div>
           </div>
