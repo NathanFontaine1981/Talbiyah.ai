@@ -1787,7 +1787,7 @@ function LegacyTeacherAssignmentModal({ user, onClose, onSuccess }: { user: User
           teacher_profiles!inner(
             id,
             user_id,
-            profiles!inner(full_name)
+            profiles!teacher_profiles_user_id_fkey(full_name)
           )
         `)
         .eq('student_id', user.id);
@@ -1817,7 +1817,7 @@ function LegacyTeacherAssignmentModal({ user, onClose, onSuccess }: { user: User
           id,
           user_id,
           is_legacy_teacher,
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey(full_name)
         `)
         .eq('status', 'approved');
 

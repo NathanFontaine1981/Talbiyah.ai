@@ -50,7 +50,7 @@ export default function RescheduleLesson() {
           duration_minutes,
           teacher_id,
           teacher_profiles!inner(
-            profiles!inner(
+            profiles!teacher_profiles_user_id_fkey(
               full_name
             )
           ),

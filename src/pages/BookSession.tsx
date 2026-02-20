@@ -175,7 +175,7 @@ export default function BookSession() {
             rating,
             teacher_type,
             independent_rate,
-            profiles!inner(
+            profiles!teacher_profiles_user_id_fkey(
               full_name,
               avatar_url,
               bio

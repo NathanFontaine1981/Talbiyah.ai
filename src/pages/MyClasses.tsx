@@ -140,7 +140,7 @@ export default function MyClasses() {
             recording_expires_at,
             teacher_profiles!inner(
               user_id,
-              profiles!inner(
+              profiles!teacher_profiles_user_id_fkey(
                 full_name,
                 avatar_url
               )

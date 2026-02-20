@@ -77,7 +77,7 @@ export default function TeacherPayouts() {
           *,
           teacher_profiles!inner(
             user_id,
-            profiles!inner(full_name, email)
+            profiles!teacher_profiles_user_id_fkey(full_name, email)
           )
         `)
         .order('created_at', { ascending: false })

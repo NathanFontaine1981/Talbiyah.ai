@@ -542,7 +542,7 @@ function NewSessionModal({ onClose, onSuccess }: any) {
       // Fetch approved teachers
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
-        .select('id, user_id, profiles!inner(full_name)')
+        .select('id, user_id, profiles!teacher_profiles_user_id_fkey(full_name)')
         .eq('status', 'approved');
 
       setTeachers(teacherData || []);

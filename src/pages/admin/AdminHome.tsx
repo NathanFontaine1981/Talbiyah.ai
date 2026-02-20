@@ -333,7 +333,7 @@ export default function AdminHome() {
       // 1. Pending teacher applications
       const { data: pendingTeachers } = await supabase
         .from('teacher_profiles')
-        .select('id, user_id, profiles!inner(full_name)')
+        .select('id, user_id, profiles!teacher_profiles_user_id_fkey(full_name)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .limit(3);

@@ -54,7 +54,7 @@ export default function ManageTeachers() {
             user_id,
             bio,
             hourly_rate,
-            profiles!inner(full_name)
+            profiles!teacher_profiles_user_id_fkey(full_name)
           )
         `)
         .eq('student_id', user.id)
@@ -95,7 +95,7 @@ export default function ManageTeachers() {
           user_id,
           bio,
           hourly_rate,
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey(full_name)
         `)
         .eq('status', 'approved');
 

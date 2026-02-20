@@ -142,7 +142,7 @@ export default function RecordingsHistory() {
             recording_url,
             teacher_profiles!inner(
               user_id,
-              profiles!inner(
+              profiles!teacher_profiles_user_id_fkey(
                 full_name
               )
             ),

@@ -128,7 +128,7 @@ export default function Recordings() {
   async function fetchTeachers() {
     const { data } = await supabase
       .from('teacher_profiles')
-      .select('user_id, profiles!inner(id, full_name)')
+      .select('user_id, profiles!teacher_profiles_user_id_fkey(id, full_name)')
       .eq('status', 'approved');
     setTeachers(data || []);
   }

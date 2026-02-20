@@ -578,7 +578,7 @@ function CreateGroupSessionModal({ onClose, onSuccess, subjects }: any) {
     // Only fetch teachers who are approved AND enabled for group lessons
     const { data } = await supabase
       .from('teacher_profiles')
-      .select('id, user_id, group_lesson_tier, group_lesson_hourly_rate, profiles!inner(full_name, country, city)')
+      .select('id, user_id, group_lesson_tier, group_lesson_hourly_rate, profiles!teacher_profiles_user_id_fkey(full_name, country, city)')
       .eq('status', 'approved')
       .eq('group_lesson_enabled', true);
     setTeachers(data || []);

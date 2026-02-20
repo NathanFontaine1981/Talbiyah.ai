@@ -268,7 +268,7 @@ export default function Analytics() {
 
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
-        .select(`id, user_id, profiles!inner(full_name), average_rating`)
+        .select(`id, user_id, profiles!teacher_profiles_user_id_fkey(full_name), average_rating`)
         .eq('status', 'approved');
 
       const { data: lessonCounts } = await supabase

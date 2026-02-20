@@ -85,7 +85,7 @@ export default function RecordingWithInsights() {
             duration_minutes,
             subjects(name),
             teacher_profiles!inner(
-              profiles!inner(full_name)
+              profiles!teacher_profiles_user_id_fkey(full_name)
             )
           )
         `)
