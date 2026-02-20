@@ -228,7 +228,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           ),
           teacher_profiles(
             user_id,
-            profiles(
+            profiles!teacher_profiles_user_id_fkey(
               full_name,
               avatar_url
             )
@@ -334,7 +334,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
           ),
           teacher_profiles(
             user_id,
-            profiles(
+            profiles!teacher_profiles_user_id_fkey(
               full_name,
               avatar_url
             )
