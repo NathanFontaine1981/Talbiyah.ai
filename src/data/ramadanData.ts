@@ -2,7 +2,7 @@
 // These are approximate — actual dates depend on moon sighting
 const RAMADAN_DATES: Record<number, { start: string; end: string }> = {
   2025: { start: '2025-03-01', end: '2025-03-30' },
-  2026: { start: '2026-02-18', end: '2026-03-19' },
+  2026: { start: '2026-02-17', end: '2026-03-18' },
   2027: { start: '2027-02-08', end: '2027-03-09' },
   2028: { start: '2028-01-28', end: '2028-02-26' },
 };
