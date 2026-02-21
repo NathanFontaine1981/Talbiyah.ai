@@ -353,7 +353,7 @@ export default function UnshakableFoundations() {
       setShowIntro(true);
       setViewMode('intro');
     } else {
-      navigate('/new-muslim');
+      navigate('/explorer');
     }
   }
 

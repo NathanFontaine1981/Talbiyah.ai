@@ -225,7 +225,7 @@ export default function NewMuslimPage() {
               Back
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/explorer')}
               className="text-slate-400 hover:text-white transition"
             >
               <X className="w-6 h-6" />
@@ -270,7 +270,7 @@ export default function NewMuslimPage() {
         >
           {/* Close button */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/explorer')}
             className="absolute top-6 right-6 text-slate-400 hover:text-white transition"
           >
             <X className="w-6 h-6" />
@@ -410,7 +410,7 @@ export default function NewMuslimPage() {
           </div>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/explorer')}
             className="text-slate-400 hover:text-white transition text-sm"
           >
             Return Home
@@ -500,7 +500,7 @@ export default function NewMuslimPage() {
                   Explore Life Manual
                 </button>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/explorer')}
                   className="text-slate-400 hover:text-white transition text-sm"
                 >
                   Return Home
@@ -537,7 +537,7 @@ export default function NewMuslimPage() {
 
       {/* Close button */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/explorer')}
         className="fixed top-6 right-6 text-slate-400 hover:text-white transition z-50"
       >
         <X className="w-6 h-6" />

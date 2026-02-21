@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { BookOpen, Compass, GraduationCap, ChevronRight, LogOut, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, Compass, GraduationCap, ChevronRight, ChevronDown, LogOut, Moon, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface ExploreProgress {
@@ -9,12 +9,100 @@ interface ExploreProgress {
   completedCount: number;
 }
 
+interface SalahProgress {
+  completedPositions: string[];
+}
+
+interface FoundationProgress {
+  watchedVideos: string[];
+}
+
+const METHODOLOGY_PRINCIPLES = [
+  {
+    title: 'Knowledge needs structure',
+    body: "We learn Islam from the Qur'an & Sunnah, through the understanding of the Prophet \u03C6, his companions, and the two generations after them (the Salaf). This isn't one opinion among many \u2014 it's the methodology the Prophet \u03C6 himself endorsed.",
+  },
+  {
+    title: 'The Prophet \u03C6 is the living example',
+    body: "He is the most documented person in history. Hadith science uses strict chain-of-narration verification and authenticity grading \u2014 every statement traced back link by link, narrator by narrator.",
+  },
+  {
+    title: 'The golden rule in dunya',
+    body: "Everything in worldly life is halal (permissible) except what Allah has made haram. Eat, drink, do anything \u2014 except what\u2019s been explicitly prohibited.",
+  },
+  {
+    title: 'Worship is the opposite',
+    body: "Every act of worship is haram unless prescribed by Qur'an or Sunnah. Nothing counts on your scales unless it has evidence. Find proof for everything you do \u2014 it\u2019s easy to fall into customs and culture thinking it\u2019s religion.",
+  },
+  {
+    title: 'Beware of innovation',
+    body: '\u201CBeware of newly invented matters in the religion, every innovation is misguidance and every misguidance is in the Fire.\u201D \u2014 the imam\u2019s Friday reminder (Sahih Muslim 867)',
+  },
+];
+
+const JOURNEY_STEPS = [
+  {
+    step: 1,
+    title: 'Exploring Islam',
+    subtitle: 'The proof',
+    description: 'The proofs and evidences \u2014 remind yourself or show others',
+    route: '/explore',
+    icon: BookOpen,
+    color: 'indigo',
+    gradient: 'from-indigo-500 to-purple-600',
+    border: 'border-indigo-700/50 hover:border-indigo-600',
+    bg: 'from-indigo-900/50 to-purple-900/30 hover:from-indigo-800/50 hover:to-purple-800/30',
+    badge: 'bg-indigo-500',
+    chevron: 'text-indigo-400',
+    bar: 'from-indigo-500 to-purple-500',
+    totalItems: 13,
+    unit: 'episodes',
+  },
+  {
+    step: 2,
+    title: 'Learn Salah',
+    subtitle: 'The rope to Allah',
+    description: 'The rope between you and Allah \u2014 build up to 5 daily prayers',
+    route: '/salah',
+    icon: Moon,
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-600',
+    border: 'border-emerald-700/50 hover:border-emerald-600',
+    bg: 'from-emerald-900/50 to-teal-900/30 hover:from-emerald-800/50 hover:to-teal-800/30',
+    badge: 'bg-emerald-500',
+    chevron: 'text-emerald-400',
+    bar: 'from-emerald-500 to-teal-500',
+    totalItems: 24,
+    unit: 'positions',
+  },
+  {
+    step: 3,
+    title: 'Unshakable Foundations',
+    subtitle: 'Built on firm ground',
+    description: 'Like a house built on firm ground \u2014 takes the longest, holds everything up',
+    route: '/new-muslim',
+    icon: Layers,
+    color: 'amber',
+    gradient: 'from-amber-500 to-orange-600',
+    border: 'border-amber-700/50 hover:border-amber-600',
+    bg: 'from-amber-900/50 to-orange-900/30 hover:from-amber-800/50 hover:to-orange-800/30',
+    badge: 'bg-amber-500',
+    chevron: 'text-amber-400',
+    bar: 'from-amber-500 to-orange-500',
+    totalItems: 0, // dynamic from localStorage
+    unit: 'videos',
+  },
+];
+
 export default function ExplorerDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [exploreProgress, setExploreProgress] = useState<ExploreProgress | null>(null);
+  const [salahProgress, setSalahProgress] = useState<SalahProgress | null>(null);
+  const [foundationProgress, setFoundationProgress] = useState<FoundationProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -42,18 +130,17 @@ export default function ExplorerDashboard() {
 
         // Check if user is actually an explorer
         if (!profileData.roles?.includes('explorer')) {
-          // If they're a student, redirect to regular dashboard
           if (profileData.roles?.includes('student')) {
             navigate('/dashboard');
             return;
           }
         }
 
-        // Load explore progress from localStorage (will update to DB later)
-        const savedProgress = localStorage.getItem('talbiyah_explore_progress');
-        if (savedProgress) {
+        // Load explore progress
+        const savedExplore = localStorage.getItem('talbiyah_explore_progress');
+        if (savedExplore) {
           try {
-            const parsed = JSON.parse(savedProgress);
+            const parsed = JSON.parse(savedExplore);
             const stageOrder = ['intro', 'bias', 'chain-of-custody', 'axiom-check', 'authority-match', 'probability-moment', 'checkpoint', 'the-question', 'the-voice', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'];
             const highestIndex = stageOrder.indexOf(parsed.highestStage || 'intro');
             setExploreProgress({
@@ -62,6 +149,32 @@ export default function ExplorerDashboard() {
             });
           } catch (e) {
             console.error('Error parsing explore progress:', e);
+          }
+        }
+
+        // Load salah progress
+        const savedSalah = localStorage.getItem('talbiyah_salah_progress');
+        if (savedSalah) {
+          try {
+            const parsed = JSON.parse(savedSalah);
+            setSalahProgress({
+              completedPositions: parsed.completedPositions || []
+            });
+          } catch (e) {
+            console.error('Error parsing salah progress:', e);
+          }
+        }
+
+        // Load foundation progress
+        const savedFoundation = localStorage.getItem('talbiyah_foundation_progress');
+        if (savedFoundation) {
+          try {
+            const parsed = JSON.parse(savedFoundation);
+            setFoundationProgress({
+              watchedVideos: parsed.watchedVideos || []
+            });
+          } catch (e) {
+            console.error('Error parsing foundation progress:', e);
           }
         }
       }
@@ -81,19 +194,33 @@ export default function ExplorerDashboard() {
     if (!user) return;
 
     try {
-      // Update roles to include student
-      const newRoles = [...(profile?.roles || []), 'student'].filter((v, i, a) => a.indexOf(v) === i);
+      const newRoles = [...(profile?.roles || []), 'student'].filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
 
       await supabase
         .from('profiles')
         .update({ roles: newRoles })
         .eq('id', user.id);
 
-      // Navigate to welcome flow
       navigate('/welcome');
     } catch (error) {
       console.error('Error upgrading to student:', error);
     }
+  }
+
+  function getStepProgress(step: number): { completed: number; total: number } | null {
+    if (step === 1) {
+      if (!exploreProgress || exploreProgress.completedCount === 0) return null;
+      return { completed: exploreProgress.completedCount, total: 13 };
+    }
+    if (step === 2) {
+      if (!salahProgress || salahProgress.completedPositions.length === 0) return null;
+      return { completed: salahProgress.completedPositions.length, total: 24 };
+    }
+    if (step === 3) {
+      if (!foundationProgress || foundationProgress.watchedVideos.length === 0) return null;
+      return { completed: foundationProgress.watchedVideos.length, total: foundationProgress.watchedVideos.length }; // total is dynamic
+    }
+    return null;
   }
 
   if (loading) {
@@ -142,78 +269,135 @@ export default function ExplorerDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            Welcome back, {profile?.full_name?.split(' ')[0] || 'Explorer'}
+            Welcome, {profile?.full_name?.split(' ')[0] || 'Explorer'}
           </h2>
-          <p className="text-slate-300 text-lg">
-            Continue your journey of discovery
+          <p className="text-slate-400 text-lg">
+            Follow the steps below &mdash; each builds on the last
           </p>
         </motion.div>
 
-        {/* Main Actions */}
-        <div className="space-y-4 mb-12">
-          {/* Exploring Islam */}
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            onClick={() => navigate('/explore')}
-            className="w-full group bg-gradient-to-r from-indigo-900/50 to-purple-900/30 hover:from-indigo-800/50 hover:to-purple-800/30 rounded-2xl p-6 border border-indigo-700/50 hover:border-indigo-600 transition-all text-left"
+        {/* Methodology Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <button
+            onClick={() => setMethodologyOpen(!methodologyOpen)}
+            className="w-full flex items-center justify-between p-4 bg-slate-900/60 hover:bg-slate-900/80 rounded-2xl border border-slate-700/50 transition-all"
           >
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="w-8 h-8 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-slate-300" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-1">Exploring Islam</h3>
-                <p className="text-slate-300">
-                  {exploreProgress && exploreProgress.completedCount > 0
-                    ? `${exploreProgress.completedCount} of 13 episodes completed`
-                    : 'A journey of discovery in 13 episodes'}
-                </p>
+              <div className="text-left">
+                <h3 className="text-white font-semibold text-sm">Our Methodology</h3>
+                <p className="text-slate-500 text-xs">Qur'an & Sunnah upon the understanding of the Salaf</p>
               </div>
-              <ChevronRight className="w-6 h-6 text-indigo-400 group-hover:translate-x-1 transition-transform" />
             </div>
-            {exploreProgress && exploreProgress.completedCount > 0 && (
-              <div className="mt-4 h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all"
-                  style={{ width: `${(exploreProgress.completedCount / 13) * 100}%` }}
-                />
-              </div>
-            )}
-          </motion.button>
+            <motion.div
+              animate={{ rotate: methodologyOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-5 h-5 text-slate-400" />
+            </motion.div>
+          </button>
 
-          {/* Unshakeable Foundations */}
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            onClick={() => navigate('/new-muslim')}
-            className="w-full group bg-gradient-to-r from-emerald-900/50 to-teal-900/30 hover:from-emerald-800/50 hover:to-teal-800/30 rounded-2xl p-6 border border-emerald-700/50 hover:border-emerald-600 transition-all text-left"
-          >
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <User className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-1">Unshakeable Foundations</h3>
-                <p className="text-slate-300">
-                  Build your Islamic knowledge from the ground up
-                </p>
-              </div>
-              <ChevronRight className="w-6 h-6 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </motion.button>
+          <AnimatePresence>
+            {methodologyOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3 space-y-2">
+                  {METHODOLOGY_PRINCIPLES.map((principle, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="p-4 bg-slate-900/40 rounded-xl border border-slate-800/50"
+                    >
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <h4 className="text-white font-medium text-sm mb-1">{principle.title}</h4>
+                          <p className="text-slate-400 text-sm leading-relaxed">{principle.body}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Journey Steps */}
+        <div className="space-y-4 mb-12">
+          {JOURNEY_STEPS.map((step, i) => {
+            const Icon = step.icon;
+            const progress = getStepProgress(step.step);
+
+            return (
+              <motion.button
+                key={step.step}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + i * 0.08 }}
+                onClick={() => navigate(step.route)}
+                className={`w-full group bg-gradient-to-r ${step.bg} rounded-2xl p-6 border ${step.border} transition-all text-left relative`}
+              >
+                {/* Step badge */}
+                <div className={`absolute -top-2.5 left-5 ${step.badge} text-white text-xs font-bold px-2.5 py-0.5 rounded-full shadow-lg`}>
+                  Step {step.step}
+                </div>
+
+                <div className="flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${step.gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-semibold text-white mb-0.5">
+                      {step.title}
+                    </h3>
+                    <p className="text-slate-500 text-sm italic mb-1">{step.subtitle}</p>
+                    <p className="text-slate-300 text-sm">
+                      {progress
+                        ? `${progress.completed} of ${progress.total} ${step.unit} completed`
+                        : step.description}
+                    </p>
+                  </div>
+                  <ChevronRight className={`w-6 h-6 ${step.chevron} group-hover:translate-x-1 transition-transform flex-shrink-0`} />
+                </div>
+
+                {progress && (
+                  <div className="mt-4 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full bg-gradient-to-r ${step.bar} rounded-full transition-all`}
+                      style={{ width: `${(progress.completed / progress.total) * 100}%` }}
+                    />
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
         </div>
 
         {/* Upgrade CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="bg-gradient-to-r from-amber-900/30 to-orange-900/20 rounded-2xl p-8 border border-amber-700/30 text-center"
         >
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">

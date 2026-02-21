@@ -387,7 +387,7 @@ export default function ExplorePage() {
         <span className="hidden md:inline">Episodes</span>
       </button>
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/explorer')}
         className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} right-6 text-slate-300 hover:text-white transition z-40 bg-slate-800/90 backdrop-blur-md p-1.5 rounded-lg border border-slate-600/50 shadow-lg`}
       >
         <X className="w-5 h-5" />
@@ -428,7 +428,7 @@ export default function ExplorePage() {
 
         {/* Close button */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/explorer')}
           className="fixed top-6 right-6 text-slate-400 hover:text-slate-700 transition z-50 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-sm hover:shadow-md border border-slate-200/50"
         >
           <X className="w-5 h-5" />
