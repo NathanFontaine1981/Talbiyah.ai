@@ -349,11 +349,9 @@ export default function UnshakableFoundations() {
       setSelectedCategory(null);
       setSearchParams({});
     } else if (viewMode === 'categories') {
-      // From main categories view, go back to intro/how it works
-      setShowIntro(true);
-      setViewMode('intro');
+      navigate('/dashboard');
     } else {
-      navigate('/explorer');
+      navigate('/dashboard');
     }
   }
 
