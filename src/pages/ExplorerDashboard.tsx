@@ -401,7 +401,7 @@ export default function ExplorerDashboard() {
           className="mb-8"
         >
           <a
-            href="https://open.spotify.com/playlist/320rmq3WLWuetaWh1mdRIq"
+            href="https://open.spotify.com/show/5P5S72Rgx5DStu4sRQHx8V?si=616322c4e3424c92"
             target="_blank"
             rel="noopener noreferrer"
             className="block bg-gradient-to-r from-emerald-900/40 to-teal-900/30 hover:from-emerald-800/40 hover:to-teal-800/30 rounded-2xl p-6 border border-emerald-700/40 hover:border-emerald-600 transition-all group"
