@@ -59,6 +59,19 @@ function hasWeakAreas(p: SurahReview): boolean {
   return p.selfAssessment.weakMemorisation || p.selfAssessment.weakFluency || p.selfAssessment.weakUnderstanding;
 }
 
+interface SalahPrayerAssignment {
+  name: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+  label: string;
+  emoji: string;
+  surahs: { number: number; english: string; arabic: string }[];
+  completed: boolean;
+}
+
+interface SalahSurahPlan {
+  prayers: SalahPrayerAssignment[];
+  rotationIndexUsed: number;
+}
+
 interface DailySession {
   id: string;
   sessionDate: string;
@@ -68,6 +81,7 @@ interface DailySession {
   status: 'in_progress' | 'completed' | 'partial';
   completedAt: string | null;
   kahfCompleted: boolean;
+  salahSurahs: SalahSurahPlan | null;
 }
 
 interface LearnerStats {
@@ -313,6 +327,41 @@ const SURAH_NAMES: { [key: number]: { english: string; arabic: string } } = {
   114: { english: 'An-Nas', arabic: 'الناس' },
 };
 
+const PRAYER_INFO: { name: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'; label: string; emoji: string }[] = [
+  { name: 'fajr',    label: 'Fajr',    emoji: '\u{1F305}' },
+  { name: 'dhuhr',   label: 'Dhuhr',   emoji: '\u{2600}\u{FE0F}' },
+  { name: 'asr',     label: 'Asr',     emoji: '\u{1F324}\u{FE0F}' },
+  { name: 'maghrib', label: 'Maghrib', emoji: '\u{1F307}' },
+  { name: 'isha',    label: 'Isha',    emoji: '\u{1F319}' },
+];
+
+function generateSalahSurahPlan(memorizedSurahs: number[], rotationIndex: number): SalahSurahPlan {
+  // Filter out Al-Fatihah and long surahs (only keep ≤40 ayahs — practical for prayer)
+  let pool = memorizedSurahs.filter(s => s !== 1 && (FULL_SURAH_AYAH_COUNTS[s] || 999) <= 40);
+  // Fallback if pool is empty
+  if (pool.length === 0) pool = [112, 113, 114];
+
+  const picked: { number: number; english: string; arabic: string }[] = [];
+  for (let i = 0; i < 10; i++) {
+    const surahNum = pool[(rotationIndex + i) % pool.length];
+    picked.push({
+      number: surahNum,
+      english: SURAH_NAMES[surahNum]?.english || `Surah ${surahNum}`,
+      arabic: SURAH_NAMES[surahNum]?.arabic || '',
+    });
+  }
+
+  const prayers: SalahPrayerAssignment[] = PRAYER_INFO.map((p, i) => ({
+    name: p.name,
+    label: p.label,
+    emoji: p.emoji,
+    surahs: [picked[i * 2], picked[i * 2 + 1]],
+    completed: false,
+  }));
+
+  return { prayers, rotationIndexUsed: rotationIndex };
+}
+
 // Self-assessment multi-select card shown after reciting x3
 function SelfAssessmentCard({ passageIndex, onSubmit }: { passageIndex: number; onSubmit: (index: number, assessment: SelfAssessment) => void }) {
   const [smooth, setSmooth] = useState(false);
@@ -456,7 +505,7 @@ export default function DailyMaintenancePage() {
       // Load learner stats + rotation index
       const { data: learner } = await supabase
         .from('learners')
-        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date, daily_review_rotation_index')
+        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date, daily_review_rotation_index, salah_surah_rotation_index')
         .eq('id', targetLearnerId)
         .maybeSingle();
 
@@ -470,6 +519,7 @@ export default function DailyMaintenancePage() {
       }
 
       const rotationIndex = learner?.daily_review_rotation_index || 0;
+      const salahRotationIndex = learner?.salah_surah_rotation_index || 0;
 
       // Load memorized surahs sorted by surah_number ascending
       const { data: trackedSurahs } = await supabase
@@ -539,7 +589,8 @@ export default function DailyMaintenancePage() {
             totalTasks: existingSession.total_tasks,
             status: existingSession.status,
             completedAt: existingSession.completed_at,
-            kahfCompleted: existingSession.kahf_completed ?? false
+            kahfCompleted: existingSession.kahf_completed ?? false,
+            salahSurahs: existingSession.salah_surahs ?? null
           });
         } else {
           // New format session: resume as-is
@@ -567,7 +618,8 @@ export default function DailyMaintenancePage() {
             totalTasks: existingSession.total_tasks,
             status: existingSession.status,
             completedAt: existingSession.completed_at,
-            kahfCompleted: existingSession.kahf_completed ?? false
+            kahfCompleted: existingSession.kahf_completed ?? false,
+            salahSurahs: existingSession.salah_surahs ?? null
           });
         }
       }
@@ -599,6 +651,8 @@ export default function DailyMaintenancePage() {
         const isFridaySession = new Date(today).getDay() === 5;
         const totalTasks = isFridaySession ? numToReview + 1 : numToReview;
 
+        const salahPlan = generateSalahSurahPlan(allMemorized, salahRotationIndex);
+
         const { data: newSession, error: insertError } = await supabase
           .from('daily_maintenance_sessions')
           .insert({
@@ -608,7 +662,8 @@ export default function DailyMaintenancePage() {
             tasks_completed: 0,
             total_tasks: totalTasks,
             status: 'in_progress',
-            kahf_completed: false
+            kahf_completed: false,
+            salah_surahs: salahPlan
           })
           .select()
           .single();
@@ -626,7 +681,8 @@ export default function DailyMaintenancePage() {
             totalTasks: totalTasks,
             status: 'in_progress',
             completedAt: null,
-            kahfCompleted: false
+            kahfCompleted: false,
+            salahSurahs: salahPlan
           });
         }
       }
@@ -880,6 +936,12 @@ export default function DailyMaintenancePage() {
         );
         const newRotationIndex = ((lastIdx === -1 ? 0 : lastIdx) + 1) % (passageList.length || 1);
 
+        // Advance salah surah rotation by 10
+        const salahPool = memorizedSurahs.filter(s => s !== 1 && (FULL_SURAH_AYAH_COUNTS[s] || 999) <= 40);
+        const salahPoolSize = salahPool.length || 3;
+        const currentSalahIndex = todaySession.salahSurahs?.rotationIndexUsed ?? 0;
+        const newSalahRotationIndex = (currentSalahIndex + 10) % salahPoolSize;
+
         await supabase
           .from('learners')
           .update({
@@ -887,7 +949,8 @@ export default function DailyMaintenancePage() {
             longest_streak: Math.max(learnerStats.longestStreak, learnerStats.currentStreak + 1),
             last_maintenance_date: new Date().toISOString().split('T')[0],
             total_maintenance_sessions: learnerStats.totalSessions + 1,
-            daily_review_rotation_index: newRotationIndex
+            daily_review_rotation_index: newRotationIndex,
+            salah_surah_rotation_index: newSalahRotationIndex
           })
           .eq('id', learnerId);
 
@@ -905,6 +968,23 @@ export default function DailyMaintenancePage() {
     if (!todaySession || !learnerId) return;
     const updatedSurahs = todaySession.surahsReviewed.map(s => ({ ...s }));
     await saveSession(updatedSurahs, undefined, undefined, true);
+  }
+
+  async function toggleSalahPrayerComplete(prayerIndex: number) {
+    if (!todaySession?.salahSurahs || !learnerId) return;
+    const updatedPlan: SalahSurahPlan = {
+      ...todaySession.salahSurahs,
+      prayers: todaySession.salahSurahs.prayers.map((p, i) =>
+        i === prayerIndex ? { ...p, completed: !p.completed } : p
+      ),
+    };
+    // Update DB
+    await supabase
+      .from('daily_maintenance_sessions')
+      .update({ salah_surahs: updatedPlan })
+      .eq('id', todaySession.id);
+    // Update local state
+    setTodaySession({ ...todaySession, salahSurahs: updatedPlan });
   }
 
   const completedPassageCount = todaySession
@@ -1022,6 +1102,80 @@ export default function DailyMaintenancePage() {
             <p className="text-xs text-gray-500 dark:text-gray-400">Surahs Today</p>
           </div>
         </div>
+
+        {/* Salah Surah Planner */}
+        {todaySession?.salahSurahs && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-teal-500 to-emerald-500 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">{'\u{1F54C}'}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-lg">Salah Surah Planner</h3>
+                    <p className="text-white/80 text-xs">Surahs to recite after Al-Fatihah today</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-white font-bold text-lg">
+                    {todaySession.salahSurahs.prayers.filter(p => p.completed).length}/5
+                  </span>
+                  <p className="text-white/70 text-xs">prayers</p>
+                </div>
+              </div>
+              <div className="mt-3 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-500"
+                  style={{ width: `${(todaySession.salahSurahs.prayers.filter(p => p.completed).length / 5) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Prayer cards */}
+            <div className="p-4 space-y-3">
+              {todaySession.salahSurahs.prayers.map((prayer, i) => (
+                <div
+                  key={prayer.name}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                    prayer.completed
+                      ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20'
+                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+                  }`}
+                >
+                  <span className="text-2xl w-8 text-center">{prayer.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold text-sm ${prayer.completed ? 'text-emerald-800 dark:text-emerald-200' : 'text-gray-900 dark:text-white'}`}>
+                      {prayer.label}
+                    </p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {prayer.surahs.map((s, j) => (
+                        <p key={j} className="text-xs text-gray-500 dark:text-gray-400">
+                          {s.english} <span className="font-arabic" dir="rtl">{s.arabic}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleSalahPrayerComplete(i)}
+                    className={`w-9 h-9 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                      prayer.completed
+                        ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
+                        : 'border-gray-300 dark:border-gray-600 text-gray-300 dark:text-gray-600 hover:border-teal-400 hover:text-teal-400'
+                    }`}
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center pt-1">
+                Recite Al-Fatihah first, then the assigned surah in each rak'ah
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Completion celebration */}
         {todaySession?.status === 'completed' && (

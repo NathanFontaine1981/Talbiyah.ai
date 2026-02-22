@@ -54,6 +54,7 @@ import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
 import NotificationDropdown from '../components/NotificationDropdown';
+import { isRamadan, getRamadanYear, getRamadanDay, RAMADAN_DAYS } from '../data/ramadanData';
 
 interface UserProfile {
   full_name: string | null;
@@ -984,6 +985,49 @@ export default function Dashboard() {
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (
               <>
+                {/* Ramadan Planner Banner — front & centre during Ramadan */}
+                {(() => {
+                  const rYear = getRamadanYear();
+                  const rDay = getRamadanDay(rYear);
+                  const rActive = isRamadan(rYear);
+                  if (!rActive || !rDay) return null;
+                  const pct = Math.round((rDay / RAMADAN_DAYS) * 100);
+                  return (
+                    <div className="mb-6">
+                      <button
+                        onClick={() => navigate('/ramadan-planner')}
+                        className="w-full text-left bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-50" />
+                        <div className="relative flex items-center gap-4">
+                          <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center flex-shrink-0">
+                            <Moon className="w-7 h-7 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-bold text-white">Ramadan Planner</h3>
+                              <span className="px-2 py-0.5 bg-white/20 backdrop-blur text-white/90 rounded-full text-xs font-medium">
+                                Day {rDay}
+                              </span>
+                            </div>
+                            <p className="text-white/70 text-sm mb-2">
+                              Track your Quran, prayers, sadaqah & habits
+                            </p>
+                            <div className="w-full bg-white/20 rounded-full h-2">
+                              <div
+                                className="bg-white rounded-full h-2 transition-all"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <p className="text-white/50 text-xs mt-1">{pct}% of Ramadan complete</p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition flex-shrink-0" />
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })()}
+
                 {/* Connect Referrer - Only shows if eligible */}
                 {userId && (
                   <div className="mb-6">
