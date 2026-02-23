@@ -70,7 +70,8 @@ export const FOUNDATION_CATEGORIES: FoundationCategory[] = [
     isActive: true,
     isComingSoon: false,
     color: 'amber',
-    gradient: 'from-amber-500 to-orange-600'
+    gradient: 'from-amber-500 to-orange-600',
+    audioUrl: 'https://open.spotify.com/show/1llBPascXiLSvgbzPJSK34?si=7bd5094017344aa3'
   },
   {
     slug: 'names-of-allah',

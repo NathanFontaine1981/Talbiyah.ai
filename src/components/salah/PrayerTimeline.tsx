@@ -1,6 +1,7 @@
-import { MapPin, Check, Circle, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle } from 'lucide-react';
 import { usePrayerTimes } from '../../hooks/usePrayerTimes';
-import { usePrayerTracking } from '../../hooks/usePrayerTracking';
+import { usePrayerTracking, SUNNAH_PRAYERS, TOTAL_SUNNAH_RAKAHS } from '../../hooks/usePrayerTracking';
 
 interface PrayerTimelineProps {
   variant?: 'light' | 'dark';
@@ -10,7 +11,8 @@ type PrayerStatus = 'future' | 'active' | 'completed' | 'missed';
 
 export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProps) {
   const { prayerTimes, location, loading, currentMinutes } = usePrayerTimes();
-  const { completedPrayers, togglePrayer, isPrayerCompleted } = usePrayerTracking();
+  const { completedPrayers, togglePrayer, isPrayerCompleted, toggleSunnah, isSunnahCompleted, sunnahRakahsDone } = usePrayerTracking();
+  const [showSunnah, setShowSunnah] = useState(false);
 
   const isDark = variant === 'dark';
 
@@ -283,6 +285,108 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
           "The most beloved deeds to Allah are the most consistent, even if small."
         </p>
       )}
+
+      {/* Sunnah Rawatib section — gold/black "extra reward" theme */}
+      <div className={`mt-4 pt-3 border-t ${isDark ? 'border-amber-800/40' : 'border-amber-300/60'}`}>
+        <button
+          onClick={() => setShowSunnah(!showSunnah)}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <Castle className={`w-4 h-4 ${sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (isDark ? 'text-amber-400' : 'text-amber-500') : isDark ? 'text-amber-500/70' : 'text-amber-600'}`} />
+            <span className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-gray-900'}`}>
+              Sunnah Prayers
+            </span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+              sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
+                ? isDark ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40' : 'bg-amber-400 text-gray-900'
+                : sunnahRakahsDone > 0
+                  ? isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-800'
+                  : isDark ? 'bg-slate-700 text-amber-500/60' : 'bg-amber-50 text-amber-700/60'
+            }`}>
+              {sunnahRakahsDone}/{TOTAL_SUNNAH_RAKAHS} rak'ahs
+            </span>
+          </div>
+          {showSunnah ? (
+            <ChevronUp className={`w-4 h-4 ${isDark ? 'text-amber-500/70' : 'text-amber-600'}`} />
+          ) : (
+            <ChevronDown className={`w-4 h-4 ${isDark ? 'text-amber-500/70' : 'text-amber-600'}`} />
+          )}
+        </button>
+
+        {showSunnah && (
+          <div className="mt-3 space-y-2">
+            {/* Palace progress */}
+            {sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (
+              <div className={`text-center py-2.5 px-3 rounded-lg ${isDark ? 'bg-gradient-to-r from-amber-900/40 to-yellow-900/30 border border-amber-600/50' : 'bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300'}`}>
+                <p className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-gray-900'}`}>
+                  A palace is being built for you in Paradise today
+                </p>
+              </div>
+            ) : (
+              <p className={`text-xs italic text-center ${isDark ? 'text-amber-500/60' : 'text-amber-700/60'}`}>
+                "Whoever prays 12 rak'ahs during the day and night, a house will be built for him in Paradise." — Tirmidhi
+              </p>
+            )}
+
+            {/* Sunnah checkboxes */}
+            <div className="grid grid-cols-1 gap-1.5">
+              {SUNNAH_PRAYERS.map((sunnah) => {
+                const done = isSunnahCompleted(sunnah.key);
+                return (
+                  <button
+                    key={sunnah.key}
+                    onClick={() => toggleSunnah(sunnah.key)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left ${
+                      done
+                        ? isDark
+                          ? 'bg-amber-900/30 border border-amber-600/40'
+                          : 'bg-amber-100 border border-amber-300'
+                        : isDark
+                          ? 'bg-slate-800/50 border border-amber-800/30 hover:bg-amber-900/20'
+                          : 'bg-amber-50/50 border border-amber-200/60 hover:bg-amber-100/60'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      done
+                        ? isDark ? 'bg-amber-500 text-gray-900' : 'bg-amber-500 text-gray-900'
+                        : isDark ? 'border-2 border-amber-700/50' : 'border-2 border-amber-300'
+                    }`}>
+                      {done && <Check className="w-3 h-3" strokeWidth={3} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs font-medium ${
+                        done
+                          ? isDark ? 'text-amber-300' : 'text-gray-900'
+                          : isDark ? 'text-slate-300' : 'text-gray-800'
+                      }`}>
+                        {sunnah.label}
+                      </span>
+                      <span className={`text-xs ml-1.5 ${isDark ? 'text-amber-600/60' : 'text-amber-600/70'}`}>
+                        ({sunnah.rakahs} rak'ahs)
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Progress bar toward 12 */}
+            <div className="mt-1">
+              <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-amber-100'}`}>
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
+                      ? 'bg-gradient-to-r from-amber-400 to-yellow-400'
+                      : isDark ? 'bg-amber-600' : 'bg-amber-400'
+                  }`}
+                  style={{ width: `${(sunnahRakahsDone / TOTAL_SUNNAH_RAKAHS) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

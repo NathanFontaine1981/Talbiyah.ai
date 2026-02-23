@@ -13,7 +13,8 @@ import {
   Volume2,
   VolumeX,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Plane
 } from 'lucide-react';
 import { salahPositions, getPositionsByOrder } from '../../data/salahData';
 import LearnMode from './LearnMode';
@@ -22,6 +23,7 @@ import PracticeMode from './PracticeMode';
 import PrayNowMode from './PrayNowMode';
 import WuduMode from './WuduMode';
 import CommonMistakesMode from './CommonMistakesMode';
+import PrayerTimeline from './PrayerTimeline';
 
 interface SalahTutorialProps {
   onComplete?: () => void;
@@ -139,6 +141,7 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
   const [initialPositionId, setInitialPositionId] = useState<string | undefined>(undefined);
   const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [travellingOpen, setTravellingOpen] = useState(false);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Play Arabic audio using Web Speech API
@@ -311,6 +314,56 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
                 style={{ width: `${learnProgress}%` }}
               />
             </div>
+          </div>
+        </motion.div>
+
+        {/* Pray Now — Primary CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => setMode('pray')}
+            className="w-full group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl p-5 text-left flex items-center gap-4 shadow-lg transition-all"
+          >
+            <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Moon className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">Pray Now</h3>
+              <p className="text-emerald-100 text-sm">Follow along with your daily prayers</p>
+            </div>
+            <ArrowRight className="w-6 h-6 text-white group-hover:translate-x-1 transition-transform" />
+          </button>
+        </motion.div>
+
+        {/* Prayer Times Timeline */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="mb-6"
+        >
+          <PrayerTimeline variant="light" />
+        </motion.div>
+
+        {/* Early Prayer Tip */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.13 }}
+          className="mb-6"
+        >
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <p className="text-amber-900 text-sm leading-relaxed">
+              <em>"The Prophet &#xFDFA; was asked: 'Which deed is most beloved to Allah?' He said: 'Prayer at its earliest time.'"</em>
+              <span className="text-amber-600 text-xs ml-1">— Sahih al-Bukhari 527</span>
+            </p>
+            <p className="text-amber-700 text-xs mt-2 font-medium">
+              Try to pray within 15 minutes of the adhan
+            </p>
           </div>
         </motion.div>
 
@@ -618,35 +671,19 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
           })()}
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Learn Step by Step */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="grid md:grid-cols-2 gap-4 mb-6"
+          className="mb-6"
         >
-          {/* Pray Now */}
-          <button
-            onClick={() => setMode('pray')}
-            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl p-5 text-left flex items-center gap-4 shadow-md transition-all"
-          >
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Moon className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white">Pray Now</h3>
-              <p className="text-emerald-100 text-sm">Follow along with your daily prayers</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          {/* Learn Mode */}
           <button
             onClick={() => {
               setInitialPositionId(undefined);
               setMode('learn');
             }}
-            className="group bg-white hover:bg-gray-50 rounded-2xl p-5 border border-gray-200 hover:border-emerald-300 text-left flex items-center gap-4 shadow-sm transition-all"
+            className="w-full group bg-white hover:bg-gray-50 rounded-2xl p-5 border border-gray-200 hover:border-emerald-300 text-left flex items-center gap-4 shadow-sm transition-all"
           >
             <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
               <BookOpen className="w-6 h-6 text-emerald-600" />
@@ -699,6 +736,97 @@ export default function SalahTutorial({ onComplete, onBack, standalone = true }:
               <CheckCircle2 className="w-5 h-5 text-blue-500" />
             )}
           </button>
+        </motion.div>
+
+        {/* Travelling Prayer Diagram */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => setTravellingOpen(!travellingOpen)}
+            className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-2xl border border-gray-200 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+                <Plane className="w-5 h-5 text-sky-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-gray-900 text-sm">Travelling? Prayer rules</h3>
+                <p className="text-gray-500 text-xs">Shortening & combining prayers</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${travellingOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {travellingOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-3 bg-white rounded-2xl border border-gray-200 p-5 space-y-5">
+                  {/* Combining prayers */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Combining Prayers</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-3 border border-blue-100">
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <span className="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-1 rounded">Dhuhr</span>
+                          <span className="text-blue-400 text-xs">4 &rarr; 2</span>
+                          <span className="text-blue-300 font-bold">+</span>
+                          <span className="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-1 rounded">Asr</span>
+                          <span className="text-blue-400 text-xs">4 &rarr; 2</span>
+                        </div>
+                        <span className="text-blue-600 text-xs">at either time</span>
+                      </div>
+                      <div className="flex items-center gap-3 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <span className="bg-indigo-200 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Maghrib</span>
+                          <span className="text-indigo-400 text-xs">3</span>
+                          <span className="text-indigo-300 font-bold">+</span>
+                          <span className="bg-indigo-200 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Isha</span>
+                          <span className="text-indigo-400 text-xs">4 &rarr; 2</span>
+                        </div>
+                        <span className="text-indigo-600 text-xs">at either time</span>
+                      </div>
+                      <div className="flex items-center gap-3 bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <span className="bg-emerald-200 text-emerald-800 text-xs font-bold px-2 py-1 rounded">Fajr</span>
+                          <span className="text-emerald-600 text-xs">always prayed normally</span>
+                        </div>
+                        <span className="text-emerald-500 text-xs font-medium">2 rakahs</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shortening rules */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Shortening Rules</h4>
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">4-rakah prayers (Dhuhr, Asr, Isha)</span>
+                        <span className="font-semibold text-emerald-700">Shortened to 2</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">Maghrib</span>
+                        <span className="font-semibold text-gray-900">Stays at 3</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">Fajr</span>
+                        <span className="font-semibold text-gray-900">Stays at 2</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* XP Display */}

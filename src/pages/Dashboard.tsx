@@ -34,6 +34,7 @@ import DailyPracticeWidget from '../components/DailyPracticeWidget';
 import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
+import PrayerTimeline from '../components/salah/PrayerTimeline';
 import DashboardHeader from '../components/DashboardHeader';
 import TeacherSessionsCard from '../components/TeacherSessionsCard';
 import TeacherStatsWidget from '../components/TeacherStatsWidget';
@@ -981,6 +982,11 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* Prayer Timeline — visible for all roles */}
+            <div className="mb-6">
+              <PrayerTimeline variant="light" />
+            </div>
 
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (
