@@ -647,20 +647,24 @@ export default function RamadanPlannerPage() {
 
         {/* Calendar Grid */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-500" />
             30-Day Calendar
           </h3>
-          <div className="grid grid-cols-6 sm:grid-cols-10 gap-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            Night = Taraweeh &middot; Fast starts the following morning (Night 1 has no fast)
+          </p>
+          <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
             {Array.from({ length: RAMADAN_DAYS }, (_, i) => i + 1).map(day => {
               const status = getDayStatus(day);
               const isSelected = selectedDay === day;
               const isToday = currentDay === day;
+              const fastDay = day - 1;
               return (
                 <button
                   key={day}
                   onClick={() => selectDay(day)}
-                  className={`relative aspect-square rounded-lg border-2 flex flex-col items-center justify-center text-xs font-bold transition ${
+                  className={`relative rounded-lg border-2 flex flex-col items-center justify-center py-2 px-1 transition ${
                     isSelected
                       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-300'
                       : status === 'logged'
@@ -672,7 +676,8 @@ export default function RamadanPlannerPage() {
                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400'
                   }`}
                 >
-                  {day}
+                  <span className="text-[10px] opacity-60 leading-none">N{day}</span>
+                  <span className="text-xs font-bold leading-tight">{fastDay > 0 ? `F${fastDay}` : '—'}</span>
                   {isToday && (
                     <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full" />
                   )}
@@ -687,9 +692,14 @@ export default function RamadanPlannerPage() {
         {selectedDay && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Day {selectedDay} Check-In
-              </h3>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Night {selectedDay} Check-In
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {selectedDay > 1 ? `Fast day ${selectedDay - 1}` : 'No fast (first night of Ramadan)'}
+                </p>
+              </div>
               <div className="flex gap-1">
                 <button
                   onClick={() => selectedDay > 1 && selectDay(selectedDay - 1)}
@@ -711,7 +721,9 @@ export default function RamadanPlannerPage() {
             <div className="space-y-4">
               {/* Fasted */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Fasted today?</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {selectedDay > 1 ? `Fasted? (Fast ${selectedDay - 1})` : 'Fasted? (No fast day 1)'}
+                </span>
                 <button
                   onClick={() => setLogFasted(!logFasted)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
