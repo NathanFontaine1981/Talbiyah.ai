@@ -355,6 +355,27 @@ export default function ReasoningTest({ onComplete }: ReasoningTestProps) {
                     You used <span className="text-amber-400 font-semibold">evidence</span> to eliminate what's impossible and narrow down to what's possible.
                   </p>
                 </div>
+
+                <div className="border-t border-slate-700 pt-4 mt-4">
+                  <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-4">
+                    <p className="text-amber-200 leading-relaxed text-lg text-center">
+                      This is exactly how we should approach the biggest question of all:
+                    </p>
+                    <p className="text-3xl text-white font-bold text-center mt-3">
+                      Why are we here?
+                    </p>
+                  </div>
+
+                  <p className="text-lg text-slate-300 leading-relaxed mb-3">
+                    You've already agreed that you exist, you had a beginning, and you're going to die. You've just proved you can think critically.
+                  </p>
+
+                  <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+                    <p className="text-emerald-200 leading-relaxed">
+                      Now let's apply the <span className="text-white font-semibold">same brain</span> you just used to life's biggest question.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <button

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lightbulb, User, Scale, Gavel, HelpCircle, Compass, BookOpen, TrendingUp, Users, Frame, Brain, Search, Heart, Smartphone, Zap, CheckCircle2, Eye, TreePine, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, User, Scale, Gavel, Compass, BookOpen, Brain, Search, Heart, CheckCircle2, Volume2, VolumeX, Stethoscope, Leaf, Waves, Sparkles } from 'lucide-react';
 import AlmanacGame from './AlmanacGame';
 import ReasoningTest from './ReasoningTest';
 import QuranExhibits from './QuranExhibits';
@@ -10,8 +10,8 @@ interface ExploreIntroProps {
   onComplete: () => void;
 }
 
-// Foundation truths for the interactive builder
-const foundationTruthsPart1 = [
+// ========== All 8 foundation truths (single flow) ==========
+const foundationTruths = [
   {
     id: 1,
     text: 'We are human beings, and we are alive',
@@ -20,21 +20,18 @@ const foundationTruthsPart1 = [
   {
     id: 2,
     text: 'We had a beginning — we were born',
-    reflection: 'There was a time when you didn\'t exist. Then you were brought into being.',
+    reflection: "There was a time when you didn't exist. Then you were brought into being.",
   },
   {
     id: 3,
-    text: 'We are going to die one day — we don\'t know when or where',
+    text: "We are going to die one day — we don't know when or where",
     reflection: 'Every human who has ever lived has died, or will die. This is undeniable.',
   },
   {
     id: 4,
     text: 'We are intelligent beings',
-    reflection: 'You\'re reading, understanding, and processing this right now. That\'s intelligence.',
+    reflection: "You're reading, understanding, and processing this right now. That's intelligence.",
   },
-];
-
-const foundationTruthsPart2 = [
   {
     id: 5,
     text: 'We are the most intelligent beings on earth — we can outsmart, capture, and contain any animal no matter how big or dangerous',
@@ -43,7 +40,7 @@ const foundationTruthsPart2 = [
   {
     id: 6,
     text: 'Our bodies work automatically — heart beats, we heal when cut, hair grows, all without us choosing',
-    reflection: 'You didn\'t tell your heart to beat today. You don\'t choose to heal. It just happens.',
+    reflection: "You didn't tell your heart to beat today. You don't choose to heal. It just happens.",
   },
   {
     id: 7,
@@ -52,43 +49,63 @@ const foundationTruthsPart2 = [
   },
   {
     id: 8,
-    text: 'There was a beginning to the universe — it hasn\'t always existed',
-    reflection: 'Science confirms this. The Big Bang. Before that — nothing. It had a start.',
+    text: "There was a beginning to the universe — it hasn't always existed",
+    reflection: "Science confirms this. The Big Bang. Before that — nothing. It had a start.",
   },
 ];
 
+// ========== Phase definitions ==========
+interface Phase {
+  id: string;
+  name: string;
+  startScene: number;
+  endScene: number;
+}
+
+const phases: Phase[] = [
+  { id: 'A', name: 'What We Know For Sure', startScene: 0, endScene: 4 },
+  { id: 'B', name: 'Apply Your Logic', startScene: 5, endScene: 10 },
+  { id: 'C', name: 'The Evidence', startScene: 11, endScene: 16 },
+  { id: 'D', name: 'The Closing', startScene: 17, endScene: 19 },
+];
+
+function getCurrentPhase(sceneIndex: number): Phase {
+  return phases.find(p => sceneIndex >= p.startScene && sceneIndex <= p.endScene) || phases[0];
+}
+
+// ========== Scene definitions ==========
 interface IntroScene {
   id: string;
   title: string;
   icon: string;
   content: React.ReactNode | null;
-  commentary?: string;
   isInteractive?: boolean;
-  interactiveType?: 'foundation-1' | 'foundation-2' | 'reasoning-test' | 'almanac' | 'quran-exhibits';
+  interactiveType?: 'foundation' | 'reasoning-test' | 'almanac' | 'quran-exhibits';
+  voiceSource?: 'nathan' | 'daniel' | 'none';
 }
 
 const introScenes: IntroScene[] = [
-  // ========== PHASE A: "What We Know For Sure" (Scenes 0-4) ==========
+  // ===== PHASE A: "What We Know For Sure" (Scenes 0-4) ~5 min =====
   {
     id: 'welcome',
-    title: "A Message From The Founder",
+    title: 'A Message From The Founder',
     icon: 'founder-image',
+    voiceSource: 'nathan',
     content: (
       <>
-        {/* Founder Image */}
         <div className="flex justify-center mb-6 -mt-2">
-          <img
-            src="/founder-nathan.jpg"
-            alt="Nathan Ellington - Founder of Talbiyah"
-            className="w-full max-w-sm rounded-xl shadow-lg"
-          />
+          <div className="relative">
+            <img
+              src="/founder-nathan.jpg"
+              alt="Nathan Ellington - Founder of Talbiyah"
+              className="w-full max-w-sm rounded-xl shadow-lg"
+            />
+          </div>
         </div>
         <div className="space-y-4">
           <p className="text-xl text-white font-medium leading-relaxed">
             My duty is to convey the message that I found.
           </p>
-
-          {/* Ayah */}
           <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
             <p className="text-emerald-200 text-center font-arabic text-lg mb-2">
               مَّا عَلَى الرَّسُولِ إِلَّا الْبَلَاغُ
@@ -100,7 +117,6 @@ const introScenes: IntroScene[] = [
               — Quran 5:99
             </p>
           </div>
-
           <p className="text-lg text-slate-300 leading-relaxed">
             I want to share what I found—in full detail—and take you through <span className="text-amber-400 font-medium">my journey, from my lenses</span>.
           </p>
@@ -110,86 +126,43 @@ const introScenes: IntroScene[] = [
         </div>
       </>
     ),
-    commentary: "I'm not here to convince you. I'm here to share what I discovered. The rest is between you and your Creator.",
   },
   {
     id: 'what-we-know',
     title: 'What Do We All Know For Sure?',
     icon: 'lightbulb',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-xl text-white font-medium leading-relaxed">
-            Before I share anything with you, let's start with what every single human being on this earth already knows.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Not opinions. Not beliefs. Not theories.
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg">
-              <span className="text-white font-semibold">Facts</span> that no one — regardless of their religion, culture, or background — can deny.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            I want to build a <span className="text-emerald-400 font-medium">foundation</span> with you. Things we both agree on. Things that will never change.
-          </p>
-
-          <p className="text-slate-400 leading-relaxed">
-            Once we have that foundation, everything else becomes clearer.
-          </p>
-        </div>
-      </>
-    ),
+    voiceSource: 'nathan',
+    content: null, // Rendered dynamically with word-reveal animation
   },
   {
-    id: 'foundation-part-1',
-    title: 'The Foundation — Part 1',
+    id: 'foundation',
+    title: 'The Foundation',
     icon: 'foundation',
+    voiceSource: 'daniel',
     content: null,
     isInteractive: true,
-    interactiveType: 'foundation-1',
+    interactiveType: 'foundation',
   },
-  {
-    id: 'foundation-part-2',
-    title: 'The Foundation — Part 2',
-    icon: 'foundation',
-    content: null,
-    isInteractive: true,
-    interactiveType: 'foundation-2',
-  },
-  {
-    id: 'your-foundation',
-    title: 'Your Foundation',
-    icon: 'check',
-    content: null, // Rendered dynamically to show all 8 truths
-  },
-
-  // ========== PHASE B: "Test Your Thinking" (Scenes 5-7) ==========
   {
     id: 'reasoning-setup',
     title: 'Test Your Thinking',
     icon: 'brain',
+    voiceSource: 'daniel',
     content: (
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
             We all judge things against what we already know. If new information <span className="text-amber-400 font-medium">contradicts</span> something you know for sure, you can rule it out.
           </p>
-
           <p className="text-lg text-slate-300 leading-relaxed">
             That's how your brain works. Evidence in, conclusion out.
           </p>
-
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
             <p className="text-white font-medium text-lg mb-2">Let me give you a quick test.</p>
             <p className="text-slate-400 leading-relaxed">
               Nothing complicated. Just see if your brain is doing what it should be doing.
             </p>
           </div>
-
           <p className="text-slate-400 leading-relaxed">
             Ready?
           </p>
@@ -201,317 +174,40 @@ const introScenes: IntroScene[] = [
     id: 'reasoning-test',
     title: 'The Reasoning Test',
     icon: 'search',
+    voiceSource: 'none',
     content: null,
     isInteractive: true,
     interactiveType: 'reasoning-test',
   },
+
+  // ===== PHASE B: "Apply Your Logic" (Scenes 5-10) ~8 min =====
   {
-    id: 'you-proved-something',
-    title: 'You Just Proved Something',
-    icon: 'brain',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-xl text-white font-medium leading-relaxed">
-            You didn't guess. You didn't go with your feelings.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            You used <span className="text-amber-400 font-semibold">evidence</span> to eliminate the impossible and narrow down to what's possible.
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg text-center">
-              This is exactly how we should approach the biggest question of all:
-            </p>
-            <p className="text-3xl text-white font-bold text-center mt-3">
-              Why are we here?
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            You've already agreed that you exist, you had a beginning, and you're going to die. You've just proved you can think critically.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              Now let's apply the <span className="text-white font-semibold">same brain</span> you just used to life's biggest question.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-
-  // ========== PHASE C: "Apply Your Logic" (Scenes 8-15) ==========
-  {
-    id: 'something-brought-us-here',
-    title: 'Something Brought Us Here',
+    id: 'something-created-us',
+    title: 'Something Created Us',
     icon: 'lightbulb',
-    content: (
-      <>
-        <div className="space-y-5">
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-1">Remember, you agreed:</p>
-            <p className="text-white leading-relaxed">
-              We exist. We had a beginning. We didn't choose to be here.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            So <span className="text-white font-medium">something</span> must have brought us into existence. Because it's impossible for nothing to create something.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 text-center">
-            <p className="text-4xl text-white font-bold mb-2">
-              0 + 0 = 0
-            </p>
-            <p className="text-slate-400 text-sm">
-              Nothing plus nothing equals nothing.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            So how can <span className="text-amber-400 font-medium">no intelligence</span> create <span className="text-white font-medium">intelligence</span>?
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Surely something <span className="text-emerald-400 font-semibold">more intelligent</span> created all the intelligence and sophistication we see around us.
-          </p>
-        </div>
-      </>
-    ),
+    voiceSource: 'nathan',
+    content: null, // Rendered dynamically with counter animation + phone-in-desert
   },
   {
-    id: 'phone-in-desert',
-    title: 'The Phone in the Desert',
-    icon: 'smartphone',
-    content: null, // Rendered dynamically for interactivity
-  },
-  {
-    id: 'body-evidence',
+    id: 'the-evidence-within',
     title: 'The Evidence Within You',
     icon: 'user',
-    content: (
-      <>
-        <div className="space-y-5">
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm mb-1">Remember, you agreed:</p>
-            <p className="text-white leading-relaxed">
-              Our bodies work automatically. We think something and our body does it.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Let's look closer at the <span className="text-amber-400 font-medium">evidence you carry with you</span> every single day:
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-              <span className="text-2xl">👁️</span> Your Eyes
-            </h3>
-            <p className="text-slate-300 leading-relaxed">
-              576 megapixels. Auto-focus in milliseconds. Self-cleaning. Adjusts to light instantly. Works for <span className="text-white font-medium">80+ years</span> without replacement.
-            </p>
-            <p className="text-slate-400 text-sm mt-2">
-              No camera company has come close. And we have two of them.
-            </p>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-              <span className="text-2xl">🩹</span> Your Body
-            </h3>
-            <p className="text-slate-300 leading-relaxed">
-              Cut yourself—it heals. Break a bone—it repairs. Get sick—your immune system <span className="text-white font-medium">fights back automatically</span>.
-            </p>
-            <p className="text-slate-400 text-sm mt-2">
-              No machine fixes itself. Your body does it without you even thinking.
-            </p>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-              <span className="text-2xl">🧠</span> Your Brain
-            </h3>
-            <p className="text-slate-300 leading-relaxed">
-              86 billion neurons. Stores a lifetime of memories. Processes emotions, language, creativity, and <span className="text-white font-medium">consciousness itself</span>.
-            </p>
-            <p className="text-slate-400 text-sm mt-2">
-              The most powerful supercomputers still can't replicate what sits between your ears.
-            </p>
-          </div>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              All of this... by <span className="text-white font-medium">accident</span>? Or by <span className="text-emerald-400 font-semibold">design</span>?
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            The evidence points to a <span className="text-white font-medium">system</span>. Order. Precision. Purpose.
-          </p>
-        </div>
-      </>
-    ),
+    voiceSource: 'daniel',
+    content: null, // Rendered dynamically with body diagram animation
   },
   {
-    id: 'what-we-observe',
-    title: 'What We See Around Us',
-    icon: 'tree',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            It's not just our bodies. Look at the <span className="text-amber-400 font-medium">world around you</span>:
-          </p>
-
-          <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">Day and Night</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Every ~24 hours, like clockwork. The sun rises, the sun sets. Light, then dark. Calculated. Precise. Never misses.
-              </p>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">The Seasons</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Summer — things grow, blossom, come alive. Winter — leaves fall, things appear dead. But they're not gone forever. When it warms up again, it all comes back. A cycle. Designed.
-              </p>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">Reproduction</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                A baby comes from a man and a woman. It grows inside the mother through stages — from nothing visible to a full human being. We didn't design this process. It just works.
-              </p>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">Ecosystems</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Communities of bees, colonies of ants — each with roles, systems, order. The entire natural world runs with a precision that we observe but didn't create.
-              </p>
-            </div>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Through <span className="text-white font-medium">observation</span>, we collect data, we understand patterns. That's what we do as intelligent beings — we observe and we work things out.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              And everything we observe points to <span className="text-white font-semibold">order</span>, <span className="text-white font-semibold">systems</span>, and <span className="text-white font-semibold">design</span>. Not chaos. Not randomness.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'something-different',
-    title: 'Something Different About Us',
-    icon: 'heart',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Animals live by <span className="text-amber-400 font-medium">survival of the fittest</span>. Kill or be killed. The lion doesn't feel guilt after a hunt. It's just survival.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            But human beings? We're <span className="text-white font-medium">different</span>.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium text-lg mb-3">We have things inside us that animals don't:</p>
-            <div className="space-y-2">
-              <p className="text-slate-300 leading-relaxed">
-                A sense of <span className="text-amber-400 font-medium">justice</span> — we know when something is wrong, even when it doesn't affect us personally.
-              </p>
-              <p className="text-slate-300 leading-relaxed">
-                <span className="text-amber-400 font-medium">Love</span> — not just instinct, but deep, conscious love for people.
-              </p>
-              <p className="text-slate-300 leading-relaxed">
-                A desire to be <span className="text-amber-400 font-medium">good</span> — to help, to be fair, to be kind. Why? Where does that come from?
-              </p>
-            </div>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            We see injustice happen around the world — people harmed for no reason, property taken, the powerful exploiting the weak — and something <span className="text-white font-medium">inside us</span> says: <span className="text-amber-400 font-medium">"That's wrong."</span>
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Where did that come from? How do we just <span className="text-white font-medium">have</span> justice inside of us? How do we just <span className="text-white font-medium">have</span> love?
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              There are so many things <span className="text-white font-semibold">common between all human beings</span> — across every culture, every continent, every era. We all share a sense of right and wrong. That's not random. That's built in.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'creator-vs-creation',
-    title: 'Creator vs Creation',
+    id: 'the-creator',
+    title: 'The Creator',
     icon: 'scale',
+    voiceSource: 'daniel',
     content: (
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            Science tells us the universe had a <span className="text-amber-400 font-medium">beginning</span>.
+            Science tells us the universe had a <span className="text-amber-400 font-medium">beginning</span>. The Big Bang. Before that—<span className="text-white font-medium">nothing</span>.
           </p>
 
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-slate-300 leading-relaxed">
-              The Big Bang. A moment when space, time, and matter came into existence. Before that—<span className="text-white font-medium">nothing</span>.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            If the universe was <span className="text-amber-400 font-medium">brought into existence</span>, then it is a <span className="text-white font-medium">creation</span>.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And every creation needs something to create it—something that was <span className="text-emerald-400 font-medium">already there</span>.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              The universe didn't create itself. It couldn't have—because it didn't exist yet.
-            </p>
-            <p className="text-emerald-300 mt-3">
-              Something <span className="text-white font-semibold">outside</span> the universe must have brought it into being.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Whatever that something is, must be the <span className="text-emerald-400 font-semibold">Creator</span>.
-          </p>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'the-question-redundant',
-    title: 'Who Created the Creator?',
-    icon: 'question',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Some ask: <span className="text-amber-400 font-medium">"If everything needs a creator, who created the Creator?"</span>
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            But I came to the conclusion that this question misunderstands what "Creator" means. Let me define two words:
-          </p>
-
+          {/* Creator vs Creation split cards */}
           <div className="grid gap-4">
             <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
               <h3 className="text-amber-300 font-bold mb-1">Creation</h3>
@@ -521,7 +217,6 @@ const introScenes: IntroScene[] = [
                 <li>• Cannot bring itself into existence</li>
               </ul>
             </div>
-
             <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
               <h3 className="text-emerald-300 font-bold mb-1">Creator</h3>
               <ul className="text-slate-400 text-sm space-y-1">
@@ -532,69 +227,38 @@ const introScenes: IntroScene[] = [
             </div>
           </div>
 
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Some ask: <span className="text-amber-400 font-medium">"Who created the Creator?"</span> — but that's like asking a man when he gave birth to his child. The question doesn't apply.
+          </p>
+
+          {/* Picture on the Wall concept */}
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-slate-300 leading-relaxed mb-3">
-              Asking "who created the Creator" is like asking a man: <span className="text-white font-medium">"When did you give birth to your child?"</span>
+            <p className="text-white font-medium mb-3">The Picture on the Wall</p>
+            <p className="text-slate-300 leading-relaxed text-sm mb-2">
+              You need to hang a picture but can't do it alone. You ask Person A — they say "I can help, but only if someone helps me first." Person B says the same. And C. And D.
             </p>
-            <p className="text-slate-400 text-sm">
-              The question doesn't apply. Men don't give birth. Creators aren't created.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            The question "who created the Creator" is really asking about <span className="text-amber-400 font-medium">creation</span>—not the Creator.
-          </p>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'picture-on-wall',
-    title: 'The Picture on the Wall',
-    icon: 'frame',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Imagine you need to hang a <span className="text-white font-medium">picture on the wall</span>, but you can't do it alone.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-3">
-            <p className="text-slate-300 leading-relaxed">
-              You ask <span className="text-amber-400">Person A</span> for help. They say: "I can help, but only if someone helps me first."
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              So you ask <span className="text-amber-400">Person B</span>. Same answer: "I can help, but only if someone helps me first."
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              And <span className="text-amber-400">Person C</span>... and <span className="text-amber-400">Person D</span>... all the same.
+            <p className="text-white font-medium leading-relaxed text-sm">
+              If this chain goes on forever, the picture never gets on the wall.
             </p>
           </div>
-
-          <p className="text-lg text-white font-medium leading-relaxed">
-            If this chain goes on forever, the picture would never get on the wall.
-          </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed mb-3">
+            <p className="text-emerald-200 leading-relaxed mb-2">
               But the picture <span className="text-white font-bold">is</span> on the wall. The universe <span className="text-white font-bold">does</span> exist.
             </p>
             <p className="text-emerald-300 leading-relaxed">
-              That means at some point, there must be someone who <span className="text-white font-medium">doesn't need help</span>—someone self-sufficient who can act without depending on another.
+              There must be someone who <span className="text-white font-medium">doesn't need help</span>—self-sufficient, uncreated. That is the <span className="text-emerald-400 font-semibold">Creator</span>.
             </p>
           </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            That is the <span className="text-emerald-400 font-semibold">Creator</span>. Otherwise, you're forever relying on creation—and the picture never goes up.
-          </p>
         </div>
       </>
     ),
   },
   {
     id: 'what-are-you-for',
-    title: 'But What Are You For?',
-    icon: 'user',
+    title: 'What Are You For?',
+    icon: 'compass',
+    voiceSource: 'nathan',
     content: (
       <>
         <div className="space-y-5">
@@ -602,39 +266,25 @@ const introScenes: IntroScene[] = [
             Ask yourself about any body part and you know the answer:
           </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Feet</p>
-              <p className="text-slate-500 text-xs">To walk</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Eyes</p>
-              <p className="text-slate-500 text-xs">To see</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Ears</p>
-              <p className="text-slate-500 text-xs">To hear</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Hands</p>
-              <p className="text-slate-500 text-xs">To feel and hold</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Nose</p>
-              <p className="text-slate-500 text-xs">To smell</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 text-center">
-              <p className="text-white text-sm font-medium">Lungs</p>
-              <p className="text-slate-500 text-xs">To breathe</p>
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { part: 'Feet', purpose: 'To walk' },
+              { part: 'Eyes', purpose: 'To see' },
+              { part: 'Ears', purpose: 'To hear' },
+              { part: 'Hands', purpose: 'To hold' },
+              { part: 'Nose', purpose: 'To smell' },
+              { part: 'Lungs', purpose: 'To breathe' },
+            ].map(item => (
+              <div key={item.part} className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
+                <p className="text-white text-sm font-medium">{item.part}</p>
+                <p className="text-slate-500 text-xs">{item.purpose}</p>
+              </div>
+            ))}
           </div>
 
           <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 text-center">
             <p className="text-amber-200 leading-relaxed text-xl font-medium">
               But what are <span className="text-white font-bold">you</span> for?
-            </p>
-            <p className="text-amber-300 mt-2">
-              What are we doing here? Why do we have all these faculties?
             </p>
           </div>
 
@@ -642,74 +292,27 @@ const introScenes: IntroScene[] = [
             We didn't make our own faculties. We didn't design our eyes or choose to have a heartbeat. <span className="text-white font-medium">Something gave us all of this.</span>
           </p>
 
+          {/* The Plane metaphor */}
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
             <p className="text-slate-300 leading-relaxed mb-3">
-              Imagine a <span className="text-white font-medium">Boeing 747</span>. All those buttons, the engines, the fuel system. It tells you exactly how far it can fly, what fuel it takes, how long before it needs refuelling.
+              Imagine you <span className="text-white font-medium">wake up on a plane</span>. You don't know how you got there. What would you immediately think?
             </p>
-            <p className="text-slate-300 leading-relaxed">
-              Would you ever believe the wind blew, the sand shifted, metal dropped from the sky, and it just <span className="text-amber-400 font-medium">assembled itself</span> into a working aeroplane?
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            You'd say that's <span className="text-white font-medium">impossible</span>. And you'd be right. We never come to that conclusion in <span className="text-amber-400 font-medium">any</span> area of life. So why would we think differently about ourselves?
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              That's why the majority of human beings throughout history have come to the same conclusion: <span className="text-white font-semibold">something created us</span>.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'the-plane',
-    title: 'The Plane',
-    icon: 'compass',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            We find ourselves living in this world. We <span className="text-amber-400 font-medium">didn't decide</span> to be here. We <span className="text-amber-400 font-medium">didn't choose</span> to be here. But here we are.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And we know one thing for sure: one day, we are going to <span className="text-white font-medium">pass away</span>. We don't know when—but it's certain.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            So the question is: <span className="text-amber-400 font-medium">is that the end?</span> Do we just live, do what we want, die, and that's it — nothing afterwards? Or does what we do in our lives actually <span className="text-white font-medium">matter</span>?
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-slate-300 leading-relaxed mb-3">
-              Imagine you <span className="text-white font-medium">wake up on a plane</span>. You don't know how you got there.
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              What would you immediately think?
-            </p>
-            <ul className="mt-3 space-y-2 text-slate-400">
+            <ul className="space-y-2 text-slate-400">
               <li>• What am I doing on this plane?</li>
               <li>• Where is it heading?</li>
-              <li>• How did I get on here?</li>
+              <li>• How did I get here?</li>
             </ul>
+            <p className="text-slate-300 leading-relaxed mt-3">
+              It would be <span className="text-amber-400 font-medium">strange</span> to just turn on the TV, order some food, and enjoy yourself—without knowing what's happening or where you're going.
+            </p>
           </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            It would be <span className="text-amber-400 font-medium">strange</span> to just turn on the TV, order some food, and enjoy yourself—without knowing what's happening or where you're going.
-          </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
             <p className="text-emerald-200 leading-relaxed text-lg">
               <span className="text-white font-semibold">This is us.</span>
             </p>
             <p className="text-emerald-300 mt-3 leading-relaxed">
-              We're on a journey we didn't choose, heading towards an end we can't escape. Every part of us has <span className="text-white font-medium">clear purpose</span>. So surely the whole of us has a purpose too.
-            </p>
-            <p className="text-emerald-200 mt-3 leading-relaxed">
-              The answer <span className="text-white font-semibold">must exist</span>. It's up to us to find it.
+              We're on a journey we didn't choose, heading towards an end we can't escape. The answer <span className="text-white font-semibold">must exist</span>. And that's exactly what I set out to find.
             </p>
           </div>
         </div>
@@ -717,175 +320,88 @@ const introScenes: IntroScene[] = [
     ),
   },
   {
-    id: 'answer-must-exist',
+    id: 'the-answer',
     title: 'The Answer Must Exist',
-    icon: 'lightbulb',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            So if we establish that something <span className="text-white font-medium">more intelligent than us</span> created us and this universe, for a <span className="text-amber-400 font-medium">reason</span>...
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg">
-              Would it really create us and then <span className="text-white font-semibold">not tell us why</span>?
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            That doesn't make sense. If something created you with <span className="text-white font-medium">purpose-built parts</span> — eyes to see, ears to hear, a brain to think, a heart that beats on its own — it clearly had a plan.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And if it had a plan, it must have <span className="text-amber-400 font-medium">communicated</span> that plan. Otherwise, what's the point?
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              The <span className="text-white font-semibold">answer must be here</span> — somewhere in the world. It's up to us to find it. And that's exactly what I set out to do.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'invitation',
-    title: 'The Claim',
     icon: 'book',
+    voiceSource: 'daniel',
     content: (
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            So I did some <span className="text-amber-400 font-medium">investigating</span>. And I found a claim.
+            If something <span className="text-white font-medium">more intelligent than us</span> created us and this universe, for a <span className="text-amber-400 font-medium">reason</span>... would it really create us and then <span className="text-white font-semibold">not tell us why</span>?
           </p>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            There is one source — the <span className="text-white font-semibold">Quran</span> — that claims to be from the One who created us. And it doesn't just say "believe." It says: <span className="text-amber-400 font-medium">here's why you're here, here's what happens when you die, and here's how to live</span>.
+            That doesn't make sense. If something created you with <span className="text-white font-medium">purpose-built parts</span> — eyes to see, ears to hear, a brain to think — it clearly had a plan. And it must have <span className="text-amber-400 font-medium">communicated</span> that plan.
           </p>
 
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium mb-3">It claims to contain:</p>
+            <p className="text-white font-medium mb-3">I found one source — the Quran — that claims:</p>
             <div className="space-y-2 text-slate-300 text-sm">
               <p>• Why you were created and your purpose</p>
               <p>• What happened to people before us</p>
               <p>• What happens when you die — and what comes after</p>
-              <p>• How the world was created</p>
               <p>• Laws for living — inheritance, family, food, business</p>
-              <p>• Morals, justice, how to treat your parents and spouse</p>
               <p>• A complete <span className="text-amber-400 font-medium">code of life</span></p>
             </div>
           </div>
 
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg">
-              That's a bold claim. So we need to <span className="text-white font-semibold">examine it</span>.
-            </p>
+          {/* Glowing book visual */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-400/20 blur-2xl rounded-full" />
+              <div className="relative bg-amber-900/30 rounded-xl p-8 border border-amber-700/50 text-center">
+                <BookOpen className="w-16 h-16 text-amber-400 mx-auto mb-3" />
+                <p className="text-amber-200 leading-relaxed text-lg">
+                  That's a bold claim. So we need to <span className="text-white font-semibold">examine it</span>.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </>
     ),
   },
   {
-    id: 'examine-the-claim',
-    title: 'Where Did This Book Come From?',
-    icon: 'search',
+    id: 'my-discovery',
+    title: 'What I Found',
+    icon: 'heart',
+    voiceSource: 'nathan',
     content: (
       <>
         <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            If you find a <span className="text-white font-medium">book on the floor</span>, there are only a few possibilities for where it came from:
+          <p className="text-xl text-white font-medium leading-relaxed">
+            When I started looking into this — genuinely looking, not just hearing what people say — something shifted.
           </p>
 
-          <div className="space-y-2">
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-300 text-sm"><span className="text-amber-400 font-medium">Option 1:</span> One human being wrote it</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-300 text-sm"><span className="text-amber-400 font-medium">Option 2:</span> A group of human beings wrote it</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-300 text-sm"><span className="text-amber-400 font-medium">Option 3:</span> It came from something else — the Creator</p>
-            </div>
-          </div>
-
           <p className="text-lg text-slate-300 leading-relaxed">
-            Now consider this: the Quran came over <span className="text-white font-medium">1,400 years ago</span>.
+            I wasn't expecting to find what I found.
           </p>
 
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-slate-300 leading-relaxed mb-3">
-              Imagine someone from back then hearing a conversation from today — phones, AI, flying across the world in hours. They wouldn't understand a word.
-            </p>
-            <p className="text-slate-400 text-sm">
-              <span className="text-white">"I'll fly to that country and be there in half an hour"</span> — they'd say: "Only birds fly. How can humans fly?"
+          <p className="text-lg text-slate-300 leading-relaxed">
+            The more I examined, the more I couldn't walk away. Piece after piece after piece. And at some point, it stopped being about "maybe" and became...
+          </p>
+
+          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 text-center">
+            <p className="text-2xl text-white font-bold">
+              I can't deny this.
             </p>
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            So if this book from 1,400 years ago contains information that <span className="text-amber-400 font-medium">couldn't have been known</span> at that time — but we've since discovered to be true — that tells us something.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              Let's <span className="text-white font-semibold">cross-check</span> what it says with what we now know for sure. Let's see if this book really talks as if its Author <span className="text-white font-semibold">knows everything</span> — or if it makes mistakes along the way.
-            </p>
-          </div>
-
-          <p className="text-slate-400 leading-relaxed">
-            All I ask is an <span className="text-white font-medium">open mind</span>. Not blind acceptance. Not stubborn rejection. Just honest examination of the evidence.
+            I want to show you what I found. And I want you to <span className="text-amber-400 font-medium">judge for yourself</span>.
           </p>
         </div>
       </>
     ),
   },
 
-  // ========== PHASE D: "The Evidence Begins" ==========
-  {
-    id: 'beliefs-change',
-    title: 'Beliefs Change With Evidence',
-    icon: 'trending',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Think about it—<span className="text-white font-medium">we update our beliefs all the time</span> when new evidence comes in.
-          </p>
-
-          <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-400 text-sm">
-                <span className="text-white">Before telephones:</span> "Talk to someone miles away? Impossible."
-              </p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-400 text-sm">
-                <span className="text-white">Before planes:</span> "Humans flying through the sky? Ridiculous."
-              </p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-              <p className="text-slate-400 text-sm">
-                <span className="text-white">Before Concorde:</span> "London to New York in 3 hours? Unbelievable."
-              </p>
-            </div>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            The <span className="text-amber-400 font-medium">impossible</span> became <span className="text-emerald-400 font-medium">possible</span>. Then it became <span className="text-white">normal</span>.
-          </p>
-
-          <p className="text-slate-400 leading-relaxed">
-            We all carry beliefs right now. The question is—are we willing to examine them when evidence is presented?
-          </p>
-        </div>
-      </>
-    ),
-  },
+  // ===== PHASE C: "The Evidence" (Scenes 11-16) ~10 min =====
   {
     id: 'court-session',
     title: 'Court Is Now In Session',
     icon: 'gavel',
+    voiceSource: 'nathan',
     content: (
       <>
         <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50 mb-6 text-center">
@@ -901,10 +417,10 @@ const introScenes: IntroScene[] = [
             You are the <span className="text-amber-400 font-semibold">judge and jury</span>. I will present evidence. You will decide.
           </p>
           <p className="text-lg text-slate-300 leading-relaxed">
-            Your duty: examine each piece of evidence with an <span className="text-blue-400 font-semibold">open mind</span>. Accept what convinces you. Question what doesn't.
+            Examine each piece of evidence with an <span className="text-blue-400 font-semibold">open mind</span>. Accept what convinces you. Question what doesn't.
           </p>
           <p className="text-lg text-slate-300 leading-relaxed">
-            At the end, you will deliver your verdict. <span className="text-amber-400 font-medium">Is this book from the Creator—or isn't it?</span>
+            At the end — <span className="text-amber-400 font-medium">you deliver the verdict</span>.
           </p>
         </div>
       </>
@@ -914,6 +430,7 @@ const introScenes: IntroScene[] = [
     id: 'back-in-time',
     title: 'Put Yourself Back in Time',
     icon: 'compass',
+    voiceSource: 'daniel',
     content: (
       <>
         <div className="space-y-5">
@@ -931,10 +448,6 @@ const introScenes: IntroScene[] = [
             </div>
           </div>
 
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Imagine someone from that time hearing a conversation from today — phones, AI, flying across the world in hours.
-          </p>
-
           <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
             <p className="text-amber-200 leading-relaxed">
               <span className="text-white font-medium">"I'll fly to that country and be there in half an hour"</span> — they'd say: <span className="text-amber-300">"Only birds fly. How can a human fly?"</span>
@@ -950,8 +463,9 @@ const introScenes: IntroScene[] = [
   },
   {
     id: 'the-specialist',
-    title: 'The Specialist Argument',
+    title: 'The Specialist',
     icon: 'brain',
+    voiceSource: 'daniel',
     content: (
       <>
         <div className="space-y-5">
@@ -959,68 +473,43 @@ const introScenes: IntroScene[] = [
             Think about the <span className="text-amber-400 font-medium">best people in the world</span> in their respective areas:
           </p>
 
+          {/* Specialist cards */}
           <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">A Cardiologist</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Spent their entire life becoming an expert in <span className="text-white">one area of the body</span> — the heart. Years of study, training, practice. Just to be a specialist in that one thing.
-              </p>
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
+              <div className="w-10 h-10 bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Stethoscope className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">A Cardiologist</p>
+                <p className="text-slate-400 text-sm">Spent their entire life becoming an expert in <span className="text-white">one area of the body</span> — the heart.</p>
+              </div>
             </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">David Attenborough</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Everyone knows him for <span className="text-white">observing nature</span> — animals, ecosystems, life forms. He spent a <span className="text-white">lifetime</span> doing just that. If he tried to switch to cardiology, he'd never be as good.
-              </p>
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
+              <div className="w-10 h-10 bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Leaf className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">David Attenborough</p>
+                <p className="text-slate-400 text-sm">Everyone knows him for <span className="text-white">observing nature</span>. A <span className="text-white">lifetime</span> of doing just that.</p>
+              </div>
             </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-white font-medium mb-1">An Oceanologist</p>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Spent their career studying <span className="text-white">the ocean</span> — currents, salinity, marine life. One subject, one lifetime.
-              </p>
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
+              <div className="w-10 h-10 bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Waves className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium mb-1">An Oceanologist</p>
+                <p className="text-slate-400 text-sm">Spent their career studying <span className="text-white">the ocean</span>. One subject, one lifetime.</p>
+              </div>
             </div>
-          </div>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg">
-              Each of these people spent a <span className="text-white font-semibold">lifetime</span> becoming the best at <span className="text-white font-semibold">one thing</span>.
-            </p>
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            Yet somehow, the Quran — from <span className="text-white font-medium">1400 years ago</span> — covers:
+            Yet the Quran — from <span className="text-white font-medium">1400 years ago</span> — covers the human body, the ocean, the mountains, embryology, the universe, law, and history.
           </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">The human body</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">The ocean</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">The mountains</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">The universe</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">Embryology</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">Law & morality</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">History & prophecy</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 text-center">
-              <p className="text-slate-300 text-xs">Nature & ecology</p>
-            </div>
-          </div>
-
           <p className="text-lg text-slate-300 leading-relaxed">
-            And gets <span className="text-amber-400 font-medium">nothing wrong</span>. From a man who couldn't read or write, in a civilisation that knew nothing about these fields.
+            And gets <span className="text-amber-400 font-medium">nothing wrong</span>. From a man who couldn't read or write.
           </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
@@ -1028,184 +517,90 @@ const introScenes: IntroScene[] = [
               <span className="text-white font-semibold">How?</span>
             </p>
             <p className="text-emerald-300 mt-2 leading-relaxed">
-              Somebody give me a clear explanation of where this book came from. Because the author seems to know <span className="text-white font-semibold">everything about everything</span>.
+              The author seems to know <span className="text-white font-semibold">everything about everything</span>.
             </p>
           </div>
         </div>
       </>
     ),
-  },
-  {
-    id: 'almanac',
-    title: 'The Almanac Moment',
-    icon: 'book',
-    isInteractive: true,
-    interactiveType: 'almanac',
-    content: null,
   },
   {
     id: 'quran-exhibits',
     title: 'The Exhibits',
     icon: 'search',
+    voiceSource: 'none',
     isInteractive: true,
     interactiveType: 'quran-exhibits',
     content: null,
   },
   {
-    id: 'no-contradictions',
-    title: 'No Contradictions',
-    icon: 'check',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Consider what we've just seen. Now consider this:
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium mb-3">The Quran was revealed over 23 years</p>
-            <div className="space-y-2 text-slate-400 text-sm">
-              <p>In bits and pieces, across different situations</p>
-              <p>In rhyming Arabic of the highest eloquence</p>
-              <p>Covering laws, morals, science, history, prophecy, and the unseen</p>
-            </div>
-          </div>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg text-center">
-              And <span className="text-white font-bold">nothing</span> — absolutely nothing — has contradicted itself.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            No ruling contradicts another ruling. No scientific description has been proven wrong. No prophecy has failed. Over <span className="text-white font-medium">1400 years</span> of scrutiny.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            What's the <span className="text-amber-400 font-medium">probability</span> of human beings compiling this information — perfectly — in one book, one time, not messing anything up?
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              A book of <span className="text-white font-semibold">laws</span>, <span className="text-white font-semibold">morals</span>, <span className="text-white font-semibold">science</span>, and <span className="text-white font-semibold">history</span> — from an illiterate man in the desert — with zero errors. You'd have to decide for yourself what that means.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
+    id: 'the-almanac',
+    title: 'The Almanac Moment',
+    icon: 'book',
+    voiceSource: 'none',
+    isInteractive: true,
+    interactiveType: 'almanac',
+    content: null,
   },
   {
-    id: 'one-book',
-    title: 'One Book. One Version.',
-    icon: 'book',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            When you find a book that makes a claim, the first thing you check is: <span className="text-amber-400 font-medium">is it authentic?</span>
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Are there other versions? Has it been changed? Is there any copy that says something different?
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 text-center">
-            <p className="text-amber-200 leading-relaxed text-xl font-medium">
-              There is <span className="text-white font-bold">one Quran</span>.
-            </p>
-            <p className="text-amber-300 mt-2">
-              Every copy on earth is identical. 1400 years. One version.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And the very first thing this book says to you — the opening of the second chapter:
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white/80 font-arabic text-lg text-center mb-3 leading-loose" dir="rtl">
-              ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
-            </p>
-            <p className="text-white leading-relaxed text-center italic">
-              "This is the Book about which there is no doubt — a guidance for those who are mindful of God."
-            </p>
-            <p className="text-amber-400/70 text-center text-xs mt-2">
-              — Al-Baqarah 2:2
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            It opens by telling you: <span className="text-white font-medium">there's no doubt in this</span>. It's the manual for mankind.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              The one book in the world that claims to answer why you're here, what happens when you die, and how to live — and it starts with <span className="text-white font-semibold">"no doubt."</span>
-            </p>
-          </div>
-        </div>
-      </>
-    ),
+    id: 'the-verdict',
+    title: 'No Contradictions. One Book.',
+    icon: 'check',
+    voiceSource: 'daniel',
+    content: null, // Rendered dynamically with stats counter animation
   },
+
+  // ===== PHASE D: "The Closing" (Scenes 17-19) ~3 min =====
   {
     id: 'prove-it',
     title: 'Prove It',
-    icon: 'zap',
+    icon: 'sparkles',
+    voiceSource: 'daniel',
+    content: null, // Rendered dynamically with animated checklist
+  },
+  {
+    id: 'your-verdict',
+    title: 'Your Verdict',
+    icon: 'heart',
+    voiceSource: 'nathan',
     content: (
       <>
         <div className="space-y-5">
           <p className="text-lg text-slate-300 leading-relaxed">
-            So what do we say back?
+            Based on everything you've seen — the evidence within your own body, the facts stated 1400 years before science confirmed them, one book, one version, zero contradictions —
           </p>
 
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 text-center">
-            <p className="text-2xl text-white font-bold mb-2">
-              "You claim to be my Creator?"
-            </p>
-            <p className="text-amber-200 text-lg">
-              Prove it. Show me. Give me evidence.
+          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 text-center">
+            <p className="text-2xl text-white font-bold">
+              Where do you think this book came from?
             </p>
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            I need to be able to <span className="text-amber-400 font-medium">cross-check</span> things. I need to see what's what. That's all I'm asking — proof.
+            Whatever you decide, I respect it. But I'd encourage you — <span className="text-amber-400 font-medium">keep going</span>. There's more to see.
+          </p>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'begin',
+    title: "Let's Begin",
+    icon: 'compass',
+    voiceSource: 'nathan',
+    content: (
+      <>
+        <div className="space-y-5">
+          <p className="text-xl text-white font-medium leading-relaxed text-center">
+            The journey only gets more interesting from here.
           </p>
 
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And that's <span className="text-white font-medium">exactly what we just did</span>.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <div className="space-y-2 text-slate-300 text-sm">
-              <p className="flex items-center gap-2">
-                <span className="text-emerald-400">&#10003;</span>
-                We examined what the Quran says about the human body — <span className="text-white">confirmed by modern science</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="text-emerald-400">&#10003;</span>
-                We examined what it says about the universe — <span className="text-white">confirmed by modern science</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="text-emerald-400">&#10003;</span>
-                We examined what it says about the natural world — <span className="text-white">confirmed by modern science</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="text-emerald-400">&#10003;</span>
-                Zero contradictions over 1400 years — <span className="text-white">confirmed</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="text-emerald-400">&#10003;</span>
-                One version, unchanged — <span className="text-white">confirmed</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+          <div className="bg-emerald-900/30 rounded-xl p-6 border border-emerald-700/50 text-center">
             <p className="text-emerald-200 leading-relaxed text-lg">
-              Now it's your turn to deliver the verdict.
+              You've seen the evidence. You've delivered your own verdict. Now let's go deeper.
             </p>
-            <p className="text-emerald-300 mt-3 leading-relaxed">
-              Based on what you've seen — <span className="text-white font-semibold">where do you think this book came from?</span>
+            <p className="text-emerald-300 mt-3">
+              The next chapter explores the Quran itself — what it says, how it reads, and why millions of people across every century have been moved by it.
             </p>
           </div>
         </div>
@@ -1214,27 +609,19 @@ const introScenes: IntroScene[] = [
   },
 ];
 
-// ========== Foundation Builder Component ==========
-function FoundationBuilder({
-  truths,
-  previousTruths,
-  onComplete,
-}: {
-  truths: typeof foundationTruthsPart1;
-  previousTruths: typeof foundationTruthsPart1;
-  onComplete: () => void;
-}) {
+// ========== Foundation Builder Component (all 8 truths, single flow) ==========
+function FoundationBuilder({ onComplete }: { onComplete: () => void }) {
   const [agreedTruths, setAgreedTruths] = useState<number[]>([]);
   const [currentTruthIndex, setCurrentTruthIndex] = useState(0);
   const [showReflection, setShowReflection] = useState(false);
 
-  const currentTruth = truths[currentTruthIndex];
-  const allAgreed = agreedTruths.length === truths.length;
+  const currentTruth = foundationTruths[currentTruthIndex];
+  const allAgreed = agreedTruths.length === foundationTruths.length;
 
   const handleAgree = () => {
     setAgreedTruths(prev => [...prev, currentTruth.id]);
     setShowReflection(false);
-    if (currentTruthIndex < truths.length - 1) {
+    if (currentTruthIndex < foundationTruths.length - 1) {
       setCurrentTruthIndex(prev => prev + 1);
     }
   };
@@ -1247,32 +634,15 @@ function FoundationBuilder({
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-serif text-white mb-2">
-            {previousTruths.length > 0 ? 'The Foundation — Part 2' : 'The Foundation — Part 1'}
-          </h1>
+          <h1 className="text-3xl font-serif text-white mb-2">The Foundation</h1>
           <p className="text-slate-400 text-sm">
-            {agreedTruths.length + previousTruths.length} of {truths.length + previousTruths.length} truths confirmed
+            {agreedTruths.length} of {foundationTruths.length} truths confirmed
           </p>
         </div>
 
-        {/* Foundation stack — previously agreed truths */}
-        {previousTruths.length > 0 && (
-          <div className="mb-4 space-y-1.5">
-            {previousTruths.map((truth) => (
-              <motion.div
-                key={truth.id}
-                className="bg-emerald-900/15 rounded-lg px-4 py-2 border border-emerald-800/30 flex items-center gap-2 opacity-60"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-emerald-400/70 text-sm">{truth.text}</p>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Foundation stack — current round agreed truths */}
+        {/* Foundation stack — agreed truths */}
         <div className="mb-6 space-y-2">
-          {truths
+          {foundationTruths
             .filter(t => agreedTruths.includes(t.id))
             .map((truth, index) => (
               <motion.div
@@ -1284,7 +654,7 @@ function FoundationBuilder({
               >
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <p className="text-emerald-300 text-sm leading-relaxed">
-                  <span className="text-emerald-400 font-medium">#{previousTruths.length + index + 1}:</span> {truth.text}
+                  <span className="text-emerald-400 font-medium">#{index + 1}:</span> {truth.text}
                 </p>
               </motion.div>
             ))}
@@ -1301,7 +671,7 @@ function FoundationBuilder({
               className="bg-slate-900/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-6"
             >
               <p className="text-amber-400 text-sm font-medium mb-3">
-                Truth #{previousTruths.length + currentTruthIndex + 1}
+                Truth #{currentTruthIndex + 1}
               </p>
               <p className="text-xl text-white font-medium leading-relaxed mb-6">
                 {currentTruth.text}
@@ -1348,18 +718,19 @@ function FoundationBuilder({
           </AnimatePresence>
         )}
 
-        {/* All agreed — continue */}
+        {/* All agreed — gold border glow + continue */}
         {allAgreed && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-6">
+            <div className="bg-emerald-900/30 rounded-xl p-5 border-2 border-amber-500/50 mb-6 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
               <p className="text-emerald-200 text-lg leading-relaxed">
-                {previousTruths.length > 0
-                  ? "You've confirmed all 8 truths. Your foundation is complete."
-                  : "Great. Let's keep building."}
+                You've confirmed all 8 truths. Your foundation is complete.
+              </p>
+              <p className="text-amber-400 leading-relaxed mt-2 font-medium">
+                Now... let's put your thinking to the test.
               </p>
             </div>
             <button
@@ -1376,153 +747,390 @@ function FoundationBuilder({
   );
 }
 
-// ========== Phone in Desert Interactive Scene ==========
-function PhoneInDesert({ onComplete }: { onComplete: () => void }) {
-  const [answered, setAnswered] = useState(false);
+// ========== Word Reveal Animation for "What We Know" scene ==========
+function WordRevealScene() {
+  const [visibleWords, setVisibleWords] = useState(0);
+
+  const paragraphs = [
+    { words: 'Before I share anything with you, let\'s start with what every single human being on this earth already knows.'.split(' '), delay: 0 },
+    { words: 'Not opinions. Not beliefs. Not theories.'.split(' '), delay: 0 },
+    { words: 'Facts that no one — regardless of their religion, culture, or background — can deny.'.split(' '), delay: 0 },
+    { words: 'I want to build a foundation with you. Things we both agree on. Things that will never change. Once we have that foundation, everything else becomes clearer.'.split(' '), delay: 0 },
+  ];
+
+  const allWords = paragraphs.flatMap(p => [...p.words, '||']); // || = paragraph break
+
+  useEffect(() => {
+    if (visibleWords >= allWords.length) return;
+    const timer = setTimeout(() => {
+      setVisibleWords(prev => prev + 1);
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [visibleWords, allWords.length]);
+
+  let wordIndex = 0;
+
+  return (
+    <div className="space-y-5">
+      {paragraphs.map((para, pIdx) => {
+        const paraWords = para.words.map((word, wIdx) => {
+          const globalIdx = wordIndex;
+          wordIndex++;
+          const isVisible = globalIdx < visibleWords;
+          const isHighlighted = word === 'Facts' || word === 'foundation';
+          return (
+            <motion.span
+              key={`${pIdx}-${wIdx}`}
+              initial={{ opacity: 0, y: 5 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 5 }}
+              transition={{ duration: 0.2 }}
+              className={`inline ${isHighlighted ? 'text-amber-400 font-semibold' : pIdx === 0 ? 'text-xl text-white font-medium' : pIdx === 1 ? 'text-lg text-slate-300' : pIdx === 2 ? 'text-lg text-slate-300' : 'text-slate-400'}`}
+            >
+              {word}{' '}
+            </motion.span>
+          );
+        });
+        wordIndex++; // skip the || separator
+        return (
+          <p key={pIdx} className="leading-relaxed">
+            {paraWords}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+// ========== Counter Animation for "Something Created Us" scene ==========
+function SomethingCreatedUsScene() {
+  const [showCounter, setShowCounter] = useState(false);
+  const [counterStep, setCounterStep] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setShowCounter(true), 800);
+    return () => clearTimeout(t1);
+  }, []);
+
+  useEffect(() => {
+    if (!showCounter || counterStep >= 3) return;
+    const timer = setTimeout(() => setCounterStep(prev => prev + 1), 600);
+    return () => clearTimeout(timer);
+  }, [showCounter, counterStep]);
 
   return (
     <div className="space-y-5">
       <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
         <p className="text-slate-400 text-sm mb-1">Remember, you agreed:</p>
         <p className="text-white leading-relaxed">
-          Our bodies work automatically. We think and our body acts. We heal without choosing to.
+          We exist. We had a beginning. We didn't choose to be here.
         </p>
       </div>
 
       <p className="text-lg text-slate-300 leading-relaxed">
-        Imagine you're walking through a <span className="text-amber-400 font-medium">desert</span>. Nothing around for miles. Just sand.
+        So <span className="text-white font-medium">something</span> must have brought us into existence. Because zero plus zero will always equal zero.
       </p>
 
-      <p className="text-lg text-slate-300 leading-relaxed">
-        Then you find a <span className="text-white font-medium">smartphone</span> lying on the ground.
-      </p>
-
-      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center">
-        <Smartphone className="w-16 h-16 text-slate-400 mx-auto mb-3" />
-        <p className="text-slate-300 text-sm">
-          Calendars. Messages. A camera with incredible clarity. Apps. Precision engineering.
-        </p>
-      </div>
-
-      {!answered ? (
-        <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-          <p className="text-amber-200 leading-relaxed text-lg text-center mb-4">
-            Did this phone design itself?
-          </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => { setAnswered(true); onComplete(); }}
-              className="px-6 py-3 bg-red-900/40 hover:bg-red-900/60 border border-red-700/50 text-red-300 rounded-xl font-medium transition"
-            >
-              No, obviously not
-            </button>
-            <button
-              onClick={() => { setAnswered(true); onComplete(); }}
-              className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl font-medium transition"
-            >
-              No
-            </button>
-          </div>
-        </div>
-      ) : (
+      {/* Animated counter */}
+      {showCounter && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 text-center"
         >
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed text-lg">
-              Exactly. Whenever you see <span className="text-white font-semibold">design</span>, you know there's a <span className="text-white font-semibold">designer</span>.
-            </p>
+          <div className="flex items-center justify-center gap-3 text-4xl font-bold text-white">
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: counterStep >= 0 ? 1 : 0 }}
+            >0</motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: counterStep >= 1 ? 1 : 0 }}
+              className="text-slate-500"
+            >+</motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: counterStep >= 1 ? 1 : 0 }}
+            >0</motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: counterStep >= 2 ? 1 : 0 }}
+              className="text-slate-500"
+            >=</motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: counterStep >= 2 ? 1 : 0 }}
+              className="text-amber-400"
+            >0</motion.span>
           </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            That phone is <span className="text-amber-400 font-medium">infinitely less complex</span> than the human eye alone. Let alone the entire human body.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            So why would we look at something <span className="text-white font-medium">far more sophisticated</span>—a body that heals itself, a brain that thinks, eyes that see—and conclude it has <span className="text-amber-400 font-medium">no designer</span>?
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed">
-              If every <span className="text-white font-medium">part</span> of you was created for a reason... doesn't it make sense that the <span className="text-white font-medium">whole</span> of you was created for a reason too?
-            </p>
-          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: counterStep >= 3 ? 1 : 0 }}
+            className="text-slate-400 text-sm mt-2"
+          >
+            Nothing plus nothing equals nothing.
+          </motion.p>
         </motion.div>
       )}
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        So how can <span className="text-amber-400 font-medium">no intelligence</span> create <span className="text-white font-medium">intelligence</span>?
+      </p>
+
+      {/* Phone in desert concept */}
+      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+        <p className="text-slate-300 leading-relaxed mb-3">
+          Imagine you're walking through a <span className="text-amber-400 font-medium">desert</span>. Nothing around for miles. Then you find a <span className="text-white font-medium">smartphone</span> lying on the ground.
+        </p>
+        <p className="text-slate-300 text-sm leading-relaxed mb-3">
+          Calendars. Messages. A camera with incredible clarity. Precision engineering.
+        </p>
+        <p className="text-amber-200 font-medium">
+          Did this phone design itself?
+        </p>
+      </div>
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        You'd say <span className="text-white font-medium">no, obviously not</span>. So why would we look at something far more complex — the human body — and think differently?
+      </p>
     </div>
   );
 }
 
-// ========== Your Foundation Recap Scene ==========
-function FoundationRecap({ onComplete }: { onComplete: () => void }) {
-  const allTruths = [...foundationTruthsPart1, ...foundationTruthsPart2];
+// ========== Body Diagram Animation for "Evidence Within" scene ==========
+function EvidenceWithinScene() {
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+
+  const bodyParts = [
+    { name: 'Your Eyes', icon: '👁️', detail: '576 megapixels. Auto-focus in milliseconds. Self-cleaning. Works for 80+ years without replacement.', sub: 'No camera company has come close.' },
+    { name: 'Your Body', icon: '🩹', detail: 'Cut yourself—it heals. Break a bone—it repairs. Get sick—your immune system fights back automatically.', sub: 'No machine fixes itself.' },
+    { name: 'Your Brain', icon: '🧠', detail: '86 billion neurons. Stores a lifetime of memories. Processes emotions, language, creativity, and consciousness itself.', sub: 'The most powerful supercomputers still can\'t replicate it.' },
+  ];
+
+  useEffect(() => {
+    if (highlightIndex >= bodyParts.length - 1) return;
+    const timer = setTimeout(() => {
+      setHighlightIndex(prev => prev + 1);
+    }, highlightIndex < 0 ? 1000 : 2000);
+    return () => clearTimeout(timer);
+  }, [highlightIndex, bodyParts.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-          </div>
-        </div>
+    <div className="space-y-5">
+      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+        <p className="text-slate-400 text-sm mb-1">Remember, you agreed:</p>
+        <p className="text-white leading-relaxed">
+          Our bodies work automatically. We think something and our body does it.
+        </p>
+      </div>
 
-        <h1 className="text-3xl font-serif text-white text-center mb-8">Your Foundation</h1>
+      <p className="text-lg text-slate-300 leading-relaxed">
+        Let's look closer at the <span className="text-amber-400 font-medium">evidence you carry with you</span> every single day:
+      </p>
 
-        <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-6">
-          <div className="space-y-2">
-            {allTruths.map((truth, index) => (
-              <motion.div
-                key={truth.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.15 }}
-                className="bg-emerald-900/20 rounded-lg px-4 py-3 border border-emerald-700/40 flex items-start gap-3"
+      {bodyParts.map((part, idx) => (
+        <motion.div
+          key={part.name}
+          initial={{ opacity: 0.3 }}
+          animate={{
+            opacity: idx <= highlightIndex ? 1 : 0.3,
+            borderColor: idx === highlightIndex ? 'rgba(245, 158, 11, 0.5)' : 'rgba(51, 65, 85, 1)',
+          }}
+          transition={{ duration: 0.5 }}
+          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700"
+        >
+          <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+            <span className="text-2xl">{part.icon}</span> {part.name}
+          </h3>
+          <p className="text-slate-300 leading-relaxed">{part.detail}</p>
+          <p className="text-slate-400 text-sm mt-2">{part.sub}</p>
+        </motion.div>
+      ))}
+
+      <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+        <p className="text-emerald-200 leading-relaxed">
+          All of this... by <span className="text-white font-medium">accident</span>? Or by <span className="text-emerald-400 font-semibold">design</span>?
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ========== Stats Counter for "The Verdict" scene ==========
+function VerdictScene() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (step >= 3) return;
+    const timer = setTimeout(() => setStep(prev => prev + 1), 1000);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  return (
+    <div className="space-y-5">
+      <p className="text-lg text-slate-300 leading-relaxed">
+        Consider what we've just seen. The Quran was revealed over 23 years, in bits and pieces, covering laws, morals, science, history, prophecy, and the unseen.
+      </p>
+
+      {/* Animated stats */}
+      <div className="space-y-3">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: step >= 1 ? 1 : 0, x: step >= 1 ? 0 : -20 }}
+          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
+        >
+          <p className="text-4xl font-bold text-white">23 years</p>
+          <p className="text-slate-400 text-sm mt-1">of revelation</p>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: step >= 2 ? 1 : 0, x: step >= 2 ? 0 : -20 }}
+          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
+        >
+          <p className="text-4xl font-bold text-emerald-400">0 contradictions</p>
+          <p className="text-slate-400 text-sm mt-1">over 1400 years of scrutiny</p>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: step >= 3 ? 1 : 0, x: step >= 3 ? 0 : -20 }}
+          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
+        >
+          <p className="text-4xl font-bold text-amber-400">1 version</p>
+          <p className="text-slate-400 text-sm mt-1">every copy on earth is identical</p>
+        </motion.div>
+      </div>
+
+      {/* Al-Baqarah 2:2 */}
+      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+        <p className="text-white/80 font-arabic text-lg text-center mb-3 leading-loose" dir="rtl">
+          ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
+        </p>
+        <p className="text-white leading-relaxed text-center italic">
+          "This is the Book about which there is no doubt — a guidance for those who are mindful of God."
+        </p>
+        <p className="text-amber-400/70 text-center text-xs mt-2">
+          — Al-Baqarah 2:2
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ========== Animated Checklist for "Prove It" scene ==========
+function ProveItScene() {
+  const [visibleChecks, setVisibleChecks] = useState(0);
+
+  const checks = [
+    'We examined what the Quran says about the human body — confirmed by modern science',
+    'We examined what it says about the universe — confirmed by modern science',
+    'We examined what it says about the natural world — confirmed by modern science',
+    'Zero contradictions over 1400 years — confirmed',
+    'One version, unchanged — confirmed',
+  ];
+
+  useEffect(() => {
+    if (visibleChecks >= checks.length) return;
+    const timer = setTimeout(() => setVisibleChecks(prev => prev + 1), 600);
+    return () => clearTimeout(timer);
+  }, [visibleChecks, checks.length]);
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 text-center">
+        <p className="text-2xl text-white font-bold mb-2">
+          "You claim to be my Creator?"
+        </p>
+        <p className="text-amber-200 text-lg">
+          Prove it. Show me. Give me evidence.
+        </p>
+      </div>
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        And that's <span className="text-white font-medium">exactly what we just did</span>.
+      </p>
+
+      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+        <div className="space-y-3">
+          {checks.map((check, idx) => (
+            <motion.p
+              key={idx}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{
+                opacity: idx < visibleChecks ? 1 : 0,
+                x: idx < visibleChecks ? 0 : -10,
+              }}
+              transition={{ duration: 0.3 }}
+              className="flex items-start gap-2 text-slate-300 text-sm"
+            >
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: idx < visibleChecks ? 1 : 0 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
+                className="text-emerald-400 mt-0.5 flex-shrink-0"
               >
-                <span className="text-emerald-400 font-bold text-sm mt-0.5 flex-shrink-0">#{truth.id}</span>
-                <p className="text-emerald-200 text-sm leading-relaxed">{truth.text}</p>
-              </motion.div>
-            ))}
-          </div>
+                &#10003;
+              </motion.span>
+              {check}
+            </motion.p>
+          ))}
         </div>
+      </div>
 
-        <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-8">
-          <p className="text-white text-lg leading-relaxed mb-2">
-            These are things you've confirmed you know to be true.
-          </p>
-          <p className="text-slate-300 leading-relaxed">
-            They will never change. You can always stand on them.
-          </p>
-          <p className="text-amber-400 leading-relaxed mt-3 font-medium">
-            Now... let's put your thinking to the test.
-          </p>
-        </div>
+      <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+        <p className="text-emerald-200 leading-relaxed text-lg">
+          Now it's your turn to deliver the verdict.
+        </p>
+      </div>
+    </div>
+  );
+}
 
-        <div className="flex justify-center">
-          <button
-            onClick={onComplete}
-            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2"
-          >
-            Continue
-            <ArrowRight className="w-5 h-5" />
-          </button>
+// ========== Phase Progress Indicator ==========
+function PhaseProgressBar({ currentScene, totalScenes }: { currentScene: number; totalScenes: number }) {
+  const phase = getCurrentPhase(currentScene);
+  const scenesInPhase = phase.endScene - phase.startScene + 1;
+  const sceneWithinPhase = currentScene - phase.startScene + 1;
+  const progressPercent = (sceneWithinPhase / scenesInPhase) * 100;
+
+  return (
+    <div className="bg-slate-900/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
+      <div className="flex items-center gap-3">
+        <span className="text-slate-500 text-xs font-medium whitespace-nowrap">
+          Phase {phase.id}: {phase.name}
+        </span>
+        <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden min-w-[60px]">
+          <motion.div
+            className="h-full bg-amber-500 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.3 }}
+          />
         </div>
+        <span className="text-slate-500 text-xs whitespace-nowrap">
+          {sceneWithinPhase}/{scenesInPhase}
+        </span>
       </div>
     </div>
   );
 }
 
 // ========== Audio playback helper ==========
-function getAudioUrl(sceneId: string): string {
+function getAudioUrl(sceneId: string, voiceSource?: string): string {
+  // Nathan's recordings take priority
+  if (voiceSource === 'nathan') {
+    const { data } = supabase.storage.from('explore-audio').getPublicUrl(`nathan-${sceneId}.mp3`);
+    return data.publicUrl;
+  }
+  // Daniel (AI) narrations
   const { data } = supabase.storage.from('explore-audio').getPublicUrl(`${sceneId}.mp3`);
   return data.publicUrl;
 }
 
 // ========== Main ExploreIntro Component ==========
 export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
-  const [currentScene, setCurrentScene] = useState(0);
-  const [phoneAnswered, setPhoneAnswered] = useState(false);
+  const [currentScene, setCurrentScene] = useState(() => {
+    const saved = localStorage.getItem('explore_intro_scene');
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [audioMuted, setAudioMuted] = useState(() => {
     return localStorage.getItem('explore_audio_muted') === 'true';
   });
@@ -1533,44 +1141,49 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
   const isLastScene = currentScene === introScenes.length - 1;
   const isFirstScene = currentScene === 0;
 
+  // Save progress on scene change
+  useEffect(() => {
+    localStorage.setItem('explore_intro_scene', String(currentScene));
+  }, [currentScene]);
+
   // Auto-play audio when scene changes
   useEffect(() => {
-    // Stop any currently playing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
       setAudioPlaying(false);
     }
 
-    // Don't play for interactive scenes (they have their own flow)
-    if (scene.isInteractive || scene.id === 'your-foundation') return;
+    // Don't play for interactive scenes or scenes with no audio
+    if (scene.isInteractive || scene.voiceSource === 'none') return;
     if (audioMuted) return;
 
-    const audio = new Audio(getAudioUrl(scene.id));
+    const audio = new Audio(getAudioUrl(scene.id, scene.voiceSource));
     audioRef.current = audio;
 
-    audio.addEventListener('play', () => setAudioPlaying(true));
-    audio.addEventListener('ended', () => setAudioPlaying(false));
-    audio.addEventListener('pause', () => setAudioPlaying(false));
-    audio.addEventListener('error', () => setAudioPlaying(false));
+    const onPlay = () => setAudioPlaying(true);
+    const onEnd = () => setAudioPlaying(false);
+    const onPause = () => setAudioPlaying(false);
+    const onError = () => setAudioPlaying(false);
 
-    // Small delay so the scene animates in first
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('ended', onEnd);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError);
+
     const timer = setTimeout(() => {
-      audio.play().catch(() => {
-        // Autoplay blocked by browser — user needs to interact first
-        setAudioPlaying(false);
-      });
+      audio.play().catch(() => setAudioPlaying(false));
     }, 600);
 
     return () => {
       clearTimeout(timer);
       audio.pause();
-      audio.removeEventListener('play', () => setAudioPlaying(true));
-      audio.removeEventListener('ended', () => setAudioPlaying(false));
-      audio.removeEventListener('pause', () => setAudioPlaying(false));
-      audio.removeEventListener('error', () => setAudioPlaying(false));
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('ended', onEnd);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('error', onError);
     };
-  }, [currentScene, audioMuted, scene.id, scene.isInteractive]);
+  }, [currentScene, audioMuted, scene.id, scene.isInteractive, scene.voiceSource]);
 
   const toggleMute = () => {
     setAudioMuted(prev => {
@@ -1585,6 +1198,7 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
 
   const handleNext = useCallback(() => {
     if (isLastScene) {
+      localStorage.removeItem('explore_intro_scene');
       onComplete();
     } else {
       setCurrentScene(prev => prev + 1);
@@ -1593,11 +1207,9 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
 
   const handleBack = () => {
     if (!isFirstScene) {
-      // Skip back over interactive scenes to their preceding scene
       const prevIndex = currentScene - 1;
       const prevScene = introScenes[prevIndex];
       if (prevScene?.isInteractive) {
-        // Go back one more to the scene before the interactive
         setCurrentScene(Math.max(0, prevIndex - 1));
       } else {
         setCurrentScene(prevIndex);
@@ -1605,48 +1217,25 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     }
   };
 
-  // Handle interactive scenes
+  // ===== Handle interactive scenes =====
   if (scene.isInteractive) {
-    if (scene.interactiveType === 'foundation-1') {
-      return (
-        <div className="relative">
-          <div className="fixed top-20 left-6 z-40">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
-          <FoundationBuilder
-            key="foundation-1"
-            truths={foundationTruthsPart1}
-            previousTruths={[]}
-            onComplete={handleNext}
-          />
-        </div>
-      );
-    }
+    const backButton = (
+      <div className="fixed top-20 left-6 z-40">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      </div>
+    );
 
-    if (scene.interactiveType === 'foundation-2') {
+    if (scene.interactiveType === 'foundation') {
       return (
         <div className="relative">
-          <div className="fixed top-20 left-6 z-40">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
-          <FoundationBuilder
-            key="foundation-2"
-            truths={foundationTruthsPart2}
-            previousTruths={foundationTruthsPart1}
-            onComplete={handleNext}
-          />
+          {backButton}
+          <FoundationBuilder onComplete={handleNext} />
         </div>
       );
     }
@@ -1654,33 +1243,8 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     if (scene.interactiveType === 'reasoning-test') {
       return (
         <div className="relative">
-          <div className="fixed top-20 left-6 z-40">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
+          {backButton}
           <ReasoningTest onComplete={handleNext} />
-        </div>
-      );
-    }
-
-    if (scene.interactiveType === 'almanac') {
-      return (
-        <div className="relative">
-          <div className="fixed top-20 left-6 z-40">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
-          <AlmanacGame onComplete={handleNext} />
         </div>
       );
     }
@@ -1688,41 +1252,66 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     if (scene.interactiveType === 'quran-exhibits') {
       return (
         <div className="relative">
-          <div className="fixed top-20 left-6 z-40">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
+          {backButton}
           <QuranExhibits onComplete={handleNext} />
+        </div>
+      );
+    }
+
+    if (scene.interactiveType === 'almanac') {
+      return (
+        <div className="relative">
+          {backButton}
+          <AlmanacGame onComplete={handleNext} />
         </div>
       );
     }
   }
 
-  // Handle "Your Foundation" recap scene
-  if (scene.id === 'your-foundation') {
+  // ===== Render dynamic content for specific scenes =====
+  const renderSceneContent = () => {
+    switch (scene.id) {
+      case 'what-we-know':
+        return <WordRevealScene />;
+      case 'something-created-us':
+        return <SomethingCreatedUsScene />;
+      case 'the-evidence-within':
+        return <EvidenceWithinScene />;
+      case 'the-verdict':
+        return <VerdictScene />;
+      case 'prove-it':
+        return <ProveItScene />;
+      default:
+        return scene.content;
+    }
+  };
+
+  // ===== Icon renderer =====
+  const renderIcon = () => {
+    if (scene.icon === 'founder-image') return null;
+    const iconMap: Record<string, React.ReactNode> = {
+      lightbulb: <Lightbulb className="w-10 h-10 text-amber-400" />,
+      brain: <Brain className="w-10 h-10 text-purple-400" />,
+      search: <Search className="w-10 h-10 text-amber-400" />,
+      user: <User className="w-10 h-10 text-emerald-400" />,
+      scale: <Scale className="w-10 h-10 text-blue-400" />,
+      compass: <Compass className="w-10 h-10 text-blue-400" />,
+      book: <BookOpen className="w-10 h-10 text-amber-400" />,
+      gavel: <Gavel className="w-10 h-10 text-amber-400" />,
+      heart: <Heart className="w-10 h-10 text-rose-400" />,
+      check: <CheckCircle2 className="w-10 h-10 text-emerald-400" />,
+      sparkles: <Sparkles className="w-10 h-10 text-amber-400" />,
+    };
+    const icon = iconMap[scene.icon];
+    if (!icon) return null;
     return (
-      <div className="relative">
-        <div className="fixed top-20 left-6 z-40">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1 text-slate-400 hover:text-white transition bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-700/50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
-          </button>
+      <div className="flex justify-center mb-8">
+        <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
+          {icon}
         </div>
-        <FoundationRecap onComplete={handleNext} />
       </div>
     );
-  }
-
-  // Handle "Phone in Desert" interactive scene
-  const isPhoneScene = scene.id === 'phone-in-desert';
+  };
 
   return (
     <motion.div
@@ -1730,23 +1319,12 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative"
     >
-      {/* Progress indicator + audio toggle */}
-      <div className="fixed top-20 left-6 right-6 z-40 flex items-center justify-between">
-        <div className="bg-slate-900/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50">
-          <div className="flex items-center gap-1.5">
-            {introScenes.map((_, i) => (
-              <div
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i <= currentScene ? 'bg-amber-500' : 'bg-slate-700'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+      {/* Phase progress indicator + audio toggle */}
+      <div className="fixed top-20 left-6 right-6 z-40 flex items-center justify-between gap-3">
+        <PhaseProgressBar currentScene={currentScene} totalScenes={introScenes.length} />
         <button
           onClick={toggleMute}
-          className={`bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 transition ${
+          className={`bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 transition flex-shrink-0 ${
             audioPlaying ? 'text-amber-400' : 'text-slate-400 hover:text-white'
           }`}
           title={audioMuted ? 'Unmute narration' : 'Mute narration'}
@@ -1769,81 +1347,43 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Icon */}
-            {scene.icon !== 'founder-image' && (
-              <div className="flex justify-center mb-8">
-                <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  {scene.icon === 'welcome' && <Heart className="w-10 h-10 text-emerald-400" />}
-                  {scene.icon === 'question' && <HelpCircle className="w-10 h-10 text-purple-400" />}
-                  {scene.icon === 'user' && <User className="w-10 h-10 text-emerald-400" />}
-                  {scene.icon === 'compass' && <Compass className="w-10 h-10 text-blue-400" />}
-                  {scene.icon === 'book' && <BookOpen className="w-10 h-10 text-amber-400" />}
-                  {scene.icon === 'trending' && <TrendingUp className="w-10 h-10 text-emerald-400" />}
-                  {scene.icon === 'users' && <Users className="w-10 h-10 text-cyan-400" />}
-                  {scene.icon === 'gavel' && <Gavel className="w-10 h-10 text-amber-400" />}
-                  {scene.icon === 'scale' && <Scale className="w-10 h-10 text-blue-400" />}
-                  {scene.icon === 'lightbulb' && <Lightbulb className="w-10 h-10 text-amber-400" />}
-                  {scene.icon === 'frame' && <Frame className="w-10 h-10 text-teal-400" />}
-                  {scene.icon === 'brain' && <Brain className="w-10 h-10 text-purple-400" />}
-                  {scene.icon === 'search' && <Search className="w-10 h-10 text-amber-400" />}
-                  {scene.icon === 'smartphone' && <Smartphone className="w-10 h-10 text-slate-400" />}
-                  {scene.icon === 'check' && <CheckCircle2 className="w-10 h-10 text-emerald-400" />}
-                  {scene.icon === 'zap' && <Zap className="w-10 h-10 text-amber-400" />}
-                  {scene.icon === 'heart' && <Heart className="w-10 h-10 text-rose-400" />}
-                  {scene.icon === 'tree' && <TreePine className="w-10 h-10 text-emerald-400" />}
-                </div>
-              </div>
-            )}
+            {renderIcon()}
 
-            {/* Title */}
             <h1 className="text-3xl sm:text-4xl font-serif text-white text-center mb-8">
               {scene.title}
             </h1>
 
-            {/* Content */}
             <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700">
-              {isPhoneScene ? (
-                <PhoneInDesert onComplete={() => setPhoneAnswered(true)} />
-              ) : (
-                scene.content
-              )}
+              {renderSceneContent()}
             </div>
-
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Fixed bottom navigation bar */}
-      {(
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50">
-          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-            <button
-              onClick={handleBack}
-              disabled={isFirstScene}
-              className={`flex items-center gap-2 px-5 py-3 rounded-full font-medium transition ${
-                isFirstScene
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50'
-              }`}
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={isPhoneScene && !phoneAnswered}
-              className={`flex items-center gap-2 px-8 py-3 rounded-full font-semibold transition ${
-                isPhoneScene && !phoneAnswered
-                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                  : 'bg-amber-600 hover:bg-amber-500 text-white'
-              }`}
-            >
-              {isLastScene ? "Let's Begin" : 'Continue'}
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-sm border-t border-slate-800/50">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button
+            onClick={handleBack}
+            disabled={isFirstScene}
+            className={`flex items-center gap-2 px-5 py-3 rounded-full font-medium transition ${
+              isFirstScene
+                ? 'text-slate-600 cursor-not-allowed'
+                : 'text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50'
+            }`}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
+          <button
+            onClick={handleNext}
+            className="flex items-center gap-2 px-8 py-3 rounded-full font-semibold transition bg-amber-600 hover:bg-amber-500 text-white"
+          >
+            {isLastScene ? "Let's Begin" : 'Continue'}
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
-      )}
+      </div>
     </motion.div>
   );
 };

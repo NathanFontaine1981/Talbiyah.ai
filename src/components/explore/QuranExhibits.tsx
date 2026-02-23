@@ -105,6 +105,8 @@ export default function QuranExhibits({ onComplete }: QuranExhibitsProps) {
   const [exhibitPhases, setExhibitPhases] = useState<Record<string, ExhibitPhase>>({});
   const [completedExhibits, setCompletedExhibits] = useState<Set<string>>(new Set());
 
+  const REQUIRED_EXHIBITS = 4;
+  const canContinue = completedExhibits.size >= REQUIRED_EXHIBITS;
   const allCompleted = completedExhibits.size === exhibits.length;
   const viewedExhibit = currentExhibit ? exhibits.find(e => e.id === currentExhibit) : null;
   const currentPhase = currentExhibit ? (exhibitPhases[currentExhibit] || 'verse') : 'locked';
@@ -209,7 +211,7 @@ export default function QuranExhibits({ onComplete }: QuranExhibitsProps) {
                 })}
               </div>
 
-              {allCompleted && (
+              {canContinue && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -217,7 +219,10 @@ export default function QuranExhibits({ onComplete }: QuranExhibitsProps) {
                 >
                   <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-6">
                     <p className="text-emerald-200 text-lg leading-relaxed">
-                      You've examined all the evidence. Each of these facts was stated in a book from <span className="text-white font-semibold">1400 years ago</span> — long before any human could have known them.
+                      {allCompleted
+                        ? <>You've examined all the evidence. Each of these facts was stated in a book from <span className="text-white font-semibold">1400 years ago</span> — long before any human could have known them.</>
+                        : <>You've reviewed {completedExhibits.size} exhibits. You can continue, or examine the remaining evidence.</>
+                      }
                     </p>
                   </div>
                   <button
