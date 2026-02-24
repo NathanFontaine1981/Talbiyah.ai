@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, BookOpen, ChevronRight, Lock, Eye, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronRight, Eye, CheckCircle2 } from 'lucide-react';
 
 interface QuranExhibitsProps {
   onComplete: () => void;

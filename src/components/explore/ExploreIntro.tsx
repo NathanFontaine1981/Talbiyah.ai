@@ -332,11 +332,11 @@ const introScenes: IntroScene[] = [
           </p>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            That doesn't make sense. If something created you with <span className="text-white font-medium">purpose-built parts</span> — eyes to see, ears to hear, a brain to think — it clearly had a plan. And it must have <span className="text-amber-400 font-medium">communicated</span> that plan.
+            That doesn't make sense. If something designed you with <span className="text-white font-medium">this level of precision</span> — intelligence, awareness, a body that maintains itself — it clearly had a plan. And it must have <span className="text-amber-400 font-medium">communicated</span> that plan.
           </p>
 
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium mb-3">I found one source — the Quran — that claims:</p>
+            <p className="text-white font-medium mb-3">There is one source — the Quran — that claims:</p>
             <div className="space-y-2 text-slate-300 text-sm">
               <p>• Why you were created and your purpose</p>
               <p>• What happened to people before us</p>
@@ -566,8 +566,8 @@ const introScenes: IntroScene[] = [
     content: (
       <>
         <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Based on everything you've seen — the evidence within your own body, the facts stated 1400 years before science confirmed them, one book, one version, zero contradictions —
+          <p className="text-xl text-white font-medium leading-relaxed">
+            You've seen it for yourself. Not because I told you — because you examined the evidence.
           </p>
 
           <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 text-center">
@@ -577,7 +577,7 @@ const introScenes: IntroScene[] = [
           </div>
 
           <p className="text-lg text-slate-300 leading-relaxed">
-            Whatever you decide, I respect it. But I'd encourage you — <span className="text-amber-400 font-medium">keep going</span>. There's more to see.
+            Whatever you decide, I respect it.
           </p>
         </div>
       </>
@@ -587,20 +587,20 @@ const introScenes: IntroScene[] = [
     id: 'begin',
     title: "Let's Begin",
     icon: 'compass',
-    voiceSource: 'nathan',
+    voiceSource: 'none', // Audio combined with your-verdict recording
     content: (
       <>
         <div className="space-y-5">
           <p className="text-xl text-white font-medium leading-relaxed text-center">
-            The journey only gets more interesting from here.
+            This was just the introduction.
           </p>
 
           <div className="bg-emerald-900/30 rounded-xl p-6 border border-emerald-700/50 text-center">
             <p className="text-emerald-200 leading-relaxed text-lg">
-              You've seen the evidence. You've delivered your own verdict. Now let's go deeper.
+              What comes next goes deeper — into the Quran itself, its language, its message, and what it asks of you.
             </p>
             <p className="text-emerald-300 mt-3">
-              The next chapter explores the Quran itself — what it says, how it reads, and why millions of people across every century have been moved by it.
+              Take your time. Come back whenever you're ready.
             </p>
           </div>
         </div>
@@ -755,7 +755,7 @@ function WordRevealScene() {
     { words: 'Before I share anything with you, let\'s start with what every single human being on this earth already knows.'.split(' '), delay: 0 },
     { words: 'Not opinions. Not beliefs. Not theories.'.split(' '), delay: 0 },
     { words: 'Facts that no one — regardless of their religion, culture, or background — can deny.'.split(' '), delay: 0 },
-    { words: 'I want to build a foundation with you. Things we both agree on. Things that will never change. Once we have that foundation, everything else becomes clearer.'.split(' '), delay: 0 },
+    { words: 'I want to build a foundation with you. Things we both agree on. Things that will never change.'.split(' '), delay: 0 },
   ];
 
   const allWords = paragraphs.flatMap(p => [...p.words, '||']); // || = paragraph break
@@ -968,7 +968,7 @@ function VerdictScene() {
   return (
     <div className="space-y-5">
       <p className="text-lg text-slate-300 leading-relaxed">
-        Consider what we've just seen. The Quran was revealed over 23 years, in bits and pieces, covering laws, morals, science, history, prophecy, and the unseen.
+        Consider what we've just seen. The Quran was revealed over 23 years — in bits and pieces, across completely different situations — and yet:
       </p>
 
       {/* Animated stats */}
@@ -1077,7 +1077,7 @@ function ProveItScene() {
 
       <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
         <p className="text-emerald-200 leading-relaxed text-lg">
-          Now it's your turn to deliver the verdict.
+          The evidence has been presented.
         </p>
       </div>
     </div>
@@ -1085,7 +1085,7 @@ function ProveItScene() {
 }
 
 // ========== Phase Progress Indicator ==========
-function PhaseProgressBar({ currentScene, totalScenes }: { currentScene: number; totalScenes: number }) {
+function PhaseProgressBar({ currentScene }: { currentScene: number }) {
   const phase = getCurrentPhase(currentScene);
   const scenesInPhase = phase.endScene - phase.startScene + 1;
   const sceneWithinPhase = currentScene - phase.startScene + 1;
@@ -1321,7 +1321,7 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     >
       {/* Phase progress indicator + audio toggle */}
       <div className="fixed top-20 left-6 right-6 z-40 flex items-center justify-between gap-3">
-        <PhaseProgressBar currentScene={currentScene} totalScenes={introScenes.length} />
+        <PhaseProgressBar currentScene={currentScene} />
         <button
           onClick={toggleMute}
           className={`bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 transition flex-shrink-0 ${
