@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Lightbulb, User, Scale, Gavel, Compass, BookOpen
 import AlmanacGame from './AlmanacGame';
 import ReasoningTest from './ReasoningTest';
 import QuranExhibits from './QuranExhibits';
+import AuthorshipElimination from './AuthorshipElimination';
 import { supabase } from '../../lib/supabaseClient';
 
 interface ExploreIntroProps {
@@ -66,7 +67,7 @@ const phases: Phase[] = [
   { id: 'A', name: 'What We Know For Sure', startScene: 0, endScene: 4 },
   { id: 'B', name: 'Apply Your Logic', startScene: 5, endScene: 10 },
   { id: 'C', name: 'The Evidence', startScene: 11, endScene: 16 },
-  { id: 'D', name: 'The Closing', startScene: 17, endScene: 19 },
+  { id: 'D', name: 'The Closing', startScene: 17, endScene: 21 },
 ];
 
 function getCurrentPhase(sceneIndex: number): Phase {
@@ -80,7 +81,7 @@ interface IntroScene {
   icon: string;
   content: React.ReactNode | null;
   isInteractive?: boolean;
-  interactiveType?: 'foundation' | 'reasoning-test' | 'almanac' | 'quran-exhibits';
+  interactiveType?: 'foundation' | 'reasoning-test' | 'almanac' | 'quran-exhibits' | 'authorship-elimination';
   voiceSource?: 'nathan' | 'daniel' | 'none';
 }
 
@@ -525,21 +526,59 @@ const introScenes: IntroScene[] = [
     ),
   },
   {
+    id: 'the-claim',
+    title: 'The Claim',
+    icon: 'book',
+    voiceSource: 'daniel',
+    content: (
+      <>
+        <div className="space-y-5">
+          <div className="bg-slate-800/50 rounded-xl p-6 border border-amber-700/50">
+            <p className="text-white/70 font-arabic text-lg text-center leading-loose mb-3" dir="rtl">
+              ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
+            </p>
+            <p className="text-white text-center text-xl font-medium italic leading-relaxed">
+              "This is the Book about which there is <span className="text-amber-400 font-bold">no doubt</span>, a guidance for those who are mindful of God."
+            </p>
+            <p className="text-amber-400/70 text-center text-xs mt-2">
+              — Al-Baqarah 2:2 — The very beginning of the Quran
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Think about that claim. This book opens by saying there is <span className="text-white font-medium">no doubt</span> in it.
+          </p>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Not "a wise man once said..." Not "according to so-and-so..." Not "he said that God said..."
+          </p>
+
+          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
+            <p className="text-amber-200 leading-relaxed text-lg text-center">
+              This claims to be the <span className="text-white font-semibold">direct, verbatim words</span> of your Creator — speaking to <span className="text-white font-semibold">you</span>, in first person.
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Is there another book on Earth that makes that claim? Not a book <span className="text-white">about</span> God. Not a book of stories <span className="text-white">attributed</span> to God. A book that says: these are <span className="text-amber-400 font-medium">My words, directly to you, unchanged</span>.
+          </p>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed text-lg text-center font-medium">
+              That's a bold claim. So let's test it.
+            </p>
+          </div>
+        </div>
+      </>
+    ),
+  },
+  {
     id: 'quran-exhibits',
     title: 'The Exhibits',
     icon: 'search',
     voiceSource: 'none',
     isInteractive: true,
     interactiveType: 'quran-exhibits',
-    content: null,
-  },
-  {
-    id: 'the-almanac',
-    title: 'The Almanac Moment',
-    icon: 'book',
-    voiceSource: 'none',
-    isInteractive: true,
-    interactiveType: 'almanac',
     content: null,
   },
   {
@@ -557,6 +596,24 @@ const introScenes: IntroScene[] = [
     icon: 'sparkles',
     voiceSource: 'daniel',
     content: null, // Rendered dynamically with animated checklist
+  },
+  {
+    id: 'the-author',
+    title: 'The Author',
+    icon: 'scale',
+    voiceSource: 'none',
+    isInteractive: true,
+    interactiveType: 'authorship-elimination',
+    content: null,
+  },
+  {
+    id: 'the-almanac',
+    title: 'The Almanac Moment',
+    icon: 'book',
+    voiceSource: 'none',
+    isInteractive: true,
+    interactiveType: 'almanac',
+    content: null,
   },
   {
     id: 'your-verdict',
@@ -1263,6 +1320,15 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
         <div className="relative">
           {backButton}
           <AlmanacGame onComplete={handleNext} />
+        </div>
+      );
+    }
+
+    if (scene.interactiveType === 'authorship-elimination') {
+      return (
+        <div className="relative">
+          {backButton}
+          <AuthorshipElimination onComplete={handleNext} />
         </div>
       );
     }

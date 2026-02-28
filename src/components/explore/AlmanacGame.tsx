@@ -6,10 +6,10 @@ interface AlmanacGameProps {
   onComplete: () => void;
 }
 
-type GamePhase = 'intro' | 'millionaire' | 'biff-mind' | 'belief-growth' | 'plane-question' | 'answer' | 'revelation';
+type GamePhase = 'personal-story' | 'movie-scene' | 'millionaire' | 'biff-mind' | 'belief-growth' | 'plane-question' | 'answer' | 'revelation';
 
 export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
-  const [phase, setPhase] = useState<GamePhase>('intro');
+  const [phase, setPhase] = useState<GamePhase>('personal-story');
   const [beliefLevel, setBeliefLevel] = useState(0);
   const [userAnswer, setUserAnswer] = useState<'yes' | 'no' | null>(null);
   const [showingResults, setShowingResults] = useState(false);
@@ -36,10 +36,10 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <AnimatePresence mode="wait">
-          {/* Phase 1: Intro */}
-          {phase === 'intro' && (
+          {/* Phase 0a: Personal Story */}
+          {phase === 'personal-story' && (
             <motion.div
-              key="intro"
+              key="personal-story"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -47,32 +47,98 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
             >
               <div className="flex justify-center mb-6">
                 <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <BookOpen className="w-10 h-10 text-amber-400" />
+                  <Brain className="w-10 h-10 text-amber-400" />
                 </div>
               </div>
 
               <h1 className="text-3xl font-serif text-white mb-2">The Almanac Moment</h1>
-              <p className="text-slate-400 text-sm mb-8">(A publication of data and statistics - in the movie, sports results)</p>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  Have you ever seen <span className="text-white font-medium">Back to the Future 2</span>?
+                  We've just ruled out every possible human author. So let me share something that helped it click for me.
                 </p>
 
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-3">
-                  <p className="text-slate-300 leading-relaxed">
-                    In the movie, old Biff travels to the future—<span className="text-amber-400 font-medium">the year 2015</span>—and finds a <span className="text-white font-medium">Sports Almanac</span>.
+                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-4">
+                  <p className="text-amber-200 leading-relaxed">
+                    I always used to think about this — <span className="text-white font-medium">imagine you could go forward in time</span>, see everything that's going to happen, get all the information...
                   </p>
-                  <p className="text-slate-300 leading-relaxed">
-                    This book contains all the results of every sporting event from 1950-2000.
-                  </p>
-                  <p className="text-slate-300 leading-relaxed">
-                    He then takes the almanac <span className="text-amber-400 font-medium">back in time</span> and gives it to his <span className="text-white font-medium">younger self</span> in 1955.
-                  </p>
-                  <p className="text-slate-400 leading-relaxed">
-                    Young Biff now knows the results of every game—<span className="text-white">before they happen</span>.
+                  <p className="text-amber-200 leading-relaxed mt-3">
+                    Then come <span className="text-white font-medium">back in time</span> with all of that knowledge.
                   </p>
                 </div>
+
+                <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+                  <p className="text-emerald-200 leading-relaxed text-lg text-center">
+                    I'd do exactly that — and I'd become a <span className="text-white font-semibold">millionaire</span>.
+                  </p>
+                  <p className="text-emerald-300 text-center mt-2 text-sm">
+                    You'd know every result before it happens. Every stock, every game, every event.
+                  </p>
+                </div>
+
+                <p className="text-slate-400 leading-relaxed mt-4">
+                  Then I saw a movie that played out this exact scenario...
+                </p>
+              </div>
+
+              <button
+                onClick={() => advancePhase('movie-scene')}
+                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                The Movie
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* Phase 0b: Movie Scene */}
+          {phase === 'movie-scene' && (
+            <motion.div
+              key="movie-scene"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-4xl">🎬</span>
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-8">Back to the Future 2</h2>
+
+              <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
+                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                  This is <span className="text-white font-medium">exactly</span> what happens in the movie.
+                </p>
+
+                <p className="text-slate-300 leading-relaxed mb-6">
+                  Old Biff travels to <span className="text-amber-400 font-medium">the year 2015</span>, grabs a Sports Almanac containing every result from 1950-2000, then takes it <span className="text-amber-400 font-medium">back in time</span> and gives it to his younger self.
+                </p>
+
+                {/* Movie scene card */}
+                <a
+                  href="https://www.youtube.com/results?search_query=back+to+the+future+2+biff+sports+almanac+scene"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-slate-800/80 rounded-xl p-5 border border-slate-600 hover:border-amber-600/50 transition group mb-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-red-600/20 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-600/30 transition">
+                      <span className="text-3xl">▶️</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-medium group-hover:text-amber-400 transition">Watch the scene</p>
+                      <p className="text-slate-400 text-sm mt-0.5">Back to the Future 2 — Biff's Almanac</p>
+                      <p className="text-slate-500 text-xs mt-1">Opens YouTube in a new tab</p>
+                    </div>
+                  </div>
+                </a>
+
+                <p className="text-slate-500 text-sm italic">
+                  If you've seen the movie, you'll know exactly what happens next. If not, it's worth a quick watch.
+                </p>
               </div>
 
               <button
@@ -457,7 +523,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  When I started examining the Quran, I had a <span className="text-amber-400 font-semibold">lightbulb moment</span>.
+                  You've already seen the evidence. Embryology, the expanding universe, fingerprints, ocean barriers, the lowest land, Pharaoh's preserved body — <span className="text-white font-medium">all confirmed</span>.
                 </p>
 
                 <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-4">
@@ -465,7 +531,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     This book read like an <span className="text-white font-semibold">Almanac</span>.
                   </p>
                   <p className="text-emerald-300 mt-2">
-                    It contained information that <span className="text-white">couldn't have been known</span> 1,400 years ago—but we've since discovered to be true.
+                    It contained information that <span className="text-white">couldn't have been known</span> 1,400 years ago — and no human could have authored it.
                   </p>
                 </div>
 
@@ -474,7 +540,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </p>
 
                 <p className="text-xl text-white leading-relaxed mb-4">
-                  The Quran became <span className="text-amber-400 font-semibold">difficult to dismiss</span>.
+                  Every result that checks out makes it <span className="text-amber-400 font-semibold">harder to dismiss</span>.
                 </p>
 
                 <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
@@ -489,9 +555,9 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
 
               <button
                 onClick={onComplete}
-                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
               >
-                Let me show you what I found
+                Continue
                 <ArrowRight className="w-5 h-5" />
               </button>
             </motion.div>

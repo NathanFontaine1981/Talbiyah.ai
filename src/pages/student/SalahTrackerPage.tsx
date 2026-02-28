@@ -42,6 +42,10 @@ export default function SalahTrackerPage() {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<SalahRecord[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [editingCell, setEditingCell] = useState<{ date: string; prayer: string } | null>(null);
+  const [editStatus, setEditStatus] = useState<string>('prayed_on_time');
+  const [editLocation, setEditLocation] = useState<string>('home');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadAllRecords();
@@ -93,6 +97,51 @@ export default function SalahTrackerPage() {
 
     return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
   }, [records]);
+
+  function openEdit(date: string, prayer: string) {
+    const dayData = daySummaries.find(d => d.date === date);
+    const prayerData = dayData?.prayers[prayer];
+    setEditStatus(prayerData?.status || 'prayed_on_time');
+    setEditLocation(prayerData?.location || 'home');
+    setEditingCell({ date, prayer });
+  }
+
+  async function saveEdit() {
+    if (!editingCell) return;
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (editStatus === 'missed') {
+        await supabase
+          .from('salah_daily_record')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('record_date', editingCell.date)
+          .eq('prayer_name', editingCell.prayer);
+      } else {
+        await supabase.from('salah_daily_record').upsert(
+          {
+            user_id: user.id,
+            record_date: editingCell.date,
+            prayer_name: editingCell.prayer,
+            status: editStatus,
+            location: editLocation,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,record_date,prayer_name' }
+        );
+      }
+
+      setEditingCell(null);
+      await loadAllRecords();
+    } catch (err) {
+      console.error('Failed to save edit:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // Stats
   const stats = useMemo(() => {
@@ -378,13 +427,15 @@ export default function SalahTrackerPage() {
                 }
 
                 return (
-                  <div
+                  <button
                     key={`${prayer}-${d.date}`}
-                    className={`h-7 rounded-md flex items-center justify-center ${bgClass} transition-colors`}
+                    onClick={() => !isFuture && openEdit(d.date, prayer)}
+                    disabled={isFuture}
+                    className={`h-7 rounded-md flex items-center justify-center ${bgClass} transition-colors ${!isFuture ? 'cursor-pointer hover:ring-2 hover:ring-blue-400/50 active:scale-95' : ''}`}
                     title={`${prayer} — ${d.date}${prayerData ? ` (${prayerData.status}, ${prayerData.location})` : ''}`}
                   >
                     {icon}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -503,6 +554,95 @@ export default function SalahTrackerPage() {
             })}
           </div>
         </div>
+
+        {/* Edit Prayer Modal */}
+        {editingCell && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingCell(null)}>
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                Edit {editingCell.prayer}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{editingCell.date}</p>
+
+              {/* Status */}
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</label>
+              <div className="grid grid-cols-3 gap-2 mt-2 mb-5">
+                {[
+                  { value: 'prayed_on_time', label: 'On Time', color: 'emerald' },
+                  { value: 'prayed_late', label: 'Late', color: 'amber' },
+                  { value: 'missed', label: 'Missed', color: 'red' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setEditStatus(opt.value)}
+                    className={`py-2.5 rounded-xl text-sm font-medium transition border ${
+                      editStatus === opt.value
+                        ? opt.color === 'emerald'
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : opt.color === 'amber'
+                          ? 'bg-amber-400 text-white border-amber-400'
+                          : 'bg-red-500 text-white border-red-500'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Location — only show if not missed */}
+              {editStatus !== 'missed' && (
+                <>
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location</label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 mb-5">
+                    <button
+                      onClick={() => setEditLocation('home')}
+                      className={`py-2.5 rounded-xl text-sm font-medium transition border flex items-center justify-center gap-2 ${
+                        editLocation === 'home'
+                          ? 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      <Home className="w-4 h-4" />
+                      Home
+                    </button>
+                    <button
+                      onClick={() => setEditLocation('masjid')}
+                      className={`py-2.5 rounded-xl text-sm font-medium transition border flex items-center justify-center gap-2 ${
+                        editLocation === 'masjid'
+                          ? 'bg-amber-500 text-white border-amber-500'
+                          : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4" />
+                      Masjid
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingCell(null)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 transition disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Empty state */}
         {records.length === 0 && (
