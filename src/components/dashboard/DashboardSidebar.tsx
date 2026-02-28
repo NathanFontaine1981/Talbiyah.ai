@@ -36,6 +36,8 @@ import {
   UserSearch,
   FileCheck,
   Megaphone,
+  Clock,
+  Heart,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -125,6 +127,8 @@ export default function DashboardSidebar({
       items: [
         { icon: BookOpen, label: "Qur'an Tracker", path: '/progress/quran', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: Clock, label: 'Salah Tracker', path: '/salah-tracker', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
+        { icon: Heart, label: 'Daily Athkar', path: '/daily-athkar', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: BookOpen, label: 'Jummah Guide', path: '/jummah-guide', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: Calendar, label: 'Ramadan Planner', path: '/ramadan-planner', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },

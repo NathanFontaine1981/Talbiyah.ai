@@ -737,6 +737,11 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Prayer Timeline — visible for all roles, shown first for mobile visibility */}
+            <div className="mb-6">
+              <PrayerTimeline variant="light" />
+            </div>
+
             {/* ===== EXPLORER VIEW ===== */}
             {selectedViewRole === 'Explorer' && (
               <>
@@ -983,10 +988,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Prayer Timeline — visible for all roles */}
-            <div className="mb-6">
-              <PrayerTimeline variant="light" />
-            </div>
 
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (

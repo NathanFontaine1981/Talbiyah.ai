@@ -83,6 +83,15 @@ export const DUA_CATEGORIES: DuaCategory[] = [
     suggestedNames: ['Al-Hafiz', 'Al-Wali', 'As-Sami'],
     isCore: true
   },
+  {
+    id: 'athan',
+    name: 'During & After Athan',
+    nameArabic: 'الأذان',
+    icon: '🕌',
+    description: 'What to say during and after the call to prayer',
+    suggestedNames: ['As-Sami', 'Al-Mujib', 'Al-Qarib'],
+    isCore: true
+  },
   // Situational Categories
   {
     id: 'forgiveness',
@@ -380,6 +389,55 @@ export const DUA_LIBRARY: LibraryDua[] = [
     transliteration: "Allahumma inna nas'aluka fi safarina hadhal-birra wat-taqwa, wa minal-'amali ma tarda, Allahumma hawwin 'alayna safarana hadha watwi 'anna bu'dah, Allahumma antas-sahibu fis-safar, wal-khalifatu fil-ahl",
     english: 'O Allah, we ask You on this journey for righteousness and piety, and deeds which please You. O Allah, make this journey easy for us and shorten its distance. O Allah, You are the Companion on the journey and the Guardian of the family.',
     source: 'Sahih Muslim',
+    isCore: true
+  },
+
+  // === DURING & AFTER ATHAN ===
+  {
+    id: 'athan-1',
+    category: 'athan',
+    title: 'Responding to the Athan',
+    titleArabic: 'ترديد الأذان',
+    arabic: 'يُرَدِّدُ مِثْلَ مَا يَقُولُ الْمُؤَذِّنُ، إِلَّا فِي «حَيَّ عَلَى الصَّلَاةِ» وَ«حَيَّ عَلَى الْفَلَاحِ» فَيَقُولُ: لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+    transliteration: "Repeat after the mu'adhin word for word, except when he says 'Ḥayya 'alas-ṣalāh' and 'Ḥayya 'alal-falāḥ', say instead: Lā ḥawla wa lā quwwata illā billāh",
+    english: 'Repeat what the caller to prayer says, except when he says "Come to prayer" and "Come to success" — instead say: "There is no power or strength except with Allah."',
+    source: 'Sahih Muslim 385',
+    isCore: true
+  },
+  {
+    id: 'athan-2',
+    category: 'athan',
+    title: 'Sending Salawat After the Athan',
+    titleArabic: 'الصلاة على النبي بعد الأذان',
+    arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ',
+    transliteration: "Allāhumma ṣalli 'alā Muḥammadin wa 'alā āli Muḥammad, kamā ṣallayta 'alā Ibrāhīma wa 'alā āli Ibrāhīm, innaka Ḥamīdun Majīd. Allāhumma bārik 'alā Muḥammadin wa 'alā āli Muḥammad, kamā bārakta 'alā Ibrāhīma wa 'alā āli Ibrāhīm, innaka Ḥamīdun Majīd",
+    english: 'O Allah, send prayers upon Muhammad and upon the family of Muhammad, as You sent prayers upon Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious. O Allah, bless Muhammad and the family of Muhammad, as You blessed Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.',
+    source: 'Sahih Muslim 384',
+    sourceArabic: 'صحيح مسلم',
+    isCore: true
+  },
+  {
+    id: 'athan-3',
+    category: 'athan',
+    title: 'Dua After the Athan',
+    titleArabic: 'الدعاء بعد الأذان',
+    arabic: 'اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ الْقَائِمَةِ، آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ، وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ',
+    transliteration: "Allāhumma Rabba hādhihid-da'watit-tāmmah, waṣ-ṣalātil-qā'imah, āti Muḥammadanil-wasīlata wal-faḍīlah, wab'ath-hu maqāman maḥmūdanil-ladhī wa'adtah",
+    english: 'O Allah, Lord of this perfect call and established prayer, grant Muhammad the intercession and the eminence, and raise him to the praised position that You have promised him.',
+    source: 'Sahih Bukhari 614',
+    sourceArabic: 'صحيح البخاري',
+    isCore: true
+  },
+  {
+    id: 'athan-4',
+    category: 'athan',
+    title: 'Dua Between Athan and Iqamah',
+    titleArabic: 'الدعاء بين الأذان والإقامة',
+    arabic: 'الدُّعَاءُ لَا يُرَدُّ بَيْنَ الْأَذَانِ وَالْإِقَامَةِ',
+    transliteration: "Ad-du'ā'u lā yuraddu baynal-adhāni wal-iqāmah",
+    english: 'Supplication is not rejected between the athan and the iqamah. (Make any personal dua you wish during this blessed time.)',
+    source: 'Tirmidhi 212, Abu Dawud 521',
+    sourceArabic: 'الترمذي وأبو داود',
     isCore: true
   },
 

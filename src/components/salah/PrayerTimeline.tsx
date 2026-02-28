@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle } from 'lucide-react';
+import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle, Home, Building2 } from 'lucide-react';
 import { usePrayerTimes } from '../../hooks/usePrayerTimes';
 import { usePrayerTracking, SUNNAH_PRAYERS, TOTAL_SUNNAH_RAKAHS } from '../../hooks/usePrayerTracking';
 
@@ -11,7 +11,7 @@ type PrayerStatus = 'future' | 'active' | 'completed' | 'missed';
 
 export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProps) {
   const { prayerTimes, location, loading, currentMinutes } = usePrayerTimes();
-  const { completedPrayers, togglePrayer, isPrayerCompleted, toggleSunnah, isSunnahCompleted, sunnahRakahsDone } = usePrayerTracking();
+  const { completedPrayers, togglePrayer, isPrayerCompleted, toggleSunnah, isSunnahCompleted, sunnahRakahsDone, toggleLocation, getLocation } = usePrayerTracking();
   const [showSunnah, setShowSunnah] = useState(false);
 
   const isDark = variant === 'dark';
@@ -202,21 +202,22 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
         )}
       </div>
 
-      {/* Checkmark button row */}
+      {/* Checkmark button row + location toggle */}
       <div className="flex mt-4">
         {segments.map((seg, i) => {
           const widthPercent = (seg.duration / totalDuration) * 100;
           const status = getPrayerStatus(i);
           const isFuture = status === 'future';
+          const loc = getLocation(seg.name);
 
           return (
             <div
               key={`check-${seg.name}`}
-              className="flex items-center justify-center"
+              className="flex flex-col items-center gap-1"
               style={{ width: `${widthPercent}%`, minWidth: '40px' }}
             >
               <button
-                onClick={() => !isFuture && togglePrayer(seg.name)}
+                onClick={() => !isFuture && togglePrayer(seg.name, seg.end, currentMinutes)}
                 disabled={isFuture}
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                   status === 'completed'
@@ -251,6 +252,35 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
                   <Circle className="w-3.5 h-3.5" />
                 )}
               </button>
+
+              {/* Home / Masjid toggle — only shown when prayer is completed */}
+              {status === 'completed' && (
+                <button
+                  onClick={() => toggleLocation(seg.name)}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                    loc === 'masjid'
+                      ? isDark
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'bg-amber-100 text-amber-700 border border-amber-300'
+                      : isDark
+                        ? 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
+                        : 'bg-emerald-100/60 text-emerald-600 border border-emerald-200/60'
+                  }`}
+                  aria-label={`${seg.name}: ${loc === 'masjid' ? 'Prayed at masjid (27x reward)' : 'Prayed at home'} — tap to toggle`}
+                >
+                  {loc === 'masjid' ? (
+                    <>
+                      <Building2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">Masjid</span>
+                    </>
+                  ) : (
+                    <>
+                      <Home className="w-3 h-3" />
+                      <span className="hidden sm:inline">Home</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           );
         })}

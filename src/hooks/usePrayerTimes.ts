@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export interface PrayerTime {
   name: string;
@@ -26,6 +27,26 @@ function getNowMinutes(): number {
   return now.getHours() * 60 + now.getMinutes();
 }
 
+// Geocode a "City, Country" string to coordinates using Nominatim
+async function geocodeLocation(locationStr: string): Promise<{ lat: number; lon: number; display: string } | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationStr)}&limit=1`
+    );
+    const results = await response.json();
+    if (results && results.length > 0) {
+      return {
+        lat: parseFloat(results[0].lat),
+        lon: parseFloat(results[0].lon),
+        display: results[0].display_name?.split(',').slice(0, 2).join(',').trim() || locationStr,
+      };
+    }
+  } catch {
+    // Geocoding failed — fall through
+  }
+  return null;
+}
+
 export function usePrayerTimes(): UsePrayerTimesResult {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
   const [location, setLocation] = useState('Detecting location...');
@@ -49,8 +70,36 @@ export function usePrayerTimes(): UsePrayerTimesResult {
   }, [currentMinutes]);
 
   useEffect(() => {
-    requestLocationAndFetchPrayers();
+    initPrayerTimes();
   }, []);
+
+  async function initPrayerTimes() {
+    // 1. Try user's saved location from profile settings
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('location')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.location && profile.location.trim()) {
+          const geo = await geocodeLocation(profile.location.trim());
+          if (geo) {
+            setLocation(geo.display);
+            await fetchPrayerTimesForCoordinates(geo.lat, geo.lon);
+            return;
+          }
+        }
+      }
+    } catch {
+      // Profile fetch failed — fall through to geolocation
+    }
+
+    // 2. Fall back to browser geolocation
+    requestLocationAndFetchPrayers();
+  }
 
   async function requestLocationAndFetchPrayers() {
     if (!navigator.geolocation) {

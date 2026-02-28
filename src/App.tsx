@@ -138,6 +138,8 @@ const SmartHomeworkPage = lazy(() => import('./pages/student/SmartHomeworkPage')
 const MemorizationSetupPage = lazy(() => import('./pages/student/MemorizationSetupPage'));
 const AyahRecallPracticePage = lazy(() => import('./pages/student/AyahRecallPracticePage'));
 const RamadanPlannerPage = lazy(() => import('./pages/student/RamadanPlannerPage'));
+const SalahTrackerPage = lazy(() => import('./pages/student/SalahTrackerPage'));
+const DailyAthkarPage = lazy(() => import('./pages/student/DailyAthkarPage'));
 
 // Parent pages
 const ParentOnboarding = lazy(() => import('./pages/parent/ParentOnboarding'));
@@ -655,6 +657,22 @@ function App() {
           element={
             <ProtectedRoute>
               <RamadanPlannerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/salah-tracker"
+          element={
+            <ProtectedRoute>
+              <SalahTrackerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/daily-athkar"
+          element={
+            <ProtectedRoute>
+              <DailyAthkarPage />
             </ProtectedRoute>
           }
         />
