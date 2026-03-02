@@ -57,6 +57,179 @@ interface GeneratedDua {
 
 type TabType = 'build' | 'library' | 'saved' | 'names' | 'learn';
 
+// Cache key for IndexedDB
+const ATHAN_AUDIO_CACHE_KEY = 'talbiyah_athan_dua_audio';
+
+const ATHAN_DUA_ARABIC = 'اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ الْقَائِمَةِ، آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ، وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ';
+
+async function getCachedAthanAudio(): Promise<string | null> {
+  try {
+    const cached = localStorage.getItem(ATHAN_AUDIO_CACHE_KEY);
+    if (cached) return cached;
+  } catch { /* no cache */ }
+  return null;
+}
+
+async function cacheAthanAudio(base64: string) {
+  try {
+    localStorage.setItem(ATHAN_AUDIO_CACHE_KEY, base64);
+  } catch { /* storage full — ignore */ }
+}
+
+function DuaAfterAthanCard() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [hasAudio, setHasAudio] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check cache on mount
+  useEffect(() => {
+    getCachedAthanAudio().then(cached => {
+      if (cached) setHasAudio(true);
+    });
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const playAudio = async () => {
+    // If already playing, pause
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    // Try cache first
+    const cached = await getCachedAthanAudio();
+    if (cached) {
+      const audio = new Audio(cached);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      audio.onpause = () => setIsPlaying(false);
+      await audio.play();
+      setIsPlaying(true);
+      return;
+    }
+
+    // Generate and cache
+    setIsGenerating(true);
+    try {
+      const response = await generateTTSAudio(ATHAN_DUA_ARABIC, 'arabic');
+      if (!response.ok) throw new Error('Failed to generate audio');
+
+      const blob = await response.blob();
+      // Convert to base64 data URL for caching
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        await cacheAthanAudio(base64);
+        setHasAudio(true);
+
+        const audio = new Audio(base64);
+        audioRef.current = audio;
+        audio.onended = () => setIsPlaying(false);
+        audio.onpause = () => setIsPlaying(false);
+        await audio.play();
+        setIsPlaying(true);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error('Failed to generate athan audio:', error);
+      toast.error('Failed to generate audio. Try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="bg-white/10 rounded-xl border border-white/20 overflow-hidden">
+      {/* Header row */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-3 flex items-center justify-between hover:bg-white/5 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+            <Volume2 className="text-emerald-300" size={20} />
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-white">Dua After Athan</p>
+            <p className="text-xs text-emerald-200">Tap to recite after every call to prayer</p>
+          </div>
+        </div>
+        {expanded ? <ChevronUp className="text-emerald-200" size={20} /> : <ChevronDown className="text-emerald-200" size={20} />}
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3">
+          {/* Arabic text */}
+          <p
+            dir="rtl"
+            className="text-xl leading-loose text-white text-right"
+            style={{ fontFamily: "'Scheherazade New', 'Amiri', 'Traditional Arabic', serif", lineHeight: '2.2' }}
+          >
+            {ATHAN_DUA_ARABIC}
+          </p>
+
+          {/* Transliteration */}
+          <p className="text-sm text-emerald-100 italic">
+            Allāhumma Rabba hādhihid-da'watit-tāmmah, waṣ-ṣalātil-qā'imah, āti Muḥammadanil-wasīlata wal-faḍīlah, wab'ath-hu maqāman maḥmūdanil-ladhī wa'adtah
+          </p>
+
+          {/* Translation */}
+          <p className="text-sm text-emerald-200">
+            O Allah, Lord of this perfect call and established prayer, grant Muhammad the intercession and the eminence, and raise him to the praised position that You have promised him.
+          </p>
+
+          {/* Source */}
+          <p className="text-xs text-emerald-300/60">Sahih Bukhari 614</p>
+
+          {/* Play button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              playAudio();
+            }}
+            disabled={isGenerating}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all ${
+              isPlaying
+                ? 'bg-white text-emerald-700'
+                : 'bg-emerald-400 hover:bg-emerald-300 text-emerald-900'
+            }`}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Generating audio (one-time)...
+              </>
+            ) : isPlaying ? (
+              <>
+                <Pause size={18} />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play size={18} />
+                {hasAudio ? 'Play Arabic Audio' : 'Generate & Play Audio'}
+              </>
+            )}
+          </button>
+
+          {hasAudio && (
+            <p className="text-[10px] text-emerald-300/50 text-center">Audio saved — plays instantly offline</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DuaBuilder() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('build');
@@ -544,26 +717,8 @@ export default function DuaBuilder() {
               <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
             </button>
 
-            {/* Dua After Athan Quick Link */}
-            <button
-              onClick={() => {
-                setActiveTab('library');
-                setSelectedCategory('athan');
-                setLibraryFilter('all');
-              }}
-              className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                  <Volume2 className="text-emerald-300" size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-white">Dua During & After Athan</p>
-                  <p className="text-xs text-emerald-200">What to say when you hear the call to prayer</p>
-                </div>
-              </div>
-              <ChevronLeft className="rotate-180 text-emerald-200 group-hover:translate-x-1 transition-transform" size={20} />
-            </button>
+            {/* Dua After Athan — inline card with cached audio */}
+            <DuaAfterAthanCard />
           </div>
         </div>
 

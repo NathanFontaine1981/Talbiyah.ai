@@ -1,4 +1,4 @@
-import { CheckCircle, Search, BookOpen, Clock } from 'lucide-react';
+import { CheckCircle, Search, BookOpen, Compass, Clock, Heart } from 'lucide-react';
 
 interface WelcomeStepProps {
   parentName: string;
@@ -32,8 +32,17 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
                 <Search className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <span className="font-medium text-gray-800">Browse our qualified teachers</span>
-                <p className="text-sm text-gray-600">All teachers are vetted and experienced</p>
+                <span className="font-medium text-gray-800">Book a Quran or Arabic lesson</span>
+                <p className="text-sm text-gray-600">Live 1-on-1 video lessons with qualified teachers</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Compass className="w-4 h-4 text-amber-600" />
+              </div>
+              <div>
+                <span className="font-medium text-gray-800">Explore Islam interactively</span>
+                <p className="text-sm text-gray-600">10 scientific signs, authorship analysis, and more</p>
               </div>
             </li>
             <li className="flex items-start gap-3">
@@ -41,17 +50,17 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
                 <BookOpen className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <span className="font-medium text-gray-800">Book a trial lesson</span>
-                <p className="text-sm text-gray-600">Start with a session to find the right fit</p>
+                <span className="font-medium text-gray-800">Learn and track Salah</span>
+                <p className="text-sm text-gray-600">Step-by-step tutorial with daily prayer tracking</p>
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Clock className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Heart className="w-4 h-4 text-purple-600" />
               </div>
               <div>
-                <span className="font-medium text-gray-800">Learn at your own pace</span>
-                <p className="text-sm text-gray-600">Flexible scheduling that works for you</p>
+                <span className="font-medium text-gray-800">Daily Athkar and Duas</span>
+                <p className="text-sm text-gray-600">Morning, evening, and prayer-time remembrances</p>
               </div>
             </li>
           </ul>
@@ -64,12 +73,12 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
             <div className="text-xs font-medium text-gray-600">Qualified Teachers</div>
           </div>
           <div className="p-3 bg-gray-50 rounded-xl">
-            <div className="text-2xl mb-1">📱</div>
-            <div className="text-xs font-medium text-gray-600">Live Video Lessons</div>
+            <div className="text-2xl mb-1">🕌</div>
+            <div className="text-xs font-medium text-gray-600">Salah Tracker</div>
           </div>
           <div className="p-3 bg-gray-50 rounded-xl">
-            <div className="text-2xl mb-1">📊</div>
-            <div className="text-xs font-medium text-gray-600">Track Progress</div>
+            <div className="text-2xl mb-1">📖</div>
+            <div className="text-xs font-medium text-gray-600">Exploring Islam</div>
           </div>
         </div>
 
@@ -86,14 +95,14 @@ export default function WelcomeStep({ parentName, childName, onComplete, saving 
             </>
           ) : (
             <>
-              Find a Teacher
-              <Search className="w-5 h-5" />
+              Go to Dashboard
+              <Compass className="w-5 h-5" />
             </>
           )}
         </button>
 
         <p className="text-sm text-gray-500 mt-4">
-          You can also explore from your dashboard anytime
+          Everything is accessible from your dashboard
         </p>
       </div>
 

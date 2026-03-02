@@ -30,18 +30,12 @@ export const BiasBlur = ({ onComplete, onBack }: BiasBlurProps) => {
             <Scale className="w-8 h-8 text-amber-400" />
           </div>
           <h2 className="text-2xl font-serif text-white mb-2">
-            Let's Clear Our Minds
+            Where I Started
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
-            <p className="text-slate-300 leading-relaxed mb-4">
-              Before we look at any evidence, let's do something important: <span className="text-white font-medium">clear our minds</span>.
-            </p>
-            <p className="text-slate-300 leading-relaxed mb-4">
-              We all carry biases — from family, culture, media, past experiences. These shape how we see the world, often without us realising. <span className="text-white font-medium">I certainly had mine</span>.
-            </p>
             <p className="text-slate-300 leading-relaxed">
               I was raised with <span className="text-white font-medium">Christian values</span>. I went to Saturday school, Sunday school, and was part of the <span className="text-white font-medium">70th London Boys' Brigade</span> in Tooting, London. I learned good manners, respect, and values I still hold today.
             </p>

@@ -67,12 +67,12 @@ const suspects: Suspect[] = [
     subtitle: 'Could it have been copied from earlier scriptures?',
     theCase: 'The Quran shares some stories with the Bible and Torah. Perhaps Muhammad copied from them.',
     evidenceAgainst: [
-      'The Quran corrects specific errors found in the Bible — for example, it states that Pharaoh\'s body would be preserved. The Bible doesn\'t mention this, yet the mummy was discovered in 1898.',
-      'Many scientific details in the Quran appear in no previous scripture — the expanding universe, embryonic stages, and ocean barriers are found nowhere in the Bible or Torah.',
-      'Where the Quran and Bible differ on scientific matters, modern science consistently sides with the Quran.',
-      'Muhammad had no known access to, or ability to read, previous scriptures — he was illiterate and the Bible had not been translated into Arabic.',
+      'There has never been a single "Bible" to copy from. It is a collection of separate books, written by different authors, at different times, across different centuries.',
+      'Jesus (Eesa) spoke Aramaic — yet the earliest Gospel manuscripts are written in Greek, decades after his departure, by people who never met him. The words we read today are not his words in his language.',
+      'After centuries of editing, translation, and selection by church councils, what remains is a library of human accounts — not a preserved revelation. Its own books contradict each other, and there is no way to distinguish what is original from what was changed by men.',
+      'Muhammad was illiterate and the Bible had not been translated into Arabic. He had no access to these texts, and even if he had — the scientific knowledge you\'ve already seen in the Quran appears in none of them.',
     ],
-    elimination: 'The Quran contains unique knowledge not found in any prior text, and corrects previous scriptures where they diverge from science. It cannot be a copy.',
+    elimination: 'There was no single preserved scripture to copy from. The Bible is a collection of human accounts, written in languages its prophets never spoke, edited over centuries, with no way to verify what is original. Muhammad had no access to it — and even if he had, it does not contain the knowledge found in the Quran.',
   },
   {
     id: 'coincidence',

@@ -660,6 +660,8 @@ export default function RamadanPlannerPage() {
               const isSelected = selectedDay === day;
               const isToday = currentDay === day;
               const fastDay = day - 1;
+              const dateStr = getRamadanDateForDay(ramadanYear, day);
+              const dayName = dateStr ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(dateStr + 'T12:00:00').getDay()] : '';
               return (
                 <button
                   key={day}
@@ -676,8 +678,9 @@ export default function RamadanPlannerPage() {
                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400'
                   }`}
                 >
-                  <span className="text-[10px] opacity-60 leading-none">N{day}</span>
-                  <span className="text-xs font-bold leading-tight">{fastDay > 0 ? `F${fastDay}` : '—'}</span>
+                  <span className="text-[10px] opacity-60 leading-none">{dayName}</span>
+                  <span className="text-xs font-bold leading-tight">N{day}</span>
+                  <span className="text-[10px] opacity-60 leading-none">{fastDay > 0 ? `F${fastDay}` : '—'}</span>
                   {isToday && (
                     <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full" />
                   )}
@@ -858,8 +861,41 @@ export default function RamadanPlannerPage() {
           </div>
         )}
 
-        {/* Year-over-Year comparison placeholder */}
-        {/* This would show if previous year data exists */}
+        {/* Year-over-Year Motivation Card */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-5 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100">Your Ramadan Journey is Being Saved</h3>
+              <p className="text-sm text-purple-800 dark:text-purple-200 mt-1">
+                Every page of Quran, every sadaqah, every prayer in the masjid, every night of Taraweeh — your totals are saved for Ramadan {ramadanYear}.
+              </p>
+              <p className="text-sm text-purple-800 dark:text-purple-200 mt-2">
+                Next year, you'll be able to see how you did and aim to better it, in shaa Allah.
+                <span className="font-semibold"> How much sawab did you earn this Ramadan?</span> Challenge yourself to go further in {ramadanYear + 1}.
+              </p>
+              <div className="mt-3 bg-white/60 dark:bg-gray-800/60 rounded-lg p-3">
+                <p className="text-xs text-purple-700 dark:text-purple-300 font-medium mb-1">Your {ramadanYear} totals so far:</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-purple-600 dark:text-purple-400">
+                  <span>{totalQuranPages} Quran pages</span>
+                  <span>&middot;</span>
+                  <span>{fastDays} fasts</span>
+                  <span>&middot;</span>
+                  <span>{taraweehNights} Taraweeh nights</span>
+                  <span>&middot;</span>
+                  <span>{totalMasjidPrayers} masjid prayers</span>
+                  <span>&middot;</span>
+                  <span>{plan?.sadaqah_currency || 'GBP'} {totalSadaqah.toFixed(0)} sadaqah</span>
+                </div>
+              </div>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 italic">
+                "The most beloved deeds to Allah are those done consistently, even if they are small." — Sahih al-Bukhari 6464
+              </p>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -28,9 +28,9 @@ const STORAGE_KEY = 'talbiyah_explore_progress';
 
 // Stage order for the Explore journey - organized into 3 chapters
 //
-// Chapter 1: Open Mind (Preparation) - ~10 min
-// - Intro - Personal introduction, what I discovered
-// - BiasBlur - Acknowledge biases before exploring
+// Chapter 1: Open Mind - ~45 min
+// - Intro - Full journey: reasoning, 10 exhibits, authorship elimination, almanac, verdict (22 scenes)
+// - BiasBlur - Where I started and why I looked further
 // - ChainOfCustody - Document analysis: Bible vs Quran preservation
 //
 // Chapter 2: The Evidence - ~15 min
@@ -79,8 +79,8 @@ interface Episode {
 // Episodes organized by chapter
 const EPISODES: Episode[] = [
   // Chapter 1: Open Mind
-  { id: 'intro', episode: 1, title: 'The Beginning', description: 'A personal journey of discovery', duration: '3 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
-  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Acknowledge biases before exploring truth', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'amber' },
+  { id: 'intro', episode: 1, title: 'The Beginning', description: 'From reasoning to evidence — the full journey', duration: '35 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
+  { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Where I started and why I looked further', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'amber' },
   { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'amber' },
   // Chapter 2: The Evidence
   { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: <Microscope className="w-6 h-6" />, color: 'emerald' },

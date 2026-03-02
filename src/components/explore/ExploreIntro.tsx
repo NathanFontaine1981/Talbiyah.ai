@@ -86,7 +86,7 @@ interface IntroScene {
 }
 
 const introScenes: IntroScene[] = [
-  // ===== PHASE A: "What We Know For Sure" (Scenes 0-4) ~5 min =====
+  // ===== PHASE A: "What We Know For Sure" (Scenes 0-4) ~8 min =====
   {
     id: 'welcome',
     title: 'A Message From The Founder',
@@ -181,7 +181,7 @@ const introScenes: IntroScene[] = [
     interactiveType: 'reasoning-test',
   },
 
-  // ===== PHASE B: "Apply Your Logic" (Scenes 5-10) ~8 min =====
+  // ===== PHASE B: "Apply Your Logic" (Scenes 5-10) ~10 min =====
   {
     id: 'something-created-us',
     title: 'Something Created Us',
@@ -397,7 +397,7 @@ const introScenes: IntroScene[] = [
     ),
   },
 
-  // ===== PHASE C: "The Evidence" (Scenes 11-16) ~10 min =====
+  // ===== PHASE C: "The Evidence" (Scenes 11-16) ~15 min =====
   {
     id: 'court-session',
     title: 'Court Is Now In Session',
@@ -589,7 +589,7 @@ const introScenes: IntroScene[] = [
     content: null, // Rendered dynamically with stats counter animation
   },
 
-  // ===== PHASE D: "The Closing" (Scenes 17-19) ~3 min =====
+  // ===== PHASE D: "The Closing" (Scenes 17-21) ~15 min =====
   {
     id: 'prove-it',
     title: 'Prove It',
