@@ -65,6 +65,7 @@ export default function AdminDashboard() {
         { icon: DollarSign, label: 'Teacher Payouts', path: '/admin/teacher-payouts' },
         { icon: FileText, label: 'Legacy Billing', path: '/admin/legacy-billing' },
         { icon: Heart, label: 'Sadaqah Fund', path: '/admin/sadaqah' },
+        { icon: UserPlus, label: 'Shahada Requests', path: '/admin/shahada-requests' },
       ]
     },
     {

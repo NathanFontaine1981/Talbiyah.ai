@@ -189,6 +189,7 @@ const ContentModeration = lazy(() => import('./pages/admin/ContentModeration'));
 const LegacyBilling = lazy(() => import('./pages/admin/LegacyBilling'));
 const AdminEmail = lazy(() => import('./pages/admin/AdminEmail'));
 const SadaqahManagement = lazy(() => import('./pages/admin/SadaqahManagement'));
+const ShahadaRequests = lazy(() => import('./pages/admin/ShahadaRequests'));
 
 // Recruitment system pages
 const RecruitmentPipeline = lazy(() => import('./pages/admin/RecruitmentPipeline'));
@@ -389,6 +390,7 @@ function App() {
           <Route path="legacy-billing" element={<LegacyBilling />} />
           <Route path="email" element={<AdminEmail />} />
           <Route path="sadaqah" element={<SadaqahManagement />} />
+          <Route path="shahada-requests" element={<ShahadaRequests />} />
           <Route path="recruitment-pipeline" element={<RecruitmentPipeline />} />
           <Route path="sourcing" element={<SourcingTracker />} />
           <Route path="interviews" element={<InterviewManagement />} />

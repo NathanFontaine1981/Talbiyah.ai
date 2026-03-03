@@ -15,7 +15,9 @@ import {
   Heart,
   RefreshCw,
   Compass,
-  ArrowLeft
+  ArrowLeft,
+  Gift,
+  Footprints,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import TalbiyahLogo from '../components/TalbiyahLogo';
@@ -295,6 +297,79 @@ export default function NewMuslimLanding() {
         </div>
       </section>
 
+      {/* Your Welcome Pack Section */}
+      <section className="py-24 px-4 bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center mx-auto mb-8 border border-amber-500/20"
+            >
+              <Gift className="w-10 h-10 text-amber-400" />
+            </motion.div>
+
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Your <span className="text-amber-400">Welcome Pack</span>
+            </h2>
+
+            <div className="space-y-6 text-lg text-slate-300 max-w-2xl mx-auto">
+              <p>
+                You are part of a family now. The Muslim community — your community —
+                is here to support you every step of the way.
+              </p>
+              <motion.p
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="text-xl font-medium text-white"
+              >
+                Come to the masjid to receive your welcome pack.
+              </motion.p>
+              <p>
+                We've prepared practical essentials to help you begin your journey —
+                a prayer mat, a beginner's guide, and key contacts for ongoing support.
+              </p>
+            </div>
+
+            {/* Welcome items */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto"
+            >
+              {[
+                { label: 'Prayer Mat & Essentials', desc: 'Everything you need to establish your prayer' },
+                { label: "Beginner's Guide", desc: 'A clear, simple roadmap for your first steps' },
+                { label: 'Community Contacts', desc: 'People who are here to help whenever you need' },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20"
+                >
+                  <p className="font-medium text-amber-300 text-sm mb-1">{item.label}</p>
+                  <p className="text-slate-400 text-xs">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Fresh Start - Sins Transformed Section */}
       <section className="py-24 px-4 bg-gradient-to-b from-slate-950 to-black">
         <div className="max-w-4xl mx-auto">
@@ -355,7 +430,7 @@ export default function NewMuslimLanding() {
         </div>
       </section>
 
-      {/* Vastness of Knowledge Section */}
+      {/* The Journey Ahead Section */}
       <section className="py-24 px-4 bg-gradient-to-b from-black via-indigo-950/30 to-black">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -364,7 +439,7 @@ export default function NewMuslimLanding() {
             viewport={{ once: true }}
             className="text-center"
           >
-            {/* Compass icon */}
+            {/* Footprints icon */}
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
@@ -372,20 +447,21 @@ export default function NewMuslimLanding() {
               transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
               className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center mx-auto mb-8 border border-blue-500/20"
             >
-              <Compass className="w-10 h-10 text-blue-400" />
+              <Footprints className="w-10 h-10 text-blue-400" />
             </motion.div>
 
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              A <span className="text-blue-400">Vast Ocean</span> Awaits
+              The <span className="text-blue-400">Journey Ahead</span>
             </h2>
 
             <div className="space-y-6 text-lg text-slate-300 max-w-2xl mx-auto">
               <p>
-                You've stepped from darkness into light. But this light reveals
-                an ocean of knowledge — 1,400 years of wisdom, guidance, and beauty.
+                Your next step should be the <span className="text-white font-medium">Unshakable Foundations</span> journey —
+                a structured path covering everything a new Muslim needs to know.
               </p>
               <p>
-                It might feel overwhelming. But remember:
+                Take your time. Baby steps, at the pace you are comfortable with.
+                There is no rush, no pressure.
               </p>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -394,13 +470,54 @@ export default function NewMuslimLanding() {
                 transition={{ delay: 0.3 }}
                 className="text-xl font-medium text-white"
               >
-                You don't have to drink the whole ocean today.
+                But never remain idle — even at 1 mph, keep moving forward.
               </motion.p>
               <p>
-                We'll guide you step by step, starting with what matters most —
-                the unshakeable foundations that everything else is built upon.
+                Learning something new every day builds over time. Being idle is actually
+                going backwards, because we forget what we don't revisit.
               </p>
             </div>
+
+            {/* Stepping stones visual */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="mt-12 flex items-center justify-center gap-3 max-w-md mx-auto"
+            >
+              {[0.3, 0.45, 0.6, 0.75, 0.9, 1].map((opacity, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5 + i * 0.1, type: "spring" }}
+                  className="w-8 h-8 rounded-full border-2 border-blue-400 flex items-center justify-center"
+                  style={{ opacity }}
+                >
+                  <div className="w-3 h-3 rounded-full bg-blue-400" style={{ opacity }} />
+                </motion.div>
+              ))}
+              <ArrowRight className="w-5 h-5 text-blue-400 ml-1" />
+            </motion.div>
+
+            {/* Prayer - the lifeline */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6 }}
+              className="mt-12 p-6 bg-emerald-500/5 rounded-2xl border border-emerald-500/20 max-w-2xl mx-auto"
+            >
+              <p className="text-lg text-emerald-300 font-medium mb-2">
+                Establish the prayer — your lifeline with your Creator.
+              </p>
+              <p className="text-slate-400">
+                Salah is the direct connection between you and Allah. It is the first thing
+                to establish and the foundation upon which everything else is built.
+              </p>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -487,10 +604,13 @@ export default function NewMuslimLanding() {
               className="group px-10 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
             >
               <span className="flex items-center gap-2">
-                Begin Your Foundations
+                Begin Unshakable Foundations
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </span>
             </button>
+            <p className="text-slate-500 text-sm mt-4">
+              Establish your prayer connection while you build your knowledge.
+            </p>
           </motion.div>
         </div>
       </section>
