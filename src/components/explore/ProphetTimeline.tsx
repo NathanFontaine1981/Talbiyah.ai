@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Book, Users, AlertTriangle, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Book, Users, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 
 interface ProphetTimelineProps {
   onComplete: () => void;
@@ -25,6 +25,7 @@ interface Prophet {
   message: string;
   mustBelieveIn: string[];
   additionalNote?: string;
+  eraContext?: string;
   scriptures?: Scripture[];
 }
 
@@ -39,6 +40,7 @@ const prophets: Prophet[] = [
     borderColor: 'border-slate-600',
     message: 'Worship God alone. I am the first human—your example.',
     mustBelieveIn: [],
+    eraContext: 'Created from one soul — marriage restrictions were not in place because procreation required it. The laws were minimal, the guidance foundational.',
     scriptures: [
       {
         text: 'And the LORD God commanded the man, saying, "Of every tree of the garden you may freely eat; but of the tree of the knowledge of good and evil you shall not eat."',
@@ -58,6 +60,7 @@ const prophets: Prophet[] = [
     message: 'Worship God alone and follow me as your human example.',
     mustBelieveIn: ['Adam'],
     additionalNote: 'If you lived in this era and believed this, you were a Muslim—one who submits to God.',
+    eraContext: 'Basic laws for survival and worship. Humanity was young — the rules matched the needs of a fresh civilisation.',
     scriptures: [
       {
         text: 'Noah was a righteous man, blameless among the people of his time, and he walked faithfully with God.',
@@ -78,6 +81,7 @@ const prophets: Prophet[] = [
     message: 'Worship God alone and follow me. I submit fully to Him.',
     mustBelieveIn: ['Adam', 'Noah'],
     additionalNote: 'Abraham is called the father of the prophets. Jews, Christians, and Muslims all trace back to him.',
+    eraContext: 'Establishing the foundations of monotheism. Abraham built the Kaaba, the first house of worship, and set the precedent for total submission.',
     scriptures: [
       {
         text: 'I am God Almighty; walk before me faithfully and be blameless.',
@@ -103,6 +107,7 @@ const prophets: Prophet[] = [
     message: 'Worship God alone and follow the law given to me.',
     mustBelieveIn: ['Adam', 'Noah', 'Abraham'],
     additionalNote: 'The Torah was the revelation for the Children of Israel. Those who followed it were Muslims of their time.',
+    eraContext: 'Comprehensive law (Torah) for the Children of Israel — a specific people, in a specific region, at a specific time. Detailed legislation covering all areas of life.',
     scriptures: [
       {
         text: 'I am the LORD your God... You shall have no other gods before me.',
@@ -133,6 +138,7 @@ const prophets: Prophet[] = [
     message: 'Worship God alone. I came to confirm the Torah and guide you.',
     mustBelieveIn: ['Adam', 'Noah', 'Abraham', 'Moses'],
     additionalNote: 'Jesus said he came to uphold the law of Moses. Those who accepted him and still believed in Moses were the true followers.',
+    eraContext: 'Came to ease some of the Torah\'s strictness and confirm what came before. A spiritual renewal — not a new religion, but a return to the straight path.',
     scriptures: [
       {
         text: 'This is eternal life: that they know you, the only true God, and Jesus Christ, whom you have sent.',
@@ -213,6 +219,7 @@ const prophets: Prophet[] = [
     message: 'Worship God alone. I am the final messenger—believe in all who came before me.',
     mustBelieveIn: ['Adam', 'Noah', 'Abraham', 'Moses', 'Jesus'],
     additionalNote: 'The final revelation for all of humanity. Guarded from corruption because there will be no prophet after.',
+    eraContext: 'Final, universal legislation for all humanity. Alcohol prohibited in stages (demonstrating gradual guidance). Complete code of life — the culmination of all previous revelations.',
     scriptures: [
       {
         text: 'Say, "He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent."',
@@ -236,6 +243,18 @@ const prophets: Prophet[] = [
 export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) => {
   const [currentScene, setCurrentScene] = useState(0);
   const [selectedProphet, setSelectedProphet] = useState<string | null>(null);
+  const [visitedProphets, setVisitedProphets] = useState<Set<string>>(new Set());
+
+  const allVisited = visitedProphets.size === prophets.length;
+
+  const handleSelectProphet = (prophetId: string) => {
+    if (selectedProphet === prophetId) {
+      setSelectedProphet(null);
+    } else {
+      setSelectedProphet(prophetId);
+      setVisitedProphets(prev => new Set(prev).add(prophetId));
+    }
+  };
 
   const scenes = ['intro', 'timeline', 'the-pattern', 'rejection', 'final'];
 
@@ -289,8 +308,9 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
               God didn't send His guidance all at once. He revealed it in <span className="text-amber-400 font-semibold">stages</span>, through different messengers, to different people, at different times.
             </p>
 
-            <p className="text-lg text-slate-300 leading-relaxed mb-6">
-              But the <span className="text-white font-semibold">core message was always the same</span>:
+            <p className="text-slate-300 leading-relaxed mb-6">
+              The <span className="text-white font-semibold">laws and rules changed</span> based on the time and the people — because mankind was created from one soul.
+              Early on, certain restrictions couldn't apply. But the <span className="text-white font-semibold">core message was always the same</span>:
             </p>
 
             <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-6">
@@ -340,7 +360,11 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-4">
             <h2 className="text-xl sm:text-2xl font-serif text-white mb-1">The Chain of Prophets</h2>
-            <p className="text-slate-400 text-sm">Tap each era to learn more</p>
+            <p className="text-slate-400 text-sm">
+              {allVisited
+                ? `All ${prophets.length} eras explored`
+                : `${visitedProphets.size} of ${prophets.length} explored — tap each era to understand the full picture`}
+            </p>
           </div>
 
           {/* Horizontal Timeline - scrollable on mobile */}
@@ -362,11 +386,17 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
                       className="flex flex-col items-center"
                     >
                       {/* Dot on timeline */}
-                      <div className={`w-5 h-5 rounded-full border-2 z-10 flex-shrink-0 ${
+                      <div className={`w-5 h-5 rounded-full border-2 z-10 flex-shrink-0 flex items-center justify-center ${
                         selectedProphet === prophet.id
                           ? `${prophet.bgColor} ${prophet.borderColor}`
-                          : 'bg-slate-800 border-slate-600'
-                      }`} />
+                          : visitedProphets.has(prophet.id)
+                            ? 'bg-emerald-900/50 border-emerald-500'
+                            : 'bg-slate-800 border-slate-600'
+                      }`}>
+                        {visitedProphets.has(prophet.id) && selectedProphet !== prophet.id && (
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        )}
+                      </div>
 
                       {/* Vertical connector line */}
                       <div className={`w-0.5 h-5 flex-shrink-0 ${
@@ -375,7 +405,7 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
 
                       {/* Era card - hanging below */}
                       <button
-                        onClick={() => setSelectedProphet(selectedProphet === prophet.id ? null : prophet.id)}
+                        onClick={() => handleSelectProphet(prophet.id)}
                         className={`w-20 sm:w-28 p-2 sm:p-3 rounded-xl border-2 transition-all text-center ${
                           selectedProphet === prophet.id
                             ? `${prophet.bgColor} ${prophet.borderColor} scale-105`
@@ -492,6 +522,13 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
                   </div>
                 )}
 
+                {selectedProphetData.eraContext && (
+                  <div className="mb-3 bg-amber-900/20 rounded-lg p-3 border border-amber-700/30">
+                    <p className="text-amber-300 text-xs font-medium mb-1">Why the laws differed:</p>
+                    <p className="text-slate-300 text-xs leading-relaxed">{selectedProphetData.eraContext}</p>
+                  </div>
+                )}
+
                 {selectedProphetData.additionalNote && (
                   <p className={`text-xs ${selectedProphetData.color} italic`}>
                     {selectedProphetData.additionalNote}
@@ -511,15 +548,21 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
             )}
           </AnimatePresence>
 
-          {/* Continue button */}
+          {/* Continue button — gated until all prophets visited */}
           <div className="text-center">
-            <button
-              onClick={handleNext}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-semibold transition flex items-center gap-2 mx-auto"
-            >
-              Continue
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            {allVisited ? (
+              <button
+                onClick={handleNext}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                Continue
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <p className="text-slate-500 text-sm">
+                Explore all eras to continue
+              </p>
+            )}
           </div>
         </div>
       </motion.div>

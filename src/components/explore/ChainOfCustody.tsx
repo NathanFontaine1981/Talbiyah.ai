@@ -91,7 +91,7 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
               On examining the sources, I wanted to examine the religion I was already following — <span className="text-amber-400 font-semibold">Christianity</span>.
             </p>
             <p className="text-lg text-slate-300 leading-relaxed">
-              It was only fair to examine the <span className="text-amber-400 font-semibold">largest religion</span> alongside the <span className="text-emerald-400 font-semibold">most practiced religion in the world</span> — Islam.
+              It was only fair to examine the <span className="text-amber-400 font-semibold">largest religion</span> alongside the <span className="text-emerald-400 font-semibold">fastest-growing religion in the world</span> — Islam.
             </p>
             <p className="text-lg text-slate-300 leading-relaxed">
               I watched an interesting documentary called <span className="text-white font-medium">"Who Wrote the Bible"</span> by Christian historian <span className="text-amber-400 font-semibold">Robert Beckford</span>, produced on Channel 4.

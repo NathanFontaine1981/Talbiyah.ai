@@ -85,11 +85,6 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
       });
 
       setSubmitted(true);
-
-      // Navigate to Unshakeable Foundations after 3 seconds
-      setTimeout(() => {
-        navigate('/new-muslim');
-      }, 3000);
     } catch (err) {
       console.error('Error submitting shahada request:', err);
       setFormError('Something went wrong. Please try again.');
@@ -102,7 +97,7 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 flex items-center justify-center p-4 relative"
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 relative"
     >
       {/* Back button */}
       {onBack && (
@@ -126,23 +121,23 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
               exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="w-10 h-10 text-amber-400" />
+              <div className="w-20 h-20 bg-amber-600/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="w-10 h-10 text-amber-300" />
               </div>
 
               <h2 className="text-3xl font-serif text-white mb-6">
                 The First Step
               </h2>
 
-              <div className="bg-slate-900/70 rounded-2xl p-8 border border-slate-700 mb-8">
-                <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  You've seen the evidence. You understand there's a <span className="text-amber-400 font-semibold">Creator</span>.
+              <div className="bg-slate-700/50 rounded-2xl p-8 border border-slate-600 mb-8">
+                <p className="text-lg text-slate-200 leading-relaxed mb-4">
+                  You've seen the evidence. You understand there's a <span className="text-amber-300 font-semibold">Creator</span>.
                 </p>
-                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                <p className="text-lg text-slate-200 leading-relaxed mb-4">
                   That's not a small thing—most people never get this far.
                 </p>
                 <p className="text-lg text-white leading-relaxed">
-                  The question now is: <span className="text-amber-300">what will you do with this knowledge?</span>
+                  The question now is: <span className="text-amber-200">what will you do with this knowledge?</span>
                 </p>
               </div>
 
@@ -165,75 +160,75 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
               exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="w-10 h-10 text-emerald-400" />
+              <div className="w-20 h-20 bg-emerald-600/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-10 h-10 text-emerald-300" />
               </div>
 
               <h2 className="text-3xl font-serif text-white mb-2">
                 The Articles of Faith
               </h2>
-              <p className="text-slate-400 text-sm mb-6">
+              <p className="text-slate-300 text-sm mb-6">
                 What a Muslim believes
               </p>
 
-              <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-700 mb-6">
+              <div className="bg-slate-700/50 rounded-2xl p-6 border border-slate-600 mb-6">
                 <div className="space-y-3 text-left">
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">1.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">1.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in Allah</p>
-                      <p className="text-slate-300 text-sm">One God—the Creator, with no partners</p>
+                      <p className="text-slate-200 text-sm">One God—the Creator, with no partners</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">2.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">2.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in the Angels</p>
-                      <p className="text-slate-300 text-sm">Beings of light who carry out Allah's commands</p>
+                      <p className="text-slate-200 text-sm">Beings of light who carry out Allah's commands</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">3.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">3.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in the Books</p>
-                      <p className="text-slate-300 text-sm">The Quran, Torah, Gospel, Psalms—all originally from Allah</p>
+                      <p className="text-slate-200 text-sm">The Quran, Torah, Gospel, Psalms—all originally from Allah</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">4.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">4.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in the Prophets</p>
-                      <p className="text-slate-300 text-sm">From Adam to Muhammad ﷺ—all sent with the same message</p>
+                      <p className="text-slate-200 text-sm">From Adam to Muhammad ﷺ—all sent with the same message</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">5.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">5.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in the Day of Judgment</p>
-                      <p className="text-slate-300 text-sm">We will all be held accountable for our choices</p>
+                      <p className="text-slate-200 text-sm">We will all be held accountable for our choices</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-slate-800/70 rounded-lg border border-slate-700">
-                    <span className="text-amber-400 font-bold text-lg">6.</span>
+                  <div className="flex items-start gap-3 p-3 bg-slate-600/40 rounded-lg border border-slate-500/50">
+                    <span className="text-amber-300 font-bold text-lg">6.</span>
                     <div>
                       <p className="text-white font-semibold">Belief in Divine Decree</p>
-                      <p className="text-slate-300 text-sm">Allah's knowledge encompasses all—past, present, and future</p>
+                      <p className="text-slate-200 text-sm">Allah's knowledge encompasses all—past, present, and future</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-emerald-900/40 to-amber-900/40 rounded-2xl p-6 border-2 border-emerald-500/40 mb-6">
-                <Heart className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+              <div className="bg-gradient-to-br from-emerald-800/40 to-amber-800/30 rounded-2xl p-6 border-2 border-emerald-400/40 mb-6">
+                <Heart className="w-8 h-8 text-emerald-300 mx-auto mb-3" />
                 <p className="text-white text-lg leading-relaxed text-center">
-                  If you believe these, you <span className="text-emerald-400 font-bold">already</span> have <span className="text-amber-300 font-bold">Iman</span> (faith) in your heart.
+                  If you believe these, you <span className="text-emerald-300 font-bold">already</span> have <span className="text-amber-200 font-bold">Iman</span> (faith) in your heart.
                 </p>
-                <p className="text-slate-300 text-base mt-2 text-center">
+                <p className="text-slate-200 text-base mt-2 text-center">
                   The shahada is simply the <span className="text-white font-semibold">declaration</span> of what you already believe.
                 </p>
               </div>
@@ -272,15 +267,15 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 <>
                   {/* Shahada display */}
                   <div className="mb-8">
-                    <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Heart className="w-8 h-8 text-emerald-400" />
+                    <div className="w-16 h-16 bg-emerald-600/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="w-8 h-8 text-emerald-300" />
                     </div>
 
                     <h2 className="text-2xl font-serif text-white mb-6">
                       The Shahada
                     </h2>
 
-                    <div className="bg-gradient-to-br from-emerald-900/30 to-amber-900/30 rounded-2xl p-6 border-2 border-emerald-500/30 mb-6">
+                    <div className="bg-gradient-to-br from-emerald-800/30 to-amber-800/25 rounded-2xl p-6 border-2 border-emerald-400/30 mb-6">
                       {/* Arabic */}
                       <p className="text-3xl md:text-4xl text-amber-300 leading-relaxed mb-4" dir="rtl" style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}>
                         أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ
@@ -298,36 +293,36 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                     </div>
 
                     {/* What this means */}
-                    <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-700 mb-6 text-left">
+                    <div className="bg-slate-700/50 rounded-2xl p-5 border border-slate-600 mb-6 text-left">
                       <h3 className="text-white font-semibold mb-3 text-center">What it means to be Muslim</h3>
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
-                          <p className="text-slate-300 text-sm">You are choosing to <span className="text-white font-medium">submit to the One Creator</span> who made you and everything around you</p>
+                          <span className="text-emerald-300 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-200 text-sm">You are choosing to <span className="text-white font-medium">submit to the One Creator</span> who made you and everything around you</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
-                          <p className="text-slate-300 text-sm">You join a <span className="text-white font-medium">family of nearly 2 billion people</span> worldwide who share this declaration</p>
+                          <span className="text-emerald-300 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-200 text-sm">You join a <span className="text-white font-medium">family of nearly 2 billion people</span> worldwide who share this declaration</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
-                          <p className="text-slate-300 text-sm">All your previous sins are <span className="text-white font-medium">completely wiped clean</span>—you start with a fresh slate</p>
+                          <span className="text-emerald-300 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-200 text-sm">All your previous sins are <span className="text-white font-medium">completely wiped clean</span>—you start with a fresh slate</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">&#x2022;</span>
-                          <p className="text-slate-300 text-sm">You don't need to be perfect—Islam is a <span className="text-white font-medium">journey of growth</span>, one step at a time</p>
+                          <span className="text-emerald-300 mt-0.5">&#x2022;</span>
+                          <p className="text-slate-200 text-sm">You don't need to be perfect—Islam is a <span className="text-white font-medium">journey of growth</span>, one step at a time</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Contact form */}
-                  <div className="bg-slate-900/70 rounded-2xl p-6 border border-slate-700 mb-6">
+                  <div className="bg-slate-700/50 rounded-2xl p-6 border border-slate-600 mb-6">
                     <div className="flex items-center justify-center gap-2 mb-4">
-                      <Phone className="w-5 h-5 text-emerald-400" />
+                      <Phone className="w-5 h-5 text-emerald-300" />
                       <h3 className="text-white font-semibold">Request a Guidance Call</h3>
                     </div>
-                    <p className="text-slate-400 text-sm mb-4">
+                    <p className="text-slate-300 text-sm mb-4">
                       We'd love to speak with you personally and help you through this beautiful moment. Leave your details and we'll call you.
                     </p>
 
@@ -412,37 +407,71 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                   </button>
                 </>
               ) : (
-                /* Success state */
+                /* Success state — give this moment space */
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
                   className="text-center py-8"
                 >
-                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-10 h-10 text-emerald-400" />
-                  </div>
-
-                  <h2 className="text-2xl font-serif text-white mb-3">
-                    Welcome to Islam
-                  </h2>
-
-                  <p className="text-emerald-300 text-lg mb-2">
-                    May Allah bless your journey.
-                  </p>
-                  <p className="text-slate-300 mb-6">
-                    We'll be in touch very soon, {fullName.split(' ')[0]}.
-                  </p>
-
-                  <p className="text-slate-400 text-sm mb-4">
-                    Taking you to your first course...
-                  </p>
-
-                  <button
-                    onClick={() => navigate('/new-muslim')}
-                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition"
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring', stiffness: 150 }}
+                    className="w-24 h-24 bg-emerald-600/30 rounded-full flex items-center justify-center mx-auto mb-8"
                   >
-                    Go to Unshakeable Foundations
-                  </button>
+                    <CheckCircle className="w-12 h-12 text-emerald-300" />
+                  </motion.div>
+
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-3xl font-serif text-white mb-4"
+                  >
+                    Welcome to Islam, {fullName.split(' ')[0]}
+                  </motion.h2>
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="space-y-4 mb-8"
+                  >
+                    <p className="text-emerald-300 text-lg">
+                      May Allah bless your journey and keep you steadfast.
+                    </p>
+                    <div className="bg-emerald-900/20 rounded-2xl p-5 border border-emerald-700/30 max-w-md mx-auto">
+                      <p className="text-amber-200 italic text-lg mb-2" dir="rtl" style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}>
+                        إِنَّ الَّذِينَ قَالُوا رَبُّنَا اللَّهُ ثُمَّ اسْتَقَامُوا فَلَا خَوْفٌ عَلَيْهِمْ وَلَا هُمْ يَحْزَنُونَ
+                      </p>
+                      <p className="text-slate-300 italic text-sm">
+                        "Indeed, those who say 'Our Lord is Allah' and then remain steadfast — there will be no fear upon them, nor will they grieve."
+                      </p>
+                      <p className="text-slate-500 text-xs mt-2">— Surah Al-Ahqaf (46:13)</p>
+                    </div>
+                    <p className="text-slate-300">
+                      We'll be in touch very soon to support you.
+                    </p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.5 }}
+                    className="space-y-3"
+                  >
+                    <button
+                      onClick={() => navigate('/new-muslim')}
+                      className="w-full px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-lg font-semibold transition flex items-center justify-center gap-2"
+                    >
+                      Begin Your Journey
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                    <p className="text-slate-500 text-xs">
+                      When you're ready — take your time
+                    </p>
+                  </motion.div>
                 </motion.div>
               )}
             </motion.div>
@@ -462,10 +491,10 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center mb-8"
                 >
-                  <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Heart className="w-8 h-8 text-emerald-400" />
+                  <div className="w-16 h-16 bg-emerald-600/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Heart className="w-8 h-8 text-emerald-300" />
                   </div>
-                  <p className="text-emerald-300 text-lg">
+                  <p className="text-emerald-200 text-lg">
                     That's a beautiful first step.
                   </p>
                 </motion.div>
@@ -479,17 +508,17 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 {/* Path 1: Learn more about the messenger */}
                 <button
                   onClick={onLearnMore}
-                  className="w-full bg-slate-900/70 hover:bg-slate-800/70 rounded-xl p-5 border border-slate-700 hover:border-slate-600 transition text-left group"
+                  className="w-full bg-slate-700/50 hover:bg-slate-700/70 rounded-xl p-5 border border-slate-600 hover:border-slate-500 transition text-left group"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-6 h-6 text-purple-400" />
+                    <div className="w-12 h-12 bg-purple-600/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-6 h-6 text-purple-300" />
                     </div>
                     <div>
                       <h3 className="text-white font-semibold mb-1">
                         Learn About the Messenger
                       </h3>
-                      <p className="text-slate-300 text-sm">
+                      <p className="text-slate-200 text-sm">
                         Continue to the curriculum and learn about Muhammad ﷺ and the complete path
                       </p>
                     </div>
@@ -499,17 +528,17 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 {/* Path 2: Practical guidance */}
                 <button
                   onClick={onNeedMoreTime}
-                  className="w-full bg-slate-900/70 hover:bg-slate-800/70 rounded-xl p-5 border border-slate-700 hover:border-slate-600 transition text-left group"
+                  className="w-full bg-slate-700/50 hover:bg-slate-700/70 rounded-xl p-5 border border-slate-600 hover:border-slate-500 transition text-left group"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Users className="w-6 h-6 text-blue-400" />
+                    <div className="w-12 h-12 bg-blue-600/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-blue-300" />
                     </div>
                     <div>
                       <h3 className="text-white font-semibold mb-1">
                         Practical Life Guidance
                       </h3>
-                      <p className="text-slate-300 text-sm">
+                      <p className="text-slate-200 text-sm">
                         See how the Quran's wisdom applies to everyday life challenges
                       </p>
                     </div>
@@ -519,9 +548,9 @@ export const TheFirstStep = ({ onTakeStep, onNeedMoreTime, onLearnMore, onBack }
                 {/* Path 3: Return to dashboard */}
                 <button
                   onClick={onTakeStep}
-                  className="w-full bg-slate-800/50 hover:bg-slate-800/70 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition text-center"
+                  className="w-full bg-slate-700/40 hover:bg-slate-700/60 rounded-xl p-4 border border-slate-600 hover:border-slate-500 transition text-center"
                 >
-                  <p className="text-slate-300">
+                  <p className="text-slate-200">
                     Return to Dashboard
                   </p>
                 </button>

@@ -2,67 +2,65 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X, Play, CheckCircle2, ChevronRight, BookOpen,
-  Sparkles, Eye, ScrollText, Microscope, BarChart3,
-  Dices, MessageSquare,
-  Handshake, Clock, Lightbulb, Footprints, Scale, Heart
+  Sparkles, Eye, ScrollText, Map,
+  Handshake, Clock, Footprints, Scale, Heart, Globe, MessageSquare
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import ExploreIntro from '../../components/explore/ExploreIntro';
 import BiasBlur from '../../components/explore/BiasBlur';
 import ChainOfCustody from '../../components/explore/ChainOfCustody';
-import AxiomCheck from '../../components/explore/AxiomCheck';
-import AuthorityMatch from '../../components/explore/AuthorityMatch';
-import ProbabilityMoment from '../../components/explore/ProbabilityMoment';
-import TheSource from '../../components/explore/TheSource';
+import QuranWalkthrough from '../../components/explore/QuranWalkthrough';
+import TheVoice from '../../components/explore/TheVoice';
+import TheNames from '../../components/explore/TheNames';
+import TheMercy from '../../components/explore/TheMercy';
 import TheReconciliation from '../../components/explore/TheReconciliation';
 import ProphetTimeline from '../../components/explore/ProphetTimeline';
-import CheatCodes from '../../components/explore/CheatCodes';
 import TheFirstStep from '../../components/explore/TheFirstStep';
 import ExploreProgressBar from '../../components/explore/ExploreProgressBar';
 import ChapterIntro from '../../components/explore/ChapterIntro';
 import ChapterComplete from '../../components/explore/ChapterComplete';
-import ChapterSelect, { EXPLORE_CHAPTERS, type Chapter } from '../../components/explore/ChapterSelect';
 
 const STORAGE_KEY = 'talbiyah_explore_progress';
 
 // Stage order for the Explore journey - organized into 3 chapters
 //
-// Chapter 1: Open Mind - ~45 min
-// - Intro - Full journey: reasoning, 10 exhibits, authorship elimination, almanac, verdict (22 scenes)
+// Chapter 1: Open Mind - ~20 min
+// - Intro - Reasoning, foundation truths, logic to Creator, court session (12 scenes)
 // - BiasBlur - Where I started and why I looked further
 // - ChainOfCustody - Document analysis: Bible vs Quran preservation
 //
-// Chapter 2: The Evidence - ~15 min
-// - AxiomCheck - Present undeniable facts user already accepts (The Data)
-// - AuthorityMatch - Show Quran verses matching agreed facts (Past Scores)
-// - ProbabilityMoment - Visual probability dropping + checkpoint (merged)
+// Chapter 2: The Walkthrough - ~60 min (3 episodes)
+// - QuranWalkthrough - Follow the Quran's narrative with inline evidence (31 scenes)
 //
-// Chapter 3: What's Inside - ~20 min
-// - TheSource - The Question + The Voice (merged)
-// - TheReconciliation - Explain how all Abrahamic religions are one
+// Chapter 3: The Full Picture - ~20 min
+// - TheVoice - How the Quran speaks, the declaration, the preservation promise
+// - TheReconciliation - One message, why different religions, the invitation
 // - ProphetTimeline - Visual timeline of prophets and their eras
-// - CheatCodes - Life guidance from the Quran (Cheat Codes)
-// - TheFirstStep - Soft shahada (Tawhid) and next steps
+// - TheNames - Allah/Alaha/Jesus/Isa linguistic connections, 23-year revelation
+// - TheMercy - Mercy + reality of death
+// - TheFirstStep - Shahada and next steps
 
 type FlowStage =
   | 'menu'
   | 'chapter-1-intro' | 'intro' | 'bias' | 'chain-of-custody' | 'chapter-1-complete'
-  | 'chapter-2-intro' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'chapter-2-complete'
-  | 'chapter-3-intro' | 'the-source' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
+  | 'chapter-2-intro' | 'walkthrough' | 'chapter-2-complete'
+  | 'chapter-3-intro' | 'the-voice' | 'reconciliation' | 'prophet-timeline'
+  | 'the-names' | 'the-mercy' | 'first-step';
 
 // Order of stages for navigation (menu is separate, not in the flow)
 const STAGE_ORDER: FlowStage[] = [
   'chapter-1-intro', 'intro', 'bias', 'chain-of-custody', 'chapter-1-complete',
-  'chapter-2-intro', 'axiom-check', 'authority-match', 'probability-moment', 'chapter-2-complete',
-  'chapter-3-intro', 'the-source', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'
+  'chapter-2-intro', 'walkthrough', 'chapter-2-complete',
+  'chapter-3-intro', 'the-voice', 'reconciliation', 'prophet-timeline',
+  'the-names', 'the-mercy', 'first-step'
 ];
 
 // Chapter definitions for navigation
 const CHAPTER_STAGES: Record<number, { intro: FlowStage; stages: FlowStage[] }> = {
   1: { intro: 'chapter-1-intro', stages: ['intro', 'bias', 'chain-of-custody'] },
-  2: { intro: 'chapter-2-intro', stages: ['axiom-check', 'authority-match', 'probability-moment'] },
-  3: { intro: 'chapter-3-intro', stages: ['the-source', 'reconciliation', 'prophet-timeline', 'cheat-codes', 'first-step'] },
+  2: { intro: 'chapter-2-intro', stages: ['walkthrough'] },
+  3: { intro: 'chapter-3-intro', stages: ['the-voice', 'reconciliation', 'prophet-timeline', 'the-names', 'the-mercy', 'first-step'] },
 };
 
 // Episode definitions for the menu
@@ -79,25 +77,24 @@ interface Episode {
 // Episodes organized by chapter
 const EPISODES: Episode[] = [
   // Chapter 1: Open Mind
-  { id: 'intro', episode: 1, title: 'The Beginning', description: 'From reasoning to evidence — the full journey', duration: '35 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
+  { id: 'intro', episode: 1, title: 'The Beginning', description: 'From reasoning to the Creator', duration: '15 min', icon: <Sparkles className="w-6 h-6" />, color: 'amber' },
   { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Where I started and why I looked further', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'amber' },
   { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'amber' },
-  // Chapter 2: The Evidence
-  { id: 'axiom-check', episode: 4, title: 'The Data', description: 'Facts we can all agree on', duration: '4 min', icon: <Microscope className="w-6 h-6" />, color: 'emerald' },
-  { id: 'authority-match', episode: 5, title: 'Past Scores', description: 'Ancient texts meet modern knowledge', duration: '5 min', icon: <BarChart3 className="w-6 h-6" />, color: 'emerald' },
-  { id: 'probability-moment', episode: 6, title: 'The Verdict', description: 'Weighing the evidence', duration: '6 min', icon: <Dices className="w-6 h-6" />, color: 'emerald' },
-  // Chapter 3: What's Inside
-  { id: 'the-source', episode: 7, title: 'The Source', description: 'Where did this knowledge come from?', duration: '8 min', icon: <MessageSquare className="w-6 h-6" />, color: 'purple' },
-  { id: 'reconciliation', episode: 8, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'purple' },
-  { id: 'prophet-timeline', episode: 9, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'purple' },
-  { id: 'cheat-codes', episode: 10, title: 'Life Guidance', description: 'Practical wisdom for daily life', duration: '5 min', icon: <Lightbulb className="w-6 h-6" />, color: 'purple' },
-  { id: 'first-step', episode: 11, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'purple' },
+  // Chapter 2: The Walkthrough
+  { id: 'walkthrough', episode: 4, title: 'The Walkthrough', description: 'Follow the Quran\'s story, verify every claim', duration: '60 min', icon: <Map className="w-6 h-6" />, color: 'emerald' },
+  // Chapter 3: The Full Picture
+  { id: 'the-voice', episode: 5, title: 'The Voice', description: 'How the Quran speaks and its promise', duration: '3 min', icon: <MessageSquare className="w-6 h-6" />, color: 'purple' },
+  { id: 'reconciliation', episode: 6, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'purple' },
+  { id: 'prophet-timeline', episode: 7, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'purple' },
+  { id: 'the-names', episode: 8, title: 'The Names', description: 'Linguistic connections across faiths', duration: '3 min', icon: <Globe className="w-6 h-6" />, color: 'purple' },
+  { id: 'the-mercy', episode: 9, title: 'The Mercy', description: 'Mercy, reality, and what comes next', duration: '3 min', icon: <Heart className="w-6 h-6" />, color: 'purple' },
+  { id: 'first-step', episode: 10, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'purple' },
 ];
 
 // Helper to get chapter number for an episode
 const getEpisodeChapter = (episodeId: FlowStage): number => {
   if (['intro', 'bias', 'chain-of-custody', 'chapter-1-intro', 'chapter-1-complete'].includes(episodeId)) return 1;
-  if (['axiom-check', 'authority-match', 'probability-moment', 'chapter-2-intro', 'chapter-2-complete'].includes(episodeId)) return 2;
+  if (['walkthrough', 'chapter-2-intro', 'chapter-2-complete'].includes(episodeId)) return 2;
   return 3;
 };
 
@@ -105,19 +102,14 @@ export default function ExplorePage() {
   const navigate = useNavigate();
   const [flowStage, setFlowStage] = useState<FlowStage>('menu');
   const [highestStageReached, setHighestStageReached] = useState<FlowStage>('chapter-1-intro');
-  const [agreedAxioms, setAgreedAxioms] = useState<string[]>([]);
-  const [verifiedCount, setVerifiedCount] = useState(0);
-  const [beliefChoice, setBeliefChoice] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
   // Load progress from database (if logged in) or localStorage
   useEffect(() => {
     const loadProgress = async () => {
-      // Check for user session
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // If logged in, try to load from database first
       if (session?.user) {
         try {
           const { data: profile } = await supabase
@@ -127,28 +119,20 @@ export default function ExplorePage() {
             .single();
 
           if (profile?.explore_progress && Object.keys(profile.explore_progress).length > 0) {
-            const { highestStage, axioms, verified, belief } = profile.explore_progress;
+            const { highestStage } = profile.explore_progress;
             if (highestStage) setHighestStageReached(highestStage);
-            if (axioms) setAgreedAxioms(axioms);
-            if (verified) setVerifiedCount(verified);
-            if (belief) setBeliefChoice(belief);
-            return; // Don't fall through to localStorage
+            return;
           }
         } catch (e) {
           console.error('Error loading progress from database:', e);
         }
       }
 
-      // Fallback: load from localStorage (for anonymous users or if DB load failed)
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          const { highestStage, axioms, verified, belief } = JSON.parse(saved);
-          // Always start at menu - let user choose where to go
+          const { highestStage } = JSON.parse(saved);
           if (highestStage) setHighestStageReached(highestStage);
-          if (axioms) setAgreedAxioms(axioms);
-          if (verified) setVerifiedCount(verified);
-          if (belief) setBeliefChoice(belief);
         } catch (e) {
           console.error('Error loading progress:', e);
         }
@@ -163,15 +147,10 @@ export default function ExplorePage() {
       const progressData = {
         stage: flowStage,
         highestStage: highestStageReached,
-        axioms: agreedAxioms,
-        verified: verifiedCount,
-        belief: beliefChoice
       };
 
-      // Always save to localStorage as backup
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
 
-      // If logged in, also save to database
       if (user) {
         supabase
           .from('profiles')
@@ -182,7 +161,7 @@ export default function ExplorePage() {
           });
       }
     }
-  }, [flowStage, highestStageReached, agreedAxioms, verifiedCount, beliefChoice, user]);
+  }, [flowStage, highestStageReached, user]);
 
   // Helper to advance to a stage (updates highest if needed)
   const advanceToStage = (newStage: FlowStage) => {
@@ -201,134 +180,38 @@ export default function ExplorePage() {
   };
 
   // Chapter intro handlers
-  const handleChapter1IntroBegin = () => {
-    advanceToStage('intro');
-  };
-
-  const handleChapter2IntroBegin = () => {
-    advanceToStage('axiom-check');
-  };
-
-  const handleChapter3IntroBegin = () => {
-    advanceToStage('the-source');
-  };
+  const handleChapter1IntroBegin = () => advanceToStage('intro');
+  const handleChapter2IntroBegin = () => advanceToStage('walkthrough');
+  const handleChapter3IntroBegin = () => advanceToStage('the-voice');
 
   // Stage handlers
-  const handleIntroComplete = () => {
-    advanceToStage('bias');
-  };
-
-  const handleBiasComplete = () => {
-    advanceToStage('chain-of-custody');
-  };
-
-  const handleChainOfCustodyComplete = () => {
-    advanceToStage('chapter-1-complete');
-  };
-
-  const handleBiasBack = () => {
-    setFlowStage('intro');
-  };
-
-  const handleChainOfCustodyBack = () => {
-    setFlowStage('bias');
-  };
-
-  const handleAxiomCheckBack = () => {
-    setFlowStage('chapter-2-intro');
-  };
-
-  const handleAuthorityMatchBack = () => {
-    setFlowStage('axiom-check');
-  };
-
-  const handleProbabilityMomentBack = () => {
-    setFlowStage('authority-match');
-  };
-
-  const handleSourceBack = () => {
-    setFlowStage('chapter-3-intro');
-  };
-
-  const handleReconciliationBack = () => {
-    setFlowStage('the-source');
-  };
-
-  const handleCheatCodesBack = () => {
-    setFlowStage('prophet-timeline');
-  };
-
-  const handleFirstStepBack = () => {
-    setFlowStage('cheat-codes');
-  };
-
-  const handleAxiomCheckComplete = (axioms: string[]) => {
-    setAgreedAxioms(axioms);
-    setVerifiedCount(axioms.length);
-    advanceToStage('authority-match');
-  };
-
-  const handleAuthorityMatchComplete = () => {
-    advanceToStage('probability-moment');
-  };
-
-  const handleProbabilityMomentComplete = () => {
-    // Normal continue - go to chapter 2 complete screen
-    advanceToStage('chapter-2-complete');
-  };
-
-  const handleProbabilityMomentConvinced = () => {
-    // Fast track - they're convinced, skip to reconciliation
-    advanceToStage('reconciliation');
-  };
+  const handleIntroComplete = () => advanceToStage('bias');
+  const handleBiasComplete = () => advanceToStage('chain-of-custody');
+  const handleChainOfCustodyComplete = () => advanceToStage('chapter-1-complete');
+  const handleWalkthroughComplete = () => advanceToStage('chapter-2-complete');
+  const handleVoiceComplete = () => advanceToStage('reconciliation');
+  const handleReconciliationComplete = () => advanceToStage('prophet-timeline');
+  const handleProphetTimelineComplete = () => advanceToStage('the-names');
+  const handleNamesComplete = () => advanceToStage('the-mercy');
+  const handleMercyComplete = () => advanceToStage('first-step');
 
   // Chapter completion handlers
-  const handleChapter1Complete = () => {
-    advanceToStage('chapter-2-intro');
-  };
-
-  const handleChapter1TakeBreak = () => {
-    setFlowStage('menu');
-  };
-
-  const handleChapter2Complete = () => {
-    advanceToStage('chapter-3-intro');
-  };
-
-  const handleChapter2TakeBreak = () => {
-    setFlowStage('menu');
-  };
-
-  const handleSourceComplete = () => {
-    advanceToStage('reconciliation');
-  };
-
-  const handleReconciliationComplete = () => {
-    advanceToStage('prophet-timeline');
-  };
-
-  const handleProphetTimelineComplete = () => {
-    advanceToStage('cheat-codes');
-  };
-
-  const handleCheatCodesComplete = () => {
-    advanceToStage('first-step');
-  };
+  const handleChapter1Complete = () => advanceToStage('chapter-2-intro');
+  const handleChapter1TakeBreak = () => setFlowStage('menu');
+  const handleChapter2Complete = () => advanceToStage('chapter-3-intro');
+  const handleChapter2TakeBreak = () => setFlowStage('menu');
 
   const handleFirstStepTakeStep = () => {
-    // Return to dashboard
     localStorage.removeItem(STORAGE_KEY);
     markExploreCompleted();
     navigate('/dashboard');
   };
 
   const handleFirstStepNeedMoreTime = () => {
-    // Go to practical guidance (cheat codes)
-    setFlowStage('cheat-codes');
+    setFlowStage('the-mercy');
   };
 
   const handleFirstStepLearnMore = () => {
-    // Go to new-muslim curriculum
     localStorage.removeItem(STORAGE_KEY);
     markExploreCompleted();
     navigate('/new-muslim');
@@ -351,12 +234,10 @@ export default function ExplorePage() {
   // Reset journey to the beginning
   const handleResetJourney = () => {
     setHighestStageReached('chapter-1-intro');
-    setAgreedAxioms([]);
-    setVerifiedCount(0);
-    setBeliefChoice(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('explore_intro_scene');
+    localStorage.removeItem('explore_walkthrough_scene');
 
-    // Clear from database if logged in
     if (user) {
       supabase
         .from('profiles')
@@ -378,7 +259,6 @@ export default function ExplorePage() {
           onStageClick={handleProgressBarClick}
         />
       )}
-      {/* Back to episodes button - positioned just below progress bar on stages, at top when no progress bar */}
       <button
         onClick={() => setFlowStage('menu')}
         className={`fixed ${showProgress ? 'top-20 md:top-16' : 'top-6'} left-6 text-slate-300 hover:text-white transition z-40 flex items-center gap-2 text-sm bg-slate-800/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-600/50 shadow-lg`}
@@ -395,38 +275,30 @@ export default function ExplorePage() {
     </>
   );
 
-  // All episodes are accessible - users can explore freely
-  const isEpisodeAccessible = (_episodeId: FlowStage) => {
-    return true; // All episodes unlocked for free exploration
-  };
-
-  // Helper to check if an episode is completed
+  // All episodes are accessible
   const isEpisodeCompleted = (episodeId: FlowStage) => {
     const episodeIndex = STAGE_ORDER.indexOf(episodeId);
     const highestIndex = STAGE_ORDER.indexOf(highestStageReached);
     return episodeIndex < highestIndex;
   };
 
-  // Get the next episode to continue from
   const getNextEpisode = () => {
     return highestStageReached;
   };
 
-  // Menu: Episode Overview
+  // ─── Menu: Episode Overview ─────────────────────────────────────────────
   if (flowStage === 'menu') {
     const totalDuration = EPISODES.reduce((acc, ep) => acc + parseInt(ep.duration), 0);
     const completedCount = EPISODES.filter(ep => isEpisodeCompleted(ep.id)).length;
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden">
-        {/* Subtle decorative background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-100/40 rounded-full blur-3xl" />
           <div className="absolute top-1/3 -left-20 w-60 h-60 bg-amber-100/30 rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-100/30 rounded-full blur-3xl" />
         </div>
 
-        {/* Close button */}
         <button
           onClick={() => navigate('/explorer')}
           className="fixed top-6 right-6 text-slate-400 hover:text-slate-700 transition z-50 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-sm hover:shadow-md border border-slate-200/50"
@@ -554,7 +426,6 @@ export default function ExplorePage() {
               transition={{ delay: 0.4 }}
               className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-1-intro')}
                 className="w-full p-5 flex items-center gap-4 hover:bg-amber-50/50 transition-colors"
@@ -565,14 +436,13 @@ export default function ExplorePage() {
                 <div className="flex-1 text-left">
                   <p className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 1</p>
                   <h3 className="text-xl font-bold text-slate-900">Open Mind</h3>
-                  <p className="text-slate-500 text-sm">Preparing for the journey • ~10 min</p>
+                  <p className="text-slate-500 text-sm">Reasoning to the Creator &bull; ~20 min</p>
                 </div>
                 <div className="text-amber-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
 
-              {/* Chapter 1 episodes */}
               <div className="px-4 pb-4 space-y-2">
                 {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 1).map((episode) => {
                   const isCompleted = isEpisodeCompleted(episode.id);
@@ -609,14 +479,13 @@ export default function ExplorePage() {
               </div>
             </motion.div>
 
-            {/* Chapter 2: The Evidence */}
+            {/* Chapter 2: The Walkthrough */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
               className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-2-intro')}
                 className="w-full p-5 flex items-center gap-4 hover:bg-emerald-50/50 transition-colors"
@@ -626,15 +495,14 @@ export default function ExplorePage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 2</p>
-                  <h3 className="text-xl font-bold text-slate-900">The Evidence</h3>
-                  <p className="text-slate-500 text-sm">Scientific facts in ancient text • ~15 min</p>
+                  <h3 className="text-xl font-bold text-slate-900">The Walkthrough</h3>
+                  <p className="text-slate-500 text-sm">Follow the Quran's story &bull; ~60 min &bull; 3 episodes</p>
                 </div>
                 <div className="text-emerald-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
 
-              {/* Chapter 2 episodes */}
               <div className="px-4 pb-4 space-y-2">
                 {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 2).map((episode) => {
                   const isCompleted = isEpisodeCompleted(episode.id);
@@ -671,14 +539,13 @@ export default function ExplorePage() {
               </div>
             </motion.div>
 
-            {/* Chapter 3: What's Inside */}
+            {/* Chapter 3: The Full Picture */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
               className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* Chapter header */}
               <button
                 onClick={() => setFlowStage('chapter-3-intro')}
                 className="w-full p-5 flex items-center gap-4 hover:bg-purple-50/50 transition-colors"
@@ -688,15 +555,14 @@ export default function ExplorePage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-purple-600 text-xs font-semibold uppercase tracking-wide mb-1">Chapter 3</p>
-                  <h3 className="text-xl font-bold text-slate-900">What's Inside</h3>
-                  <p className="text-slate-500 text-sm">The message and meaning • ~20 min</p>
+                  <h3 className="text-xl font-bold text-slate-900">The Full Picture</h3>
+                  <p className="text-slate-500 text-sm">One message through history &bull; ~20 min</p>
                 </div>
                 <div className="text-purple-500">
                   <Play className="w-6 h-6" />
                 </div>
               </button>
 
-              {/* Chapter 3 episodes */}
               <div className="px-4 pb-4 space-y-2">
                 {EPISODES.filter(ep => getEpisodeChapter(ep.id) === 3).map((episode) => {
                   const isCompleted = isEpisodeCompleted(episode.id);
@@ -750,11 +616,11 @@ export default function ExplorePage() {
                 Begin Your Journey
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <p className="mt-4 text-slate-400 text-sm">Free • No account required</p>
+              <p className="mt-4 text-slate-400 text-sm">Free &bull; No account required</p>
             </motion.div>
           )}
 
-          {/* Sign up prompt - only show if not logged in */}
+          {/* Sign up prompt */}
           {!user && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -790,7 +656,6 @@ export default function ExplorePage() {
             </motion.div>
           )}
 
-          {/* What's next hint */}
           {!user && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -809,7 +674,6 @@ export default function ExplorePage() {
             </motion.div>
           )}
 
-          {/* Info about what this journey is */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -824,20 +688,21 @@ export default function ExplorePage() {
     );
   }
 
-  // Chapter 1 Intro
+  // ─── Chapter 1 ────────────────────────────────────────────────────────
+
   if (flowStage === 'chapter-1-intro') {
     return (
       <ChapterIntro
         chapterNumber={1}
         title="Open Mind"
-        subtitle="Preparing for the journey"
-        description="Let's clear our minds together. We all carry biases — setting them aside is the first step to honest inquiry."
+        subtitle="Reasoning to the Creator"
+        description="Let's start with what we all agree on, reason through it together, then examine the Quran's preservation."
         bulletPoints={[
-          'Clear our minds of preconceptions',
-          'Approach evidence with fresh eyes',
-          'Commit to honest consideration',
+          'Build foundations from shared truths',
+          'Reason logically to the Creator',
+          'Examine how scriptures were preserved',
         ]}
-        duration="10 min"
+        duration="20 min"
         episodeCount={3}
         icon={<Eye className="w-10 h-10" />}
         color="amber"
@@ -847,7 +712,6 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 1: Introduction (no progress bar yet)
   if (flowStage === 'intro') {
     return (
       <div className="relative">
@@ -857,19 +721,17 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 2: Bias Blur
   if (flowStage === 'bias') {
     return (
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <BiasBlur onComplete={handleBiasComplete} onBack={handleBiasBack} />
+          <BiasBlur onComplete={handleBiasComplete} onBack={() => setFlowStage('intro')} />
         </div>
       </div>
     );
   }
 
-  // Stage 2: Chain of Custody - Document analysis (Bible vs Quran preservation)
   if (flowStage === 'chain-of-custody') {
     return (
       <div className="relative">
@@ -877,20 +739,19 @@ export default function ExplorePage() {
         <div className="pt-16 md:pt-14">
           <ChainOfCustody
             onComplete={handleChainOfCustodyComplete}
-            onBack={handleChainOfCustodyBack}
+            onBack={() => setFlowStage('bias')}
           />
         </div>
       </div>
     );
   }
 
-  // Chapter 1 Complete
   if (flowStage === 'chapter-1-complete') {
     return (
       <ChapterComplete
         chapterNumber={1}
         chapterTitle="Open Mind"
-        nextChapterTitle="The Evidence"
+        nextChapterTitle="The Walkthrough"
         nextChapterNumber={2}
         icon={<Eye className="w-8 h-8" />}
         color="amber"
@@ -900,20 +761,21 @@ export default function ExplorePage() {
     );
   }
 
-  // Chapter 2 Intro
+  // ─── Chapter 2 ────────────────────────────────────────────────────────
+
   if (flowStage === 'chapter-2-intro') {
     return (
       <ChapterIntro
         chapterNumber={2}
-        title="The Evidence"
-        subtitle="Scientific facts in ancient text"
-        description="Examine undeniable scientific facts stated in the Quran over 1,400 years ago—long before modern discovery."
+        title="The Walkthrough"
+        subtitle="Follow the Quran's story of existence step by step"
+        description="3 episodes — take your time between each one. Verify every claim, understand the deeper reality, and deliver your verdict. The most important subject you will ever consider."
         bulletPoints={[
-          'Review scientific facts we can all agree on',
-          'See how ancient text matches modern science',
-          'Weigh the statistical probability',
+          'Verify scientific claims with inline evidence',
+          'Discover purpose, warnings, and the promise of paradise',
+          'Eliminate every possible author one by one',
         ]}
-        duration="15 min"
+        duration="60 min"
         episodeCount={3}
         icon={<Scale className="w-10 h-10" />}
         color="emerald"
@@ -923,58 +785,21 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 3: Axiom Check - Present undeniable facts (The Data)
-  if (flowStage === 'axiom-check') {
+  if (flowStage === 'walkthrough') {
     return (
       <div className="relative">
         <NavWithProgress />
-        <div className="pt-16 md:pt-14">
-          <AxiomCheck onComplete={handleAxiomCheckComplete} onBack={handleAxiomCheckBack} />
-        </div>
+        <QuranWalkthrough onComplete={handleWalkthroughComplete} onTakeBreak={() => setFlowStage('menu')} />
       </div>
     );
   }
 
-  // Stage 3: Authority Match - Show Quran verses matching agreed facts (Past Scores)
-  if (flowStage === 'authority-match') {
-    return (
-      <div className="relative">
-        <NavWithProgress />
-        <div className="pt-16 md:pt-14">
-          <AuthorityMatch
-            agreedAxioms={agreedAxioms}
-            onComplete={handleAuthorityMatchComplete}
-            onBack={handleAuthorityMatchBack}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Stage 4: Probability Moment - Visual probability dropping + checkpoint (merged)
-  if (flowStage === 'probability-moment') {
-    return (
-      <div className="relative">
-        <NavWithProgress />
-        <div className="pt-16 md:pt-14">
-          <ProbabilityMoment
-            verifiedCount={verifiedCount}
-            onComplete={handleProbabilityMomentComplete}
-            onConvinced={handleProbabilityMomentConvinced}
-            onBack={handleProbabilityMomentBack}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Chapter 2 Complete
   if (flowStage === 'chapter-2-complete') {
     return (
       <ChapterComplete
         chapterNumber={2}
-        chapterTitle="The Evidence"
-        nextChapterTitle="What's Inside"
+        chapterTitle="The Walkthrough"
+        nextChapterTitle="The Full Picture"
         nextChapterNumber={3}
         icon={<Scale className="w-8 h-8" />}
         color="emerald"
@@ -984,21 +809,22 @@ export default function ExplorePage() {
     );
   }
 
-  // Chapter 3 Intro
+  // ─── Chapter 3 ────────────────────────────────────────────────────────
+
   if (flowStage === 'chapter-3-intro') {
     return (
       <ChapterIntro
         chapterNumber={3}
-        title="What's Inside"
-        subtitle="The message and meaning"
-        description="Discover what this book actually says—about life, purpose, and your place in creation."
+        title="The Full Picture"
+        subtitle="One message through history"
+        description="Now that you've seen the evidence, discover the full picture — the prophets, the one message, and the invitation."
         bulletPoints={[
-          'Explore the source of this knowledge',
-          'Understand the connection between faiths',
-          'Learn practical life guidance',
+          'Hear how the Quran speaks as God',
+          'Understand the connection between all faiths',
+          'Journey through prophetic history',
         ]}
         duration="20 min"
-        episodeCount={5}
+        episodeCount={6}
         icon={<Heart className="w-10 h-10" />}
         color="purple"
         onBegin={handleChapter3IntroBegin}
@@ -1007,36 +833,31 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 5: The Source - The Question + The Voice (merged)
-  if (flowStage === 'the-source') {
+  if (flowStage === 'the-voice') {
     return (
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <TheSource
-            verifiedCount={verifiedCount}
-            totalFacts={agreedAxioms.length}
-            onComplete={handleSourceComplete}
-            onBack={handleSourceBack}
+          <TheVoice
+            onComplete={handleVoiceComplete}
+            onBack={() => setFlowStage('chapter-3-intro')}
           />
         </div>
       </div>
     );
   }
 
-  // Stage 6: The Reconciliation - Explain how all Abrahamic religions are one
   if (flowStage === 'reconciliation') {
     return (
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <TheReconciliation onComplete={handleReconciliationComplete} onBack={handleReconciliationBack} />
+          <TheReconciliation onComplete={handleReconciliationComplete} onBack={() => setFlowStage('the-voice')} />
         </div>
       </div>
     );
   }
 
-  // Stage 8: Prophet Timeline - Visual timeline of prophets and their eras
   if (flowStage === 'prophet-timeline') {
     return (
       <div className="relative">
@@ -1051,24 +872,34 @@ export default function ExplorePage() {
     );
   }
 
-  // Stage 9: Cheat Codes - Life guidance from the Quran
-  if (flowStage === 'cheat-codes') {
+  if (flowStage === 'the-names') {
     return (
       <div className="relative">
         <NavWithProgress />
         <div className="pt-16 md:pt-14">
-          <CheatCodes
-            verifiedCount={verifiedCount}
-            totalFacts={agreedAxioms.length}
-            onComplete={handleCheatCodesComplete}
-            onBack={handleCheatCodesBack}
+          <TheNames
+            onComplete={handleNamesComplete}
+            onBack={() => setFlowStage('prophet-timeline')}
           />
         </div>
       </div>
     );
   }
 
-  // Stage 9: The First Step - Soft shahada (Tawhid) and next steps
+  if (flowStage === 'the-mercy') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <div className="pt-16 md:pt-14">
+          <TheMercy
+            onComplete={handleMercyComplete}
+            onBack={() => setFlowStage('the-names')}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (flowStage === 'first-step') {
     return (
       <div className="relative">
@@ -1078,7 +909,7 @@ export default function ExplorePage() {
             onTakeStep={handleFirstStepTakeStep}
             onNeedMoreTime={handleFirstStepNeedMoreTime}
             onLearnMore={handleFirstStepLearnMore}
-            onBack={handleFirstStepBack}
+            onBack={() => setFlowStage('the-mercy')}
           />
         </div>
       </div>

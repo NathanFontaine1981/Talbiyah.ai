@@ -6,7 +6,7 @@ interface AlmanacGameProps {
   onComplete: () => void;
 }
 
-type GamePhase = 'personal-story' | 'movie-scene' | 'millionaire' | 'biff-mind' | 'belief-growth' | 'plane-question' | 'answer' | 'revelation';
+type GamePhase = 'personal-story' | 'movie-scene' | 'millionaire' | 'biff-mind' | 'belief-growth' | 'plane-question' | 'answer' | 'revelation' | 'two-destinations';
 
 export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
   const [phase, setPhase] = useState<GamePhase>('personal-story');
@@ -119,7 +119,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
 
                 {/* Movie scene card */}
                 <a
-                  href="https://www.youtube.com/results?search_query=back+to+the+future+2+biff+sports+almanac+scene"
+                  href="https://www.youtube.com/watch?v=zorz3SXqjv0"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block bg-slate-800/80 rounded-xl p-5 border border-slate-600 hover:border-amber-600/50 transition group mb-4"
@@ -137,7 +137,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </a>
 
                 <p className="text-slate-500 text-sm italic">
-                  If you've seen the movie, you'll know exactly what happens next. If not, it's worth a quick watch.
+                  If you've seen the movie, you'll know exactly what happens next. If not, it's worth a quick watch. Please excuse the mild language and some scenes with women — it's a Hollywood movie, but the concept is what matters.
                 </p>
               </div>
 
@@ -181,6 +181,29 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     Every bet wins. Every time.
                   </p>
                 </div>
+
+                {/* Almanac detail clip */}
+                <a
+                  href="https://www.youtube.com/watch?v=bRLtif9h0HQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-slate-800/80 rounded-xl p-5 border border-slate-600 hover:border-amber-600/50 transition group mt-5 mb-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-red-600/20 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-600/30 transition">
+                      <span className="text-3xl">▶️</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-medium group-hover:text-amber-400 transition">Watch the almanac scene</p>
+                      <p className="text-slate-400 text-sm mt-0.5">Back to the Future 2 — The Almanac Detail</p>
+                      <p className="text-slate-500 text-xs mt-1">Opens YouTube in a new tab</p>
+                    </div>
+                  </div>
+                </a>
+
+                <p className="text-slate-500 text-sm italic mb-4">
+                  Please excuse the mild language and some scenes with women — it's a Hollywood movie, but the concept is what matters.
+                </p>
 
                 <p className="text-slate-400 mt-4 leading-relaxed">
                   But here's what I found interesting...
@@ -504,7 +527,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
             </motion.div>
           )}
 
-          {/* Phase 7: Revelation */}
+          {/* Phase 7: Revelation — Fiction vs Reality */}
           {phase === 'revelation' && (
             <motion.div
               key="revelation"
@@ -519,43 +542,110 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-serif text-white mb-8">The Quran</h2>
+              <h2 className="text-2xl font-serif text-white mb-8">But Here's the Thing...</h2>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
-                <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  You've already seen the evidence. Embryology, the expanding universe, fingerprints, ocean barriers, the lowest land, Pharaoh's preserved body — <span className="text-white font-medium">all confirmed</span>.
+                <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                  Biff's Almanac was <span className="text-white font-medium">fiction</span>. A movie prop about sports results and gambling.
                 </p>
 
-                <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 mb-4">
-                  <p className="text-emerald-200 leading-relaxed">
-                    This book read like an <span className="text-white font-semibold">Almanac</span>.
+                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-6">
+                  <p className="text-amber-200 leading-relaxed text-center">
+                    The Quran is <span className="text-white font-semibold">real</span>.
                   </p>
-                  <p className="text-emerald-300 mt-2">
-                    It contained information that <span className="text-white">couldn't have been known</span> 1,400 years ago — and no human could have authored it.
+                  <p className="text-amber-300 mt-2 text-center">
+                    And it's not about sport scores. It's about the most important questions you will ever face.
                   </p>
                 </div>
 
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  And just like with Biff's Almanac...
+                  You've already seen the evidence. Embryology, the expanding universe, fingerprints, ocean barriers, the lowest land, Pharaoh's preserved body — <span className="text-white font-medium">all confirmed</span>.
                 </p>
 
-                <p className="text-xl text-white leading-relaxed mb-4">
-                  Every result that checks out makes it <span className="text-amber-400 font-semibold">harder to dismiss</span>.
+                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                  Every result that checked out <span className="text-white font-semibold">compounded</span> the strength of belief.
+                  One after another. Each one making it harder to walk away.
                 </p>
 
-                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-                  <p className="text-amber-200 leading-relaxed">
-                    Every result that checked out <span className="text-white font-semibold">compounded</span> my strength of belief in the book.
+                <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+                  <p className="text-emerald-200 leading-relaxed">
+                    This book contained information that <span className="text-white font-semibold">couldn't have been known</span> 1,400 years ago — and no human could have authored it.
                   </p>
-                  <p className="text-amber-300 mt-2">
-                    One after another. Each one making it harder to walk away.
+                  <p className="text-emerald-300 mt-3">
+                    It read like an Almanac — except it's about <span className="text-white font-medium">your life, your purpose, and what happens after you die</span>.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => advancePhase('two-destinations')}
+                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                Continue
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* Phase 8: Two Destinations */}
+          {phase === 'two-destinations' && (
+            <motion.div
+              key="two-destinations"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-10 h-10 text-red-400" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-8">Two Destinations</h2>
+
+              <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
+                <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                  According to this book — a book that has <span className="text-white font-medium">proven itself</span> to you — we are all heading towards one of <span className="text-white font-semibold">two destinations</span>.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 text-center">
+                    <p className="text-emerald-300 font-bold text-lg mb-1">Paradise</p>
+                    <p className="text-slate-400 text-sm">For those who take heed and follow</p>
+                  </div>
+                  <div className="bg-red-900/30 rounded-xl p-5 border border-red-700/50 text-center">
+                    <p className="text-red-300 font-bold text-lg mb-1">Hellfire</p>
+                    <p className="text-slate-400 text-sm">For those who reject after knowing</p>
+                  </div>
+                </div>
+
+                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                  There is no third option. No middle ground.
+                </p>
+
+                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-6">
+                  <p className="text-amber-200 leading-relaxed text-lg text-center">
+                    You now have the <span className="text-white font-semibold">cheat sheet for life</span>.
+                  </p>
+                  <p className="text-amber-300 leading-relaxed text-center mt-2">
+                    Which destination are you going to prepare for?
+                  </p>
+                </div>
+
+                <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
+                  <p className="text-slate-300 leading-relaxed mb-3">
+                    Take heed and follow — or reject it and accept the fate of those who reject in the end.
+                  </p>
+                  <p className="text-white leading-relaxed font-medium">
+                    After everything you've seen, there is no excuse for the one who has read it.
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={onComplete}
-                className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
               >
                 Continue
                 <ArrowRight className="w-5 h-5" />

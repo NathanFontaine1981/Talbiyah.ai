@@ -1,10 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Lightbulb, User, Scale, Gavel, Compass, BookOpen, Brain, Search, Heart, CheckCircle2, Volume2, VolumeX, Stethoscope, Leaf, Waves, Sparkles } from 'lucide-react';
-import AlmanacGame from './AlmanacGame';
+import { ArrowLeft, ArrowRight, Lightbulb, User, Scale, Gavel, Compass, BookOpen, Brain, Search, Heart, CheckCircle2, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import ReasoningTest from './ReasoningTest';
-import QuranExhibits from './QuranExhibits';
-import AuthorshipElimination from './AuthorshipElimination';
 import { supabase } from '../../lib/supabaseClient';
 
 interface ExploreIntroProps {
@@ -65,9 +62,7 @@ interface Phase {
 
 const phases: Phase[] = [
   { id: 'A', name: 'What We Know For Sure', startScene: 0, endScene: 4 },
-  { id: 'B', name: 'Apply Your Logic', startScene: 5, endScene: 10 },
-  { id: 'C', name: 'The Evidence', startScene: 11, endScene: 16 },
-  { id: 'D', name: 'The Closing', startScene: 17, endScene: 21 },
+  { id: 'B', name: 'Apply Your Logic', startScene: 5, endScene: 11 },
 ];
 
 function getCurrentPhase(sceneIndex: number): Phase {
@@ -81,7 +76,7 @@ interface IntroScene {
   icon: string;
   content: React.ReactNode | null;
   isInteractive?: boolean;
-  interactiveType?: 'foundation' | 'reasoning-test' | 'almanac' | 'quran-exhibits' | 'authorship-elimination';
+  interactiveType?: 'foundation' | 'reasoning-test';
   voiceSource?: 'nathan' | 'daniel' | 'none';
 }
 
@@ -181,7 +176,7 @@ const introScenes: IntroScene[] = [
     interactiveType: 'reasoning-test',
   },
 
-  // ===== PHASE B: "Apply Your Logic" (Scenes 5-10) ~10 min =====
+  // ===== PHASE B: "Apply Your Logic" (Scenes 5-11) ~12 min =====
   {
     id: 'something-created-us',
     title: 'Something Created Us',
@@ -397,7 +392,7 @@ const introScenes: IntroScene[] = [
     ),
   },
 
-  // ===== PHASE C: "The Evidence" (Scenes 11-16) ~15 min =====
+  // Scene 11: Court session — bridge to Chapter 2
   {
     id: 'court-session',
     title: 'Court Is Now In Session',
@@ -423,243 +418,6 @@ const introScenes: IntroScene[] = [
           <p className="text-lg text-slate-300 leading-relaxed">
             At the end — <span className="text-amber-400 font-medium">you deliver the verdict</span>.
           </p>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'back-in-time',
-    title: 'Put Yourself Back in Time',
-    icon: 'compass',
-    voiceSource: 'daniel',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Before we look at the evidence, you have to <span className="text-amber-400 font-medium">put yourself back in that time</span> and understand what life was like.
-          </p>
-
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium mb-3">7th Century Arabia</p>
-            <div className="space-y-2 text-slate-300 text-sm">
-              <p>No technology. No electricity. No printing press.</p>
-              <p>Barefooted Bedouins of the desert.</p>
-              <p>Most people couldn't read or write.</p>
-              <p>They had the most eloquent poetry — but <span className="text-white">no science, no medicine, no astronomy</span>.</p>
-            </div>
-          </div>
-
-          <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed">
-              <span className="text-white font-medium">"I'll fly to that country and be there in half an hour"</span> — they'd say: <span className="text-amber-300">"Only birds fly. How can a human fly?"</span>
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            That's the <span className="text-white font-medium">gap</span> between what they knew then and what we know now. Keep that in mind as we look at what this book says.
-          </p>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'the-specialist',
-    title: 'The Specialist',
-    icon: 'brain',
-    voiceSource: 'daniel',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Think about the <span className="text-amber-400 font-medium">best people in the world</span> in their respective areas:
-          </p>
-
-          {/* Specialist cards */}
-          <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
-              <div className="w-10 h-10 bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Stethoscope className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <p className="text-white font-medium mb-1">A Cardiologist</p>
-                <p className="text-slate-400 text-sm">Spent their entire life becoming an expert in <span className="text-white">one area of the body</span> — the heart.</p>
-              </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
-              <div className="w-10 h-10 bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Leaf className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-white font-medium mb-1">David Attenborough</p>
-                <p className="text-slate-400 text-sm">Everyone knows him for <span className="text-white">observing nature</span>. A <span className="text-white">lifetime</span> of doing just that.</p>
-              </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Waves className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-white font-medium mb-1">An Oceanologist</p>
-                <p className="text-slate-400 text-sm">Spent their career studying <span className="text-white">the ocean</span>. One subject, one lifetime.</p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Yet the Quran — from <span className="text-white font-medium">1400 years ago</span> — covers the human body, the ocean, the mountains, embryology, the universe, law, and history.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            And gets <span className="text-amber-400 font-medium">nothing wrong</span>. From a man who couldn't read or write.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed text-lg">
-              <span className="text-white font-semibold">How?</span>
-            </p>
-            <p className="text-emerald-300 mt-2 leading-relaxed">
-              The author seems to know <span className="text-white font-semibold">everything about everything</span>.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'the-claim',
-    title: 'The Claim',
-    icon: 'book',
-    voiceSource: 'daniel',
-    content: (
-      <>
-        <div className="space-y-5">
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-amber-700/50">
-            <p className="text-white/70 font-arabic text-lg text-center leading-loose mb-3" dir="rtl">
-              ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
-            </p>
-            <p className="text-white text-center text-xl font-medium italic leading-relaxed">
-              "This is the Book about which there is <span className="text-amber-400 font-bold">no doubt</span>, a guidance for those who are mindful of God."
-            </p>
-            <p className="text-amber-400/70 text-center text-xs mt-2">
-              — Al-Baqarah 2:2 — The very beginning of the Quran
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Think about that claim. This book opens by saying there is <span className="text-white font-medium">no doubt</span> in it.
-          </p>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Not "a wise man once said..." Not "according to so-and-so..." Not "he said that God said..."
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
-            <p className="text-amber-200 leading-relaxed text-lg text-center">
-              This claims to be the <span className="text-white font-semibold">direct, verbatim words</span> of your Creator — speaking to <span className="text-white font-semibold">you</span>, in first person.
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Is there another book on Earth that makes that claim? Not a book <span className="text-white">about</span> God. Not a book of stories <span className="text-white">attributed</span> to God. A book that says: these are <span className="text-amber-400 font-medium">My words, directly to you, unchanged</span>.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed text-lg text-center font-medium">
-              That's a bold claim. So let's test it.
-            </p>
-          </div>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'quran-exhibits',
-    title: 'The Exhibits',
-    icon: 'search',
-    voiceSource: 'none',
-    isInteractive: true,
-    interactiveType: 'quran-exhibits',
-    content: null,
-  },
-  {
-    id: 'the-verdict',
-    title: 'No Contradictions. One Book.',
-    icon: 'check',
-    voiceSource: 'daniel',
-    content: null, // Rendered dynamically with stats counter animation
-  },
-
-  // ===== PHASE D: "The Closing" (Scenes 17-21) ~15 min =====
-  {
-    id: 'prove-it',
-    title: 'Prove It',
-    icon: 'sparkles',
-    voiceSource: 'daniel',
-    content: null, // Rendered dynamically with animated checklist
-  },
-  {
-    id: 'the-author',
-    title: 'The Author',
-    icon: 'scale',
-    voiceSource: 'none',
-    isInteractive: true,
-    interactiveType: 'authorship-elimination',
-    content: null,
-  },
-  {
-    id: 'the-almanac',
-    title: 'The Almanac Moment',
-    icon: 'book',
-    voiceSource: 'none',
-    isInteractive: true,
-    interactiveType: 'almanac',
-    content: null,
-  },
-  {
-    id: 'your-verdict',
-    title: 'Your Verdict',
-    icon: 'heart',
-    voiceSource: 'nathan',
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-xl text-white font-medium leading-relaxed">
-            You've seen it for yourself. Not because I told you — because you examined the evidence.
-          </p>
-
-          <div className="bg-amber-900/30 rounded-xl p-6 border border-amber-700/50 text-center">
-            <p className="text-2xl text-white font-bold">
-              Where do you think this book came from?
-            </p>
-          </div>
-
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Whatever you decide, I respect it.
-          </p>
-        </div>
-      </>
-    ),
-  },
-  {
-    id: 'begin',
-    title: "Let's Begin",
-    icon: 'compass',
-    voiceSource: 'none', // Audio combined with your-verdict recording
-    content: (
-      <>
-        <div className="space-y-5">
-          <p className="text-xl text-white font-medium leading-relaxed text-center">
-            This was just the introduction.
-          </p>
-
-          <div className="bg-emerald-900/30 rounded-xl p-6 border border-emerald-700/50 text-center">
-            <p className="text-emerald-200 leading-relaxed text-lg">
-              What comes next goes deeper — into the Quran itself, its language, its message, and what it asks of you.
-            </p>
-            <p className="text-emerald-300 mt-3">
-              Take your time. Come back whenever you're ready.
-            </p>
-          </div>
         </div>
       </>
     ),
@@ -1012,135 +770,6 @@ function EvidenceWithinScene() {
   );
 }
 
-// ========== Stats Counter for "The Verdict" scene ==========
-function VerdictScene() {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (step >= 3) return;
-    const timer = setTimeout(() => setStep(prev => prev + 1), 1000);
-    return () => clearTimeout(timer);
-  }, [step]);
-
-  return (
-    <div className="space-y-5">
-      <p className="text-lg text-slate-300 leading-relaxed">
-        Consider what we've just seen. The Quran was revealed over 23 years — in bits and pieces, across completely different situations — and yet:
-      </p>
-
-      {/* Animated stats */}
-      <div className="space-y-3">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: step >= 1 ? 1 : 0, x: step >= 1 ? 0 : -20 }}
-          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
-        >
-          <p className="text-4xl font-bold text-white">23 years</p>
-          <p className="text-slate-400 text-sm mt-1">of revelation</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: step >= 2 ? 1 : 0, x: step >= 2 ? 0 : -20 }}
-          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
-        >
-          <p className="text-4xl font-bold text-emerald-400">0 contradictions</p>
-          <p className="text-slate-400 text-sm mt-1">over 1400 years of scrutiny</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: step >= 3 ? 1 : 0, x: step >= 3 ? 0 : -20 }}
-          className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-center"
-        >
-          <p className="text-4xl font-bold text-amber-400">1 version</p>
-          <p className="text-slate-400 text-sm mt-1">every copy on earth is identical</p>
-        </motion.div>
-      </div>
-
-      {/* Al-Baqarah 2:2 */}
-      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-        <p className="text-white/80 font-arabic text-lg text-center mb-3 leading-loose" dir="rtl">
-          ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
-        </p>
-        <p className="text-white leading-relaxed text-center italic">
-          "This is the Book about which there is no doubt — a guidance for those who are mindful of God."
-        </p>
-        <p className="text-amber-400/70 text-center text-xs mt-2">
-          — Al-Baqarah 2:2
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ========== Animated Checklist for "Prove It" scene ==========
-function ProveItScene() {
-  const [visibleChecks, setVisibleChecks] = useState(0);
-
-  const checks = [
-    'We examined what the Quran says about the human body — confirmed by modern science',
-    'We examined what it says about the universe — confirmed by modern science',
-    'We examined what it says about the natural world — confirmed by modern science',
-    'Zero contradictions over 1400 years — confirmed',
-    'One version, unchanged — confirmed',
-  ];
-
-  useEffect(() => {
-    if (visibleChecks >= checks.length) return;
-    const timer = setTimeout(() => setVisibleChecks(prev => prev + 1), 600);
-    return () => clearTimeout(timer);
-  }, [visibleChecks, checks.length]);
-
-  return (
-    <div className="space-y-5">
-      <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 text-center">
-        <p className="text-2xl text-white font-bold mb-2">
-          "You claim to be my Creator?"
-        </p>
-        <p className="text-amber-200 text-lg">
-          Prove it. Show me. Give me evidence.
-        </p>
-      </div>
-
-      <p className="text-lg text-slate-300 leading-relaxed">
-        And that's <span className="text-white font-medium">exactly what we just did</span>.
-      </p>
-
-      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-        <div className="space-y-3">
-          {checks.map((check, idx) => (
-            <motion.p
-              key={idx}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{
-                opacity: idx < visibleChecks ? 1 : 0,
-                x: idx < visibleChecks ? 0 : -10,
-              }}
-              transition={{ duration: 0.3 }}
-              className="flex items-start gap-2 text-slate-300 text-sm"
-            >
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: idx < visibleChecks ? 1 : 0 }}
-                transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
-                className="text-emerald-400 mt-0.5 flex-shrink-0"
-              >
-                &#10003;
-              </motion.span>
-              {check}
-            </motion.p>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-        <p className="text-emerald-200 leading-relaxed text-lg">
-          The evidence has been presented.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ========== Phase Progress Indicator ==========
 function PhaseProgressBar({ currentScene }: { currentScene: number }) {
   const phase = getCurrentPhase(currentScene);
@@ -1192,6 +821,7 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     return localStorage.getItem('explore_audio_muted') === 'true';
   });
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const scene = introScenes[currentScene];
@@ -1209,19 +839,21 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
       audioRef.current.pause();
       audioRef.current = null;
       setAudioPlaying(false);
+      setAudioLoading(false);
     }
 
     // Don't play for interactive scenes or scenes with no audio
     if (scene.isInteractive || scene.voiceSource === 'none') return;
     if (audioMuted) return;
 
+    setAudioLoading(true);
     const audio = new Audio(getAudioUrl(scene.id, scene.voiceSource));
     audioRef.current = audio;
 
-    const onPlay = () => setAudioPlaying(true);
+    const onPlay = () => { setAudioPlaying(true); setAudioLoading(false); };
     const onEnd = () => setAudioPlaying(false);
     const onPause = () => setAudioPlaying(false);
-    const onError = () => setAudioPlaying(false);
+    const onError = () => { setAudioPlaying(false); setAudioLoading(false); };
 
     audio.addEventListener('play', onPlay);
     audio.addEventListener('ended', onEnd);
@@ -1229,7 +861,7 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
     audio.addEventListener('error', onError);
 
     const timer = setTimeout(() => {
-      audio.play().catch(() => setAudioPlaying(false));
+      audio.play().catch(() => { setAudioPlaying(false); setAudioLoading(false); });
     }, 600);
 
     return () => {
@@ -1306,32 +938,6 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
       );
     }
 
-    if (scene.interactiveType === 'quran-exhibits') {
-      return (
-        <div className="relative">
-          {backButton}
-          <QuranExhibits onComplete={handleNext} />
-        </div>
-      );
-    }
-
-    if (scene.interactiveType === 'almanac') {
-      return (
-        <div className="relative">
-          {backButton}
-          <AlmanacGame onComplete={handleNext} />
-        </div>
-      );
-    }
-
-    if (scene.interactiveType === 'authorship-elimination') {
-      return (
-        <div className="relative">
-          {backButton}
-          <AuthorshipElimination onComplete={handleNext} />
-        </div>
-      );
-    }
   }
 
   // ===== Render dynamic content for specific scenes =====
@@ -1343,10 +949,6 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
         return <SomethingCreatedUsScene />;
       case 'the-evidence-within':
         return <EvidenceWithinScene />;
-      case 'the-verdict':
-        return <VerdictScene />;
-      case 'prove-it':
-        return <ProveItScene />;
       default:
         return scene.content;
     }
@@ -1391,12 +993,14 @@ export const ExploreIntro = ({ onComplete }: ExploreIntroProps) => {
         <button
           onClick={toggleMute}
           className={`bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 transition flex-shrink-0 ${
-            audioPlaying ? 'text-amber-400' : 'text-slate-400 hover:text-white'
+            audioPlaying ? 'text-amber-400' : audioLoading ? 'text-slate-500' : 'text-slate-400 hover:text-white'
           }`}
-          title={audioMuted ? 'Unmute narration' : 'Mute narration'}
+          title={audioMuted ? 'Unmute narration' : audioLoading ? 'Loading audio...' : 'Mute narration'}
         >
           {audioMuted ? (
             <VolumeX className="w-5 h-5" />
+          ) : audioLoading ? (
+            <Volume2 className="w-5 h-5 animate-pulse opacity-50" />
           ) : (
             <Volume2 className={`w-5 h-5 ${audioPlaying ? 'animate-pulse' : ''}`} />
           )}

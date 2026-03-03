@@ -3,56 +3,81 @@ import {
   Compass,
   Brain,
   FileSearch,
-  CheckSquare,
-  BookOpen,
-  Target,
-  Flag,
-  HelpCircle,
+  Map,
   MessageSquare,
   Link,
   Users,
-  Sparkles,
+  Globe,
   Heart,
+  Footprints,
 } from 'lucide-react';
 
-type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'axiom-check' | 'authority-match' | 'probability-moment' | 'checkpoint' | 'the-question' | 'the-voice' | 'reconciliation' | 'prophet-timeline' | 'cheat-codes' | 'first-step';
+type FlowStage = 'intro' | 'bias' | 'chain-of-custody' | 'walkthrough' | 'the-voice' | 'reconciliation' | 'prophet-timeline' | 'the-names' | 'the-mercy' | 'first-step';
 
 interface StageInfo {
   id: FlowStage;
   label: string;
   shortLabel: string;
   icon: React.ReactNode;
+  chapter: number;
 }
 
 const stages: StageInfo[] = [
-  { id: 'intro', label: 'Introduction', shortLabel: 'Intro', icon: <Compass className="w-4 h-4" /> },
-  { id: 'bias', label: 'Bias Check', shortLabel: 'Bias', icon: <Brain className="w-4 h-4" /> },
-  { id: 'chain-of-custody', label: 'Chain of Custody', shortLabel: 'Source', icon: <FileSearch className="w-4 h-4" /> },
-  { id: 'axiom-check', label: 'The Facts', shortLabel: 'Facts', icon: <CheckSquare className="w-4 h-4" /> },
-  { id: 'authority-match', label: 'The Quran', shortLabel: 'Quran', icon: <BookOpen className="w-4 h-4" /> },
-  { id: 'probability-moment', label: 'The Odds', shortLabel: 'Odds', icon: <Target className="w-4 h-4" /> },
-  { id: 'checkpoint', label: 'Checkpoint', shortLabel: 'Check', icon: <Flag className="w-4 h-4" /> },
-  { id: 'the-question', label: 'The Question', shortLabel: 'Question', icon: <HelpCircle className="w-4 h-4" /> },
-  { id: 'the-voice', label: 'The Voice', shortLabel: 'Voice', icon: <MessageSquare className="w-4 h-4" /> },
-  { id: 'reconciliation', label: 'The Connection', shortLabel: 'Connect', icon: <Link className="w-4 h-4" /> },
-  { id: 'prophet-timeline', label: 'The Prophets', shortLabel: 'Prophets', icon: <Users className="w-4 h-4" /> },
-  { id: 'cheat-codes', label: 'Life Guidance', shortLabel: 'Guide', icon: <Sparkles className="w-4 h-4" /> },
-  { id: 'first-step', label: 'The First Step', shortLabel: 'Step', icon: <Heart className="w-4 h-4" /> },
+  // Chapter 1
+  { id: 'intro', label: 'Introduction', shortLabel: 'Intro', icon: <Compass className="w-4 h-4" />, chapter: 1 },
+  { id: 'bias', label: 'Bias Check', shortLabel: 'Bias', icon: <Brain className="w-4 h-4" />, chapter: 1 },
+  { id: 'chain-of-custody', label: 'Chain of Custody', shortLabel: 'Source', icon: <FileSearch className="w-4 h-4" />, chapter: 1 },
+  // Chapter 2
+  { id: 'walkthrough', label: 'The Walkthrough', shortLabel: 'Walk', icon: <Map className="w-4 h-4" />, chapter: 2 },
+  // Chapter 3
+  { id: 'the-voice', label: 'The Voice', shortLabel: 'Voice', icon: <MessageSquare className="w-4 h-4" />, chapter: 3 },
+  { id: 'reconciliation', label: 'The Connection', shortLabel: 'Connect', icon: <Link className="w-4 h-4" />, chapter: 3 },
+  { id: 'prophet-timeline', label: 'The Prophets', shortLabel: 'Prophets', icon: <Users className="w-4 h-4" />, chapter: 3 },
+  { id: 'the-names', label: 'The Names', shortLabel: 'Names', icon: <Globe className="w-4 h-4" />, chapter: 3 },
+  { id: 'the-mercy', label: 'The Mercy', shortLabel: 'Mercy', icon: <Heart className="w-4 h-4" />, chapter: 3 },
+  { id: 'first-step', label: 'The First Step', shortLabel: 'Step', icon: <Footprints className="w-4 h-4" />, chapter: 3 },
 ];
 
+// Map chapter-intro/complete flow stages to the nearest real progress bar stage
+// Derived from chapter data: intro → first stage, complete → last stage of that chapter
+const CHAPTER_FIRST_STAGE: Record<number, number> = {};
+const CHAPTER_LAST_STAGE: Record<number, number> = {};
+stages.forEach((s, i) => {
+  if (!(s.chapter in CHAPTER_FIRST_STAGE)) CHAPTER_FIRST_STAGE[s.chapter] = i;
+  CHAPTER_LAST_STAGE[s.chapter] = i;
+});
+
 interface ExploreProgressBarProps {
-  currentStage: FlowStage;
+  currentStage: string;
   onStageClick: (stage: FlowStage) => void;
-  highestStageReached: FlowStage;
+  highestStageReached: string;
 }
+
+const resolveStageIndex = (stage: string): number => {
+  const direct = stages.findIndex(s => s.id === stage);
+  if (direct >= 0) return direct;
+
+  // Chapter boundaries → derived from chapter data
+  const introMatch = stage.match(/^chapter-(\d+)-intro$/);
+  if (introMatch) {
+    const ch = parseInt(introMatch[1], 10);
+    return CHAPTER_FIRST_STAGE[ch] ?? 0;
+  }
+  const completeMatch = stage.match(/^chapter-(\d+)-complete$/);
+  if (completeMatch) {
+    const ch = parseInt(completeMatch[1], 10);
+    return CHAPTER_LAST_STAGE[ch] ?? 0;
+  }
+  return 0;
+};
 
 export const ExploreProgressBar = ({
   currentStage,
   onStageClick,
   highestStageReached,
 }: ExploreProgressBarProps) => {
-  const currentIndex = stages.findIndex(s => s.id === currentStage);
-  const highestIndex = stages.findIndex(s => s.id === highestStageReached);
+  const currentIndex = resolveStageIndex(currentStage);
+  const highestIndex = resolveStageIndex(highestStageReached);
 
   const isStageAccessible = (stageIndex: number) => {
     return stageIndex <= highestIndex;
@@ -107,15 +132,15 @@ export const ExploreProgressBar = ({
         })}
       </div>
 
-      {/* Mobile view - simple progress indicator with more vertical space */}
+      {/* Mobile view - simple progress indicator */}
       <div className="md:hidden px-4 py-4">
         <div className="flex items-center justify-center">
           <div className="text-center">
             <span className="text-emerald-400 text-sm font-medium">
-              {stages[currentIndex].label}
+              {currentIndex >= 0 ? stages[currentIndex].label : 'Exploring'}
             </span>
             <span className="text-slate-500 text-xs ml-2">
-              ({currentIndex + 1}/{stages.length})
+              ({Math.max(currentIndex + 1, 1)}/{stages.length})
             </span>
           </div>
         </div>
