@@ -372,7 +372,7 @@ export default function ReasoningTest({ onComplete }: ReasoningTestProps) {
 
                   <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
                     <p className="text-emerald-200 leading-relaxed">
-                      Now let's apply the <span className="text-white font-semibold">same brain</span> you just used to life's biggest question.
+                      Now let's apply the <span className="text-white font-semibold">same method</span> you just used to life's biggest question.
                     </p>
                   </div>
                 </div>

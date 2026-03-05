@@ -408,8 +408,11 @@ export default function ChainOfCustody({ onComplete, onBack }: ChainOfCustodyPro
               <p className="text-slate-300 leading-relaxed">
                 I didn't want to read 600 pages. I was lazy. I just wanted the <span className="text-white font-medium">facts</span>.
               </p>
-              <p className="text-emerald-400 mt-2 font-medium">
-                So I looked at the miracles.
+              <p className="text-slate-300 leading-relaxed mt-3">
+                So I looked at what people had to say about the Quran first — what people found <span className="text-white font-medium">interesting</span> and had <span className="text-amber-400 font-medium">no answers for</span>.
+              </p>
+              <p className="text-emerald-400 mt-3 font-medium">
+                I looked at the miracles.
               </p>
             </div>
           </div>

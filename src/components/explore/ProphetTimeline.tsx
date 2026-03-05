@@ -614,7 +614,7 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
                 Throughout history, true believers were simply people on <span className="text-emerald-400 font-semibold">"The Straight Path"</span>—those who submitted to God and followed His messenger of their time.
               </p>
               <p className="text-slate-300 leading-relaxed">
-                There was no sect. No label. Just <span className="text-white font-medium">submission to the One God</span>.
+                There was no sect. No label. Just <span className="text-white font-medium">peaceful submission to the One Creator</span>.
               </p>
             </div>
 
@@ -652,7 +652,7 @@ export const ProphetTimeline = ({ onComplete, onBack }: ProphetTimelineProps) =>
                 إِسْلَام
               </p>
               <p className="text-center text-emerald-300 font-medium">
-                Islam — "Submission to God"
+                Islam — "Peaceful Submission to the Creator"
               </p>
               <p className="text-slate-400 text-sm text-center mt-3 italic">
                 "This day I have perfected your religion for you, completed My favour upon you, and have chosen for you Islam as your way of life." — Quran 5:3

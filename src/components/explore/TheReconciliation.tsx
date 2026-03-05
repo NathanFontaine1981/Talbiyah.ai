@@ -106,7 +106,7 @@ const scenes = [
       <>
         <p className="text-lg text-slate-300 leading-relaxed mb-4">
           Islam isn't a "new" religion. It's the <span className="text-amber-400 font-semibold">original religion</span>—
-          submission to One God.
+          peaceful submission to the One Creator.
         </p>
         <div className="bg-amber-900/20 rounded-xl p-4 border border-amber-700/50 mb-4">
           <p className="text-amber-200 italic text-lg">

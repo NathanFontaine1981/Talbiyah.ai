@@ -73,8 +73,8 @@ const EXHIBITS = {
     arabicVerse: "وَلَقَدْ خَلَقْنَا الْإِنسَانَ مِن سُلَالَةٍ مِّن طِينٍ ثُمَّ جَعَلْنَاهُ نُطْفَةً فِي قَرَارٍ مَّكِينٍ",
     verseRef: "Al-Mu'minun 23:12-14",
     whatWasKnown: "No microscopes existed. The stages of embryonic development were completely unknown. Many believed babies were preformed miniature humans from the start.",
-    modernDiscovery: "Modern embryology confirms the exact sequence: fertilisation, implantation, embryo resembling a clinging clot, lump-like stage, skeleton formation, then muscles wrapping around bones. The Quran described this process with remarkable accuracy.",
-    discoveredBy: "Karl Ernst von Baer, 1827",
+    modernDiscovery: "Modern embryology confirms the exact sequence: fertilisation, implantation, embryo resembling a clinging clot, lump-like stage, skeleton formation, then muscles wrapping around bones. Professor Keith Moore — author of 'The Developing Human', the standard embryology textbook used in universities worldwide — was so struck by the Quran's accuracy that he published a special edition of his textbook with Islamic additions in 1983, stating the Quran's descriptions were 'simple, comprehensive, and conforming with present embryological knowledge.'",
+    discoveredBy: "Karl Ernst von Baer (1827) / Prof. Keith Moore (1983)",
     yearsBefore: 1195,
   },
 };
@@ -109,8 +109,10 @@ const QUICK_FIRE_SIGNS = [
     title: "Pharaoh's Body Preserved",
     verse: "Today We will preserve your body so you can be a sign for those who come after you.",
     ref: "Yunus 10:92",
-    fact: "Pharaoh drowned in the sea — yet his mummy was discovered remarkably intact in 1898. Salt deposits confirmed drowning in seawater. It sits in Cairo museum to this day.",
+    fact: "Pharaoh drowned in the sea — yet his mummy was discovered remarkably intact in 1898. Salt deposits confirmed drowning in seawater. It sits in Cairo museum to this day. French surgeon Maurice Bucaille examined the body and was astonished by its preservation.",
     year: "Loret / Bucaille, 1898",
+    sourceUrl: "https://www.youtube.com/watch?v=tOKkEdMgPq0&t=77s",
+    sourceLabel: "Watch: Maurice Bucaille examines Pharaoh's body",
   },
   {
     icon: <MapPin className="w-5 h-5" />,
@@ -138,8 +140,8 @@ function QuickFireScene({ onAllRevealed }: { onAllRevealed: () => void }) {
   };
 
   return (
-    <div className="space-y-3 max-w-2xl mx-auto">
-      <p className="text-slate-400 text-center text-sm mb-4">Tap each sign to reveal the evidence</p>
+    <div className="space-y-4 max-w-2xl mx-auto">
+      <p className="text-slate-400 text-center mb-4">Tap each sign to reveal the evidence</p>
       {QUICK_FIRE_SIGNS.map((sign, i) => (
         <motion.div
           key={i}
@@ -151,28 +153,41 @@ function QuickFireScene({ onAllRevealed }: { onAllRevealed: () => void }) {
             onClick={() => revealSign(i)}
             className={`w-full text-left rounded-xl border transition-all ${
               revealed.includes(i)
-                ? 'bg-emerald-900/20 border-emerald-700/40 p-4'
-                : 'bg-slate-800/50 border-slate-700/50 p-4 hover:border-slate-600'
+                ? 'bg-emerald-900/20 border-emerald-700/40 p-5'
+                : 'bg-slate-800/50 border-slate-700/50 p-5 hover:border-slate-600'
             }`}
           >
-            <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            <div className="flex items-start gap-4">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                 revealed.includes(i) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'
               }`}>
-                {revealed.includes(i) ? <CheckCircle2 className="w-5 h-5" /> : sign.icon}
+                {revealed.includes(i) ? <CheckCircle2 className="w-6 h-6" /> : sign.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-white font-medium text-sm">{sign.title}</h4>
-                <p className="text-amber-300/80 text-xs italic mt-1">"{sign.verse}" — {sign.ref}</p>
+                <h4 className="text-white font-semibold text-lg">{sign.title}</h4>
+                <p className="text-amber-300/80 text-sm italic mt-1.5">"{sign.verse}" — {sign.ref}</p>
                 <AnimatePresence>
                   {revealed.includes(i) && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 pt-2 border-t border-slate-700/50"
+                      className="mt-3 pt-3 border-t border-slate-700/50"
                     >
-                      <p className="text-slate-300 text-sm">{sign.fact}</p>
-                      <p className="text-emerald-400 text-xs mt-1 font-medium">{sign.year}</p>
+                      <p className="text-slate-300 leading-relaxed">{sign.fact}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-emerald-400 text-sm font-medium">{sign.year}</p>
+                        {sign.sourceUrl && (
+                          <a
+                            href={sign.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-amber-400 hover:text-amber-300 text-sm underline transition"
+                          >
+                            {sign.sourceLabel}
+                          </a>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -377,10 +392,10 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
           <p className="text-slate-300 leading-relaxed text-center">
             A cardiologist spends a <span className="text-white font-semibold">lifetime</span> studying the heart.
             An oceanologist dedicates decades to understanding the sea.
-            An astronomer devotes their career to the cosmos.
+            An astronomer devotes their entire career to the cosmos.
           </p>
           <p className="text-slate-300 leading-relaxed text-center">
-            Each one is a <span className="text-white font-semibold">specialist</span> — an expert in one narrow field.
+            Each one is a <span className="text-white font-semibold">specialist</span> — an expert in <span className="text-amber-400 font-semibold">one</span> narrow field. It's highly unlikely for a person to truly master even <span className="text-white font-semibold">two</span> areas in their lifetime — let alone countless.
           </p>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -400,9 +415,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             ))}
           </div>
           <p className="text-slate-300 leading-relaxed text-center">
-            Now imagine <span className="text-amber-300 font-semibold">one man</span> — who could not read or write — making
-            statements across <span className="text-white font-semibold">every one of these fields</span>...
-            and getting them all right.
+            Now imagine <span className="text-amber-300 font-semibold">one man</span> — who could not read or write — speaking with <span className="text-white font-semibold">real accuracy</span> across <span className="text-white font-semibold">every one of these fields</span>... over 1,400 years ago.
           </p>
         </div>
       ),
@@ -522,6 +535,35 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             <p className="text-slate-500 text-sm mt-2">— Surah Adh-Dhariyat, 51:56</p>
           </div>
           <p className="text-slate-300 leading-relaxed">
+            But what does it mean by the word <span className="text-white font-semibold">worship</span>? Surely it's not just about praying all day?
+          </p>
+
+          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 text-left">
+            <p className="text-slate-300 leading-relaxed mb-3">
+              The Arabic word used is <span className="text-amber-300 font-semibold">ʿibādah</span> — and it's far broader than prayer. It means <span className="text-white font-medium">any act done to please the Creator</span>.
+            </p>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {[
+                'Earning an honest living',
+                'Being kind to your parents',
+                'Smiling at someone',
+                'Feeding the hungry',
+                'Seeking knowledge',
+                'Being patient in hardship',
+                'Raising your children well',
+                'Even sleeping — with the right intention',
+              ].map(item => (
+                <div key={item} className="bg-slate-700/40 rounded-lg px-3 py-2">
+                  <p className="text-slate-300 text-sm">{item}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-emerald-300 leading-relaxed text-center">
+              Your entire life can be an act of worship — not just the moments you pray.
+            </p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
             This is a claim you <span className="text-white font-semibold">cannot verify scientifically</span>.
             No microscope will show you purpose. No telescope will reveal meaning.
           </p>
@@ -540,11 +582,38 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       iconBg: 'bg-amber-500/20',
       content: (
         <div className="space-y-5 max-w-2xl mx-auto">
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-4">
             <p className="text-slate-300 leading-relaxed">
-              The word <span className="text-amber-300 font-semibold">Islam</span> means submission.
-              A <span className="text-amber-300 font-semibold">Muslim</span> is one who submits.
+              <span className="text-amber-300 font-semibold">Islam</span> is a verb — not just a label. It comes from the Arabic root <em>s-l-m</em>, carrying meanings of submission, peace, safety, and wholeness. It means to <span className="text-white font-medium">peacefully submit to the Creator</span>.
             </p>
+            <p className="text-slate-300 leading-relaxed">
+              The person who does this is called a <span className="text-amber-300 font-semibold">Muslim</span> — one who peacefully submits.
+            </p>
+
+            {/* Arabic prefix explanation */}
+            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+              <p className="text-slate-400 text-sm mb-3">In Arabic, adding <span className="text-amber-400 font-semibold">mu-</span> to a verb makes it "the one who does it" — just like adding <span className="text-amber-400 font-semibold">-er</span> in English:</p>
+              <div className="space-y-2">
+                {[
+                  { en: 'Teach → Teacher', ar: 'ʿAllam → Muʿallim', arLabel: 'مُعَلِّم' },
+                  { en: 'Travel → Traveller', ar: 'Sāfar → Musāfir', arLabel: 'مُسَافِر' },
+                  { en: 'Submit → Submitter', ar: 'Aslam → Muslim', arLabel: 'مُسْلِم' },
+                ].map(row => (
+                  <div key={row.en} className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-700/50 rounded-lg px-3 py-2 text-center">
+                      <p className="text-slate-300 text-sm">{row.en}</p>
+                    </div>
+                    <div className="bg-amber-900/20 rounded-lg px-3 py-2 text-center">
+                      <p className="text-amber-200 text-sm">{row.ar}</p>
+                      <p className="text-amber-400/60 text-xs font-arabic">{row.arLabel}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-slate-400 text-sm mt-3 text-center">
+                A <span className="text-white font-medium">Muslim</span> is simply "the one who submits" — to the Creator, in peace.
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -562,17 +631,22 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             ))}
           </div>
           <p className="text-slate-300 leading-relaxed text-center">
-            Everything in creation submits. <span className="text-white font-semibold">Your body is already Muslim.</span>
+            If this framework is correct, everything in creation already operates in submission. Your heart beats, your lungs breathe, your cells heal — <span className="text-white font-semibold">none of it requires your consent</span>.
           </p>
-          <p className="text-slate-400 text-center">
-            Only humans and jinn have been given the <span className="text-amber-300 font-semibold">choice</span>.
-          </p>
+          <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/40 text-center">
+            <p className="text-amber-200 leading-relaxed text-lg">
+              According to the Qur'an, only the souls of <span className="text-white font-semibold">humans</span> and <span className="text-white font-semibold">jinn</span> have been given the <span className="text-amber-400 font-semibold">choice</span>.
+            </p>
+            <p className="text-slate-400 leading-relaxed mt-2">
+              Everything else submits by design. The question is whether you will do so consciously.
+            </p>
+          </div>
         </div>
       ),
     },
     {
       id: 'the-souls-choice',
-      title: "The Soul's Choice",
+      title: "The Implication",
       icon: <Heart className="w-10 h-10 text-rose-400" />,
       iconBg: 'bg-rose-500/20',
       content: (
@@ -587,11 +661,10 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             <p className="text-slate-500 text-sm mt-2">— Surah Al-Insan, 76:3</p>
           </div>
           <p className="text-slate-300 leading-relaxed">
-            Your body is Muslim whether you like it or not — you didn't choose to be here.
+            If the evidence holds, your body already operates in submission — every cell, every heartbeat, every breath follows the laws set by the Creator. You didn't choose any of it.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            The test is whether your <span className="text-white font-semibold">soul</span> will fall in line
-            with the rest of creation.
+            The test, according to this claim, is whether your <span className="text-white font-semibold">conscious choice</span> will align with what the rest of creation already does — to recognise the guidance, examine it honestly, and respond to the evidence.
           </p>
           <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700">
             <p className="text-lg font-arabic text-amber-100 leading-loose mb-2" dir="rtl">
@@ -615,8 +688,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       content: (
         <div className="space-y-5 max-w-2xl mx-auto text-center">
           <p className="text-slate-300 leading-relaxed">
-            Actions are based on <span className="text-white font-semibold">intentions</span>.
-            Angels record <span className="text-white font-semibold">everything</span>.
+            According to the Qur'an, actions are judged by <span className="text-white font-semibold">intentions</span> — and every deed is recorded.
           </p>
           <div className="bg-slate-800/60 rounded-2xl p-5 border border-blue-700/30">
             <p className="text-lg font-arabic text-amber-100 leading-loose mb-3" dir="rtl">
@@ -632,8 +704,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             Science confirmed this — the Quran used this specific metaphor for ultimate closeness.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            Every daily action can be worship if done with the right intention.
-            Eating, sleeping, working, smiling — all counted.
+            Under this system, every daily action can count as worship if done with the right intention — eating, sleeping, working, even smiling.
           </p>
         </div>
       ),
@@ -646,8 +717,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       content: (
         <div className="space-y-5 max-w-2xl mx-auto text-center">
           <p className="text-slate-300 leading-relaxed">
-            Allah created a <span className="text-emerald-400 font-semibold">reward multiplier</span> —
-            like the most generous bonus system ever designed.
+            The Qur'an describes a <span className="text-emerald-400 font-semibold">reward multiplier</span> — a system heavily weighted in your favour.
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-emerald-900/20 rounded-xl p-4 border border-emerald-700/30">
@@ -673,7 +743,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             And if you intended a bad deed but didn't act on it — it's not written at all.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            The mercy is <span className="text-emerald-400 font-semibold">built into the system</span>.
+            Look at the ratio. The system is <span className="text-emerald-400 font-semibold">designed for you to succeed</span>.
           </p>
         </div>
       ),
@@ -686,8 +756,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       content: (
         <div className="space-y-5 max-w-2xl mx-auto text-center">
           <p className="text-slate-300 leading-relaxed">
-            Every soul has an appointed time. You didn't choose to come here.
-            You can't choose when you leave.
+            The Qur'an states that every soul has an appointed time. You didn't choose to arrive — and you won't choose when you leave.
           </p>
           <div className="space-y-3">
             <div className="bg-rose-900/20 rounded-xl p-4 border border-rose-700/30">
@@ -709,11 +778,10 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             <p className="text-slate-500 text-xs">— Surah An-Naziat, 79:37-41</p>
           </div>
           <p className="text-slate-300 leading-relaxed">
-            Follow guidance — paradise. Follow desires — the other.
-            The game of life ends when you die.
+            According to this source, these are the only two outcomes. The window closes when your time is up.
           </p>
           <p className="text-slate-400 text-sm">
-            Rejection after knowledge is different from ignorance. Only Allah knows your heart.
+            The Qur'an also distinguishes between those who reject after seeing the evidence and those who were never shown it. The judgement, it says, is with Allah alone.
           </p>
         </div>
       ),
@@ -737,17 +805,17 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             <p className="text-slate-500 text-sm mt-2">— Surah Ar-Rum, 30:19</p>
           </div>
           <p className="text-slate-300 leading-relaxed">
-            Flowers grow, die, and regrow. Seasons cycle. Nature shows you <span className="text-emerald-400 font-semibold">resurrection every spring</span>.
+            Observable pattern: flowers grow, die, and regrow. Seasons cycle. Nature demonstrates a <span className="text-emerald-400 font-semibold">cycle of death and renewal</span> — consistent with the Qur'an's claim of resurrection.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            Your arm moves the instant you think it — who's doing that?
+            Consider your own body: your arm moves the instant you will it — but you didn't design the nervous system that makes it possible. You breathe without choosing to. Your heart beats without your permission. Someone or something is sustaining all of this.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            You see a phone in the desert, you know someone intelligent made it.
-            What about the universe? What about <span className="text-white font-semibold">you</span>?
+            If you found a phone in the desert, you'd conclude an intelligent being made it.
+            The human body is incomparably more complex — what does the evidence suggest about <span className="text-white font-semibold">its origin</span>?
           </p>
           <p className="text-amber-300 italic">
-            "Do you think you were created for no reason?"
+            The Qur'an poses this directly: "Do you think you were created for no reason?" — Surah Al-Mu'minun, 23:115
           </p>
         </div>
       ),
@@ -839,33 +907,29 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       iconBg: 'bg-indigo-500/20',
       content: (
         <div className="space-y-6 max-w-2xl mx-auto text-center">
+          <ImagePlaceholder description="Person standing at a fork in the road, silhouetted at dusk" category="concept" src="/images/explore/fork-in-the-road.jpg" />
+
           <motion.div
             animate={{ scale: [1, 1.03, 1] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             className="bg-slate-800/60 rounded-2xl p-6 border border-indigo-700/30"
           >
             <p className="text-xl text-white font-semibold leading-relaxed mb-4">
-              What you are exploring right now is the most important subject in your life.
+              You've examined the evidence. You've eliminated the alternatives. You've seen the track record.
             </p>
             <p className="text-slate-300 leading-relaxed">
-              Not your career. Not your relationships. Not your bank account.
-              <span className="text-white font-semibold"> This.</span>
+              If this source is what it claims to be — the words of the Creator — then the subject you're exploring right now carries more weight than anything else in your life.
             </p>
           </motion.div>
 
-          <ImagePlaceholder description="Person standing at a fork in the road, silhouetted at dusk" category="concept" src="/images/explore/fork-in-the-road.jpg" />
-
           <p className="text-slate-300 leading-relaxed">
-            Open your heart. Be honest with yourself. Ask — sincerely —
-            to be <span className="text-indigo-300 font-semibold">shown the truth</span>.
+            This is where the investigation becomes personal. The evidence has been laid out — the next step is yours.
           </p>
           <p className="text-slate-300 leading-relaxed">
-            Accept what your brain tells you makes sense through the process of elimination.
-            Do not be <span className="text-rose-300">arrogant</span>. Do not <span className="text-rose-300">dismiss</span>.
+            Be honest with yourself about what the process of elimination has shown you. If the conclusion makes sense, <span className="text-indigo-300 font-semibold">follow where it leads</span>.
           </p>
           <p className="text-slate-400 leading-relaxed">
-            Take your time. Come back tomorrow if you need to. There is no rush —
-            but there is <span className="text-white font-medium">no subject more worthy of your attention</span>.
+            Take your time. Come back tomorrow if you need to. There is no rush — but give this the attention the evidence demands.
           </p>
 
           <motion.div
@@ -1506,10 +1570,24 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
         const exhibit = getExhibitForScene(scene.id);
         if (!exhibit) return null;
         return (
-          <InlineEvidence
-            {...exhibit}
-            onVerified={() => {/* enables continue */}}
-          />
+          <div className="space-y-4">
+            <InlineEvidence
+              {...exhibit}
+              onVerified={() => {/* enables continue */}}
+            />
+            {scene.id === 'the-creation' && (
+              <div className="text-center pt-2">
+                <a
+                  href="https://www.youtube.com/watch?v=sYajKl-Xr6c"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-slate-500 hover:text-rose-400 transition underline"
+                >
+                  Watch: Prof. Keith Moore explains embryology in the Quran
+                </a>
+              </div>
+            )}
+          </div>
         );
       }
       if (scene.interactiveType === 'quick-fire-evidence') {

@@ -13,42 +13,42 @@ const foundationTruths = [
   {
     id: 1,
     text: 'We are human beings, and we are alive',
-    reflection: 'Can you truly deny that you exist and are alive right now?',
+    reflection: 'You are here, reading this, breathing. Nobody can deny their own existence.',
   },
   {
     id: 2,
     text: 'We had a beginning — we were born',
-    reflection: "There was a time when you didn't exist. Then you were brought into being.",
+    reflection: 'We can see the evidence — babies are born from the womb every single day. We all came into this world the same way.',
   },
   {
     id: 3,
     text: "We are going to die one day — we don't know when or where",
-    reflection: 'Every human who has ever lived has died, or will die. This is undeniable.',
+    reflection: 'We see it with our own eyes. People around us pass away. Everyone who came before us lived and died. The evidence is undeniable.',
   },
   {
     id: 4,
     text: 'We are intelligent beings',
-    reflection: "You're reading, understanding, and processing this right now. That's intelligence.",
+    reflection: "You're reading, understanding, and processing this right now. That's intelligence in action.",
   },
   {
     id: 5,
     text: 'We are the most intelligent beings on earth — we can outsmart, capture, and contain any animal no matter how big or dangerous',
-    reflection: 'Lions, sharks, elephants — we can contain them all. No other creature rules like we do.',
+    reflection: 'The evidence is all around us. Animals far bigger and stronger exist — lions, sharks, elephants — yet we have the intelligence to trap and contain them all. We are the caretakers of this earth.',
   },
   {
     id: 6,
     text: 'Our bodies work automatically — heart beats, we heal when cut, hair grows, all without us choosing',
-    reflection: "You didn't tell your heart to beat today. You don't choose to heal. It just happens.",
+    reflection: "It happens whether we like it or not. Laws of nature — things we can see happening around us without any input from us.",
   },
   {
     id: 7,
     text: 'We just have to think something and our body does it — move your little toe, pick something up, it just happens',
-    reflection: 'Think about moving your finger. It moves. The connection between thought and action is instant.',
+    reflection: 'All you have to do is think it and it happens. The connection between thought and action is instant — no wires, no manual, no setup.',
   },
   {
     id: 8,
     text: "There was a beginning to the universe — it hasn't always existed",
-    reflection: "Science confirms this. The Big Bang. Before that — nothing. It had a start.",
+    reflection: "Through observation, scientists found the universe is ever-expanding. Rewind that — it keeps contracting. It must have started as one piece. It had a beginning.",
   },
 ];
 
@@ -154,9 +154,9 @@ const introScenes: IntroScene[] = [
             That's how your brain works. Evidence in, conclusion out.
           </p>
           <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-white font-medium text-lg mb-2">Let me give you a quick test.</p>
+            <p className="text-white font-medium text-lg mb-2">Let me give you an example.</p>
             <p className="text-slate-400 leading-relaxed">
-              Nothing complicated. Just see if your brain is doing what it should be doing.
+              Nothing complicated — just so it's easier to see this in action.
             </p>
           </div>
           <p className="text-slate-400 leading-relaxed">
@@ -569,8 +569,8 @@ function WordRevealScene() {
   const paragraphs = [
     { words: 'Before I share anything with you, let\'s start with what every single human being on this earth already knows.'.split(' '), delay: 0 },
     { words: 'Not opinions. Not beliefs. Not theories.'.split(' '), delay: 0 },
-    { words: 'Facts that no one — regardless of their religion, culture, or background — can deny.'.split(' '), delay: 0 },
-    { words: 'I want to build a foundation with you. Things we both agree on. Things that will never change.'.split(' '), delay: 0 },
+    { words: 'Established facts — things any sane person would agree on, because we can see the evidence with our own eyes.'.split(' '), delay: 0 },
+    { words: 'I want to build a foundation with you. Universal truths that we all agree on.'.split(' '), delay: 0 },
   ];
 
   const allWords = paragraphs.flatMap(p => [...p.words, '||']); // || = paragraph break
@@ -592,7 +592,7 @@ function WordRevealScene() {
           const globalIdx = wordIndex;
           wordIndex++;
           const isVisible = globalIdx < visibleWords;
-          const isHighlighted = word === 'Facts' || word === 'foundation';
+          const isHighlighted = word === 'Established' || word === 'Universal' || word === 'foundation';
           return (
             <motion.span
               key={`${pIdx}-${wIdx}`}
@@ -620,6 +620,7 @@ function WordRevealScene() {
 function SomethingCreatedUsScene() {
   const [showCounter, setShowCounter] = useState(false);
   const [counterStep, setCounterStep] = useState(0);
+  const [phoneAnswer, setPhoneAnswer] = useState<string | null>(null);
 
   useEffect(() => {
     const t1 = setTimeout(() => setShowCounter(true), 800);
@@ -642,7 +643,15 @@ function SomethingCreatedUsScene() {
       </div>
 
       <p className="text-lg text-slate-300 leading-relaxed">
-        So <span className="text-white font-medium">something</span> must have brought us into existence. Because zero plus zero will always equal zero.
+        If the universe had <span className="text-white font-medium">always existed</span>, the question of who created it wouldn't arise. Something that always existed... just always exists.
+      </p>
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        But the universe <span className="text-amber-400 font-medium">had a beginning</span>. It didn't exist, and then it came into existence. That begs the question — <span className="text-white font-medium">who or what brought it into being?</span>
+      </p>
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        Because we know that <span className="text-white font-medium">nothing cannot create something</span>. Something has to create something.
       </p>
 
       {/* Animated counter */}
@@ -680,33 +689,110 @@ function SomethingCreatedUsScene() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: counterStep >= 3 ? 1 : 0 }}
-            className="text-slate-400 text-sm mt-2"
+            className="text-slate-400 text-sm mt-3"
           >
-            Nothing plus nothing equals nothing.
+            Zero is the absence of a number. Add zero a million times — you still get nothing.
           </motion.p>
         </motion.div>
       )}
 
-      <p className="text-lg text-slate-300 leading-relaxed">
-        So how can <span className="text-amber-400 font-medium">no intelligence</span> create <span className="text-white font-medium">intelligence</span>?
-      </p>
-
-      {/* Phone in desert concept */}
+      {/* Infinite regression argument */}
       <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
         <p className="text-slate-300 leading-relaxed mb-3">
-          Imagine you're walking through a <span className="text-amber-400 font-medium">desert</span>. Nothing around for miles. Then you find a <span className="text-white font-medium">smartphone</span> lying on the ground.
+          <span className="text-white font-medium">Something must have always existed</span> to bring our existence into being. Otherwise, you'd keep asking the same question — "what was there before <em>that</em>?"
         </p>
-        <p className="text-slate-300 text-sm leading-relaxed mb-3">
-          Calendars. Messages. A camera with incredible clarity. Precision engineering.
+        <p className="text-slate-300 leading-relaxed mb-3">
+          You'd go back and back and back, and you'd never reach a starting point.
         </p>
-        <p className="text-amber-200 font-medium">
-          Did this phone design itself?
+        <p className="text-emerald-300 leading-relaxed font-medium">
+          But we're already here. So there must be something that was always there — uncreated, self-sufficient — otherwise our existence would be impossible.
         </p>
       </div>
 
       <p className="text-lg text-slate-300 leading-relaxed">
-        You'd say <span className="text-white font-medium">no, obviously not</span>. So why would we look at something far more complex — the human body — and think differently?
+        And we're <span className="text-white font-medium">intelligent beings</span>. So whatever created us must be <span className="text-amber-400 font-medium">more intelligent than us</span>. You can't create something more intelligent than yourself. Whatever created this universe must know best about how it works, and must have control over it.
       </p>
+
+      {/* Phone in desert — interactive */}
+      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+        <p className="text-slate-300 leading-relaxed mb-3">
+          Imagine you're walking through a <span className="text-amber-400 font-medium">desert</span>. Nothing but sand for miles. Then you find a <span className="text-white font-medium">smartphone</span> lying on the ground.
+        </p>
+        <p className="text-slate-300 text-sm leading-relaxed mb-3">
+          Calendars. Messages. A camera with incredible clarity. Recordings. Precision engineering. So many parts, clearly designed with thought behind each one.
+        </p>
+        <p className="text-white font-medium mb-4">
+          Where did this phone come from?
+        </p>
+
+        {!phoneAnswer ? (
+          <div className="space-y-2">
+            {[
+              { id: 'natural', label: 'It came together through natural occurrences — sand, wind, heat, cold', correct: false },
+              { id: 'accident', label: 'It came together by accident — all these functions just happened', correct: false },
+              { id: 'made', label: 'Somebody made it — with precision, intelligence, and purpose', correct: true },
+            ].map(option => (
+              <button
+                key={option.id}
+                onClick={() => setPhoneAnswer(option.id)}
+                className="w-full text-left px-4 py-3 rounded-xl border transition-all bg-slate-700/50 border-slate-600 hover:border-amber-500/50 hover:bg-slate-700 text-slate-300 text-sm"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {phoneAnswer === 'made' ? (
+              <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
+                <p className="text-emerald-200 leading-relaxed mb-2">
+                  <span className="text-white font-semibold">Exactly.</span> Somebody must have made it. With intelligence, with precision, and <span className="text-emerald-400 font-medium">for a reason</span>.
+                </p>
+                <p className="text-emerald-300 text-sm leading-relaxed">
+                  Whoever created it must have been more intelligent than the phone itself. And it wasn't created for no reason — you wouldn't use a smartphone as a plate or a fork. It was designed with purpose.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
+                <p className="text-amber-200 leading-relaxed mb-2">
+                  Really? A smartphone — with calendars, cameras, messaging, precision engineering — just came together from sand and wind? By accident?
+                </p>
+                <p className="text-white leading-relaxed font-medium">
+                  Of course not. Somebody made it. With intelligence, with precision, and for a reason.
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* The manual insight */}
+      {phoneAnswer && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="space-y-4"
+        >
+          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+            <p className="text-slate-300 leading-relaxed mb-3">
+              Here's the thing — most of us don't even use our phones to their <span className="text-white font-medium">full capabilities</span>. Some people only make calls. They never check the manual. They might be using <span className="text-amber-400 font-medium">3-5%</span> of what the phone can actually do.
+            </p>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Sound familiar?
+            </p>
+          </div>
+
+          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+            <p className="text-emerald-200 leading-relaxed">
+              So if a phone — something <span className="text-white font-medium">far simpler</span> than you — clearly has a maker... why would we look at the human body, something infinitely more complex, and think differently?
+            </p>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

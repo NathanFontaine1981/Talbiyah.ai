@@ -542,29 +542,32 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-serif text-white mb-8">But Here's the Thing...</h2>
+              <h2 className="text-2xl font-serif text-white mb-8">Now Consider the Parallels</h2>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
                 <p className="text-lg text-slate-300 leading-relaxed mb-6">
                   Biff's Almanac was <span className="text-white font-medium">fiction</span>. A movie prop about sports results and gambling.
                 </p>
 
+                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                  You've examined a handful of claims from the Qur'an — embryology, the expanding universe, fingerprints, ocean barriers, the lowest land, Pharaoh's preserved body — <span className="text-white font-medium">all confirmed by modern science</span>.
+                </p>
+
+                <p className="text-lg text-slate-300 leading-relaxed mb-4">
+                  And that was just the <span className="text-white font-semibold">tip of the iceberg</span>. The Qur'an contains countless more signs spread throughout the entire book. Every result that checked out <span className="text-white font-semibold">compounded</span> the case — one after another.
+                </p>
+
                 <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-6">
-                  <p className="text-amber-200 leading-relaxed text-center">
-                    The Quran is <span className="text-white font-semibold">real</span>.
+                  <p className="text-amber-200 leading-relaxed">
+                    The Almanac knew the future because it came <span className="text-white font-medium">from</span> the future.
                   </p>
-                  <p className="text-amber-300 mt-2 text-center">
-                    And it's not about sport scores. It's about the most important questions you will ever face.
+                  <p className="text-amber-300 mt-3 leading-relaxed">
+                    The Qur'an's author claims to know <span className="text-white font-medium">"what is before them and what is behind them"</span> <span className="text-slate-500 text-sm">(Al-Baqarah, 2:255)</span> — because He <span className="text-white font-medium">created</span> time itself, and is not subject to it.
                   </p>
                 </div>
 
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  You've already seen the evidence. Embryology, the expanding universe, fingerprints, ocean barriers, the lowest land, Pharaoh's preserved body — <span className="text-white font-medium">all confirmed</span>.
-                </p>
-
-                <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  Every result that checked out <span className="text-white font-semibold">compounded</span> the strength of belief.
-                  One after another. Each one making it harder to walk away.
+                  If that claim holds, it changes everything. It means the Qur'an isn't predicting the future — it's authored by someone who already sees the full timeline, and is informing us <span className="text-white font-medium">in advance</span> of what is coming and how to prepare.
                 </p>
 
                 <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
@@ -572,7 +575,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     This book contained information that <span className="text-white font-semibold">couldn't have been known</span> 1,400 years ago — and no human could have authored it.
                   </p>
                   <p className="text-emerald-300 mt-3">
-                    It read like an Almanac — except it's about <span className="text-white font-medium">your life, your purpose, and what happens after you die</span>.
+                    It reads like an Almanac — except it's not about sport scores. It's about <span className="text-white font-medium">your life, your purpose, and what happens after you die</span>.
                   </p>
                 </div>
               </div>
@@ -602,43 +605,48 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-serif text-white mb-8">Two Destinations</h2>
+              <h2 className="text-2xl font-serif text-white mb-8">What the Evidence Points To</h2>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8 text-left">
                 <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                  According to this book — a book that has <span className="text-white font-medium">proven itself</span> to you — we are all heading towards one of <span className="text-white font-semibold">two destinations</span>.
+                  A source that has <span className="text-white font-medium">demonstrated its credibility</span> — across science, history, and prophecy — also makes a claim about the future that hasn't arrived yet.
+                </p>
+
+                <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                  It states that every human being is heading towards one of <span className="text-white font-semibold">two outcomes</span>:
                 </p>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50 text-center">
                     <p className="text-emerald-300 font-bold text-lg mb-1">Paradise</p>
-                    <p className="text-slate-400 text-sm">For those who take heed and follow</p>
+                    <p className="text-slate-400 text-sm">For those who recognise the evidence and submit willingly</p>
                   </div>
                   <div className="bg-red-900/30 rounded-xl p-5 border border-red-700/50 text-center">
                     <p className="text-red-300 font-bold text-lg mb-1">Hellfire</p>
-                    <p className="text-slate-400 text-sm">For those who reject after knowing</p>
+                    <p className="text-slate-400 text-sm">For those who see the evidence and still turn away</p>
                   </div>
                 </div>
 
                 <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                  There is no third option. No middle ground.
+                  The same source also tells you exactly <span className="text-white font-medium">how to reach one and avoid the other</span>. It doesn't leave you guessing.
                 </p>
 
-                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50 mb-6">
-                  <p className="text-amber-200 leading-relaxed text-lg text-center">
-                    You now have the <span className="text-white font-semibold">cheat sheet for life</span>.
+                <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600 mb-6">
+                  <p className="text-slate-400 italic leading-relaxed text-center">
+                    "Not a leaf falls but that He knows it."
                   </p>
-                  <p className="text-amber-300 leading-relaxed text-center mt-2">
-                    Which destination are you going to prepare for?
+                  <p className="text-slate-500 text-sm text-center mt-2">— Surah Al-An'am, 6:59</p>
+                  <p className="text-slate-300 leading-relaxed mt-4">
+                    The level of control and knowledge being described here is total. Not a single leaf falls in the darkest of nights without His knowledge and permission. If this is true — and the track record suggests it deserves serious consideration — then nothing in your life is random either.
                   </p>
                 </div>
 
-                <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-600">
-                  <p className="text-slate-300 leading-relaxed mb-3">
-                    Take heed and follow — or reject it and accept the fate of those who reject in the end.
+                <div className="bg-amber-900/30 rounded-xl p-5 border border-amber-700/50">
+                  <p className="text-amber-200 leading-relaxed text-lg text-center">
+                    The Almanac gave Biff an unfair advantage because he <span className="text-white font-semibold">trusted the source</span>.
                   </p>
-                  <p className="text-white leading-relaxed font-medium">
-                    After everything you've seen, there is no excuse for the one who has read it.
+                  <p className="text-amber-300 leading-relaxed text-center mt-3">
+                    You've now examined the Qur'an's track record. The question is — what will you do with the information it gives you about what's coming next?
                   </p>
                 </div>
               </div>
