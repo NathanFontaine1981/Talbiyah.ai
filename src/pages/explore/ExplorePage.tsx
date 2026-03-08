@@ -11,6 +11,7 @@ import ExploreIntro from '../../components/explore/ExploreIntro';
 import BiasBlur from '../../components/explore/BiasBlur';
 import ChainOfCustody from '../../components/explore/ChainOfCustody';
 import QuranWalkthrough from '../../components/explore/QuranWalkthrough';
+import QuranWalkthroughLight from '../../components/explore/QuranWalkthroughLight';
 import TheVoice from '../../components/explore/TheVoice';
 import TheNames from '../../components/explore/TheNames';
 import TheMercy from '../../components/explore/TheMercy';
@@ -44,14 +45,14 @@ const STORAGE_KEY = 'talbiyah_explore_progress';
 type FlowStage =
   | 'menu'
   | 'chapter-1-intro' | 'intro' | 'bias' | 'chain-of-custody' | 'chapter-1-complete'
-  | 'chapter-2-intro' | 'walkthrough' | 'chapter-2-complete'
+  | 'chapter-2-intro' | 'walkthrough-light' | 'walkthrough' | 'chapter-2-complete'
   | 'chapter-3-intro' | 'the-voice' | 'reconciliation' | 'prophet-timeline'
   | 'the-names' | 'the-mercy' | 'first-step';
 
 // Order of stages for navigation (menu is separate, not in the flow)
 const STAGE_ORDER: FlowStage[] = [
   'chapter-1-intro', 'intro', 'bias', 'chain-of-custody', 'chapter-1-complete',
-  'chapter-2-intro', 'walkthrough', 'chapter-2-complete',
+  'chapter-2-intro', 'walkthrough-light', 'walkthrough', 'chapter-2-complete',
   'chapter-3-intro', 'the-voice', 'reconciliation', 'prophet-timeline',
   'the-names', 'the-mercy', 'first-step'
 ];
@@ -59,7 +60,7 @@ const STAGE_ORDER: FlowStage[] = [
 // Chapter definitions for navigation
 const CHAPTER_STAGES: Record<number, { intro: FlowStage; stages: FlowStage[] }> = {
   1: { intro: 'chapter-1-intro', stages: ['intro', 'bias', 'chain-of-custody'] },
-  2: { intro: 'chapter-2-intro', stages: ['walkthrough'] },
+  2: { intro: 'chapter-2-intro', stages: ['walkthrough-light', 'walkthrough'] },
   3: { intro: 'chapter-3-intro', stages: ['the-voice', 'reconciliation', 'prophet-timeline', 'the-names', 'the-mercy', 'first-step'] },
 };
 
@@ -81,20 +82,21 @@ const EPISODES: Episode[] = [
   { id: 'bias', episode: 2, title: 'Clear Vision', description: 'Where I started and why I looked further', duration: '2 min', icon: <Eye className="w-6 h-6" />, color: 'amber' },
   { id: 'chain-of-custody', episode: 3, title: 'Chain of Custody', description: 'Examining how scriptures were preserved', duration: '5 min', icon: <ScrollText className="w-6 h-6" />, color: 'amber' },
   // Chapter 2: The Walkthrough
-  { id: 'walkthrough', episode: 4, title: 'The Walkthrough', description: 'Follow the Quran\'s story, verify every claim', duration: '60 min', icon: <Map className="w-6 h-6" />, color: 'emerald' },
+  { id: 'walkthrough-light', episode: 4, title: 'The Quick Version', description: 'Signs, purpose, and the Almanac moment', duration: '15 min', icon: <Sparkles className="w-6 h-6" />, color: 'emerald' },
+  { id: 'walkthrough', episode: 5, title: 'The Deep Dive', description: 'Full inline evidence, authorship elimination', duration: '60 min', icon: <Map className="w-6 h-6" />, color: 'emerald' },
   // Chapter 3: The Full Picture
-  { id: 'the-voice', episode: 5, title: 'The Voice', description: 'How the Quran speaks and its promise', duration: '3 min', icon: <MessageSquare className="w-6 h-6" />, color: 'purple' },
-  { id: 'reconciliation', episode: 6, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'purple' },
-  { id: 'prophet-timeline', episode: 7, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'purple' },
-  { id: 'the-names', episode: 8, title: 'The Names', description: 'Linguistic connections across faiths', duration: '3 min', icon: <Globe className="w-6 h-6" />, color: 'purple' },
-  { id: 'the-mercy', episode: 9, title: 'The Mercy', description: 'Mercy, reality, and what comes next', duration: '3 min', icon: <Heart className="w-6 h-6" />, color: 'purple' },
-  { id: 'first-step', episode: 10, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'purple' },
+  { id: 'the-voice', episode: 6, title: 'The Voice', description: 'How the Quran speaks and its promise', duration: '3 min', icon: <MessageSquare className="w-6 h-6" />, color: 'purple' },
+  { id: 'reconciliation', episode: 7, title: 'One Message', description: 'The connection between all faiths', duration: '4 min', icon: <Handshake className="w-6 h-6" />, color: 'purple' },
+  { id: 'prophet-timeline', episode: 8, title: 'The Timeline', description: 'Journey through prophetic history', duration: '5 min', icon: <Clock className="w-6 h-6" />, color: 'purple' },
+  { id: 'the-names', episode: 9, title: 'The Names', description: 'Linguistic connections across faiths', duration: '3 min', icon: <Globe className="w-6 h-6" />, color: 'purple' },
+  { id: 'the-mercy', episode: 10, title: 'The Mercy', description: 'Mercy, reality, and what comes next', duration: '3 min', icon: <Heart className="w-6 h-6" />, color: 'purple' },
+  { id: 'first-step', episode: 11, title: 'The First Step', description: 'Where do we go from here?', duration: '3 min', icon: <Footprints className="w-6 h-6" />, color: 'purple' },
 ];
 
 // Helper to get chapter number for an episode
 const getEpisodeChapter = (episodeId: FlowStage): number => {
   if (['intro', 'bias', 'chain-of-custody', 'chapter-1-intro', 'chapter-1-complete'].includes(episodeId)) return 1;
-  if (['walkthrough', 'chapter-2-intro', 'chapter-2-complete'].includes(episodeId)) return 2;
+  if (['walkthrough-light', 'walkthrough', 'chapter-2-intro', 'chapter-2-complete'].includes(episodeId)) return 2;
   return 3;
 };
 
@@ -181,7 +183,7 @@ export default function ExplorePage() {
 
   // Chapter intro handlers
   const handleChapter1IntroBegin = () => advanceToStage('intro');
-  const handleChapter2IntroBegin = () => advanceToStage('walkthrough');
+  const handleChapter2IntroBegin = () => advanceToStage('walkthrough-light');
   const handleChapter3IntroBegin = () => advanceToStage('the-voice');
 
   // Stage handlers
@@ -769,19 +771,31 @@ export default function ExplorePage() {
         chapterNumber={2}
         title="The Walkthrough"
         subtitle="Follow the Quran's story of existence step by step"
-        description="3 episodes — take your time between each one. Verify every claim, understand the deeper reality, and deliver your verdict. The most important subject you will ever consider."
+        description="Start with the Quick Version (~15 min) — signs, purpose, and the Almanac moment. Then go deeper if you want the full inline evidence and authorship elimination."
         bulletPoints={[
-          'Verify scientific claims with inline evidence',
-          'Discover purpose, warnings, and the promise of paradise',
-          'Eliminate every possible author one by one',
+          'Quick Version: Signs across every field, rapid-fire',
+          'Purpose of life and what is coming next',
+          'The Almanac moment — connects it all',
         ]}
-        duration="60 min"
-        episodeCount={3}
+        duration="15-60 min"
+        episodeCount={2}
         icon={<Scale className="w-10 h-10" />}
         color="emerald"
         onBegin={handleChapter2IntroBegin}
         onBack={() => setFlowStage('menu')}
       />
+    );
+  }
+
+  if (flowStage === 'walkthrough-light') {
+    return (
+      <div className="relative">
+        <NavWithProgress />
+        <QuranWalkthroughLight
+          onComplete={handleWalkthroughComplete}
+          onGoDeeper={() => advanceToStage('walkthrough')}
+        />
+      </div>
     );
   }
 

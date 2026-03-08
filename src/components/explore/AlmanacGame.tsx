@@ -4,12 +4,13 @@ import { ArrowRight, Check, Plane, BookOpen, TrendingUp, DollarSign, Brain, Aler
 
 interface AlmanacGameProps {
   onComplete: () => void;
+  startPhase?: GamePhase;
 }
 
 type GamePhase = 'personal-story' | 'movie-scene' | 'millionaire' | 'biff-mind' | 'belief-growth' | 'plane-question' | 'answer' | 'revelation' | 'two-destinations';
 
-export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
-  const [phase, setPhase] = useState<GamePhase>('personal-story');
+export default function AlmanacGame({ onComplete, startPhase = 'personal-story' }: AlmanacGameProps) {
+  const [phase, setPhase] = useState<GamePhase>(startPhase);
   const [beliefLevel, setBeliefLevel] = useState(0);
   const [userAnswer, setUserAnswer] = useState<'yes' | 'no' | null>(null);
   const [showingResults, setShowingResults] = useState(false);
@@ -244,10 +245,13 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
 
                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 mb-4">
                   <p className="text-slate-400">
-                    He would have had <span className="text-amber-400 font-medium">zero belief</span> in it.
+                    He would have had <span className="text-amber-400 font-medium">zero belief</span> in it. He dismissed it completely.
                   </p>
-                  <p className="text-slate-500 text-sm mt-1 italic">
-                    "A book from the future? Yeah right..."
+                  <p className="text-slate-500 text-sm mt-2 italic">
+                    "A book that knows the future? You must be joking."
+                  </p>
+                  <p className="text-slate-400 mt-3">
+                    He was ready to <span className="text-white font-medium">hand it straight back</span>. He wasn't convinced at all. Why would he be? It sounded ridiculous.
                   </p>
                 </div>
 
@@ -278,6 +282,10 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
               <h2 className="text-2xl font-serif text-white mb-8">Biff's Belief Level</h2>
 
               <div className="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-slate-700 mb-8">
+                <p className="text-slate-400 text-sm leading-relaxed mb-6 text-center">
+                  The number of correct results it takes to become convinced is <span className="text-white font-medium">different for every person</span>. But if they keep stacking up with zero errors — eventually, there is no room left for doubt.
+                </p>
+
                 {/* Belief meter */}
                 <div className="mb-8">
                   <div className="flex justify-between text-sm text-slate-400 mb-2">
@@ -315,7 +323,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     >
                       <Check className="w-5 h-5 text-emerald-400" />
                       <span className="text-emerald-300">Result #2: Correct</span>
-                      <span className="text-slate-500 text-sm ml-auto">"That's lucky..."</span>
+                      <span className="text-slate-500 text-sm ml-auto">"Could be lucky..."</span>
                     </motion.div>
                   )}
                   {beliefLevel >= 3 && (
@@ -326,7 +334,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     >
                       <Check className="w-5 h-5 text-emerald-400" />
                       <span className="text-emerald-300">Result #3: Correct</span>
-                      <span className="text-slate-500 text-sm ml-auto">"Wait a minute..."</span>
+                      <span className="text-slate-500 text-sm ml-auto">"Hold on..."</span>
                     </motion.div>
                   )}
                   {beliefLevel >= 4 && (
@@ -337,7 +345,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     >
                       <Check className="w-5 h-5 text-emerald-400" />
                       <span className="text-emerald-300">Result #4: Correct</span>
-                      <span className="text-slate-500 text-sm ml-auto">"This is real..."</span>
+                      <span className="text-slate-500 text-sm ml-auto">"This can't be coincidence..."</span>
                     </motion.div>
                   )}
                   {beliefLevel >= 5 && (
@@ -348,7 +356,7 @@ export default function AlmanacGame({ onComplete }: AlmanacGameProps) {
                     >
                       <Check className="w-5 h-5 text-emerald-400" />
                       <span className="text-emerald-300">Result #5: Correct</span>
-                      <span className="text-white text-sm ml-auto font-medium">"No doubt."</span>
+                      <span className="text-white text-sm ml-auto font-medium">"I trust this book."</span>
                     </motion.div>
                   )}
                 </div>

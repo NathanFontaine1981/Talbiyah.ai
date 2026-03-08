@@ -23,6 +23,13 @@ export const SUNNAH_PRAYERS: { key: string; label: string; rakahs: number; fardP
 
 export const TOTAL_SUNNAH_RAKAHS = SUNNAH_PRAYERS.reduce((sum, s) => sum + s.rakahs, 0); // 12
 
+// Nafl (voluntary) prayers — tracked separately from the 12 Rawatib
+export const NAFL_PRAYERS: { key: string; label: string; rakahs: string; description: string }[] = [
+  { key: 'Ishraq', label: 'Ishraq', rakahs: '2', description: 'Stay in the masjid after Fajr remembering Allah, then pray 2 rak\'ahs after sunrise (~15 min). Reward of Hajj & Umrah.' },
+  { key: 'Duha', label: 'Duha (Forenoon)', rakahs: '2–12', description: 'Prayed after sunrise (~15 min) until before Dhuhr. Minimum 2 rak\'ahs.' },
+  { key: 'Witr', label: 'Witr', rakahs: '1–11', description: 'Prayed after Isha. Odd number of rak\'ahs, minimum 1.' },
+];
+
 function getTodayString(): string {
   return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
@@ -172,9 +179,11 @@ export function usePrayerTracking() {
       const newState: PrayerTrackingData = { ...prev, completed: next, statuses: newStatuses };
       saveToday(newState);
 
-      // Sync to Supabase
+      // Sync to Supabase — Jumu'ah (Dhuhr on Friday) is always at the masjid
+      const isFridayDhuhr = name === 'Dhuhr' && new Date().getDay() === 5;
+      const location = isFridayDhuhr ? 'masjid' : (prev.locations[name] || 'home');
       if (!wasCompleted) {
-        syncToSupabase(name, status, prev.locations[name] || 'home', newState.sunnahCompleted);
+        syncToSupabase(name, status, location, newState.sunnahCompleted);
       } else {
         deleteFromSupabase(name);
       }

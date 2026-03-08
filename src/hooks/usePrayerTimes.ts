@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 
 export interface PrayerTime {
   name: string;
+  displayName?: string;
   time: string;
   timeInMinutes: number;
   isPassed: boolean;
@@ -10,6 +11,7 @@ export interface PrayerTime {
 
 interface UsePrayerTimesResult {
   prayerTimes: PrayerTime[];
+  sunrise: { time: string; timeInMinutes: number } | null;
   location: string;
   loading: boolean;
   nextPrayer: PrayerTime | null;
@@ -49,6 +51,7 @@ async function geocodeLocation(locationStr: string): Promise<{ lat: number; lon:
 
 export function usePrayerTimes(): UsePrayerTimesResult {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
+  const [sunrise, setSunrise] = useState<{ time: string; timeInMinutes: number } | null>(null);
   const [location, setLocation] = useState('Detecting location...');
   const [loading, setLoading] = useState(true);
   const [currentMinutes, setCurrentMinutes] = useState(getNowMinutes);
@@ -152,9 +155,10 @@ export function usePrayerTimes(): UsePrayerTimesResult {
         const timings = data.data.timings;
         const nowMins = getNowMinutes();
 
+        const isFriday = now.getDay() === 5;
         const times: PrayerTime[] = [
           { name: 'Fajr', time: timings.Fajr, timeInMinutes: 0, isPassed: false },
-          { name: 'Dhuhr', time: timings.Dhuhr, timeInMinutes: 0, isPassed: false },
+          { name: 'Dhuhr', displayName: isFriday ? "Jumu'ah" : undefined, time: timings.Dhuhr, timeInMinutes: 0, isPassed: false },
           { name: 'Asr', time: timings.Asr, timeInMinutes: 0, isPassed: false },
           { name: 'Maghrib', time: timings.Maghrib, timeInMinutes: 0, isPassed: false },
           { name: 'Isha', time: timings.Isha, timeInMinutes: 0, isPassed: false },
@@ -169,6 +173,12 @@ export function usePrayerTimes(): UsePrayerTimesResult {
         });
 
         setPrayerTimes(times);
+
+        // Capture sunrise for forbidden time calculations
+        if (timings.Sunrise) {
+          const sunriseTime = timings.Sunrise.split(' ')[0];
+          setSunrise({ time: sunriseTime, timeInMinutes: parseTimeToMinutes(timings.Sunrise) });
+        }
       }
     } catch (error) {
       console.error('Error fetching prayer times:', error);
@@ -191,5 +201,5 @@ export function usePrayerTimes(): UsePrayerTimesResult {
 
   const nextPrayer = prayerTimes.find(p => !p.isPassed) || null;
 
-  return { prayerTimes, location, loading, nextPrayer, currentMinutes };
+  return { prayerTimes, sunrise, location, loading, nextPrayer, currentMinutes };
 }

@@ -1,0 +1,1012 @@
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sparkles, ChevronRight, ChevronLeft, Globe, Dna, Droplets, Mountain,
+  Fingerprint, Heart, Brain, Clock, Target, Zap,
+  BookOpen, Microscope, Bug, Milk, Leaf,
+  CheckCircle2, AlertTriangle, ArrowRight, UserX, X,
+} from 'lucide-react';
+import AlmanacGame from './AlmanacGame';
+
+interface QuranWalkthroughLightProps {
+  onComplete: () => void;
+  onGoDeeper?: () => void;
+}
+
+// ── Sign data ─────────────────────────────────────────────────────────────
+
+interface Sign {
+  icon: React.ReactNode;
+  title: string;
+  verse: string;
+  verseRef: string;
+  arabicVerse: string;
+  fact: string;
+  discoveredBy?: string;
+}
+
+// Phase 1: Where did the universe begin?
+const COSMOLOGY_SIGNS: Sign[] = [
+  {
+    icon: <Sparkles className="w-5 h-5" />,
+    title: 'The Big Bang',
+    verse: 'Do not the disbelievers see that the heavens and the earth were a joined entity, and then We separated them?',
+    arabicVerse: 'أَوَلَمْ يَرَ الَّذِينَ كَفَرُوا أَنَّ السَّمَاوَاتِ وَالْأَرْضَ كَانَتَا رَتْقًا فَفَتَقْنَاهُمَا',
+    verseRef: 'Al-Anbiya 21:30',
+    fact: 'The universe began as a single point that expanded outward. Confirmed by Georges Lemaitre in 1927.',
+    discoveredBy: '1,300 years before modern cosmology',
+  },
+  {
+    icon: <Globe className="w-5 h-5" />,
+    title: 'The Expanding Universe',
+    verse: 'And the heaven We constructed with strength, and indeed, We are its expander.',
+    arabicVerse: 'وَالسَّمَاءَ بَنَيْنَاهَا بِأَيْدٍ وَإِنَّا لَمُوسِعُونَ',
+    verseRef: 'Adh-Dhariyat 51:47',
+    fact: 'Edwin Hubble discovered the universe is expanding in 1929. The Quran stated it 1,300 years earlier.',
+    discoveredBy: '1,300 years before Hubble',
+  },
+  {
+    icon: <Globe className="w-5 h-5" />,
+    title: 'Orbital Motion',
+    verse: 'Each in an orbit is swimming.',
+    arabicVerse: 'كُلٌّ فِي فَلَكٍ يَسْبَحُونَ',
+    verseRef: 'Al-Anbiya 21:33',
+    fact: 'The Arabic word "yasbahoon" means "swimming" — perfectly describing smooth, continuous orbital motion through space.',
+    discoveredBy: '977 years before Kepler',
+  },
+];
+
+// Phase 2: Where did YOU come from?
+const CREATION_SIGNS: Sign[] = [
+  {
+    icon: <Dna className="w-5 h-5" />,
+    title: 'Embryonic Stages',
+    verse: 'Then We made the sperm-drop into a clinging clot, and We made the clot into a lump, and We made from the lump bones, and We covered the bones with flesh.',
+    arabicVerse: 'ثُمَّ خَلَقْنَا النُّطْفَةَ عَلَقَةً فَخَلَقْنَا الْعَلَقَةَ مُضْغَةً فَخَلَقْنَا الْمُضْغَةَ عِظَامًا فَكَسَوْنَا الْعِظَامَ لَحْمًا',
+    verseRef: 'Al-Mu\'minun 23:14',
+    fact: 'Modern embryology confirms this exact sequence. Prof. Keith Moore, author of the standard university textbook on embryology, published a special edition acknowledging the Quran\'s accuracy.',
+    discoveredBy: '1,195 years before modern embryology',
+  },
+  {
+    icon: <Droplets className="w-5 h-5" />,
+    title: 'Life from Water',
+    verse: 'And We made from water every living thing.',
+    arabicVerse: 'وَجَعَلْنَا مِنَ الْمَاءِ كُلَّ شَيْءٍ حَيٍّ',
+    verseRef: 'Al-Anbiya 21:30',
+    fact: 'Every living organism is water-based. The human body is ~60% water. No life exists without it. Stated in a desert 1,400 years ago.',
+    discoveredBy: 'Confirmed by modern biology',
+  },
+];
+
+// Phase 3: He knows His creation
+const KNOWLEDGE_SIGNS: Sign[] = [
+  {
+    icon: <Milk className="w-5 h-5" />,
+    title: 'Milk from Between Blood and Digested Food',
+    verse: 'We produce for you from what is within their bellies — from between excretions and blood — pure milk, palatable to drinkers.',
+    arabicVerse: 'نُّسْقِيكُم مِّمَّا فِي بُطُونِهِ مِن بَيْنِ فَرْثٍ وَدَمٍ لَّبَنًا خَالِصًا سَائِغًا لِّلشَّارِبِينَ',
+    verseRef: 'An-Nahl 16:66',
+    fact: 'Milk is produced in mammary glands from nutrients absorbed from digested food (chyme) carried by the blood. Pure milk emerging from between these two — exactly as described.',
+    discoveredBy: 'Confirmed by modern physiology',
+  },
+  {
+    icon: <Bug className="w-5 h-5" />,
+    title: 'The Female Bee',
+    verse: 'And your Lord inspired the bee: "Build homes in mountains and trees and in what they construct. Then eat from all fruits and follow the pathways of your Lord."',
+    arabicVerse: 'وَأَوْحَىٰ رَبُّكَ إِلَى النَّحْلِ أَنِ اتَّخِذِي مِنَ الْجِبَالِ بُيُوتًا',
+    verseRef: 'An-Nahl 16:68-69',
+    fact: 'The Arabic uses FEMININE verb forms — "ittakhithi", "kuli", "fasluki". Only female bees build hives, forage, and produce honey. This wasn\'t known until modern entomology.',
+    discoveredBy: 'Linguistic precision impossible to guess',
+  },
+  {
+    icon: <Bug className="w-5 h-5" />,
+    title: 'Honey as Medicine',
+    verse: 'There emerges from their bellies a drink of varying colours, in which there is healing for people.',
+    arabicVerse: 'يَخْرُجُ مِن بُطُونِهَا شَرَابٌ مُّخْتَلِفٌ أَلْوَانُهُ فِيهِ شِفَاءٌ لِّلنَّاسِ',
+    verseRef: 'An-Nahl 16:69',
+    fact: 'Modern medicine confirms honey has antibacterial, anti-inflammatory, and wound-healing properties. It\'s used in clinical wound dressings worldwide.',
+    discoveredBy: 'Confirmed by modern medicine',
+  },
+  {
+    icon: <Leaf className="w-5 h-5" />,
+    title: 'Animal Communities',
+    verse: 'There is no creature on earth, nor any bird that flies with its wings, but they are communities like you.',
+    arabicVerse: 'وَمَا مِن دَابَّةٍ فِي الْأَرْضِ وَلَا طَائِرٍ يَطِيرُ بِجَنَاحَيْهِ إِلَّا أُمَمٌ أَمْثَالُكُمْ',
+    verseRef: 'Al-An\'am 6:38',
+    fact: 'Modern zoology confirms animals live in structured communities with social hierarchies, communication systems, and cooperative behaviour — just like humans.',
+    discoveredBy: 'Confirmed by modern zoology',
+  },
+  {
+    icon: <Droplets className="w-5 h-5" />,
+    title: 'The Barrier Between Two Seas',
+    verse: 'He released the two seas, meeting side by side. Between them is a barrier so neither of them transgresses.',
+    arabicVerse: 'مَرَجَ الْبَحْرَيْنِ يَلْتَقِيَانِ بَيْنَهُمَا بَرْزَخٌ لَّا يَبْغِيَانِ',
+    verseRef: 'Ar-Rahman 55:19-20',
+    fact: 'Where fresh and salt water meet, a halocline forms — a visible barrier. The waters don\'t mix due to density differences.',
+    discoveredBy: '1,271 years before modern oceanography',
+  },
+  {
+    icon: <Mountain className="w-5 h-5" />,
+    title: 'Mountains as Pegs',
+    verse: 'Have We not made the earth a resting place? And the mountains as stakes?',
+    arabicVerse: 'أَلَمْ نَجْعَلِ الْأَرْضَ مِهَادًا وَالْجِبَالَ أَوْتَادًا',
+    verseRef: 'An-Naba 78:6-7',
+    fact: 'Mountains have deep roots extending into the mantle — like pegs stabilising tectonic plates. Confirmed by geology.',
+    discoveredBy: '1,223 years before George Airy',
+  },
+  {
+    icon: <Fingerprint className="w-5 h-5" />,
+    title: 'Unique Fingerprints',
+    verse: 'Yes, We are able to put together in perfect order the very tips of his fingers.',
+    arabicVerse: 'بَلَىٰ قَادِرِينَ عَلَىٰ أَن نُّسَوِّيَ بَنَانَهُ',
+    verseRef: 'Al-Qiyamah 75:3-4',
+    fact: 'Every human has unique fingerprints — even identical twins. Highlighted 1,300 years before forensic science.',
+    discoveredBy: '1,260 years before Sir Francis Galton',
+  },
+  {
+    icon: <Zap className="w-5 h-5" />,
+    title: 'Pain Receptors in Skin',
+    verse: 'Every time their skins are roasted through, We will replace them with other skins so they may taste the punishment.',
+    arabicVerse: 'كُلَّمَا نَضِجَتْ جُلُودُهُم بَدَّلْنَاهُمْ جُلُودًا غَيْرَهَا لِيَذُوقُوا الْعَذَابَ',
+    verseRef: 'An-Nisa 4:56',
+    fact: 'Pain receptors (nociceptors) are concentrated in the skin. Burns destroy them, stopping pain. Replacing skin resets the ability to feel.',
+    discoveredBy: '1,274 years before Charles Sherrington',
+  },
+  {
+    icon: <Target className="w-5 h-5" />,
+    title: 'Iron Sent Down',
+    verse: 'And We sent down iron, wherein is great military might and benefits for the people.',
+    arabicVerse: 'وَأَنزَلْنَا الْحَدِيدَ فِيهِ بَأْسٌ شَدِيدٌ وَمَنَافِعُ لِلنَّاسِ',
+    verseRef: 'Al-Hadid 57:25',
+    fact: 'Iron cannot form inside our sun — it requires a supernova. All iron on Earth literally came from outer space. The Quran says "sent down" — not "created from the earth".',
+    discoveredBy: 'Confirmed by astrophysics',
+  },
+  {
+    icon: <Heart className="w-5 h-5" />,
+    title: 'Pharaoh\'s Body Preserved',
+    verse: 'Today We will preserve your body so you can be a sign for those who come after you.',
+    arabicVerse: 'فَالْيَوْمَ نُنَجِّيكَ بِبَدَنِكَ لِتَكُونَ لِمَنْ خَلْفَكَ آيَةً',
+    verseRef: 'Yunus 10:92',
+    fact: 'Pharaoh drowned — yet his mummy was found intact in 1898. Salt deposits confirmed drowning in seawater. It sits in Cairo Museum to this day.',
+    discoveredBy: 'Body discovered 1898',
+  },
+];
+
+// Phase 5: What is coming — future events described in past tense
+interface FutureSign {
+  title: string;
+  verse: string;
+  arabicVerse: string;
+  verseRef: string;
+  arabicNote: string;
+}
+
+const FUTURE_SIGNS: FutureSign[] = [
+  {
+    title: 'The Earth Shaken',
+    verse: 'When the earth is shaken with its final earthquake, and the earth discharges its burdens, and man says, "What is wrong with it?"',
+    arabicVerse: 'إِذَا زُلْزِلَتِ الْأَرْضُ زِلْزَالَهَا وَأَخْرَجَتِ الْأَرْضُ أَثْقَالَهَا وَقَالَ الْإِنسَانُ مَا لَهَا',
+    verseRef: 'Az-Zalzalah 99:1-3',
+    arabicNote: '"Zulzilat" — past tense. As if it has already happened.',
+  },
+  {
+    title: 'The Sun Wrapped Up',
+    verse: 'When the sun is wrapped up, when the stars fall and scatter, when the mountains are moved away...',
+    arabicVerse: 'إِذَا الشَّمْسُ كُوِّرَتْ وَإِذَا النُّجُومُ انكَدَرَتْ وَإِذَا الْجِبَالُ سُيِّرَتْ',
+    verseRef: 'At-Takwir 81:1-3',
+    arabicNote: '"Kuwwirat" — past tense. The sun folded up, as though it\'s done.',
+  },
+  {
+    title: 'The Sky Split Apart',
+    verse: 'When the sky breaks apart, and when the stars are scattered, and when the seas are erupted...',
+    arabicVerse: 'إِذَا السَّمَاءُ انفَطَرَتْ وَإِذَا الْكَوَاكِبُ انتَثَرَتْ وَإِذَا الْبِحَارُ فُجِّرَتْ',
+    verseRef: 'Al-Infitar 82:1-3',
+    arabicNote: '"Infatarat" — past tense. The sky already broken.',
+  },
+  {
+    title: 'The Striking Calamity',
+    verse: 'The Striking Calamity — what is the Striking Calamity? And what can make you know what the Striking Calamity is?',
+    arabicVerse: 'الْقَارِعَةُ مَا الْقَارِعَةُ وَمَا أَدْرَاكَ مَا الْقَارِعَةُ',
+    verseRef: 'Al-Qari\'ah 101:1-3',
+    arabicNote: 'A direct address — "What can make YOU know?" — speaking to you personally.',
+  },
+  {
+    title: 'The Weighing of Deeds',
+    verse: 'Then as for he whose scales are heavy — he will be in a pleasant life. But as for he whose scales are light — his refuge will be the Abyss.',
+    arabicVerse: 'فَأَمَّا مَن ثَقُلَتْ مَوَازِينُهُ فَهُوَ فِي عِيشَةٍ رَّاضِيَةٍ وَأَمَّا مَنْ خَفَّتْ مَوَازِينُهُ فَأُمُّهُ هَاوِيَةٌ',
+    verseRef: 'Al-Qari\'ah 101:6-9',
+    arabicNote: '"Thaqulat", "khaffat" — past tense. Already weighed. Already decided.',
+  },
+];
+
+// ── Phase type ──────────────────────────────────────────────────────────
+
+type LightPhase =
+  | 'intro'
+  | 'cosmology' | 'creation' | 'knowledge' | 'purpose' | 'future-intro' | 'future-events'
+  | 'who-wrote-it' | 'the-concept' | 'almanac'
+  | 'go-deeper';
+
+// ── Sign Card Component ─────────────────────────────────────────────────
+
+function SignCard({ sign, index, isRevealed, onReveal }: {
+  sign: Sign;
+  index: number;
+  isRevealed: boolean;
+  onReveal: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.08 }}
+    >
+      <button
+        onClick={onReveal}
+        className={`w-full text-left rounded-xl border transition-all ${
+          isRevealed
+            ? 'bg-[#132e2a]/50 border-[#1f5c4d]/40 p-4'
+            : 'bg-[#1a2744]/60 border-[#2a3a5c]/50 p-4 hover:border-[#3a4f7a]/70'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            isRevealed ? 'bg-teal-500/15 text-teal-300' : 'bg-[#253553] text-slate-400'
+          }`}>
+            {isRevealed ? <CheckCircle2 className="w-5 h-5" /> : sign.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-white font-semibold">{sign.title}</h4>
+            <p className="text-amber-200/70 text-sm italic mt-1">"{sign.verse}" — {sign.verseRef}</p>
+            <AnimatePresence>
+              {isRevealed && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-2 pt-2 border-t border-[#2a3a5c]/40"
+                >
+                  <p className="text-slate-300 text-sm leading-relaxed">{sign.fact}</p>
+                  {sign.discoveredBy && (
+                    <p className="text-teal-300/80 text-xs font-medium mt-1">{sign.discoveredBy}</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </button>
+    </motion.div>
+  );
+}
+
+// ── Rapid Fire Section ──────────────────────────────────────────────────
+
+function RapidSignsSection({
+  title,
+  subtitle,
+  signs,
+  onAllRevealed,
+}: {
+  title: string;
+  subtitle: string;
+  signs: Sign[];
+  onAllRevealed: () => void;
+}) {
+  const [revealed, setRevealed] = useState<number[]>([]);
+
+  const revealSign = (index: number) => {
+    if (!revealed.includes(index)) {
+      const next = [...revealed, index];
+      setRevealed(next);
+      if (next.length === signs.length) {
+        onAllRevealed();
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-4 max-w-2xl mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-serif text-white mb-2">{title}</h2>
+        <p className="text-slate-400">{subtitle}</p>
+      </div>
+      <p className="text-slate-500 text-center text-sm mb-2">Tap each sign to reveal</p>
+      {signs.map((sign, i) => (
+        <SignCard
+          key={i}
+          sign={sign}
+          index={i}
+          isRevealed={revealed.includes(i)}
+          onReveal={() => revealSign(i)}
+        />
+      ))}
+      {revealed.length === signs.length && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center pt-4"
+        >
+          <div className="inline-flex items-center gap-2 text-teal-300 text-sm font-medium">
+            <CheckCircle2 className="w-4 h-4" />
+            All {signs.length} signs revealed
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Component ──────────────────────────────────────────────────────
+
+export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranWalkthroughLightProps) {
+  const [phase, setPhase] = useState<LightPhase>('intro');
+  const [sectionsComplete, setSectionsComplete] = useState({
+    cosmology: false,
+    creation: false,
+    knowledge: false,
+  });
+  const [totalSigns] = useState(
+    COSMOLOGY_SIGNS.length + CREATION_SIGNS.length + KNOWLEDGE_SIGNS.length
+  );
+  const [futureRevealed, setFutureRevealed] = useState<number[]>([]);
+
+  const advancePhase = useCallback((next: LightPhase) => {
+    window.scrollTo(0, 0);
+    setPhase(next);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0f1a2e] via-[#162033] to-[#0f1a2e] flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full py-8">
+        <AnimatePresence mode="wait">
+
+          {/* ── INTRO ──────────────────────────────────────────────────── */}
+          {phase === 'intro' && (
+            <motion.div
+              key="intro"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-[#3d2e1a]/60 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-10 h-10 text-amber-300/80" />
+                </div>
+              </div>
+
+              <h1 className="text-3xl font-serif text-white mb-4">The Quran</h1>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-8 text-left space-y-4">
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-xl font-arabic text-amber-100/90 leading-loose mb-3 text-center" dir="rtl">
+                    ذَٰلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ
+                  </p>
+                  <p className="text-white italic text-center">
+                    "This is the Book about which there is no doubt."
+                  </p>
+                  <p className="text-slate-500 text-sm text-center mt-1">— Al-Baqarah 2:2</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  A book that claims to be the direct words of the <span className="text-white font-semibold">Creator of the universe</span>.
+                </p>
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Delivered in <span className="text-amber-200/80 font-semibold">7th century Arabia</span> — no telescopes, no microscopes, no laboratories — by a man who <span className="text-white font-semibold">could not read or write</span>.
+                </p>
+                <p className="text-slate-400 leading-relaxed text-center">
+                  Let's test that claim. We'll follow the questions humans naturally ask — and see what this book said about each one, <span className="text-white">over 1,400 years ago</span>.
+                </p>
+              </div>
+
+              <button
+                onClick={() => advancePhase('cosmology')}
+                className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                Begin
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── PHASE 1: WHERE DID THE UNIVERSE BEGIN? ──────────────── */}
+          {phase === 'cosmology' && (
+            <motion.div
+              key="cosmology"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <RapidSignsSection
+                title="Where did the universe begin?"
+                subtitle="The first question every human asks"
+                signs={COSMOLOGY_SIGNS}
+                onAllRevealed={() => setSectionsComplete(s => ({ ...s, cosmology: true }))}
+              />
+              {sectionsComplete.cosmology && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center mt-8">
+                  <button
+                    onClick={() => advancePhase('creation')}
+                    className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                  >
+                    Where did WE come from?
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── PHASE 2: WHERE DID WE COME FROM? ───────────────────── */}
+          {phase === 'creation' && (
+            <motion.div
+              key="creation"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <RapidSignsSection
+                title="Where did WE come from?"
+                subtitle="What this book says about your own creation"
+                signs={CREATION_SIGNS}
+                onAllRevealed={() => setSectionsComplete(s => ({ ...s, creation: true }))}
+              />
+              {sectionsComplete.creation && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center mt-8">
+                  <button
+                    onClick={() => advancePhase('knowledge')}
+                    className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                  >
+                    Proof the Author knows His creation
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── PHASE 3: HE KNOWS HIS CREATION ────────────────────── */}
+          {phase === 'knowledge' && (
+            <motion.div
+              key="knowledge"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <RapidSignsSection
+                title="He knows His creation"
+                subtitle="Details no human could have known — across every field"
+                signs={KNOWLEDGE_SIGNS}
+                onAllRevealed={() => setSectionsComplete(s => ({ ...s, knowledge: true }))}
+              />
+              {sectionsComplete.knowledge && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 mt-8">
+                  {/* Running total */}
+                  <div className="bg-[#132e2a]/40 rounded-xl p-5 border border-teal-800/25 text-center">
+                    <p className="text-4xl font-bold text-teal-300 mb-1">{totalSigns}</p>
+                    <p className="text-slate-300 text-sm">verified claims across cosmology, biology, geology, anatomy, and history</p>
+                    <p className="text-slate-500 text-xs mt-1">Each one stated 1,400 years ago in a desert with no technology</p>
+                  </div>
+                  <div className="text-center">
+                    <button
+                      onClick={() => advancePhase('purpose')}
+                      className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                    >
+                      So why are we here?
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── PHASE 4: THE PURPOSE ───────────────────────────────── */}
+          {phase === 'purpose' && (
+            <motion.div
+              key="purpose"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <h2 className="text-2xl font-serif text-white mb-2">Why are we here?</h2>
+              <p className="text-slate-400 mb-8">The question science can't answer — but this book does</p>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-6 text-left space-y-5">
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-xl font-arabic text-amber-100/90 leading-loose mb-3 text-center" dir="rtl">
+                    وَمَا خَلَقْتُ الْجِنَّ وَالْإِنسَ إِلَّا لِيَعْبُدُونِ
+                  </p>
+                  <p className="text-white italic text-center">
+                    "I did not create jinn and mankind except to worship Me."
+                  </p>
+                  <p className="text-slate-500 text-sm text-center mt-1">— Adh-Dhariyat 51:56</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Your heart beats without you asking. Trees grow without permission.
+                  Planets orbit in perfect paths. Everything already <span className="text-white font-semibold">submits</span>.
+                </p>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  <span className="text-white font-semibold">You</span> are the one being asked to submit <span className="text-amber-200/80 font-semibold">willingly</span>.
+                  That's the test.
+                </p>
+
+                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40">
+                  <p className="text-lg font-arabic text-amber-100/90 leading-loose mb-2 text-center" dir="rtl">
+                    اعْلَمُوا أَنَّمَا الْحَيَاةُ الدُّنْيَا لَعِبٌ وَلَهْوٌ وَزِينَةٌ
+                  </p>
+                  <p className="text-white italic text-center text-sm">
+                    "Know that the life of this world is but amusement, diversion, and adornment."
+                  </p>
+                  <p className="text-slate-500 text-xs text-center mt-1">— Al-Hadid 57:20</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  60-70 years — what's that compared to <span className="text-white font-semibold">infinity</span>?
+                </p>
+
+                <div className="bg-[#132e2a]/30 rounded-xl p-4 border border-teal-800/20 text-center">
+                  <p className="text-teal-200/80 leading-relaxed">
+                    Good deeds multiplied <span className="text-white font-semibold">10x minimum</span>.
+                    Bad deeds recorded as <span className="text-white font-semibold">just one</span>.
+                    The system is <span className="text-teal-200 font-semibold">designed for you to succeed</span>.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => advancePhase('future-intro')}
+                className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                But what is coming?
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── PHASE 5a: FUTURE INTRO ─────────────────────────────── */}
+          {phase === 'future-intro' && (
+            <motion.div
+              key="future-intro"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-[#3a2a1a]/50 rounded-full flex items-center justify-center">
+                  <Clock className="w-10 h-10 text-orange-200/70/80" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-4">What Is Coming</h2>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-8 text-left space-y-5">
+                <p className="text-slate-300 leading-relaxed text-center">
+                  The Quran doesn't just describe the <span className="text-white font-semibold">past</span>.
+                  It describes events that <span className="text-orange-200/80 font-semibold">haven't happened yet</span>.
+                </p>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  But here's what's remarkable —
+                </p>
+
+                <div className="bg-[#2e2215]/50 rounded-xl p-5 border border-orange-800/25">
+                  <p className="text-orange-100/80 leading-relaxed text-center text-lg">
+                    It describes them in the <span className="text-white font-bold">past tense</span>.
+                  </p>
+                  <p className="text-orange-200/70 text-center mt-3 leading-relaxed">
+                    As if they have <span className="text-white font-semibold">already happened</span>.
+                  </p>
+                </div>
+
+                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40">
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    Why? Because the Author claims to have <span className="text-white font-semibold">created time itself</span> — and is not subject to it.
+                  </p>
+                  <div className="mt-4 bg-[#1a2744]/50 rounded-lg p-4">
+                    <p className="text-lg font-arabic text-amber-100/90 leading-loose mb-2 text-center" dir="rtl">
+                      يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ
+                    </p>
+                    <p className="text-white italic text-center text-sm">
+                      "He knows what is before them and what is behind them."
+                    </p>
+                    <p className="text-slate-500 text-xs text-center mt-1">— Al-Baqarah 2:255</p>
+                  </div>
+                  <p className="text-slate-400 text-center mt-3 text-sm leading-relaxed">
+                    He's not <span className="text-white">predicting</span>. He's <span className="text-amber-200/80 font-semibold">informing</span>.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => advancePhase('future-events')}
+                className="px-8 py-4 bg-[#9a6a35] hover:bg-[#b07a40] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                See what He describes
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── PHASE 5b: FUTURE EVENTS ────────────────────────────── */}
+          {phase === 'future-events' && (
+            <motion.div
+              key="future-events"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-serif text-white mb-2">Already Written</h2>
+                <p className="text-slate-400 text-sm">Future events — described as though they've already occurred</p>
+              </div>
+
+              <div className="space-y-4 max-w-2xl mx-auto">
+                <p className="text-slate-500 text-center text-sm mb-2">Tap each to reveal</p>
+                {FUTURE_SIGNS.map((sign, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <button
+                      onClick={() => {
+                        if (!futureRevealed.includes(i)) {
+                          setFutureRevealed(prev => [...prev, i]);
+                        }
+                      }}
+                      className={`w-full text-left rounded-xl border transition-all ${
+                        futureRevealed.includes(i)
+                          ? 'bg-[#2e2215]/40 border-orange-800/25 p-4'
+                          : 'bg-slate-800/50 border-slate-700/50 p-4 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          futureRevealed.includes(i) ? 'bg-[#3a2a1a]/40 text-orange-300/70' : 'bg-slate-700 text-slate-400'
+                        }`}>
+                          {futureRevealed.includes(i) ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-white font-semibold">{sign.title}</h4>
+                          <AnimatePresence>
+                            {futureRevealed.includes(i) && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                              >
+                                <p className="text-lg font-arabic text-amber-100/90 leading-loose mt-2" dir="rtl">
+                                  {sign.arabicVerse}
+                                </p>
+                                <p className="text-amber-200/70 text-sm italic mt-1">
+                                  "{sign.verse}"
+                                </p>
+                                <p className="text-slate-500 text-xs mt-1">— {sign.verseRef}</p>
+                                <div className="mt-2 pt-2 border-t border-[#2a3a5c]/40">
+                                  <p className="text-orange-200/70 text-sm font-medium">
+                                    {sign.arabicNote}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    </button>
+                  </motion.div>
+                ))}
+
+                {futureRevealed.length === FUTURE_SIGNS.length && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4 mt-6"
+                  >
+                    <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-orange-800/20 text-center">
+                      <p className="text-orange-100/80 leading-relaxed mb-3">
+                        Every one of these is written in <span className="text-white font-bold">past tense</span> — as if describing yesterday's news.
+                      </p>
+                      <p className="text-slate-300 leading-relaxed">
+                        Because for the One who <span className="text-white font-semibold">created time</span>, there is no "future". It has all already been determined.
+                      </p>
+                    </div>
+
+                    <div className="text-center">
+                      <button
+                        onClick={() => advancePhase('who-wrote-it')}
+                        className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                      >
+                        So who wrote this book?
+                        <ArrowRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── ALMANAC BRIDGE ─────────────────────────────────────── */}
+          {phase === 'who-wrote-it' && (
+            <motion.div
+              key="who-wrote-it"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-[#2a1f3d]/50 rounded-full flex items-center justify-center">
+                  <UserX className="w-10 h-10 text-purple-300/80" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-4">Who Wrote This Book?</h2>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-8 text-left space-y-4">
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Let's rule out every possible human author.
+                </p>
+
+                {[
+                  {
+                    suspect: 'Muhammad himself?',
+                    ruling: 'Illiterate. No education, no tools, no instruments. Gained no wealth — died with almost nothing.',
+                  },
+                  {
+                    suspect: 'Other Arab poets?',
+                    ruling: 'The Quran challenged anyone to produce a single chapter like it. 1,400 years later — no one has. Not even AI.',
+                  },
+                  {
+                    suspect: 'Later scholars edited it?',
+                    ruling: 'Memorised word-for-word by thousands in his lifetime. Every copy on Earth is letter-for-letter identical. No opportunity to change it ever existed.',
+                  },
+                  {
+                    suspect: 'Copied from the Bible?',
+                    ruling: 'Muhammad was illiterate and the Bible wasn\'t in Arabic. The scientific knowledge in the Quran appears in no previous scripture.',
+                  },
+                  {
+                    suspect: 'Lucky guesses?',
+                    ruling: 'One guess is luck. Precise claims across embryology, cosmology, oceanography, geology, anatomy, and history — with zero errors across 6,236 verses — is not luck.',
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.15 }}
+                    className="flex items-start gap-3 bg-[#1e2d4a]/40 rounded-xl p-4 border border-[#2a3a5c]/30"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-rose-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <X className="w-4 h-4 text-rose-400/70" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium text-sm">{item.suspect}</p>
+                      <p className="text-slate-400 text-sm mt-1 leading-relaxed">{item.ruling}</p>
+                    </div>
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.9 }}
+                  className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20 mt-2"
+                >
+                  <p className="text-teal-200/80 leading-relaxed text-center">
+                    Every human possibility eliminated. The Quran's own claim remains: these are the words of <span className="text-white font-semibold">the Creator</span>.
+                  </p>
+                </motion.div>
+              </div>
+
+              <button
+                onClick={() => advancePhase('the-concept')}
+                className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                Now let me share something that made it click...
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── THE CONCEPT ────────────────────────────────────────── */}
+          {phase === 'the-concept' && (
+            <motion.div
+              key="the-concept"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-[#2a1f3d]/50 rounded-full flex items-center justify-center">
+                  <Brain className="w-10 h-10 text-purple-300/80" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-4">The Thought Experiment</h2>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-8 text-left space-y-5">
+                <div className="bg-[#2e2215]/40 rounded-xl p-5 border border-amber-800/25">
+                  <p className="text-amber-100/90 leading-relaxed text-center text-lg">
+                    Imagine you could go <span className="text-white font-semibold">forward in time</span>.
+                  </p>
+                  <p className="text-amber-100/90 leading-relaxed text-center mt-2">
+                    See everything that's going to happen. Get all the information.
+                  </p>
+                  <p className="text-amber-100/90 leading-relaxed text-center mt-2">
+                    Then come <span className="text-white font-semibold">back in time</span> with all of that knowledge.
+                  </p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  You'd have the ultimate advantage. You'd know every result before it happens.
+                </p>
+
+                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40">
+                  <p className="text-lg font-arabic text-amber-100/90 leading-loose mb-3 text-center" dir="rtl">
+                    يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ
+                  </p>
+                  <p className="text-white italic text-center text-sm">
+                    "He knows what is before them and what is behind them, and they encompass nothing of His knowledge except what He wills."
+                  </p>
+                  <p className="text-slate-500 text-xs text-center mt-1">— Al-Baqarah 2:255</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Allah claims He <span className="text-white font-semibold">already knows</span> everything — past, present, and future. He created time. He is not subject to it.
+                </p>
+
+                <p className="text-slate-400 leading-relaxed text-center">
+                  There's a movie that shows <span className="text-white">exactly this concept</span> — and it helped me understand what the Quran is actually doing.
+                </p>
+              </div>
+
+              <button
+                onClick={() => advancePhase('almanac')}
+                className="px-8 py-4 bg-[#6b4fa0] hover:bg-[#7d5eb5] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                Show me the movie
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── ALMANAC GAME ───────────────────────────────────────── */}
+          {phase === 'almanac' && (
+            <motion.div
+              key="almanac"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <AlmanacGame onComplete={() => advancePhase('go-deeper')} startPhase="movie-scene" />
+            </motion.div>
+          )}
+
+          {/* ── GO DEEPER ──────────────────────────────────────────── */}
+          {phase === 'go-deeper' && (
+            <motion.div
+              key="go-deeper"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-20 h-20 bg-[#1a3530]/50 rounded-full flex items-center justify-center"
+                >
+                  <BookOpen className="w-10 h-10 text-teal-300/80" />
+                </motion.div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-4">The Real Cheat Code</h2>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-8 space-y-5">
+
+                {/* The parallel */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40">
+                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-3">Fiction</p>
+                    <p className="text-white font-semibold mb-2">The Almanac</p>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                      A cheat code for <span className="text-slate-300">sports results</span> until the year 2000.
+                    </p>
+                    <p className="text-slate-500 text-xs mt-3">Made Biff a millionaire.</p>
+                  </div>
+                  <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20">
+                    <p className="text-teal-300/70 text-xs font-semibold uppercase tracking-wide mb-3">Reality</p>
+                    <p className="text-white font-semibold mb-2">The Quran</p>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      A cheat code for <span className="text-white">life itself</span> — your purpose, your decisions, and what comes after.
+                    </p>
+                    <p className="text-teal-200/60 text-xs mt-3">From the One who created time.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#2e2215]/30 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-amber-100/80 leading-relaxed text-center">
+                    The Almanac knew the future because it <span className="text-white font-medium">came from</span> the future.
+                  </p>
+                  <p className="text-amber-100/80 leading-relaxed text-center mt-2">
+                    The Quran knows the future because its Author <span className="text-white font-medium">created</span> the future — and the past, and you, and everything in between.
+                  </p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Biff used his cheat code to win money. The Quran tells you how to win <span className="text-white font-semibold">the only game that actually matters</span>.
+                </p>
+
+                <p className="text-slate-400 leading-relaxed text-center text-sm">
+                  And you've only seen <span className="text-white">{totalSigns} signs</span> — the tip of the iceberg.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  {onGoDeeper && (
+                    <button
+                      onClick={onGoDeeper}
+                      className="w-full bg-[#132e2a]/30 hover:bg-[#132e2a]/50 border border-teal-800/30 hover:border-teal-600/50 rounded-xl p-5 text-left transition group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-[#1a3530]/50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#1a3530]/70 transition">
+                          <Microscope className="w-6 h-6 text-teal-300" />
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold group-hover:text-teal-200 transition">Go Deeper — The Full Walkthrough</p>
+                          <p className="text-slate-400 text-sm mt-0.5">Inline evidence, authorship elimination, the deeper reality</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-teal-300 transition ml-auto" />
+                      </div>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={onComplete}
+                    className="w-full bg-[#2e2215]/30 hover:bg-[#2e2215]/50 border border-amber-800/25 hover:border-amber-700/40 rounded-xl p-5 text-left transition group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-[#3d2e1a]/40 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#3d2e1a]/60 transition">
+                        <Heart className="w-6 h-6 text-amber-300/80" />
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold group-hover:text-amber-200 transition">Continue the Journey</p>
+                        <p className="text-slate-400 text-sm mt-0.5">The voice of the Quran, the prophets, and your next step</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-amber-300 transition ml-auto" />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+
+        {/* ── Navigation (except almanac phase which has its own) ──── */}
+        {phase !== 'almanac' && phase !== 'intro' && phase !== 'go-deeper' && (
+          <div className="flex justify-between mt-8 px-4">
+            <button
+              onClick={() => {
+                const phases: LightPhase[] = ['intro', 'cosmology', 'creation', 'knowledge', 'purpose', 'future-intro', 'future-events', 'who-wrote-it', 'the-concept', 'almanac', 'go-deeper'];
+                const idx = phases.indexOf(phase);
+                if (idx > 0) advancePhase(phases[idx - 1]);
+              }}
+              className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -577,7 +577,7 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
     },
     {
       id: 'everything-is-muslim',
-      title: 'Everything Is Muslim',
+      title: 'The Qur\'an Says Everything Is Muslim, Except...',
       icon: <Sunrise className="w-10 h-10 text-amber-400" />,
       iconBg: 'bg-amber-500/20',
       content: (
@@ -631,14 +631,17 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             ))}
           </div>
           <p className="text-slate-300 leading-relaxed text-center">
-            If this framework is correct, everything in creation already operates in submission. Your heart beats, your lungs breathe, your cells heal — <span className="text-white font-semibold">none of it requires your consent</span>.
+            According to the Qur'an, all of this is already in a state of <span className="text-white font-semibold">submission</span>. Your heart, the trees, the planets — they all follow the laws set for them. By this definition, they are all <span className="text-amber-300 font-semibold">Muslim</span>.
+          </p>
+          <p className="text-slate-300 leading-relaxed text-center">
+            Everything in creation submits. <span className="text-white font-semibold">Except...</span>
           </p>
           <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/40 text-center">
             <p className="text-amber-200 leading-relaxed text-lg">
-              According to the Qur'an, only the souls of <span className="text-white font-semibold">humans</span> and <span className="text-white font-semibold">jinn</span> have been given the <span className="text-amber-400 font-semibold">choice</span>.
+              <span className="text-white font-semibold">Humans</span> and <span className="text-white font-semibold">jinn</span>.
             </p>
-            <p className="text-slate-400 leading-relaxed mt-2">
-              Everything else submits by design. The question is whether you will do so consciously.
+            <p className="text-slate-400 leading-relaxed mt-3">
+              The Qur'an states that these two — and only these two — were given <span className="text-amber-400 font-semibold">a choice</span>. Everything else submits by design. You are the exception — the one being asked to submit <span className="text-white font-medium">willingly</span>.
             </p>
           </div>
         </div>

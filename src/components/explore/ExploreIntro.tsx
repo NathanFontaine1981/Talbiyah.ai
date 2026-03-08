@@ -618,181 +618,25 @@ function WordRevealScene() {
 
 // ========== Counter Animation for "Something Created Us" scene ==========
 function SomethingCreatedUsScene() {
-  const [showCounter, setShowCounter] = useState(false);
-  const [counterStep, setCounterStep] = useState(0);
-  const [phoneAnswer, setPhoneAnswer] = useState<string | null>(null);
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setShowCounter(true), 800);
-    return () => clearTimeout(t1);
-  }, []);
-
-  useEffect(() => {
-    if (!showCounter || counterStep >= 3) return;
-    const timer = setTimeout(() => setCounterStep(prev => prev + 1), 600);
-    return () => clearTimeout(timer);
-  }, [showCounter, counterStep]);
-
   return (
     <div className="space-y-5">
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <p className="text-slate-400 text-sm mb-1">Remember, you agreed:</p>
-        <p className="text-white leading-relaxed">
-          We exist. We had a beginning. We didn't choose to be here.
+      <p className="text-lg text-slate-300 leading-relaxed">
+        The universe <span className="text-amber-400 font-medium">had a beginning</span>. It didn't exist, then it did. So — <span className="text-white font-medium">what brought it into being?</span>
+      </p>
+
+      <p className="text-lg text-slate-300 leading-relaxed">
+        Nothing can't create something. And if you keep asking <em>"well what created that?"</em> — you'd go back forever and never reach a starting point.
+      </p>
+
+      <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
+        <p className="text-emerald-200 leading-relaxed">
+          But we're already here. So <span className="text-white font-medium">something uncreated must have always existed</span> — self-sufficient, needing nothing — to bring everything else into being.
         </p>
       </div>
 
       <p className="text-lg text-slate-300 leading-relaxed">
-        If the universe had <span className="text-white font-medium">always existed</span>, the question of who created it wouldn't arise. Something that always existed... just always exists.
+        And we're <span className="text-white font-medium">intelligent beings</span>. So whatever created us must be <span className="text-amber-400 font-medium">more intelligent than us</span> — and must know best about how this universe works.
       </p>
-
-      <p className="text-lg text-slate-300 leading-relaxed">
-        But the universe <span className="text-amber-400 font-medium">had a beginning</span>. It didn't exist, and then it came into existence. That begs the question — <span className="text-white font-medium">who or what brought it into being?</span>
-      </p>
-
-      <p className="text-lg text-slate-300 leading-relaxed">
-        Because we know that <span className="text-white font-medium">nothing cannot create something</span>. Something has to create something.
-      </p>
-
-      {/* Animated counter */}
-      {showCounter && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 text-center"
-        >
-          <div className="flex items-center justify-center gap-3 text-4xl font-bold text-white">
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: counterStep >= 0 ? 1 : 0 }}
-            >0</motion.span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: counterStep >= 1 ? 1 : 0 }}
-              className="text-slate-500"
-            >+</motion.span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: counterStep >= 1 ? 1 : 0 }}
-            >0</motion.span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: counterStep >= 2 ? 1 : 0 }}
-              className="text-slate-500"
-            >=</motion.span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: counterStep >= 2 ? 1 : 0 }}
-              className="text-amber-400"
-            >0</motion.span>
-          </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: counterStep >= 3 ? 1 : 0 }}
-            className="text-slate-400 text-sm mt-3"
-          >
-            Zero is the absence of a number. Add zero a million times — you still get nothing.
-          </motion.p>
-        </motion.div>
-      )}
-
-      {/* Infinite regression argument */}
-      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-        <p className="text-slate-300 leading-relaxed mb-3">
-          <span className="text-white font-medium">Something must have always existed</span> to bring our existence into being. Otherwise, you'd keep asking the same question — "what was there before <em>that</em>?"
-        </p>
-        <p className="text-slate-300 leading-relaxed mb-3">
-          You'd go back and back and back, and you'd never reach a starting point.
-        </p>
-        <p className="text-emerald-300 leading-relaxed font-medium">
-          But we're already here. So there must be something that was always there — uncreated, self-sufficient — otherwise our existence would be impossible.
-        </p>
-      </div>
-
-      <p className="text-lg text-slate-300 leading-relaxed">
-        And we're <span className="text-white font-medium">intelligent beings</span>. So whatever created us must be <span className="text-amber-400 font-medium">more intelligent than us</span>. You can't create something more intelligent than yourself. Whatever created this universe must know best about how it works, and must have control over it.
-      </p>
-
-      {/* Phone in desert — interactive */}
-      <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-        <p className="text-slate-300 leading-relaxed mb-3">
-          Imagine you're walking through a <span className="text-amber-400 font-medium">desert</span>. Nothing but sand for miles. Then you find a <span className="text-white font-medium">smartphone</span> lying on the ground.
-        </p>
-        <p className="text-slate-300 text-sm leading-relaxed mb-3">
-          Calendars. Messages. A camera with incredible clarity. Recordings. Precision engineering. So many parts, clearly designed with thought behind each one.
-        </p>
-        <p className="text-white font-medium mb-4">
-          Where did this phone come from?
-        </p>
-
-        {!phoneAnswer ? (
-          <div className="space-y-2">
-            {[
-              { id: 'natural', label: 'It came together through natural occurrences — sand, wind, heat, cold', correct: false },
-              { id: 'accident', label: 'It came together by accident — all these functions just happened', correct: false },
-              { id: 'made', label: 'Somebody made it — with precision, intelligence, and purpose', correct: true },
-            ].map(option => (
-              <button
-                key={option.id}
-                onClick={() => setPhoneAnswer(option.id)}
-                className="w-full text-left px-4 py-3 rounded-xl border transition-all bg-slate-700/50 border-slate-600 hover:border-amber-500/50 hover:bg-slate-700 text-slate-300 text-sm"
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {phoneAnswer === 'made' ? (
-              <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-700/50">
-                <p className="text-emerald-200 leading-relaxed mb-2">
-                  <span className="text-white font-semibold">Exactly.</span> Somebody must have made it. With intelligence, with precision, and <span className="text-emerald-400 font-medium">for a reason</span>.
-                </p>
-                <p className="text-emerald-300 text-sm leading-relaxed">
-                  Whoever created it must have been more intelligent than the phone itself. And it wasn't created for no reason — you wouldn't use a smartphone as a plate or a fork. It was designed with purpose.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-amber-900/30 rounded-xl p-4 border border-amber-700/50">
-                <p className="text-amber-200 leading-relaxed mb-2">
-                  Really? A smartphone — with calendars, cameras, messaging, precision engineering — just came together from sand and wind? By accident?
-                </p>
-                <p className="text-white leading-relaxed font-medium">
-                  Of course not. Somebody made it. With intelligence, with precision, and for a reason.
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* The manual insight */}
-      {phoneAnswer && (
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-4"
-        >
-          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-            <p className="text-slate-300 leading-relaxed mb-3">
-              Here's the thing — most of us don't even use our phones to their <span className="text-white font-medium">full capabilities</span>. Some people only make calls. They never check the manual. They might be using <span className="text-amber-400 font-medium">3-5%</span> of what the phone can actually do.
-            </p>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Sound familiar?
-            </p>
-          </div>
-
-          <div className="bg-emerald-900/30 rounded-xl p-5 border border-emerald-700/50">
-            <p className="text-emerald-200 leading-relaxed">
-              So if a phone — something <span className="text-white font-medium">far simpler</span> than you — clearly has a maker... why would we look at the human body, something infinitely more complex, and think differently?
-            </p>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }

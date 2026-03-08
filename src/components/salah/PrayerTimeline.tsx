@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle, Home, Building2 } from 'lucide-react';
+import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle, Home, Building2, Sun, AlertTriangle, Star } from 'lucide-react';
 import { usePrayerTimes } from '../../hooks/usePrayerTimes';
-import { usePrayerTracking, SUNNAH_PRAYERS, TOTAL_SUNNAH_RAKAHS } from '../../hooks/usePrayerTracking';
+import { usePrayerTracking, SUNNAH_PRAYERS, TOTAL_SUNNAH_RAKAHS, NAFL_PRAYERS } from '../../hooks/usePrayerTracking';
 
 interface PrayerTimelineProps {
   variant?: 'light' | 'dark';
@@ -9,10 +9,17 @@ interface PrayerTimelineProps {
 
 type PrayerStatus = 'future' | 'active' | 'completed' | 'missed';
 
+function formatMinutes(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
 export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProps) {
-  const { prayerTimes, location, loading, currentMinutes } = usePrayerTimes();
+  const { prayerTimes, sunrise, location, loading, currentMinutes } = usePrayerTimes();
   const { completedPrayers, togglePrayer, isPrayerCompleted, toggleSunnah, isSunnahCompleted, sunnahRakahsDone, toggleLocation, getLocation } = usePrayerTracking();
   const [showSunnah, setShowSunnah] = useState(false);
+  const [showNafl, setShowNafl] = useState(false);
 
   const isDark = variant === 'dark';
 
@@ -30,18 +37,44 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
   }
 
   // Calculate segment widths proportional to duration
-  const segments = prayerTimes.map((prayer, i) => {
+  // Fajr ends at sunrise (not Dhuhr), with a gap segment for sunrise→Dhuhr
+  const rawSegments = prayerTimes.map((prayer, i) => {
     const start = prayer.timeInMinutes;
-    const end = i < prayerTimes.length - 1
-      ? prayerTimes[i + 1].timeInMinutes
-      : 1440; // midnight
+    const isFajr = prayer.name === 'Fajr';
+    const end = isFajr && sunrise
+      ? sunrise.timeInMinutes
+      : i < prayerTimes.length - 1
+        ? prayerTimes[i + 1].timeInMinutes
+        : 1440; // midnight
     return {
       ...prayer,
       start,
       end,
       duration: end - start,
+      isGap: false,
     };
   });
+
+  // Insert a gap segment between sunrise and Dhuhr
+  const segments: typeof rawSegments = [];
+  for (const seg of rawSegments) {
+    segments.push(seg);
+    if (seg.name === 'Fajr' && sunrise) {
+      const dhuhr = prayerTimes.find(p => p.name === 'Dhuhr');
+      if (dhuhr && sunrise.timeInMinutes < dhuhr.timeInMinutes) {
+        segments.push({
+          name: '',
+          time: sunrise.time,
+          timeInMinutes: sunrise.timeInMinutes,
+          isPassed: currentMinutes > sunrise.timeInMinutes,
+          start: sunrise.timeInMinutes,
+          end: dhuhr.timeInMinutes,
+          duration: dhuhr.timeInMinutes - sunrise.timeInMinutes,
+          isGap: true,
+        });
+      }
+    }
+  }
 
   const totalDuration = segments.reduce((sum, s) => sum + s.duration, 0);
 
@@ -68,6 +101,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
 
   // Determine status for each prayer
   const getPrayerStatus = (index: number): PrayerStatus => {
+    if (segments[index].isGap) return 'future'; // gap segments are neutral
     const name = segments[index].name;
     if (isPrayerCompleted(name)) return 'completed';
     if (index === activeIndex) return 'active';
@@ -75,8 +109,9 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
     return 'future';
   };
 
-  // Find next prayer index (first non-completed future/active prayer)
-  const nextPrayerIndex = segments.findIndex((_, i) => {
+  // Find next prayer index (first non-completed future/active prayer, skip gaps)
+  const nextPrayerIndex = segments.findIndex((seg, i) => {
+    if (seg.isGap) return false;
     const status = getPrayerStatus(i);
     return status === 'active' || status === 'future';
   });
@@ -167,26 +202,56 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
           {segments.map((seg, i) => {
             const widthPercent = (seg.duration / totalDuration) * 100;
             const status = getPrayerStatus(i);
-            const bgClass = getSegmentBg(status);
+            const bgClass = seg.isGap
+              ? (isDark ? 'bg-slate-800/60' : 'bg-slate-100/80')
+              : getSegmentBg(status);
             const textClass = getSegmentText(status);
             const timeClass = getSegmentTimeText(status);
 
             return (
               <div
-                key={seg.name}
+                key={seg.isGap ? 'sunrise-gap' : seg.name}
                 className={`flex flex-col items-center justify-center ${bgClass} transition-colors relative ${i > 0 ? (isDark ? 'border-l border-slate-600/50' : 'border-l border-emerald-200/50') : ''}`}
-                style={{ width: `${widthPercent}%`, minWidth: '40px' }}
+                style={{ width: `${widthPercent}%`, minWidth: seg.isGap ? '30px' : '40px' }}
               >
-                <span className={`text-xs font-semibold ${textClass} leading-none`}>
-                  {seg.name}
-                </span>
-                <span className={`text-[10px] mt-1 ${timeClass}`}>
-                  {seg.time}
-                </span>
+                {seg.isGap ? (
+                  <>
+                    <Sun className={`w-3.5 h-3.5 ${isDark ? 'text-amber-500/60' : 'text-amber-500/50'}`} />
+                    <span className={`text-[9px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {sunrise?.time}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`text-xs font-semibold ${textClass} leading-none`}>
+                      {seg.displayName || seg.name}
+                    </span>
+                    <span className={`text-[10px] mt-1 ${timeClass}`}>
+                      {seg.time}
+                    </span>
+                  </>
+                )}
               </div>
             );
           })}
         </div>
+
+        {/* Forbidden time zone around sunrise — 30min before to 15min after */}
+        {sunrise && (() => {
+          const forbiddenStart = sunrise.timeInMinutes - 30;
+          const forbiddenEnd = sunrise.timeInMinutes + 15;
+          const barStart = segments[0]?.start ?? 0;
+          const startPercent = ((forbiddenStart - barStart) / totalDuration) * 100;
+          const widthPercent = ((forbiddenEnd - forbiddenStart) / totalDuration) * 100;
+          return (
+            <div
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{ left: `${Math.max(0, startPercent)}%`, width: `${widthPercent}%` }}
+            >
+              <div className={`h-full ${isDark ? 'bg-red-500/20' : 'bg-red-400/15'} border-l border-r ${isDark ? 'border-red-500/50' : 'border-red-400/40'}`} />
+            </div>
+          );
+        })()}
 
         {/* Current time marker */}
         {markerPercent !== null && (
@@ -194,21 +259,43 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
             className="absolute top-0 bottom-0 flex flex-col items-center pointer-events-none"
             style={{ left: `${markerPercent}%`, transform: 'translateX(-50%)' }}
           >
-            <div className={`w-0.5 h-full ${isDark ? 'bg-white' : 'bg-emerald-900'}`} />
-            <div className={`absolute -bottom-5 text-[10px] font-bold ${isDark ? 'text-white' : 'text-emerald-900'}`}>
+            <div className={`absolute -top-5 text-[10px] font-bold ${isDark ? 'text-white' : 'text-emerald-900'}`}>
               NOW
             </div>
+            <div className={`w-0.5 h-full ${isDark ? 'bg-white' : 'bg-emerald-900'}`} />
           </div>
         )}
       </div>
+
+      {/* Forbidden time note */}
+      {sunrise && (
+        <div className={`flex items-center gap-1.5 mt-6 mb-1 ${isDark ? 'text-red-400/70' : 'text-red-500/60'}`}>
+          <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+          <p className="text-[10px] leading-tight">
+            Avoid voluntary prayer {formatMinutes(sunrise.timeInMinutes - 30)}–{formatMinutes(sunrise.timeInMinutes + 15)} (around sunrise). Fajr fard is still permitted if needed.
+          </p>
+        </div>
+      )}
 
       {/* Checkmark button row + location toggle */}
       <div className="flex mt-4">
         {segments.map((seg, i) => {
           const widthPercent = (seg.duration / totalDuration) * 100;
+
+          // Gap segments get an empty spacer
+          if (seg.isGap) {
+            return (
+              <div
+                key="check-sunrise-gap"
+                style={{ width: `${widthPercent}%`, minWidth: '30px' }}
+              />
+            );
+          }
+
           const status = getPrayerStatus(i);
           const isFuture = status === 'future';
           const loc = getLocation(seg.name);
+          const isJumuah = !!seg.displayName && seg.displayName === "Jumu'ah";
 
           return (
             <div
@@ -255,31 +342,42 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
 
               {/* Home / Masjid toggle — only shown when prayer is completed */}
               {status === 'completed' && (
-                <button
-                  onClick={() => toggleLocation(seg.name)}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
-                    loc === 'masjid'
-                      ? isDark
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                        : 'bg-amber-100 text-amber-700 border border-amber-300'
-                      : isDark
-                        ? 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
-                        : 'bg-emerald-100/60 text-emerald-600 border border-emerald-200/60'
-                  }`}
-                  aria-label={`${seg.name}: ${loc === 'masjid' ? 'Prayed at masjid (27x reward)' : 'Prayed at home'} — tap to toggle`}
-                >
-                  {loc === 'masjid' ? (
-                    <>
-                      <Building2 className="w-3 h-3" />
-                      <span className="hidden sm:inline">Masjid</span>
-                    </>
-                  ) : (
-                    <>
-                      <Home className="w-3 h-3" />
-                      <span className="hidden sm:inline">Home</span>
-                    </>
-                  )}
-                </button>
+                isJumuah ? (
+                  <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                    isDark
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      : 'bg-amber-100 text-amber-700 border border-amber-300'
+                  }`}>
+                    <Building2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Masjid</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => toggleLocation(seg.name)}
+                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                      loc === 'masjid'
+                        ? isDark
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                          : 'bg-amber-100 text-amber-700 border border-amber-300'
+                        : isDark
+                          ? 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
+                          : 'bg-emerald-100/60 text-emerald-600 border border-emerald-200/60'
+                    }`}
+                    aria-label={`${seg.name}: ${loc === 'masjid' ? 'Prayed at masjid (27x reward)' : 'Prayed at home'} — tap to toggle`}
+                  >
+                    {loc === 'masjid' ? (
+                      <>
+                        <Building2 className="w-3 h-3" />
+                        <span className="hidden sm:inline">Masjid</span>
+                      </>
+                    ) : (
+                      <>
+                        <Home className="w-3 h-3" />
+                        <span className="hidden sm:inline">Home</span>
+                      </>
+                    )}
+                  </button>
+                )
               )}
             </div>
           );
@@ -311,7 +409,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
 
       {/* Gentle encouragement when partially done */}
       {completedCount > 0 && completedCount < 5 && (
-        <p className={`text-center text-xs italic mt-2 leading-relaxed ${isDark ? 'text-slate-500' : 'text-emerald-500/70'}`}>
+        <p className={`text-center text-xs italic mt-2 leading-relaxed ${isDark ? 'text-slate-300' : 'text-emerald-700'}`}>
           "The most beloved deeds to Allah are the most consistent, even if small."
         </p>
       )}
@@ -413,6 +511,101 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
                   style={{ width: `${(sunnahRakahsDone / TOTAL_SUNNAH_RAKAHS) * 100}%` }}
                 />
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Nafl (Voluntary) prayers section */}
+      <div className={`mt-3 pt-3 border-t ${isDark ? 'border-indigo-800/40' : 'border-indigo-300/60'}`}>
+        <button
+          onClick={() => setShowNafl(!showNafl)}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <Star className={`w-4 h-4 ${isDark ? 'text-indigo-400/70' : 'text-indigo-500'}`} />
+            <span className={`text-xs font-semibold ${isDark ? 'text-indigo-300' : 'text-gray-900'}`}>
+              Nafl Prayers
+            </span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+              NAFL_PRAYERS.every(n => isSunnahCompleted(n.key))
+                ? isDark ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/40' : 'bg-indigo-400 text-white'
+                : NAFL_PRAYERS.some(n => isSunnahCompleted(n.key))
+                  ? isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-100 text-indigo-800'
+                  : isDark ? 'bg-slate-700 text-indigo-500/60' : 'bg-indigo-50 text-indigo-700/60'
+            }`}>
+              {NAFL_PRAYERS.filter(n => isSunnahCompleted(n.key)).length}/{NAFL_PRAYERS.length}
+            </span>
+          </div>
+          {showNafl ? (
+            <ChevronUp className={`w-4 h-4 ${isDark ? 'text-indigo-500/70' : 'text-indigo-500'}`} />
+          ) : (
+            <ChevronDown className={`w-4 h-4 ${isDark ? 'text-indigo-500/70' : 'text-indigo-500'}`} />
+          )}
+        </button>
+
+        {showNafl && (
+          <div className="mt-3 space-y-2">
+            {/* Ishraq / staying after Fajr reward */}
+            {NAFL_PRAYERS.every(n => isSunnahCompleted(n.key)) ? (
+              <div className={`text-center py-2.5 px-3 rounded-lg ${isDark ? 'bg-gradient-to-r from-indigo-900/40 to-purple-900/30 border border-indigo-600/50' : 'bg-gradient-to-r from-indigo-100 to-purple-100 border border-indigo-300'}`}>
+                <p className={`text-xs font-semibold ${isDark ? 'text-indigo-300' : 'text-gray-900'}`}>
+                  All nafl prayers completed today. May Allah accept them.
+                </p>
+              </div>
+            ) : (
+              <div className={`rounded-lg p-3 ${isDark ? 'bg-indigo-900/20 border border-indigo-700/30' : 'bg-indigo-50 border border-indigo-200'}`}>
+                <p className={`text-xs italic text-center leading-relaxed ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>
+                  "Whoever prays Fajr in congregation, then sits remembering Allah until the sun rises, then prays two rak'ahs — he will have a reward like that of Hajj and Umrah, complete, complete, complete."
+                </p>
+                <p className={`text-[10px] text-center mt-1.5 not-italic ${isDark ? 'text-indigo-500/50' : 'text-indigo-500/60'}`}>
+                  — Jami' at-Tirmidhi 586
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-1.5">
+              {NAFL_PRAYERS.map((nafl) => {
+                const done = isSunnahCompleted(nafl.key);
+                return (
+                  <button
+                    key={nafl.key}
+                    onClick={() => toggleSunnah(nafl.key)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition text-left ${
+                      done
+                        ? isDark
+                          ? 'bg-indigo-900/30 border border-indigo-600/40'
+                          : 'bg-indigo-100 border border-indigo-300'
+                        : isDark
+                          ? 'bg-slate-800/50 border border-indigo-800/30 hover:bg-indigo-900/20'
+                          : 'bg-indigo-50/50 border border-indigo-200/60 hover:bg-indigo-100/60'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      done
+                        ? isDark ? 'bg-indigo-500 text-white' : 'bg-indigo-500 text-white'
+                        : isDark ? 'border-2 border-indigo-700/50' : 'border-2 border-indigo-300'
+                    }`}>
+                      {done && <Check className="w-3 h-3" strokeWidth={3} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs font-medium ${
+                        done
+                          ? isDark ? 'text-indigo-300' : 'text-gray-900'
+                          : isDark ? 'text-slate-300' : 'text-gray-800'
+                      }`}>
+                        {nafl.label}
+                      </span>
+                      <span className={`text-xs ml-1.5 ${isDark ? 'text-indigo-600/60' : 'text-indigo-600/70'}`}>
+                        ({nafl.rakahs} rak'ahs)
+                      </span>
+                      <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                        {nafl.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
