@@ -634,6 +634,7 @@ export default function CourseSessionInsights() {
   const [recordingExpiresAt, setRecordingExpiresAt] = useState<string | null>(null);
   const [recordingAssetId, setRecordingAssetId] = useState<string | null>(null);
   const [refreshingRecording, setRefreshingRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const { hasAccess: hasNotesAccess, loading: notesAccessLoading, notesPricePounds, isTeacherOrAdmin } = useCourseNotesAccess(groupSessionId);
   const currentSessionNum = parseInt(sessionNumber || '1', 10);
@@ -669,12 +670,13 @@ export default function CourseSessionInsights() {
         }
       }
 
-      const { data: session } = await supabase.from('course_sessions').select('id, session_number, recording_url, recording_expires_at, recording_asset_id').eq('group_session_id', course.id).eq('session_number', num).single();
+      const { data: session } = await supabase.from('course_sessions').select('id, session_number, recording_url, recording_expires_at, recording_asset_id, audio_url').eq('group_session_id', course.id).eq('session_number', num).single();
       if (!session) { toast.error('Session not found'); navigate(`/course/${slug}`); return; }
       setCourseSessionId(session.id);
       setRecordingUrl(session.recording_url || null);
       setRecordingExpiresAt(session.recording_expires_at || null);
       setRecordingAssetId(session.recording_asset_id || null);
+      setAudioUrl(session.audio_url || null);
 
       const { data: insightData, error } = await supabase.from('course_insights')
         .select(`id, title, summary, insights_content, processing_time_ms, created_at, course_sessions!inner (session_number, title, session_date), group_sessions!inner (name, slug, teacher:profiles!group_sessions_teacher_id_fkey (full_name))`)
@@ -917,6 +919,29 @@ export default function CourseSessionInsights() {
                   controlsList="nodownload"
                 />
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Audio Player */}
+        {audioUrl && canViewNotes && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm mb-6">
+            <div className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Lesson Audio</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Listen to the full session</p>
+                </div>
+              </div>
+              <audio
+                src={audioUrl}
+                controls
+                className="w-full"
+                preload="metadata"
+              />
             </div>
           </div>
         )}

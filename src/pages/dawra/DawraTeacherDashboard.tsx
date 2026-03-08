@@ -25,6 +25,8 @@ import {
   Search,
   X,
   Mail,
+  Upload,
+  Headphones,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -37,6 +39,7 @@ interface CourseSession {
   status: string;
   live_status: string | null;
   transcript: string | null;
+  audio_url: string | null;
 }
 
 interface CourseInsight {
@@ -119,6 +122,7 @@ export default function CourseTeacherDashboard() {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
+  const [uploadingAudioId, setUploadingAudioId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -143,7 +147,7 @@ export default function CourseTeacherDashboard() {
       // Fetch sessions
       const { data: sessionsData } = await supabase
         .from('course_sessions')
-        .select('id, session_number, title, session_date, status, live_status, transcript')
+        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url')
         .eq('group_session_id', courseData.id)
         .order('session_number', { ascending: true });
 
@@ -269,6 +273,37 @@ export default function CourseTeacherDashboard() {
       toast.error('Failed to save: ' + err.message);
     } finally {
       setSavingTranscript(false);
+    }
+  }
+
+  async function uploadAudio(sessionId: string, file: File) {
+    setUploadingAudioId(sessionId);
+    try {
+      const ext = file.name.split('.').pop() || 'mp3';
+      const filePath = `dawra/${course?.id}/${sessionId}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('teacher_audio')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('teacher_audio')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('course_sessions')
+        .update({ audio_url: publicUrl })
+        .eq('id', sessionId);
+
+      if (updateError) throw updateError;
+      toast.success('Audio uploaded');
+      fetchData();
+    } catch (err: any) {
+      toast.error('Failed to upload audio: ' + err.message);
+    } finally {
+      setUploadingAudioId(null);
     }
   }
 
@@ -918,6 +953,34 @@ export default function CourseTeacherDashboard() {
                       {session.transcript ? 'Edit Transcript' : 'Add Transcript'}
                     </button>
                   )}
+
+                  {/* Upload audio */}
+                  <label
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors cursor-pointer ${
+                      session.audio_url
+                        ? 'border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    } ${uploadingAudioId === session.id ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    {uploadingAudioId === session.id ? (
+                      <Loader className="w-3.5 h-3.5 animate-spin" />
+                    ) : session.audio_url ? (
+                      <Headphones className="w-3.5 h-3.5" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    {session.audio_url ? 'Replace Audio' : 'Upload Audio'}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadAudio(session.id, file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
 
                   {/* Generate insights */}
                   {(session.status === 'transcript_added' || session.status === 'published') && (
