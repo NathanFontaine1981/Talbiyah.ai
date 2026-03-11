@@ -5,6 +5,7 @@ import {
   Fingerprint, Heart, Brain, Clock, Target, Zap,
   BookOpen, Microscope, Bug, Milk, Leaf,
   CheckCircle2, AlertTriangle, ArrowRight, UserX, X,
+  HelpCircle, Crown, Send, Shield,
 } from 'lucide-react';
 import AlmanacGame from './AlmanacGame';
 
@@ -219,10 +220,123 @@ const FUTURE_SIGNS: FutureSign[] = [
   },
 ];
 
+// ── Origin story — the inner conversation ──────────────────────────────
+
+interface OriginStep {
+  question: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  verses: {
+    arabic: string;
+    english: string;
+    ref: string;
+  }[];
+  reflection: string;
+}
+
+const ORIGIN_STEPS: OriginStep[] = [
+  {
+    question: 'Where did I come from?',
+    subtitle: 'The first question every soul asks',
+    icon: <HelpCircle className="w-6 h-6" />,
+    iconBg: 'bg-[#2a3a5c]/60',
+    verses: [
+      {
+        arabic: 'الَّذِي أَحْسَنَ كُلَّ شَيْءٍ خَلَقَهُ ۖ وَبَدَأَ خَلْقَ الْإِنسَانِ مِن طِينٍ ثُمَّ جَعَلَ نَسْلَهُ مِن سُلَالَةٍ مِّن مَّاءٍ مَّهِينٍ ثُمَّ سَوَّاهُ وَنَفَخَ فِيهِ مِن رُّوحِهِ',
+        english: 'He who perfected everything He created, and began the creation of man from clay. Then He made his posterity from an extract of a humble fluid. Then He proportioned him and breathed into him from His soul.',
+        ref: 'As-Sajdah 32:7-9',
+      },
+    ],
+    reflection: 'You weren\'t an accident. You were designed — shaped, proportioned, and given a soul breathed into you by your Creator.',
+  },
+  {
+    question: 'What makes me special?',
+    subtitle: 'Why you — out of all creation',
+    icon: <Crown className="w-6 h-6" />,
+    iconBg: 'bg-[#3d2e1a]/60',
+    verses: [
+      {
+        arabic: 'وَإِذْ قَالَ رَبُّكَ لِلْمَلَائِكَةِ إِنِّي جَاعِلٌ فِي الْأَرْضِ خَلِيفَةً',
+        english: 'And when your Lord said to the angels, "Indeed, I will make upon the earth a successive authority."',
+        ref: 'Al-Baqarah 2:30',
+      },
+      {
+        arabic: 'وَلَقَدْ كَرَّمْنَا بَنِي آدَمَ',
+        english: 'And We have certainly honoured the children of Adam.',
+        ref: 'Al-Isra 17:70',
+      },
+    ],
+    reflection: 'God announced your coming to the angels. You were placed on this earth with purpose — as His representative, honoured above the rest of creation.',
+  },
+  {
+    question: 'Why was I sent to this world?',
+    subtitle: 'The descent — and the reason behind it',
+    icon: <Send className="w-6 h-6" />,
+    iconBg: 'bg-[#1a2744]/60',
+    verses: [
+      {
+        arabic: 'قُلْنَا اهْبِطُوا مِنْهَا جَمِيعًا',
+        english: '"Go down from it, all of you."',
+        ref: 'Al-Baqarah 2:38',
+      },
+      {
+        arabic: 'قَالَ اهْبِطَا مِنْهَا جَمِيعًا ۖ بَعْضُكُمْ لِبَعْضٍ عَدُوٌّ',
+        english: '"Descend from it, all of you. Some of you will be enemies to others."',
+        ref: 'Ta-Ha 20:123',
+      },
+    ],
+    reflection: 'You were sent here. This world is not your home — it\'s your test. A temporary place with a permanent consequence.',
+  },
+  {
+    question: 'Do you think you were created without purpose?',
+    subtitle: 'The question that confronts you',
+    icon: <Target className="w-6 h-6" />,
+    iconBg: 'bg-[#2e2215]/60',
+    verses: [
+      {
+        arabic: 'أَفَحَسِبْتُمْ أَنَّمَا خَلَقْنَاكُمْ عَبَثًا وَأَنَّكُمْ إِلَيْنَا لَا تُرْجَعُونَ',
+        english: '"Did you think that We created you without purpose, and that to Us you would not be returned?"',
+        ref: 'Al-Mu\'minun 23:115',
+      },
+      {
+        arabic: 'أَيَحْسَبُ الْإِنسَانُ أَن يُتْرَكَ سُدًى',
+        english: '"Does man think he will be left alone without being tested?"',
+        ref: 'Al-Qiyamah 75:36',
+      },
+      {
+        arabic: 'اعْلَمُوا أَنَّمَا الْحَيَاةُ الدُّنْيَا لَعِبٌ وَلَهْوٌ وَزِينَةٌ',
+        english: '"Know that the life of this world is but amusement, diversion, and adornment."',
+        ref: 'Al-Hadid 57:20',
+      },
+    ],
+    reflection: 'He\'s speaking directly to you. This life — the distractions, the entertainment, the status — it\'s temporary. You were created with purpose and you will be returned to Him.',
+  },
+  {
+    question: 'Will I be left alone?',
+    subtitle: 'The promise that changes everything',
+    icon: <Shield className="w-6 h-6" />,
+    iconBg: 'bg-[#132e2a]/60',
+    verses: [
+      {
+        arabic: 'فَإِمَّا يَأْتِيَنَّكُم مِّنِّي هُدًى فَمَن تَبِعَ هُدَايَ فَلَا خَوْفٌ عَلَيْهِمْ وَلَا هُمْ يَحْزَنُونَ',
+        english: '"When guidance comes to you from Me, whoever follows My guidance — there will be no fear upon them, nor will they grieve."',
+        ref: 'Al-Baqarah 2:38',
+      },
+      {
+        arabic: 'فَمَنِ اتَّبَعَ هُدَايَ فَلَا يَضِلُّ وَلَا يَشْقَىٰ',
+        english: '"Whoever follows My guidance will neither go astray nor suffer."',
+        ref: 'Ta-Ha 20:123',
+      },
+    ],
+    reflection: 'He didn\'t send you here and abandon you. He promised guidance — a book, messengers, signs — so you could find your way back.',
+  },
+];
+
 // ── Phase type ──────────────────────────────────────────────────────────
 
 type LightPhase =
-  | 'intro'
+  | 'intro' | 'origin'
   | 'cosmology' | 'creation' | 'knowledge' | 'purpose' | 'future-intro' | 'future-events'
   | 'who-wrote-it' | 'the-concept' | 'almanac'
   | 'go-deeper';
@@ -257,19 +371,32 @@ function SignCard({ sign, index, isRevealed, onReveal }: {
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-white font-semibold">{sign.title}</h4>
-            <p className="text-amber-200/70 text-sm italic mt-1">"{sign.verse}" — {sign.verseRef}</p>
             <AnimatePresence>
-              {isRevealed && (
+              {isRevealed ? (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-2 pt-2 border-t border-[#2a3a5c]/40"
+                  className="mt-3 space-y-3"
                 >
-                  <p className="text-slate-300 text-sm leading-relaxed">{sign.fact}</p>
-                  {sign.discoveredBy && (
-                    <p className="text-teal-300/80 text-xs font-medium mt-1">{sign.discoveredBy}</p>
-                  )}
+                  {/* Arabic verse */}
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2]" dir="rtl">
+                    {sign.arabicVerse}
+                  </p>
+                  {/* English translation */}
+                  <p className="text-amber-200/70 text-sm italic leading-relaxed">
+                    "{sign.verse}"
+                  </p>
+                  <p className="text-slate-500 text-xs">— {sign.verseRef}</p>
+                  {/* Science fact */}
+                  <div className="pt-2 border-t border-[#2a3a5c]/40">
+                    <p className="text-slate-300 text-sm leading-relaxed">{sign.fact}</p>
+                    {sign.discoveredBy && (
+                      <p className="text-teal-300/80 text-xs font-medium mt-1">{sign.discoveredBy}</p>
+                    )}
+                  </div>
                 </motion.div>
+              ) : (
+                <p className="text-slate-400 text-sm mt-1">Tap to reveal</p>
               )}
             </AnimatePresence>
           </div>
@@ -340,6 +467,8 @@ function RapidSignsSection({
 
 export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranWalkthroughLightProps) {
   const [phase, setPhase] = useState<LightPhase>('intro');
+  const [originStep, setOriginStep] = useState(0);
+  const [originVerseRevealed, setOriginVerseRevealed] = useState(false);
   const [sectionsComplete, setSectionsComplete] = useState({
     cosmology: false,
     creation: false,
@@ -392,20 +521,172 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                   A book that claims to be the direct words of the <span className="text-white font-semibold">Creator of the universe</span>.
                 </p>
                 <p className="text-slate-300 leading-relaxed text-center">
-                  Delivered in <span className="text-amber-200/80 font-semibold">7th century Arabia</span> — no telescopes, no microscopes, no laboratories — by a man who <span className="text-white font-semibold">could not read or write</span>.
-                </p>
-                <p className="text-slate-400 leading-relaxed text-center">
-                  Let's test that claim. We'll follow the questions humans naturally ask — and see what this book said about each one, <span className="text-white">over 1,400 years ago</span>.
+                  Before we test that claim — let it speak to you. Let it answer the questions that sit quietly in every human heart.
                 </p>
               </div>
 
               <button
-                onClick={() => advancePhase('cosmology')}
+                onClick={() => advancePhase('origin')}
                 className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
               >
                 Begin
                 <ArrowRight className="w-5 h-5" />
               </button>
+            </motion.div>
+          )}
+
+          {/* ── THE ORIGIN STORY — inner conversation ─────────────── */}
+          {phase === 'origin' && (
+            <motion.div
+              key={`origin-${originStep}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              {(() => {
+                const step = ORIGIN_STEPS[originStep];
+                const isLastStep = originStep === ORIGIN_STEPS.length - 1;
+
+                return (
+                  <>
+                    {/* Step indicator */}
+                    <div className="flex justify-center gap-2 mb-8">
+                      {ORIGIN_STEPS.map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1 rounded-full transition-all duration-500 ${
+                            i <= originStep ? 'w-8 bg-amber-400/70' : 'w-4 bg-slate-700'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* The question — like a thought in the mind */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="mb-6"
+                    >
+                      <div className={`w-16 h-16 ${step.iconBg} rounded-full flex items-center justify-center mx-auto mb-5`}>
+                        <span className="text-amber-200/80">{step.icon}</span>
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-serif text-white mb-2 italic">
+                        "{step.question}"
+                      </h2>
+                      <p className="text-slate-500 text-sm">{step.subtitle}</p>
+                    </motion.div>
+
+                    {/* The Quran answers */}
+                    {!originVerseRevealed ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="mt-8"
+                      >
+                        <button
+                          onClick={() => setOriginVerseRevealed(true)}
+                          className="px-6 py-3 bg-[#1e2d4a]/80 hover:bg-[#253553] border border-amber-800/20 hover:border-amber-700/30 rounded-full text-amber-200/80 transition flex items-center gap-2 mx-auto text-sm"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          See what the Quran says
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="space-y-4 mt-6"
+                      >
+                        {step.verses.map((v, vi) => (
+                          <motion.div
+                            key={vi}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: vi * 0.3 }}
+                            className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20"
+                          >
+                            <p className="text-lg sm:text-xl font-arabic text-amber-100/90 leading-[2] mb-3" dir="rtl">
+                              {v.arabic}
+                            </p>
+                            <p className="text-white italic leading-relaxed">
+                              "{v.english}"
+                            </p>
+                            <p className="text-slate-500 text-sm mt-2">— {v.ref}</p>
+                          </motion.div>
+                        ))}
+
+                        {/* Reflection */}
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: step.verses.length * 0.3 + 0.3 }}
+                          className="text-slate-300 leading-relaxed px-2 pt-2"
+                        >
+                          {step.reflection}
+                        </motion.p>
+
+                        {/* Next button */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: step.verses.length * 0.3 + 0.8 }}
+                          className="pt-4"
+                        >
+                          {isLastStep ? (
+                            /* After the last origin step — bridge to the evidence */
+                            <div className="space-y-5">
+                              <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20">
+                                <p className="text-lg font-arabic text-amber-100/90 leading-loose mb-2" dir="rtl">
+                                  ذَٰلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ هُدًى لِّلْمُتَّقِينَ
+                                </p>
+                                <p className="text-white italic text-sm">
+                                  "This is the Book about which there is no doubt, a guidance for those conscious of God."
+                                </p>
+                                <p className="text-slate-500 text-xs mt-1">— Al-Baqarah 2:2</p>
+                              </div>
+
+                              <p className="text-slate-300 leading-relaxed">
+                                He told you where you came from, why you're here, and that guidance would come. <span className="text-white font-semibold">This book claims to be that guidance.</span>
+                              </p>
+
+                              <p className="text-slate-400 text-sm leading-relaxed">
+                                Delivered in <span className="text-white">7th century Arabia</span> — no telescopes, no microscopes, no laboratories — by a man who <span className="text-white">could not read or write</span>.
+                              </p>
+
+                              <p className="text-slate-400 text-sm">
+                                Let's test it.
+                              </p>
+
+                              <button
+                                onClick={() => advancePhase('cosmology')}
+                                className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                              >
+                                Test the claim
+                                <ArrowRight className="w-5 h-5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setOriginStep(s => s + 1);
+                                setOriginVerseRevealed(false);
+                              }}
+                              className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+                            >
+                              {ORIGIN_STEPS[originStep + 1]?.question || 'Continue'}
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </>
+                );
+              })()}
             </motion.div>
           )}
 
@@ -995,7 +1276,13 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
           <div className="flex justify-between mt-8 px-4">
             <button
               onClick={() => {
-                const phases: LightPhase[] = ['intro', 'cosmology', 'creation', 'knowledge', 'purpose', 'future-intro', 'future-events', 'who-wrote-it', 'the-concept', 'almanac', 'go-deeper'];
+                if (phase === 'origin' && originStep > 0) {
+                  setOriginStep(s => s - 1);
+                  setOriginVerseRevealed(false);
+                  window.scrollTo(0, 0);
+                  return;
+                }
+                const phases: LightPhase[] = ['intro', 'origin', 'cosmology', 'creation', 'knowledge', 'purpose', 'future-intro', 'future-events', 'who-wrote-it', 'the-concept', 'almanac', 'go-deeper'];
                 const idx = phases.indexOf(phase);
                 if (idx > 0) advancePhase(phases[idx - 1]);
               }}

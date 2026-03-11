@@ -713,6 +713,61 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       ),
     },
     {
+      id: 'the-record',
+      title: 'The Record',
+      icon: <BookOpen className="w-10 h-10 text-indigo-400" />,
+      iconBg: 'bg-indigo-500/20',
+      content: (
+        <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            You're never alone. According to the Qur'an, two angels are assigned to you — <span className="text-white font-semibold">one on your right, one on your left</span> — recording everything.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-indigo-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              إِذْ يَتَلَقَّى الْمُتَلَقِّيَانِ عَنِ الْيَمِينِ وَعَنِ الشِّمَالِ قَعِيدٌ مَّا يَلْفِظُ مِن قَوْلٍ إِلَّا لَدَيْهِ رَقِيبٌ عَتِيدٌ
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "When the two receivers receive, seated on the right and on the left. He does not utter a single word except that with him is an observer, prepared."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Qaf, 50:17-18</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            Every word. Every action. Every <span className="text-white font-semibold">intention</span>. Recorded in a scroll that will be placed in your hands on the Day of Judgement.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-indigo-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              وَوُضِعَ الْكِتَابُ فَتَرَى الْمُجْرِمِينَ مُشْفِقِينَ مِمَّا فِيهِ وَيَقُولُونَ يَا وَيْلَتَنَا مَالِ هَـٰذَا الْكِتَابِ لَا يُغَادِرُ صَغِيرَةً وَلَا كَبِيرَةً إِلَّا أَحْصَاهَا
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "And the record will be placed, and you will see the sinful fearful of what is in it. They will say, 'Woe to us! What is this book that leaves nothing small or great except that it has counted it?'"
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-Kahf, 18:49</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            Not a single thing left out. Every deed — <span className="text-white font-semibold">small or great</span> — accounted for.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-indigo-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              اقْرَأْ كِتَابَكَ كَفَىٰ بِنَفْسِكَ الْيَوْمَ عَلَيْكَ حَسِيبًا
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "Read your record. Sufficient is yourself against you this Day as accountant."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-Isra, 17:14</p>
+          </div>
+
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Imagine the most comprehensive surveillance ever conceived — except the camera is on every thought, every whisper, every hidden intention. And on that Day, you are your own witness.
+          </p>
+        </div>
+      ),
+    },
+    {
       id: 'the-bonus-system',
       title: 'The Bonus System',
       icon: <Gift className="w-10 h-10 text-emerald-400" />,
