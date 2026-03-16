@@ -5,7 +5,7 @@ import {
   Fingerprint, Heart, Brain, Clock, Target, Zap,
   BookOpen, Microscope, Bug, Milk, Leaf,
   CheckCircle2, AlertTriangle, ArrowRight, UserX, X,
-  HelpCircle, Crown, Send, Shield,
+  HelpCircle, Crown, Send, Shield, Compass,
 } from 'lucide-react';
 import AlmanacGame from './AlmanacGame';
 
@@ -337,7 +337,7 @@ const ORIGIN_STEPS: OriginStep[] = [
 
 type LightPhase =
   | 'intro' | 'origin'
-  | 'cosmology' | 'creation' | 'knowledge' | 'purpose' | 'future-intro' | 'future-events'
+  | 'cosmology' | 'creation' | 'knowledge' | 'purpose' | 'the-way' | 'future-intro' | 'future-events'
   | 'who-wrote-it' | 'the-concept' | 'almanac'
   | 'go-deeper';
 
@@ -791,49 +791,255 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
               exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
-              <h2 className="text-2xl font-serif text-white mb-2">Why are we here?</h2>
-              <p className="text-slate-400 mb-8">The question science can't answer — but this book does</p>
+              <h2 className="text-2xl font-serif text-white mb-2">So why are we here?</h2>
+              <p className="text-slate-400 mb-8">Science can tell you <span className="text-slate-300">how</span> you got here. Only the Creator can tell you <span className="text-white">why</span>.</p>
 
-              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-6 text-left space-y-5">
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-6 text-left space-y-6">
+
+                {/* The direct answer */}
                 <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
-                  <p className="text-xl font-arabic text-amber-100/90 leading-loose mb-3 text-center" dir="rtl">
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
                     وَمَا خَلَقْتُ الْجِنَّ وَالْإِنسَ إِلَّا لِيَعْبُدُونِ
                   </p>
-                  <p className="text-white italic text-center">
+                  <p className="text-white italic text-center leading-relaxed">
                     "I did not create jinn and mankind except to worship Me."
                   </p>
                   <p className="text-slate-500 text-sm text-center mt-1">— Adh-Dhariyat 51:56</p>
                 </div>
 
                 <p className="text-slate-300 leading-relaxed text-center">
-                  Your heart beats without you asking. Trees grow without permission.
-                  Planets orbit in perfect paths. Everything already <span className="text-white font-semibold">submits</span>.
+                  Not worship as in rituals all day. The Arabic word <span className="text-amber-200/80 font-semibold">ya'budoon</span> carries the meaning of <span className="text-white font-semibold">recognising, knowing, and living in conscious connection</span> with your Creator. Every action — eating, working, being kind to someone — becomes worship when done with that awareness.
                 </p>
 
-                <p className="text-slate-300 leading-relaxed text-center">
-                  <span className="text-white font-semibold">You</span> are the one being asked to submit <span className="text-amber-200/80 font-semibold">willingly</span>.
-                  That's the test.
-                </p>
-
-                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40">
-                  <p className="text-lg font-arabic text-amber-100/90 leading-loose mb-2 text-center" dir="rtl">
-                    اعْلَمُوا أَنَّمَا الْحَيَاةُ الدُّنْيَا لَعِبٌ وَلَهْوٌ وَزِينَةٌ
+                {/* The reality check */}
+                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40 space-y-4">
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    But think about what most of us actually give our lives to:
                   </p>
-                  <p className="text-white italic text-center text-sm">
-                    "Know that the life of this world is but amusement, diversion, and adornment."
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Money', 'Status', 'Likes', 'Career', 'Comfort', 'Image'].map(item => (
+                      <div key={item} className="bg-[#253553]/60 rounded-lg py-2 px-3 text-center">
+                        <p className="text-slate-400 text-sm">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    We all submit to <span className="text-white font-semibold">something</span>. The question is whether it's something that was created — or the One who created it.
+                  </p>
+                </div>
+
+                {/* This life is temporary */}
+                <div className="bg-[#2e2215]/40 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
+                    اعْلَمُوا أَنَّمَا الْحَيَاةُ الدُّنْيَا لَعِبٌ وَلَهْوٌ وَزِينَةٌ وَتَفَاخُرٌ بَيْنَكُمْ وَتَكَاثُرٌ فِي الْأَمْوَالِ وَالْأَوْلَادِ
+                  </p>
+                  <p className="text-white italic text-center text-sm leading-relaxed">
+                    "Know that the life of this world is but amusement, diversion, adornment, boasting among yourselves, and competition in wealth and children."
                   </p>
                   <p className="text-slate-500 text-xs text-center mt-1">— Al-Hadid 57:20</p>
                 </div>
 
                 <p className="text-slate-300 leading-relaxed text-center">
-                  60-70 years — what's that compared to <span className="text-white font-semibold">infinity</span>?
+                  Read that list again. Amusement. Diversion. Showing off. Competing over money and kids. That's not a vague description — that is <span className="text-white font-semibold">exactly</span> what most people build their entire lives around.
                 </p>
 
-                <div className="bg-[#132e2a]/30 rounded-xl p-4 border border-teal-800/20 text-center">
-                  <p className="text-teal-200/80 leading-relaxed">
-                    Good deeds multiplied <span className="text-white font-semibold">10x minimum</span>.
-                    Bad deeds recorded as <span className="text-white font-semibold">just one</span>.
-                    The system is <span className="text-teal-200 font-semibold">designed for you to succeed</span>.
+                {/* The real life */}
+                <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20">
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
+                    وَإِنَّ الدَّارَ الْآخِرَةَ لَهِيَ الْحَيَوَانُ ۚ لَوْ كَانُوا يَعْلَمُونَ
+                  </p>
+                  <p className="text-white italic text-center text-sm leading-relaxed">
+                    "And indeed, the home of the Hereafter — that is the true life, if only they knew."
+                  </p>
+                  <p className="text-slate-500 text-xs text-center mt-1">— Al-Ankabut 29:64</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  60-70 years — that's what you get here. What's that compared to <span className="text-white font-semibold">forever</span>? The Qur'an says this life is a test, a brief window. The real life — the permanent one — is what comes after.
+                </p>
+
+                {/* The bonus system */}
+                <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20 space-y-3">
+                  <p className="text-teal-200/80 text-center font-semibold">And the system is stacked in your favour:</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-teal-300">10x</p>
+                      <p className="text-slate-400 text-xs">minimum reward for every good deed</p>
+                    </div>
+                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-teal-300">1x</p>
+                      <p className="text-slate-400 text-xs">bad deed recorded as just one</p>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-sm text-center leading-relaxed">
+                    Intend a bad deed but don't act on it? <span className="text-white">Not written</span>. Intend a good deed but can't do it? <span className="text-teal-200/80">Still rewarded</span>. The system is <span className="text-teal-200 font-semibold">designed for you to succeed</span>.
+                  </p>
+                </div>
+
+                {/* The punchline */}
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
+                    وَالْآخِرَةُ خَيْرٌ وَأَبْقَىٰ
+                  </p>
+                  <p className="text-white italic text-center text-sm leading-relaxed">
+                    "And the Hereafter is better and more lasting."
+                  </p>
+                  <p className="text-slate-500 text-xs text-center mt-1">— Al-A'la 87:17</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  <span className="text-white font-semibold">Better</span> and <span className="text-white font-semibold">more lasting</span>. Six words that change the way you look at everything — your career, your bank account, your status, your time. Once you see this life for what it is, the priorities shift on their own.
+                </p>
+              </div>
+
+              <button
+                onClick={() => advancePhase('the-way')}
+                className="px-8 py-4 bg-[#b08545] hover:bg-[#c4965a] text-white rounded-full text-lg font-semibold transition flex items-center gap-2 mx-auto"
+              >
+                So what is "The Way"?
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── THE WAY — submission explained ─────────────────────── */}
+          {phase === 'the-way' && (
+            <motion.div
+              key="the-way"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-[#3d2e1a]/60 rounded-full flex items-center justify-center">
+                  <Compass className="w-10 h-10 text-amber-300/80" />
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-serif text-white mb-2">The Religion of Pure Submission</h2>
+              <p className="text-slate-400 mb-8">One way. One message. From the first human to the last prophet.</p>
+
+              <div className="bg-[#1a2744]/80 backdrop-blur rounded-2xl p-8 border border-[#2a3a5c]/60 mb-6 text-left space-y-6">
+
+                {/* What the word means */}
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Throughout history, the followers of every prophet were known as <span className="text-white font-semibold">the people of The Way</span> — people who gave up their own desires in favour of following the path their Creator set for them.
+                </p>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  But what <span className="text-white font-semibold">was</span> that way? In Arabic, it has a name — and the name tells you everything.
+                </p>
+
+                {/* Arabic language breakdown */}
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20 space-y-4">
+                  <p className="text-slate-400 text-sm text-center">In Arabic, adding <span className="text-amber-300 font-semibold">mu-</span> to a verb makes it "the one who does it" — just like adding <span className="text-amber-300 font-semibold">-er</span> in English:</p>
+                  <div className="space-y-2">
+                    {[
+                      { en: 'Travel → Traveller', ar: 'Sāfar → Musāfir', arLabel: 'مُسَافِر' },
+                      { en: 'Teach → Teacher', ar: 'ʿAllam → Muʿallim', arLabel: 'مُعَلِّم' },
+                      { en: 'Submit → Submitter', ar: 'Aslam → Muslim', arLabel: 'مُسْلِم', highlight: true },
+                    ].map(row => (
+                      <div key={row.en} className={`grid grid-cols-2 gap-3 ${row.highlight ? 'ring-1 ring-amber-600/30 rounded-lg' : ''}`}>
+                        <div className="bg-slate-700/50 rounded-lg px-3 py-2.5 text-center">
+                          <p className="text-slate-300 text-sm">{row.en}</p>
+                        </div>
+                        <div className={`rounded-lg px-3 py-2.5 text-center ${row.highlight ? 'bg-amber-900/30' : 'bg-amber-900/20'}`}>
+                          <p className="text-amber-200 text-sm">{row.ar}</p>
+                          <p className="text-amber-400/60 text-xs font-arabic">{row.arLabel}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t border-[#2a3a5c]/40 space-y-2">
+                    <p className="text-white text-center font-medium">
+                      Islam <span className="text-slate-400 font-normal">=</span> submission to the Creator, in peace
+                    </p>
+                    <p className="text-white text-center font-medium">
+                      Muslim <span className="text-slate-400 font-normal">=</span> the one who submits
+                    </p>
+                  </div>
+                </div>
+
+                {/* The way defined */}
+                <p className="text-slate-300 leading-relaxed text-center">
+                  The way was always the same — <span className="text-white font-semibold">recognise that your Creator has a path He requires you to follow</span>, and choose it over your own desires. Not because you're forced — but because you <span className="text-amber-200/80 font-semibold">accept</span>.
+                </p>
+
+                {/* Two outcomes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#132e2a]/40 rounded-xl p-5 border border-teal-800/20">
+                    <p className="text-teal-300/80 text-xs font-semibold uppercase tracking-wide mb-3">Those who try their best to follow</p>
+                    <div className="bg-[#1a3530]/40 rounded-lg p-4 mb-3">
+                      <p className="text-lg font-arabic text-amber-100/90 leading-[2]" dir="rtl">
+                        مَن عَمِلَ صَالِحًا مِّن ذَكَرٍ أَوْ أُنثَىٰ وَهُوَ مُؤْمِنٌ فَلَنُحْيِيَنَّهُ حَيَاةً طَيِّبَةً
+                      </p>
+                    </div>
+                    <p className="text-white italic text-sm leading-relaxed">
+                      "Whoever does righteousness, whether male or female, while being a believer — We will surely cause him to live a good life."
+                    </p>
+                    <p className="text-slate-500 text-xs mt-2">— An-Nahl 16:97</p>
+                    <p className="text-teal-200/70 text-sm mt-3 font-medium">This life <span className="text-white">and</span> the next.</p>
+                  </div>
+
+                  <div className="bg-[#2e1515]/30 rounded-xl p-5 border border-rose-800/20">
+                    <p className="text-rose-300/70 text-xs font-semibold uppercase tracking-wide mb-3">Those who reject</p>
+                    <div className="bg-[#2a1a1a]/40 rounded-lg p-4 mb-3">
+                      <p className="text-lg font-arabic text-amber-100/90 leading-[2]" dir="rtl">
+                        وَمَنْ أَعْرَضَ عَن ذِكْرِي فَإِنَّ لَهُ مَعِيشَةً ضَنكًا
+                      </p>
+                    </div>
+                    <p className="text-white italic text-sm leading-relaxed">
+                      "And whoever turns away from My remembrance — indeed, he will have a depressed life."
+                    </p>
+                    <p className="text-slate-500 text-xs mt-2">— Ta-Ha 20:124</p>
+                    <p className="text-rose-200/60 text-sm mt-3 font-medium">This life only — and even that, constrained.</p>
+                  </div>
+                </div>
+
+                {/* The clear way */}
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
+                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
+                    قَدْ جَاءَكُم مِّنَ اللَّهِ نُورٌ وَكِتَابٌ مُّبِينٌ يَهْدِي بِهِ اللَّهُ مَنِ اتَّبَعَ رِضْوَانَهُ سُبُلَ السَّلَامِ
+                  </p>
+                  <p className="text-white italic text-center leading-relaxed">
+                    "There has come to you from Allah a light and a clear Book, by which Allah guides those who pursue His pleasure to the ways of peace."
+                  </p>
+                  <p className="text-slate-500 text-sm text-center mt-2">— Al-Ma'idah 5:15-16</p>
+                </div>
+
+                <p className="text-slate-300 leading-relaxed text-center">
+                  Allah shows the clear path to success — and how to avoid the doom prepared for those who <span className="text-white font-semibold">purposely reject</span> after the evidence has reached them, or who worship the creation rather than the Creator.
+                </p>
+
+                {/* Every prophet was a Muslim */}
+                <div className="bg-[#2e2215]/40 rounded-xl p-5 border border-amber-800/20 space-y-4">
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    Every single prophet submitted to Allah in peace. Adam, Noah, Abraham, Moses, Jesus — by this meaning, every prophet was a <span className="text-amber-300 font-semibold">Muslim</span>.
+                  </p>
+                  <div className="bg-[#1e2d4a]/50 rounded-lg p-4">
+                    <p className="text-lg sm:text-xl font-arabic text-amber-100/90 leading-[2.2] mb-2" dir="rtl">
+                      مَا كَانَ إِبْرَاهِيمُ يَهُودِيًّا وَلَا نَصْرَانِيًّا وَلَـٰكِن كَانَ حَنِيفًا مُّسْلِمًا
+                    </p>
+                    <p className="text-white italic text-sm text-center leading-relaxed">
+                      "Abraham was neither a Jew nor a Christian, but he was one inclining toward truth — a Muslim."
+                    </p>
+                    <p className="text-slate-500 text-xs text-center mt-1">— Aal-Imran 3:67</p>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    Allah did not officially <span className="text-white font-semibold">name</span> the way of life until the final revelation:
+                  </p>
+                  <div className="bg-amber-900/20 rounded-lg p-4 border border-amber-700/30">
+                    <p className="text-lg sm:text-xl font-arabic text-amber-100/90 leading-[2.2] mb-2" dir="rtl">
+                      الْيَوْمَ أَكْمَلْتُ لَكُمْ دِينَكُمْ وَأَتْمَمْتُ عَلَيْكُمْ نِعْمَتِي وَرَضِيتُ لَكُمُ الْإِسْلَامَ دِينًا
+                    </p>
+                    <p className="text-white italic text-sm text-center leading-relaxed">
+                      "Today I have perfected your religion for you, completed My favour upon you, and have chosen for you Islam as your way of life."
+                    </p>
+                    <p className="text-slate-500 text-xs text-center mt-1">— Al-Ma'idah 5:3</p>
+                  </div>
+                  <p className="text-slate-400 text-sm text-center leading-relaxed">
+                    One message. One way. From the first human to the last prophet. The only thing that changed over time was the name — and God Himself chose it.
                   </p>
                 </div>
               </div>
@@ -1282,7 +1488,7 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                   window.scrollTo(0, 0);
                   return;
                 }
-                const phases: LightPhase[] = ['intro', 'origin', 'cosmology', 'creation', 'knowledge', 'purpose', 'future-intro', 'future-events', 'who-wrote-it', 'the-concept', 'almanac', 'go-deeper'];
+                const phases: LightPhase[] = ['intro', 'origin', 'cosmology', 'creation', 'knowledge', 'purpose', 'the-way', 'future-intro', 'future-events', 'who-wrote-it', 'the-concept', 'almanac', 'go-deeper'];
                 const idx = phases.indexOf(phase);
                 if (idx > 0) advancePhase(phases[idx - 1]);
               }}

@@ -576,53 +576,27 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
       ),
     },
     {
-      id: 'everything-is-muslim',
-      title: 'The Qur\'an Says Everything Is Muslim, Except...',
+      id: 'everything-submits',
+      title: 'Everything Is in Submission to the Creator',
       icon: <Sunrise className="w-10 h-10 text-amber-400" />,
       iconBg: 'bg-amber-500/20',
       content: (
-        <div className="space-y-5 max-w-2xl mx-auto">
-          <div className="text-center space-y-4">
-            <p className="text-slate-300 leading-relaxed">
-              <span className="text-amber-300 font-semibold">Islam</span> is a verb — not just a label. It comes from the Arabic root <em>s-l-m</em>, carrying meanings of submission, peace, safety, and wholeness. It means to <span className="text-white font-medium">peacefully submit to the Creator</span>.
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              The person who does this is called a <span className="text-amber-300 font-semibold">Muslim</span> — one who peacefully submits.
-            </p>
+        <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            Think about your own body. Your heart beats. Your lungs breathe. Your cells divide and heal. You had <span className="text-white font-semibold">no say</span> in any of it.
+          </p>
+          <p className="text-slate-300 leading-relaxed">
+            You didn't choose to be created. You won't choose when you die. But you know — with certainty — that <span className="text-white font-semibold">you are headed that way</span>.
+          </p>
 
-            {/* Arabic prefix explanation */}
-            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-              <p className="text-slate-400 text-sm mb-3">In Arabic, adding <span className="text-amber-400 font-semibold">mu-</span> to a verb makes it "the one who does it" — just like adding <span className="text-amber-400 font-semibold">-er</span> in English:</p>
-              <div className="space-y-2">
-                {[
-                  { en: 'Teach → Teacher', ar: 'ʿAllam → Muʿallim', arLabel: 'مُعَلِّم' },
-                  { en: 'Travel → Traveller', ar: 'Sāfar → Musāfir', arLabel: 'مُسَافِر' },
-                  { en: 'Submit → Submitter', ar: 'Aslam → Muslim', arLabel: 'مُسْلِم' },
-                ].map(row => (
-                  <div key={row.en} className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-700/50 rounded-lg px-3 py-2 text-center">
-                      <p className="text-slate-300 text-sm">{row.en}</p>
-                    </div>
-                    <div className="bg-amber-900/20 rounded-lg px-3 py-2 text-center">
-                      <p className="text-amber-200 text-sm">{row.ar}</p>
-                      <p className="text-amber-400/60 text-xs font-arabic">{row.arLabel}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-slate-400 text-sm mt-3 text-center">
-                A <span className="text-white font-medium">Muslim</span> is simply "the one who submits" — to the Creator, in peace.
-              </p>
-            </div>
-          </div>
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: 'Your heart beats', detail: 'without you asking' },
-              { label: 'Your cells heal', detail: 'without permission' },
+              { label: 'Your cells heal', detail: 'without your permission' },
+              { label: 'Your lungs breathe', detail: 'even while you sleep' },
+              { label: 'Your limbs move', detail: 'by laws you didn\'t set' },
               { label: 'Trees grow', detail: 'following their nature' },
               { label: 'Planets orbit', detail: 'in perfect paths' },
-              { label: 'The sun rises', detail: 'every single day' },
-              { label: 'Water flows', detail: 'obeying gravity' },
             ].map(item => (
               <div key={item.label} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50 text-center">
                 <p className="text-white text-sm font-medium">{item.label}</p>
@@ -630,47 +604,212 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
               </div>
             ))}
           </div>
-          <p className="text-slate-300 leading-relaxed text-center">
-            According to the Qur'an, all of this is already in a state of <span className="text-white font-semibold">submission</span>. Your heart, the trees, the planets — they all follow the laws set for them. By this definition, they are all <span className="text-amber-300 font-semibold">Muslim</span>.
+
+          <p className="text-slate-300 leading-relaxed">
+            Your body, your limbs, the trees, the planets — none of them have a choice. They all <span className="text-white font-semibold">submit</span> to the laws set for them by the Creator.
           </p>
-          <p className="text-slate-300 leading-relaxed text-center">
-            Everything in creation submits. <span className="text-white font-semibold">Except...</span>
-          </p>
-          <div className="bg-amber-900/20 rounded-xl p-5 border border-amber-700/40 text-center">
-            <p className="text-amber-200 leading-relaxed text-lg">
-              <span className="text-white font-semibold">Humans</span> and <span className="text-white font-semibold">jinn</span>.
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-amber-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              وَلِلَّهِ يَسْجُدُ مَن فِي السَّمَاوَاتِ وَالْأَرْضِ طَوْعًا وَكَرْهًا
             </p>
-            <p className="text-slate-400 leading-relaxed mt-3">
-              The Qur'an states that these two — and only these two — were given <span className="text-amber-400 font-semibold">a choice</span>. Everything else submits by design. You are the exception — the one being asked to submit <span className="text-white font-medium">willingly</span>.
+            <p className="text-white italic leading-relaxed">
+              "And to Allah prostrates whatever is in the heavens and whatever is on the earth — willingly or unwillingly."
             </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Ar-Ra'd, 13:15</p>
           </div>
         </div>
       ),
     },
     {
-      id: 'the-souls-choice',
-      title: "The Implication",
+      id: 'what-do-you-submit-to',
+      title: 'What Do You Submit To?',
+      icon: <Compass className="w-10 h-10 text-slate-400" />,
+      iconBg: 'bg-slate-500/20',
+      content: (
+        <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            Here's the thing — <span className="text-white font-semibold">everyone submits to something</span>.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Money', icon: '💰', detail: 'Working for it, chasing it, worrying about it' },
+              { label: 'Status', icon: '👑', detail: 'What people think, how you\'re perceived' },
+              { label: 'Health', icon: '🏃', detail: 'Diet plans, gym routines, anti-ageing' },
+              { label: 'Family', icon: '👨‍👩‍👧‍👦', detail: 'Sacrificing everything for those you love' },
+              { label: 'Career', icon: '📈', detail: 'Promotions, targets, recognition' },
+              { label: 'Pleasure', icon: '🎮', detail: 'Entertainment, comfort, distraction' },
+            ].map(item => (
+              <div key={item.label} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50 text-center">
+                <p className="text-lg mb-1">{item.icon}</p>
+                <p className="text-white text-sm font-medium">{item.label}</p>
+                <p className="text-slate-500 text-xs">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            We all pull towards something. We all organise our lives around something. For the vast majority of us, <span className="text-white font-semibold">this life is the main focus</span> — so naturally, without knowledge of the bigger picture, we prioritise based on that.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-amber-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              أَفَرَأَيْتَ مَنِ اتَّخَذَ إِلَـٰهَهُ هَوَاهُ
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "Have you seen the one who takes as his god his own desire?"
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-Jathiyah, 45:23</p>
+          </div>
+
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Whatever you give your life to — whatever drives your decisions, your sacrifices, your priorities — that is what you are submitting to.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'the-shift',
+      title: 'The Shift',
       icon: <Heart className="w-10 h-10 text-rose-400" />,
       iconBg: 'bg-rose-500/20',
       content: (
         <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            It's only once <span className="text-white font-semibold">guidance</span> comes to you that the picture changes.
+          </p>
+          <p className="text-slate-300 leading-relaxed">
+            Once you see that this life is a <span className="text-white font-semibold">testing ground</span> — not the main event — your priorities shift. The Qur'an describes the real life that comes after:
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-emerald-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              وَإِنَّ الدَّارَ الْآخِرَةَ لَهِيَ الْحَيَوَانُ ۚ لَوْ كَانُوا يَعْلَمُونَ
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "And indeed, the home of the Hereafter — that is the true life, if only they knew."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-Ankabut, 29:64</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            Not 60 or 70 years. <span className="text-white font-semibold">Forever.</span> And Allah says it is <span className="text-emerald-400 font-semibold">better</span>.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-amber-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              وَالْآخِرَةُ خَيْرٌ وَأَبْقَىٰ
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "And the Hereafter is better and more lasting."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-A'la, 87:17</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            So once you get your head around the concept of <span className="text-white font-semibold">submission to the Creator</span> — that it's not a burden but a return to your natural state — we can then understand what the Arabic language actually tells us.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'the-word-islam',
+      title: 'The Word',
+      icon: <BookOpen className="w-10 h-10 text-amber-400" />,
+      iconBg: 'bg-amber-500/20',
+      content: (
+        <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            In Arabic, the word <span className="text-amber-300 font-semibold">Islam</span> comes from the root <em className="text-amber-200">s-l-m</em> — carrying meanings of submission, peace, safety, and wholeness. It means to <span className="text-white font-medium">submit to the Creator in peace</span>.
+          </p>
+
+          {/* Arabic prefix explanation */}
+          <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+            <p className="text-slate-400 text-sm mb-3">In Arabic, adding <span className="text-amber-400 font-semibold">mu-</span> to a verb makes it "the one who does it" — just like adding <span className="text-amber-400 font-semibold">-er</span> in English:</p>
+            <div className="space-y-2">
+              {[
+                { en: 'Teach → Teacher', ar: 'ʿAllam → Muʿallim', arLabel: 'مُعَلِّم' },
+                { en: 'Travel → Traveller', ar: 'Sāfar → Musāfir', arLabel: 'مُسَافِر' },
+                { en: 'Submit → Submitter', ar: 'Aslam → Muslim', arLabel: 'مُسْلِم' },
+              ].map(row => (
+                <div key={row.en} className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-700/50 rounded-lg px-3 py-2 text-center">
+                    <p className="text-slate-300 text-sm">{row.en}</p>
+                  </div>
+                  <div className="bg-amber-900/20 rounded-lg px-3 py-2 text-center">
+                    <p className="text-amber-200 text-sm">{row.ar}</p>
+                    <p className="text-amber-400/60 text-xs font-arabic">{row.arLabel}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-slate-400 text-sm mt-3">
+              A <span className="text-white font-medium">Muslim</span> is simply "the one who submits" — to the Creator, in peace.
+            </p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            In essence, every single prophet <span className="text-white font-semibold">submitted to Allah in peace</span>. Adam, Noah, Abraham, Moses, Jesus — by this meaning, every prophet was a <span className="text-amber-300 font-semibold">Muslim</span>.
+          </p>
+
+          <div className="bg-slate-800/60 rounded-2xl p-5 border border-amber-700/30">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              مَا كَانَ إِبْرَاهِيمُ يَهُودِيًّا وَلَا نَصْرَانِيًّا وَلَـٰكِن كَانَ حَنِيفًا مُّسْلِمًا
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "Abraham was neither a Jew nor a Christian, but he was one inclining toward truth — a Muslim (one who submits to Allah)."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Aal-Imran, 3:67</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            Allah did not choose to <span className="text-white font-semibold">name</span> the way of life until the final revelation. In the Qur'an, He gave it its official name:
+          </p>
+
+          <div className="bg-amber-900/20 rounded-2xl p-5 border border-amber-700/40">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
+              الْيَوْمَ أَكْمَلْتُ لَكُمْ دِينَكُمْ وَأَتْمَمْتُ عَلَيْكُمْ نِعْمَتِي وَرَضِيتُ لَكُمُ الْإِسْلَامَ دِينًا
+            </p>
+            <p className="text-white italic leading-relaxed">
+              "Today I have perfected your religion for you, completed My favour upon you, and have chosen for you Islam as your way of life."
+            </p>
+            <p className="text-slate-500 text-sm mt-2">— Surah Al-Ma'idah, 5:3</p>
+          </div>
+
+          <p className="text-slate-400 text-sm leading-relaxed">
+            One message. One way. From the first human to the last prophet. The only thing that changed was the name — and God Himself chose it.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'the-choice',
+      title: 'The Choice',
+      icon: <Heart className="w-10 h-10 text-rose-400" />,
+      iconBg: 'bg-rose-500/20',
+      content: (
+        <div className="space-y-5 max-w-2xl mx-auto text-center">
+          <p className="text-slate-300 leading-relaxed">
+            Everything in creation already submits. Your body already submits. But <span className="text-white font-semibold">you</span> — your conscious self — were given a choice.
+          </p>
+
           <div className="bg-slate-800/60 rounded-2xl p-5 border border-rose-700/30">
-            <p className="text-lg font-arabic text-amber-100 leading-loose mb-3" dir="rtl">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-3" dir="rtl">
               إِنَّا هَدَيْنَاهُ السَّبِيلَ إِمَّا شَاكِرًا وَإِمَّا كَفُورًا
             </p>
-            <p className="text-white italic">
-              "We guided him to the way, be he grateful or ungrateful."
+            <p className="text-white italic leading-relaxed">
+              "We guided him to the way — be he grateful or ungrateful."
             </p>
             <p className="text-slate-500 text-sm mt-2">— Surah Al-Insan, 76:3</p>
           </div>
+
           <p className="text-slate-300 leading-relaxed">
-            If the evidence holds, your body already operates in submission — every cell, every heartbeat, every breath follows the laws set by the Creator. You didn't choose any of it.
+            According to the Qur'an, only two of His creation were given this choice — <span className="text-white font-semibold">humans</span> and <span className="text-white font-semibold">jinn</span>. Everything else submits by design. You are the exception — the one being asked to submit <span className="text-amber-300 font-medium">willingly</span>.
           </p>
-          <p className="text-slate-300 leading-relaxed">
-            The test, according to this claim, is whether your <span className="text-white font-semibold">conscious choice</span> will align with what the rest of creation already does — to recognise the guidance, examine it honestly, and respond to the evidence.
-          </p>
+
           <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700">
-            <p className="text-lg font-arabic text-amber-100 leading-loose mb-2" dir="rtl">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100 leading-[2.2] mb-2" dir="rtl">
               الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا
             </p>
             <p className="text-slate-300 italic text-sm">
@@ -678,6 +817,10 @@ export default function QuranWalkthrough({ onComplete, onTakeBreak }: QuranWalkt
             </p>
             <p className="text-slate-500 text-xs mt-1">— Surah Al-Mulk, 67:2</p>
           </div>
+
+          <p className="text-slate-400 text-sm leading-relaxed">
+            The evidence has been presented. The guidance has arrived. What you do with it — that's the test.
+          </p>
         </div>
       ),
     },
