@@ -78,14 +78,17 @@ export default function FeedbackButton() {
 
       if (insertError) throw insertError;
 
-      // Send email notification
+      // Send email notification to contact@talbiyah.ai
       try {
         await supabase.functions.invoke('notify-suggestion', {
           body: {
-            category,
-            title: subject.trim(),
-            description: message.trim(),
-            userEmail: user.email
+            suggestion: {
+              category,
+              title: subject.trim(),
+              description: message.trim(),
+              user_email: user.email,
+              user_name: user.user_metadata?.full_name
+            }
           }
         });
       } catch (emailError) {

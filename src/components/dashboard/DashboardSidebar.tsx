@@ -126,7 +126,7 @@ export default function DashboardSidebar({
       title: 'Tools & Resources',
       items: [
         { icon: Heart, label: 'Daily Athkar', path: '/daily-athkar', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
-        { icon: Sparkles, label: 'Daily Practice', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
+        { icon: Sparkles, label: 'Daily Schedule', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
         { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
         { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },

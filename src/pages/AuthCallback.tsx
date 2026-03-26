@@ -68,10 +68,39 @@ export default function AuthCallback() {
         // Password reset
         navigate('/reset-password');
       } else {
-        // Handle OAuth or other auth state changes
+        // Handle OAuth (Google, etc.) or other auth state changes
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {
+          const user = session.user;
+          const isOAuth = user.app_metadata?.provider && user.app_metadata.provider !== 'email';
+
+          if (isOAuth) {
+            // Check if this OAuth user has a profile already
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, selected_role')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            if (!profile) {
+              // First-time OAuth user — create their profile
+              const fullName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+              await supabase.from('profiles').insert({
+                id: user.id,
+                full_name: fullName,
+                selected_role: 'student',
+                email_notifications: true,
+              });
+            }
+
+            const userName = user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || '';
+            toast.success(`Welcome${userName ? `, ${userName}` : ''}!`, {
+              description: 'Signed in with Google successfully.',
+              duration: 4000,
+            });
+          }
+
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           setTimeout(() => {

@@ -13,6 +13,8 @@ import {
   ChevronRight,
   TrendingUp,
   Star,
+  List,
+  X,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -48,6 +50,7 @@ interface DailyLog {
   quran_pages_read: number;
   sadaqah_given: number;
   taraweeh_attended: boolean;
+  qiyam_attended: boolean;
   masjid_prayers: number;
   habits_maintained: string[];
   fasted: boolean;
@@ -64,6 +67,7 @@ export default function RamadanPlannerPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [editingPlan, setEditingPlan] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Plan form state — per-prayer Quran pages (before + after each salah)
   const [salahPages, setSalahPages] = useState<Record<string, number>>({
@@ -81,6 +85,7 @@ export default function RamadanPlannerPage() {
   const [logQuranPages, setLogQuranPages] = useState(0);
   const [logSadaqah, setLogSadaqah] = useState(0);
   const [logTaraweeh, setLogTaraweeh] = useState(false);
+  const [logQiyam, setLogQiyam] = useState(false);
   const [logMasjidPrayers, setLogMasjidPrayers] = useState<string[]>([]);
   const [logHabitsMaintained, setLogHabitsMaintained] = useState<string[]>([]);
   const [logFasted, setLogFasted] = useState(true);
@@ -200,6 +205,7 @@ export default function RamadanPlannerPage() {
       quran_pages_read: logQuranPages,
       sadaqah_given: logSadaqah,
       taraweeh_attended: logTaraweeh,
+      qiyam_attended: logQiyam,
       masjid_prayers: logMasjidPrayers.length,
       masjid_prayers_list: logMasjidPrayers,
       habits_maintained: logHabitsMaintained,
@@ -235,6 +241,7 @@ export default function RamadanPlannerPage() {
       setLogQuranPages(existingLog.quran_pages_read);
       setLogSadaqah(existingLog.sadaqah_given);
       setLogTaraweeh(existingLog.taraweeh_attended);
+      setLogQiyam(existingLog.qiyam_attended || false);
       setLogMasjidPrayers((existingLog as any).masjid_prayers_list?.length ? (existingLog as any).masjid_prayers_list : []);
       setLogHabitsMaintained(existingLog.habits_maintained || []);
       setLogFasted(existingLog.fasted);
@@ -242,6 +249,7 @@ export default function RamadanPlannerPage() {
       setLogQuranPages(0);
       setLogSadaqah(0);
       setLogTaraweeh(false);
+      setLogQiyam(false);
       setLogMasjidPrayers([]);
       setLogHabitsMaintained([]);
       setLogFasted(true);
@@ -252,6 +260,7 @@ export default function RamadanPlannerPage() {
   const totalQuranPages = logs.reduce((sum, l) => sum + l.quran_pages_read, 0);
   const totalSadaqah = logs.reduce((sum, l) => sum + Number(l.sadaqah_given), 0);
   const taraweehNights = logs.filter(l => l.taraweeh_attended).length;
+  const qiyamNights = logs.filter(l => l.qiyam_attended).length;
   const totalMasjidPrayers = logs.reduce((sum, l) => sum + l.masjid_prayers, 0);
   const fastDays = logs.filter(l => l.fasted).length;
 
@@ -600,7 +609,7 @@ export default function RamadanPlannerPage() {
         </div>
 
         {/* Progress Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
             <BookOpen className="w-5 h-5 text-emerald-600 mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalQuranPages}</p>
@@ -615,6 +624,11 @@ export default function RamadanPlannerPage() {
             <Moon className="w-5 h-5 text-indigo-500 mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{taraweehNights}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">/ {plan?.taraweeh_target_nights || 30} Taraweeh nights</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <Star className="w-5 h-5 text-purple-500 mb-2" />
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{qiyamNights}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Qiyam nights</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
             <Star className="w-5 h-5 text-amber-500 mb-2" />
@@ -645,7 +659,191 @@ export default function RamadanPlannerPage() {
           </div>
         )}
 
+        {/* View Toggle */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setShowHistory(false)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              !showHistory
+                ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+            }`}
+          >
+            <Calendar className="w-4 h-4" /> Calendar
+          </button>
+          <button
+            onClick={() => setShowHistory(true)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              showHistory
+                ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+            }`}
+          >
+            <List className="w-4 h-4" /> History
+          </button>
+        </div>
+
+        {/* History View */}
+        {showHistory && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <List className="w-5 h-5 text-indigo-500" />
+              Ramadan {ramadanYear} — Full History
+            </h3>
+            <div className="overflow-x-auto -mx-5 px-5">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                    <th className="pb-2 pr-2">Day</th>
+                    <th className="pb-2 pr-2">Date</th>
+                    <th className="pb-2 pr-2">Fast</th>
+                    <th className="pb-2 pr-2">Quran</th>
+                    <th className="pb-2 pr-2">Sadaqah</th>
+                    <th className="pb-2 pr-2">Taraweeh</th>
+                    <th className="pb-2 pr-2">Qiyam</th>
+                    <th className="pb-2 pr-2">Masjid</th>
+                    <th className="pb-2">Edit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: RAMADAN_DAYS }, (_, i) => i + 1).map(day => {
+                    const logDate = getRamadanDateForDay(ramadanYear, day);
+                    const log = logs.find(l => l.log_date === logDate);
+                    const status = getDayStatus(day);
+                    const isToday = currentDay === day;
+                    const dateObj = logDate ? new Date(logDate + 'T12:00:00') : null;
+                    const dateLabel = dateObj ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                    const dayName = dateObj ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dateObj.getDay()] : '';
+
+                    return (
+                      <tr
+                        key={day}
+                        className={`border-b border-gray-100 dark:border-gray-700/50 ${
+                          isToday ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''
+                        } ${selectedDay === day ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                      >
+                        <td className="py-2 pr-2">
+                          <span className={`font-medium ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'}`}>
+                            N{day}
+                          </span>
+                          {isToday && <span className="ml-1 text-[10px] text-indigo-500 font-medium">TODAY</span>}
+                        </td>
+                        <td className="py-2 pr-2 text-gray-500 dark:text-gray-400">
+                          {dayName} {dateLabel}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {day === 1 ? (
+                            <span className="text-gray-400 text-xs">—</span>
+                          ) : log ? (
+                            log.fasted ? (
+                              <CheckCircle className="w-4 h-4 text-emerald-500" />
+                            ) : (
+                              <X className="w-4 h-4 text-rose-400" />
+                            )
+                          ) : status === 'future' ? (
+                            <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {log ? (
+                            <span className={`font-medium ${
+                              log.quran_pages_read >= (plan?.quran_goal_pages_per_day || 0)
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {log.quran_pages_read}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {log && log.sadaqah_given > 0 ? (
+                            <span className="text-pink-600 dark:text-pink-400">{log.sadaqah_given}</span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {log ? (
+                            log.taraweeh_attended ? (
+                              <CheckCircle className="w-4 h-4 text-indigo-500" />
+                            ) : (
+                              <X className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                            )
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {log ? (
+                            log.qiyam_attended ? (
+                              <CheckCircle className="w-4 h-4 text-purple-500" />
+                            ) : (
+                              <X className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                            )
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2">
+                          {log && log.masjid_prayers > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">{log.masjid_prayers}/5</span>
+                          ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2">
+                          <button
+                            onClick={() => { selectDay(day); setShowHistory(false); }}
+                            className="px-2 py-1 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals row */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Fasts: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{fastDays}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Quran: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{totalQuranPages} pages</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Sadaqah: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{plan?.sadaqah_currency || 'GBP'} {totalSadaqah.toFixed(0)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Taraweeh: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{taraweehNights} nights</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Qiyam: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{qiyamNights} nights</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Masjid: </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{totalMasjidPrayers} prayers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Calendar Grid */}
+        {!showHistory && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-500" />
@@ -690,6 +888,7 @@ export default function RamadanPlannerPage() {
             })}
           </div>
         </div>
+        )}
 
         {/* Daily Check-In */}
         {selectedDay && (
@@ -801,6 +1000,24 @@ export default function RamadanPlannerPage() {
                 </button>
               </div>
 
+              {/* Qiyam al-Layl */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Qiyam al-Layl?</span>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Last third of the night</p>
+                </div>
+                <button
+                  onClick={() => setLogQiyam(!logQiyam)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                    logQiyam
+                      ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+                  }`}
+                >
+                  {logQiyam ? 'Yes' : 'No'}
+                </button>
+              </div>
+
               {/* Masjid Prayers */}
               <div>
                 <label className="text-sm text-gray-700 dark:text-gray-300 block mb-2">Masjid prayers today</label>
@@ -884,6 +1101,8 @@ export default function RamadanPlannerPage() {
                   <span>{fastDays} fasts</span>
                   <span>&middot;</span>
                   <span>{taraweehNights} Taraweeh nights</span>
+                  <span>&middot;</span>
+                  <span>{qiyamNights} Qiyam nights</span>
                   <span>&middot;</span>
                   <span>{totalMasjidPrayers} masjid prayers</span>
                   <span>&middot;</span>

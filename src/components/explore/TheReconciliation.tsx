@@ -33,6 +33,57 @@ const scenes = [
         <p className="text-lg text-slate-300 leading-relaxed">
           Muslims believe in <span className="text-white font-semibold">all of them</span>. Same team. Same message.
         </p>
+
+        <div className="mt-5 space-y-4">
+          <p className="text-slate-300 leading-relaxed">
+            But why <span className="text-white font-semibold">Him alone</span>? Because worship belongs to the Creator — the One who is <span className="text-amber-400 font-semibold">sustaining everything</span> right now.
+          </p>
+
+          <div className="bg-amber-900/20 rounded-xl p-4 border border-amber-700/40">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-2 text-center" dir="rtl">
+              يَا أَيُّهَا النَّاسُ أَنتُمُ الْفُقَرَاءُ إِلَى اللَّهِ ۖ وَاللَّهُ هُوَ الْغَنِيُّ الْحَمِيدُ
+            </p>
+            <p className="text-white italic text-center text-sm leading-relaxed">
+              "O mankind, you are the ones in need of Allah, while Allah is the Free of need, the Praiseworthy."
+            </p>
+            <p className="text-slate-500 text-xs text-center mt-1">— Fatir 35:15</p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            Everything in creation is <span className="text-white font-semibold">in need</span> of Allah. Your health, your next breath, the ground beneath you — all sustained by Him. So it makes no sense to turn to something that is <span className="text-slate-400">itself</span> in need of the Creator.
+          </p>
+
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <p className="text-slate-400 text-sm mb-3">This is the meaning of the first part of the shahada:</p>
+            <p className="text-xl font-arabic text-amber-100/90 leading-[2] text-center mb-2" dir="rtl">
+              لَا إِلَـٰهَ إِلَّا اللَّهُ
+            </p>
+            <p className="text-white text-center font-medium">
+              "There is no one worthy of worship except Allah."
+            </p>
+            <p className="text-slate-400 text-sm text-center mt-2 leading-relaxed">
+              Everything else — money, people, status, idols — is created and in need. <span className="text-white">Only the Creator</span> is worthy of being turned to.
+            </p>
+          </div>
+
+          <p className="text-slate-300 leading-relaxed">
+            The opposite of this — giving the rights that belong to <span className="text-white font-semibold">Allah</span> to other than Allah — is called <span className="text-amber-400 font-semibold">thulm</span> in Arabic: <span className="text-white">injustice</span>. Putting something where it doesn't belong. The Quran calls it the greatest wrong a person can commit:
+          </p>
+
+          <div className="bg-rose-900/20 rounded-xl p-4 border border-rose-700/40">
+            <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-2 text-center" dir="rtl">
+              إِنَّ الشِّرْكَ لَظُلْمٌ عَظِيمٌ
+            </p>
+            <p className="text-white italic text-center text-sm leading-relaxed">
+              "Indeed, associating others with Allah is a great injustice."
+            </p>
+            <p className="text-slate-500 text-xs text-center mt-1">— Luqman 31:13</p>
+          </div>
+
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Not because Allah is harmed by it — He is free of need. But because <span className="text-white">you</span> are harmed by it. Turning to something that cannot help you, while ignoring the One who sustains you — that is the injustice to yourself.
+          </p>
+        </div>
       </>
     ),
     icon: <MessageCircle className="w-12 h-12" />,

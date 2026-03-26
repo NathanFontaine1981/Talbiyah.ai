@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-const PRAYER_NAMES = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+const FARD_PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+const PRAYER_NAMES = [...FARD_PRAYERS, 'Qiyam'];
 const MASJID_MULTIPLIER = 27;
 
 interface SalahRecord {
@@ -176,9 +177,12 @@ export default function SalahTrackerPage() {
     let bestStreak = 0;
     let tempStreak = 0;
 
-    // Get unique dates with all 5 prayers
+    // Get unique dates with all 5 fard prayers (Qiyam is voluntary, not counted)
     const perfectDays = new Set(
-      daySummaries.filter(d => d.prayerCount === 5).map(d => d.date)
+      daySummaries.filter(d => {
+        const fardCount = FARD_PRAYERS.filter(p => d.prayers[p] && d.prayers[p].status !== 'missed').length;
+        return fardCount === 5;
+      }).map(d => d.date)
     );
 
     // Calculate streaks by walking dates backwards from today

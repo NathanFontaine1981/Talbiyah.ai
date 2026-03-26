@@ -808,27 +808,10 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                 </div>
 
                 <p className="text-slate-300 leading-relaxed text-center">
-                  Not worship as in rituals all day. The Arabic word <span className="text-amber-200/80 font-semibold">ya'budoon</span> carries the meaning of <span className="text-white font-semibold">recognising, knowing, and living in conscious connection</span> with your Creator. Every action — eating, working, being kind to someone — becomes worship when done with that awareness.
+                  Not rituals all day. The Arabic word <span className="text-amber-200/80 font-semibold">ya'budoon</span> means <span className="text-white font-semibold">living in conscious connection</span> with your Creator. Every action — eating, working, being kind — becomes worship when done with that awareness.
                 </p>
 
-                {/* The reality check */}
-                <div className="bg-[#1e2d4a]/50 rounded-xl p-5 border border-[#2a3a5c]/40 space-y-4">
-                  <p className="text-slate-300 leading-relaxed text-center">
-                    But think about what most of us actually give our lives to:
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Money', 'Status', 'Likes', 'Career', 'Comfort', 'Image'].map(item => (
-                      <div key={item} className="bg-[#253553]/60 rounded-lg py-2 px-3 text-center">
-                        <p className="text-slate-400 text-sm">{item}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-slate-300 leading-relaxed text-center">
-                    We all submit to <span className="text-white font-semibold">something</span>. The question is whether it's something that was created — or the One who created it.
-                  </p>
-                </div>
-
-                {/* This life is temporary */}
+                {/* This life vs the real life */}
                 <div className="bg-[#2e2215]/40 rounded-xl p-5 border border-amber-800/20">
                   <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
                     اعْلَمُوا أَنَّمَا الْحَيَاةُ الدُّنْيَا لَعِبٌ وَلَهْوٌ وَزِينَةٌ وَتَفَاخُرٌ بَيْنَكُمْ وَتَكَاثُرٌ فِي الْأَمْوَالِ وَالْأَوْلَادِ
@@ -839,45 +822,7 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                   <p className="text-slate-500 text-xs text-center mt-1">— Al-Hadid 57:20</p>
                 </div>
 
-                <p className="text-slate-300 leading-relaxed text-center">
-                  Read that list again. Amusement. Diversion. Showing off. Competing over money and kids. That's not a vague description — that is <span className="text-white font-semibold">exactly</span> what most people build their entire lives around.
-                </p>
-
-                {/* The real life */}
                 <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20">
-                  <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
-                    وَإِنَّ الدَّارَ الْآخِرَةَ لَهِيَ الْحَيَوَانُ ۚ لَوْ كَانُوا يَعْلَمُونَ
-                  </p>
-                  <p className="text-white italic text-center text-sm leading-relaxed">
-                    "And indeed, the home of the Hereafter — that is the true life, if only they knew."
-                  </p>
-                  <p className="text-slate-500 text-xs text-center mt-1">— Al-Ankabut 29:64</p>
-                </div>
-
-                <p className="text-slate-300 leading-relaxed text-center">
-                  60-70 years — that's what you get here. What's that compared to <span className="text-white font-semibold">forever</span>? The Qur'an says this life is a test, a brief window. The real life — the permanent one — is what comes after.
-                </p>
-
-                {/* The bonus system */}
-                <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20 space-y-3">
-                  <p className="text-teal-200/80 text-center font-semibold">And the system is stacked in your favour:</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-teal-300">10x</p>
-                      <p className="text-slate-400 text-xs">minimum reward for every good deed</p>
-                    </div>
-                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-teal-300">1x</p>
-                      <p className="text-slate-400 text-xs">bad deed recorded as just one</p>
-                    </div>
-                  </div>
-                  <p className="text-slate-400 text-sm text-center leading-relaxed">
-                    Intend a bad deed but don't act on it? <span className="text-white">Not written</span>. Intend a good deed but can't do it? <span className="text-teal-200/80">Still rewarded</span>. The system is <span className="text-teal-200 font-semibold">designed for you to succeed</span>.
-                  </p>
-                </div>
-
-                {/* The punchline */}
-                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-amber-800/20">
                   <p className="text-xl sm:text-2xl font-arabic text-amber-100/90 leading-[2.2] mb-3 text-center" dir="rtl">
                     وَالْآخِرَةُ خَيْرٌ وَأَبْقَىٰ
                   </p>
@@ -885,11 +830,28 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                     "And the Hereafter is better and more lasting."
                   </p>
                   <p className="text-slate-500 text-xs text-center mt-1">— Al-A'la 87:17</p>
+                  <p className="text-slate-300 text-center text-sm mt-3">
+                    60-70 years here. <span className="text-white font-semibold">Forever</span> there.
+                  </p>
                 </div>
 
-                <p className="text-slate-300 leading-relaxed text-center">
-                  <span className="text-white font-semibold">Better</span> and <span className="text-white font-semibold">more lasting</span>. Six words that change the way you look at everything — your career, your bank account, your status, your time. Once you see this life for what it is, the priorities shift on their own.
-                </p>
+                {/* The bonus system */}
+                <div className="bg-[#132e2a]/30 rounded-xl p-5 border border-teal-800/20 space-y-3">
+                  <p className="text-teal-200/80 text-center font-semibold">And the system is stacked in your favour:</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-teal-300">10x</p>
+                      <p className="text-slate-400 text-xs">minimum for every good deed</p>
+                    </div>
+                    <div className="bg-[#1a3530]/40 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-teal-300">1x</p>
+                      <p className="text-slate-400 text-xs">bad deed recorded as just one</p>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-sm text-center leading-relaxed">
+                    Intend bad but don't act? <span className="text-white">Not written</span>. Intend good but can't do it? <span className="text-teal-200/80">Still rewarded</span>.
+                  </p>
+                </div>
               </div>
 
               <button
@@ -1040,6 +1002,37 @@ export default function QuranWalkthroughLight({ onComplete, onGoDeeper }: QuranW
                   </div>
                   <p className="text-slate-400 text-sm text-center leading-relaxed">
                     One message. One way. From the first human to the last prophet. The only thing that changed over time was the name — and God Himself chose it.
+                  </p>
+                </div>
+
+                {/* Taghabun — the whole message in 18 verses */}
+                <div className="bg-[#1e2d4a]/60 rounded-xl p-5 border border-[#2a3a5c]/40 space-y-4">
+                  <p className="text-slate-300 leading-relaxed text-center">
+                    Want the entire message in <span className="text-white font-semibold">one surah</span>? Surah At-Taghabun (64) — just 18 verses — covers it all:
+                  </p>
+
+                  <div className="bg-[#1a2744]/50 rounded-lg p-4">
+                    <p className="text-lg sm:text-xl font-arabic text-amber-100/90 leading-[2.2] mb-2" dir="rtl">
+                      هُوَ الَّذِي خَلَقَكُمْ فَمِنكُمْ كَافِرٌ وَمِنكُم مُّؤْمِنٌ ۚ وَاللَّهُ بِمَا تَعْمَلُونَ بَصِيرٌ
+                    </p>
+                    <p className="text-white italic text-sm text-center leading-relaxed">
+                      "He is the One who created you, yet some of you disbelieve and some believe. And Allah is All-Seeing of what you do."
+                    </p>
+                    <p className="text-slate-500 text-xs text-center mt-1">— At-Taghabun 64:2</p>
+                  </div>
+
+                  <div className="bg-[#1a2744]/50 rounded-lg p-4">
+                    <p className="text-lg sm:text-xl font-arabic text-amber-100/90 leading-[2.2] mb-2" dir="rtl">
+                      يَوْمَ يَجْمَعُكُمْ لِيَوْمِ الْجَمْعِ ۖ ذَٰلِكَ يَوْمُ التَّغَابُنِ
+                    </p>
+                    <p className="text-white italic text-sm text-center leading-relaxed">
+                      "The Day He will gather you for the Day of Assembly — that is the Day of Mutual Loss and Gain."
+                    </p>
+                    <p className="text-slate-500 text-xs text-center mt-1">— At-Taghabun 64:9</p>
+                  </div>
+
+                  <p className="text-slate-400 text-sm text-center leading-relaxed">
+                    <span className="text-white font-medium">Taghabun</span> — the Day where the believer gains what the disbeliever lost, and the disbeliever realises what they traded away. Creation, choice, consequences — all in 18 verses.
                   </p>
                 </div>
               </div>
