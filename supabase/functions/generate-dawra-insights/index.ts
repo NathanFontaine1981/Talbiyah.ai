@@ -269,7 +269,7 @@ Generate the study notes following the exact format specified in the system prom
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 8192,
+        max_tokens: 16384,
         temperature: 0.3,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],

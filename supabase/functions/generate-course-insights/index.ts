@@ -246,17 +246,20 @@ ${previousSessionContext}
 
 CRITICAL INSTRUCTIONS:
 1. Read the ENTIRE transcript carefully before generating notes
-2. Filter out greetings, technical chat, and admin discussion from the start
+2. Filter out greetings, technical chat, admin discussion, food/logistics talk, and off-topic conversation
 3. Capture the teacher's SPECIFIC explanations, examples, and analogies — not generic content
 4. All Arabic text must include full harakat (tashkeel)
 5. Focus on what the teacher ACTUALLY said, not what you think they should have said
 6. If Qur'anic verses are referenced, include the Arabic with tashkeel and English translation
 7. Preserve the teacher's teaching style and emphasis in your notes
+8. These notes are for students who MISSED the class — they should be able to learn the material from notes alone
+9. Include the "aha moments" and powerful points from the lesson
+10. Keep the spirit of the interactive class in the notes — include key discussion points and student reflections
 
 TRANSCRIPT:
 ${session.transcript}
 
-Generate the study notes following the exact format specified in the system prompt.`;
+Generate the study notes following the exact format specified in the system prompt. Be thorough — cover everything taught, not just a summary.`;
 
     console.log(`Calling Claude API for course session ${session.session_number} of "${courseName}"...`);
 
@@ -269,7 +272,7 @@ Generate the study notes following the exact format specified in the system prom
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 8192,
+        max_tokens: 16384,
         temperature: 0.3,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
