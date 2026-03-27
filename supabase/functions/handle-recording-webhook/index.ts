@@ -174,7 +174,7 @@ async function triggerCourseInsightsPipeline(
   try {
     console.log("Auto-triggering course insight generation for session:", courseSessionId);
 
-    const insightResp = await fetch(`${supabaseUrl}/functions/v1/generate-dawra-insights`, {
+    const insightResp = await fetch(`${supabaseUrl}/functions/v1/generate-course-insights`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${supabaseServiceKey}`,
@@ -189,7 +189,7 @@ async function triggerCourseInsightsPipeline(
 
       // Auto-notify enrolled students
       if (insightData.insight_id) {
-        const notifyResp = await fetch(`${supabaseUrl}/functions/v1/notify-dawra-insights`, {
+        const notifyResp = await fetch(`${supabaseUrl}/functions/v1/notify-course-insights`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${supabaseServiceKey}`,
