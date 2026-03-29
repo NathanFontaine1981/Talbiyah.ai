@@ -208,7 +208,7 @@ export default function HomeLandingV2() {
             backgroundImage: `url('https://images.unsplash.com/photo-1585036156171-384164a8c675?auto=format&fit=crop&w=2000&q=80')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-950/90 via-gray-900/85 to-emerald-950/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950/70 via-gray-900/60 to-emerald-950/55" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
           <div className="max-w-4xl mx-auto text-center">
