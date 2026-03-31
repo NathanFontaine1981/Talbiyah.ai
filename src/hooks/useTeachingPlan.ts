@@ -10,7 +10,7 @@ interface UseTeachingPlanReturn {
   getImagesAsBase64: () => Promise<{ base64: string; media_type: string }[]>;
 }
 
-function resizeImage(file: File, maxWidth = 1500): Promise<{ base64: string; media_type: string }> {
+function resizeImage(file: File, maxWidth = 1024): Promise<{ base64: string; media_type: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -19,15 +19,22 @@ function resizeImage(file: File, maxWidth = 1500): Promise<{ base64: string; med
         const canvas = document.createElement('canvas');
         let w = img.width;
         let h = img.height;
+        // Scale down to fit within maxWidth
         if (w > maxWidth) {
           h = Math.round((h * maxWidth) / w);
           w = maxWidth;
+        }
+        // Also cap height
+        const maxHeight = 1400;
+        if (h > maxHeight) {
+          w = Math.round((w * maxHeight) / h);
+          h = maxHeight;
         }
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
         const base64 = dataUrl.split(',')[1];
         resolve({ base64, media_type: 'image/jpeg' });
       };
