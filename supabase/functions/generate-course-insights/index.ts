@@ -13,6 +13,7 @@ interface GenerateCourseInsightsRequest {
   course_session_id: string;
   mode?: "study_notes" | "teaching_plan";
   images?: { base64: string; media_type: string }[];
+  image_urls?: string[];
 }
 
 const COURSE_INSIGHT_PROMPT = `You are an expert Islamic studies note-taker and curriculum designer. Your role is to produce comprehensive, beautifully structured study notes from a course (intensive course) session transcript.
@@ -272,7 +273,7 @@ Deno.serve(async (req: Request) => {
   const startTime = Date.now();
 
   try {
-    const { course_session_id, mode = "study_notes", images }: GenerateCourseInsightsRequest = await req.json();
+    const { course_session_id, mode = "study_notes", images, image_urls }: GenerateCourseInsightsRequest = await req.json();
 
     if (!course_session_id) {
       return new Response(
@@ -323,14 +324,18 @@ Deno.serve(async (req: Request) => {
     // MODE: TEACHING PLAN (from book page images)
     // ============================================================
     if (mode === "teaching_plan") {
-      if (!images || images.length === 0) {
+      const hasImages = images && images.length > 0;
+      const hasUrls = image_urls && image_urls.length > 0;
+
+      if (!hasImages && !hasUrls) {
         return new Response(
           JSON.stringify({ error: "No book page images provided" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      console.log(`Generating teaching plan for session ${session.session_number} of "${courseName}" from ${images.length} images...`);
+      const imageCount = hasUrls ? image_urls!.length : images!.length;
+      console.log(`Generating teaching plan for session ${session.session_number} of "${courseName}" from ${imageCount} images...`);
 
       const sessionDate = session.session_date
         ? new Date(session.session_date).toLocaleDateString("en-GB", {
@@ -338,18 +343,60 @@ Deno.serve(async (req: Request) => {
           })
         : "Date not recorded";
 
+      // Build image content blocks - either from URLs or base64
+      let imageBlocks: any[] = [];
+
+      if (hasUrls) {
+        // Fetch images from URLs and convert to base64
+        for (const url of image_urls!) {
+          try {
+            const imgResp = await fetch(url);
+            if (!imgResp.ok) {
+              console.warn(`Failed to fetch image: ${url}`);
+              continue;
+            }
+            const arrayBuf = await imgResp.arrayBuffer();
+            const uint8 = new Uint8Array(arrayBuf);
+            let binary = "";
+            for (let i = 0; i < uint8.length; i++) {
+              binary += String.fromCharCode(uint8[i]);
+            }
+            const base64 = btoa(binary);
+            const contentType = imgResp.headers.get("content-type") || "image/jpeg";
+            imageBlocks.push({
+              type: "image",
+              source: { type: "base64", media_type: contentType, data: base64 },
+            });
+          } catch (err) {
+            console.warn(`Error fetching image ${url}:`, err);
+          }
+        }
+      } else if (hasImages) {
+        imageBlocks = images!.map((img: { base64: string; media_type: string }) => ({
+          type: "image",
+          source: { type: "base64", media_type: img.media_type, data: img.base64 },
+        }));
+      }
+
+      if (imageBlocks.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Failed to process any images" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // Build multi-modal message with images
       const messageContent: any[] = [
         {
           type: "text",
-          text: `Generate an interactive teaching plan for this session.\n\nSESSION METADATA:\n- Course: ${courseName}\n- Teachers: Nathan and Brother Kareem\n- Session Number: ${session.session_number}\n- Session Title: ${session.title || "Untitled"}\n- Date: ${sessionDate}\n\nThe following images are pages from the book that will be read aloud in class. Create a teaching plan with stop points, discussion questions, scenarios, and interactive elements based on the content in these pages.`,
+          text: `Generate an interactive teaching plan for this session.\n\nSESSION METADATA:\n- Course: ${courseName}\n- Teachers: Nathan and Brother Kareem\n- Session Number: ${session.session_number}\n- Session Title: ${session.title || "Untitled"}\n- Date: ${sessionDate}\n\nThe following ${imageBlocks.length} images are pages from the book that will be read aloud in class. Create a teaching plan with stop points, discussion questions, scenarios, and interactive elements based on the content in these pages.`,
         },
-        ...images.map((img: { base64: string; media_type: string }) => ({
+        ...imageBlocks.map((block: any) => ({
           type: "image",
           source: {
             type: "base64",
-            media_type: img.media_type,
-            data: img.base64,
+            media_type: block.source.media_type,
+            data: block.source.data,
           },
         })),
       ];

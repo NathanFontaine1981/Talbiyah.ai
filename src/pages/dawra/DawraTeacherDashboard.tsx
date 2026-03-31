@@ -366,9 +366,12 @@ export default function CourseTeacherDashboard() {
   async function generateTeachingPlan(sessionId: string) {
     setGeneratingPlanId(sessionId);
     try {
-      const images = await teachingPlan.getImagesAsBase64();
+      toast.info(`Uploading ${teachingPlan.images.length} images...`);
+      const imageUrls = await teachingPlan.uploadImagesToStorage(sessionId);
+      toast.info('Generating teaching plan...');
+
       const { data, error } = await supabase.functions.invoke('generate-course-insights', {
-        body: { course_session_id: sessionId, mode: 'teaching_plan', images },
+        body: { course_session_id: sessionId, mode: 'teaching_plan', image_urls: imageUrls },
       });
 
       if (error) throw error;

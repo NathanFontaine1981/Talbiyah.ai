@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 interface UseTeachingPlanReturn {
   images: File[];
@@ -8,6 +9,7 @@ interface UseTeachingPlanReturn {
   removeImage: (index: number) => void;
   clearImages: () => void;
   getImagesAsBase64: () => Promise<{ base64: string; media_type: string }[]>;
+  uploadImagesToStorage: (sessionId: string) => Promise<string[]>;
 }
 
 function resizeImage(file: File, maxWidth = 1024): Promise<{ base64: string; media_type: string }> {
@@ -76,6 +78,24 @@ export function useTeachingPlan(): UseTeachingPlanReturn {
     return Promise.all(images.map(f => resizeImage(f)));
   }, [images]);
 
+  const uploadImagesToStorage = useCallback(async (sessionId: string) => {
+    const urls: string[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const file = images[i];
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `teaching-plans/${sessionId}/${Date.now()}-${i}.${ext}`;
+      const { error } = await supabase.storage
+        .from('course_assets')
+        .upload(filePath, file, { upsert: true });
+      if (error) throw new Error(`Failed to upload image ${i + 1}: ${error.message}`);
+      const { data: { publicUrl } } = supabase.storage
+        .from('course_assets')
+        .getPublicUrl(filePath);
+      urls.push(publicUrl);
+    }
+    return urls;
+  }, [images]);
+
   return {
     images,
     previews,
@@ -84,5 +104,6 @@ export function useTeachingPlan(): UseTeachingPlanReturn {
     removeImage,
     clearImages,
     getImagesAsBase64,
+    uploadImagesToStorage,
   };
 }
