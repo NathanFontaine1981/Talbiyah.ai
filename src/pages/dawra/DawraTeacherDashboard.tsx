@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -27,9 +27,16 @@ import {
   Mail,
   Upload,
   Headphones,
+  Mic,
+  Square,
+  ImageIcon,
+  Printer,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { useBrowserRecording } from '../../hooks/useBrowserRecording';
+import { useTeachingPlan } from '../../hooks/useTeachingPlan';
 
 interface CourseSession {
   id: string;
@@ -40,6 +47,8 @@ interface CourseSession {
   live_status: string | null;
   transcript: string | null;
   audio_url: string | null;
+  teaching_plan: string | null;
+  teaching_plan_generated_at: string | null;
 }
 
 interface CourseInsight {
@@ -124,6 +133,17 @@ export default function CourseTeacherDashboard() {
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [uploadingAudioId, setUploadingAudioId] = useState<string | null>(null);
 
+  // Teaching plan state
+  const [showTeachingPlanSession, setShowTeachingPlanSession] = useState<string | null>(null);
+  const [generatingPlanId, setGeneratingPlanId] = useState<string | null>(null);
+  const teachingPlan = useTeachingPlan();
+  const teachingPlanFileRef = useRef<HTMLInputElement>(null);
+
+  // Browser recording state
+  const [recordingSessionId, setRecordingSessionId] = useState<string | null>(null);
+  const [transcribingAudio, setTranscribingAudio] = useState(false);
+  const recording = useBrowserRecording();
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -147,7 +167,7 @@ export default function CourseTeacherDashboard() {
       // Fetch sessions
       const { data: sessionsData } = await supabase
         .from('course_sessions')
-        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url')
+        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url, teaching_plan, teaching_plan_generated_at')
         .eq('group_session_id', courseData.id)
         .order('session_number', { ascending: true });
 
@@ -341,6 +361,92 @@ export default function CourseTeacherDashboard() {
     } finally {
       setNotifyingId(null);
     }
+  }
+
+  async function generateTeachingPlan(sessionId: string) {
+    setGeneratingPlanId(sessionId);
+    try {
+      const images = await teachingPlan.getImagesAsBase64();
+      const { data, error } = await supabase.functions.invoke('generate-course-insights', {
+        body: { course_session_id: sessionId, mode: 'teaching_plan', images },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Generation failed');
+
+      toast.success(`Teaching plan generated in ${Math.round((data.processing_time_ms || 0) / 1000)}s`);
+      teachingPlan.clearImages();
+      fetchData();
+    } catch (err: any) {
+      toast.error('Failed to generate teaching plan: ' + err.message);
+    } finally {
+      setGeneratingPlanId(null);
+    }
+  }
+
+  async function transcribeAndSaveRecording(sessionId: string) {
+    if (!recording.audioBlob) return;
+    setTranscribingAudio(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(recording.audioBlob!);
+      });
+
+      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64, mime_type: recording.audioBlob!.type || 'audio/webm' },
+      });
+
+      if (error) throw error;
+      const transcript = data?.text || data?.transcript;
+      if (!transcript || transcript.length < 20) throw new Error('Transcription too short or empty');
+
+      await supabase
+        .from('course_sessions')
+        .update({ transcript, transcript_source: 'browser_recording', status: 'transcript_added' })
+        .eq('id', sessionId);
+
+      toast.success('Audio transcribed and saved');
+      recording.discardRecording();
+      setRecordingSessionId(null);
+      fetchData();
+
+      // Auto-generate study notes
+      generateInsights(sessionId);
+    } catch (err: any) {
+      toast.error('Transcription failed: ' + err.message);
+    } finally {
+      setTranscribingAudio(false);
+    }
+  }
+
+  function printTeachingPlan(plan: string, sessionTitle: string) {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Teaching Plan - ${sessionTitle}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1a1a1a; }
+        h1, h2, h3 { color: #2C5F7C; }
+        h2 { border-bottom: 2px solid #7FB685; padding-bottom: 8px; margin-top: 32px; }
+        blockquote { border-left: 4px solid #4A90A4; padding-left: 16px; margin: 16px 0; background: #f0f7fa; padding: 12px 16px; border-radius: 0 8px 8px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+        th { background: #2C5F7C; color: white; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+        @media print { body { margin: 20px; } }
+      </style></head><body>
+      <h1>Teaching Plan: ${sessionTitle}</h1>
+      ${plan.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}
+      </body></html>
+    `);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
   }
 
   async function startClass(sessionId: string, sessionNumber: number) {
@@ -982,6 +1088,53 @@ export default function CourseTeacherDashboard() {
                     />
                   </label>
 
+                  {/* Teaching Plan */}
+                  <button
+                    onClick={() => {
+                      setShowTeachingPlanSession(showTeachingPlanSession === session.id ? null : session.id);
+                      if (showTeachingPlanSession !== session.id) teachingPlan.clearImages();
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                      session.teaching_plan
+                        ? 'border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    {session.teaching_plan ? 'View Plan' : 'Teaching Plan'}
+                  </button>
+
+                  {/* Record Audio */}
+                  {session.status === 'draft' && !session.transcript && (
+                    <button
+                      onClick={async () => {
+                        if (recordingSessionId === session.id && recording.isRecording) {
+                          recording.stopRecording();
+                        } else if (!recording.isRecording) {
+                          setRecordingSessionId(session.id);
+                          try { await recording.startRecording(); } catch { toast.error('Microphone access denied'); setRecordingSessionId(null); }
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                        recordingSessionId === session.id && recording.isRecording
+                          ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {recordingSessionId === session.id && recording.isRecording ? (
+                        <>
+                          <Square className="w-3.5 h-3.5" />
+                          Stop {recording.formatTime(recording.recordingTime)}
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3.5 h-3.5" />
+                          Record Audio
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   {/* Generate insights */}
                   {(session.status === 'transcript_added' || session.status === 'published') && (
                     <button
@@ -1066,6 +1219,117 @@ export default function CourseTeacherDashboard() {
                         </button>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Browser recording preview */}
+                {recordingSessionId === session.id && !recording.isRecording && recording.audioUrl && (
+                  <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recording Preview</p>
+                    <audio src={recording.audioUrl} controls className="w-full mb-3" />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => transcribeAndSaveRecording(session.id)}
+                        disabled={transcribingAudio}
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50"
+                      >
+                        {transcribingAudio ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                        {transcribingAudio ? 'Transcribing...' : 'Transcribe & Generate Notes'}
+                      </button>
+                      <button
+                        onClick={() => { recording.discardRecording(); setRecordingSessionId(null); }}
+                        className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      >
+                        Discard
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Teaching plan section */}
+                {showTeachingPlanSession === session.id && (
+                  <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                    {!session.teaching_plan ? (
+                      <>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          Upload book pages to generate a teaching plan
+                        </p>
+                        <input
+                          ref={teachingPlanFileRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files) teachingPlan.addImages(e.target.files);
+                            e.target.value = '';
+                          }}
+                        />
+                        <button
+                          onClick={() => teachingPlanFileRef.current?.click()}
+                          className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-amber-400 dark:hover:border-amber-500 transition-colors text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
+                        >
+                          <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">Click to upload book page photos</p>
+                          <p className="text-xs mt-1">PNG, JPG — multiple pages supported</p>
+                        </button>
+
+                        {teachingPlan.previews.length > 0 && (
+                          <>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+                              {teachingPlan.previews.map((src, i) => (
+                                <div key={i} className="relative group">
+                                  <img src={src} className="rounded-lg w-full h-24 object-cover border border-gray-200 dark:border-gray-600" />
+                                  <button
+                                    onClick={() => teachingPlan.removeImage(i)}
+                                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => generateTeachingPlan(session.id)}
+                              disabled={generatingPlanId === session.id}
+                              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {generatingPlanId === session.id ? (
+                                <><Loader className="w-4 h-4 animate-spin" /> Generating Teaching Plan...</>
+                              ) : (
+                                <><Sparkles className="w-4 h-4" /> Generate Teaching Plan ({teachingPlan.images.length} page{teachingPlan.images.length !== 1 ? 's' : ''})</>
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Teaching Plan</h4>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => printTeachingPlan(session.teaching_plan!, session.title || `Session ${session.session_number}`)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              <Printer className="w-3 h-3" /> Print
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await supabase.from('course_sessions').update({ teaching_plan: null, teaching_plan_generated_at: null }).eq('id', session.id);
+                                fetchData();
+                              }}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Sparkles className="w-3 h-3" /> Regenerate
+                            </button>
+                          </div>
+                        </div>
+                        <div className="prose prose-sm dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800 rounded-xl p-4 max-h-[600px] overflow-y-auto">
+                          <ReactMarkdown>{session.teaching_plan}</ReactMarkdown>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

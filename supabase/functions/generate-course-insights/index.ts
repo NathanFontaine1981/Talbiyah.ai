@@ -11,6 +11,8 @@ const corsHeaders = {
 
 interface GenerateCourseInsightsRequest {
   course_session_id: string;
+  mode?: "study_notes" | "teaching_plan";
+  images?: { base64: string; media_type: string }[];
 }
 
 const COURSE_INSIGHT_PROMPT = `You are an expert Islamic studies note-taker and curriculum designer. Your role is to produce comprehensive, beautifully structured study notes from a course (intensive course) session transcript.
@@ -126,6 +128,142 @@ Test your understanding of this session (5-8 questions):
 
 [Based on the teacher's comments about what's coming next, suggest what students should review or think about before the next session. If the teacher didn't mention this, provide a general suggestion based on the themes covered.]`;
 
+const TEACHING_PLAN_PROMPT = `You are creating an interactive teaching plan for Nathan and Kareem to deliver a Wednesday evening class for new Muslim brothers at Cheadle Masjid. This is for the "Exploring Islam" course using Islamic Studies Books 1-4 by Dr. Abu Ameenah Bilal Philips.
+
+CONTEXT:
+- Class: 7:15-8:30 PM (with Isha prayer break around 8:00 PM)
+- Students: 10 adult male reverts (new Muslims)
+- Teachers: Nathan (former footballer, BBC commentator) and Kareem
+- Teaching method: Read from the book → Stop at marked points → Discuss → Engage → Continue
+- The book will ALWAYS be read - your job is to add the interactive layer
+
+YOUR TASK:
+Create a teaching guide that adds life, engagement, and real-world connection to the book content. The teachers will READ the book text themselves - you provide what to SAY and DO in addition to make it stick.
+
+STRUCTURE OF THE TEACHING PLAN:
+
+## OPENING HOOK (2-3 MINUTES)
+Create an attention-grabbing scenario, question, or story that:
+- Relates directly to the chapter topic
+- Makes students curious
+- Can be from real life, hypothetical scenarios, or current events
+- Should provoke thought or emotion
+- Sets up the "why should I care?" for the lesson
+
+## STOP POINTS THROUGHOUT THE CHAPTER
+
+Mark 8-13 stop points where teachers should pause reading. At EACH stop point include:
+
+### 1. DISCUSSION QUESTIONS
+- 1-3 open-ended questions to ask the group
+- Include expected answers or discussion direction
+
+### 2. REAL-LIFE SCENARIOS & EXAMPLES
+At least 5-7 powerful scenarios throughout the lesson:
+- Before/After Islam scenarios
+- Daily life situations (work, family, social media, money)
+- Modern relatable examples (technology, social pressure, career)
+- Historical/biographical examples (companions, Mike Tyson, Muhammad Ali)
+- Analogies from nature/everyday objects (trees, buildings, sports)
+
+### 3. INTERACTIVE ELEMENTS
+3-5 interactive moments:
+- Stand up physically
+- Show of hands
+- Turn to neighbour and discuss
+- Quick 30-second reflection
+- Share one word/phrase
+
+### 4. RECAP MOMENTS
+After complex concepts, include recap moments
+
+### 5. CHECKING FOR UNDERSTANDING
+Include checkpoints throughout
+
+FORMATTING:
+
+**OPENING HOOK (2-3 MIN)**
+[Detailed scenario with exact wording]
+
+**PAGE [X] - [SECTION TITLE] ([X] MIN)**
+
+🛑 STOP #[N]: After "[exact line from book]"
+
+❓ QUESTION: "[Exact question to ask]"
+Expected answers: [List possible responses]
+
+💡 SCENARIO: "[Title of scenario]"
+[Full detailed scenario with exact wording]
+
+✓ KEY POINT: "[Main teaching point]"
+[Explanation/clarification]
+
+🎯 INTERACTIVE: "[What students do]"
+[Exact instructions]
+
+📝 RECAP: "[Summary prompt]"
+[What to review]
+
+**WRAP-UP & ISHA BREAK (3-5 MIN)**
+[Quick recap, one reflection question, transition to prayer]
+
+**AFTER FOOD DISCUSSION (10-15 MIN)**
+[5-7 deeper discussion questions for informal conversation]
+
+**HOMEWORK/ACTION STEPS**
+[3-5 practical things to do this week]
+
+TONE & STYLE:
+
+For Nathan's parts:
+- Direct, no-nonsense, from personal experience
+- Use sports/physical analogies
+- "Let me tell you..." / "Here's the thing..."
+- Can be blunt but loving
+
+For Kareem's parts:
+- More scholarly references
+- Explains Arabic terms
+- Provides deeper context
+- Calmer, more measured delivery
+
+Both should speak conversationally, use "you" and "we", be warm and encouraging, challenge without condemning.
+
+SCENARIO GUIDELINES:
+- Specific and detailed
+- Relatable to new Muslims in UK
+- Show internal thought process
+- Present a choice or dilemma
+- Include emotions (how it FEELS)
+- Use modern language and contexts
+
+PACING:
+Total time: 75 minutes
+- Opening: 2-3 min
+- Teaching with stops: 45-50 min
+- Wrap-up: 3-5 min
+- Isha prayer: ~15 min
+- Food & discussion: 10-15 min
+
+Mark estimated time for each section and indicate which teacher handles each section.
+
+CHECKLIST:
+- Attention-grabbing opening hook
+- 8-13 clearly marked stop points
+- At least 1 question per stop point
+- 5-7 powerful scenarios throughout
+- 3-5 interactive physical moments
+- 2-3 group tasks where everyone shares
+- 2-3 recap moments for complex concepts
+- Multiple "check for understanding" prompts
+- Wrap-up with quick review
+- After-food discussion questions
+- Practical homework/action steps
+- Time estimates for each section
+- Balance between Nathan and Kareem
+- Mix of challenge and encouragement
+- Connection to new Muslim experience`;
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -134,7 +272,7 @@ Deno.serve(async (req: Request) => {
   const startTime = Date.now();
 
   try {
-    const { course_session_id }: GenerateCourseInsightsRequest = await req.json();
+    const { course_session_id, mode = "study_notes", images }: GenerateCourseInsightsRequest = await req.json();
 
     if (!course_session_id) {
       return new Response(
@@ -169,6 +307,123 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const course = session.group_sessions as any;
+    const teacherName = course.teacher?.full_name || "Teacher";
+    const courseName = course.name;
+
+    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Anthropic API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============================================================
+    // MODE: TEACHING PLAN (from book page images)
+    // ============================================================
+    if (mode === "teaching_plan") {
+      if (!images || images.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No book page images provided" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Generating teaching plan for session ${session.session_number} of "${courseName}" from ${images.length} images...`);
+
+      const sessionDate = session.session_date
+        ? new Date(session.session_date).toLocaleDateString("en-GB", {
+            weekday: "long", year: "numeric", month: "long", day: "numeric",
+          })
+        : "Date not recorded";
+
+      // Build multi-modal message with images
+      const messageContent: any[] = [
+        {
+          type: "text",
+          text: `Generate an interactive teaching plan for this session.\n\nSESSION METADATA:\n- Course: ${courseName}\n- Teachers: Nathan and Brother Kareem\n- Session Number: ${session.session_number}\n- Session Title: ${session.title || "Untitled"}\n- Date: ${sessionDate}\n\nThe following images are pages from the book that will be read aloud in class. Create a teaching plan with stop points, discussion questions, scenarios, and interactive elements based on the content in these pages.`,
+        },
+        ...images.map((img: { base64: string; media_type: string }) => ({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: img.media_type,
+            data: img.base64,
+          },
+        })),
+      ];
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicApiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 16384,
+          temperature: 0.4,
+          system: TEACHING_PLAN_PROMPT,
+          messages: [{ role: "user", content: messageContent }],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Claude API error (teaching plan):", errorText);
+        return new Response(
+          JSON.stringify({ error: "Failed to generate teaching plan", details: errorText }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const data = await response.json();
+      const generatedPlan = data.content?.[0]?.text;
+
+      if (!generatedPlan) {
+        return new Response(
+          JSON.stringify({ error: "No teaching plan generated from AI" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const processingTime = Date.now() - startTime;
+      console.log(`Teaching plan generated in ${processingTime}ms, saving...`);
+
+      // Save teaching plan to course_sessions
+      const { error: saveError } = await supabase
+        .from("course_sessions")
+        .update({
+          teaching_plan: generatedPlan,
+          teaching_plan_generated_at: new Date().toISOString(),
+        })
+        .eq("id", course_session_id);
+
+      if (saveError) {
+        console.error("Error saving teaching plan:", saveError);
+        return new Response(
+          JSON.stringify({ error: "Failed to save teaching plan", details: saveError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          mode: "teaching_plan",
+          course_session_id,
+          teaching_plan: generatedPlan,
+          processing_time_ms: processingTime,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============================================================
+    // MODE: STUDY NOTES (from transcript) — default
+    // ============================================================
     if (!session.transcript) {
       return new Response(
         JSON.stringify({ error: "No transcript available for this session" }),
@@ -181,10 +436,6 @@ Deno.serve(async (req: Request) => {
       .from("course_sessions")
       .update({ status: "generating" })
       .eq("id", course_session_id);
-
-    const course = session.group_sessions as any;
-    const teacherName = course.teacher?.full_name || "Teacher";
-    const courseName = course.name;
 
     // Fetch previous session summaries for continuity
     let previousSessionContext = "";
@@ -212,14 +463,6 @@ Deno.serve(async (req: Request) => {
       .from("course_sessions")
       .select("id", { count: "exact", head: true })
       .eq("group_session_id", session.group_session_id);
-
-    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicApiKey) {
-      return new Response(
-        JSON.stringify({ error: "Anthropic API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Use custom prompt if the teacher set one, otherwise use default
     const systemPrompt = course.custom_insight_prompt || COURSE_INSIGHT_PROMPT;
@@ -321,10 +564,6 @@ Generate the study notes following the exact format specified in the system prom
       ? summaryMatch[1].trim()
       : generatedText.substring(0, 500);
 
-    // Extract title from Session Overview or use session title
-    const titleMatch = generatedText.match(
-      /## Session Overview[\s\S]*?\*\*Session\*\*:\s*\d+/
-    );
     const insightTitle =
       session.title ||
       `${courseName} - Session ${session.session_number}`;
@@ -366,7 +605,6 @@ Generate the study notes following the exact format specified in the system prom
     let saveError;
 
     if (existingInsight && existingInsight.length > 0) {
-      // Update existing
       const result = await supabase
         .from("course_insights")
         .update({
@@ -384,7 +622,6 @@ Generate the study notes following the exact format specified in the system prom
       savedInsight = result.data;
       saveError = result.error;
     } else {
-      // Insert new
       const result = await supabase
         .from("course_insights")
         .insert({
@@ -423,6 +660,7 @@ Generate the study notes following the exact format specified in the system prom
     return new Response(
       JSON.stringify({
         success: true,
+        mode: "study_notes",
         insight_id: savedInsight.id,
         course_session_id,
         title: insightTitle,
