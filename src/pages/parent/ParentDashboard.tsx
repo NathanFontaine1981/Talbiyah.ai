@@ -107,7 +107,6 @@ export default function ParentDashboard() {
     { icon: Users, label: 'My Children', onClick: () => setActiveTab('child'), active: activeTab === 'child' },
     { icon: CreditCard, label: 'Payments', onClick: () => setActiveTab('payments'), active: activeTab === 'payments' },
     { icon: Video, label: 'Recordings', path: '/recordings/history', active: false },
-    { icon: MessageCircle, label: 'Islamic Sources', path: '/islamic-source-reference', active: false },
     { icon: Settings, label: 'Settings', path: '/account/settings', active: false },
   ];
 
@@ -270,35 +269,6 @@ export default function ParentDashboard() {
                     <PaymentHistoryWidget parentId={userId} />
                   </div>
 
-                  {/* Islamic Source Reference Card - For Parents */}
-                  <div className="mt-6 bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl p-6 border border-gray-200 backdrop-blur-sm shadow-xl">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-white mb-2">Need Islamic Guidance?</h3>
-                        <p className="text-gray-600 mb-4">
-                          Use Islamic Source Reference to find relevant ayahs and authentic Hadith. A helpful reference tool available 24/7.
-                        </p>
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => navigate('/islamic-source-reference')}
-                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center space-x-2"
-                          >
-                            <MessageCircle className="w-5 h-5" />
-                            <span>Find Sources Now</span>
-                          </button>
-                          <button
-                            onClick={() => navigate('/about/islamic-source-reference')}
-                            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
-                          >
-                            Learn More
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
 

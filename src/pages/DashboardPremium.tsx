@@ -362,9 +362,6 @@ export default function DashboardPremium() {
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Admin'], isNew: true },
         { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
-        { icon: Scroll, label: 'Islamic Sources', path: '/islamic-source-reference', active: false, roles: ['Student', 'Admin'] },
-        { icon: Library, label: 'Islamic Library', path: '#', active: false, roles: ['Student'], comingSoon: true },
-        { icon: Headphones, label: 'Lecture Series', path: '#', active: false, roles: ['Student'], comingSoon: true },
         { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
       ]
     },
@@ -858,35 +855,6 @@ export default function DashboardPremium() {
               </div>
             )}
 
-            {/* Islamic Source Reference Card */}
-            <GlassCard className="mb-6 p-6">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Need Islamic Guidance?</h3>
-                  <p className="text-gray-500 mb-4">
-                    Use Islamic Source Reference to find relevant ayahs and authentic Hadith.
-                  </p>
-                  <div className="flex items-center space-x-3">
-                    <Link
-                      to="/islamic-source-reference"
-                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition shadow-lg shadow-emerald-500/20 flex items-center space-x-2"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Find Sources</span>
-                    </Link>
-                    <Link
-                      to="/about/islamic-source-reference"
-                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition"
-                    >
-                      Learn More
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </GlassCard>
 
             {/* Khutbah Tools */}
             <div className="mb-6 grid md:grid-cols-2 gap-4">

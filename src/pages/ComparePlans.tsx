@@ -42,7 +42,6 @@ const categories: FeatureCategory[] = [
     features: [
       { name: 'Dua Builder', explorer: false, student: true },
       { name: 'Khutbah Creator', explorer: false, student: true },
-      { name: 'Islamic Sources', explorer: false, student: true },
       { name: 'Lesson Insights', explorer: false, student: true },
     ],
   },

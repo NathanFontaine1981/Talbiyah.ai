@@ -114,7 +114,6 @@ Deno.serve(async (req) => {
         await supabase.from("referral_transactions").delete().eq("user_id", user.id);
         await supabase.from("referrals").delete().or(`referrer_id.eq.${user.id},referred_user_id.eq.${user.id}`);
         await supabase.from("saved_khutbahs").delete().eq("user_id", user.id);
-        await supabase.from("imam_conversations").delete().eq("user_id", user.id);
         await supabase.from("diagnostic_assessments").delete().or(`student_id.eq.${user.id},teacher_id.eq.${user.id}`);
         await supabase.from("user_achievements").delete().eq("user_id", user.id);
         await supabase.from("user_feedback").delete().eq("user_id", user.id);

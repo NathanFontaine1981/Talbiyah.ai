@@ -758,91 +758,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Islamic Sources Section - COMMENTED OUT FOR NOW
-      <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-gray-100">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-700 font-semibold text-sm">Islamic Sources</span>
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-serif font-semibold text-gray-900 mb-6">
-                  Find Authentic Sources
-                </h2>
-                <p className="text-lg text-gray-500 leading-relaxed mb-6">
-                  Get help finding relevant ayahs from the Qur'an and authentic Hadith based on the understanding of the Salaf.
-                </p>
-                <div className="space-y-3 mb-6">
-                  {[
-                    'Quranic verses with context',
-                    'Authentic Hadith references',
-                    'Based on understanding of the Salaf',
-                    'Available 24/7'
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center space-x-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                      <span className="text-gray-600">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-6">
-                  <p className="text-sm text-emerald-800">
-                    <strong>Important:</strong> This is a reference tool only. Always consult qualified scholars or imams for religious rulings.
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (user) {
-                      navigate('/islamic-source-reference');
-                    } else {
-                      navigate('/signup');
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-semibold transition"
-                >
-                  <span>Find Islamic Sources</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-gray-900 font-semibold mb-1">Example Question:</p>
-                      <p className="text-gray-500 text-sm">"What does the Quran say about patience?"</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-gray-900 font-semibold mb-1">Get References:</p>
-                      <p className="text-gray-500 text-sm">Relevant ayahs and authentic Hadith with proper citations</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-gray-900 font-semibold mb-1">Verify with Scholars:</p>
-                      <p className="text-gray-500 text-sm">Take the references to your local imam or qualified scholar</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      */}
 
       {/* Pricing Section - Clean White Design */}
       <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white">
@@ -1082,7 +997,6 @@ export default function Home() {
               <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
                 <li><a href="/diagnostic/start" className="hover:text-emerald-500 transition">Free Assessment</a></li>
                 <li><a href="/subjects" className="hover:text-emerald-500 transition">Subjects</a></li>
-                <li><a href="/about/islamic-source-reference" className="hover:text-emerald-500 transition">Islamic Source Reference</a></li>
               </ul>
             </div>
 

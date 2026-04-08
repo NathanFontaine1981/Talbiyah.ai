@@ -196,9 +196,6 @@ Deno.serve(async (req) => {
     const d23 = await supabase.from("saved_khutbahs").delete().eq("user_id", user_id);
     deletions.push({ table: "saved_khutbahs", error: d23.error });
 
-    const d24 = await supabase.from("imam_conversations").delete().eq("user_id", user_id);
-    deletions.push({ table: "imam_conversations", error: d24.error });
-
     // 14. Diagnostic assessments
     const d25 = await supabase.from("diagnostic_assessments").delete().or(`student_id.eq.${user_id},teacher_id.eq.${user_id}`);
     deletions.push({ table: "diagnostic_assessments", error: d25.error });

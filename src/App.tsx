@@ -57,7 +57,6 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Teachers = lazy(() => import('./pages/Teachers'));
 const TeacherProfile = lazy(() => import('./pages/TeacherProfile'));
-const Matchmaking = lazy(() => import('./pages/Matchmaking'));
 const Welcome = lazy(() => import('./pages/Welcome'));
 const BookSession = lazy(() => import('./pages/BookSession'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
@@ -87,8 +86,6 @@ const MyClasses = lazy(() => import('./pages/MyClasses'));
 const MissedLessons = lazy(() => import('./pages/MissedLessons'));
 const DashboardPremium = lazy(() => import('./pages/DashboardPremium'));
 const TierDiagnostic = lazy(() => import('./pages/TierDiagnostic'));
-const IslamicSourceReferenceAbout = lazy(() => import('./pages/IslamicSourceReferenceAbout'));
-const IslamicSourceReference = lazy(() => import('./pages/IslamicSourceReference'));
 const KhutbaCreator = lazy(() => import('./pages/KhutbaCreator'));
 const DuaBuilder = lazy(() => import('./pages/DuaBuilder'));
 const QunutPractice = lazy(() => import('./pages/QunutPractice'));
@@ -689,7 +686,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/matchmaking" element={<Matchmaking />} />
         <Route
           path="/welcome"
           element={
@@ -850,15 +846,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/islamic-source-reference"
-          element={
-            <ProtectedRoute>
-              <IslamicSourceReference />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/about/islamic-source-reference" element={<IslamicSourceReferenceAbout />} />
         <Route path="/referral-info" element={<ReferralInfo />} />
         <Route
           path="/khutba-creator"

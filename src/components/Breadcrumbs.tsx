@@ -64,8 +64,6 @@ const routeLabels: Record<string, string> = {
   '/admin/settings': 'Settings',
 
   // Feature routes
-  '/islamic-source-reference': 'Islamic Source Reference',
-  '/about/islamic-source-reference': 'About Islamic Sources',
   '/khutba-creator': 'Khutba Creator',
   '/khutba-reflections': 'Reflections',
   '/insights-library': 'Insights Library',
