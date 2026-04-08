@@ -106,14 +106,14 @@ export default function GroupLessons() {
         return;
       }
 
-      // Fetch teacher's group sessions
+      // Fetch teacher's group sessions (including co-taught courses)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('group_sessions')
         .select(`
           *,
           subject:subjects(name)
         `)
-        .eq('teacher_id', user.id)
+        .or(`teacher_id.eq.${user.id},co_teacher_ids.cs.{${user.id}}`)
         .order('start_date', { ascending: true });
 
       if (sessionsError) throw sessionsError;
