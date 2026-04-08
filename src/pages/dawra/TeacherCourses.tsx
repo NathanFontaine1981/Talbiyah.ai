@@ -114,7 +114,7 @@ export default function TeacherCourses() {
       const { data } = await supabase
         .from('group_sessions')
         .select('id, name, slug, description, location, delivery_mode, start_date, end_date, schedule_day, schedule_time, duration_minutes, current_participants, max_participants, course_type, poster_url, total_sessions, is_free, price_per_session')
-        .or(`teacher_id.eq.${user.id},created_by.eq.${user.id}`)
+        .or(`teacher_id.eq.${user.id},created_by.eq.${user.id},co_teacher_ids.cs.{${user.id}}`)
         .eq('course_type', 'course')
         .order('created_at', { ascending: false });
 
