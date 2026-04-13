@@ -239,6 +239,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         `)
         .in('learner_id', targetLearnerIds)
         .eq('status', 'booked')
+        .lte('scheduled_time', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('scheduled_time', { ascending: true });
 
       if (error) {
@@ -308,8 +309,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
 
             // Show lesson if it hasn't ended yet
             return lessonEnd > now;
-          })
-          .slice(0, 5); // Limit to 5 lessons
+          });
 
         setLessons(formattedLessons);
       }
