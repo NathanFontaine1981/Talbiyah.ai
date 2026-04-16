@@ -58,15 +58,19 @@ Deno.serve(async (req: Request) => {
         if (course_session_id && transcript.length > 20) {
           const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-          // Save transcript
-          await supabase
+          // Save transcript (transcript_source must match CHECK constraint: '100ms', 'paste', 'upload')
+          const { error: updErr } = await supabase
             .from("course_sessions")
             .update({
               transcript,
-              transcript_source: "browser_recording",
+              transcript_source: "upload",
               status: "transcript_added",
             })
             .eq("id", course_session_id);
+          if (updErr) {
+            console.error(`[transcribe-url] Failed to save transcript: ${updErr.message}`);
+            return;
+          }
           console.log(`[transcribe-url] Saved transcript for course_session ${course_session_id}`);
 
           // Generate course insights
