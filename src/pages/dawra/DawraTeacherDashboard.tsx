@@ -391,38 +391,52 @@ export default function CourseTeacherDashboard() {
     if (!recording.audioBlob) return;
     setTranscribingAudio(true);
     try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(recording.audioBlob!);
-      });
+      // Step 1: Upload audio to storage (avoids base64 payload size limits for long recordings)
+      const ext = recording.audioBlob.type.includes('webm') ? 'webm' : 'mp3';
+      const filePath = `dawra/${course?.id}/${sessionId}-${Date.now()}.${ext}`;
+      toast.info('Uploading audio...');
 
-      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audio: base64, mime_type: recording.audioBlob!.type || 'audio/webm' },
-      });
+      const { error: uploadError } = await supabase.storage
+        .from('teacher_audio')
+        .upload(filePath, recording.audioBlob, {
+          contentType: recording.audioBlob.type || 'audio/webm',
+        });
 
-      if (error) throw error;
-      const transcript = data?.text || data?.transcript;
-      if (!transcript || transcript.length < 20) throw new Error('Transcription too short or empty');
+      if (uploadError) throw new Error('Upload failed: ' + uploadError.message);
 
+      const { data: { publicUrl } } = supabase.storage
+        .from('teacher_audio')
+        .getPublicUrl(filePath);
+
+      // Save audio_url to course session immediately (so we have a record even if transcription fails)
       await supabase
         .from('course_sessions')
-        .update({ transcript, transcript_source: 'browser_recording', status: 'transcript_added' })
+        .update({ audio_url: publicUrl })
         .eq('id', sessionId);
 
-      toast.success('Audio transcribed and saved');
+      toast.success('Audio saved. Transcribing in background...');
+
+      // Step 2: Trigger background transcription + insight generation
+      // This uses the transcribe-url function which handles large files
+      const { error: transcribeError } = await supabase.functions.invoke('transcribe-url', {
+        body: {
+          audio_url: publicUrl,
+          course_session_id: sessionId,
+        },
+      });
+
+      if (transcribeError) {
+        // Don't throw - audio is safely saved. They can retry transcription later.
+        toast.warning('Audio saved but transcription did not start: ' + transcribeError.message);
+      } else {
+        toast.success('Transcribing in background. Study notes will appear in 3–5 minutes.');
+      }
+
       recording.discardRecording();
       setRecordingSessionId(null);
       fetchData();
-
-      // Auto-generate study notes
-      generateInsights(sessionId);
     } catch (err: any) {
-      toast.error('Transcription failed: ' + err.message);
+      toast.error('Failed: ' + err.message);
     } finally {
       setTranscribingAudio(false);
     }
