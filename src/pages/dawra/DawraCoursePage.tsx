@@ -221,6 +221,11 @@ export default function CoursePage() {
       } else {
         toast.success('Successfully enrolled! Welcome to the course.');
         setIsEnrolled(true);
+
+        // Fire-and-forget welcome email
+        supabase.functions.invoke('send-enrollment-welcome', {
+          body: { group_session_id: course!.id, student_id: userId },
+        }).catch((e) => console.error('Welcome email failed:', e));
       }
     } catch (err: any) {
       toast.error('Failed to enrol: ' + err.message);

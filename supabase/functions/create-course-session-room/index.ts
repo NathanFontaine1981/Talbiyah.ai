@@ -211,6 +211,23 @@ serve(async (req) => {
 
     console.log('Course session updated with room info, live_status = live')
 
+    // Fire-and-forget: notify enrolled students that class is live
+    fetch(`${supabaseUrl}/functions/v1/notify-class-live`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({ course_session_id, guest_code: guestCode }),
+    }).then(async (r) => {
+      if (r.ok) {
+        const data = await r.json()
+        console.log(`Notified ${data.notified || 0} students that class is live`)
+      } else {
+        console.error('Class-live notification failed:', await r.text())
+      }
+    }).catch((e) => console.error('Class-live notification error:', e))
+
     return new Response(
       JSON.stringify({
         success: true,
