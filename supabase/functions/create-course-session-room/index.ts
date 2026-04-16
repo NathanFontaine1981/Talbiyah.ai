@@ -67,7 +67,8 @@ serve(async (req) => {
         group_sessions!inner(
           id,
           name,
-          teacher_id
+          teacher_id,
+          co_teacher_ids
         )
       `)
       .eq('id', course_session_id)
@@ -77,10 +78,12 @@ serve(async (req) => {
       throw new Error('Course session not found')
     }
 
-    // Verify user is the course teacher or admin
+    // Verify user is the course teacher, a co-teacher, or admin
     const courseTeacherId = session.group_sessions?.teacher_id
-    if (!isAdmin && user.id !== courseTeacherId) {
-      throw new Error('Only the course teacher can start this class')
+    const coTeacherIds: string[] = session.group_sessions?.co_teacher_ids || []
+    const isCoTeacher = coTeacherIds.includes(user.id)
+    if (!isAdmin && user.id !== courseTeacherId && !isCoTeacher) {
+      throw new Error('Only the course teacher or co-teachers can start this class')
     }
 
     // If room already exists, just set live and return existing codes

@@ -704,6 +704,23 @@ Generate the study notes following the exact format specified in the system prom
 
     console.log(`Course insight saved successfully: ${savedInsight.id}`);
 
+    // Auto-notify enrolled students (fire and forget)
+    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-course-insights`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({ course_insight_id: savedInsight.id }),
+    }).then(async (r) => {
+      if (r.ok) {
+        const data = await r.json();
+        console.log(`Auto-notified students: ${data.email_count || 0} emails sent`);
+      } else {
+        console.error("Auto-notify failed:", await r.text());
+      }
+    }).catch(e => console.error("Auto-notify error:", e));
+
     return new Response(
       JSON.stringify({
         success: true,
