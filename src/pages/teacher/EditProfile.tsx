@@ -555,26 +555,6 @@ export default function EditProfile() {
                     </select>
                   </div>
 
-                  {/* Subjects (multi-select) */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subject(s) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {bioSubjectOptions.map((subject) => (
-                        <label key={subject} className="flex items-center space-x-2 p-2 border border-gray-200 rounded hover:bg-white cursor-pointer transition">
-                          <input
-                            type="checkbox"
-                            checked={bioSubjects.includes(subject)}
-                            onChange={() => toggleBioSubject(subject)}
-                            className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{subject}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Focus Area */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -702,25 +682,52 @@ export default function EditProfile() {
           </div>
 
           {/* Subjects Taught */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Subjects You Teach <span className="text-red-500">*</span>
-            </label>
-            <p className="text-sm text-gray-500 mb-3">
-              Select all subjects you are qualified to teach. Students will find you based on these subjects.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {subjects.map((subject) => (
-                <label key={subject.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                  <input
-                    type="checkbox"
-                    checked={selectedSubjects.includes(subject.id)}
-                    onChange={() => toggleSubject(subject.id)}
-                    className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700 font-medium">{ALLOWED_SUBJECTS[subject.name] || subject.name}</span>
-                </label>
-              ))}
+          {/* Subjects: capabilities (what you can teach) beside Talbiyah subjects */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* What you can teach — capabilities (also feeds your bio) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                What You Can Teach
+              </label>
+              <p className="text-sm text-gray-500 mb-3">
+                Your teaching background — everything you're qualified in. Helps us match you and is used in your bio.
+              </p>
+              <div className="space-y-2">
+                {bioSubjectOptions.map((subject) => (
+                  <label key={subject} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={bioSubjects.includes(subject)}
+                      onChange={() => toggleBioSubject(subject)}
+                      className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700 font-medium">{subject}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Talbiyah subjects you're available for */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Talbiyah Subjects You Teach <span className="text-red-500">*</span>
+              </label>
+              <p className="text-sm text-gray-500 mb-3">
+                The subjects students can book you for on Talbiyah. Choose from those available.
+              </p>
+              <div className="space-y-2">
+                {subjects.map((subject) => (
+                  <label key={subject.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={selectedSubjects.includes(subject.id)}
+                      onChange={() => toggleSubject(subject.id)}
+                      className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700 font-medium">{ALLOWED_SUBJECTS[subject.name] || subject.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
