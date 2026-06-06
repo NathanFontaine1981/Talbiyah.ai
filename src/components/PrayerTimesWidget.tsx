@@ -1,4 +1,4 @@
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, RefreshCw } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes';
 
 interface PrayerTimesWidgetProps {
@@ -6,7 +6,7 @@ interface PrayerTimesWidgetProps {
 }
 
 export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesWidgetProps) {
-  const { nextPrayer, location } = usePrayerTimes();
+  const { nextPrayer, location, loading, refresh } = usePrayerTimes();
 
   const getColorClasses = () => {
     switch (userRole) {
@@ -70,6 +70,15 @@ export default function PrayerTimesWidget({ userRole = 'Student' }: PrayerTimesW
         <div className="flex items-center space-x-1 text-xs text-white/70">
           <MapPin className="w-3 h-3" />
           <span>{location}</span>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            title="Detect my location"
+            aria-label="Detect my location"
+            className="ml-1 p-0.5 rounded hover:bg-white/10 transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 

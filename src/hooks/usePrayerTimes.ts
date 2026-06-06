@@ -16,6 +16,7 @@ interface UsePrayerTimesResult {
   loading: boolean;
   nextPrayer: PrayerTime | null;
   currentMinutes: number;
+  refresh: () => void;
 }
 
 function parseTimeToMinutes(time: string): number {
@@ -76,8 +77,51 @@ export function usePrayerTimes(): UsePrayerTimesResult {
     initPrayerTimes();
   }, []);
 
-  async function initPrayerTimes() {
-    // 1. Try user's saved location from profile settings
+  // Detect location and fetch prayer times.
+  // Priority: live GPS (follows you as you travel) -> saved profile city -> London.
+  function initPrayerTimes() {
+    setLoading(true);
+    setLocation('Detecting location...');
+
+    if (!navigator.geolocation) {
+      useSavedLocationOrDefault();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await setLocationFromCoordinates(latitude, longitude);
+        await fetchPrayerTimesForCoordinates(latitude, longitude);
+      },
+      async (error) => {
+        // code 1 = permission denied; anything else = unavailable/timeout
+        if (error.code !== 1) {
+          console.warn('Geolocation unavailable:', error.message);
+        }
+        await useSavedLocationOrDefault();
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60_000 }
+    );
+  }
+
+  // Reverse-geocode coordinates to a "City, Country" label for display
+  async function setLocationFromCoordinates(latitude: number, longitude: number) {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      const data = await response.json();
+      const city = data.address?.city || data.address?.town || data.address?.village || 'Your location';
+      const country = data.address?.country || '';
+      setLocation(`${city}${country ? ', ' + country : ''}`);
+    } catch {
+      setLocation('Your location');
+    }
+  }
+
+  // Fallback when GPS is denied/unavailable: saved profile city, then London
+  async function useSavedLocationOrDefault() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -97,46 +141,11 @@ export function usePrayerTimes(): UsePrayerTimesResult {
         }
       }
     } catch {
-      // Profile fetch failed — fall through to geolocation
+      // Profile fetch failed — fall through to default
     }
 
-    // 2. Fall back to browser geolocation
-    requestLocationAndFetchPrayers();
-  }
-
-  async function requestLocationAndFetchPrayers() {
-    if (!navigator.geolocation) {
-      setLocation('London, UK (default)');
-      await fetchPrayerTimesForCoordinates(51.5074, -0.1278);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          const city = data.address?.city || data.address?.town || data.address?.village || 'Your location';
-          const country = data.address?.country || '';
-          setLocation(`${city}${country ? ', ' + country : ''}`);
-        } catch {
-          setLocation('Your location');
-        }
-
-        await fetchPrayerTimesForCoordinates(latitude, longitude);
-      },
-      (error) => {
-        if (error.code !== 1) {
-          console.warn('Geolocation unavailable:', error.message);
-        }
-        setLocation('London, UK (default)');
-        fetchPrayerTimesForCoordinates(51.5074, -0.1278);
-      }
-    );
+    setLocation('London, UK (default)');
+    await fetchPrayerTimesForCoordinates(51.5074, -0.1278);
   }
 
   async function fetchPrayerTimesForCoordinates(latitude: number, longitude: number) {
@@ -201,5 +210,5 @@ export function usePrayerTimes(): UsePrayerTimesResult {
 
   const nextPrayer = prayerTimes.find(p => !p.isPassed) || null;
 
-  return { prayerTimes, sunrise, location, loading, nextPrayer, currentMinutes };
+  return { prayerTimes, sunrise, location, loading, nextPrayer, currentMinutes, refresh: initPrayerTimes };
 }
