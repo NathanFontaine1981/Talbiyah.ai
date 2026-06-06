@@ -1,13 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Video, Upload, PlayCircle, StopCircle, Trash2, Info } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Video, Upload, PlayCircle, StopCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
-import { INSIGHTS_ADDON } from '../../constants/insightsAddonPricing';
 
 interface Subject {
   id: string;
   name: string;
 }
+
+// Teachers may only choose from these three subjects. Keys are the DB subject
+// names; values are the clean labels shown to teachers.
+const ALLOWED_SUBJECTS: Record<string, string> = {
+  'Quran with Understanding': "Qur'an",
+  'Arabic Language': 'Arabic',
+  'Islamic Studies': 'Islamic Studies',
+};
+const ALLOWED_SUBJECT_ORDER = Object.keys(ALLOWED_SUBJECTS);
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -19,7 +27,6 @@ export default function EditProfile() {
   const [teacherProfileId, setTeacherProfileId] = useState<string | null>(null);
   const [bio, setBio] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('10');
   const [videoUrl, setVideoUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
 
@@ -325,7 +332,6 @@ export default function EditProfile() {
       setTeacherProfileId(teacherProfile.id);
       setBio(teacherProfile.bio || '');
       setEducationLevel(teacherProfile.education_level || '');
-      setHourlyRate(teacherProfile.hourly_rate?.toString() || '10');
       setVideoUrl(teacherProfile.video_intro_url || '');
       setYoutubeUrl(teacherProfile.youtube_intro_url || '');
 
@@ -363,7 +369,15 @@ export default function EditProfile() {
         .order('name');
 
       if (error) throw error;
-      setSubjects(data || []);
+      // Only offer the three available subjects, in a fixed order.
+      const allowed = (data || [])
+        .filter((s) => s.name in ALLOWED_SUBJECTS)
+        .sort(
+          (a, b) =>
+            ALLOWED_SUBJECT_ORDER.indexOf(a.name) -
+            ALLOWED_SUBJECT_ORDER.indexOf(b.name)
+        );
+      setSubjects(allowed);
     } catch (err) {
       console.error('Error loading subjects:', err);
     }
@@ -418,7 +432,6 @@ export default function EditProfile() {
         .update({
           bio: finalBio.trim(),
           education_level: educationLevel.trim() || null,
-          hourly_rate: parseFloat(hourlyRate) || 7,
           video_intro_url: introType === 'video' ? (videoUrl.trim() || currentIntroUrl) : null,
           youtube_intro_url: introType === 'youtube' ? (youtubeUrl.trim() || currentIntroUrl) : null,
         })
@@ -705,58 +718,10 @@ export default function EditProfile() {
                     onChange={() => toggleSubject(subject.id)}
                     className="w-5 h-5 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="text-gray-700 font-medium">{subject.name}</span>
+                  <span className="text-gray-700 font-medium">{ALLOWED_SUBJECTS[subject.name] || subject.name}</span>
                 </label>
               ))}
             </div>
-          </div>
-
-          {/* Hourly Rate */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Your Hourly Rate (£) <span className="text-red-500">*</span>
-            </label>
-            <p className="text-sm text-gray-500 mb-2">
-              Set the rate you charge per hour for your lessons.
-            </p>
-            <div className="relative w-48">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">£</span>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                step="0.50"
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="7"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">/hour</span>
-            </div>
-
-            {/* Platform Fee Breakdown */}
-            {hourlyRate && parseFloat(hourlyRate) > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3 max-w-sm">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-700">
-                    <span>Your rate:</span>
-                    <span className="font-medium">£{parseFloat(hourlyRate).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>+ Platform fee:</span>
-                    <span className="font-medium">£{INSIGHTS_ADDON.pricePerLesson.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t border-blue-200 pt-2 flex justify-between font-semibold text-gray-900">
-                    <span>Student pays:</span>
-                    <span>£{(parseFloat(hourlyRate) + INSIGHTS_ADDON.pricePerLesson).toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 mt-3 text-xs text-blue-700">
-                  <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  <span>The £{INSIGHTS_ADDON.pricePerLesson.toFixed(2)} platform fee covers AI-powered study notes for your students. You receive £{parseFloat(hourlyRate).toFixed(2)}.</span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Video/Audio Introduction */}
