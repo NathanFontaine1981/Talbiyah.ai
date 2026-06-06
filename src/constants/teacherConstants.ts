@@ -30,7 +30,7 @@ export const TEACHER_TIERS: Record<string, TeacherTier> = {
     gradientTo: 'to-emerald-600',
     description: 'New to Talbiyah, eager to help you learn',
     shortDescription: 'New teacher',
-    hourlyRate: 5.00,
+    hourlyRate: 3.00,
     studentPrice: 15.00,
     benefits: [
       'Fresh perspective and enthusiasm',
@@ -49,7 +49,7 @@ export const TEACHER_TIERS: Record<string, TeacherTier> = {
     gradientTo: 'to-blue-600',
     description: 'Building experience, 50+ hours taught',
     shortDescription: '50+ hours taught',
-    hourlyRate: 6.00,
+    hourlyRate: 4.00,
     studentPrice: 15.00,
     benefits: [
       'Proven track record',
@@ -68,7 +68,7 @@ export const TEACHER_TIERS: Record<string, TeacherTier> = {
     gradientTo: 'to-purple-600',
     description: 'Experienced educator, 150+ hours taught',
     shortDescription: '150+ hours taught',
-    hourlyRate: 7.00,
+    hourlyRate: 5.00,
     studentPrice: 15.00,
     benefits: [
       'Extensive experience (150+ hours)',
@@ -88,7 +88,7 @@ export const TEACHER_TIERS: Record<string, TeacherTier> = {
     gradientTo: 'to-amber-600',
     description: 'Verified credentials, ijazah or degree holder',
     shortDescription: 'Verified credentials',
-    hourlyRate: 8.50,
+    hourlyRate: 6.00,
     studentPrice: 16.50,
     benefits: [
       'Ijazah or Islamic degree holder',
@@ -109,7 +109,7 @@ export const TEACHER_TIERS: Record<string, TeacherTier> = {
     gradientTo: 'to-amber-600',
     description: 'Elite educator, multiple ijazahs, Al-Azhar or equivalent',
     shortDescription: 'Elite educator',
-    hourlyRate: 10.00,
+    hourlyRate: 7.00,
     studentPrice: 18.00,
     benefits: [
       'Multiple ijazahs (Quran + Qira\'at)',

@@ -8,7 +8,6 @@ import {
   Lock,
   ArrowRight,
   DollarSign,
-  Users,
   Shield,
   Zap,
   Target,
@@ -23,7 +22,6 @@ interface TierLevel {
   icon: string;
   color: string;
   teacherRate: number;
-  studentPrice: number;
   hoursRequired: number;
   ratingRequired: number;
   requiresApproval: boolean;
@@ -38,8 +36,7 @@ const tiers: TierLevel[] = [
     name: 'Newcomer',
     icon: '🌱',
     color: 'emerald',
-    teacherRate: 4.00,
-    studentPrice: 15.00,
+    teacherRate: 3.00,
     hoursRequired: 0,
     ratingRequired: 0,
     requiresApproval: false,
@@ -61,8 +58,7 @@ const tiers: TierLevel[] = [
     name: 'Apprentice',
     icon: '📚',
     color: 'blue',
-    teacherRate: 5.00,
-    studentPrice: 15.00,
+    teacherRate: 4.00,
     hoursRequired: 50,
     ratingRequired: 4.0,
     requiresApproval: false,
@@ -84,8 +80,7 @@ const tiers: TierLevel[] = [
     name: 'Skilled',
     icon: '🎯',
     color: 'purple',
-    teacherRate: 6.00,
-    studentPrice: 15.00,
+    teacherRate: 5.00,
     hoursRequired: 150,
     ratingRequired: 4.5,
     requiresApproval: false,
@@ -109,8 +104,7 @@ const tiers: TierLevel[] = [
     name: 'Expert',
     icon: '🏆',
     color: 'amber',
-    teacherRate: 7.00,
-    studentPrice: 16.00,
+    teacherRate: 6.00,
     hoursRequired: 250,
     ratingRequired: 4.5,
     requiresApproval: true,
@@ -135,8 +129,7 @@ const tiers: TierLevel[] = [
     name: 'Master',
     icon: '💎',
     color: 'pink',
-    teacherRate: 8.00,
-    studentPrice: 16.00,
+    teacherRate: 7.00,
     hoursRequired: 500,
     ratingRequired: 4.7,
     requiresApproval: true,
@@ -160,11 +153,11 @@ const tiers: TierLevel[] = [
 
 const getTierColor = (color: string) => {
   const colors: Record<string, { bg: string, border: string, text: string, accent: string }> = {
-    emerald: { bg: 'bg-emerald-500/20', border: 'border-emerald-500/50', text: 'text-emerald-400', accent: 'text-emerald-300' },
-    blue: { bg: 'bg-blue-500/20', border: 'border-blue-500/50', text: 'text-blue-400', accent: 'text-blue-300' },
-    purple: { bg: 'bg-purple-500/20', border: 'border-purple-500/50', text: 'text-purple-400', accent: 'text-purple-300' },
-    amber: { bg: 'bg-amber-500/20', border: 'border-amber-500/50', text: 'text-amber-400', accent: 'text-amber-300' },
-    pink: { bg: 'bg-pink-500/20', border: 'border-pink-500/50', text: 'text-pink-400', accent: 'text-pink-300' },
+    emerald: { bg: 'bg-emerald-500/20', border: 'border-emerald-500/50', text: 'text-emerald-600', accent: 'text-emerald-700' },
+    blue: { bg: 'bg-blue-500/20', border: 'border-blue-500/50', text: 'text-blue-600', accent: 'text-blue-700' },
+    purple: { bg: 'bg-purple-500/20', border: 'border-purple-500/50', text: 'text-purple-600', accent: 'text-purple-700' },
+    amber: { bg: 'bg-amber-500/20', border: 'border-amber-500/50', text: 'text-amber-600', accent: 'text-amber-700' },
+    pink: { bg: 'bg-pink-500/20', border: 'border-pink-500/50', text: 'text-pink-600', accent: 'text-pink-700' },
   };
   return colors[color] || colors.emerald;
 };
@@ -188,20 +181,20 @@ export default function TeacherTierInfo() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/50 rounded-full mb-4">
             <Crown className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-medium text-cyan-300">Teacher Tier System</span>
+            <span className="text-sm font-medium text-emerald-700">Teacher Tier System</span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Your Path to Excellence
           </h1>
-          <p className="text-xl text-gray-500 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Progress through five tiers as you teach, grow your skills, and increase your earnings.
             Each tier unlocks better pay, exclusive benefits, and recognition.
           </p>
         </div>
 
         {/* How it Works */}
-        <div className="bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-8 mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+        <div className="bg-gray-50 rounded-xl shadow-lg border border-gray-200 p-8 mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
             <Zap className="w-6 h-6 text-emerald-600" />
             How Progression Works
           </h2>
@@ -211,30 +204,30 @@ export default function TeacherTierInfo() {
                 <Clock className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white mb-2">Teach & Build Hours</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 mb-2">Teach & Build Hours</h3>
+                <p className="text-sm text-gray-600">
                   Complete lessons and accumulate teaching hours on the platform. Your progress is tracked automatically.
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="p-3 bg-emerald-500/20 rounded-lg flex-shrink-0">
-                <Star className="w-6 h-6 text-emerald-400" />
+                <Star className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white mb-2">Maintain High Quality</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 mb-2">Maintain High Quality</h3>
+                <p className="text-sm text-gray-600">
                   Deliver excellent lessons to earn 5-star reviews. Higher tiers require higher ratings.
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="p-3 bg-purple-500/20 rounded-lg flex-shrink-0">
-                <TrendingUp className="w-6 h-6 text-purple-400" />
+                <TrendingUp className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white mb-2">Auto-Promote or Apply</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 mb-2">Auto-Promote or Apply</h3>
+                <p className="text-sm text-gray-600">
                   Tiers 1-3 promote automatically. Expert & Master require credential verification and approval.
                 </p>
               </div>
@@ -251,7 +244,7 @@ export default function TeacherTierInfo() {
             return (
               <div
                 key={tier.tier}
-                className={`bg-gray-100 rounded-xl shadow-lg border ${colorScheme.border} p-8 relative overflow-hidden`}
+                className={`bg-gray-50 rounded-xl shadow-lg border ${colorScheme.border} p-8 relative overflow-hidden`}
               >
                 {/* Tier Level Badge */}
                 <div className="absolute top-4 right-4">
@@ -271,13 +264,9 @@ export default function TeacherTierInfo() {
                       {isLocked && <Lock className="w-6 h-6 text-gray-500" />}
                     </h3>
                     <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-gray-700">
                         <DollarSign className="w-4 h-4" />
                         <span>Earn <strong className={colorScheme.text}>£{tier.teacherRate.toFixed(2)}/hour</strong></span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span>Students pay £{tier.studentPrice.toFixed(2)}/hour</span>
                       </div>
                     </div>
                   </div>
@@ -286,7 +275,7 @@ export default function TeacherTierInfo() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Requirements */}
                   <div>
-                    <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <Target className="w-5 h-5 text-emerald-600" />
                       Requirements
                     </h4>
@@ -310,7 +299,7 @@ export default function TeacherTierInfo() {
                         </div>
                       ))}
                       {isLocked && (
-                        <div className="flex items-start gap-2 text-sm text-amber-400 mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                        <div className="flex items-start gap-2 text-sm text-amber-700 mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                           <Shield className="w-4 h-4 mt-0.5 flex-shrink-0" />
                           <span><strong>Manual Approval Required</strong> - Submit application after meeting requirements</span>
                         </div>
@@ -320,14 +309,14 @@ export default function TeacherTierInfo() {
 
                   {/* Benefits */}
                   <div>
-                    <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                      <Award className="w-5 h-5 text-emerald-400" />
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Award className="w-5 h-5 text-emerald-600" />
                       Benefits
                     </h4>
                     <div className="space-y-2">
                       {tier.benefits.map((benefit, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                          <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                          <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600" />
                           <span>{benefit}</span>
                         </div>
                       ))}
@@ -338,7 +327,7 @@ export default function TeacherTierInfo() {
                 {/* Progress Arrow */}
                 {index < tiers.length - 1 && (
                   <div className="flex justify-center mt-8">
-                    <div className="p-3 bg-white rounded-full">
+                    <div className="p-3 bg-white border border-gray-200 rounded-full">
                       <ArrowRight className="w-6 h-6 text-emerald-600" />
                     </div>
                   </div>
@@ -350,7 +339,7 @@ export default function TeacherTierInfo() {
 
         {/* Call to Action */}
         <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-500/20 rounded-xl shadow-lg border border-emerald-500/50 p-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-3">Ready to Start Your Journey?</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Ready to Start Your Journey?</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
             View your current tier status, track your progress towards the next level, and see how much you can earn.
           </p>

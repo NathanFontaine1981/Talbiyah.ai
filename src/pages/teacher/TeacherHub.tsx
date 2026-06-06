@@ -8,7 +8,6 @@ import {
   Award,
   Calendar,
   Users,
-  TrendingUp,
   Settings,
   CreditCard,
   ArrowRight,
@@ -365,21 +364,12 @@ export default function TeacherHub() {
           <div className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="text-5xl">{stats.tier_icon}</div>
+                <div className="text-5xl">💷</div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{stats.tier_name} Teacher</h2>
-                  <p className="text-gray-400">£{stats.teacher_hourly_rate.toFixed(2)}/hour</p>
+                  <h2 className="text-2xl font-bold text-white">£{stats.teacher_hourly_rate.toFixed(2)}/hour</h2>
+                  <p className="text-gray-400">Your payout rate</p>
                 </div>
               </div>
-              {stats.next_auto_tier && (
-                <button
-                  onClick={() => navigate('/teacher/tiers')}
-                  className="px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-600 font-semibold transition flex items-center space-x-2"
-                >
-                  <TrendingUp className="w-5 h-5" />
-                  <span>View Progress</span>
-                </button>
-              )}
             </div>
           </div>
         )}
@@ -745,69 +735,6 @@ export default function TeacherHub() {
                   className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
                 >
                   View Full Earnings
-                </button>
-              </div>
-
-              <div className="bg-gradient-to-br from-emerald-500/10 to-blue-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
-                <h3 className="text-xl font-bold text-white mb-3">🎯 Tier Progress</h3>
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Current Tier</span>
-                    <span className="font-semibold text-emerald-400">{stats?.tier_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Hours Taught</span>
-                    <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Student Retention</span>
-                    <span className="font-semibold text-emerald-400">
-                      {(stats?.total_unique_students || 0) >= 5
-                        ? `${(stats?.retention_rate || 0).toFixed(0)}%`
-                        : 'Need 5+ students'}
-                    </span>
-                  </div>
-                  {stats?.next_auto_tier && stats?.hours_to_next_tier !== null && stats.hours_to_next_tier > 0 && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Next Tier</span>
-                        <span className="font-semibold text-blue-400 capitalize">
-                          {stats.next_auto_tier}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Hours to Promotion</span>
-                        <span className="font-semibold text-amber-400">
-                          {stats.hours_to_next_tier.toFixed(1)}h remaining
-                        </span>
-                      </div>
-                      {stats.min_retention_for_next && stats.min_retention_for_next > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400">Retention Required</span>
-                          <span className="font-semibold text-emerald-400">
-                            {stats.min_retention_for_next}% ({stats.min_students_for_next}+ students)
-                          </span>
-                        </div>
-                      )}
-                      {/* Progress bar */}
-                      <div className="mt-3">
-                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
-                            style={{
-                              width: `${Math.min(100, ((stats.hours_taught || 0) / ((stats.hours_taught || 0) + stats.hours_to_next_tier)) * 100)}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <button
-                  onClick={() => navigate('/teacher/tiers')}
-                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
-                >
-                  View Tier Details
                 </button>
               </div>
             </>

@@ -598,15 +598,8 @@ export default function TeacherProfileSetup() {
                       <span className="font-semibold text-emerald-600">💡 Hourly Rate</span>
                     </p>
                     <p className="text-xs text-gray-500">
-                      Your earnings rate is determined by your teacher tier. New teachers start at the Newcomer tier (£4/hour).
-                      As you teach more hours and maintain good ratings, you'll automatically progress through tiers with higher rates (up to £8/hour).
+                      You'll be paid £3/hour for every hour you teach on Talbiyah.
                     </p>
-                    <a
-                      href="/teacher/tier-info"
-                      className="text-xs text-emerald-600 hover:text-emerald-700 mt-2 inline-block"
-                    >
-                      Learn about teacher tiers →
-                    </a>
                   </div>
                 )}
               </div>

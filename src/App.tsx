@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { initSentry } from './sentryConfig';
@@ -152,8 +152,6 @@ const HomeworkReview = lazy(() => import('./pages/teacher/HomeworkReview'));
 const TeacherGroupLessons = lazy(() => import('./pages/teacher/GroupLessons'));
 const TeacherGroupHomework = lazy(() => import('./pages/teacher/GroupHomework'));
 const MySchedule = lazy(() => import('./pages/teacher/MySchedule'));
-const TeacherTierDashboard = lazy(() => import('./pages/TeacherTierDashboard'));
-const TeacherTierInfo = lazy(() => import('./pages/TeacherTierInfo'));
 const TeacherEarnings = lazy(() => import('./pages/TeacherEarnings'));
 const TeacherPaymentSettings = lazy(() => import('./pages/TeacherPaymentSettings'));
 const TeacherDiagnosticAssessment = lazy(() => import('./pages/teacher/DiagnosticAssessment'));
@@ -515,22 +513,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/teacher/tiers"
-          element={
-            <ProtectedRoute requireTeacherOrAdmin={true}>
-              <TeacherTierDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/teacher/tier-info"
-          element={
-            <ProtectedRoute requireTeacherOrAdmin={true}>
-              <TeacherTierInfo />
-            </ProtectedRoute>
-          }
-        />
+        {/* Tier pages are hidden from teachers — redirect to dashboard */}
+        <Route path="/teacher/tiers" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/teacher/tier-info" element={<Navigate to="/dashboard" replace />} />
         <Route
           path="/teacher/tier-diagnostic"
           element={

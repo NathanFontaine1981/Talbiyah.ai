@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle, Mail, BookOpen, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, CheckCircle, Mail, BookOpen, Award } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface TierInfo {
@@ -8,19 +8,10 @@ interface TierInfo {
   hourly_rate: number;
 }
 
-const TIER_INFO = [
-  { name: 'Master', rate: 8, emoji: '💎', description: 'Multiple Ijazahs + Islamic Degree + Native English' },
-  { name: 'Expert', rate: 7, emoji: '🏆', description: 'Ijazah OR Degree + Fluent/Native English' },
-  { name: 'Skilled', rate: 6, emoji: '🎯', description: '5+ years experience OR Teaching Certificate' },
-  { name: 'Apprentice', rate: 5, emoji: '📚', description: '2-5 years teaching experience' },
-  { name: 'Newcomer', rate: 4, emoji: '🌱', description: '0-2 years (default starting tier)' },
-];
-
 export default function TeacherPendingApproval() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
   const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
-  const [showTierDetails, setShowTierDetails] = useState(false);
 
   useEffect(() => {
     checkApprovalStatus();
@@ -113,23 +104,20 @@ export default function TeacherPendingApproval() {
               </div>
             </div>
 
-            {/* Your Starting Tier Section */}
+            {/* Your Payout Rate */}
             {tierInfo && (
               <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-6 mb-8 text-left">
                 <div className="flex items-center justify-center space-x-3 mb-4">
                   <Award className="w-8 h-8 text-emerald-600" />
-                  <h3 className="text-xl font-bold text-gray-900">Your Starting Tier</h3>
+                  <h3 className="text-xl font-bold text-gray-900">Your Payout Rate</h3>
                 </div>
 
-                <div className="bg-white rounded-lg p-5 border border-emerald-200 mb-4">
-                  <p className="text-sm text-gray-500 mb-2 text-center">Based on your qualifications:</p>
+                <div className="bg-white rounded-lg p-5 border border-emerald-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold text-emerald-700">
-                        {TIER_INFO.find(t => t.name === tierInfo.tier_name)?.emoji} {tierInfo.tier_name} Tier
-                      </p>
+                      <p className="text-sm text-gray-500">You'll be paid</p>
                       <p className="text-sm text-gray-500 mt-1">
-                        Auto-approved after document verification
+                        for every hour you teach on Talbiyah
                       </p>
                     </div>
                     <div className="text-right">
@@ -138,50 +126,6 @@ export default function TeacherPendingApproval() {
                     </div>
                   </div>
                 </div>
-
-                <p className="text-xs text-emerald-700 text-center mb-4">
-                  Your tier can increase as you teach more hours and receive higher ratings on our platform!
-                </p>
-
-                {/* Expandable Tier Details */}
-                <button
-                  onClick={() => setShowTierDetails(!showTierDetails)}
-                  className="w-full flex items-center justify-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition py-2"
-                >
-                  <span>How tiers work</span>
-                  {showTierDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-
-                {showTierDetails && (
-                  <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200">
-                    <h4 className="font-semibold text-gray-700 mb-3 text-sm">All Teacher Tiers</h4>
-                    <div className="space-y-2">
-                      {TIER_INFO.map((tier) => (
-                        <div
-                          key={tier.name}
-                          className={`flex items-center justify-between text-xs p-2 rounded ${
-                            tier.name === tierInfo.tier_name
-                              ? 'bg-emerald-50 border border-emerald-300'
-                              : ''
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <span>{tier.emoji}</span>
-                            <span className={tier.name === tierInfo.tier_name ? 'text-emerald-700 font-semibold' : 'text-gray-600'}>
-                              {tier.name}
-                            </span>
-                          </div>
-                          <span className={tier.name === tierInfo.tier_name ? 'text-emerald-700 font-semibold' : 'text-gray-600'}>
-                            £{tier.rate.toFixed(2)}/hr
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3">
-                      After approval, your tier increases automatically as you teach and receive good ratings!
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 

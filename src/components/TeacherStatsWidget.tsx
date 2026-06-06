@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Clock, Users, BookOpen, PoundSterling, Star, TrendingUp, Award } from 'lucide-react';
+import { Clock, Users, BookOpen, PoundSterling, Star, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { useNavigate } from 'react-router-dom';
 
 interface TeacherStats {
   totalHours: number;
@@ -17,7 +16,6 @@ interface TeacherStats {
 }
 
 export default function TeacherStatsWidget() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState<TeacherStats>({
     totalHours: 0,
     totalStudents: 0,
@@ -28,7 +26,7 @@ export default function TeacherStatsWidget() {
     tier: 'newcomer',
     tierName: 'Newcomer',
     tierIcon: '🌱',
-    teacherHourlyRate: 5.0
+    teacherHourlyRate: 3.0
   });
   const [loading, setLoading] = useState(true);
   const [isIndependent, setIsIndependent] = useState(false);
@@ -97,7 +95,7 @@ export default function TeacherStatsWidget() {
           tierIcon: tierStats.tier_icon || '🥉',
           teacherHourlyRate: teacherIsIndependent
             ? (Number(teacherProfile.independent_rate) || 0)
-            : (tierStats.teacher_hourly_rate || 15.0)
+            : (tierStats.teacher_hourly_rate || 3.0)
         });
       }
     } catch (error) {
@@ -193,28 +191,15 @@ export default function TeacherStatsWidget() {
           </div>
         </div>
       ) : (
-        <div
-          onClick={() => navigate('/teacher/tiers')}
-          className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 rounded-xl p-4 border border-emerald-500/30 mb-4 cursor-pointer hover:border-emerald-500/50 transition"
-        >
+        <div className="bg-gradient-to-r from-emerald-500/10 to-blue-600/10 rounded-xl p-4 border border-emerald-500/30 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="text-3xl">{stats.tierIcon}</div>
+              <div className="text-3xl">💷</div>
               <div>
-                <p className="text-xs text-gray-500">Current Tier</p>
-                <p className="text-lg font-bold text-white">{stats.tierName}</p>
+                <p className="text-xs text-gray-500">Your Payout</p>
+                <p className="text-lg font-bold text-white">£{stats.teacherHourlyRate.toFixed(2)}/hour</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Hourly Rate</p>
-              <p className="text-lg font-bold text-emerald-400">£{stats.teacherHourlyRate.toFixed(2)}</p>
-            </div>
-          </div>
-          <div className="mt-2 flex items-center justify-center">
-            <button className="text-xs text-emerald-600 hover:text-blue-400 font-medium flex items-center space-x-1">
-              <Award className="w-3 h-3" />
-              <span>View Tier Progress</span>
-            </button>
           </div>
         </div>
       )}
