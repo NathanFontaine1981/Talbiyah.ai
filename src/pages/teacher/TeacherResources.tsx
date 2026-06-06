@@ -95,6 +95,7 @@ export default function TeacherResources() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedResource, setSelectedResource] = useState<OnboardingResource | null>(null);
   const [markingRead, setMarkingRead] = useState(false);
+  const [modalLang, setModalLang] = useState<'english' | 'arabic'>('english');
 
   useEffect(() => {
     loadData();
@@ -228,6 +229,7 @@ export default function TeacherResources() {
       }
       return;
     }
+    setModalLang('english');
     setSelectedResource(resource);
   }
 
@@ -417,16 +419,39 @@ export default function TeacherResources() {
                     {selectedResource.resource_type}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {selectedResource.title}
-                </h2>
-                {selectedResource.title_arabic && (
-                  <p
-                    className="text-base text-gray-500 dark:text-gray-400 mt-1 font-arabic"
-                    dir="rtl"
-                  >
+                {/* Language toggle — only when an Arabic version exists */}
+                {(selectedResource.title_arabic || selectedResource.description_arabic) && (
+                  <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 mb-2">
+                    <button
+                      onClick={() => setModalLang('english')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                        modalLang === 'english'
+                          ? 'bg-emerald-500 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => setModalLang('arabic')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition font-arabic ${
+                        modalLang === 'arabic'
+                          ? 'bg-emerald-500 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      العربية
+                    </button>
+                  </div>
+                )}
+                {modalLang === 'arabic' && selectedResource.title_arabic ? (
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white font-arabic" dir="rtl">
                     {selectedResource.title_arabic}
-                  </p>
+                  </h2>
+                ) : (
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {selectedResource.title}
+                  </h2>
                 )}
               </div>
               <button
@@ -439,20 +464,21 @@ export default function TeacherResources() {
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6">
-              {/* Description */}
-              {selectedResource.description && (
-                <div className="mb-4">
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {selectedResource.description}
-                  </p>
-                </div>
-              )}
-              {selectedResource.description_arabic && (
+              {/* Description — language follows the toggle */}
+              {modalLang === 'arabic' && selectedResource.description_arabic ? (
                 <div className="mb-4" dir="rtl">
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap font-arabic">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap font-arabic">
                     {selectedResource.description_arabic}
                   </p>
                 </div>
+              ) : (
+                selectedResource.description && (
+                  <div className="mb-4">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {selectedResource.description}
+                    </p>
+                  </div>
+                )
               )}
 
               {/* PDF embed */}
