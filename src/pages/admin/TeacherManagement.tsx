@@ -34,6 +34,14 @@ interface TeacherApplication {
   is_accepting_bookings: boolean;
 }
 
+// The three bookable Talbiyah subjects (DB name -> clean label shown to admin).
+const SUBJECT_LABELS: Record<string, string> = {
+  'Quran with Understanding': "Qur'an",
+  'Arabic Language': 'Arabic',
+  'Islamic Studies': 'Islamic Studies',
+};
+const SUBJECT_ORDER = Object.keys(SUBJECT_LABELS);
+
 export default function TeacherManagement() {
   const [pendingApplications, setPendingApplications] = useState<TeacherApplication[]>([]);
   const [approvedTeachers, setApprovedTeachers] = useState<TeacherApplication[]>([]);
@@ -41,6 +49,10 @@ export default function TeacherManagement() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Bookable subjects: the 3 available subjects, and each teacher's current selection
+  const [allowedSubjects, setAllowedSubjects] = useState<{ id: string; name: string; label: string }[]>([]);
+  const [teacherSubjects, setTeacherSubjects] = useState<Record<string, string[]>>({});
+  const [subjectSavingId, setSubjectSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeachers();
@@ -119,6 +131,28 @@ export default function TeacherManagement() {
 
       setPendingApplications(formattedData.filter(t => t.status === 'pending_approval'));
       setApprovedTeachers(formattedData.filter(t => t.status === 'approved'));
+
+      // Load the 3 bookable subjects + each teacher's current selections
+      const { data: subjectsData } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .in('name', SUBJECT_ORDER);
+      const ordered = (subjectsData || [])
+        .map(s => ({ id: s.id, name: s.name, label: SUBJECT_LABELS[s.name] || s.name }))
+        .sort((a, b) => SUBJECT_ORDER.indexOf(a.name) - SUBJECT_ORDER.indexOf(b.name));
+      setAllowedSubjects(ordered);
+
+      const teacherIds = teacherProfilesData.map(tp => tp.id);
+      const { data: tsData } = await supabase
+        .from('teacher_subjects')
+        .select('teacher_id, subject_id')
+        .in('teacher_id', teacherIds);
+      const tsMap: Record<string, string[]> = {};
+      (tsData || []).forEach(row => {
+        if (!tsMap[row.teacher_id]) tsMap[row.teacher_id] = [];
+        tsMap[row.teacher_id].push(row.subject_id);
+      });
+      setTeacherSubjects(tsMap);
     } catch (error) {
       console.error('Error fetching teachers:', error);
     } finally {
@@ -200,6 +234,40 @@ export default function TeacherManagement() {
       toast.error('Failed to reject teacher. Please try again.');
     } finally {
       setProcessingId(null);
+    }
+  }
+
+  async function toggleTeacherSubject(teacherId: string, subjectId: string) {
+    const current = teacherSubjects[teacherId] || [];
+    const hasSubject = current.includes(subjectId);
+    setSubjectSavingId(teacherId);
+    try {
+      if (hasSubject) {
+        const { error } = await supabase
+          .from('teacher_subjects')
+          .delete()
+          .eq('teacher_id', teacherId)
+          .eq('subject_id', subjectId);
+        if (error) throw error;
+        setTeacherSubjects(prev => ({
+          ...prev,
+          [teacherId]: (prev[teacherId] || []).filter(id => id !== subjectId),
+        }));
+      } else {
+        const { error } = await supabase
+          .from('teacher_subjects')
+          .insert({ teacher_id: teacherId, subject_id: subjectId });
+        if (error) throw error;
+        setTeacherSubjects(prev => ({
+          ...prev,
+          [teacherId]: [...(prev[teacherId] || []), subjectId],
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating teacher subjects:', error);
+      toast.error('Failed to update subjects. Please try again.');
+    } finally {
+      setSubjectSavingId(null);
     }
   }
 
@@ -400,6 +468,43 @@ export default function TeacherManagement() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Bookable Subjects (admin sets which subjects this teacher is available for) */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                  <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Bookable Subjects</span>
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Choose which Talbiyah subjects this teacher is available for. Students can book these.
+                </p>
+                {allowedSubjects.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">No subjects available.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {allowedSubjects.map((s) => {
+                      const checked = (teacherSubjects[teacher.id] || []).includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTeacherSubject(teacher.id, s.id);
+                          }}
+                          disabled={subjectSavingId === teacher.id}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition disabled:opacity-50 ${
+                            checked
+                              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                              : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-400'
+                          }`}
+                        >
+                          {checked ? '✓ ' : ''}{s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Bio */}
