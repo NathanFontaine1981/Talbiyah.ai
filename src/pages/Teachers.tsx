@@ -239,13 +239,25 @@ export default function Teachers() {
         `)
         .eq('status', 'approved');
 
-      // Get teachers who have availability set (with is_available = true)
+      // Get teachers who have availability set: recurring (is_available = true)
+      // OR upcoming one-off availability on a specific date. Without the one-off
+      // check, teachers who only set specific dates would never appear.
       const { data: availabilityData } = await supabase
         .from('teacher_availability')
         .select('teacher_id')
         .eq('is_available', true);
 
-      const teachersWithAvailability = new Set(availabilityData?.map(a => a.teacher_id) || []);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: oneOffAvailabilityData } = await supabase
+        .from('teacher_availability_one_off')
+        .select('teacher_id')
+        .eq('is_available', true)
+        .gte('date', todayStr);
+
+      const teachersWithAvailability = new Set([
+        ...(availabilityData?.map(a => a.teacher_id) || []),
+        ...(oneOffAvailabilityData?.map(a => a.teacher_id) || []),
+      ]);
 
       // Merge the data
       const teachersMap = new Map(data?.map(t => [t.teacher_id, t]) || []);
@@ -334,13 +346,15 @@ export default function Teachers() {
 
       const selectedSubjectNames = selectedSubjects.map(id => subjectIdToName.get(id)).filter(Boolean) as string[];
 
-      // Get teachers who have availability with these subjects
-      const { data: availabilityWithSubjects, error } = await supabase
-        .from('teacher_availability')
-        .select('teacher_id, subjects')
-        .eq('is_available', true);
+      // Get teachers who have availability (recurring or upcoming one-off) with these subjects
+      const todayStr = new Date().toISOString().split('T')[0];
+      const [{ data: recurringWithSubjects, error }, { data: oneOffWithSubjects }] = await Promise.all([
+        supabase.from('teacher_availability').select('teacher_id, subjects').eq('is_available', true),
+        supabase.from('teacher_availability_one_off').select('teacher_id, subjects').eq('is_available', true).gte('date', todayStr),
+      ]);
+      const availabilityWithSubjects = [...(recurringWithSubjects || []), ...(oneOffWithSubjects || [])];
 
-      if (!error && availabilityWithSubjects) {
+      if (!error) {
         const teacherIdsWithSubjects = new Set<string>();
 
         availabilityWithSubjects.forEach(avail => {
