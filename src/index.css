@@ -15,6 +15,10 @@
 
   body {
     @apply antialiased;
+    /* Append loaded Arabic web fonts as a global fallback so Arabic text never
+       renders as missing-glyph squares on devices without a system Arabic font,
+       even when not explicitly wrapped in .font-arabic. */
+    font-family: theme('fontFamily.sans'), 'Noto Naskh Arabic', 'Amiri';
   }
 }
 
