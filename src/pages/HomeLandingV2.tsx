@@ -71,6 +71,26 @@ export default function HomeLandingV2() {
     }
   }
 
+  async function handleForgotPassword() {
+    setAuthError('');
+    if (!authForm.email) {
+      setAuthError('Enter your email address above first, then tap "Forgot password?"');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authForm.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success(`Password reset email sent to ${authForm.email}. Check your inbox (and spam).`);
+    } catch (err: any) {
+      setAuthError(err.message || 'Could not send the reset email. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut();
   }
@@ -1287,6 +1307,16 @@ export default function HomeLandingV2() {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                   placeholder="Enter your password"
                 />
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={authLoading}
+                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               <button

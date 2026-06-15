@@ -29,9 +29,14 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Document, Page, pdfjs } from 'react-pdf';
+// Bundle the PDF.js worker locally (served same-origin, exact version match with
+// the installed pdfjs-dist) instead of loading it from the unpkg CDN. The CDN
+// approach failed/version-mismatched, which broke the inline viewer and forced
+// teachers to open PDFs in a new tab.
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 import { supabase } from '../lib/supabaseClient';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
