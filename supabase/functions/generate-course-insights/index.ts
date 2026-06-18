@@ -265,6 +265,74 @@ CHECKLIST:
 - Mix of challenge and encouragement
 - Connection to new Muslim experience`;
 
+// Call Claude with streaming and accumulate the full text response.
+// Streaming is required for large max_tokens (>~16K) to avoid HTTP timeouts.
+async function streamClaudeText(params: {
+  apiKey: string;
+  model: string;
+  maxTokens: number;
+  temperature: number;
+  system: string;
+  userContent: unknown;
+}): Promise<{ text: string; stopReason: string | null }> {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": params.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      temperature: params.temperature,
+      stream: true,
+      system: params.system,
+      messages: [{ role: "user", content: params.userContent }],
+    }),
+  });
+
+  if (!resp.ok || !resp.body) {
+    const errorText = await resp.text().catch(() => "no body");
+    throw new Error(`Claude API error (${resp.status}): ${errorText}`);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  let stopReason: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      let evt: any;
+      try {
+        evt = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+        text += evt.delta.text;
+      } else if (evt.type === "message_delta" && evt.delta?.stop_reason) {
+        stopReason = evt.delta.stop_reason;
+      } else if (evt.type === "error") {
+        throw new Error(`Claude stream error: ${JSON.stringify(evt.error)}`);
+      }
+    }
+  }
+
+  return { text, stopReason };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -409,7 +477,7 @@ Deno.serve(async (req: Request) => {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 16384,
           temperature: 0.4,
           system: TEACHING_PLAN_PROMPT,
@@ -551,27 +619,25 @@ ${session.transcript}
 
 Generate the study notes following the exact format specified in the system prompt. Be thorough — cover everything taught, not just a summary.`;
 
-    console.log(`Calling Claude API for course session ${session.session_number} of "${courseName}"...`);
+    console.log(`Calling Claude API (streaming) for course session ${session.session_number} of "${courseName}"...`);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicApiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 16384,
+    // Stream the response so long, multi-section study notes don't truncate
+    // (Sonnet 4.6 supports up to 64K output; streaming avoids HTTP timeouts above ~16K).
+    let generatedText = "";
+    let stopReason: string | null = null;
+    try {
+      const result = await streamClaudeText({
+        apiKey: anthropicApiKey,
+        model: "claude-sonnet-4-6",
+        maxTokens: 32000,
         temperature: 0.3,
         system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Claude API error:", errorText);
+        userContent: userPrompt,
+      });
+      generatedText = result.text;
+      stopReason = result.stopReason;
+    } catch (err: any) {
+      console.error("Claude API error:", err?.message || err);
 
       // Reset session status on failure
       await supabase
@@ -580,13 +646,10 @@ Generate the study notes following the exact format specified in the system prom
         .eq("id", course_session_id);
 
       return new Response(
-        JSON.stringify({ error: "Failed to generate insights", details: errorText }),
+        JSON.stringify({ error: "Failed to generate insights", details: err?.message || String(err) }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const data = await response.json();
-    const generatedText = data.content?.[0]?.text;
 
     if (!generatedText) {
       await supabase
@@ -598,6 +661,10 @@ Generate the study notes following the exact format specified in the system prom
         JSON.stringify({ error: "No response generated from AI" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (stopReason === "max_tokens") {
+      console.warn(`Insights for session ${course_session_id} hit max_tokens — notes may be truncated.`);
     }
 
     const processingTime = Date.now() - startTime;
@@ -659,7 +726,7 @@ Generate the study notes following the exact format specified in the system prom
           summary,
           insights_content: generatedText,
           detailed_insights: detailedInsights,
-          ai_model: "claude-sonnet-4-20250514",
+          ai_model: "claude-sonnet-4-6",
           confidence_score: 0.85,
           processing_time_ms: processingTime,
         })
@@ -678,7 +745,7 @@ Generate the study notes following the exact format specified in the system prom
           summary,
           insights_content: generatedText,
           detailed_insights: detailedInsights,
-          ai_model: "claude-sonnet-4-20250514",
+          ai_model: "claude-sonnet-4-6",
           confidence_score: 0.85,
           processing_time_ms: processingTime,
         })

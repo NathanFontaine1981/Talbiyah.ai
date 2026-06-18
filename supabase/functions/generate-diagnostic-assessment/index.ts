@@ -123,7 +123,7 @@ Provide your analysis in this exact JSON structure (return ONLY valid JSON, no m
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
+        model: "claude-haiku-4-5",
         max_tokens: 2000,
         messages: [
           {

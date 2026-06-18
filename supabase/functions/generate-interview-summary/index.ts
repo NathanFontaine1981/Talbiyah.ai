@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 1024,
         messages: [
           {
@@ -179,7 +179,7 @@ Please provide:
       .from("recruitment_interviews")
       .update({
         ai_summary: summary,
-        ai_model: "claude-sonnet-4-20250514",
+        ai_model: "claude-sonnet-4-6",
       })
       .eq("id", interview_id);
 

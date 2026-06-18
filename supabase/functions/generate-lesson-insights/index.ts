@@ -1665,7 +1665,7 @@ Generate the insights following the exact format specified in the system prompt.
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 8192, // Increased for detailed Arabic notes
           temperature: 0.3,
           system: systemPrompt,
@@ -2062,7 +2062,7 @@ Generate the insights following the exact format specified in the system prompt.
           summary: summaryText,
           key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
-          ai_model: 'claude-sonnet-4-20250514',
+          ai_model: 'claude-sonnet-4-6',
           confidence_score: 0.90,
           processing_time_ms: processingTime,
           raw_transcript: transcript, // Preserve transcript for future regeneration
@@ -2086,7 +2086,7 @@ Generate the insights following the exact format specified in the system prompt.
           summary: summaryText,
           key_topics: keyTopics,
           detailed_insights: detailedInsightsData,
-          ai_model: 'claude-sonnet-4-20250514',
+          ai_model: 'claude-sonnet-4-6',
           confidence_score: 0.90,
           processing_time_ms: processingTime,
           raw_transcript: transcript, // Preserve transcript for future regeneration

@@ -153,7 +153,7 @@ Generate the khutba content in the exact JSON format specified.`;
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 8192,
           temperature: 0.4,
           system: SYSTEM_PROMPT,

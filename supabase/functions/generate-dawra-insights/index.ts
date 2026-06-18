@@ -268,7 +268,7 @@ Generate the study notes following the exact format specified in the system prom
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 16384,
         temperature: 0.3,
         system: systemPrompt,
@@ -371,7 +371,7 @@ Generate the study notes following the exact format specified in the system prom
           summary,
           insights_content: generatedText,
           detailed_insights: detailedInsights,
-          ai_model: "claude-sonnet-4-20250514",
+          ai_model: "claude-sonnet-4-6",
           confidence_score: 0.85,
           processing_time_ms: processingTime,
         })
@@ -391,7 +391,7 @@ Generate the study notes following the exact format specified in the system prom
           summary,
           insights_content: generatedText,
           detailed_insights: detailedInsights,
-          ai_model: "claude-sonnet-4-20250514",
+          ai_model: "claude-sonnet-4-6",
           confidence_score: 0.85,
           processing_time_ms: processingTime,
         })
