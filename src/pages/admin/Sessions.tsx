@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 import { formatLessonTime, formatLessonDate } from '../../lib/formatLessonTime';
 
 interface SessionStats {
@@ -243,8 +242,8 @@ export default function Sessions() {
 
     try {
       const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
+        .from('lessons')
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
         .eq('id', selectedSession.id);
 
       if (error) throw error;
@@ -620,19 +619,25 @@ function NewSessionModal({ onClose, onSuccess }: any) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('bookings').insert([{
-        teacher_id: formData.teacher_id,
-        student_id: formData.student_id,
-        subject_id: formData.subject_id,
-        scheduled_date: formData.scheduled_date,
-        scheduled_time: formData.scheduled_time,
-        duration_minutes: formData.duration_minutes,
-        price: formData.price,
-        status: formData.status,
-        payment_status: 'unpaid',
-      }]);
+      // Create via the internal booking function so a 100ms room is provisioned
+      // (raw-inserting into `lessons` would create a room-less, unjoinable lesson).
+      const scheduledIso = new Date(
+        `${formData.scheduled_date}T${formData.scheduled_time}`
+      ).toISOString();
+
+      const { data, error } = await supabase.functions.invoke('create-single-booking-internal', {
+        body: {
+          user_id: formData.student_id,        // student profiles.id
+          teacher_id: formData.teacher_id,      // teacher_profiles.id
+          date: formData.scheduled_date,        // YYYY-MM-DD
+          time: scheduledIso,                   // full ISO -> stored as scheduled_time
+          subject: formData.subject_id,         // subjects.id
+          duration: Number(formData.duration_minutes) || 60,
+        },
+      });
 
       if (error) throw error;
+      if (data && (data as any).error) throw new Error((data as any).error);
 
       await onSuccess();
       onClose();
@@ -666,8 +671,8 @@ function NewSessionModal({ onClose, onSuccess }: any) {
               >
                 <option value="">Select Teacher</option>
                 {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.user_id}>
-                    {(teacher.profiles as any).full_name}
+                  <option key={teacher.id} value={teacher.id}>
+                    {(teacher.profiles as any)?.full_name || 'Unknown'}
                   </option>
                 ))}
               </select>
@@ -824,7 +829,8 @@ function ViewSessionModal({ session, onClose }: any) {
           </div>
           <div>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Scheduled</p>
-            <p>{format(new Date(session.scheduled_date), 'MMMM d, yyyy')} at {session.scheduled_time}</p>
+            <p>Teacher: {formatLessonDate(session.scheduled_time, session.teacher_tz)} · {formatLessonTime(session.scheduled_time, session.teacher_tz)}</p>
+            <p>Student: {formatLessonDate(session.scheduled_time, session.student_tz)} · {formatLessonTime(session.scheduled_time, session.student_tz)}</p>
           </div>
           <div>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Duration</p>
@@ -860,10 +866,12 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
 
+  const _editInit = new Date(session.scheduled_time);
+  const _pad = (n: number) => String(n).padStart(2, '0');
   const [formData, setFormData] = useState({
     subject_id: '',
-    scheduled_date: session.scheduled_date,
-    scheduled_time: session.scheduled_time,
+    scheduled_date: `${_editInit.getFullYear()}-${_pad(_editInit.getMonth() + 1)}-${_pad(_editInit.getDate())}`,
+    scheduled_time: `${_pad(_editInit.getHours())}:${_pad(_editInit.getMinutes())}`,
     duration_minutes: session.duration_minutes,
     price: session.price,
     status: session.status,
@@ -891,10 +899,10 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
 
     try {
       const updateData: any = {
-        scheduled_date: formData.scheduled_date,
-        scheduled_time: formData.scheduled_time,
+        scheduled_time: new Date(
+          `${formData.scheduled_date}T${formData.scheduled_time}`
+        ).toISOString(),
         duration_minutes: formData.duration_minutes,
-        price: formData.price,
         status: formData.status,
       };
 
@@ -903,7 +911,7 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
       }
 
       const { error } = await supabase
-        .from('bookings')
+        .from('lessons')
         .update(updateData)
         .eq('id', session.id);
 
@@ -1042,9 +1050,11 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
 
 function RescheduleModal({ session, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
+  const _rInit = new Date(session.scheduled_time);
+  const _pad = (n: number) => String(n).padStart(2, '0');
   const [formData, setFormData] = useState({
-    scheduled_date: session.scheduled_date,
-    scheduled_time: session.scheduled_time,
+    scheduled_date: `${_rInit.getFullYear()}-${_pad(_rInit.getMonth() + 1)}-${_pad(_rInit.getDate())}`,
+    scheduled_time: `${_pad(_rInit.getHours())}:${_pad(_rInit.getMinutes())}`,
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1053,10 +1063,11 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
 
     try {
       const { error } = await supabase
-        .from('bookings')
+        .from('lessons')
         .update({
-          scheduled_date: formData.scheduled_date,
-          scheduled_time: formData.scheduled_time,
+          scheduled_time: new Date(
+            `${formData.scheduled_date}T${formData.scheduled_time}`
+          ).toISOString(),
         })
         .eq('id', session.id);
 
@@ -1085,7 +1096,7 @@ function RescheduleModal({ session, onClose, onSuccess }: any) {
         <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Schedule:</p>
           <p className="text-gray-900 dark:text-white font-medium">
-            {format(new Date(session.scheduled_date), 'MMMM d, yyyy')} at {session.scheduled_time}
+            {formatLessonDate(session.scheduled_time, null)} at {formatLessonTime(session.scheduled_time, null)}
           </p>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
             {session.teacher_name} → {session.student_name}

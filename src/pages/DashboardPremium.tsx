@@ -372,6 +372,7 @@ export default function DashboardPremium() {
         { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics', active: false, roles: ['Admin'] },
         { icon: Users, label: 'Manage Users', path: '/admin/users', active: false, roles: ['Admin'] },
         { icon: GraduationCap, label: 'Manage Teachers', path: '/admin/teachers', active: false, roles: ['Admin'] },
+        { icon: Calendar, label: '1-on-1 Sessions', path: '/admin/sessions', active: false, roles: ['Admin'] },
         { icon: Sparkles, label: 'Insights Generator', path: '/admin/insights-generator', active: false, roles: ['Admin'] },
         { icon: Lightbulb, label: 'User Suggestions', path: '/admin/suggestions', active: false, roles: ['Admin'] },
       ]
