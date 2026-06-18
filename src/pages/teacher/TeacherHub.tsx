@@ -25,6 +25,8 @@ import DiagnosticSessionsCard from '../../components/teacher/DiagnosticSessionsC
 import CancelLessonModal from '../../components/teacher/CancelLessonModal';
 import AcknowledgeLessonModal from '../../components/teacher/AcknowledgeLessonModal';
 import DeclineLessonModal from '../../components/teacher/DeclineLessonModal';
+import { useUserTimezone } from '../../hooks/useUserTimezone';
+import { formatLessonTime } from '../../lib/formatLessonTime';
 
 interface TeacherStats {
   tier: string;
@@ -62,6 +64,7 @@ interface UpcomingLesson {
 
 export default function TeacherHub() {
   const navigate = useNavigate();
+  const tz = useUserTimezone();
   const [loading, setLoading] = useState(true);
   const [teacherProfileId, setTeacherProfileId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -525,10 +528,10 @@ export default function TeacherHub() {
                           ? 'bg-amber-100 text-amber-700 border border-amber-200'
                           : 'bg-gray-100 text-gray-700 border border-gray-200'
                       }`}>
-                        {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : lessonDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : lessonDate.toLocaleDateString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' })}
                       </span>
                       <span className="text-lg font-bold text-gray-900">
-                        {lessonDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        {formatLessonTime(lessonDate, tz)}
                       </span>
                     </div>
 

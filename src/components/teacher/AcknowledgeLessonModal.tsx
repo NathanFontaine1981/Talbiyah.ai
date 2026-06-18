@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { X, Send } from 'lucide-react';
+import { useUserTimezone } from '../../hooks/useUserTimezone';
+import { timeZoneCity } from '../../lib/formatLessonTime';
 
 interface AcknowledgeLessonModalProps {
   lesson: {
@@ -20,6 +22,7 @@ export default function AcknowledgeLessonModal({
   onClose,
   onComplete,
 }: AcknowledgeLessonModalProps) {
+  const tz = useUserTimezone();
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -67,13 +70,14 @@ export default function AcknowledgeLessonModal({
             <p className="text-sm text-gray-600 mb-1">Scheduled:</p>
             <p className="font-semibold text-gray-900 mb-1">
               {new Date(lesson.scheduled_time).toLocaleString('en-GB', {
+                timeZone: tz,
                 weekday: 'long',
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-              })}
+              })} ({timeZoneCity(tz)})
             </p>
             <p className="text-sm text-gray-600">
               {lesson.duration_minutes} minutes{lesson.subject_name && ` • ${lesson.subject_name}`}

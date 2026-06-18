@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { useUserTimezone } from '../../hooks/useUserTimezone';
+import { formatLessonTime } from '../../lib/formatLessonTime';
 
 // Subject icon mapping
 const getSubjectIcon = (subjectName: string): string => {
@@ -43,6 +45,7 @@ const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function WeeklyCalendar({ teacherId }: WeeklyCalendarProps) {
   const navigate = useNavigate();
+  const tz = useUserTimezone();
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const today = new Date();
     // Calculate days since Monday (Monday = 0, Sunday = 6)
@@ -342,7 +345,7 @@ export default function WeeklyCalendar({ teacherId }: WeeklyCalendarProps) {
                                     </div>
                                   </div>
                                   <p className="text-xs text-white/70">
-                                    {lessonStart.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                    {formatLessonTime(lessonStart, tz)}
                                   </p>
                                 </div>
                               </div>
@@ -362,7 +365,7 @@ export default function WeeklyCalendar({ teacherId }: WeeklyCalendarProps) {
                                     <div className="flex items-center gap-2">
                                       <Clock className="w-4 h-4 text-gray-400" />
                                       <span className="text-sm text-gray-600">
-                                        {lessonStart.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} • {lesson.duration_minutes}min
+                                        {formatLessonTime(lessonStart, tz)} • {lesson.duration_minutes}min
                                       </span>
                                     </div>
                                     <div className="pt-2 border-t border-gray-200">

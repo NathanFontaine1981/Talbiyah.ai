@@ -4,6 +4,8 @@ import { Calendar, Clock, Video, User, CalendarClock, MessageCircle, X, ArrowLef
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format, parseISO, differenceInMinutes, isPast, differenceInDays, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
+import { formatLessonTime12, formatLessonDate } from '../lib/formatLessonTime';
+import { useUserTimezone } from '../hooks/useUserTimezone';
 
 interface Lesson {
   id: string;
@@ -57,6 +59,7 @@ interface RawLessonData {
 
 export default function MyClasses() {
   const navigate = useNavigate();
+  const tz = useUserTimezone();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [isTeacher, setIsTeacher] = useState(false);
@@ -677,7 +680,7 @@ export default function MyClasses() {
                           {/* Show time inline for past lessons */}
                           {lessonIsPast && (
                             <span className="ml-2 text-gray-400">
-                              • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
+                              • {formatLessonDate(lesson.scheduled_time, tz, { month: 'short', day: 'numeric' })} at {formatLessonTime12(lesson.scheduled_time, tz)}
                             </span>
                           )}
                         </p>
@@ -744,13 +747,13 @@ export default function MyClasses() {
                         <div className="flex items-center space-x-2 text-gray-600 mb-1">
                           <Calendar className="w-4 h-4" />
                           <span className="text-sm font-medium">
-                            {format(lessonDate, 'MMM d, yyyy')}
+                            {formatLessonDate(lesson.scheduled_time, tz)}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2 text-emerald-600 mb-1">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm font-semibold">
-                            {format(lessonDate, 'h:mm a')}
+                            {formatLessonTime12(lesson.scheduled_time, tz)}
                           </span>
                         </div>
                         <div className="flex items-center justify-end space-x-1 mb-1">

@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { Clock, User, Calendar, AlertCircle } from 'lucide-react';
 import AcknowledgeLessonModal from './AcknowledgeLessonModal';
 import DeclineLessonModal from './DeclineLessonModal';
+import { useUserTimezone } from '../../hooks/useUserTimezone';
+import { formatLessonTime } from '../../lib/formatLessonTime';
 
 interface PendingLesson {
   lesson_id: string;
@@ -21,6 +23,7 @@ interface PendingLessonsListProps {
 }
 
 export default function PendingLessonsList({ teacherId }: PendingLessonsListProps) {
+  const tz = useUserTimezone();
   const [pendingLessons, setPendingLessons] = useState<PendingLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<PendingLesson | null>(null);
@@ -162,6 +165,7 @@ export default function PendingLessonsList({ teacherId }: PendingLessonsListProp
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {new Date(lesson.scheduled_time).toLocaleDateString('en-GB', {
+                          timeZone: tz,
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
@@ -169,10 +173,7 @@ export default function PendingLessonsList({ teacherId }: PendingLessonsListProp
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {new Date(lesson.scheduled_time).toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatLessonTime(lesson.scheduled_time, tz)}
                       </div>
                       <span>• {lesson.duration_minutes} min</span>
                       {lesson.subject_name && <span>• {lesson.subject_name}</span>}

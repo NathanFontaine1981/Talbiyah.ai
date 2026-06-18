@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { X, AlertTriangle, Loader2, Plus, Trash2 } from 'lucide-react';
+import { useUserTimezone } from '../../hooks/useUserTimezone';
+import { timeZoneCity } from '../../lib/formatLessonTime';
 
 interface CancelLessonModalProps {
   lesson: {
@@ -29,6 +31,7 @@ export default function CancelLessonModal({
   onClose,
   onComplete,
 }: CancelLessonModalProps) {
+  const tz = useUserTimezone();
   const [cancelReason, setCancelReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -107,13 +110,14 @@ export default function CancelLessonModal({
             <p className="text-sm text-gray-600 mb-1">Scheduled:</p>
             <p className="font-semibold text-gray-900 mb-1">
               {scheduledDate.toLocaleString('en-GB', {
+                timeZone: tz,
                 weekday: 'long',
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-              })}
+              })} ({timeZoneCity(tz)})
             </p>
             <p className="text-sm text-gray-600">
               {lesson.duration_minutes} minutes{lesson.subject && ` • ${lesson.subject}`}

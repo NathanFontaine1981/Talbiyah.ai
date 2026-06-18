@@ -3,6 +3,7 @@ import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatLessonTime, formatLessonDate } from '../../lib/formatLessonTime';
 
 interface SessionStats {
   total: number;
@@ -16,12 +17,14 @@ interface Session {
   subject: string;
   teacher_name: string;
   student_name: string;
+  teacher_tz: string | null;
+  student_tz: string | null;
   scheduled_date: string;
   scheduled_time: string;
   duration_minutes: number;
   type: 'private' | 'group';
   price: number;
-  status: 'scheduled' | 'confirmed' | 'pending' | 'completed' | 'cancelled';
+  status: string;
   payment_status: string;
   room_id?: string;
   teacher_room_code?: string;
@@ -70,41 +73,89 @@ export default function Sessions() {
     try {
       setLoading(true);
 
-      // Fetch all bookings with related data
-      const { data: bookings, error } = await supabase
-        .from('bookings')
+      // Real 1:1 bookings live in `lessons` (UTC timestamptz scheduled_time).
+      const { data: lessonRows, error } = await supabase
+        .from('lessons')
         .select(`
-          *,
-          teacher:profiles!teacher_id(full_name),
-          student:profiles!student_id(full_name),
-          subject:subjects(name)
+          id, scheduled_time, duration_minutes, status, payment_status,
+          teacher_id, learner_id, student_id, subject_id, total_cost_paid,
+          "100ms_room_id", teacher_room_code, student_room_code,
+          subject:subjects!subject_id(name)
         `)
-        .order('scheduled_date', { ascending: false })
         .order('scheduled_time', { ascending: false });
 
       if (error) throw error;
 
+      const rows: any[] = lessonRows || [];
+
+      // Resolve names + timezones via id->record lookup maps (avoids fragile deep embeds).
+      const uniq = (vals: any[]) => [...new Set(vals.filter(Boolean))];
+      const teacherIds = uniq(rows.map(r => r.teacher_id));
+      const learnerIds = uniq(rows.map(r => r.learner_id));
+      const studentIds = uniq(rows.map(r => r.student_id));
+
+      const teacherMap: Record<string, { name: string; tz: string | null }> = {};
+      if (teacherIds.length) {
+        const { data: teachers } = await supabase
+          .from('teacher_profiles')
+          .select('id, user:profiles!user_id(full_name, timezone)')
+          .in('id', teacherIds);
+        (teachers || []).forEach((t: any) => {
+          teacherMap[t.id] = { name: t.user?.full_name || 'Unknown Teacher', tz: t.user?.timezone ?? null };
+        });
+      }
+
+      const learnerMap: Record<string, { name: string; tz: string | null }> = {};
+      if (learnerIds.length) {
+        const { data: learners } = await supabase
+          .from('learners')
+          .select('id, name, owner:profiles!parent_id(full_name, timezone)')
+          .in('id', learnerIds);
+        (learners || []).forEach((l: any) => {
+          learnerMap[l.id] = { name: l.name || l.owner?.full_name || 'Unknown Student', tz: l.owner?.timezone ?? null };
+        });
+      }
+
+      const studentMap: Record<string, { name: string; tz: string | null }> = {};
+      if (studentIds.length) {
+        const { data: studentProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, timezone')
+          .in('id', studentIds);
+        (studentProfiles || []).forEach((s: any) => {
+          studentMap[s.id] = { name: s.full_name || 'Unknown Student', tz: s.timezone ?? null };
+        });
+      }
+
       // Transform data
-      const sessionData: Session[] = bookings?.map((booking: any) => ({
-        id: booking.id,
-        subject: booking.subject?.name || 'Unknown',
-        teacher_name: booking.teacher?.full_name || 'Unknown Teacher',
-        student_name: booking.student?.full_name || 'Unknown Student',
-        scheduled_date: booking.scheduled_date,
-        scheduled_time: booking.scheduled_time,
-        duration_minutes: booking.duration_minutes,
-        type: 'private', // Default to private for now
-        price: booking.price,
-        status: booking.status || 'pending',
-        payment_status: booking.payment_status || 'unpaid',
-        room_id: booking.room_id,
-        teacher_room_code: booking.teacher_room_code,
-        student_room_code: booking.student_room_code,
-      })) || [];
+      const sessionData: Session[] = rows.map((lesson: any) => {
+        const teacher = lesson.teacher_id ? teacherMap[lesson.teacher_id] : undefined;
+        const student = (lesson.learner_id ? learnerMap[lesson.learner_id] : undefined)
+          || (lesson.student_id ? studentMap[lesson.student_id] : undefined);
+        const scheduledIso: string = lesson.scheduled_time || '';
+        return {
+          id: lesson.id,
+          subject: lesson.subject?.name || 'Unknown',
+          teacher_name: teacher?.name || 'Unknown Teacher',
+          student_name: student?.name || 'Unknown Student',
+          teacher_tz: teacher?.tz ?? null,
+          student_tz: student?.tz ?? null,
+          scheduled_date: scheduledIso ? scheduledIso.split('T')[0] : '',
+          scheduled_time: scheduledIso,
+          duration_minutes: lesson.duration_minutes || 0,
+          type: 'private',
+          price: Number(lesson.total_cost_paid || 0),
+          status: lesson.status || 'pending',
+          payment_status: lesson.payment_status || 'unpaid',
+          room_id: lesson['100ms_room_id'],
+          teacher_room_code: lesson.teacher_room_code,
+          student_room_code: lesson.student_room_code,
+        };
+      });
 
       setSessions(sessionData);
 
-      // Calculate stats
+      // Calculate stats (today = same UTC calendar day)
       const today = new Date().toISOString().split('T')[0];
       const todaySessions = sessionData.filter(s => s.scheduled_date === today);
 
@@ -425,7 +476,7 @@ function StatCard({ label, value, icon: Icon, color }: any) {
   };
 
   return (
-    <div className={`${colors[color]} border rounded-xl p-6`}>
+    <div className={`${colors[color as keyof typeof colors]} border rounded-xl p-6`}>
       <div className="flex items-center justify-between mb-3">
         <Icon className="w-8 h-8" />
       </div>
@@ -437,9 +488,6 @@ function StatCard({ label, value, icon: Icon, color }: any) {
 
 // Session Card Component
 function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatusColor }: any) {
-  const sessionDate = session.scheduled_date ? new Date(session.scheduled_date) : new Date();
-  const formattedDate = format(sessionDate, 'MMM d, yyyy');
-
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start justify-between mb-4">
@@ -453,25 +501,25 @@ function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatu
           <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
             <p><span className="text-gray-500 dark:text-gray-400">Teacher:</span> {session.teacher_name}</p>
             <p><span className="text-gray-500 dark:text-gray-400">Student:</span> {session.student_name}</p>
-            <div className="flex items-center space-x-4 mt-2">
-              <span className="flex items-center space-x-1">
+            <div className="space-y-1 mt-2">
+              <div className="flex items-center space-x-1">
                 <Calendar className="w-4 h-4" />
-                <span>{formattedDate}</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <Clock className="w-4 h-4" />
-                <span>{session.scheduled_time}</span>
-              </span>
-              <span className="flex items-center space-x-1">
+                <span><span className="text-gray-500 dark:text-gray-400">Teacher:</span> {formatLessonDate(session.scheduled_time, session.teacher_tz)} · {formatLessonTime(session.scheduled_time, session.teacher_tz)}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Calendar className="w-4 h-4" />
+                <span><span className="text-gray-500 dark:text-gray-400">Student:</span> {formatLessonDate(session.scheduled_time, session.student_tz)} · {formatLessonTime(session.scheduled_time, session.student_tz)}</span>
+              </div>
+              <div className="flex items-center space-x-1">
                 <Clock className="w-4 h-4" />
                 <span>{session.duration_minutes}m</span>
-              </span>
+              </div>
             </div>
             <div className="flex items-center space-x-4 mt-2">
               <span className="text-emerald-600 dark:text-emerald-400">Type: {session.type.charAt(0).toUpperCase() + session.type.slice(1)}</span>
               <span className="flex items-center space-x-1 text-emerald-500 dark:text-emerald-400">
                 <DollarSign className="w-4 h-4" />
-                <span>£{(session.price / 100).toFixed(2)}</span>
+                <span>£{Number(session.price || 0).toFixed(2)}</span>
               </span>
             </div>
           </div>

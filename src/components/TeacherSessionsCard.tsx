@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { Calendar, Clock, Video, RefreshCw, User, CheckCircle, History, BookOpen, Play, Download, ChevronDown, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, differenceInDays, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
+import { formatLessonTime12, formatLessonDate } from '../lib/formatLessonTime';
+import { useUserTimezone } from '../hooks/useUserTimezone';
 
 interface TeacherSession {
   id: string;
@@ -24,6 +26,7 @@ interface TeacherSession {
 
 export default function TeacherSessionsCard() {
   const navigate = useNavigate();
+  const tz = useUserTimezone();
   const [sessions, setSessions] = useState<TeacherSession[]>([]);
   const [pastSessions, setPastSessions] = useState<TeacherSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -533,13 +536,13 @@ export default function TeacherSessionsCard() {
                     <div className="flex items-center space-x-2 text-gray-600 mb-1">
                       <Calendar className="w-4 h-4" />
                       <span className="text-sm font-medium">
-                        {format(sessionDate, 'MMM d, yyyy')}
+                        {formatLessonDate(session.scheduled_time, tz)}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2 text-blue-400">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-semibold">
-                        {format(sessionDate, 'h:mm a')}
+                        {formatLessonTime12(session.scheduled_time, tz)}
                       </span>
                     </div>
                   </div>

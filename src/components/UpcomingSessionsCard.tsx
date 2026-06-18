@@ -5,6 +5,8 @@ import { Calendar, Clock, Video, RefreshCw, BookOpen, User, CalendarClock, Spark
 import { supabase } from '../lib/supabaseClient';
 import { format, parseISO, differenceInMinutes, isPast } from 'date-fns';
 import { getSubjectGradientClasses } from '../lib/subjectColors';
+import { formatLessonTime12, formatLessonDate } from '../lib/formatLessonTime';
+import { useUserTimezone } from '../hooks/useUserTimezone';
 
 interface UpcomingLesson {
   id: string;
@@ -48,6 +50,7 @@ interface UpcomingSessionsCardProps {
 
 export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCardProps) {
   const navigate = useNavigate();
+  const tz = useUserTimezone();
   const [lessons, setLessons] = useState<UpcomingLesson[]>([]);
   const [recentLessons, setRecentLessons] = useState<UpcomingLesson[]>([]);
   const [courseSessions, setCourseSessions] = useState<UpcomingCourseSession[]>([]);
@@ -624,7 +627,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                           )}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
+                          with {lesson.teacher_name} • {formatLessonDate(lessonDate, tz, { month: 'short', day: 'numeric' })} at {formatLessonTime12(lessonDate, tz)}
                         </p>
                         {lesson.insight_title && (
                           <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
@@ -924,13 +927,13 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                     <div className="flex items-center space-x-2 text-gray-600 mb-1">
                       <Calendar className="w-4 h-4" />
                       <span className="text-sm font-medium">
-                        {format(lessonDate, 'MMM d, yyyy')}
+                        {formatLessonDate(lesson.scheduled_time, tz)}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2 text-emerald-600 mb-1">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-semibold">
-                        {format(lessonDate, 'h:mm a')}
+                        {formatLessonTime12(lesson.scheduled_time, tz)}
                       </span>
                     </div>
                     <div className="flex items-center justify-end space-x-1 mb-1">
@@ -1069,7 +1072,7 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
                           )}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          with {lesson.teacher_name} • {format(lessonDate, 'MMM d')} at {format(lessonDate, 'h:mm a')}
+                          with {lesson.teacher_name} • {formatLessonDate(lessonDate, tz, { month: 'short', day: 'numeric' })} at {formatLessonTime12(lessonDate, tz)}
                         </p>
                         {lesson.insight_title && (
                           <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
