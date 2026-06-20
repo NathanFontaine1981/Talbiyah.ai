@@ -1551,10 +1551,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Run the heavy insight generation in a background task and return 202 now.
-    // Long lessons produce long Claude generations that otherwise blow past the
-    // ~150s edge gateway limit (504). Callers re-query the lesson_insights table
-    // for the result; the early `return`s below simply end the background task.
+    // Run generation in a background task and return 202 immediately. Qur'an lessons
+    // (verse/tafsir enrichment + long output) take ~2-4 min — longer than the 150s
+    // gateway limit, so a synchronous response would 504 and the work would be killed
+    // before saving. The background task has a longer budget; callers re-query
+    // lesson_insights for the result (it appears a few minutes later).
     const backgroundWork = (async () => {
 
     // Try to parse surah info from lesson_title if not in metadata
@@ -1732,7 +1733,7 @@ Generate the insights following the exact format specified in the system prompt.
     const claudeResult = await streamClaudeText({
       apiKey: anthropicApiKey,
       model: "claude-sonnet-4-6",
-      maxTokens: 8192, // Detailed study notes
+      maxTokens: 16000, // Rich Quran lessons (verses + tafsir + quiz) were truncating at 8192; streaming+background allows longer output. Billed on tokens actually used.
       temperature: 0.3,
       system: systemPrompt,
       userContent: userPrompt,
@@ -2249,7 +2250,7 @@ Generate the insights following the exact format specified in the system prompt.
         success: true,
         status: "processing",
         lesson_id,
-        message: "Insight generation started. The insight will appear shortly.",
+        message: "Insight generation started; it will appear in a few minutes.",
       }),
       {
         status: 202,

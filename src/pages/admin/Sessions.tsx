@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -217,6 +218,12 @@ export default function Sessions() {
     return colors[status as keyof typeof colors] || colors.pending;
   }
 
+  const navigate = useNavigate();
+
+  function handleViewInsights(session: Session) {
+    navigate(`/lesson/${session.id}/insights`);
+  }
+
   function handleViewSession(session: Session) {
     setSelectedSession(session);
     setShowViewModal(true);
@@ -399,6 +406,7 @@ export default function Sessions() {
               key={session.id}
               session={session}
               onView={handleViewSession}
+              onInsights={handleViewInsights}
               onEdit={handleEditSession}
               onReschedule={handleRescheduleSession}
               onCancel={handleCancelSession}
@@ -486,7 +494,7 @@ function StatCard({ label, value, icon: Icon, color }: any) {
 }
 
 // Session Card Component
-function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatusColor }: any) {
+function SessionCard({ session, onView, onInsights, onEdit, onReschedule, onCancel, getStatusColor }: any) {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start justify-between mb-4">
@@ -532,6 +540,14 @@ function SessionCard({ session, onView, onEdit, onReschedule, onCancel, getStatu
         >
           <Eye className="w-4 h-4" />
           <span>View Details</span>
+        </button>
+        <button
+          onClick={() => onInsights(session)}
+          className="px-3 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-600 rounded-lg transition text-sm flex items-center space-x-1"
+          title="View lesson insights"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Insights</span>
         </button>
         <button
           onClick={() => onEdit(session)}

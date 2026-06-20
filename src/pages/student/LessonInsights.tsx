@@ -2389,9 +2389,12 @@ export default function LessonInsights() {
 
       const { data: teacherProfile } = await supabase.from('teacher_profiles').select('id').eq('user_id', user.id).maybeSingle();
       const isTeacher = !!teacherProfile;
+      // Admins can view any lesson's insights (RLS permits it via is_admin()).
+      const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      const isAdmin = adminProfile?.role === 'admin';
       let learnerId: string | null = null;
 
-      if (!isTeacher) {
+      if (!isTeacher && !isAdmin) {
         // Get all learner IDs for this parent, then match against the lesson
         const { data: learners } = await supabase.from('learners').select('id').eq('parent_id', user.id);
         if (!learners || learners.length === 0) { setError('Learner profile not found'); setLoading(false); return; }

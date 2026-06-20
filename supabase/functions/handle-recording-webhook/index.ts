@@ -312,12 +312,52 @@ Deno.serve(async (req: Request) => {
       const hmsData = rawData as HMS100msWebhook;
       console.log("100ms webhook type:", hmsData.type);
 
-      // Process recording.success, beam.recording.success, transcription.success, AND transcription.started.success events
-      const validEvents = ["recording.success", "beam.recording.success", "transcription.success", "transcription.started.success"];
+      // Process recording.success, beam.recording.success, transcription.success,
+      // transcription.started.success, AND recording.failure events. Recording-failure
+      // events are accepted because the parent recording can be flagged failed when
+      // the video composite fails — but the audio room-composite sub-asset is often
+      // still completed and recoverable.
+      const successEvents = ["recording.success", "beam.recording.success", "transcription.success", "transcription.started.success"];
+      const failureEvents = ["recording.failure", "beam.recording.failure"];
+      const validEvents = [...successEvents, ...failureEvents];
       if (!validEvents.includes(hmsData.type)) {
         console.log("Ignoring event type:", hmsData.type);
         return new Response(
           JSON.stringify({ success: true, message: "Event ignored" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Failure event: try to recover any completed audio sub-asset for the room.
+      // We don't have a presigned URL on the payload, so delegate to recover-failed-recording
+      // which queries 100ms for the completed room-composite asset and fires the transcribe
+      // → insights chain. We need a course_session_id, which we look up below.
+      const isRecordingFailure = failureEvents.includes(hmsData.type);
+      if (isRecordingFailure) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const failedRoomId = hmsData.data.room_id || "";
+        if (failedRoomId) {
+          const { data: cs } = await supabase
+            .from("course_sessions")
+            .select("id")
+            .eq("room_id", failedRoomId)
+            .single();
+          if (cs?.id) {
+            console.log("Recording failure event — invoking recover-failed-recording for course_session:", cs.id);
+            // Fire-and-forget; recover-failed-recording responds 200 quickly and runs transcribe-url in background
+            fetch(`${supabaseUrl}/functions/v1/recover-failed-recording`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+              body: JSON.stringify({ course_session_id: cs.id }),
+            }).catch((e) => console.error("recover-failed-recording invocation error:", e));
+          } else {
+            console.log("Recording failure event — no course_session matched room_id:", failedRoomId);
+          }
+        }
+        return new Response(
+          JSON.stringify({ success: true, message: "Recording failure handed off to recovery" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -409,13 +449,23 @@ Deno.serve(async (req: Request) => {
       .eq("100ms_room_id", roomId)
       .single();
 
-    // If lesson found, mark it as completed
+    // If lesson found, only mark it completed once its scheduled window has actually
+    // ended. A recording webhook fired by an accidental early join must NOT complete
+    // (and thereby lock students out of) an upcoming lesson. The teacher's explicit
+    // "End Class" remains the primary completion path; this is just the backstop.
     if (lesson && lesson.status !== "completed") {
-      console.log("Marking lesson as completed:", lesson.id);
-      await supabase
-        .from("lessons")
-        .update({ status: "completed" })
-        .eq("id", lesson.id);
+      const scheduledEndMs = new Date(lesson.scheduled_time).getTime() + (lesson.duration_minutes ?? 0) * 60_000;
+      const windowEnded = Date.now() >= scheduledEndMs;
+      const isCancelled = typeof lesson.status === "string" && lesson.status.startsWith("cancelled");
+      if (windowEnded && !isCancelled) {
+        console.log("Marking lesson as completed:", lesson.id);
+        await supabase
+          .from("lessons")
+          .update({ status: "completed" })
+          .eq("id", lesson.id);
+      } else {
+        console.log(`Not auto-completing lesson ${lesson.id} (windowEnded=${windowEnded}, status=${lesson.status}) — leaving room open for re-join`);
+      }
     }
 
     if (lessonError || !lesson) {
