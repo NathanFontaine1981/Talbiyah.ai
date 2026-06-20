@@ -1432,6 +1432,75 @@ Example:
 * Always include at least 15 new vocabulary words and 10 quiz questions.
 * **CRITICAL: Every Arabic sentence in tables MUST have a complete English translation. Never leave the English column empty or incomplete.**`;
 
+// Stream a Claude completion and accumulate the full text. Streaming + running
+// in a background task lets long lessons (45-60+ min) finish without hitting the
+// ~150s edge gateway timeout that non-streaming generation was failing on.
+async function streamClaudeText(params: {
+  apiKey: string;
+  model: string;
+  maxTokens: number;
+  temperature: number;
+  system: string;
+  userContent: unknown;
+}): Promise<{ text: string; stopReason: string | null }> {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": params.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      temperature: params.temperature,
+      stream: true,
+      system: params.system,
+      messages: [{ role: "user", content: params.userContent }],
+    }),
+  });
+
+  if (!resp.ok || !resp.body) {
+    const errorText = await resp.text().catch(() => "no body");
+    throw new Error(`Claude API error (${resp.status}): ${errorText}`);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  let stopReason: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      let evt: any;
+      try {
+        evt = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+        text += evt.delta.text;
+      } else if (evt.type === "message_delta" && evt.delta?.stop_reason) {
+        stopReason = evt.delta.stop_reason;
+      } else if (evt.type === "error") {
+        throw new Error(`Claude stream error: ${JSON.stringify(evt.error)}`);
+      }
+    }
+  }
+
+  return { text, stopReason };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -1482,6 +1551,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Run the heavy insight generation in a background task and return 202 now.
+    // Long lessons produce long Claude generations that otherwise blow past the
+    // ~150s edge gateway limit (504). Callers re-query the lesson_insights table
+    // for the result; the early `return`s below simply end the background task.
+    const backgroundWork = (async () => {
+
     // Try to parse surah info from lesson_title if not in metadata
     if (!metadata.surah_number && lesson_title) {
       const parsedInfo = parseSurahInfoFromTitle(lesson_title);
@@ -1516,8 +1591,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Initialize Supabase client to fetch subject-specific template
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // (supabaseUrl / supabaseServiceKey already declared above for the independent-lesson check)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Determine which prompt to use based on subject
@@ -1653,46 +1727,17 @@ ${transcript}
 
 Generate the insights following the exact format specified in the system prompt. Remember: transcript content takes priority over booking metadata.`;
 
-    console.log(`Calling Claude API to generate ${subject} insights...`);
+    console.log(`Calling Claude API (streaming) to generate ${subject} insights...`);
 
-    const response = await fetch(
-      "https://api.anthropic.com/v1/messages",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicApiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 8192, // Increased for detailed Arabic notes
-          temperature: 0.3,
-          system: systemPrompt,
-          messages: [
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Claude API error:", errorText);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate insights", details: errorText }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const data = await response.json();
-    let generatedText = data.content?.[0]?.text;
+    const claudeResult = await streamClaudeText({
+      apiKey: anthropicApiKey,
+      model: "claude-sonnet-4-6",
+      maxTokens: 8192, // Detailed study notes
+      temperature: 0.3,
+      system: systemPrompt,
+      userContent: userPrompt,
+    });
+    let generatedText = claudeResult.text;
 
     if (!generatedText) {
       return new Response(
@@ -2189,17 +2234,25 @@ Generate the insights following the exact format specified in the system prompt.
       console.error("Error sending parent notification email:", emailError);
     }
 
+      console.log(`[generate-lesson-insights] Completed lesson ${lesson_id}, insight ${savedInsight.id}`);
+    })(); // end backgroundWork
+
+    // @ts-ignore - EdgeRuntime is available in the Supabase Edge Runtime
+    EdgeRuntime.waitUntil(
+      backgroundWork.catch((e) =>
+        console.error(`[generate-lesson-insights] background generation error for ${lesson_id}:`, (e as Error)?.message || e)
+      )
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
+        status: "processing",
         lesson_id,
-        insight_id: savedInsight.id,
-        insight_type: insightType,
-        content: generatedText,
-        processing_time_ms: processingTime,
+        message: "Insight generation started. The insight will appear shortly.",
       }),
       {
-        status: 200,
+        status: 202,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
