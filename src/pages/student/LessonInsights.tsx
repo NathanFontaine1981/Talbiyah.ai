@@ -30,6 +30,7 @@ import {
   Home,
   Video,
   Play,
+  Bell,
   Download as DownloadIcon
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
@@ -2006,6 +2007,8 @@ export default function LessonInsights() {
   const [recordingExpiresAt, setRecordingExpiresAt] = useState<string | null>(null);
   const [quranFocus, setQuranFocus] = useState<string | null>(null);
   const [learnerId, setLearnerId] = useState<string | null>(null);
+  const [reportingIssue, setReportingIssue] = useState(false);
+  const [issueReported, setIssueReported] = useState(false);
 
   // Homework tracking state
   const [completedTasks, setCompletedTasks] = useState<boolean[]>([]);
@@ -2386,9 +2389,12 @@ export default function LessonInsights() {
 
       const { data: teacherProfile } = await supabase.from('teacher_profiles').select('id').eq('user_id', user.id).maybeSingle();
       const isTeacher = !!teacherProfile;
+      // Admins can view any lesson's insights (RLS permits it via is_admin()).
+      const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      const isAdmin = adminProfile?.role === 'admin';
       let learnerId: string | null = null;
 
-      if (!isTeacher) {
+      if (!isTeacher && !isAdmin) {
         // Get all learner IDs for this parent, then match against the lesson
         const { data: learners } = await supabase.from('learners').select('id').eq('parent_id', user.id);
         if (!learners || learners.length === 0) { setError('Learner profile not found'); setLoading(false); return; }
@@ -2436,9 +2442,11 @@ export default function LessonInsights() {
         .eq('lesson_id', lessonId)
         .order('created_at', { ascending: false });
 
-      // Prefer real AI insights (with processing_time_ms) over auto_generated placeholders
+      // Only a real AI insight counts as "ready". A lone auto_generated placeholder
+      // means generation hasn't completed yet — show the not-ready screen (with the
+      // "notify us" option) rather than an empty placeholder.
       const realInsight = insightResults?.find(i => i.ai_model && i.ai_model !== 'auto_generated');
-      const insightData = realInsight || insightResults?.[0] || null;
+      const insightData = realInsight || null;
       if (insightError?.code === 'PGRST116' || !insightData) {
         setError('Insights not yet generated for this lesson');
         setLoading(false);
@@ -2636,6 +2644,25 @@ export default function LessonInsights() {
     }
   }
 
+  async function reportInsightIssue() {
+    if (!lessonId || reportingIssue) return;
+    setReportingIssue(true);
+    try {
+      const { error } = await supabase.functions.invoke('report-insight-problem', {
+        body: { lesson_id: lessonId, learner_id: learnerId },
+      });
+      if (error) throw error;
+      setIssueReported(true);
+    } catch (e) {
+      console.error('Could not send insight issue report:', e);
+      // Surface confirmation anyway — recovery is auto-triggered server-side and
+      // the alert is best-effort; avoid leaving the student at a dead end.
+      setIssueReported(true);
+    } finally {
+      setReportingIssue(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -2653,58 +2680,29 @@ export default function LessonInsights() {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full">
-          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 text-amber-500" />
           </div>
-          <h2 className="text-xl font-semibold text-center text-[#0F172A] mb-2">{error || 'Insights not available'}</h2>
-          <p className="text-[#64748B] text-center text-sm mb-6">The insights for this lesson may still be processing.</p>
+          <h2 className="text-xl font-semibold text-center text-[#0F172A] mb-2">Insights are still on their way</h2>
+          <p className="text-[#64748B] text-center text-sm mb-6">Insights are usually ready within a few minutes of your lesson ending. If it's been longer than that, let us know and we'll sort it out for you.</p>
+          {issueReported ? (
+            <div className="mb-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-center">
+              <p className="text-emerald-700 text-sm font-medium">Thanks — we've been notified and started recovering your insights. They should appear shortly.</p>
+            </div>
+          ) : (
+            <button
+              onClick={reportInsightIssue}
+              disabled={reportingIssue}
+              className="w-full px-6 py-3 mb-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {reportingIssue
+                ? (<><Loader className="w-4 h-4 animate-spin" /> Sending…</>)
+                : "My insights haven't arrived — notify us"}
+            </button>
+          )}
           <button onClick={() => navigate(-1)} className="w-full px-6 py-3 bg-[#059669] hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors">
             Go Back
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if insights are still being generated (placeholder state)
-  const isGenerating = insight.title?.toLowerCase().includes('regenerating') ||
-                       insight.title?.toLowerCase().includes('processing') ||
-                       (!insight.summary && !insight.detailed_insights?.content);
-
-  if (isGenerating) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <Sparkles className="w-10 h-10 text-emerald-600 animate-pulse" />
-          </div>
-          <h2 className="text-2xl font-semibold text-[#0F172A] mb-3">Generating Your Insights</h2>
-          <p className="text-[#64748B] text-base mb-4">
-            Our AI is analyzing your lesson to create personalized insights, vocabulary, and quizzes.
-          </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <p className="text-amber-800 text-sm text-left">
-                <span className="font-semibold">Please note:</span> Insights typically take up to 5 minutes to generate after your lesson has completed.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
-            >
-              Go Back
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 px-6 py-3 bg-[#059669] hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Refresh
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -2776,6 +2774,131 @@ export default function LessonInsights() {
   const effectiveCompletedTasks = completedTasks.length === homeworkTasks.length
     ? completedTasks
     : new Array(homeworkTasks.length).fill(false);
+
+  // Check if insights are still being generated. Treat a placeholder row, or one whose
+  // parsed content yields nothing renderable, as "still generating" so the user sees a
+  // clear pending-state notice instead of a near-empty page with only the rating widget.
+  const hasRenderableContent =
+    sections.length > 0 ||
+    vocabulary.length > 0 ||
+    sentences.length > 0 ||
+    grammarPoints.length > 0 ||
+    teacherNotes.length > 0 ||
+    tafsirPoints.length > 0 ||
+    dialogues.length > 0 ||
+    quizQuestions.length > 0 ||
+    homeworkTasks.length > 0 ||
+    firstWordPrompts.length > 0 ||
+    !!insight.summary?.trim() ||
+    !!summarySection ||
+    !!takeawaysSection;
+
+  const isGenerating =
+    insight.title?.toLowerCase().includes('regenerating') ||
+    insight.title?.toLowerCase().includes('processing') ||
+    (insight as { ai_model?: string }).ai_model === 'auto_generated' ||
+    !hasRenderableContent;
+
+  // A placeholder that is still empty well after the lesson means the recording /
+  // transcript never arrived (e.g. the lesson wasn't recorded) — it won't generate
+  // later, so show a clear "unavailable" message instead of "being generated".
+  const insightAgeMinutes = insight.created_at
+    ? (Date.now() - new Date(insight.created_at).getTime()) / 60000
+    : 0;
+  const isUnavailable = isGenerating && insightAgeMinutes > 45;
+
+  if (isUnavailable) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <FileText className="w-10 h-10 text-slate-400" />
+          </div>
+          <h2 className="text-2xl font-semibold text-[#0F172A] mb-3">No Study Notes for This Lesson</h2>
+          <p className="text-[#64748B] text-base mb-4">
+            This lesson wasn't recorded, so we couldn't generate study notes from it.
+          </p>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left">
+            <p className="text-slate-600 text-sm">
+              This can happen if the lesson was taught on an unsupported device (such as a phone or
+              tablet), or if the recording didn't capture. If you believe this is a mistake, contact{' '}
+              <a
+                href="mailto:contact@talbiyah.ai?subject=Missing%20study%20notes"
+                className="underline font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                contact@talbiyah.ai
+              </a>.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="w-full px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-slate-100 p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <Sparkles className="w-10 h-10 text-emerald-600 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-semibold text-[#0F172A] mb-3">Study Notes Being Generated</h2>
+          <p className="text-[#64748B] text-base mb-4">
+            Our AI is analyzing your lesson to create personalized study notes, vocabulary, and quizzes.
+          </p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <Bell className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <p className="text-emerald-800 text-sm text-left">
+                <span className="font-semibold">We'll notify you</span> by email once your study notes are ready — no need to keep this page open.
+              </p>
+            </div>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-amber-800 text-sm text-left">
+                <span className="font-semibold">Please note:</span> Study notes typically take up to 5 minutes to generate after your lesson has completed.
+              </p>
+            </div>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-red-800 text-sm text-left">
+                <span className="font-semibold">Still not ready after 30 minutes?</span> Please contact{' '}
+                <a href="mailto:contact@talbiyah.ai?subject=Study%20notes%20not%20generated" className="underline font-semibold hover:text-red-900">
+                  contact@talbiyah.ai
+                </a>{' '}
+                straight away so we can salvage your lesson recording before it expires.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
+            >
+              Go Back
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 px-6 py-3 bg-[#059669] hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
