@@ -186,6 +186,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         from: "Talbiyah.ai <contact@talbiyah.ai>",
         to: [payload.recipient_email],
+        reply_to: "contact@talbiyah.ai",
         subject: emailContent.subject,
         html: emailContent.html,
       }),
@@ -969,6 +970,15 @@ function getWelcomeEmail(payload: NotificationPayload): { subject: string; html:
             </div>
           </div>
 
+          <!-- Personal help offer -->
+          <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #10b981;">
+            <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 18px;">Tell me how I can help you 💬</h3>
+            <p style="margin: 0 0 14px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+              Whatever you're hoping to learn, and wherever you are on your journey, I'd love to help you personally. <strong>Just reply to this email</strong> and tell me what you're looking for — I read every message myself.
+            </p>
+            <a href="mailto:contact@talbiyah.ai?subject=I%27d%20like%20some%20help" style="display:inline-block; background:#059669; color:#ffffff; text-decoration:none; padding:10px 18px; border-radius:10px; font-weight:600; font-size:14px;">Reply and tell me what you need</a>
+          </div>
+
           <!-- Live Lessons -->
           <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 16px 0; color: #0f172a; font-size: 20px;">📚 Live 1-to-1 Lessons</h3>
@@ -1203,6 +1213,12 @@ function getAdminNewSignupEmail(payload: NotificationPayload): { subject: string
                 ` : ''}
               </table>
             </div>
+
+            ${payload.data.help_needed ? `
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:16px; margin:0 0 20px 0;">
+              <p style="margin:0 0 6px 0; color:#92400e; font-weight:700; font-size:14px;">💬 What they'd like help with</p>
+              <p style="margin:0; color:#78350f; font-size:15px; line-height:1.6; white-space:pre-wrap;">${payload.data.help_needed}</p>
+            </div>` : ''}
 
             ${user_role === 'teacher' ? `
             <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 20px 0;">

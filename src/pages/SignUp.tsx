@@ -91,6 +91,7 @@ export default function SignUp() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<ReturnType<typeof validatePassword> | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [helpNeeded, setHelpNeeded] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -263,7 +264,8 @@ export default function SignUp() {
             full_name: authForm.fullName.trim(),
             phone: fullPhoneNumber,
             selected_role: selectedRole,
-            referral_code: referralCode.trim() || null
+            referral_code: referralCode.trim() || null,
+            help_needed: helpNeeded.trim() || null
           }
         }
       });
@@ -359,7 +361,8 @@ export default function SignUp() {
                 user_email: authForm.email,
                 user_role: selectedRole,
                 signup_time: new Date().toISOString(),
-                referral_code: referralCode.trim() || null
+                referral_code: referralCode.trim() || null,
+                help_needed: helpNeeded.trim() || null
               }
             }
           })
@@ -625,6 +628,22 @@ export default function SignUp() {
                 onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 placeholder={selectedRole === 'parent' ? 'Your full name (e.g., Sarah Ahmed)' : 'Your full name'}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center space-x-2">
+                  <span>What would you like help with?</span>
+                  <span className="text-xs text-gray-400">(optional)</span>
+                </div>
+              </label>
+              <textarea
+                value={helpNeeded}
+                onChange={(e) => setHelpNeeded(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="Tell us your goal or what you're looking for — Nathan will personally help you get started."
               />
             </div>
 
