@@ -32,7 +32,7 @@ serve(async (req) => {
     // Get lesson details
     const { data: lesson, error: lessonError } = await supabase
       .from('lessons')
-      .select('teacher_id, duration, status')
+      .select('teacher_id, duration_minutes, status')
       .eq('id', lesson_id)
       .single()
 
@@ -65,12 +65,15 @@ serve(async (req) => {
     }
 
     // Update teacher stats
-    const lessonHours = lesson.duration / 60 // convert minutes to hours
+    // NOTE: the teacher_profiles columns are `hours_taught` and `completed_lessons`
+    // (not total_hours_taught / total_lessons_completed). duration is stored in
+    // `duration_minutes`. Both were previously mismatched, so these counters never updated.
+    const lessonHours = (lesson.duration_minutes || 0) / 60 // convert minutes to hours
     const { error: statsError } = await supabase
       .from('teacher_profiles')
       .update({
-        total_hours_taught: (teacher.total_hours_taught || 0) + lessonHours,
-        total_lessons_completed: (teacher.total_lessons_completed || 0) + 1,
+        hours_taught: (teacher.hours_taught || 0) + lessonHours,
+        completed_lessons: (teacher.completed_lessons || 0) + 1,
         last_tier_check: new Date().toISOString()
       })
       .eq('id', teacher.id)
@@ -78,8 +81,8 @@ serve(async (req) => {
     if (statsError) throw statsError
 
     // Calculate updated stats
-    const updatedHours = (teacher.total_hours_taught || 0) + lessonHours
-    const updatedLessons = (teacher.total_lessons_completed || 0) + 1
+    const updatedHours = (teacher.hours_taught || 0) + lessonHours
+    const updatedLessons = (teacher.completed_lessons || 0) + 1
 
     // Get current tier info
     const { data: currentTier, error: currentTierError } = await supabase

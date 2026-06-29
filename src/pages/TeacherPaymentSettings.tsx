@@ -10,8 +10,10 @@ import {
   CheckCircle,
   Loader,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Globe
 } from 'lucide-react';
+import { COUNTRIES, isUKCountry } from '../data/locationConstants';
 
 interface PaymentSettings {
   id?: string;
@@ -25,6 +27,11 @@ interface PaymentSettings {
   bank_account_number: string | null;
   bank_sort_code: string | null;
   bank_name: string | null;
+  bank_iban: string | null;
+  bank_swift_bic: string | null;
+  bank_country: string | null;
+  bank_currency: string | null;
+  taptap_phone: string | null;
   paypal_email: string | null;
   tax_id: string | null;
   vat_registered: boolean;
@@ -36,10 +43,11 @@ export default function TeacherPaymentSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
+  const [teacherCountry, setTeacherCountry] = useState<string | null>(null);
   const [settings, setSettings] = useState<PaymentSettings>({
     teacher_id: '',
     preferred_payout_method: 'stripe_connect',
-    minimum_payout_amount: 50.00,
+    minimum_payout_amount: 10.00,
     payout_schedule: 'monthly',
     stripe_account_id: null,
     stripe_onboarding_completed: false,
@@ -47,6 +55,11 @@ export default function TeacherPaymentSettings() {
     bank_account_number: null,
     bank_sort_code: null,
     bank_name: null,
+    bank_iban: null,
+    bank_swift_bic: null,
+    bank_country: null,
+    bank_currency: null,
+    taptap_phone: null,
     paypal_email: null,
     tax_id: null,
     vat_registered: false,
@@ -95,6 +108,15 @@ export default function TeacherPaymentSettings() {
 
       setTeacherId(teacherProfile.id);
 
+      // Load the teacher's country to decide between UK and international bank fields
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('country')
+        .eq('id', user.id)
+        .single();
+
+      setTeacherCountry(profile?.country ?? null);
+
       // Load payment settings
       const { data: settingsData, error } = await supabase
         .from('teacher_payment_settings')
@@ -109,8 +131,15 @@ export default function TeacherPaymentSettings() {
       if (settingsData) {
         setSettings(settingsData);
       } else {
-        // Initialize with teacher_id
-        setSettings(prev => ({ ...prev, teacher_id: teacherProfile.id }));
+        // Initialize with teacher_id, pre-filling the bank country from their profile.
+        // International teachers default to TapTap Send (the primary manual rail).
+        const intl = profile?.country ? profile.country !== 'GB' : false;
+        setSettings(prev => ({
+          ...prev,
+          teacher_id: teacherProfile.id,
+          bank_country: profile?.country ?? null,
+          preferred_payout_method: intl ? 'taptap_send' : prev.preferred_payout_method,
+        }));
       }
 
     } catch (error) {
@@ -198,6 +227,10 @@ export default function TeacherPaymentSettings() {
     );
   }
 
+  // Teachers outside the UK (e.g. Egypt) are paid by international bank transfer
+  // (Wise) rather than UK sort-code/account-number details.
+  const isIntl = teacherCountry ? !isUKCountry(teacherCountry) : false;
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -225,6 +258,20 @@ export default function TeacherPaymentSettings() {
               <p className="text-sm text-gray-500 mb-4">
                 Recommended for fast, secure, and automatic payouts directly to your bank account.
               </p>
+
+              {isIntl && (
+                <div className="flex items-start gap-2 p-4 bg-amber-500/20 border border-amber-500/50 rounded-lg mb-4">
+                  <Globe className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-gray-600">
+                    <p className="font-medium mb-1 text-amber-700">Outside the UK?</p>
+                    <p>
+                      Stripe Connect isn't available in some countries (including Egypt). If
+                      onboarding won't complete, choose <strong>International Bank Transfer</strong>{' '}
+                      below — we'll pay you by international transfer (Wise) instead.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {settings.stripe_onboarding_completed ? (
                 <div className="flex items-center gap-2 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg">
@@ -288,8 +335,13 @@ export default function TeacherPaymentSettings() {
                 onChange={(e) => setSettings({ ...settings, preferred_payout_method: e.target.value })}
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
               >
-                <option value="stripe_connect">Stripe Connect (Recommended)</option>
-                <option value="bank_transfer">Manual Bank Transfer</option>
+                {isIntl && <option value="taptap_send">TapTap Send (Recommended)</option>}
+                <option value="stripe_connect">
+                  {isIntl ? 'Stripe Connect' : 'Stripe Connect (Recommended)'}
+                </option>
+                <option value="bank_transfer">
+                  {isIntl ? 'International Bank Transfer (Wise)' : 'Manual Bank Transfer'}
+                </option>
                 <option value="paypal">PayPal</option>
               </select>
             </div>
@@ -304,7 +356,12 @@ export default function TeacherPaymentSettings() {
                 min="10"
                 step="10"
                 value={settings.minimum_payout_amount}
-                onChange={(e) => setSettings({ ...settings, minimum_payout_amount: parseFloat(e.target.value) })}
+                onChange={(e) => {
+                  const parsed = parseFloat(e.target.value);
+                  // Enforce a £10 floor for payouts
+                  const value = isNaN(parsed) ? 10 : Math.max(10, parsed);
+                  setSettings({ ...settings, minimum_payout_amount: value });
+                }}
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -331,12 +388,59 @@ export default function TeacherPaymentSettings() {
           </div>
         </div>
 
+        {/* TapTap Send (manual mobile/wallet payout) */}
+        {settings.preferred_payout_method === 'taptap_send' && (
+          <div className="bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Globe className="w-5 h-5 text-gray-500" />
+              <h2 className="text-lg font-semibold text-gray-900">TapTap Send Details</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">
+              We'll send your payouts via TapTap Send to the mobile number / wallet below.
+              Make sure the name matches the account registered to receive the funds.
+            </p>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Recipient Full Name
+                </label>
+                <input
+                  type="text"
+                  value={settings.bank_account_holder_name || ''}
+                  onChange={(e) => setSettings({ ...settings, bank_account_holder_name: e.target.value })}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                  placeholder="As registered to receive funds"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Mobile / Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={settings.taptap_phone || ''}
+                  onChange={(e) => setSettings({ ...settings, taptap_phone: e.target.value })}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                  placeholder="+20 1X XXXX XXXX"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Include your country code (e.g. +20 for Egypt).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bank Details (for manual transfers) */}
         {settings.preferred_payout_method === 'bank_transfer' && (
           <div className="bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
             <div className="flex items-center gap-3 mb-6">
               <Building2 className="w-5 h-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">Bank Account Details</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isIntl ? 'International Bank Account Details' : 'Bank Account Details'}
+              </h2>
             </div>
 
             <div className="space-y-6">
@@ -353,35 +457,104 @@ export default function TeacherPaymentSettings() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Sort Code
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.bank_sort_code || ''}
-                    onChange={(e) => setSettings({ ...settings, bank_sort_code: e.target.value })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
-                    placeholder="12-34-56"
-                    maxLength={8}
-                  />
-                </div>
+              {isIntl ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        IBAN
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.bank_iban || ''}
+                        onChange={(e) => setSettings({ ...settings, bank_iban: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                        placeholder="EG380019000500000000263180002"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Account Number
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.bank_account_number || ''}
-                    onChange={(e) => setSettings({ ...settings, bank_account_number: e.target.value })}
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
-                    placeholder="12345678"
-                    maxLength={8}
-                  />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        SWIFT / BIC
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.bank_swift_bic || ''}
+                        onChange={(e) => setSettings({ ...settings, bank_swift_bic: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                        placeholder="NBEGEGCX"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        Bank Country
+                      </label>
+                      <select
+                        value={settings.bank_country || ''}
+                        onChange={(e) => setSettings({ ...settings, bank_country: e.target.value })}
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
+                      >
+                        <option value="">Select country</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.flag} {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        Payout Currency
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.bank_currency || ''}
+                        onChange={(e) => setSettings({ ...settings, bank_currency: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) })}
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                        placeholder="EGP"
+                        maxLength={3}
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        The currency you'd like to be paid in (e.g. EGP, USD).
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Sort Code
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.bank_sort_code || ''}
+                      onChange={(e) => setSettings({ ...settings, bank_sort_code: e.target.value })}
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                      placeholder="12-34-56"
+                      maxLength={8}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.bank_account_number || ''}
+                      onChange={(e) => setSettings({ ...settings, bank_account_number: e.target.value })}
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-400"
+                      placeholder="12345678"
+                      maxLength={8}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -432,7 +605,8 @@ export default function TeacherPaymentSettings() {
           </div>
         )}
 
-        {/* Tax Information */}
+        {/* Tax Information (UK teachers only) */}
+        {!isIntl && (
         <div className="bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <DollarSign className="w-5 h-5 text-gray-500" />
@@ -486,6 +660,7 @@ export default function TeacherPaymentSettings() {
             )}
           </div>
         </div>
+        )}
 
         {/* Save Button */}
         <div className="flex justify-end gap-4">

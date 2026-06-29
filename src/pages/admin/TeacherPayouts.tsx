@@ -23,6 +23,21 @@ interface TeacherEarningsOverview {
   eligible_for_payout: boolean;
 }
 
+interface PaymentInfo {
+  teacher_id: string;
+  preferred_payout_method: string | null;
+  bank_account_holder_name: string | null;
+  bank_account_number: string | null;
+  bank_sort_code: string | null;
+  bank_name: string | null;
+  bank_iban: string | null;
+  bank_swift_bic: string | null;
+  bank_country: string | null;
+  bank_currency: string | null;
+  taptap_phone: string | null;
+  paypal_email: string | null;
+}
+
 interface TeacherPayout {
   id: string;
   teacher_id: string;
@@ -49,6 +64,8 @@ export default function TeacherPayouts() {
   const [teachers, setTeachers] = useState<TeacherEarningsOverview[]>([]);
   const [recentPayouts, setRecentPayouts] = useState<TeacherPayout[]>([]);
   const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set());
+  const [paymentInfo, setPaymentInfo] = useState<Record<string, PaymentInfo>>({});
+  const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
   const [processingPayout, setProcessingPayout] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'eligible' | 'pending'>('eligible');
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +86,16 @@ export default function TeacherPayouts() {
 
       if (teachersError) throw teachersError;
       setTeachers(teachersData || []);
+
+      // Load bank/payout details so we can show admins where to send manual / Wise payouts
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('teacher_payment_settings')
+        .select('teacher_id, preferred_payout_method, bank_account_holder_name, bank_account_number, bank_sort_code, bank_name, bank_iban, bank_swift_bic, bank_country, bank_currency, taptap_phone, paypal_email');
+
+      if (paymentError) throw paymentError;
+      const infoMap: Record<string, PaymentInfo> = {};
+      (paymentData || []).forEach((p) => { infoMap[p.teacher_id] = p as PaymentInfo; });
+      setPaymentInfo(infoMap);
 
       // Load recent payouts
       const { data: payoutsData, error: payoutsError } = await supabase
@@ -115,8 +142,11 @@ export default function TeacherPayouts() {
           const teacher = teachers.find(t => t.teacher_profile_id === teacherId);
           if (!teacher || teacher.cleared_earnings <= 0) continue;
 
+          const info = paymentInfo[teacherId];
+          const method = info?.preferred_payout_method || teacher.preferred_payout_method;
+
           // Check if teacher has Stripe Connect enabled
-          if (teacher.stripe_account_id && teacher.preferred_payout_method === 'stripe_connect') {
+          if (teacher.stripe_account_id && method === 'stripe_connect') {
             // Use Stripe Connect edge function
             const { data, error } = await supabase.functions.invoke('process-stripe-payout', {
               body: { teacher_id: teacherId }
@@ -124,6 +154,16 @@ export default function TeacherPayouts() {
 
             if (error) throw new Error(`Stripe payout failed: ${error.message}`);
             if (!data.success) throw new Error(data.error || 'Stripe payout failed');
+
+            successCount++;
+          } else if (method === 'wise' || (method === 'bank_transfer' && info?.bank_iban)) {
+            // International teacher: send automatically via Wise
+            const { data, error } = await supabase.functions.invoke('process-wise-payout', {
+              body: { teacher_id: teacherId }
+            });
+
+            if (error) throw new Error(`Wise payout failed: ${error.message}`);
+            if (!data?.success) throw new Error(data?.error || 'Wise payout failed');
 
             successCount++;
           } else {
@@ -148,7 +188,7 @@ export default function TeacherPayouts() {
                 total_amount: totalAmount,
                 currency: 'gbp',
                 earnings_count: clearedEarnings.length,
-                payout_method: teacher.preferred_payout_method || 'manual',
+                payout_method: method || 'manual',
                 status: 'pending',
                 notes: `Manual payout created by admin for ${clearedEarnings.length} lessons`,
               })
@@ -574,6 +614,57 @@ export default function TeacherPayouts() {
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">{teacher.teacher_name}</p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">{teacher.teacher_email}</p>
+                          {(() => {
+                            const info = paymentInfo[teacher.teacher_profile_id];
+                            const method = info?.preferred_payout_method || teacher.preferred_payout_method || 'manual';
+                            const isStripe = method === 'stripe_connect';
+                            return (
+                              <>
+                                <button
+                                  onClick={() => setExpandedTeacher(
+                                    expandedTeacher === teacher.teacher_profile_id ? null : teacher.teacher_profile_id
+                                  )}
+                                  className="mt-1 text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                                >
+                                  {expandedTeacher === teacher.teacher_profile_id ? 'Hide' : 'Show'} payout details · {method.replace('_', ' ')}
+                                </button>
+                                {expandedTeacher === teacher.teacher_profile_id && (
+                                  <div className="mt-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 space-y-0.5 max-w-xs">
+                                    {isStripe ? (
+                                      <p>Paid automatically via Stripe Connect.</p>
+                                    ) : method === 'taptap_send' ? (
+                                      <>
+                                        <p><span className="text-gray-500">Send via TapTap Send (manual)</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info?.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">Phone:</span> {info?.taptap_phone || '— not provided —'}</p>
+                                      </>
+                                    ) : method === 'paypal' ? (
+                                      <p><span className="text-gray-500">PayPal:</span> {info?.paypal_email || '— not provided —'}</p>
+                                    ) : info?.bank_iban ? (
+                                      <>
+                                        <p><span className="text-gray-500">Send via Wise / international transfer</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">IBAN:</span> {info.bank_iban}</p>
+                                        <p><span className="text-gray-500">SWIFT/BIC:</span> {info.bank_swift_bic || '—'}</p>
+                                        <p><span className="text-gray-500">Bank:</span> {info.bank_name || '—'}</p>
+                                        <p><span className="text-gray-500">Country:</span> {info.bank_country || '—'}{info.bank_currency ? ` · ${info.bank_currency}` : ''}</p>
+                                      </>
+                                    ) : info?.bank_account_number ? (
+                                      <>
+                                        <p><span className="text-gray-500">UK bank transfer</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">Sort code:</span> {info.bank_sort_code || '—'}</p>
+                                        <p><span className="text-gray-500">Account no:</span> {info.bank_account_number}</p>
+                                        <p><span className="text-gray-500">Bank:</span> {info.bank_name || '—'}</p>
+                                      </>
+                                    ) : (
+                                      <p className="text-amber-600">No bank details on file — ask the teacher to add them in Payment Settings.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
