@@ -29,7 +29,7 @@ export default function TeacherAgreement() {
 
         const { data: profile } = await supabase
           .from('teacher_profiles')
-          .select('id, status, agreement_accepted_at, agreement_version, full_name')
+          .select('id, status, agreement_accepted_at, agreement_version')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -43,7 +43,14 @@ export default function TeacherAgreement() {
         }
 
         setTeacherId(profile.id);
-        if (profile.full_name) setSignedName(profile.full_name);
+
+        // Pre-fill the signature from the user's profile name (full_name lives on profiles, not teacher_profiles).
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (userProfile?.full_name) setSignedName(userProfile.full_name);
       } catch (e) {
         console.error('Error loading agreement:', e);
       } finally {
