@@ -42,6 +42,10 @@ import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 import { PostLessonForm } from '../components/progress';
+import StudentLessonIntroModal from '../components/student/StudentLessonIntroModal';
+
+// localStorage flag so the student "how lessons work" walkthrough only auto-shows once.
+const STUDENT_INTRO_KEY = 'talbiyah_student_lesson_intro_seen';
 
 interface LessonData {
   id: string;
@@ -366,6 +370,7 @@ function LessonContent() {
   const [error, setError] = useState<string | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [showStudentIntro, setShowStudentIntro] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showQuickFeedback, setShowQuickFeedback] = useState(false);
@@ -565,6 +570,11 @@ function LessonContent() {
       const teacherUserId = lessonData.teacher_profiles?.user_id;
       const isTeacher = teacherUserId === currentUser.id;
       setUserRole(isTeacher ? 'teacher' : 'student');
+
+      // First-time students see a short "how lessons work" walkthrough.
+      if (!isTeacher && localStorage.getItem(STUDENT_INTRO_KEY) !== 'true') {
+        setShowStudentIntro(true);
+      }
 
       // Get the appropriate room code based on user role
       const roomCode = isTeacher
@@ -1103,6 +1113,16 @@ function LessonContent() {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
+      {/* First-time student walkthrough */}
+      <StudentLessonIntroModal
+        open={showStudentIntro}
+        teacherName={lesson?.teacher_name}
+        onClose={() => {
+          localStorage.setItem(STUDENT_INTRO_KEY, 'true');
+          setShowStudentIntro(false);
+        }}
+      />
+
       {/* Connection Warning Banner */}
       {connectionWarning && (
         <div

@@ -195,6 +195,7 @@ const OnboardingResources = lazy(() => import('./pages/admin/OnboardingResources
 const BookInterview = lazy(() => import('./pages/BookInterview'));
 const CandidateInterviewRoom = lazy(() => import('./pages/CandidateInterviewRoom'));
 const TeacherResources = lazy(() => import('./pages/teacher/TeacherResources'));
+const TeacherAgreement = lazy(() => import('./pages/teacher/TeacherAgreement'));
 const AnnouncementsManagement = lazy(() => import('./pages/admin/AnnouncementsManagement'));
 
 // 404 page
@@ -502,6 +503,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherEditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/agreement"
+          element={
+            <ProtectedRoute requireTeacherOrAdmin={true} skipAgreementCheck={true}>
+              <TeacherAgreement />
             </ProtectedRoute>
           }
         />

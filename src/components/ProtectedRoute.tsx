@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import { AGREEMENT_VERSION } from '../data/teacherAgreement';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface ProtectedRouteProps {
   excludeTeachers?: boolean;
   requireTeacherOrAdmin?: boolean;
   skipOnboardingCheck?: boolean;
+  skipAgreementCheck?: boolean;
 }
 
 export default function ProtectedRoute({
@@ -16,7 +18,8 @@ export default function ProtectedRoute({
   requireAdmin = false,
   excludeTeachers = false,
   requireTeacherOrAdmin = false,
-  skipOnboardingCheck = false
+  skipOnboardingCheck = false,
+  skipAgreementCheck = false
 }: ProtectedRouteProps) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,6 +27,7 @@ export default function ProtectedRoute({
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
   const [isApprovedTeacher, setIsApprovedTeacher] = useState(false);
+  const [needsAgreement, setNeedsAgreement] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
@@ -74,12 +78,21 @@ export default function ProtectedRoute({
         // Check if user is an approved teacher (for requireTeacherOrAdmin prop)
         const { data: teacherProfile } = await supabase
           .from('teacher_profiles')
-          .select('status')
+          .select('status, agreement_accepted_at, agreement_version')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (teacherProfile?.status === 'approved') {
           setIsApprovedTeacher(true);
+
+          // Approved teachers must accept the current teaching agreement before
+          // they can use the teacher area (hard gate).
+          const accepted =
+            !!teacherProfile.agreement_accepted_at &&
+            teacherProfile.agreement_version === AGREEMENT_VERSION;
+          if (!accepted) {
+            setNeedsAgreement(true);
+          }
         }
 
         // All checks passed, set loading to false
@@ -114,6 +127,7 @@ export default function ProtectedRoute({
           setIsAdmin(false);
           setIsTeacher(false);
           setIsApprovedTeacher(false);
+          setNeedsAgreement(false);
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           checkAuth(session);
         }
@@ -149,6 +163,12 @@ export default function ProtectedRoute({
   // Check if parent needs to complete onboarding
   if (needsOnboarding) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  // Approved teachers must accept the teaching agreement before accessing anything
+  // else (hard gate). The agreement page passes skipAgreementCheck to avoid a loop.
+  if (needsAgreement && !skipAgreementCheck && !requireAdmin && !isAdmin) {
+    return <Navigate to="/teacher/agreement" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
