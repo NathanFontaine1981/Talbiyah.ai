@@ -39,6 +39,26 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    // Service-role client for lookups the caller's own RLS can't reliably do
+    // (e.g. resolving the target learner's parent auth email for an admin comp).
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Detect an admin caller. Admins book on behalf of a student and the lesson is
+    // comped (free, no Stripe). Case-insensitive to match mixed 'admin'/'Admin'.
+    const { data: callerProfile } = await supabaseClient
+      .from('profiles')
+      .select('roles')
+      .eq('id', user.id)
+      .single()
+    const isAdminComp = Array.isArray(callerProfile?.roles) &&
+      callerProfile!.roles.some((r: string) => (r ?? '').toLowerCase() === 'admin')
+    if (isAdminComp) {
+      console.log(`🛡️ Admin comp booking by ${user.id} for learner ${'(from body)'} `)
+    }
+
     const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method, is_legacy_booking } = await req.json()
 
     if (!cart_items || cart_items.length === 0) {
@@ -196,15 +216,18 @@ serve(async (req) => {
         }
       }
 
-      // Calculate price (0 if free promo code)
-      const price = isFree ? 0 : (isCreditsPayment ? 0 : item.price)
+      // Calculate price (0 if free promo code or admin comp)
+      const price = (isAdminComp || isFree) ? 0 : (isCreditsPayment ? 0 : item.price)
       const originalPrice = item.price
 
       // Determine payment status - use standard values that pass database check constraint
       // Valid values: 'pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled'
       let paymentStatus = 'pending'
       let paymentMethod = 'stripe'
-      if (isFree) {
+      if (isAdminComp) {
+        paymentStatus = 'completed'  // Admin-comped lessons are free and confirmed
+        paymentMethod = 'admin_comp'
+      } else if (isFree) {
         paymentStatus = 'completed'  // Free lessons are considered completed
         paymentMethod = 'promo_code'
       } else if (isCreditsPayment) {
@@ -234,7 +257,7 @@ serve(async (req) => {
           teacher_rate_at_booking: originalPrice,
           platform_fee: 0,
           total_cost_paid: price,
-          payment_id: isFree ? `promo_${promoCodeUsed}_${Date.now()}` : (isCreditsPayment ? `credits_${Date.now()}_${Math.random().toString(36).substring(7)}` : (is_legacy_booking ? `legacy_${Date.now()}_${Math.random().toString(36).substring(7)}` : null)),
+          payment_id: isAdminComp ? `admin_comp_${Date.now()}` : (isFree ? `promo_${promoCodeUsed}_${Date.now()}` : (isCreditsPayment ? `credits_${Date.now()}_${Math.random().toString(36).substring(7)}` : (is_legacy_booking ? `legacy_${Date.now()}_${Math.random().toString(36).substring(7)}` : null))),
           payment_status: paymentStatus,
           '100ms_room_id': roomId,
           teacher_room_code: teacherRoomCode,
@@ -293,9 +316,17 @@ serve(async (req) => {
           .eq('id', learner_id)
           .single()
 
-        // Use the authenticated user's email (from auth session, not profiles table)
-        // profiles.email is often empty, but user.email is always available
-        const studentEmail = user.email
+        // Normally the caller IS the student/parent, so their auth email is correct.
+        // profiles.email is often empty, but user.email is always available.
+        // For an admin comp booking the caller is the ADMIN — resolve the learner's
+        // parent auth email instead so the confirmation reaches the actual student.
+        let studentEmail = user.email
+        if (isAdminComp && learnerData?.parent_id) {
+          const { data: parentAuth } = await supabaseAdmin.auth.admin.getUserById(learnerData.parent_id)
+          if (parentAuth?.user?.email) {
+            studentEmail = parentAuth.user.email
+          }
+        }
 
         // Get student name from profiles
         const { data: parentProfile } = await supabaseClient
