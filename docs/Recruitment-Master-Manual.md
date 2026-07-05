@@ -40,6 +40,7 @@ All recruitment tools are accessible from the admin sidebar under the **Recruitm
 
 ---
 
+
 ## 2. The Recruitment Pipeline at a Glance
 
 Below is the complete journey a candidate takes from discovery to active teacher:
