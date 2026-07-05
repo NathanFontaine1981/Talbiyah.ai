@@ -35,7 +35,7 @@ serve(async (req) => {
         *,
         teacher_profiles!inner(
           user_id,
-          profiles!inner(email, full_name)
+          profiles!teacher_profiles_user_id_fkey(email, full_name)
         )
       `)
       .eq('id', payout_id)
@@ -228,6 +228,10 @@ The Talbiyah.ai Team
       )
     }
 
+    // Admin always gets a copy of every payout remittance/invoice (bcc so the
+    // teacher doesn't see it). Override with PAYOUT_NOTIFY_EMAIL if needed.
+    const adminEmail = Deno.env.get('PAYOUT_NOTIFY_EMAIL') || 'contact@talbiyah.ai'
+
     // Send email using Resend
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -238,6 +242,7 @@ The Talbiyah.ai Team
       body: JSON.stringify({
         from: 'Talbiyah.ai <billing@talbiyah.ai>',
         to: teacherEmail,
+        bcc: adminEmail,
         subject: subject,
         html: htmlContent,
         text: textContent,

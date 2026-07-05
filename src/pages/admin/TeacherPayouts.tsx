@@ -23,6 +23,22 @@ interface TeacherEarningsOverview {
   eligible_for_payout: boolean;
 }
 
+interface PaymentInfo {
+  teacher_id: string;
+  preferred_payout_method: string | null;
+  bank_account_holder_name: string | null;
+  bank_account_number: string | null;
+  bank_sort_code: string | null;
+  bank_name: string | null;
+  bank_iban: string | null;
+  bank_swift_bic: string | null;
+  bank_country: string | null;
+  bank_currency: string | null;
+  taptap_phone: string | null;
+  revolut_detail: string | null;
+  paypal_email: string | null;
+}
+
 interface TeacherPayout {
   id: string;
   teacher_id: string;
@@ -34,14 +50,16 @@ interface TeacherPayout {
   completed_at: string | null;
   failed_at: string | null;
   failure_reason: string | null;
+  external_payout_id?: string | null;
+  notes?: string | null;
   created_at: string;
-  teacher_profiles: {
+  teacher_profiles?: {
     user_id: string;
     profiles: {
       full_name: string;
       email: string;
-    };
-  };
+    } | null;
+  } | null;
 }
 
 export default function TeacherPayouts() {
@@ -49,9 +67,15 @@ export default function TeacherPayouts() {
   const [teachers, setTeachers] = useState<TeacherEarningsOverview[]>([]);
   const [recentPayouts, setRecentPayouts] = useState<TeacherPayout[]>([]);
   const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set());
+  const [paymentInfo, setPaymentInfo] = useState<Record<string, PaymentInfo>>({});
+  const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
   const [processingPayout, setProcessingPayout] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'eligible' | 'pending'>('eligible');
   const [searchQuery, setSearchQuery] = useState('');
+  // Admin editing of a teacher's payout details
+  const [editTeacher, setEditTeacher] = useState<{ id: string; name: string } | null>(null);
+  const [editForm, setEditForm] = useState<Partial<PaymentInfo>>({});
+  const [savingDetails, setSavingDetails] = useState(false);
 
   useEffect(() => {
     loadPayoutsData();
@@ -70,26 +94,77 @@ export default function TeacherPayouts() {
       if (teachersError) throw teachersError;
       setTeachers(teachersData || []);
 
-      // Load recent payouts
+      // Load bank/payout details so we can show admins where to send manual / Wise payouts
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('teacher_payment_settings')
+        .select('teacher_id, preferred_payout_method, bank_account_holder_name, bank_account_number, bank_sort_code, bank_name, bank_iban, bank_swift_bic, bank_country, bank_currency, taptap_phone, revolut_detail, paypal_email');
+
+      if (paymentError) throw paymentError;
+      const infoMap: Record<string, PaymentInfo> = {};
+      (paymentData || []).forEach((p) => { infoMap[p.teacher_id] = p as PaymentInfo; });
+      setPaymentInfo(infoMap);
+
+      // Load payout history (all of it, for tracking). Use a non-inner embed so a payout
+      // never disappears just because its teacher join is null.
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('teacher_payouts')
         .select(`
           *,
-          teacher_profiles!inner(
+          teacher_profiles(
             user_id,
             profiles!teacher_profiles_user_id_fkey(full_name, email)
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(500);
 
-      if (payoutsError) throw payoutsError;
+      if (payoutsError) {
+        console.error('Error loading payout history:', payoutsError);
+      }
       setRecentPayouts(payoutsData || []);
 
     } catch (error) {
       console.error('Error loading payouts data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openEditDetails = (teacherId: string, name: string) => {
+    const info = paymentInfo[teacherId];
+    setEditForm({
+      preferred_payout_method: info?.preferred_payout_method || 'taptap_send',
+      bank_account_holder_name: info?.bank_account_holder_name || '',
+      taptap_phone: info?.taptap_phone || '',
+      revolut_detail: info?.revolut_detail || '',
+      bank_iban: info?.bank_iban || '',
+      bank_swift_bic: info?.bank_swift_bic || '',
+      bank_name: info?.bank_name || '',
+      bank_country: info?.bank_country || '',
+      bank_currency: info?.bank_currency || '',
+      bank_sort_code: info?.bank_sort_code || '',
+      bank_account_number: info?.bank_account_number || '',
+      paypal_email: info?.paypal_email || '',
+    });
+    setEditTeacher({ id: teacherId, name });
+  };
+
+  const saveDetails = async () => {
+    if (!editTeacher) return;
+    setSavingDetails(true);
+    try {
+      const { error } = await supabase
+        .from('teacher_payment_settings')
+        .upsert({ teacher_id: editTeacher.id, ...editForm }, { onConflict: 'teacher_id' });
+      if (error) throw error;
+      toast.success(`Payout details saved for ${editTeacher.name}`);
+      setEditTeacher(null);
+      loadPayoutsData();
+    } catch (e: any) {
+      console.error('Error saving payout details:', e);
+      toast.error(`Could not save details: ${e.message}`);
+    } finally {
+      setSavingDetails(false);
     }
   };
 
@@ -115,8 +190,11 @@ export default function TeacherPayouts() {
           const teacher = teachers.find(t => t.teacher_profile_id === teacherId);
           if (!teacher || teacher.cleared_earnings <= 0) continue;
 
+          const info = paymentInfo[teacherId];
+          const method = info?.preferred_payout_method || teacher.preferred_payout_method;
+
           // Check if teacher has Stripe Connect enabled
-          if (teacher.stripe_account_id && teacher.preferred_payout_method === 'stripe_connect') {
+          if (teacher.stripe_account_id && method === 'stripe_connect') {
             // Use Stripe Connect edge function
             const { data, error } = await supabase.functions.invoke('process-stripe-payout', {
               body: { teacher_id: teacherId }
@@ -125,6 +203,30 @@ export default function TeacherPayouts() {
             if (error) throw new Error(`Stripe payout failed: ${error.message}`);
             if (!data.success) throw new Error(data.error || 'Stripe payout failed');
 
+            if (data.payout_id) {
+              try {
+                await supabase.functions.invoke('send-payout-notification', {
+                  body: { payout_id: data.payout_id, teacher_id: teacherId, type: 'completed' },
+                });
+              } catch (e) { console.error('Payout email failed:', e); }
+            }
+            successCount++;
+          } else if (method === 'wise' || (method === 'bank_transfer' && info?.bank_iban)) {
+            // International teacher: send automatically via Wise
+            const { data, error } = await supabase.functions.invoke('process-wise-payout', {
+              body: { teacher_id: teacherId }
+            });
+
+            if (error) throw new Error(`Wise payout failed: ${error.message}`);
+            if (!data?.success) throw new Error(data?.error || 'Wise payout failed');
+
+            if (data.payout_id) {
+              try {
+                await supabase.functions.invoke('send-payout-notification', {
+                  body: { payout_id: data.payout_id, teacher_id: teacherId, type: 'completed' },
+                });
+              } catch (e) { console.error('Payout email failed:', e); }
+            }
             successCount++;
           } else {
             // Manual payout flow (existing logic)
@@ -148,7 +250,7 @@ export default function TeacherPayouts() {
                 total_amount: totalAmount,
                 currency: 'gbp',
                 earnings_count: clearedEarnings.length,
-                payout_method: teacher.preferred_payout_method || 'manual',
+                payout_method: method || 'manual',
                 status: 'pending',
                 notes: `Manual payout created by admin for ${clearedEarnings.length} lessons`,
               })
@@ -179,6 +281,15 @@ export default function TeacherPayouts() {
               .eq('id', payout.id);
 
             if (completeError) throw completeError;
+
+            // Email the teacher a payment confirmation / remittance (best-effort).
+            try {
+              await supabase.functions.invoke('send-payout-notification', {
+                body: { payout_id: payout.id, teacher_id: teacherId, type: 'completed' },
+              });
+            } catch (emailErr) {
+              console.error('Payout email failed (payout still recorded):', emailErr);
+            }
 
             successCount++;
           }
@@ -259,11 +370,13 @@ export default function TeacherPayouts() {
 
     try {
       if (action === 'approve') {
-        // Mark earnings as paid
+        // Mark this teacher's earnings paid: any already linked to this payout, PLUS any
+        // still-cleared earnings (monthly-queued payouts don't pre-link them). Link all to the payout.
         const { data: earningsToUpdate, error: fetchError } = await supabase
           .from('teacher_earnings')
           .select('id')
-          .eq('payout_id', payout.id);
+          .eq('teacher_id', payout.teacher_id)
+          .or(`payout_id.eq.${payout.id},status.eq.cleared`);
 
         if (fetchError) throw fetchError;
 
@@ -272,6 +385,7 @@ export default function TeacherPayouts() {
             .from('teacher_earnings')
             .update({
               status: 'paid',
+              payout_id: payout.id,
               paid_at: new Date().toISOString(),
             })
             .in('id', earningsToUpdate.map(e => e.id));
@@ -290,6 +404,13 @@ export default function TeacherPayouts() {
           .eq('id', payout.id);
 
         if (payoutError) throw payoutError;
+
+        // Email the teacher + admin a remittance (best-effort)
+        try {
+          await supabase.functions.invoke('send-payout-notification', {
+            body: { payout_id: payout.id, teacher_id: payout.teacher_id, type: 'completed' },
+          });
+        } catch (e) { console.error('Payout email failed:', e); }
 
         toast.success('Payout approved and marked as completed!');
       } else {
@@ -574,6 +695,69 @@ export default function TeacherPayouts() {
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">{teacher.teacher_name}</p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">{teacher.teacher_email}</p>
+                          {(() => {
+                            const info = paymentInfo[teacher.teacher_profile_id];
+                            const method = info?.preferred_payout_method || teacher.preferred_payout_method || 'manual';
+                            const isStripe = method === 'stripe_connect';
+                            return (
+                              <>
+                                <button
+                                  onClick={() => setExpandedTeacher(
+                                    expandedTeacher === teacher.teacher_profile_id ? null : teacher.teacher_profile_id
+                                  )}
+                                  className="mt-1 text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                                >
+                                  {expandedTeacher === teacher.teacher_profile_id ? 'Hide' : 'Show'} payout details · {method.replace('_', ' ')}
+                                </button>
+                                {expandedTeacher === teacher.teacher_profile_id && (
+                                  <div className="mt-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 space-y-0.5 max-w-xs">
+                                    {isStripe ? (
+                                      <p>Paid automatically via Stripe Connect.</p>
+                                    ) : method === 'taptap_send' ? (
+                                      <>
+                                        <p><span className="text-gray-500">Send via TapTap Send (manual)</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info?.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">Phone:</span> {info?.taptap_phone || '— not provided —'}</p>
+                                      </>
+                                    ) : method === 'revolut' ? (
+                                      <>
+                                        <p><span className="text-gray-500">Send via Revolut (manual)</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info?.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">Revolut:</span> {info?.revolut_detail || '— not provided —'}</p>
+                                      </>
+                                    ) : method === 'paypal' ? (
+                                      <p><span className="text-gray-500">PayPal:</span> {info?.paypal_email || '— not provided —'}</p>
+                                    ) : info?.bank_iban ? (
+                                      <>
+                                        <p><span className="text-gray-500">Send via Wise / international transfer</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">IBAN:</span> {info.bank_iban}</p>
+                                        <p><span className="text-gray-500">SWIFT/BIC:</span> {info.bank_swift_bic || '—'}</p>
+                                        <p><span className="text-gray-500">Bank:</span> {info.bank_name || '—'}</p>
+                                        <p><span className="text-gray-500">Country:</span> {info.bank_country || '—'}{info.bank_currency ? ` · ${info.bank_currency}` : ''}</p>
+                                      </>
+                                    ) : info?.bank_account_number ? (
+                                      <>
+                                        <p><span className="text-gray-500">UK bank transfer</span></p>
+                                        <p><span className="text-gray-500">Name:</span> {info.bank_account_holder_name || '—'}</p>
+                                        <p><span className="text-gray-500">Sort code:</span> {info.bank_sort_code || '—'}</p>
+                                        <p><span className="text-gray-500">Account no:</span> {info.bank_account_number}</p>
+                                        <p><span className="text-gray-500">Bank:</span> {info.bank_name || '—'}</p>
+                                      </>
+                                    ) : (
+                                      <p className="text-amber-600">No payout details on file yet.</p>
+                                    )}
+                                    <button
+                                      onClick={() => openEditDetails(teacher.teacher_profile_id, teacher.teacher_name)}
+                                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                    >
+                                      ✎ Edit payout details
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -632,7 +816,9 @@ export default function TeacherPayouts() {
         {/* Recent Payouts */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Payouts</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Payout History <span className="text-sm font-normal text-gray-500">({recentPayouts.length})</span>
+            </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -678,11 +864,21 @@ export default function TeacherPayouts() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {payout.teacher_profiles.profiles.full_name}
+                            {payout.teacher_profiles?.profiles?.full_name
+                              || teachers.find(t => t.teacher_profile_id === payout.teacher_id)?.teacher_name
+                              || '—'}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {payout.teacher_profiles.profiles.email}
+                            {payout.teacher_profiles?.profiles?.email
+                              || teachers.find(t => t.teacher_profile_id === payout.teacher_id)?.teacher_email
+                              || ''}
                           </p>
+                          {payout.external_payout_id && (
+                            <p className="text-xs text-gray-400">Ref: {payout.external_payout_id}</p>
+                          )}
+                          {payout.notes && (
+                            <p className="text-xs text-gray-400">{payout.notes}</p>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600">
@@ -731,6 +927,89 @@ export default function TeacherPayouts() {
           </div>
         </div>
       </div>
+
+      {/* Admin: edit a teacher's payout details */}
+      {editTeacher && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Payout details</h3>
+              <p className="text-sm text-gray-500 mb-4">{editTeacher.name}</p>
+
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Method</label>
+              <select
+                value={editForm.preferred_payout_method || 'taptap_send'}
+                onChange={(e) => setEditForm({ ...editForm, preferred_payout_method: e.target.value })}
+                className="w-full mb-4 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+              >
+                <option value="taptap_send">TapTap Send</option>
+                <option value="revolut">Revolut</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="wise">Wise</option>
+                <option value="paypal">PayPal</option>
+                <option value="stripe_connect">Stripe Connect</option>
+                <option value="manual">Manual / Other</option>
+              </select>
+
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Recipient full name</label>
+              <input
+                value={editForm.bank_account_holder_name || ''}
+                onChange={(e) => setEditForm({ ...editForm, bank_account_holder_name: e.target.value })}
+                className="w-full mb-4 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                placeholder="As registered to receive funds"
+              />
+
+              {editForm.preferred_payout_method === 'taptap_send' && (
+                <>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Mobile / phone (TapTap)</label>
+                  <input
+                    value={editForm.taptap_phone || ''}
+                    onChange={(e) => setEditForm({ ...editForm, taptap_phone: e.target.value })}
+                    className="w-full mb-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                    placeholder="+20 1X XXXX XXXX"
+                  />
+                </>
+              )}
+
+              {editForm.preferred_payout_method === 'revolut' && (
+                <>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Revolut (phone or @RevTag)</label>
+                  <input
+                    value={editForm.revolut_detail || ''}
+                    onChange={(e) => setEditForm({ ...editForm, revolut_detail: e.target.value })}
+                    className="w-full mb-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                    placeholder="@revtag or +44 7X XXXX XXXX"
+                  />
+                </>
+              )}
+
+              {(editForm.preferred_payout_method === 'bank_transfer' || editForm.preferred_payout_method === 'wise') && (
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={editForm.bank_iban || ''} onChange={(e) => setEditForm({ ...editForm, bank_iban: e.target.value })} placeholder="IBAN" className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm" />
+                  <input value={editForm.bank_swift_bic || ''} onChange={(e) => setEditForm({ ...editForm, bank_swift_bic: e.target.value })} placeholder="SWIFT/BIC" className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm" />
+                  <input value={editForm.bank_name || ''} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} placeholder="Bank name" className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm" />
+                  <input value={editForm.bank_country || ''} onChange={(e) => setEditForm({ ...editForm, bank_country: e.target.value })} placeholder="Country (e.g. EG)" className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm" />
+                  <input value={editForm.bank_currency || ''} onChange={(e) => setEditForm({ ...editForm, bank_currency: e.target.value })} placeholder="Currency (e.g. EGP)" className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm" />
+                </div>
+              )}
+
+              {editForm.preferred_payout_method === 'paypal' && (
+                <>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">PayPal email</label>
+                  <input value={editForm.paypal_email || ''} onChange={(e) => setEditForm({ ...editForm, paypal_email: e.target.value })} className="w-full mb-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white" placeholder="email@example.com" />
+                </>
+              )}
+
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => setEditTeacher(null)} className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button onClick={saveDetails} disabled={savingDetails} className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50">
+                  {savingDetails ? 'Saving…' : 'Save details'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
