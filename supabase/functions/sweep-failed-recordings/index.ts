@@ -150,14 +150,20 @@ Deno.serve(async (req: Request) => {
     const token = await getHMSManagementToken();
     const hmsHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-    // Find lessons completed in last 48h with empty insights
-    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    // Find lessons completed between 48h and 90 minutes ago with empty insights,
+    // that we have NOT already alerted about. The 90-minute floor gives the normal
+    // recording pipeline time to finish so we don't act/alert prematurely; the
+    // insight_recovery_alerted flag guarantees one alert (and one attempt) per lesson.
+    const cutoffOld = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const cutoffRecent = new Date(Date.now() - 90 * 60 * 1000).toISOString();
 
     const { data: completedLessons } = await supabase
       .from("lessons")
       .select("id, 100ms_room_id, scheduled_time, subjects(name)")
       .eq("status", "completed")
-      .gte("scheduled_time", cutoff)
+      .gte("scheduled_time", cutoffOld)
+      .lte("scheduled_time", cutoffRecent)
+      .eq("insight_recovery_alerted", false)
       .not("100ms_room_id", "is", null)
       .order("scheduled_time", { ascending: false });
 
@@ -206,6 +212,7 @@ Deno.serve(async (req: Request) => {
       Promise.allSettled(recoveryPromises).then(async (results) => {
         const successes: string[] = [];
         const failures: string[] = [];
+        const failedLessonIds: string[] = [];
 
         results.forEach((r, i) => {
           const lesson = needsRecovery[i];
@@ -216,17 +223,26 @@ Deno.serve(async (req: Request) => {
           } else {
             const err = r.status === "fulfilled" ? (r as PromiseFulfilledResult<any>).value?.error : (r as PromiseRejectedResult).reason;
             failures.push(`${date} - ${subjectName}: ${err}`);
+            failedLessonIds.push(lesson.id);
           }
         });
 
         console.log(`[sweep] Complete: ${successes.length} recovered, ${failures.length} failed`);
 
-        // Send email alert for any failures OR successes (so Nathan knows what happened)
-        if (failures.length > 0 || successes.length > 0) {
+        // Mark failed lessons as alerted so we never re-attempt or re-email them
+        // (exactly one alert per lesson). Successes drop out naturally — they now
+        // have real insights, so they won't match the query next run.
+        if (failedLessonIds.length > 0) {
+          await supabase.from("lessons").update({ insight_recovery_alerted: true }).in("id", failedLessonIds);
+        }
+
+        // Email the admin ONCE per failed lesson, with the reason it failed.
+        // Routine successes are no longer emailed (the student already gets the
+        // "insights ready" email through the normal flow).
+        if (failures.length > 0) {
           const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
           if (RESEND_API_KEY) {
             try {
-              const statusEmoji = failures.length > 0 ? "⚠️" : "✅";
               await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: {
@@ -236,28 +252,25 @@ Deno.serve(async (req: Request) => {
                 body: JSON.stringify({
                   from: "Talbiyah.ai <contact@talbiyah.ai>",
                   to: ["contact@talbiyah.ai"],
-                  subject: `${statusEmoji} Talbiyah Insights: ${successes.length} recovered, ${failures.length} failed`,
+                  subject: `⚠️ Talbiyah Insights: ${failures.length} lesson(s) failed (you won't be alerted about these again)`,
                   html: `
                     <div style="font-family: sans-serif; max-width: 600px;">
-                      <h2 style="color: #065f46;">Lesson Insights Recovery Report</h2>
-                      ${failures.length > 0 ? `
-                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                          <strong style="color: #991b1b;">⚠️ ${failures.length} lesson(s) could not recover insights:</strong>
-                          <ul>${failures.map(f => `<li>${f}</li>`).join("")}</ul>
-                        </div>
-                      ` : ""}
-                      ${successes.length > 0 ? `
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                          <strong style="color: #166534;">✅ ${successes.length} lesson(s) recovered successfully:</strong>
-                          <ul>${successes.map(s => `<li>${s}</li>`).join("")}</ul>
-                        </div>
-                      ` : ""}
-                      <p style="color: #6b7280; font-size: 12px;">Sent by sweep-failed-recordings cron • Check Supabase Edge Function logs for details</p>
+                      <h2 style="color: #991b1b;">Lesson insights could not be generated</h2>
+                      <p>The recording pipeline finished but these lessons had no usable recording to generate insights from. <strong>This is a one-time alert per lesson</strong> — you will not be emailed about them again.</p>
+                      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <ul>${failures.map(f => `<li>${f}</li>`).join("")}</ul>
+                      </div>
+                      <p style="color:#374151;font-size:13px;"><strong>What the reasons mean:</strong><br>
+                        <code>no_audio_available</code> — no recording was captured (often a no-show, or the recording failed on the teacher's device/region).<br>
+                        <code>transcription_failed</code> — a recording existed but was effectively silent/empty.<br>
+                        <code>insight_generation_failed</code> — audio + transcript were fine, but the AI step errored (worth a retry).
+                      </p>
+                      <p style="color: #6b7280; font-size: 12px;">Sent by sweep-failed-recordings cron • one alert per lesson • full detail in Supabase Edge Function logs</p>
                     </div>
                   `,
                 }),
               });
-              console.log("[sweep] Alert email sent");
+              console.log("[sweep] Failure alert sent for", failedLessonIds.length, "lessons");
             } catch (emailErr) {
               console.error("[sweep] Failed to send alert email:", emailErr);
             }
