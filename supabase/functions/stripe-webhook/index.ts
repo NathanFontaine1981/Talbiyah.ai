@@ -680,12 +680,27 @@ serve(async (req) => {
           // Send email notifications for each booked lesson
           for (const lesson of createdLessons) {
             try {
-              // Get teacher and student profiles
-              const { data: teacherProfile } = await supabaseClient
-                .from('profiles')
-                .select('full_name, email')
+              // Get teacher and student profiles.
+              // lesson.teacher_id is a teacher_profiles.id → resolve the user first, then the
+              // profile (previously queried profiles.id directly, which never matched, so the
+              // teacher name fell back to "Teacher" and the teacher email didn't send).
+              const { data: teacherRow } = await supabaseClient
+                .from('teacher_profiles')
+                .select('user_id, email')
                 .eq('id', lesson.teacher_id)
                 .single()
+              let teacherProfile: { full_name?: string; email?: string } | null = null
+              if (teacherRow?.user_id) {
+                const { data: tp } = await supabaseClient
+                  .from('profiles')
+                  .select('full_name, email')
+                  .eq('id', teacherRow.user_id)
+                  .single()
+                teacherProfile = tp
+              }
+              if (teacherProfile && !teacherProfile.email && teacherRow?.email) {
+                teacherProfile.email = teacherRow.email
+              }
 
               const { data: studentProfile } = await supabaseClient
                 .from('profiles')

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
+import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign, Gift, CreditCard, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { formatLessonTime, formatLessonDate } from '../../lib/formatLessonTime';
@@ -584,6 +584,11 @@ function NewSessionModal({ onClose, onSuccess }: any) {
   const [students, setStudents] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
 
+  // Selected student's credit standing (loaded when a student is picked)
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [unlimitedCredits, setUnlimitedCredits] = useState(false);
+  const [loadingCredits, setLoadingCredits] = useState(false);
+
   const [formData, setFormData] = useState({
     teacher_id: '',
     student_id: '',
@@ -592,13 +597,56 @@ function NewSessionModal({ onClose, onSuccess }: any) {
     scheduled_time: '',
     duration_minutes: 60,
     type: 'private',
-    price: 1500, // £15.00 in pence
-    status: 'scheduled',
+    // How the lesson is paid for: charge the student's credits, or gift it free.
+    payment_method: 'credits' as 'credits' | 'gift',
   });
+
+  // Credits needed = 1 credit per 60 min.
+  const creditsNeeded = (Number(formData.duration_minutes) || 60) / 60;
+  const chargingCredits = formData.payment_method === 'credits';
+  const insufficientCredits =
+    chargingCredits &&
+    !unlimitedCredits &&
+    formData.student_id !== '' &&
+    creditBalance !== null &&
+    creditBalance < creditsNeeded;
 
   useEffect(() => {
     fetchFormData();
   }, []);
+
+  // Load the selected student's credit balance whenever the student changes.
+  useEffect(() => {
+    if (!formData.student_id) {
+      setCreditBalance(null);
+      setUnlimitedCredits(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setLoadingCredits(true);
+      try {
+        const [{ data: profileRow }, { data: creditRow }] = await Promise.all([
+          supabase.from('profiles').select('unlimited_credits').eq('id', formData.student_id).maybeSingle(),
+          supabase.from('user_credits').select('credits_remaining').eq('user_id', formData.student_id).maybeSingle(),
+        ]);
+        if (cancelled) return;
+        setUnlimitedCredits(!!profileRow?.unlimited_credits);
+        setCreditBalance(Number(creditRow?.credits_remaining ?? 0));
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error loading student credits:', error);
+          setCreditBalance(0);
+          setUnlimitedCredits(false);
+        }
+      } finally {
+        if (!cancelled) setLoadingCredits(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [formData.student_id]);
 
   async function fetchFormData() {
     try {
@@ -632,6 +680,12 @@ function NewSessionModal({ onClose, onSuccess }: any) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (insufficientCredits) {
+      toast.error(`Student only has ${creditBalance} credit(s) but ${creditsNeeded} are needed. Add credits or gift the lesson.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -649,17 +703,27 @@ function NewSessionModal({ onClose, onSuccess }: any) {
           time: scheduledIso,                   // full ISO -> stored as scheduled_time
           subject: formData.subject_id,         // subjects.id
           duration: Number(formData.duration_minutes) || 60,
+          payment_method: formData.payment_method, // 'credits' | 'gift'
         },
       });
 
       if (error) throw error;
       if (data && (data as any).error) throw new Error((data as any).error);
 
+      const charged = (data as any)?.credits_charged || 0;
+      toast.success(
+        formData.payment_method === 'gift'
+          ? 'Lesson gifted to student (free).'
+          : charged > 0
+            ? `Lesson booked — ${charged} credit${charged === 1 ? '' : 's'} charged.`
+            : 'Lesson booked.'
+      );
+
       await onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating session:', error);
-      toast.error('Failed to create session. Please try again.');
+      toast.error(error?.message || 'Failed to create session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -767,31 +831,68 @@ function NewSessionModal({ onClose, onSuccess }: any) {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Price (£)</label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                value={formData.price / 100}
-                onChange={(e) => setFormData({ ...formData, price: Math.round(parseFloat(e.target.value) * 100) })}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
-              />
+            <div className="flex items-end">
+              <div className="w-full text-sm text-gray-600 dark:text-gray-400 px-1 pb-2">
+                {creditsNeeded} credit{creditsNeeded === 1 ? '' : 's'} needed
+                <span className="text-gray-400 dark:text-gray-500"> (1 credit = 60 min)</span>
+              </div>
             </div>
           </div>
 
+          {/* Payment method: charge the student's credits, or gift the lesson free */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-400 mb-2">Payment</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, payment_method: 'credits' })}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg border text-left transition ${
+                  formData.payment_method === 'credits'
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <CreditCard className="w-5 h-5 shrink-0" />
+                <span className="text-sm font-medium">Use student's credits</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, payment_method: 'gift' })}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg border text-left transition ${
+                  formData.payment_method === 'gift'
+                    ? 'border-pink-500 bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-300'
+                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <Gift className="w-5 h-5 shrink-0" />
+                <span className="text-sm font-medium">Gift free lesson</span>
+              </button>
+            </div>
+
+            {/* Live credit standing for the selected student */}
+            {formData.student_id && chargingCredits && (
+              <div className="mt-2 text-sm">
+                {loadingCredits ? (
+                  <span className="text-gray-500 dark:text-gray-400">Checking credit balance…</span>
+                ) : unlimitedCredits ? (
+                  <span className="text-emerald-600 dark:text-emerald-400">✨ Student has unlimited credits — nothing will be charged.</span>
+                ) : insufficientCredits ? (
+                  <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    Balance {creditBalance} credit{creditBalance === 1 ? '' : 's'} — not enough for this {creditsNeeded}-credit lesson.
+                  </span>
+                ) : (
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Balance: <span className="font-medium text-gray-900 dark:text-white">{creditBalance}</span> credit{creditBalance === 1 ? '' : 's'} — {creditsNeeded} will be charged.
+                  </span>
+                )}
+              </div>
+            )}
+            {formData.student_id && !chargingCredits && (
+              <div className="mt-2 text-sm text-pink-600 dark:text-pink-400">
+                This lesson will be free for the student (no credits charged).
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-3 pt-4">
@@ -804,10 +905,14 @@ function NewSessionModal({ onClose, onSuccess }: any) {
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition"
+              disabled={loading || insufficientCredits}
+              className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition"
             >
-              {loading ? 'Creating...' : 'Create Session'}
+              {loading
+                ? 'Creating...'
+                : formData.payment_method === 'gift'
+                  ? 'Gift Lesson'
+                  : 'Book & Charge Credits'}
             </button>
           </div>
         </form>

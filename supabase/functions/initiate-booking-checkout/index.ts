@@ -366,21 +366,26 @@ serve(async (req) => {
 
             if (!lessonData) continue;
 
-            const { data: teacherProfile } = await supabaseClient
-              .from('profiles')
-              .select('full_name, email')
+            // lessonData.teacher_id is a teacher_profiles.id — resolve the user, then the
+            // profile, so we get the real full_name/email (was querying profiles.id directly,
+            // which never matched → the name fell back to the literal "Teacher").
+            const { data: teacherRow } = await supabaseClient
+              .from('teacher_profiles')
+              .select('user_id, email')
               .eq('id', lessonData.teacher_id)
               .single();
 
-            let teacherEmail = teacherProfile?.email;
-            if (!teacherEmail) {
-              const { data: teacherProfileData } = await supabaseClient
-                .from('teacher_profiles')
-                .select('email')
-                .eq('id', lessonData.teacher_id)
+            let teacherProfile: { full_name?: string; email?: string } | null = null;
+            if (teacherRow?.user_id) {
+              const { data: p } = await supabaseClient
+                .from('profiles')
+                .select('full_name, email')
+                .eq('id', teacherRow.user_id)
                 .single();
-              teacherEmail = teacherProfileData?.email;
+              teacherProfile = p;
             }
+
+            const teacherEmail = teacherProfile?.email || teacherRow?.email;
 
             const { data: learnerData } = await supabaseClient
               .from('learners')
