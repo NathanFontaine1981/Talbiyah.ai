@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import Markdown from '../../components/Markdown';
 import {
   FileText,
   Video,
@@ -464,19 +465,18 @@ export default function TeacherResources() {
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6">
-              {/* Description — language follows the toggle */}
+              {/* Description — language follows the toggle. English renders as rich
+                  markdown for beautiful long-form reading; Arabic stays RTL plain text. */}
               {modalLang === 'arabic' && selectedResource.description_arabic ? (
-                <div className="mb-4" dir="rtl">
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap font-arabic">
+                <div className="mb-4 max-w-2xl mx-auto" dir="rtl">
+                  <p className="text-gray-700 dark:text-gray-300 leading-loose whitespace-pre-wrap font-arabic text-lg">
                     {selectedResource.description_arabic}
                   </p>
                 </div>
               ) : (
                 selectedResource.description && (
-                  <div className="mb-4">
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                      {selectedResource.description}
-                    </p>
+                  <div className="mb-4 max-w-2xl mx-auto">
+                    <Markdown>{selectedResource.description}</Markdown>
                   </div>
                 )
               )}

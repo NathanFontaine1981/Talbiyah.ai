@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import OnboardingChecklist from '../../components/teacher/OnboardingChecklist';
+import TeachingMethodCard from '../../components/teacher/TeachingMethodCard';
 import {
   DollarSign,
   Clock,
@@ -17,6 +18,8 @@ import {
   XCircle,
   Zap,
   BarChart3,
+  BookOpen,
+  ScrollText,
 } from 'lucide-react';
 import { TEACHER_TYPES, type TeacherType } from '../../constants/teacherConstants';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
@@ -292,6 +295,20 @@ export default function TeacherHub() {
       iconColor: 'text-amber-600'
     }] : []),
     {
+      icon: BookOpen,
+      label: 'Teaching Guide & Resources',
+      path: '/teacher/resources',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600'
+    },
+    {
+      icon: ScrollText,
+      label: 'Teaching Agreement',
+      path: '/teacher/agreement',
+      iconBg: 'bg-blue-500/20',
+      iconColor: 'text-blue-600'
+    },
+    {
       icon: Settings,
       label: 'Edit Profile',
       path: '/teacher/edit-profile',
@@ -325,6 +342,9 @@ export default function TeacherHub() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Teacher Account</h1>
           <p className="text-gray-500">Manage your teaching activities and track your performance.</p>
         </div>
+
+        {/* The Talbiyah teaching method — the platform USP, shown first so teachers never miss it */}
+        <TeachingMethodCard />
 
         {/* Onboarding Checklist - shown until complete */}
         {teacherProfileId && userId && (

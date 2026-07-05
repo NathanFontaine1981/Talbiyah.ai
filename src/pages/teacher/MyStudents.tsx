@@ -274,10 +274,10 @@ export default function MyStudents() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
+      <div className="min-h-screen bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex items-center justify-center h-64">
-            <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
       </div>
@@ -285,13 +285,13 @@ export default function MyStudents() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/teacher/hub')}
-            className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition group"
+            className="mb-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
             <span>Back to Teacher Hub</span>
@@ -299,35 +299,35 @@ export default function MyStudents() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 text-gray-900">
                 <Users className="w-10 h-10 text-emerald-600" />
                 My Students
               </h1>
-              <p className="text-gray-400">
+              <p className="text-gray-500">
                 Manage your student relationships and track progress
               </p>
             </div>
 
             {/* Summary Stats */}
             <div className="hidden md:flex gap-4">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl px-6 py-3 border border-emerald-400/30">
-                <p className="text-cyan-300 text-sm">Total Students</p>
-                <p className="text-3xl font-bold">{students.length}</p>
+              <div className="bg-gray-100 rounded-xl px-6 py-3 border border-gray-200">
+                <p className="text-emerald-600 text-sm">Total Students</p>
+                <p className="text-3xl font-bold text-gray-900">{students.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl px-6 py-3 border border-purple-400/30">
-                <p className="text-purple-300 text-sm">Total Lessons</p>
-                <p className="text-3xl font-bold">{totalLessons}</p>
+              <div className="bg-gray-100 rounded-xl px-6 py-3 border border-gray-200">
+                <p className="text-purple-600 text-sm">Total Lessons</p>
+                <p className="text-3xl font-bold text-gray-900">{totalLessons}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl px-6 py-3 border border-emerald-400/30">
-                <p className="text-emerald-300 text-sm">Total Hours</p>
-                <p className="text-3xl font-bold">{totalHours.toFixed(1)}</p>
+              <div className="bg-gray-100 rounded-xl px-6 py-3 border border-gray-200">
+                <p className="text-emerald-600 text-sm">Total Hours</p>
+                <p className="text-3xl font-bold text-gray-900">{totalHours.toFixed(1)}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters & Search */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/20">
+        <div className="bg-gray-100 rounded-xl p-4 mb-6 border border-gray-200">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
@@ -337,7 +337,7 @@ export default function MyStudents() {
                 placeholder="Search students by name, email, or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
@@ -347,11 +347,11 @@ export default function MyStudents() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="all" className="bg-gray-100">All Status</option>
-                <option value="active" className="bg-gray-100">Active</option>
-                <option value="paused" className="bg-gray-100">Paused</option>
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
               </select>
             </div>
 
@@ -361,12 +361,12 @@ export default function MyStudents() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="recent" className="bg-gray-100">Most Recent</option>
-                <option value="lessons" className="bg-gray-100">Most Lessons</option>
-                <option value="hours" className="bg-gray-100">Most Hours</option>
-                <option value="name" className="bg-gray-100">Name (A-Z)</option>
+                <option value="recent">Most Recent</option>
+                <option value="lessons">Most Lessons</option>
+                <option value="hours">Most Hours</option>
+                <option value="name">Name (A-Z)</option>
               </select>
             </div>
           </div>
@@ -374,14 +374,14 @@ export default function MyStudents() {
 
         {/* Student Cards Grid */}
         {filteredStudents.length === 0 ? (
-          <div className="bg-white/5 backdrop-blur-md rounded-xl p-12 text-center border border-white/10">
-            <Users className="w-16 h-16 mx-auto mb-4 text-gray-500" />
-            <h3 className="text-xl font-semibold mb-2">
+          <div className="bg-gray-100 rounded-xl p-12 text-center border border-gray-200">
+            <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">
               {searchQuery || filterStatus !== 'active'
                 ? 'No students found'
                 : 'No students yet'}
             </h3>
-            <p className="text-gray-400 mb-6">
+            <p className="text-gray-500 mb-6">
               {searchQuery
                 ? 'Try adjusting your search or filters'
                 : 'Student relationships are created automatically when they book their first paid lesson with you'}
@@ -389,7 +389,7 @@ export default function MyStudents() {
             {!searchQuery && filterStatus === 'active' && (
               <button
                 onClick={() => navigate('/teacher/hub')}
-                className="px-6 py-3 bg-emerald-600 hover:bg-cyan-700 rounded-lg font-semibold transition"
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition"
               >
                 Back to Dashboard
               </button>
@@ -417,7 +417,7 @@ export default function MyStudents() {
             </div>
 
             {/* Results Count */}
-            <div className="mt-6 text-center text-gray-400 text-sm">
+            <div className="mt-6 text-center text-gray-500 text-sm">
               Showing {filteredStudents.length} of {students.length} students
             </div>
           </>
