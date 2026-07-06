@@ -46,20 +46,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Detect an admin caller. Admins book on behalf of a student and the lesson is
-    // comped (free, no Stripe). Case-insensitive to match mixed 'admin'/'Admin'.
+    // Detect an admin caller. Case-insensitive to match mixed 'admin'/'Admin'.
     const { data: callerProfile } = await supabaseClient
       .from('profiles')
       .select('roles')
       .eq('id', user.id)
       .single()
-    const isAdminComp = Array.isArray(callerProfile?.roles) &&
+    const isAdminCaller = Array.isArray(callerProfile?.roles) &&
       callerProfile!.roles.some((r: string) => (r ?? '').toLowerCase() === 'admin')
-    if (isAdminComp) {
-      console.log(`🛡️ Admin comp booking by ${user.id} for learner ${'(from body)'} `)
-    }
 
-    const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method, is_legacy_booking } = await req.json()
+    const { cart_items, learner_id, promo_code, promo_code_id, promo_discount, payment_method, is_legacy_booking, comp } = await req.json()
+
+    // Comp (free, no Stripe) ONLY when an admin EXPLICITLY requests it (the
+    // impersonation checkout sends comp:true). Being an admin is not sufficient —
+    // otherwise a normal admin booking via the cart/credits/legacy branches would
+    // be silently comped and mis-recorded as free.
+    const isAdminComp = isAdminCaller && comp === true
+    if (isAdminComp) {
+      console.log(`🛡️ Admin comp booking by ${user.id} for learner ${learner_id}`)
+    }
 
     if (!cart_items || cart_items.length === 0) {
       throw new Error('No cart items provided')
