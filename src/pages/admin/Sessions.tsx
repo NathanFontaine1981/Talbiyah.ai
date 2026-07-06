@@ -959,7 +959,7 @@ function ViewSessionModal({ session, onClose }: any) {
           </div>
           <div>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Price</p>
-            <p>£{(session.price / 100).toFixed(2)}</p>
+            <p>£{Number(session.price || 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Payment Status</p>
@@ -1125,8 +1125,8 @@ function EditSessionModal({ session, onClose, onSuccess }: any) {
                 required
                 min="0"
                 step="0.01"
-                value={formData.price / 100}
-                onChange={(e) => setFormData({ ...formData, price: Math.round(parseFloat(e.target.value) * 100) })}
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>

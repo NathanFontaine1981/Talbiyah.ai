@@ -20,9 +20,6 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 export const ADMIN_STASH_KEY = 'talbiyah_admin_stash';
 export const IMPERSONATION_KEY = 'talbiyah_impersonation';
 
-// Auto-expire an impersonation session after this long (safety backstop).
-export const IMPERSONATION_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
-
 interface AdminStash {
   access_token: string;
   refresh_token: string;
@@ -50,9 +47,12 @@ export function getImpersonationState(): ImpersonationState | null {
     const raw = localStorage.getItem(IMPERSONATION_KEY);
     if (!raw) return null;
     const state = JSON.parse(raw) as ImpersonationState;
-    // Expired flags are treated as "not impersonating" so a stale session can't
-    // silently persist; the banner/exit path clears it.
-    if (Date.now() - state.started_at > IMPERSONATION_MAX_AGE_MS) return null;
+    // No silent time-based expiry. A lazy null-on-expiry here is dangerous: the
+    // live Supabase session is still the STUDENT until an explicit Exit restores
+    // the admin, so "expiring" only the flag would (a) strand the admin on the
+    // student session with no banner/Exit, and (b) make a "comp" booking fall
+    // through to the normal payment path and silently charge the student.
+    // Impersonation therefore persists until Exit (the banner is always visible).
     return state;
   } catch {
     return null;
@@ -196,17 +196,30 @@ export async function stopImpersonation(): Promise<void> {
 
   // 1. Restore the admin's session. Fires SIGNED_IN → ProtectedRoute recomputes isAdmin.
   if (stash) {
-    const { error } = await supabase.auth.setSession({
-      access_token: stash.access_token,
-      refresh_token: stash.refresh_token,
-    });
-    if (error) {
+    let restoreError: unknown = null;
+    try {
+      const { error } = await supabase.auth.setSession({
+        access_token: stash.access_token,
+        refresh_token: stash.refresh_token,
+      });
+      restoreError = error;
+    } catch (e) {
+      restoreError = e;
+    }
+    if (restoreError) {
       // Admin session couldn't be restored; force a clean sign-out so the user
       // re-authenticates rather than being stuck as the student.
       clearImpersonationStorage();
       await supabase.auth.signOut();
       throw new Error('Could not restore your admin session — please sign in again.');
     }
+  } else if (state) {
+    // We were impersonating but the admin stash is gone — we cannot restore the
+    // admin session. Sign out cleanly rather than silently leaving the admin
+    // stranded on the student session.
+    clearImpersonationStorage();
+    await supabase.auth.signOut();
+    throw new Error('Your admin session was lost — please sign in again.');
   }
 
   // 2. Best-effort: stamp ended_at (we're the admin again now, so a normal invoke works).

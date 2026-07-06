@@ -155,14 +155,19 @@ export default function TeacherPaymentSettings() {
     try {
       setSaving(true);
 
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from('teacher_payment_settings')
         .upsert({
           ...settings,
           teacher_id: teacherId,
-        });
+        }, { onConflict: 'teacher_id' })
+        .select()
+        .single();
 
       if (error) throw error;
+      // Keep local state in sync (incl. the row id) so a second save updates
+      // rather than re-inserting and hitting the UNIQUE(teacher_id) constraint.
+      if (saved) setSettings(saved);
 
       toast.success('Payment settings saved successfully!');
     } catch (error) {

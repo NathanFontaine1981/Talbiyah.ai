@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Eye, LogOut, Loader2 } from 'lucide-react';
 import { useImpersonation } from '../contexts/ImpersonationContext';
 
@@ -28,8 +29,15 @@ export default function ImpersonationBanner() {
   if (!isImpersonating || !target) return null;
 
   const handleExit = async () => {
-    await exit();
-    navigate('/admin/users');
+    try {
+      await exit();
+      navigate('/admin/users');
+    } catch (err) {
+      // exit() failed to restore the admin session (it will have signed the user
+      // out). Surface it and send them somewhere sane to re-authenticate.
+      toast.error(err instanceof Error ? err.message : 'Failed to exit impersonation — please sign in again.');
+      navigate('/');
+    }
   };
 
   return (

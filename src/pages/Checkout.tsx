@@ -497,6 +497,7 @@ export default function Checkout() {
         await adminAuthedInvoke('create-booking-with-room', {
           cart_items: cartItems,
           learner_id: resolvedLearnerId,
+          comp: true,
         });
         await clearCart();
         navigate('/dashboard?booking_success=true&admin_comp=true');

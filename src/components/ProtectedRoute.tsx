@@ -60,13 +60,15 @@ export default function ProtectedRoute({
         if (profileError) {
           console.error('Error fetching profile:', profileError);
         } else if (profile) {
-          // Check if admin (for requireAdmin prop)
-          if (profile.roles && profile.roles.includes('admin')) {
+          // Check if admin (for requireAdmin prop). Case-insensitive to match the
+          // edge functions / RLS, which accept 'admin' or 'Admin'.
+          const roles: string[] = Array.isArray(profile.roles) ? profile.roles : [];
+          if (roles.some((r) => (r ?? '').toLowerCase() === 'admin')) {
             setIsAdmin(true);
           }
 
           // Check if teacher (for excludeTeachers prop)
-          if (profile.roles && profile.roles.includes('teacher')) {
+          if (roles.some((r) => (r ?? '').toLowerCase() === 'teacher')) {
             setIsTeacher(true);
           }
 
