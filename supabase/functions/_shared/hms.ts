@@ -105,3 +105,37 @@ export async function getHMSManagementToken(): Promise<string> {
   // Always generate fresh token to avoid expiry issues
   return await generateHMSManagementToken()
 }
+
+/**
+ * Generate a 100ms client "auth token" so a specific user can join a specific
+ * room in a specific role, without needing a role-specific room code. Used by
+ * admins to join a lesson room as `host` for live support/debugging.
+ *
+ * @param roomId  the 100ms room id (lessons.100ms_room_id)
+ * @param userId  a stable/unique id for this joining user (e.g. `admin_<uuid>`)
+ * @param role    a role that exists in the room's template (e.g. 'host')
+ */
+export async function generateHMSAuthToken(
+  roomId: string,
+  userId: string,
+  role: string = 'host',
+  expiresIn: string = '4h'
+): Promise<string> {
+  const appAccessKey = Deno.env.get('HMS_APP_ACCESS_KEY')
+  const appSecret = Deno.env.get('HMS_APP_SECRET')
+
+  if (!appAccessKey || !appSecret) {
+    throw new Error('HMS_APP_ACCESS_KEY and HMS_APP_SECRET must be set in environment variables')
+  }
+
+  const payload = {
+    access_key: appAccessKey,
+    room_id: roomId,
+    user_id: userId,
+    role,
+    type: 'app',
+    version: 2,
+  }
+
+  return await createJWT(payload, appSecret, expiresIn)
+}
