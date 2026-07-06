@@ -7,6 +7,8 @@ import CartExpiryNotifications from './components/CartExpiryNotifications';
 import CookieConsent from './components/CookieConsent';
 import FeedbackButton from './components/FeedbackButton';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ImpersonationProvider } from './contexts/ImpersonationContext';
+import ImpersonationBanner from './components/ImpersonationBanner';
 import { useActivityTracker } from './hooks/useActivityTracker';
 
 // Scroll to top on route change
@@ -177,6 +179,10 @@ const InsightTemplateManager = lazy(() => import('./pages/admin/InsightTemplateM
 const PromoCodeManager = lazy(() => import('./pages/admin/PromoCodeManager'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const TeacherPayouts = lazy(() => import('./pages/admin/TeacherPayouts'));
+// TeacherReferrals is shelved — the component exists but is not routed yet.
+// It needs DB columns (teacher_profiles.is_referrer/referral_hourly_rate/referred_by,
+// teacher_earnings.is_referral_commission), commission-creation logic, and a nav entry
+// before it can be re-enabled. See docs/SHELVED_teacher_referrals.md.
 const FeedbackManagement = lazy(() => import('./pages/admin/FeedbackManagement'));
 const AdminSuggestions = lazy(() => import('./pages/admin/AdminSuggestions'));
 const DiagnosticAssessments = lazy(() => import('./pages/admin/DiagnosticAssessments'));
@@ -195,6 +201,7 @@ const OnboardingResources = lazy(() => import('./pages/admin/OnboardingResources
 const BookInterview = lazy(() => import('./pages/BookInterview'));
 const CandidateInterviewRoom = lazy(() => import('./pages/CandidateInterviewRoom'));
 const TeacherResources = lazy(() => import('./pages/teacher/TeacherResources'));
+const TeacherAgreement = lazy(() => import('./pages/teacher/TeacherAgreement'));
 const AnnouncementsManagement = lazy(() => import('./pages/admin/AnnouncementsManagement'));
 
 // 404 page
@@ -204,9 +211,11 @@ function App() {
   return (
     <ThemeProvider>
       <ErrorBoundary>
+        <ImpersonationProvider>
         <BrowserRouter>
         <ScrollToTop />
         <ActivityTracker />
+        <ImpersonationBanner />
         <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/" element={<HomeLandingV2 />} />
@@ -368,6 +377,7 @@ function App() {
           <Route path="teacher-tiers" element={<TeacherTiers />} />
           <Route path="group-lesson-teachers" element={<GroupLessonTeachers />} />
           <Route path="teacher-payouts" element={<TeacherPayouts />} />
+          {/* <Route path="referrals" element={<TeacherReferrals />} /> — shelved, see note above */}
           <Route path="sessions" element={<Sessions />} />
           <Route path="group-sessions" element={<GroupSessions />} />
           <Route path="courses" element={<CoursesManagement />} />
@@ -502,6 +512,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TeacherEditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/agreement"
+          element={
+            <ProtectedRoute requireTeacherOrAdmin={true} skipAgreementCheck={true}>
+              <TeacherAgreement />
             </ProtectedRoute>
           }
         />
@@ -909,6 +927,7 @@ function App() {
           }}
         />
         </BrowserRouter>
+        </ImpersonationProvider>
       </ErrorBoundary>
     </ThemeProvider>
   );

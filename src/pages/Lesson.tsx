@@ -25,7 +25,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  UserX
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -42,6 +43,10 @@ import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 import { PostLessonForm } from '../components/progress';
+import StudentLessonIntroModal from '../components/student/StudentLessonIntroModal';
+
+// localStorage flag so the student "how lessons work" walkthrough only auto-shows once.
+const STUDENT_INTRO_KEY = 'talbiyah_student_lesson_intro_seen';
 
 interface LessonData {
   id: string;
@@ -366,6 +371,7 @@ function LessonContent() {
   const [error, setError] = useState<string | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [showStudentIntro, setShowStudentIntro] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showQuickFeedback, setShowQuickFeedback] = useState(false);
@@ -566,6 +572,11 @@ function LessonContent() {
       const isTeacher = teacherUserId === currentUser.id;
       setUserRole(isTeacher ? 'teacher' : 'student');
 
+      // First-time students see a short "how lessons work" walkthrough.
+      if (!isTeacher && localStorage.getItem(STUDENT_INTRO_KEY) !== 'true') {
+        setShowStudentIntro(true);
+      }
+
       // Get the appropriate room code based on user role
       const roomCode = isTeacher
         ? lessonData.teacher_room_code
@@ -709,7 +720,7 @@ function LessonContent() {
     navigate('/dashboard');
   }
 
-  async function handleEndSession() {
+  async function handleEndSession(outcome: 'completed' | 'missed' = 'completed') {
     if (!lesson) return;
 
     setEndingSession(true);
@@ -737,17 +748,19 @@ function LessonContent() {
         }
       }
 
-      // Mark lesson as completed in database
+      // Mark lesson outcome in database.
+      // 'missed' (student no-show) is recorded distinctly from 'completed' so it is
+      // NOT counted toward teacher hours/earnings (those key off status = 'completed').
       await supabase
         .from('lessons')
         .update({
-          status: 'completed'
+          status: outcome
         })
         .eq('id', lesson.id);
 
-      // For teachers, show post-lesson form to capture feedback
-      // For students, navigate to dashboard (they already see QuickLessonFeedback)
-      if (userRole === 'teacher') {
+      // Only show the post-lesson feedback form for lessons that actually happened.
+      // A no-show navigates straight back.
+      if (userRole === 'teacher' && outcome === 'completed') {
         setShowPostLessonForm(true);
       } else {
         navigate('/dashboard');
@@ -1103,6 +1116,16 @@ function LessonContent() {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
+      {/* First-time student walkthrough */}
+      <StudentLessonIntroModal
+        open={showStudentIntro}
+        teacherName={lesson?.teacher_name}
+        onClose={() => {
+          localStorage.setItem(STUDENT_INTRO_KEY, 'true');
+          setShowStudentIntro(false);
+        }}
+      />
+
       {/* Connection Warning Banner */}
       {connectionWarning && (
         <div
@@ -1588,7 +1611,7 @@ function LessonContent() {
               <h3 id="end-session-title" className="text-xl font-bold text-gray-900 mb-2">End Session?</h3>
               <p className="text-gray-600 mb-6">
                 {userRole === 'teacher'
-                  ? 'This will end the lesson for both you and the student. The session will be marked as completed.'
+                  ? 'This will end the lesson for both you and the student. Mark it as completed if the lesson went ahead, or as a student no-show if they did not attend.'
                   : 'This will end the lesson for everyone. Only use this if the lesson is finished and the teacher cannot end the session (e.g., they are on the mobile app).'}
               </p>
 
@@ -1601,7 +1624,7 @@ function LessonContent() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleEndSession}
+                  onClick={() => handleEndSession('completed')}
                   disabled={endingSession}
                   className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
@@ -1613,11 +1636,23 @@ function LessonContent() {
                   ) : (
                     <>
                       <PhoneOff className="w-4 h-4" />
-                      <span>End Session</span>
+                      <span>{userRole === 'teacher' ? 'End & mark completed' : 'End Session'}</span>
                     </>
                   )}
                 </button>
               </div>
+
+              {/* Teacher-only: record a student no-show instead of a completed lesson */}
+              {userRole === 'teacher' && (
+                <button
+                  onClick={() => handleEndSession('missed')}
+                  disabled={endingSession}
+                  className="mt-3 w-full px-4 py-3 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <UserX className="w-4 h-4" />
+                  <span>End — student didn't show up</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useBookingAPI } from '../hooks/useBookingAPI';
 import { supabase } from '../lib/supabaseClient';
+import { isImpersonating, adminAuthedInvoke } from '../lib/impersonation';
 import { ArrowLeft, CreditCard, CheckCircle, Loader2, ShoppingCart, User, Gift, Coins, FileText, Sparkles, Shield, Lock, Zap } from 'lucide-react';
 import { INSIGHTS_ADDON } from '../constants/insightsAddonPricing';
 import { format } from 'date-fns';
@@ -486,6 +487,20 @@ export default function Checkout() {
           if (!newLearner) throw new Error('Failed to create learner profile');
           resolvedLearnerId = newLearner.id;
         }
+      }
+
+      // Admin acting as a student: comp the booking (free, no Stripe). This bypasses
+      // every payment branch below. The booking call is sent with the STASHED ADMIN
+      // token via adminAuthedInvoke — the server detects the admin caller, sets the
+      // price to £0, and emails the actual student/parent (not the admin).
+      if (isImpersonating()) {
+        await adminAuthedInvoke('create-booking-with-room', {
+          cart_items: cartItems,
+          learner_id: resolvedLearnerId,
+        });
+        await clearCart();
+        navigate('/dashboard?booking_success=true&admin_comp=true');
+        return;
       }
 
       // Get subject slugs from database

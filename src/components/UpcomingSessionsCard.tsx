@@ -132,10 +132,10 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
       const today = new Date().toISOString().split('T')[0];
 
       // Fetch upcoming course sessions (today + future)
-      const { data: sessions } = await supabase
+      const { data: allSessions } = await supabase
         .from('course_sessions')
         .select(`
-          id, session_number, title, session_date, live_status, room_code_guest,
+          id, group_session_id, session_number, title, session_date, live_status, room_code_guest,
           group_sessions!inner (
             name, slug, gender_restriction, schedule_time, duration_minutes,
             teacher:profiles!group_sessions_teacher_id_fkey (full_name, avatar_url)
@@ -144,7 +144,16 @@ export default function UpcomingSessionsCard({ learnerId }: UpcomingSessionsCard
         .in('group_session_id', courseIds)
         .gte('session_date', today)
         .order('session_date', { ascending: true })
-        .limit(3);
+        .limit(50);
+
+      // These are weekly courses (one lesson per week), so show only the SINGLE next
+      // session per course — not every future week.
+      const seenCourses = new Set<string>();
+      const sessions = (allSessions || []).filter((s: any) => {
+        if (seenCourses.has(s.group_session_id)) return false;
+        seenCourses.add(s.group_session_id);
+        return true;
+      }).slice(0, 3);
 
       if (sessions && sessions.length > 0) {
         setCourseSessions(

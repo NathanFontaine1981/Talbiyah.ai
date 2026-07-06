@@ -4,7 +4,6 @@ import { supabase } from '../../lib/supabaseClient';
 import {
   CheckCircle,
   Circle,
-  Loader2,
   X,
   ChevronRight,
   PartyPopper,
@@ -43,6 +42,51 @@ export default function OnboardingChecklist({
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [statuses, setStatuses] = useState<Map<string, CheckStatus>>(new Map());
   const [dismissed, setDismissed] = useState(false);
+
+  // Manually ticked-off items (e.g. "manual" steps, or steps the teacher has done
+  // that auto-detection can't see). Persisted per teacher in the database so they
+  // sync across devices (see teacher_onboarding_completions).
+  const [manualDone, setManualDone] = useState<Set<string>>(new Set());
+
+  async function toggleManualComplete(itemId: string) {
+    const isDone = manualDone.has(itemId);
+
+    // Optimistic UI update
+    setManualDone((prev) => {
+      const next = new Set(prev);
+      if (isDone) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+
+    try {
+      if (isDone) {
+        const { error } = await supabase
+          .from('teacher_onboarding_completions')
+          .delete()
+          .eq('teacher_id', teacherProfileId)
+          .eq('item_id', itemId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('teacher_onboarding_completions')
+          .upsert(
+            { teacher_id: teacherProfileId, item_id: itemId },
+            { onConflict: 'teacher_id,item_id' }
+          );
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error saving onboarding completion:', error);
+      // Revert on failure
+      setManualDone((prev) => {
+        const next = new Set(prev);
+        if (isDone) next.add(itemId);
+        else next.delete(itemId);
+        return next;
+      });
+    }
+  }
 
   const loadChecklistCb = useCallback(() => {
     if (localStorage.getItem(DISMISSED_KEY) === 'true') {
@@ -83,6 +127,13 @@ export default function OnboardingChecklist({
 
       setChecklistItems(items);
 
+      // Load this teacher's manually ticked-off items (synced across devices)
+      const { data: completions } = await supabase
+        .from('teacher_onboarding_completions')
+        .select('item_id')
+        .eq('teacher_id', teacherProfileId);
+      setManualDone(new Set((completions || []).map((c) => c.item_id as string)));
+
       // Now check each item's status based on check_type
       const statusMap = new Map<string, CheckStatus>();
 
@@ -93,11 +144,13 @@ export default function OnboardingChecklist({
         .eq('id', teacherProfileId)
         .single();
 
-      // Fetch availability count
+      // Fetch availability count (current table is teacher_availability, keyed by
+      // teacher_id + is_available; the old teacher_availability_recurring is unused).
       const { count: availabilityCount } = await supabase
-        .from('teacher_availability_recurring')
+        .from('teacher_availability')
         .select('id', { count: 'exact', head: true })
-        .eq('teacher_id', teacherProfileId);
+        .eq('teacher_id', teacherProfileId)
+        .eq('is_available', true);
 
       // Fetch required resources and progress
       const { data: requiredResources } = await supabase
@@ -216,11 +269,12 @@ export default function OnboardingChecklist({
     return null;
   }
 
+  // An item counts as done if auto-detection found it OR the teacher ticked it manually.
+  const isItemComplete = (itemId: string) =>
+    statuses.get(itemId)?.completed || manualDone.has(itemId);
+
   const requiredItems = checklistItems.filter((item) => item.is_required);
-  const completedCount = requiredItems.filter((item) => {
-    const status = statuses.get(item.id);
-    return status?.completed;
-  }).length;
+  const completedCount = requiredItems.filter((item) => isItemComplete(item.id)).length;
   const totalRequired = requiredItems.length;
   const allComplete = totalRequired > 0 && completedCount >= totalRequired;
   const progressPercent =
@@ -273,7 +327,8 @@ export default function OnboardingChecklist({
         <div className="space-y-2">
           {checklistItems.map((item) => {
             const status = statuses.get(item.id);
-            const completed = status?.completed || false;
+            const autoCompleted = status?.completed || false;
+            const completed = autoCompleted || manualDone.has(item.id);
 
             return (
               <div
@@ -285,10 +340,25 @@ export default function OnboardingChecklist({
                 }`}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {completed ? (
+                  {/* Auto-detected steps show a static check; otherwise the teacher
+                      can click the circle to tick the step off themselves. */}
+                  {autoCompleted ? (
                     <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   ) : (
-                    <Circle className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => toggleManualComplete(item.id)}
+                      aria-pressed={completed}
+                      aria-label={completed ? `Mark "${item.title}" as not done` : `Mark "${item.title}" as done`}
+                      title={completed ? 'Mark as not done' : 'Mark as done'}
+                      className="flex-shrink-0 rounded-full hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      {completed ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-emerald-400" />
+                      )}
+                    </button>
                   )}
                   <div className="min-w-0">
                     <p

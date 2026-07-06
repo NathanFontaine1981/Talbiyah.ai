@@ -61,7 +61,7 @@ export default function CourseLiveRoom() {
       // Find the course by slug
       const { data: course, error: courseError } = await supabase
         .from('group_sessions')
-        .select('id, name, slug, teacher_id, created_by, gender_restriction')
+        .select('id, name, slug, teacher_id, created_by, co_teacher_ids, gender_restriction')
         .eq('slug', slug)
         .single();
 
@@ -70,8 +70,13 @@ export default function CourseLiveRoom() {
         return;
       }
 
-      // Check if user is the teacher
-      const userIsTeacher = isAdmin || user.id === course.teacher_id || user.id === course.created_by;
+      // Check if user is the teacher (primary, co-teacher, creator, or admin)
+      const coTeacherIds: string[] = course.co_teacher_ids || [];
+      const userIsTeacher =
+        isAdmin ||
+        user.id === course.teacher_id ||
+        user.id === course.created_by ||
+        coTeacherIds.includes(user.id);
       setIsTeacher(userIsTeacher);
 
       // Check gender restriction for live sessions

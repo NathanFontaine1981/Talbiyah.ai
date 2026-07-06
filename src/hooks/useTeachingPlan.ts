@@ -12,7 +12,7 @@ interface UseTeachingPlanReturn {
   uploadImagesToStorage: (sessionId: string) => Promise<string[]>;
 }
 
-function resizeImage(file: File, maxWidth = 1024): Promise<{ base64: string; media_type: string }> {
+function drawResizedToCanvas(file: File, maxWidth = 1024, maxHeight = 1400): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -21,30 +21,41 @@ function resizeImage(file: File, maxWidth = 1024): Promise<{ base64: string; med
         const canvas = document.createElement('canvas');
         let w = img.width;
         let h = img.height;
-        // Scale down to fit within maxWidth
         if (w > maxWidth) {
           h = Math.round((h * maxWidth) / w);
           w = maxWidth;
         }
-        // Also cap height
-        const maxHeight = 1400;
         if (h > maxHeight) {
           w = Math.round((w * maxHeight) / h);
           h = maxHeight;
         }
         canvas.width = w;
         canvas.height = h;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-        const base64 = dataUrl.split(',')[1];
-        resolve({ base64, media_type: 'image/jpeg' });
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        resolve(canvas);
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
+  });
+}
+
+async function resizeImage(file: File): Promise<{ base64: string; media_type: string }> {
+  const canvas = await drawResizedToCanvas(file);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+  return { base64: dataUrl.split(',')[1], media_type: 'image/jpeg' };
+}
+
+async function resizeImageToBlob(file: File): Promise<Blob> {
+  const canvas = await drawResizedToCanvas(file);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode image'))),
+      'image/jpeg',
+      0.85,
+    );
   });
 }
 
@@ -81,12 +92,11 @@ export function useTeachingPlan(): UseTeachingPlanReturn {
   const uploadImagesToStorage = useCallback(async (sessionId: string) => {
     const urls: string[] = [];
     for (let i = 0; i < images.length; i++) {
-      const file = images[i];
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const filePath = `teaching-plans/${sessionId}/${Date.now()}-${i}.${ext}`;
+      const blob = await resizeImageToBlob(images[i]);
+      const filePath = `teaching-plans/${sessionId}/${Date.now()}-${i}.jpg`;
       const { error } = await supabase.storage
         .from('course_assets')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
       if (error) throw new Error(`Failed to upload image ${i + 1}: ${error.message}`);
       const { data: { publicUrl } } = supabase.storage
         .from('course_assets')

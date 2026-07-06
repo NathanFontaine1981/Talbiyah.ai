@@ -650,9 +650,22 @@ Deno.serve(async (req: Request) => {
       has_transcript: !!transcriptUrl,
     });
 
-    const updateData: Record<string, any> = {
-      status: "completed",
-    };
+    const updateData: Record<string, any> = {};
+
+    // Only mark the lesson completed once its scheduled window has actually
+    // ended. A recording webhook can fire from an accidental/early join (the
+    // teacher joining at the wrong local time and leaving), which finalizes a
+    // short recording — that must NOT complete (and lock the student out of) an
+    // upcoming lesson. The teacher's explicit "End Class" stays the primary
+    // completion path; this mirrors the guard above for the recording-save path.
+    const recScheduledEndMs = new Date(lesson.scheduled_time).getTime() + (lesson.duration_minutes ?? 0) * 60_000;
+    const recWindowEnded = Date.now() >= recScheduledEndMs;
+    const recIsCancelled = typeof lesson.status === "string" && lesson.status.startsWith("cancelled");
+    if (recWindowEnded && !recIsCancelled) {
+      updateData.status = "completed";
+    } else {
+      console.log(`Recording received but not completing lesson ${lesson.id} (windowEnded=${recWindowEnded}, status=${lesson.status}) — leaving room open for re-join`);
+    }
 
     // Only save recording URL for Premium tier or free trial
     if (shouldSaveRecording && recordingUrl) {
@@ -660,10 +673,12 @@ Deno.serve(async (req: Request) => {
       updateData.recording_expires_at = expiresAt.toISOString();
     }
 
-    const { error: updateError } = await supabase
-      .from("lessons")
-      .update(updateData)
-      .eq("id", lesson.id);
+    const { error: updateError } = Object.keys(updateData).length > 0
+      ? await supabase
+          .from("lessons")
+          .update(updateData)
+          .eq("id", lesson.id)
+      : { error: null };
 
     if (updateError) {
       console.error("Error updating lesson with recording:", updateError);

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield, RotateCcw, AlertTriangle, UserPlus, FileText, ToggleLeft, ToggleRight, Star, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Plus, RefreshCw, ChevronDown, Eye, Edit, Key, Ban, Trash2, Mail, UserCheck, X, Users, GraduationCap, Heart, Shield, RotateCcw, AlertTriangle, UserPlus, FileText, ToggleLeft, ToggleRight, Star, Crown, UserCog } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { startImpersonation } from '../../lib/impersonation';
+import { useImpersonation } from '../../contexts/ImpersonationContext';
 import { format } from 'date-fns';
 import UserProfileModal from '../../components/admin/UserProfileModal';
 
@@ -54,6 +57,9 @@ type TierFilter = 'all' | 'legacy' | 'standard' | 'independent';
 type SortOption = 'newest' | 'oldest' | 'name' | 'last_active';
 
 export default function UserManagement() {
+  const navigate = useNavigate();
+  const { refresh: refreshImpersonation } = useImpersonation();
+  const [actingAsUserId, setActingAsUserId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,6 +272,25 @@ export default function UserManagement() {
   function handleViewUser(user: User) {
     setSelectedUser(user);
     setShowUserDetails(true);
+  }
+
+  async function handleActAsStudent(user: User) {
+    if (user.roles?.some((r) => (r ?? '').toLowerCase() === 'admin')) {
+      toast.error('You cannot act as another admin.');
+      return;
+    }
+    setActingAsUserId(user.id);
+    try {
+      await startImpersonation(user.id);
+      refreshImpersonation();
+      toast.success(`Now acting as ${user.full_name || 'student'}`);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Failed to start impersonation:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to act as student');
+    } finally {
+      setActingAsUserId(null);
+    }
   }
 
   function handleEditUser(user: User) {
@@ -909,6 +934,8 @@ export default function UserManagement() {
                     onToggleSelect={() => toggleUserSelection(user.id)}
                     onRoleChange={handleRoleChange}
                     onView={() => handleViewUser(user)}
+                    onActAsStudent={() => handleActAsStudent(user)}
+                    actingAsBusy={actingAsUserId === user.id}
                     onEdit={() => handleEditUser(user)}
                     onResetPassword={() => handleResetPassword(user)}
                     onSoftDelete={() => handleSoftDeleteUser(user)}
@@ -991,7 +1018,8 @@ function StatCard({ icon: Icon, label, value, color }: any) {
 }
 
 // User Row Component
-function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdit, onResetPassword, onSoftDelete, onHardDelete, onRestore, onSendEmail, onSuspend, onToggleLegacy, onToggleLegacyTeacher, onManageLegacyTeachers }: any) {
+function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onActAsStudent, actingAsBusy, onEdit, onResetPassword, onSoftDelete, onHardDelete, onRestore, onSendEmail, onSuspend, onToggleLegacy, onToggleLegacyTeacher, onManageLegacyTeachers }: any) {
+  const targetIsAdmin = Array.isArray(user.roles) && user.roles.some((r: string) => (r ?? '').toLowerCase() === 'admin');
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(user.roles || []);
@@ -1225,6 +1253,22 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onEdi
           {showActionsDropdown && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
               <div className="py-1">
+                {!targetIsAdmin && (
+                  <>
+                    <button
+                      onClick={() => {
+                        onActAsStudent();
+                        setShowActionsDropdown(false);
+                      }}
+                      disabled={actingAsBusy}
+                      className="w-full px-4 py-2 text-left text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 disabled:opacity-60"
+                    >
+                      <UserCog className="w-4 h-4" />
+                      <span>{actingAsBusy ? 'Starting…' : 'Act as Student'}</span>
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     onView();

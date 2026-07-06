@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 import { corsHeaders, securityHeaders } from "../_shared/cors.ts";
 
@@ -6,6 +7,84 @@ const responseHeaders = {
   ...corsHeaders,
   ...securityHeaders,
 };
+
+// Lesson times are stored as UTC. Bookings are made against UK wall-clock time,
+// so every lesson notification shows the UK "booked" time plus the recipient's
+// own local time (e.g. a teacher in Egypt sees both 11:30 London and 13:30 Cairo).
+// Previously times were formatted with no `timeZone` option, so on the UTC server
+// they rendered as UTC — e.g. an 11:00 UK booking showed as "10:00". This mirrors
+// the dual-timezone display already used on the admin Sessions page.
+const UK_TZ = "Europe/London";
+
+// Lesson notification types whose `data.scheduled_time` should be rendered in
+// both UK and the recipient's local timezone.
+const LESSON_TIME_TYPES = new Set<NotificationType>([
+  "lesson_reminder_1h",
+  "lesson_time_changed",
+  "lesson_cancelled",
+  "lesson_acknowledged",
+  "lesson_declined",
+  "teacher_new_booking",
+  "student_booking_confirmation",
+]);
+
+// Friendly city label from an IANA zone: "Africa/Cairo" -> "Cairo".
+function tzCity(tz?: string | null): string {
+  const t = tz && tz.length ? tz : UK_TZ;
+  const city = t.includes("/") ? t.split("/").pop()! : t;
+  return city.replace(/_/g, " ");
+}
+
+// "Sat, 28 Jun 2026 · 11:30" rendered in the given zone.
+function fmtDateTimeInZone(value: string | number | Date, tz: string): string {
+  const d = value instanceof Date ? value : new Date(value);
+  const date = d.toLocaleDateString("en-GB", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: tz,
+  });
+  const time = d.toLocaleTimeString("en-GB", {
+    hour: "2-digit", minute: "2-digit", timeZone: tz,
+  });
+  return `${date} · ${time}`;
+}
+
+// "11:30 (London)" rendered in the given zone.
+function fmtTimeInZone(value: string | number | Date, tz: string): string {
+  const d = value instanceof Date ? value : new Date(value);
+  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+  return `${time} (${tzCity(tz)})`;
+}
+
+// True when two zones show the same wall-clock for this instant (e.g. a UK
+// recipient) so we don't print a redundant "your local time" line.
+function sameWallClock(value: string | number | Date, a: string, b: string): boolean {
+  return fmtDateTimeInZone(value, a) === fmtDateTimeInZone(value, b);
+}
+
+// HTML rows showing the UK booked time and, when different, the recipient's
+// local time. Used inside the coloured "lesson details" boxes.
+function dualTimeRows(value: string, recipientTz?: string | null, color = "#047857"): string {
+  const ukRow = `<p style="margin: 0 0 8px 0; color: ${color};">🇬🇧 Booked time (UK): <strong>${fmtDateTimeInZone(value, UK_TZ)} (${tzCity(UK_TZ)})</strong></p>`;
+  if (!recipientTz || sameWallClock(value, UK_TZ, recipientTz)) return ukRow;
+  const localRow = `<p style="margin: 0 0 8px 0; color: ${color};">📍 Your local time: <strong>${fmtDateTimeInZone(value, recipientTz)} (${tzCity(recipientTz)})</strong></p>`;
+  return `${ukRow}\n              ${localRow}`;
+}
+
+// Resolve the recipient's IANA timezone: use the one passed by the caller, else
+// look it up from profiles by email (service role). Falls back to null (UK only).
+async function resolveRecipientTimeZone(email: string, provided?: string | null): Promise<string | null> {
+  if (provided && provided.length) return provided;
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return null;
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data } = await admin.from("profiles").select("timezone").eq("email", email).maybeSingle();
+    return data?.timezone ?? null;
+  } catch (e) {
+    console.error("Timezone lookup failed:", e);
+    return null;
+  }
+}
 
 // Sanitize string to prevent XSS in HTML emails
 function sanitizeForHtml(str: string | undefined | null): string {
@@ -104,6 +183,16 @@ Deno.serve(async (req: Request) => {
 
     // Sanitize recipient name to prevent XSS
     payload.recipient_name = sanitizeForHtml(payload.recipient_name);
+
+    // For lesson notifications, resolve the recipient's timezone so the template
+    // can show both the UK booked time and the recipient's local time.
+    if (LESSON_TIME_TYPES.has(payload.type)) {
+      const tz = await resolveRecipientTimeZone(
+        payload.recipient_email,
+        payload.data?.recipient_timezone,
+      );
+      payload.data = { ...(payload.data ?? {}), recipient_timezone: tz };
+    }
 
     console.log("Sending notification email:", payload.type);
 
@@ -232,12 +321,9 @@ Deno.serve(async (req: Request) => {
 });
 
 function getLessonReminderEmail(payload: NotificationPayload) {
-  const { teacher_name, subject, scheduled_time, lesson_url } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedTime = lessonDate.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const { teacher_name, subject, scheduled_time, lesson_url, recipient_timezone } = payload.data;
+  const displayTz = recipient_timezone || UK_TZ;
+  const formattedTime = fmtTimeInZone(scheduled_time, displayTz);
 
   return {
     subject: `⏰ Reminder: Your lesson with ${teacher_name} starts in 1 hour!`,
@@ -258,6 +344,10 @@ function getLessonReminderEmail(payload: NotificationPayload) {
             <p style="margin: 0 0 20px 0; color: #334155; font-size: 16px; line-height: 1.6;">
               This is a friendly reminder that your lesson with <strong>${teacher_name}</strong> starts at <strong style="color: #f59e0b;">${formattedTime}</strong>.
             </p>
+
+            <div style="background: #fffbeb; border-radius: 8px; padding: 16px; margin: 16px 0;">
+              ${dualTimeRows(scheduled_time, recipient_timezone, '#92400e')}
+            </div>
 
             <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 20px 0;">
               <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">📝 Pre-Lesson Checklist:</h3>
@@ -287,25 +377,7 @@ function getLessonReminderEmail(payload: NotificationPayload) {
 }
 
 function getLessonTimeChangedEmail(payload: NotificationPayload) {
-  const { teacher_name, old_time, new_time, subject } = payload.data;
-  const oldDate = new Date(old_time);
-  const newDate = new Date(new_time);
-
-  const formattedOldTime = oldDate.toLocaleString('en-GB', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-
-  const formattedNewTime = newDate.toLocaleString('en-GB', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const { teacher_name, old_time, new_time, subject, recipient_timezone } = payload.data;
 
   return {
     subject: `⚠️ Lesson Time Changed - ${teacher_name}`,
@@ -328,13 +400,13 @@ function getLessonTimeChangedEmail(payload: NotificationPayload) {
             </p>
 
             <div style="background: #fee2e2; border-radius: 8px; padding: 16px; margin: 16px 0;">
-              <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">PREVIOUS TIME:</p>
-              <p style="margin: 4px 0 0 0; color: #7f1d1d; font-size: 16px; text-decoration: line-through;">${formattedOldTime}</p>
+              <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 14px; font-weight: 600;">PREVIOUS TIME:</p>
+              ${dualTimeRows(old_time, recipient_timezone, '#7f1d1d')}
             </div>
 
             <div style="background: #d1fae5; border-radius: 8px; padding: 16px; margin: 16px 0;">
-              <p style="margin: 0; color: #065f46; font-size: 14px; font-weight: 600;">NEW TIME:</p>
-              <p style="margin: 4px 0 0 0; color: #064e3b; font-size: 18px; font-weight: 600;">${formattedNewTime}</p>
+              <p style="margin: 0 0 8px 0; color: #065f46; font-size: 14px; font-weight: 600;">NEW TIME:</p>
+              ${dualTimeRows(new_time, recipient_timezone, '#064e3b')}
             </div>
 
             <p style="margin: 20px 0 0 0; color: #64748b; font-size: 14px;">
@@ -358,15 +430,7 @@ function getLessonTimeChangedEmail(payload: NotificationPayload) {
 }
 
 function getLessonCancelledEmail(payload: NotificationPayload) {
-  const { teacher_name, scheduled_time, subject, reason } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedTime = lessonDate.toLocaleString('en-GB', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const { teacher_name, scheduled_time, subject, reason, recipient_timezone } = payload.data;
 
   return {
     subject: `❌ Lesson Cancelled - ${teacher_name}`,
@@ -390,8 +454,8 @@ function getLessonCancelledEmail(payload: NotificationPayload) {
 
             <div style="background: #fee2e2; border-radius: 8px; padding: 20px; margin: 20px 0;">
               <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 14px; font-weight: 600;">CANCELLED LESSON:</p>
-              <p style="margin: 0 0 4px 0; color: #7f1d1d; font-size: 16px;"><strong>${subject}</strong></p>
-              <p style="margin: 0; color: #7f1d1d; font-size: 14px;">${formattedTime}</p>
+              <p style="margin: 0 0 8px 0; color: #7f1d1d; font-size: 16px;"><strong>${subject}</strong></p>
+              ${dualTimeRows(scheduled_time, recipient_timezone, '#7f1d1d')}
             </div>
 
             ${reason ? `
@@ -567,9 +631,7 @@ function getTierEligibleEmail(payload: NotificationPayload) {
 }
 
 function getLessonAcknowledgedEmail(payload: NotificationPayload) {
-  const { teacher_name, scheduled_time, subject } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedTime = lessonDate.toLocaleString('en-GB', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const { teacher_name, scheduled_time, subject, recipient_timezone } = payload.data;
 
   return {
     subject: `✅ Lesson Confirmed - ${teacher_name}`,
@@ -595,7 +657,7 @@ function getLessonAcknowledgedEmail(payload: NotificationPayload) {
               <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
               <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
               <p style="margin: 0 0 8px 0; color: #047857;">Teacher: <strong>${teacher_name}</strong></p>
-              <p style="margin: 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+              ${dualTimeRows(scheduled_time, recipient_timezone, '#047857')}
             </div>
           </div>
 
@@ -615,9 +677,12 @@ function getLessonAcknowledgedEmail(payload: NotificationPayload) {
 }
 
 function getLessonDeclinedEmail(payload: NotificationPayload) {
-  const { teacher_name, scheduled_time, reason } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedTime = lessonDate.toLocaleString('en-GB', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const { teacher_name, scheduled_time, reason, recipient_timezone } = payload.data;
+  const ukTime = `${fmtDateTimeInZone(scheduled_time, UK_TZ)} (${tzCity(UK_TZ)})`;
+  const localSuffix = recipient_timezone && !sameWallClock(scheduled_time, UK_TZ, recipient_timezone)
+    ? ` (your time: ${fmtDateTimeInZone(scheduled_time, recipient_timezone)} (${tzCity(recipient_timezone)}))`
+    : '';
+  const formattedTime = `${ukTime}${localSuffix}`;
 
   return {
     subject: `⚠️ Lesson Request Declined - ${teacher_name}`,
@@ -814,18 +879,7 @@ function getHoursTransferredEmail(payload: NotificationPayload) {
 }
 
 function getTeacherNewBookingEmail(payload: NotificationPayload) {
-  const { student_name, subject, scheduled_time, duration_minutes } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedDate = lessonDate.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  const formattedTime = lessonDate.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const { student_name, subject, scheduled_time, duration_minutes, recipient_timezone } = payload.data;
 
   return {
     subject: `📚 New Lesson Booking - ${subject}`,
@@ -851,8 +905,7 @@ function getTeacherNewBookingEmail(payload: NotificationPayload) {
               <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
               <p style="margin: 0 0 8px 0; color: #047857;">Student: <strong>${student_name}</strong></p>
               <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
-              <p style="margin: 0 0 8px 0; color: #047857;">Date: <strong>${formattedDate}</strong></p>
-              <p style="margin: 0 0 8px 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+              ${dualTimeRows(scheduled_time, recipient_timezone, '#047857')}
               <p style="margin: 0; color: #047857;">Duration: <strong>${duration_minutes} minutes</strong></p>
             </div>
 
@@ -1084,18 +1137,7 @@ function getWelcomeEmail(payload: NotificationPayload): { subject: string; html:
 }
 
 function getStudentBookingConfirmationEmail(payload: NotificationPayload): { subject: string; html: string } {
-  const { teacher_name, subject, scheduled_time, duration_minutes } = payload.data;
-  const lessonDate = new Date(scheduled_time);
-  const formattedDate = lessonDate.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  const formattedTime = lessonDate.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const { teacher_name, subject, scheduled_time, duration_minutes, recipient_timezone } = payload.data;
 
   return {
     subject: `✅ Lesson Booked - ${subject} with ${teacher_name}`,
@@ -1121,8 +1163,7 @@ function getStudentBookingConfirmationEmail(payload: NotificationPayload): { sub
               <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px;">📅 Lesson Details:</h3>
               <p style="margin: 0 0 8px 0; color: #047857;">Teacher: <strong>${teacher_name}</strong></p>
               <p style="margin: 0 0 8px 0; color: #047857;">Subject: <strong>${subject}</strong></p>
-              <p style="margin: 0 0 8px 0; color: #047857;">Date: <strong>${formattedDate}</strong></p>
-              <p style="margin: 0 0 8px 0; color: #047857;">Time: <strong>${formattedTime}</strong></p>
+              ${dualTimeRows(scheduled_time, recipient_timezone, '#047857')}
               <p style="margin: 0; color: #047857;">Duration: <strong>${duration_minutes} minutes</strong></p>
             </div>
 

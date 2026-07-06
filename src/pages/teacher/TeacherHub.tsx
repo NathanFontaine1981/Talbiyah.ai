@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import OnboardingChecklist from '../../components/teacher/OnboardingChecklist';
+import TeachingMethodCard from '../../components/teacher/TeachingMethodCard';
 import {
   DollarSign,
   Clock,
@@ -17,6 +18,8 @@ import {
   XCircle,
   Zap,
   BarChart3,
+  BookOpen,
+  ScrollText,
 } from 'lucide-react';
 import { TEACHER_TYPES, type TeacherType } from '../../constants/teacherConstants';
 import PendingLessonsList from '../../components/teacher/PendingLessonsList';
@@ -244,7 +247,7 @@ export default function TeacherHub() {
       icon: Calendar,
       label: 'My Schedule',
       path: '/teacher/schedule',
-      iconBg: 'bg-emerald-500/20',
+      iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600'
     },
     {
@@ -266,7 +269,7 @@ export default function TeacherHub() {
       icon: DollarSign,
       label: 'My Earnings',
       path: '/teacher/earnings',
-      iconBg: 'bg-emerald-500/20',
+      iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600'
     }] : []),
     {
@@ -289,8 +292,22 @@ export default function TeacherHub() {
       label: 'Payment Settings',
       path: '/teacher/payment-settings',
       iconBg: 'bg-amber-500/20',
-      iconColor: 'text-amber-400'
+      iconColor: 'text-amber-600'
     }] : []),
+    {
+      icon: BookOpen,
+      label: 'Teaching Guide & Resources',
+      path: '/teacher/resources',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600'
+    },
+    {
+      icon: ScrollText,
+      label: 'Teaching Agreement',
+      path: '/teacher/agreement',
+      iconBg: 'bg-blue-500/20',
+      iconColor: 'text-blue-600'
+    },
     {
       icon: Settings,
       label: 'Edit Profile',
@@ -302,19 +319,19 @@ export default function TeacherHub() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 px-4">
+    <div className="min-h-screen bg-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Back to Dashboard Button */}
         <button
           onClick={() => navigate('/dashboard')}
-          className="mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition group"
+          className="mb-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 transition group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
           <span>Back to Main Dashboard</span>
@@ -322,9 +339,12 @@ export default function TeacherHub() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Teacher Account</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Teacher Account</h1>
           <p className="text-gray-500">Manage your teaching activities and track your performance.</p>
         </div>
+
+        {/* The Talbiyah teaching method — the platform USP, shown first so teachers never miss it */}
+        <TeachingMethodCard />
 
         {/* Onboarding Checklist - shown until complete */}
         {teacherProfileId && userId && (
@@ -338,8 +358,8 @@ export default function TeacherHub() {
               <div className="flex items-center space-x-4">
                 <div className="text-5xl">🎓</div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Independent Teacher</h2>
-                  <p className="text-gray-400">
+                  <h2 className="text-2xl font-bold text-gray-900">Independent Teacher</h2>
+                  <p className="text-gray-500">
                     {independentRate > 0 ? `£${independentRate.toFixed(2)}/hour` : 'Rate set by you'}
                     {' · '}
                     Platform payment
@@ -369,8 +389,8 @@ export default function TeacherHub() {
               <div className="flex items-center space-x-4">
                 <div className="text-5xl">💷</div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">£{stats.teacher_hourly_rate.toFixed(2)}/hour</h2>
-                  <p className="text-gray-400">Your payout rate</p>
+                  <h2 className="text-2xl font-bold text-gray-900">£{stats.teacher_hourly_rate.toFixed(2)}/hour</h2>
+                  <p className="text-gray-500">Your payout rate</p>
                 </div>
               </div>
             </div>
@@ -390,14 +410,14 @@ export default function TeacherHub() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Earnings */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <div className="bg-gray-100 rounded-xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-emerald-400" />
+              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total Earnings</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-sm text-gray-500">Total Earnings</p>
+                <p className="text-2xl font-bold text-gray-900">
                   £{earnings?.total_earnings.toFixed(2) || '0.00'}
                 </p>
               </div>
@@ -408,14 +428,14 @@ export default function TeacherHub() {
           </div>
 
           {/* Hours Taught */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <div className="bg-gray-100 rounded-xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-emerald-400" />
+              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Hours Taught</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-sm text-gray-500">Hours Taught</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {stats?.hours_taught?.toFixed(1) || '0.0'}h
                 </p>
               </div>
@@ -424,14 +444,14 @@ export default function TeacherHub() {
           </div>
 
           {/* Rating */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <div className="bg-gray-100 rounded-xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <Award className="w-6 h-6 text-amber-400" />
+                <Award className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Average Rating</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-sm text-gray-500">Average Rating</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {stats?.average_rating?.toFixed(1) || '0.0'} ★
                 </p>
               </div>
@@ -440,14 +460,14 @@ export default function TeacherHub() {
           </div>
 
           {/* Students */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <div className="bg-gray-100 rounded-xl p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-400" />
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total Students</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-sm text-gray-500">Total Students</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {stats?.total_students || 0}
                 </p>
               </div>
@@ -458,18 +478,18 @@ export default function TeacherHub() {
 
         {/* Quick Navigation */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Quick Access</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Access</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {navItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="group bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-emerald-500/50 transition text-center"
+                className="group bg-gray-100 rounded-xl p-6 border border-gray-200 hover:border-emerald-200 transition text-center"
               >
                 <div className={`w-12 h-12 mx-auto mb-3 ${item.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition`}>
                   <item.icon className={`w-6 h-6 ${item.iconColor}`} />
                 </div>
-                <p className="text-sm font-semibold text-white group-hover:text-emerald-400 transition">
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition">
                   {item.label}
                 </p>
               </button>
@@ -480,8 +500,8 @@ export default function TeacherHub() {
         {/* Upcoming Lessons Details */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-emerald-600" />
               </div>
               Upcoming Lessons
@@ -497,7 +517,7 @@ export default function TeacherHub() {
 
           {upcomingLessons.length === 0 ? (
             <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm text-center">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
               <p className="text-gray-600 mb-4">No upcoming lessons scheduled</p>
               <button
                 onClick={() => navigate('/teacher/availability')}
@@ -639,22 +659,22 @@ export default function TeacherHub() {
             <>
               {/* Insights Stats for Independent Teachers */}
               <div className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30">
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <Zap className="w-5 h-5 text-blue-400" />
                   Insights Stats
                 </h3>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Total Lessons</span>
-                    <span className="font-semibold text-white">{insightsStats.total}</span>
+                    <span className="text-gray-500">Total Lessons</span>
+                    <span className="font-semibold text-gray-900">{insightsStats.total}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">With AI Insights</span>
+                    <span className="text-gray-500">With AI Insights</span>
                     <span className="font-semibold text-blue-400">{insightsStats.withInsights}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Adoption Rate</span>
-                    <span className="font-semibold text-emerald-400">
+                    <span className="text-gray-500">Adoption Rate</span>
+                    <span className="font-semibold text-emerald-600">
                       {insightsStats.total > 0
                         ? `${Math.round((insightsStats.withInsights / insightsStats.total) * 100)}%`
                         : '-'}
@@ -681,35 +701,35 @@ export default function TeacherHub() {
 
               {/* Teaching Summary for Independent Teachers */}
               <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-600" />
                   Teaching Summary
                 </h3>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Hours Taught</span>
-                    <span className="font-semibold text-white">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
+                    <span className="text-gray-500">Hours Taught</span>
+                    <span className="font-semibold text-gray-900">{stats?.hours_taught?.toFixed(1) || '0.0'}h</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Total Students</span>
-                    <span className="font-semibold text-white">{stats?.total_students || 0}</span>
+                    <span className="text-gray-500">Total Students</span>
+                    <span className="font-semibold text-gray-900">{stats?.total_students || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Average Rating</span>
-                    <span className="font-semibold text-amber-400">
+                    <span className="text-gray-500">Average Rating</span>
+                    <span className="font-semibold text-amber-600">
                       {stats?.average_rating ? `${stats.average_rating.toFixed(1)} ★` : 'No reviews yet'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Your Rate</span>
-                    <span className="font-semibold text-emerald-400">
+                    <span className="text-gray-500">Your Rate</span>
+                    <span className="font-semibold text-emerald-600">
                       £{independentRate.toFixed(2)}/hour
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/teacher/edit-profile')}
-                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
+                  className="w-full px-4 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 font-semibold transition"
                 >
                   Edit Profile
                 </button>
@@ -718,24 +738,24 @@ export default function TeacherHub() {
           ) : (
             <>
               <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30">
-                <h3 className="text-xl font-bold text-white mb-3">💰 Earnings Overview</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">💰 Earnings Overview</h3>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Cleared</span>
-                    <span className="font-semibold text-emerald-400">
+                    <span className="text-gray-500">Cleared</span>
+                    <span className="font-semibold text-emerald-600">
                       £{earnings?.cleared_amount.toFixed(2) || '0.00'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">On Hold</span>
-                    <span className="font-semibold text-amber-400">
+                    <span className="text-gray-500">On Hold</span>
+                    <span className="font-semibold text-amber-600">
                       £{earnings?.held_amount.toFixed(2) || '0.00'}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/teacher/earnings')}
-                  className="w-full px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-lg text-emerald-400 font-semibold transition"
+                  className="w-full px-4 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 font-semibold transition"
                 >
                   View Full Earnings
                 </button>
