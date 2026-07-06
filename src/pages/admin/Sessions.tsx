@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign, Gift, CreditCard, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Calendar, Clock, Users, BookOpen, Eye, Edit, RefreshCw, X as XIcon, ChevronLeft, ChevronRight, DollarSign, Gift, CreditCard, AlertTriangle, Video } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { formatLessonTime, formatLessonDate } from '../../lib/formatLessonTime';
@@ -495,6 +495,7 @@ function StatCard({ label, value, icon: Icon, color }: any) {
 
 // Session Card Component
 function SessionCard({ session, onView, onInsights, onEdit, onReschedule, onCancel, getStatusColor }: any) {
+  const navigate = useNavigate();
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
       <div className="flex items-start justify-between mb-4">
@@ -533,7 +534,15 @@ function SessionCard({ session, onView, onInsights, onEdit, onReschedule, onCanc
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => navigate(`/admin/lesson/${session.id}/join`)}
+          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition text-sm flex items-center space-x-1 font-medium"
+          title="Join this lesson's video room as Admin (to observe/help)"
+        >
+          <Video className="w-4 h-4" />
+          <span>Join Room</span>
+        </button>
         <button
           onClick={() => onView(session)}
           className="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 rounded-lg transition text-sm flex items-center space-x-1"

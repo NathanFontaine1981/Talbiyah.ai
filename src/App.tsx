@@ -179,6 +179,7 @@ const InsightTemplateManager = lazy(() => import('./pages/admin/InsightTemplateM
 const PromoCodeManager = lazy(() => import('./pages/admin/PromoCodeManager'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const TeacherPayouts = lazy(() => import('./pages/admin/TeacherPayouts'));
+const AdminLessonMonitor = lazy(() => import('./pages/admin/AdminLessonMonitor'));
 // TeacherReferrals is shelved — the component exists but is not routed yet.
 // It needs DB columns (teacher_profiles.is_referrer/referral_hourly_rate/referred_by,
 // teacher_earnings.is_referral_commission), commission-creation logic, and a nav entry
@@ -403,6 +404,15 @@ function App() {
           <Route path="onboarding-resources" element={<OnboardingResources />} />
           <Route path="announcements" element={<AnnouncementsManagement />} />
         </Route>
+        {/* Full-screen admin lesson-room monitor (not under the AdminDashboard sidebar) */}
+        <Route
+          path="/admin/lesson/:lessonId/join"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminLessonMonitor />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/apply-to-teach"
           element={
