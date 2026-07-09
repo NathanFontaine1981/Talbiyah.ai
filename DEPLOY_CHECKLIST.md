@@ -15,7 +15,9 @@ Covers two PRs:
 
 ---
 
-## ⬜ Step 1 — Run remaining SQL (before deploying)
+> **Status Jul 9 2026: Steps 1–2 complete.** Both PRs merged to main; all SQL applied (agreement columns, Qur'an guide seed, `lessons.insight_recovery_alerted`, revolut method + `requested` status constraints). All edge functions from the July merges deployed Jul 9 (incl. `monthly-teacher-payouts`, `stripe-webhook`, `initiate-booking-checkout`, `sweep-failed-recordings`). `monthly-teacher-payouts` scheduled via pg_cron at 06:00 UTC on the 1st. Remaining: Step 3 (optional Wise secrets) and Step 4 manual verification.
+
+## ✅ Step 1 — Run remaining SQL (before deploying)
 
 ### 1a. Teacher agreement columns — REQUIRED before the onboarding PR deploys
 If this column is missing when the new frontend goes live, the teacher-profile query in `ProtectedRoute` errors and **teachers get locked out**. Run this first:
@@ -34,7 +36,7 @@ All of the above is additive and safe to re-run.
 
 ---
 
-## ⬜ Step 2 — Merge & deploy
+## ✅ Step 2 — Merge & deploy
 
 Netlify auto-deploys production from `main`. The two PRs are independent and touch `Lesson.tsx` in different regions, so they merge cleanly in either order. **Ensure Step 1a is done before merging the onboarding PR.**
 
