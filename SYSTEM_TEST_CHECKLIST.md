@@ -29,12 +29,20 @@ These confirm production matches main. They are *not* functional tests.
 
 Ordered by risk. Items 1–2 touch money and were running **February code until Jul 9** — test these first.
 
-### 1. ⬜ Booking + payment end-to-end — HIGHEST RISK
+### 1. ✅ Booking + payment end-to-end — TESTED LIVE Jul 10 (found & fixed 6 bugs)
 `initiate-booking-checkout` and `stripe-webhook` jumped from Feb 11/15 code to July code on Jul 9.
-- [ ] As a student/parent: book a single lesson through checkout → Stripe payment succeeds → lesson appears with a room, teacher notified, booking-confirmation email arrives (July work changed booking emails).
-- [ ] Book with a credit/hours balance (no Stripe) if applicable.
-- [ ] Admin session booking (reworked in `f639dca`): Admin → book a session for a student → lesson created correctly, no duplicate emails.
-- [ ] Check Stripe dashboard: webhook deliveries show 200s (no signature or handler errors) since Jul 9.
+- [x] **Card path** (Jul 10, £15 live payment, then refunded/comped): checkout session → Stripe payment → webhook created lesson with room + both codes, payment intent attached, marked completed/paid. Pending booking flipped to `paid`.
+- [x] **Credits path** (Jul 10, inadvertent first test): booking + room worked; exposed bugs 1–3 below.
+- [ ] Admin session booking (reworked in `f639dca`): Admin → book a session for a student → lesson created correctly, no duplicate emails. *(still untested)*
+- [x] Webhook returned 200 and processed correctly for the live payment.
+
+**Bugs found by this test — all fixed & deployed Jul 10:**
+1. Credits-paid lessons stayed `pending` — update wrote non-existent `lessons.price` column (silent failure).
+2. Same update wrote `payment_status: 'paid'` — constraint only allows `completed` etc.
+3. `Checkout.tsx` didn't handle the `paid_with_credits` response → false "No checkout URL received" error (double-charge risk on retry).
+4. `stripe-webhook` + `initiate-booking-checkout` selected non-existent `teacher_profiles.email` → student email said "Teacher" instead of the name and the **teacher notification email never sent**.
+5. `PaymentSuccess.tsx` looked up the teacher name with the wrong ID → no name on the success page.
+6. `stripe-webhook` wrote pending_bookings statuses `completed`/`failed`, both outside the check constraint → paid bookings stuck at `pending`.
 
 ### 2. ⬜ Payouts
 - [ ] Teacher → Payment Settings: TapTap Send / Revolut / international options appear and **save** (revolut_detail persists).
