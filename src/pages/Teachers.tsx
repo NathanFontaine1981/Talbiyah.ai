@@ -319,13 +319,14 @@ export default function Teachers() {
 
       if (error) throw error;
 
-      // Only show Quran and Arabic subjects for now
-      const allowedSubjects = ['quran', 'arabic'];
-      const filteredSubjects = (data || []).filter(subject =>
-        allowedSubjects.some(allowed =>
-          subject.name.toLowerCase().includes(allowed)
-        )
-      );
+      // Only show Quran with Understanding and Arabic Language for now
+      // Exclude Quran Memorisation (coming later) — same rule as TeacherBooking.tsx
+      const filteredSubjects = (data || []).filter(subject => {
+        const nameLower = subject.name.toLowerCase();
+        if (nameLower.includes('arabic')) return true;
+        if (nameLower.includes('quran') && !nameLower.includes('memori')) return true;
+        return false;
+      });
 
       setSubjects(filteredSubjects);
     } catch (error) {
