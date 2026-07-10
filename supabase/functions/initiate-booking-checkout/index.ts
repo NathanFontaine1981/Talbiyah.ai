@@ -262,16 +262,23 @@ serve(async (req) => {
         }
 
         const lessonIds = createdLessons.map((l: any) => l.id);
-        await supabaseClient
+        // NB: lessons has no `price` column — the per-lesson amount is already stored
+        // in total_cost_paid at insert time.
+        const { error: markPaidError } = await supabaseClient
           .from('lessons')
           .update({
             payment_method: 'credits',
-            payment_status: 'paid',
+            // 'completed' is the value the payment_status check constraint allows and
+            // what stripe-webhook writes — 'paid' violates the constraint.
+            payment_status: 'completed',
             booked_at: new Date().toISOString(),
-            price: bookingsWithLearner[0]?.price || 15.00,
             is_trial: false
           })
           .in('id', lessonIds);
+
+        if (markPaidError) {
+          console.error('Failed to mark credit-paid lessons as paid:', markPaidError.message);
+        }
 
         // Create 100ms rooms
         let managementToken: string | null = null

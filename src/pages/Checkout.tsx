@@ -801,6 +801,15 @@ export default function Checkout() {
         referral_discount: referralDiscount
       });
 
+      // The edge function pays from the user's credit balance automatically when it
+      // covers the total — in that case there is no Stripe redirect, the lessons are
+      // already booked.
+      if (response.paid_with_credits) {
+        await clearCart();
+        navigate('/dashboard?booking_success=true&payment=credits');
+        return;
+      }
+
       if (response.checkout_url) {
         window.location.href = response.checkout_url;
       } else {

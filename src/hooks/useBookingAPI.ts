@@ -67,11 +67,17 @@ interface BulkBookingRequest {
 
 interface CheckoutResponse {
   success: boolean;
-  checkout_url: string;
-  session_id: string;
-  pending_booking_id: string;
-  total_amount: number;
-  session_count: number;
+  checkout_url?: string;
+  session_id?: string;
+  pending_booking_id?: string;
+  total_amount?: number;
+  session_count?: number;
+  // Set when the edge function paid from the credit balance (no Stripe redirect)
+  paid_with_credits?: boolean;
+  lessons?: { id: string }[];
+  credits_used?: number;
+  new_credit_balance?: number;
+  message?: string;
 }
 
 export function useBookingAPI() {
