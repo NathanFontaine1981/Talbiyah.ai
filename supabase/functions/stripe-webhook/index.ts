@@ -661,9 +661,11 @@ serve(async (req) => {
         }
 
         if (createdLessons.length > 0) {
+          // pending_bookings status check constraint allows pending/paid/expired/cancelled
+          // — 'completed' violates it and the update silently no-ops.
           await supabaseClient
             .from('pending_bookings')
-            .update({ status: 'completed' })
+            .update({ status: 'paid' })
             .eq('id', pendingBookingId)
 
           // Log successful booking payment
@@ -684,9 +686,12 @@ serve(async (req) => {
               // lesson.teacher_id is a teacher_profiles.id → resolve the user first, then the
               // profile (previously queried profiles.id directly, which never matched, so the
               // teacher name fell back to "Teacher" and the teacher email didn't send).
+              // teacher_profiles has no email column — selecting it errors the whole
+              // query and the teacher email/name silently fall back. Email comes from
+              // profiles below.
               const { data: teacherRow } = await supabaseClient
                 .from('teacher_profiles')
-                .select('user_id, email')
+                .select('user_id')
                 .eq('id', lesson.teacher_id)
                 .single()
               let teacherProfile: { full_name?: string; email?: string } | null = null
@@ -697,9 +702,6 @@ serve(async (req) => {
                   .eq('id', teacherRow.user_id)
                   .single()
                 teacherProfile = tp
-              }
-              if (teacherProfile && !teacherProfile.email && teacherRow?.email) {
-                teacherProfile.email = teacherRow.email
               }
 
               const { data: studentProfile } = await supabaseClient
@@ -776,9 +778,10 @@ serve(async (req) => {
             }
           }
         } else {
+          // 'failed' is not in the status check constraint — 'cancelled' is.
           await supabaseClient
             .from('pending_bookings')
-            .update({ status: 'failed' })
+            .update({ status: 'cancelled' })
             .eq('id', pendingBookingId)
 
           // Log failed booking
