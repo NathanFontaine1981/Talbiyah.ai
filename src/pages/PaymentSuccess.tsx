@@ -121,11 +121,21 @@ export default function PaymentSuccess() {
                 .eq('id', lesson.subject_id)
                 .maybeSingle();
 
-              const { data: teacherProfile } = await supabase
-                .from('profiles')
-                .select('full_name')
+              // lesson.teacher_id is a teacher_profiles.id — resolve the user_id first,
+              // then read the name from profiles (querying profiles by teacher_id never matches).
+              const { data: teacherRow } = await supabase
+                .from('teacher_profiles')
+                .select('user_id')
                 .eq('id', lesson.teacher_id)
                 .maybeSingle();
+
+              const { data: teacherProfile } = teacherRow?.user_id
+                ? await supabase
+                    .from('profiles')
+                    .select('full_name')
+                    .eq('id', teacherRow.user_id)
+                    .maybeSingle()
+                : { data: null };
 
               return {
                 ...lesson,
@@ -170,11 +180,21 @@ export default function PaymentSuccess() {
           .eq('id', lesson.subject_id)
           .maybeSingle();
 
-        const { data: teacherProfile } = await supabase
-          .from('profiles')
-          .select('full_name')
+        // lesson.teacher_id is a teacher_profiles.id — resolve the user_id first,
+        // then read the name from profiles (querying profiles by teacher_id never matches).
+        const { data: teacherRow } = await supabase
+          .from('teacher_profiles')
+          .select('user_id')
           .eq('id', lesson.teacher_id)
           .maybeSingle();
+
+        const { data: teacherProfile } = teacherRow?.user_id
+          ? await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', teacherRow.user_id)
+              .maybeSingle()
+          : { data: null };
 
         return {
           ...lesson,
