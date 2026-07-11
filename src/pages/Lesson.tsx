@@ -884,47 +884,53 @@ function LessonContent() {
             </div>
           </div>
 
-          {/* Join Options */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Web Browser Option */}
+          {/* Join — one button, every device. The embedded room works in phone and
+              tablet browsers too; the old "Join via Mobile App" card sent students
+              into the 100ms consumer app, where joins routinely dead-ended. */}
+          <div className={`grid gap-6 ${userRole === 'teacher' ? 'md:grid-cols-2' : 'max-w-md mx-auto'}`}>
+            {/* Join in browser — all devices */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-emerald-400/30 hover:border-emerald-400/60 transition-all">
               <div className="flex flex-col items-center text-center">
                 <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4">
-                  <Laptop className="w-10 h-10 text-emerald-400" />
+                  <Video className="w-10 h-10 text-emerald-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Join via Web Browser</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Join Your Lesson</h3>
                 <p className="text-emerald-200 text-sm mb-6">
-                  Recommended for desktop and laptop computers
+                  Works on computers, tablets and phones — nothing to install. Just allow
+                  your camera and microphone when asked.
                 </p>
                 <button
                   onClick={handleJoinWeb}
                   className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2"
                 >
-                  <Laptop className="w-5 h-5" />
+                  <Video className="w-5 h-5" />
                   <span>Join Now</span>
                 </button>
               </div>
             </div>
 
-            {/* Mobile/Tablet App Option */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-emerald-400/30 hover:border-emerald-400/60 transition-all">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4">
-                  <Smartphone className="w-10 h-10 text-emerald-600" />
+            {/* Teachers only: 100ms app instructions (mobile screen-sharing) */}
+            {userRole === 'teacher' && (
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-emerald-400/30 hover:border-emerald-400/60 transition-all">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Smartphone className="w-10 h-10 text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Teaching from a tablet?</h3>
+                  <p className="text-cyan-200 text-sm mb-6">
+                    The 100ms app enables screen sharing from mobile devices — useful for
+                    sharing the muṣḥaf or slides.
+                  </p>
+                  <button
+                    onClick={() => setShowMobileInstructions(true)}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2"
+                  >
+                    <Smartphone className="w-5 h-5" />
+                    <span>View Instructions</span>
+                  </button>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Join via Mobile App</h3>
-                <p className="text-cyan-200 text-sm mb-6">
-                  For tablets & phones - enables screen sharing
-                </p>
-                <button
-                  onClick={() => setShowMobileInstructions(true)}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2"
-                >
-                  <Smartphone className="w-5 h-5" />
-                  <span>View Instructions</span>
-                </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Mobile Instructions Modal */}
