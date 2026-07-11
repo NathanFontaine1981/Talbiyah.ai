@@ -59,19 +59,21 @@ Ordered by risk. Items 1–2 touch money and were running **February code until 
 **Decisions & data fixes:** historical backfill skipped (teachers settled off-platform); Osama flagged `is_legacy_teacher` (imam-paid), his £8 held earnings cancelled, and the trigger now exempts legacy-billed teachers. **Data quality:** Mariam's TapTap phone lacks +20 country code — ask her to re-save.
 **Watch-out:** admin Approve silently no-ops if done from a non-admin session (RLS 0-row update) — always approve from the admin account.
 
-### 3. ⬜ Teacher agreement gate
-- [ ] Log in as an approved teacher → redirected to agreement → tick all sections + type name + confirm → lands on hub.
-- [ ] Log out / back in → NOT re-prompted.
-- [ ] Note: every existing approved teacher gets prompted on next login (intended) — expect questions from teachers.
+### 3. ✅ Teacher agreement gate — TESTED LIVE Jul 11
+- [x] Approved teacher without acceptance → redirected to agreement → signed → recorded (name + version + timestamp verified in DB).
+- [x] **Bug found & fixed:** after signing, client-side navigation bounced the teacher back to the agreement until a hard refresh (ProtectedRoute caches its verdict across routes) — now a full-page redirect.
+- [ ] Passive check: next teacher login should NOT re-prompt (report if it ever does).
+- Note: 5 teachers still unsigned (Aasiya, Ahmad, Hajar, Karim, Shumaila) — they'll be prompted on next login; admin can track via the new compliance badges.
 
-### 4. ⬜ Admin tools (new)
-- [ ] "Act as Student" impersonation: enter/exit cleanly, actions logged to `admin_impersonation_log`, comped bookings gated correctly (hardening in `6e8dc93`).
-- [ ] Admin → Sessions → "Join Room": joins the live 100ms room as visible host "Admin (name)", can see/hear/talk. (Purely additive; safe to test on a real lesson.)
+### 4. 🟡 Admin tools — impersonation ✅ Jul 11; Join Room scheduled Sunday Jul 12
+- [x] Impersonation: works for teachers too (label said "Act as Student" — misleading, now "Act as User"); all sessions logged to `admin_impersonation_log` with admin/target/start/end (verified Jul 11). Note: closing the tab instead of exiting leaves `ended_at` null.
+- [ ] Admin → Sessions → "Join Room" during Sunday's live lesson: visible host, can see/hear/talk.
+- [ ] Admin books a session FOR a student (carried over from Test 1): one lesson, no duplicate emails.
 
-### 5. ⬜ Onboarding & student experience
-- [ ] Teacher → Resources: "How to Teach Qur'an" guide renders as formatted markdown.
-- [ ] Onboarding checklist circles clickable, persist across devices (`teacher_onboarding_completions`).
-- [ ] Student joins a lesson → "how lessons work" walkthrough appears **once** (not again on next lesson).
+### 5. 🟡 Onboarding & student experience — mostly verified Jul 11
+- [x] Teacher → Resources: guide opens and renders; method card now deep-links straight to it (`?open=` param — was dumping teachers at the resource list).
+- [x] Mark-as-read persists (`teacher_onboarding_progress` row verified in DB).
+- [ ] Sunday: student "how lessons work" walkthrough appears once, followed by the NEW Qur'an-journey welcome (method, hadith, ask-your-teacher, study-notes habit — added Jul 11).
 
 ### 6. ⬜ Lesson lifecycle edge cases
 - [ ] End Session → "student didn't show up" → recorded as no-show, NOT counted as completed/paid hours.
