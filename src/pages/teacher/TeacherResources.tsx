@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import Markdown from '../../components/Markdown';
@@ -89,6 +89,7 @@ const TYPE_ICONS: Record<ResourceType, typeof FileText> = {
 
 export default function TeacherResources() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState<OnboardingResource[]>([]);
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
@@ -101,6 +102,19 @@ export default function TeacherResources() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Deep link: /teacher/resources?open=<text> auto-opens the first resource whose
+  // title contains the text (case-insensitive). Used by the teaching-method card so
+  // "see the worked example" lands on the guide itself, not the resource list.
+  useEffect(() => {
+    const openParam = searchParams.get('open');
+    if (!openParam || resources.length === 0) return;
+    const match = resources.find((r) =>
+      r.title.toLowerCase().includes(openParam.toLowerCase())
+    );
+    if (match) openResource(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resources]);
 
   async function loadData() {
     try {

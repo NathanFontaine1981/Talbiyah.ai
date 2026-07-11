@@ -77,7 +77,7 @@ export default function TeachingMethodCard() {
       </p>
 
       <button
-        onClick={() => navigate('/teacher/resources')}
+        onClick={() => navigate('/teacher/resources?open=how%20to%20teach')}
         className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
       >
         See the full method &amp; a worked example
