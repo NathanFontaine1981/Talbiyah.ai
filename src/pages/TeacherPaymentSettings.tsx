@@ -366,6 +366,9 @@ export default function TeacherPaymentSettings() {
                 <option value="monthly">Monthly</option>
                 <option value="manual">Manual (on request)</option>
               </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Payouts are processed in the first week of every month — we aim to send them on the 1st.
+              </p>
             </div>
           </div>
         </div>
