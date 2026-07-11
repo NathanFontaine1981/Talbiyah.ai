@@ -92,7 +92,10 @@ export default function TeacherAgreement() {
         .eq('id', teacherId);
       if (error) throw error;
       toast.success('Thank you — welcome aboard!');
-      navigate('/teacher/hub');
+      // Full-page redirect, not client-side navigate: ProtectedRoute is reused across
+      // routes and caches its needs-agreement verdict, so a soft navigate bounces the
+      // teacher straight back here until they hard-refresh.
+      window.location.assign('/teacher/hub');
     } catch (e) {
       console.error('Error accepting agreement:', e);
       toast.error('Could not save your acceptance. Please try again.');
