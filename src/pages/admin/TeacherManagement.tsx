@@ -32,6 +32,10 @@ interface TeacherApplication {
   returning_students: number;
   retention_rate: number | null;
   is_accepting_bookings: boolean;
+  agreement_accepted_at: string | null;
+  agreement_signed_name: string | null;
+  required_read: number;
+  required_total: number;
 }
 
 // The three bookable Talbiyah subjects (DB name -> clean label shown to admin).
@@ -65,7 +69,7 @@ export default function TeacherManagement() {
       // Fetch teacher profiles
       const { data: teacherProfilesData, error: teacherError } = await supabase
         .from('teacher_profiles')
-        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_teaching_interests, video_intro_url, teacher_type, independent_rate, payment_collection, current_tier, hours_taught, total_lessons, completed_lessons, average_rating, total_unique_students, returning_students, retention_rate, is_accepting_bookings')
+        .select('id, user_id, bio, hourly_rate, status, created_at, education_level, islamic_teaching_interests, video_intro_url, teacher_type, independent_rate, payment_collection, current_tier, hours_taught, total_lessons, completed_lessons, average_rating, total_unique_students, returning_students, retention_rate, is_accepting_bookings, agreement_accepted_at, agreement_signed_name')
         .order('created_at', { ascending: false });
 
       if (teacherError) {
@@ -78,6 +82,24 @@ export default function TeacherManagement() {
         setApprovedTeachers([]);
         setLoading(false);
         return;
+      }
+
+      // Compliance: required onboarding resources + which each teacher has read
+      const { data: requiredResources } = await supabase
+        .from('onboarding_resources')
+        .select('id')
+        .eq('is_required', true)
+        .eq('is_active', true);
+      const requiredIds = (requiredResources || []).map(r => r.id);
+      const readCounts = new Map<string, number>();
+      if (requiredIds.length > 0) {
+        const { data: progressRows } = await supabase
+          .from('teacher_onboarding_progress')
+          .select('teacher_id, resource_id')
+          .in('resource_id', requiredIds);
+        (progressRows || []).forEach(row => {
+          readCounts.set(row.teacher_id, (readCounts.get(row.teacher_id) || 0) + 1);
+        });
       }
 
       // Fetch corresponding profiles
@@ -126,6 +148,10 @@ export default function TeacherManagement() {
           returning_students: teacher.returning_students || 0,
           retention_rate: teacher.retention_rate,
           is_accepting_bookings: teacher.is_accepting_bookings ?? false,
+          agreement_accepted_at: teacher.agreement_accepted_at || null,
+          agreement_signed_name: teacher.agreement_signed_name || null,
+          required_read: readCounts.get(teacher.id) || 0,
+          required_total: requiredIds.length,
         };
       }) || [];
 
@@ -312,6 +338,32 @@ export default function TeacherManagement() {
                   ) : teacher.status === 'approved' ? (
                     <span className="text-xs px-2 py-0.5 bg-gray-500/10 border border-gray-500/20 text-gray-500 dark:text-gray-400 rounded-full">Not Accepting</span>
                   ) : null}
+                  {teacher.status === 'approved' && (
+                    teacher.agreement_accepted_at ? (
+                      <span
+                        className="text-xs px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full"
+                        title={`Signed "${teacher.agreement_signed_name || ''}" on ${new Date(teacher.agreement_accepted_at).toLocaleDateString()}`}
+                      >
+                        Agreement ✓
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full">
+                        Agreement pending
+                      </span>
+                    )
+                  )}
+                  {teacher.status === 'approved' && teacher.required_total > 0 && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full border ${
+                        teacher.required_read >= teacher.required_total
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                      }`}
+                      title="Required reading (incl. the Talbiyah method guide) marked as read"
+                    >
+                      Reading {teacher.required_read}/{teacher.required_total}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-1.5">{teacher.email}</p>
                 <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm">
