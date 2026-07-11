@@ -44,9 +44,12 @@ import DetailedTeacherRating from '../components/DetailedTeacherRating';
 import LessonMessaging from '../components/messaging/LessonMessaging';
 import { PostLessonForm } from '../components/progress';
 import StudentLessonIntroModal from '../components/student/StudentLessonIntroModal';
+import QuranJourneyIntroModal from '../components/student/QuranJourneyIntroModal';
 
 // localStorage flag so the student "how lessons work" walkthrough only auto-shows once.
 const STUDENT_INTRO_KEY = 'talbiyah_student_lesson_intro_seen';
+// Same, for the Qur'an-method welcome (how we teach, ask your teacher, study notes).
+const QURAN_INTRO_KEY = 'talbiyah_quran_journey_intro_seen';
 
 interface LessonData {
   id: string;
@@ -372,6 +375,7 @@ function LessonContent() {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
   const [showStudentIntro, setShowStudentIntro] = useState(false);
+  const [showQuranIntro, setShowQuranIntro] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showQuickFeedback, setShowQuickFeedback] = useState(false);
@@ -575,6 +579,17 @@ function LessonContent() {
       // First-time students see a short "how lessons work" walkthrough.
       if (!isTeacher && localStorage.getItem(STUDENT_INTRO_KEY) !== 'true') {
         setShowStudentIntro(true);
+      }
+
+      // First Qur'an lesson: explain the Talbiyah method (quality over speed,
+      // ask your teacher how you'll be taught, daily study notes). Shows after
+      // the general walkthrough closes.
+      if (
+        !isTeacher &&
+        lessonData.subjects.name.toLowerCase().includes('quran') &&
+        localStorage.getItem(QURAN_INTRO_KEY) !== 'true'
+      ) {
+        setShowQuranIntro(true);
       }
 
       // Get the appropriate room code based on user role
@@ -1123,6 +1138,15 @@ function LessonContent() {
         onClose={() => {
           localStorage.setItem(STUDENT_INTRO_KEY, 'true');
           setShowStudentIntro(false);
+        }}
+      />
+
+      {/* First Qur'an lesson: the Talbiyah method welcome (after the walkthrough) */}
+      <QuranJourneyIntroModal
+        open={showQuranIntro && !showStudentIntro}
+        onClose={() => {
+          localStorage.setItem(QURAN_INTRO_KEY, 'true');
+          setShowQuranIntro(false);
         }}
       />
 
