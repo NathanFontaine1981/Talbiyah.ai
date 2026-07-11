@@ -283,11 +283,11 @@ export default function UserManagement() {
     try {
       await startImpersonation(user.id);
       refreshImpersonation();
-      toast.success(`Now acting as ${user.full_name || 'student'}`);
+      toast.success(`Now acting as ${user.full_name || 'this user'}`);
       navigate('/dashboard');
     } catch (err) {
       console.error('Failed to start impersonation:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to act as student');
+      toast.error(err instanceof Error ? err.message : 'Could not start acting as this user');
     } finally {
       setActingAsUserId(null);
     }
@@ -1264,7 +1264,7 @@ function UserRow({ user, isSelected, onToggleSelect, onRoleChange, onView, onAct
                       className="w-full px-4 py-2 text-left text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 disabled:opacity-60"
                     >
                       <UserCog className="w-4 h-4" />
-                      <span>{actingAsBusy ? 'Starting…' : 'Act as Student'}</span>
+                      <span>{actingAsBusy ? 'Starting…' : 'Act as User'}</span>
                     </button>
                     <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                   </>
