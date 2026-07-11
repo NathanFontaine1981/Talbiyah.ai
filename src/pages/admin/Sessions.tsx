@@ -296,6 +296,47 @@ export default function Sessions() {
         </button>
       </div>
 
+      {/* Live now — one-tap join for sessions in progress (built for phones: no
+          scrolling/filtering needed to reach the room during a live lesson) */}
+      {(() => {
+        const now = Date.now();
+        const liveNow = sessions.filter((s) => {
+          if (['cancelled', 'completed'].includes(s.status)) return false;
+          const start = new Date(s.scheduled_time).getTime();
+          if (Number.isNaN(start)) return false;
+          const end = start + (s.duration_minutes || 60) * 60_000;
+          return now >= start - 10 * 60_000 && now <= end + 10 * 60_000;
+        });
+        if (liveNow.length === 0) return null;
+        return (
+          <div className="mb-6 space-y-3">
+            {liveNow.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="relative flex h-3 w-3 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    Live now: {s.subject} — {s.teacher_name} with {s.student_name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate(`/admin/lesson/${s.id}/join`)}
+                  className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-semibold flex items-center justify-center space-x-2"
+                >
+                  <Video className="w-5 h-5" />
+                  <span>Join Room</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
