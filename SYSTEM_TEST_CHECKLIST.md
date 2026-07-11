@@ -44,11 +44,20 @@ Ordered by risk. Items 1–2 touch money and were running **February code until 
 5. `PaymentSuccess.tsx` looked up the teacher name with the wrong ID → no name on the success page.
 6. `stripe-webhook` wrote pending_bookings statuses `completed`/`failed`, both outside the check constraint → paid bookings stuck at `pending`.
 
-### 2. ⬜ Payouts
-- [ ] Teacher → Payment Settings: TapTap Send / Revolut / international options appear and **save** (revolut_detail persists).
-- [ ] Admin → Teacher Payouts: page loads, recipient details visible, can process a manual payout; `requested` status displays.
-- [ ] **Monthly run fires Aug 1, 06:00 UTC — it will REALLY pay Stripe Connect teachers and email you a summary.** Either watch it live on Aug 1, or dry-run before then by invoking `monthly-teacher-payouts` with the service key *knowing it executes real transfers*. Recommend: review teacher payment settings + owed amounts before Aug 1.
-- [ ] Wise (optional, Step 3 of DEPLOY_CHECKLIST): secrets not set; TapTap manual is primary. Skip unless enabling Wise.
+### 2. ✅ Payouts — TESTED LIVE Jul 11 (found & fixed 4 pipeline-killing bugs)
+- [x] Teacher → Payment Settings: saved TapTap/Revolut/bank details for Nathan Fontaine, persisted correctly.
+- [x] Full pipeline dry-run with a real £3 test payout: lesson completed → trigger created earning → cleared → monthly run queued it (`requested`, taptap_send) → admin summary email arrived → admin Approve → payout `completed`, earning `paid` + linked.
+- [x] Monthly run invoked manually and verified — Aug 1 cron will run the same code.
+- [ ] Wise (optional): secrets not set; TapTap manual is primary. Skip unless enabling Wise.
+
+**Bugs found by this test — all fixed Jul 11 (see `supabase/migrations/20260711000000_payout_pipeline_fixes.sql`):**
+1. Earnings trigger was **disabled** — no teacher earnings recorded for any completed lesson (54 lessons had none).
+2. Even enabled it crashed: `ON CONFLICT (lesson_id)` had no matching unique constraint — this crash is why it was disabled. Constraint added.
+3. The shelved referral-commission trigger beneath it had a broken `search_path` — every earnings insert exploded. Pinned.
+4. Nothing ever ran `clear_held_earnings` — now a daily 03:00 UTC pg_cron job (Osama's Nov earnings had been stuck 7 months).
+
+**Decisions & data fixes:** historical backfill skipped (teachers settled off-platform); Osama flagged `is_legacy_teacher` (imam-paid), his £8 held earnings cancelled, and the trigger now exempts legacy-billed teachers. **Data quality:** Mariam's TapTap phone lacks +20 country code — ask her to re-save.
+**Watch-out:** admin Approve silently no-ops if done from a non-admin session (RLS 0-row update) — always approve from the admin account.
 
 ### 3. ⬜ Teacher agreement gate
 - [ ] Log in as an approved teacher → redirected to agreement → tick all sections + type name + confirm → lands on hub.
