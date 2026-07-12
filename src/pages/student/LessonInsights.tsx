@@ -2872,14 +2872,26 @@ export default function LessonInsights() {
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
               <p className="text-red-800 text-sm text-left">
-                <span className="font-semibold">Still not ready after 30 minutes?</span> Please contact{' '}
-                <a href="mailto:contact@talbiyah.ai?subject=Study%20notes%20not%20generated" className="underline font-semibold hover:text-red-900">
-                  contact@talbiyah.ai
-                </a>{' '}
-                straight away so we can salvage your lesson recording before it expires.
+                <span className="font-semibold">Still not ready after 30 minutes?</span> Tap the
+                button below and we'll be alerted straight away — recovery starts automatically.
               </p>
             </div>
           </div>
+          {issueReported ? (
+            <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-center">
+              <p className="text-emerald-700 text-sm font-medium">Thanks — we've been notified and started recovering your study notes.</p>
+            </div>
+          ) : (
+            <button
+              onClick={reportInsightIssue}
+              disabled={reportingIssue}
+              className="w-full px-6 py-3 mb-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {reportingIssue
+                ? (<><Loader className="w-4 h-4 animate-spin" /> Sending…</>)
+                : "My study notes haven't arrived — notify us"}
+            </button>
+          )}
           <div className="flex gap-3">
             <button
               onClick={() => navigate(-1)}
