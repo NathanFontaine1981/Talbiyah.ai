@@ -58,6 +58,7 @@ export interface FirstWordData {
   translation: string;
   fullVerseUthmani: string;
   fullVerseTranslation?: string;
+  fullTransliteration?: string;
 }
 
 /**
@@ -185,6 +186,13 @@ export async function getFirstWordsForAyahs(
       .map(w => w.text_uthmani)
       .join(' ');
 
+    // Full-verse transliteration for learners who can't read Arabic script yet
+    const fullTransliteration = verse.words
+      .filter(w => w.char_type_name === 'word')
+      .map(w => w.transliteration?.text || '')
+      .filter(Boolean)
+      .join(' ');
+
     // Get translation if available
     const translation = verse.translations?.[0]?.text || '';
 
@@ -197,6 +205,7 @@ export async function getFirstWordsForAyahs(
       translation: firstWord?.translation?.text || '',
       fullVerseUthmani: fullVerseFromWords || verse.text_uthmani || '',
       fullVerseTranslation: translation,
+      fullTransliteration,
     };
   });
 }
