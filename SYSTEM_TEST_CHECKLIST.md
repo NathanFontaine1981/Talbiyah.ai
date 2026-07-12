@@ -87,7 +87,7 @@ Ordered by risk. Items 1–2 touch money and were running **February code until 
 - [x] Jul 12 lesson: 67-min audio unrecoverable (upload rejected, 100ms presigned refused) → placeholder insight only. One casualty.
 - [x] Sweep gap found: it only scans `completed` lessons — a lesson never "ended" via the UI is invisible to it.
 - [ ] After billing fix: confirm next lesson's recording lands in the bucket + real insights + study-notes email.
-- [ ] Student "notify us" button on missing insights → admin email + `insight_issue_reports` row. (Today's lesson is a natural candidate to test it.)
+- [x] Student "notify us" → `insight_issue_reports` row + recovery trigger + admin email verified Jul 12 (email shows real teacher name — was "Teacher" before the embed fix). Two bugs found: the "being generated" screen had no notify button (added), and the alert email hit the platform-wide teacher-name embed bug (fixed in 12 functions).
 - Minor: stripe-webhook creates rooms without `region: 'eu'` (today's was `in`); credits path sets it correctly — align next pass.
 
 ---
