@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
           tier,
           teacher_type,
           independent_rate,
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey!inner(full_name)
         )
       `)
       .eq('status', 'completed')
@@ -195,7 +195,7 @@ Deno.serve(async (req: Request) => {
         amount_earned,
         status,
         teacher_profiles!inner(
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey!inner(full_name)
         )
       `);
 

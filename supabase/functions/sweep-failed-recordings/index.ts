@@ -100,7 +100,7 @@ async function recoverSingleLesson(
 
     const { data: subject } = await supabase.from("subjects").select("name").eq("id", lesson.subject_id).single();
     const { data: learner } = await supabase.from("learners").select("name").eq("id", lesson.learner_id).single();
-    const { data: teacher } = await supabase.from("teacher_profiles").select("profiles(full_name)").eq("id", lesson.teacher_id).single();
+    const { data: teacher } = await supabase.from("teacher_profiles").select("profiles!teacher_profiles_user_id_fkey(full_name)").eq("id", lesson.teacher_id).single();
 
     const metadata = {
       teacher_name: (teacher?.profiles as any)?.full_name || "Teacher",

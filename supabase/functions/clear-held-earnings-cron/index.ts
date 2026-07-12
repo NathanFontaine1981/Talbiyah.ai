@@ -42,7 +42,7 @@ serve(async (req) => {
           amount_earned,
           teacher_profiles!inner(
             user_id,
-            profiles!inner(email, full_name)
+            profiles!teacher_profiles_user_id_fkey!inner(email, full_name)
           )
         `)
         .eq('status', 'cleared')

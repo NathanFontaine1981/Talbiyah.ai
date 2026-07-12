@@ -26,7 +26,7 @@ serve(async (req) => {
           id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes,
           subjects(name),
           learners(name),
-          teacher_profiles!lessons_teacher_id_fkey(profiles(full_name))
+          teacher_profiles!lessons_teacher_id_fkey(profiles!teacher_profiles_user_id_fkey(full_name))
         `)
         .eq('id', lesson_id)
         .single();
@@ -117,7 +117,7 @@ serve(async (req) => {
           id, scheduled_time, status, duration_minutes, "100ms_room_id",
           subjects(name),
           learners(name),
-          teacher_profiles!lessons_teacher_id_fkey(profiles(full_name))
+          teacher_profiles!lessons_teacher_id_fkey(profiles!teacher_profiles_user_id_fkey(full_name))
         `)
         .order('scheduled_time', { ascending: false })
         .limit(50);
@@ -161,7 +161,7 @@ serve(async (req) => {
         id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes, status,
         subjects(name),
         learners(name),
-        teacher_profiles!lessons_teacher_id_fkey(profiles(full_name))
+        teacher_profiles!lessons_teacher_id_fkey(profiles!teacher_profiles_user_id_fkey(full_name))
       `)
       .in('status', ['completed', 'confirmed', 'scheduled']);
 

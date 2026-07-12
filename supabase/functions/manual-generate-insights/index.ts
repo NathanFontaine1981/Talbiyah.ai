@@ -32,7 +32,7 @@ serve(async (req) => {
         id, subject_id, teacher_id, learner_id, scheduled_time, duration_minutes,
         subjects(name),
         learners(name),
-        teacher_profiles!lessons_teacher_id_fkey(profiles(full_name))
+        teacher_profiles!lessons_teacher_id_fkey(profiles!teacher_profiles_user_id_fkey(full_name))
       `)
       .eq('id', lesson_id)
       .single();
