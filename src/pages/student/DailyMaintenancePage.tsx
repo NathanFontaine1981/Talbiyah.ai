@@ -461,6 +461,17 @@ export default function DailyMaintenancePage() {
   });
   const [todaySession, setTodaySession] = useState<DailySession | null>(null);
   const [memorizedSurahs, setMemorizedSurahs] = useState<number[]>([]);
+  // Transliteration for learners who can't read Arabic script yet (per-learner,
+  // synced via learners.show_transliteration; default ON).
+  const [showTranslit, setShowTranslit] = useState(true);
+
+  async function toggleTranslit() {
+    const next = !showTranslit;
+    setShowTranslit(next);
+    if (learnerId) {
+      await supabase.from('learners').update({ show_transliteration: next }).eq('id', learnerId);
+    }
+  }
   const [passageList, setPassageList] = useState<PassageUnit[]>([]);
 
   // Expanded practice sections per passage (keyed by passage index)
@@ -505,7 +516,7 @@ export default function DailyMaintenancePage() {
       // Load learner stats + rotation index
       const { data: learner } = await supabase
         .from('learners')
-        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date, daily_review_rotation_index, salah_surah_rotation_index')
+        .select('current_streak, longest_streak, total_maintenance_sessions, last_maintenance_date, daily_review_rotation_index, salah_surah_rotation_index, show_transliteration')
         .eq('id', targetLearnerId)
         .maybeSingle();
 
@@ -516,6 +527,7 @@ export default function DailyMaintenancePage() {
           totalSessions: learner.total_maintenance_sessions || 0,
           lastMaintenanceDate: learner.last_maintenance_date
         });
+        setShowTranslit(learner.show_transliteration !== false);
       }
 
       const rotationIndex = learner?.daily_review_rotation_index || 0;
@@ -1044,10 +1056,21 @@ export default function DailyMaintenancePage() {
             <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
               <span className="text-3xl">📖</span>
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-white">Daily Quran Review</h1>
               <p className="text-white/80 text-sm">Keep your memorisation strong with daily practice</p>
             </div>
+            <button
+              onClick={toggleTranslit}
+              title="Show Latin transliteration alongside Arabic — for learners still mastering the script"
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                showTranslit
+                  ? 'bg-white text-emerald-700 border-white'
+                  : 'bg-white/10 text-white/80 border-white/30 hover:bg-white/20'
+              }`}
+            >
+              Aa Transliteration {showTranslit ? 'ON' : 'OFF'}
+            </button>
           </div>
           <div className="mt-4 flex items-center gap-2">
             <span className="text-4xl font-arabic text-white/90">حَافِظُوا عَلَى الْقُرْآن</span>
@@ -1498,12 +1521,17 @@ export default function DailyMaintenancePage() {
                                       <div className="py-2">
                                         <p className="text-sm text-purple-600 dark:text-purple-400 mb-3">First word of Ayah {gameAyahFirstWords[gameAyahIndex]?.ayahNumber}:</p>
                                         <p className="text-4xl font-arabic text-purple-900 dark:text-purple-100 mb-2" dir="rtl" style={{ lineHeight: '1.8' }}>{gameAyahFirstWords[gameAyahIndex]?.firstWord}</p>
-                                        <p className="text-sm text-purple-700 italic">{gameAyahFirstWords[gameAyahIndex]?.transliteration}</p>
+                                        {showTranslit && (
+                                          <p className="text-sm text-purple-700 italic">{gameAyahFirstWords[gameAyahIndex]?.transliteration}</p>
+                                        )}
                                       </div>
                                     ) : (
                                       <div>
                                         <p className="text-sm text-emerald-600 mb-3">Full ayah:</p>
                                         <p className="text-2xl font-arabic text-gray-900 dark:text-white mb-3" dir="rtl" style={{ lineHeight: '2' }}>{gameAyahFirstWords[gameAyahIndex]?.fullVerseUthmani}</p>
+                                        {showTranslit && gameAyahFirstWords[gameAyahIndex]?.fullTransliteration && (
+                                          <p className="text-sm text-gray-500 dark:text-gray-400 italic mb-2">{gameAyahFirstWords[gameAyahIndex].fullTransliteration}</p>
+                                        )}
                                         {gameAyahFirstWords[gameAyahIndex]?.fullVerseTranslation && (
                                           <p className="text-sm text-amber-700 dark:text-amber-200">"{gameAyahFirstWords[gameAyahIndex].fullVerseTranslation}"</p>
                                         )}
@@ -1787,7 +1815,7 @@ export default function DailyMaintenancePage() {
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
                     {memorizedSurahs
                       .filter(num => SURAH_FIRST_WORDS[num])
-                      .sort((a, b) => b - a) // Show from An-Nas to Al-Fatihah
+                      .sort((a, b) => a - b) // Mushaf (chapter) order — easy to find
                       .map(surahNum => (
                         <button
                           key={surahNum}
@@ -1861,9 +1889,11 @@ export default function DailyMaintenancePage() {
                         <p className="text-4xl md:text-5xl font-arabic text-purple-900 dark:text-purple-100 mb-3" dir="rtl" style={{ lineHeight: '1.8' }}>
                           {ayahFirstWords[currentAyahIndex].firstWord}
                         </p>
-                        <p className="text-sm text-purple-700 dark:text-purple-300 italic">
-                          {ayahFirstWords[currentAyahIndex].transliteration}
-                        </p>
+                        {showTranslit && (
+                          <p className="text-sm text-purple-700 dark:text-purple-300 italic">
+                            {ayahFirstWords[currentAyahIndex].transliteration}
+                          </p>
+                        )}
                       </div>
                     ) : revealedAnswer && ayahFirstWords[currentAyahIndex] ? (
                       /* Show full verse */
@@ -1872,6 +1902,11 @@ export default function DailyMaintenancePage() {
                         <p className="text-2xl md:text-3xl font-arabic text-gray-900 dark:text-white mb-4" dir="rtl" style={{ lineHeight: '2' }}>
                           {ayahFirstWords[currentAyahIndex].fullVerseUthmani}
                         </p>
+                        {showTranslit && ayahFirstWords[currentAyahIndex].fullTransliteration && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic mb-3">
+                            {ayahFirstWords[currentAyahIndex].fullTransliteration}
+                          </p>
+                        )}
                         <p className="text-base text-amber-700 dark:text-amber-200">
                           "{ayahFirstWords[currentAyahIndex].fullVerseTranslation}"
                         </p>
@@ -2007,9 +2042,11 @@ export default function DailyMaintenancePage() {
                         <p className="text-2xl md:text-3xl font-arabic text-gray-900 dark:text-white mb-4" dir="rtl" style={{ lineHeight: '2' }}>
                           {SURAH_FIRST_WORDS[selectedPromptSurah].arabic}
                         </p>
-                        <p className="text-lg text-purple-700 dark:text-purple-300 italic mb-2">
-                          {SURAH_FIRST_WORDS[selectedPromptSurah].transliteration}
-                        </p>
+                        {showTranslit && (
+                          <p className="text-lg text-purple-700 dark:text-purple-300 italic mb-2">
+                            {SURAH_FIRST_WORDS[selectedPromptSurah].transliteration}
+                          </p>
+                        )}
                         <p className="text-base text-amber-700 dark:text-amber-200">
                           "{SURAH_FIRST_WORDS[selectedPromptSurah].translation}"
                         </p>
