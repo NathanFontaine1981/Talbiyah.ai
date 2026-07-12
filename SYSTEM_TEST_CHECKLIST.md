@@ -65,9 +65,11 @@ Ordered by risk. Items 1–2 touch money and were running **February code until 
 - [ ] Passive check: next teacher login should NOT re-prompt (report if it ever does).
 - Note: 5 teachers still unsigned (Aasiya, Ahmad, Hajar, Karim, Shumaila) — they'll be prompted on next login; admin can track via the new compliance badges.
 
-### 4. 🟡 Admin tools — impersonation ✅ Jul 11; Join Room scheduled Sunday Jul 12
-- [x] Impersonation: works for teachers too (label said "Act as Student" — misleading, now "Act as User"); all sessions logged to `admin_impersonation_log` with admin/target/start/end (verified Jul 11). Note: closing the tab instead of exiting leaves `ended_at` null.
-- [ ] Admin → Sessions → "Join Room" during Sunday's live lesson: visible host, can see/hear/talk.
+### 4. ✅ Admin tools — impersonation Jul 11; Join Room Jul 12 (found & fixed 2 more bugs)
+- [x] Impersonation: works for teachers too (label said "Act as Student" — misleading, now "Act as User"); all sessions logged to `admin_impersonation_log` with admin/target/start/end. Note: closing the tab instead of exiting leaves `ended_at` null.
+- [x] Admin Join Room (from phone, Jul 12): admin entered the lesson room as visible host. Two stacked bugs found on the way:
+  1. Expired phone session → bare gateway 401 shown as "non-2xx" (monitor now refreshes the session and says re-login plainly).
+  2. **Join Room had NEVER worked**: the June payout work added a second teacher_profiles→profiles FK (`rate_override_by`), making the function's embed ambiguous (PGRST201) — every join 404'd as "Lesson not found". Embed pinned to `user_id` FK.
 - [ ] Admin books a session FOR a student (carried over from Test 1): one lesson, no duplicate emails.
 
 ### 5. 🟡 Onboarding & student experience — mostly verified Jul 11
