@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Video,
   Smartphone,
   Laptop,
   Copy,
