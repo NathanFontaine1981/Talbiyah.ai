@@ -631,6 +631,9 @@ export default function DailyMaintenancePage() {
         for (let i = 0; i < numToReview; i++) {
           passagesToUse.push(passages[(rotationIndex + i) % passages.length]);
         }
+        // Display in mushaf (chapter) order so surahs are easy to find, even when
+        // the rotation wraps around the end of the memorised list.
+        passagesToUse.sort((a, b) => a.surah - b.surah || (a.startAyah || 0) - (b.startAyah || 0));
 
         const initialSurahs: SurahReview[] = passagesToUse.map(p => ({
           surah: p.surah,

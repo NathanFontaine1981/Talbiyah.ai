@@ -105,11 +105,12 @@ export default function DailyCompanionCard() {
   }
 
   // ---- ACTIVE STATE: today's plan ----
-  // Review rotation: next 3 memorised surahs from the rotation index.
+  // Review rotation: next 3 memorised surahs from the rotation index,
+  // displayed in mushaf (chapter) order so they're easy to find.
   const reviewToday = Array.from(
     { length: Math.min(3, memorized.length) },
     (_, i) => memorized[(reviewIdx + i) % memorized.length]
-  );
+  ).sort((a, b) => a - b);
   // Salah plan: memorised surahs practical for prayer (≤40 āyāt, not Al-Fātiḥah), rotated.
   const salahPool = memorized.filter((s) => s !== 1 && ayahCount(s) <= 40);
   const salahPlan = salahPool.length > 0
