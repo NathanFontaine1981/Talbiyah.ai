@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import {
   Sparkles, ClipboardCheck, CalendarPlus, FileText, Moon, Landmark,
-  HeartHandshake, Flame, CheckCircle2, ChevronRight, ChevronDown, ChevronUp,
+  HeartHandshake, Flame, CheckCircle2, ChevronRight, ChevronDown, ChevronUp, BookOpen,
 } from 'lucide-react';
 
 // "Your Journey" — a self-ticking feature-discovery checklist for new students
@@ -13,7 +13,7 @@ import {
 // once complete, and can be collapsed early.
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  Sparkles, ClipboardCheck, CalendarPlus, FileText, Moon, Landmark, HeartHandshake, Flame,
+  Sparkles, ClipboardCheck, CalendarPlus, FileText, Moon, Landmark, HeartHandshake, Flame, BookOpen,
 };
 
 interface JourneyItem {
@@ -63,6 +63,11 @@ export default function StudentJourneyCard({ isParent = false }: { isParent?: bo
           const pendingKeys = new Set(pending.map((p) => p.item_key));
 
           if (learnerIds.length > 0) {
+            if (pendingKeys.has('quran_tracker')) {
+              const { count } = await supabase.from('surah_retention_tracker')
+                .select('id', { count: 'exact', head: true }).in('learner_id', learnerIds);
+              if ((count || 0) > 0) detected.push('quran_tracker');
+            }
             if (pendingKeys.has('diagnostic')) {
               const { count } = await supabase.from('diagnostic_assessments')
                 .select('id', { count: 'exact', head: true }).in('learner_id', learnerIds);
