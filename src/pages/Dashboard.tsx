@@ -35,6 +35,7 @@ import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import StudentJourneyCard from '../components/student/StudentJourneyCard';
 import DailyCompanionCard from '../components/student/DailyCompanionCard';
+import QuranTrackerCard from '../components/student/QuranTrackerCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
 import PrayerTimeline from '../components/salah/PrayerTimeline';
 import DashboardHeader from '../components/DashboardHeader';
@@ -996,6 +997,9 @@ export default function Dashboard() {
               <>
                 {/* The Daily Companion — the centrepiece: today's Qur'an plan */}
                 <DailyCompanionCard />
+
+                {/* Qur'an tracker rings — understood / fluent / memorised */}
+                <QuranTrackerCard />
 
                 {/* Your Journey — feature discovery for new students */}
                 <StudentJourneyCard />
