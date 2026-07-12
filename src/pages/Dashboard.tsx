@@ -33,6 +33,7 @@ import RecommendedActionsCard from '../components/RecommendedActionsCard';
 import DailyPracticeWidget from '../components/DailyPracticeWidget';
 import AnnouncementsCard from '../components/AnnouncementsCard';
 import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
+import StudentJourneyCard from '../components/student/StudentJourneyCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
 import PrayerTimeline from '../components/salah/PrayerTimeline';
 import DashboardHeader from '../components/DashboardHeader';
@@ -992,6 +993,9 @@ export default function Dashboard() {
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (
               <>
+                {/* Your Journey — feature discovery for new students */}
+                <StudentJourneyCard />
+
                 {/* Ramadan Planner Banner — front & centre during Ramadan */}
                 {(() => {
                   const rYear = getRamadanYear();
@@ -1075,6 +1079,9 @@ export default function Dashboard() {
             {/* ===== PARENT VIEW ===== */}
             {selectedViewRole === 'Parent' && (
               <>
+                {/* Your Journey — feature discovery, parent wording */}
+                <StudentJourneyCard isParent />
+
                 {!hasChildren ? (
                   <div className="mb-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 border-2 border-purple-400 shadow-xl">
                     <div className="flex items-start space-x-4">
