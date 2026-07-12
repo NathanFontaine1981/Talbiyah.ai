@@ -2192,7 +2192,7 @@ Generate the insights following the exact format specified in the system prompt.
         // Fetch teacher name
         const { data: teacherData } = await supabase
           .from('teacher_profiles')
-          .select('profiles(full_name)')
+          .select('profiles!teacher_profiles_user_id_fkey(full_name)')
           .eq('id', lessonData.teacher_id)
           .single();
 

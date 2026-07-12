@@ -712,8 +712,8 @@ Deno.serve(async (req: Request) => {
 
     const { data: teacher } = await supabase
       .from("teacher_profiles")
-      .select("profiles(full_name)")
-      .eq("user_id", lesson.teacher_id)
+      .select("profiles!teacher_profiles_user_id_fkey(full_name)")
+      .eq("id", lesson.teacher_id)
       .single();
 
     const teacherName = (teacher?.profiles as any)?.full_name || "Teacher";

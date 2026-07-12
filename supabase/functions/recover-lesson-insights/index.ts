@@ -58,7 +58,7 @@ async function recoverLesson(lesson_id: string): Promise<void> {
 
   const { data: subject } = await supabase.from("subjects").select("name").eq("id", lesson.subject_id).single();
   const { data: learner } = await supabase.from("learners").select("name").eq("id", lesson.learner_id).single();
-  const { data: teacher } = await supabase.from("teacher_profiles").select("user_id, profiles(full_name)").eq("id", lesson.teacher_id).single();
+  const { data: teacher } = await supabase.from("teacher_profiles").select("user_id, profiles!teacher_profiles_user_id_fkey(full_name)").eq("id", lesson.teacher_id).single();
 
   console.log("[recover] Lesson:", lesson.id, subject?.name);
 

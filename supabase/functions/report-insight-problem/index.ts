@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
         const [{ data: subj }, { data: learner }, { data: teacher }] = await Promise.all([
           admin.from("subjects").select("name").eq("id", lesson.subject_id).maybeSingle(),
           admin.from("learners").select("name").eq("id", lesson.learner_id ?? learner_id).maybeSingle(),
-          admin.from("teacher_profiles").select("profiles(full_name)").eq("id", lesson.teacher_id).maybeSingle(),
+          admin.from("teacher_profiles").select("profiles!teacher_profiles_user_id_fkey(full_name)").eq("id", lesson.teacher_id).maybeSingle(),
         ]);
         subjectName = subj?.name || subjectName;
         studentName = (learner as any)?.name || studentName;

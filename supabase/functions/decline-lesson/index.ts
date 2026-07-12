@@ -51,7 +51,7 @@ Deno.serve(async (req: Request) => {
           profiles!inner(full_name, email)
         ),
         teacher_profiles!inner(
-          profiles!inner(full_name)
+          profiles!teacher_profiles_user_id_fkey!inner(full_name)
         ),
         subjects(name)
       `)
