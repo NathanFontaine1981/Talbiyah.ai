@@ -23,6 +23,14 @@ export default function AdminLessonMonitor() {
 
     async function join() {
       try {
+        // Refresh the session first: on phones the tab often wakes with an expired
+        // access token, and invoking with it gets a bare gateway 401 ("non-2xx")
+        // that never reaches the function. getSession() triggers the refresh.
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Your admin session has expired — please sign in again, then retry Join Room.');
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
