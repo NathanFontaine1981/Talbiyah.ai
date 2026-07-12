@@ -871,6 +871,16 @@ function LessonContent() {
   if (!isVideoReady) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-gray-900 flex items-center justify-center z-50 p-6">
+        {/* Qur'an-method welcome on the calm pre-join screen — shown here (not over
+            the live room) so the video pipeline isn't competing for the main thread
+            and the student reads it before class starts. */}
+        <QuranJourneyIntroModal
+          open={showQuranIntro}
+          onClose={() => {
+            localStorage.setItem(QURAN_INTRO_KEY, 'true');
+            setShowQuranIntro(false);
+          }}
+        />
         <div className="max-w-4xl w-full">
           {/* Header */}
           <div className="text-center text-white mb-8">
