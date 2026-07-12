@@ -51,9 +51,12 @@ Deno.serve(async (req) => {
     if (!lesson_id) return json({ error: "lesson_id is required" }, 400);
 
     // Load the room id (+ a friendly label). Service-role read, so RLS can't block it.
+    // NB: teacher_profiles has TWO FKs to profiles (user_id and rate_override_by) —
+    // the embed must name the user_id one or PostgREST rejects it as ambiguous
+    // (PGRST201) and every join attempt 404s as "Lesson not found".
     const { data: lesson, error: lessonError } = await supabase
       .from("lessons")
-      .select(`"100ms_room_id", subjects(name), teacher_profiles(profiles(full_name)), learners(name)`)
+      .select(`"100ms_room_id", subjects(name), teacher_profiles(profiles!teacher_profiles_user_id_fkey(full_name)), learners(name)`)
       .eq("id", lesson_id)
       .single();
 
