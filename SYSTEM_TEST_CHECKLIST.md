@@ -83,7 +83,7 @@ Ordered by risk. Items 1–2 touch money and were running **February code until 
 
 ### 7. 🔴 Recordings & insights — LIVE TEST Jul 12 EXPOSED THE BIG ONE
 - [x] Sweep runs every 30 min (verified); recovery function exercised live.
-- [x] **ROOT CAUSE OF ALL RECORDING FAILURES SINCE FEB 28: the Google Cloud project's billing account is CLOSED** (`UserProjectAccountProblem` on bucket writes). Every recording upload since then was rejected; insights survived only via 100ms-side transcription. **ACTION (owner): reactivate billing on the GCP project owning `talbiyah-lesson-recordings`, then confirm with a write test.**
+- [x] **ROOT CAUSE OF ALL RECORDING FAILURES SINCE FEB 28: the Google Cloud project's billing account was CLOSED** (`UserProjectAccountProblem` on bucket writes). Every recording upload since then was rejected; insights survived only via 100ms-side transcription. **RESOLVED Jul 12:** project relinked to the active "talbiyah" billing account (the old account's Reopen was greyed out — relinking was the fix); bucket write test now succeeds.
 - [x] Jul 12 lesson: 67-min audio unrecoverable (upload rejected, 100ms presigned refused) → placeholder insight only. One casualty.
 - [x] Sweep gap found: it only scans `completed` lessons — a lesson never "ended" via the UI is invisible to it.
 - [ ] After billing fix: confirm next lesson's recording lands in the bucket + real insights + study-notes email.
