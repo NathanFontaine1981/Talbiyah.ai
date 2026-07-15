@@ -21,6 +21,7 @@ import {
   Radio,
   Video,
   Sparkles,
+  Download,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -659,7 +660,19 @@ export default function CoursePage() {
                         </p>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
+                      {hasInsights && (isEnrolled || isTeacher) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/course/${slug}/session/${session.session_number}?autoprint=1`, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="p-2 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
+                          title="Download study notes as PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
                       {canJoin ? (
                         <button
                           onClick={(e) => {
