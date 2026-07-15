@@ -31,6 +31,7 @@ import {
   Square,
   ImageIcon,
   Printer,
+  Download,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../lib/supabaseClient';
@@ -1194,6 +1195,21 @@ export default function CourseTeacherDashboard() {
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       View Notes
+                    </Link>
+                  )}
+
+                  {/* Download study notes as PDF — opens the notes page and
+                      auto-triggers the browser print dialog there */}
+                  {insight && course?.slug && (
+                    <Link
+                      to={`/course/${course.slug}/session/${session.session_number}?autoprint=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      title="Opens the notes in a new tab and prompts to save as PDF"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download PDF
                     </Link>
                   )}
                 </div>

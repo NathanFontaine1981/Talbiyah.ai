@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -648,6 +648,25 @@ export default function CourseSessionInsights() {
       toast.success('Study notes unlocked! You now have access to all session notes.');
     }
   }, [searchParams]);
+
+  // Auto-trigger the print dialog when arriving via a "Download PDF" link
+  // (?autoprint=1) from the course session list. Only fires once the notes
+  // have actually loaded and passed the same access check the page itself
+  // enforces — no separate/weaker gate for the download path.
+  const autoPrintTriggered = useRef(false);
+  useEffect(() => {
+    if (
+      !autoPrintTriggered.current &&
+      searchParams.get('autoprint') === '1' &&
+      !loading &&
+      insight &&
+      canViewNotes
+    ) {
+      autoPrintTriggered.current = true;
+      // Let the notes finish painting before opening the print dialog.
+      setTimeout(() => window.print(), 300);
+    }
+  }, [searchParams, loading, insight, canViewNotes]);
 
   async function fetchInsight() {
     setLoading(true);
