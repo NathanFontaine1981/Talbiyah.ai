@@ -594,8 +594,8 @@ export default function TeacherBooking() {
                         <div className="text-xs text-gray-500">{format(day, 'MMM')}</div>
                       </div>
 
-                      <div className="space-y-2">
-                        {daySlots.slice(0, 8).map((slot, idx) => {
+                      <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                        {daySlots.map((slot, idx) => {
                           const isInCart = cartItems.some(item =>
                             new Date(item.scheduled_time).getTime() === slot.time.getTime()
                           );
