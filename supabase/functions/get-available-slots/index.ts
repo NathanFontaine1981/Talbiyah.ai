@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, securityHeaders } from "../_shared/cors.ts"
 
 const responseHeaders = {
-  ...responseHeaders,
+  ...corsHeaders,
   ...securityHeaders,
 }
 
