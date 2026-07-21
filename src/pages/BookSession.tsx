@@ -745,7 +745,7 @@ export default function BookSession() {
                   ) : (
                     <div className="grid grid-cols-7 gap-1">
                       {weekDays.map((day) => {
-                        const daySlots = timeSlots.filter((slot) => isSameDay(slot.time, day)).slice(0, 10);
+                        const daySlots = timeSlots.filter((slot) => isSameDay(slot.time, day));
 
                         return (
                           <div key={day.toISOString()} className="text-center">
@@ -756,7 +756,7 @@ export default function BookSession() {
                               {format(day, 'd')}
                             </p>
 
-                            <div className="space-y-1">
+                            <div className="space-y-1 max-h-96 overflow-y-auto pr-0.5">
                               {daySlots.length === 0 ? (
                                 <p className="text-[10px] text-gray-400 py-2">No slots</p>
                               ) : (
