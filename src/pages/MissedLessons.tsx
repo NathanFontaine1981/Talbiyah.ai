@@ -269,12 +269,12 @@ export default function MissedLessons() {
 
         {/* Lessons List */}
         {lessons.length === 0 ? (
-          <div className="bg-gray-50 backdrop-blur-sm rounded-2xl p-12 text-center border border-gray-200">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Calendar className="w-10 h-10 text-gray-600" />
+          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-12 text-center border border-gray-700/50">
+            <div className="w-20 h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-10 h-10 text-gray-400" />
             </div>
-            <p className="text-xl text-gray-600 mb-2">No missed or cancelled lessons</p>
-            <p className="text-gray-500 mb-8">
+            <p className="text-xl text-gray-300 mb-2">No missed or cancelled lessons</p>
+            <p className="text-gray-400 mb-8">
               Keep attending your lessons to maintain a perfect record!
             </p>
             <button
@@ -292,11 +292,11 @@ export default function MissedLessons() {
               return (
                 <div
                   key={lesson.id}
-                  className="bg-gray-50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 hover:border-red-500/30 transition"
+                  className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 hover:border-red-500/30 transition"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
-                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                      <div className="w-16 h-16 rounded-full bg-gray-700/50 flex items-center justify-center overflow-hidden border-2 border-gray-600/50">
                         {lesson.teacher_avatar ? (
                           <img
                             src={lesson.teacher_avatar}
@@ -304,7 +304,7 @@ export default function MissedLessons() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-8 h-8 text-gray-500" />
+                          <User className="w-8 h-8 text-gray-400" />
                         )}
                       </div>
 
@@ -313,7 +313,7 @@ export default function MissedLessons() {
                           <h4 className="text-xl font-bold text-white">{lesson.subject_name}</h4>
                           {getStatusBadge(lesson.status, lesson.is_late_cancellation)}
                         </div>
-                        <p className="text-sm text-gray-500">with {lesson.teacher_name}</p>
+                        <p className="text-sm text-gray-400">with {lesson.teacher_name}</p>
 
                         {lesson.cancelled_at && (
                           <p className="text-xs text-gray-500 mt-1">
@@ -324,20 +324,20 @@ export default function MissedLessons() {
                     </div>
 
                     <div className="text-right">
-                      <div className="flex items-center space-x-2 text-gray-600 mb-1">
+                      <div className="flex items-center space-x-2 text-gray-300 mb-1">
                         <Calendar className="w-4 h-4" />
                         <span className="text-sm font-medium">
                           {format(lessonDate, 'MMM d, yyyy')}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-2 text-gray-500 mb-1">
+                      <div className="flex items-center space-x-2 text-gray-400 mb-1">
                         <Clock className="w-4 h-4" />
                         <span className="text-sm">
                           {format(lessonDate, 'h:mm a')}
                         </span>
                       </div>
                       <div className="flex items-center justify-end space-x-1">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm font-semibold rounded-lg border border-gray-300">
+                        <span className="px-2 py-1 bg-gray-700/50 text-gray-300 text-sm font-semibold rounded-lg border border-gray-600/50">
                           {lesson.duration_minutes} min
                         </span>
                       </div>
@@ -354,14 +354,14 @@ export default function MissedLessons() {
 
         {/* Help Section */}
         {lessons.length > 0 && (
-          <div className="mt-8 bg-white border border-gray-200 rounded-xl p-6">
+          <div className="mt-8 bg-gray-800/60 border border-gray-700/50 rounded-xl p-6">
             <h3 className="text-white font-bold text-lg mb-3">Need Help?</h3>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-gray-400 text-sm mb-4">
               If you believe there was an error with any of these charges, or if you have questions about the cancellation policy, please contact our support team.
             </p>
             <button
               onClick={() => navigate('/account/settings')}
-              className="px-6 py-2 bg-gray-200 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+              className="px-6 py-2 bg-gray-700/60 hover:bg-gray-600/60 text-gray-200 rounded-lg font-medium transition"
             >
               Contact Support
             </button>
