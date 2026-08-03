@@ -1152,6 +1152,7 @@ function LessonContent() {
       <StudentLessonIntroModal
         open={showStudentIntro}
         teacherName={lesson?.teacher_name}
+        subjectName={lesson?.subject_name}
         onClose={() => {
           localStorage.setItem(STUDENT_INTRO_KEY, 'true');
           setShowStudentIntro(false);
@@ -1444,7 +1445,15 @@ function LessonContent() {
               }
             }}
             onJoinRoom={() => {
-              // Successfully joined
+              // Successfully joined. Best-effort nudge to the other party if
+              // they haven't joined yet — never block/interrupt the local join.
+              if (lesson && userRole) {
+                supabase.functions.invoke('notify-lesson-partner', {
+                  body: { lesson_id: lesson.id, role: userRole }
+                }).catch((err) => {
+                  console.error('Error notifying lesson partner:', err);
+                });
+              }
             }}
             onLeaveRoom={() => {
               handleLessonEnd();

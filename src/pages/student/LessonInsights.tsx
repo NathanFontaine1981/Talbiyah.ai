@@ -31,7 +31,9 @@ import {
   Video,
   Play,
   Bell,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Shuffle,
+  Brain
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
@@ -1461,6 +1463,411 @@ function InteractiveQuiz({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function shuffleArray<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+// Sentence Builder - tap the Arabic words (plus decoys from other sentences in
+// this lesson) into the correct order for each Key Sentence. Decoys keep short
+// 2-3 word sentences from being a trivial pick between the only two options.
+function SentenceBuilder({ sentences }: { sentences: KeySentence[] }) {
+  const [index, setIndex] = useState(0);
+  const [bank, setBank] = useState<{ word: string; used: boolean }[]>([]);
+  const [answerBankIdx, setAnswerBankIdx] = useState<number[]>([]);
+  const [checked, setChecked] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [wrongTries, setWrongTries] = useState(0);
+  const [completed, setCompleted] = useState<boolean[]>(() => sentences.map(() => false));
+  const [showTranslit, setShowTranslit] = useState(false);
+
+  const allWords = Array.from(new Set(sentences.flatMap(s => s.arabic.split(/\s+/))));
+
+  function loadSentence(i: number) {
+    const words = sentences[i].arabic.split(/\s+/);
+    const correctSet = new Set(words);
+    const pool = allWords.filter(w => !correctSet.has(w));
+    const decoyCount = Math.min(5, Math.max(2, 6 - words.length), pool.length);
+    const decoys = shuffleArray(pool).slice(0, decoyCount);
+    setBank(shuffleArray([...words, ...decoys]).map(word => ({ word, used: false })));
+    setAnswerBankIdx([]);
+    setChecked(false);
+    setRevealed(false);
+    setWrongTries(0);
+    setIndex(i);
+  }
+
+  useEffect(() => {
+    loadSentence(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences]);
+
+  if (sentences.length === 0 || bank.length === 0) return null;
+
+  const sentence = sentences[index];
+  const correctWords = sentence.arabic.split(/\s+/);
+  const builtWords = answerBankIdx.map(i => bank[i].word);
+  const isFull = answerBankIdx.length === correctWords.length;
+  const completedCount = completed.filter(Boolean).length;
+
+  function placeWord(bankIdx: number) {
+    if (checked) return;
+    setBank(prev => prev.map((c, i) => (i === bankIdx ? { ...c, used: true } : c)));
+    setAnswerBankIdx(prev => [...prev, bankIdx]);
+  }
+
+  function removeWord(position: number) {
+    if (checked) return;
+    const bankIdx = answerBankIdx[position];
+    setBank(prev => prev.map((c, i) => (i === bankIdx ? { ...c, used: false } : c)));
+    setAnswerBankIdx(prev => prev.filter((_, i) => i !== position));
+  }
+
+  function checkAnswer() {
+    setChecked(true);
+    const allCorrect = builtWords.every((w, i) => w === correctWords[i]);
+    if (allCorrect) {
+      setCompleted(prev => prev.map((v, i) => (i === index ? true : v)));
+    } else {
+      setWrongTries(prev => prev + 1);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-purple-500 rounded-full transition-all duration-500"
+            style={{ width: `${(completedCount / sentences.length) * 100}%` }}
+          />
+        </div>
+        <span className="text-xs text-gray-500 whitespace-nowrap">{completedCount} of {sentences.length} built</span>
+      </div>
+
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 mb-1">Build this sentence</p>
+          <p className="text-sm font-semibold text-gray-900">{sentence.english}</p>
+        </div>
+        <button
+          onClick={() => setShowTranslit(v => !v)}
+          className="flex items-center gap-2 text-xs text-gray-500 hover:text-purple-600 flex-shrink-0"
+        >
+          <span className={`w-7 h-4 rounded-full relative transition-colors ${showTranslit ? 'bg-purple-500' : 'bg-gray-200'}`}>
+            <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showTranslit ? 'translate-x-3' : ''}`} />
+          </span>
+          Transliteration
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 italic mb-4 min-h-[16px]">{showTranslit ? sentence.transliteration : ''}</p>
+
+      {revealed ? (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 mb-4">
+          <p className="font-arabic text-2xl text-right text-gray-900 mb-1" dir="rtl">{sentence.arabic}</p>
+          <p className="text-xs text-amber-700">Here's the correct order — try the next sentence, then come back to this one later.</p>
+        </div>
+      ) : (
+        <>
+          <div
+            className={`flex flex-wrap gap-2 min-h-[54px] p-2.5 rounded-xl border-2 border-dashed mb-4 ${answerBankIdx.length === 0 ? 'border-gray-200' : 'border-gray-300'}`}
+            dir="rtl"
+          >
+            {answerBankIdx.length === 0 && (
+              <span className="text-sm text-gray-400 self-center px-1" dir="ltr">Tap words below, in order</span>
+            )}
+            {answerBankIdx.map((bankIdx, pos) => {
+              const word = bank[bankIdx].word;
+              const isCorrectHere = checked && word === correctWords[pos];
+              const isWrongHere = checked && word !== correctWords[pos];
+              return (
+                <button
+                  key={pos}
+                  onClick={() => removeWord(pos)}
+                  disabled={checked}
+                  className={`font-arabic text-xl px-3.5 py-1.5 rounded-lg border-2 transition-colors ${
+                    isCorrectHere ? 'border-emerald-400 bg-emerald-50' :
+                    isWrongHere ? 'border-red-400 bg-red-50' :
+                    'border-gray-200 bg-gray-50 hover:bg-purple-50'
+                  }`}
+                >
+                  {word}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-5 min-h-[40px]" dir="rtl">
+            {bank.map((chip, i) => !chip.used && (
+              <button
+                key={i}
+                onClick={() => placeWord(i)}
+                className="font-arabic text-xl px-3.5 py-1.5 rounded-lg border-2 border-gray-200 bg-gray-50 hover:bg-purple-50 hover:-translate-y-0.5 transition-all"
+              >
+                {chip.word}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={checkAnswer}
+              disabled={!isFull || checked}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-700"
+            >
+              Check sentence
+            </button>
+            <button
+              onClick={() => loadSentence(index)}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50"
+            >
+              Shuffle &amp; try again
+            </button>
+            {wrongTries >= 2 && (
+              <button
+                onClick={() => setRevealed(true)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50"
+              >
+                Show answer
+              </button>
+            )}
+          </div>
+
+          {checked && (
+            <div className={`mt-4 p-3 rounded-xl text-sm flex items-center gap-2 ${
+              builtWords.every((w, i) => w === correctWords[i]) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
+            }`}>
+              {builtWords.every((w, i) => w === correctWords[i])
+                ? <><CheckCircle className="w-4 h-4 flex-shrink-0" /> Correct — well built.</>
+                : <><XCircle className="w-4 h-4 flex-shrink-0" /> Not quite — the highlighted words are out of place.</>}
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+        <button
+          onClick={() => index > 0 && loadSentence(index - 1)}
+          disabled={index === 0}
+          className="text-sm font-semibold text-gray-500 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ← Previous
+        </button>
+        <div className="flex gap-1.5">
+          {sentences.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all ${
+                i === index ? 'w-4 bg-purple-500' : completed[i] ? 'w-1.5 bg-emerald-400' : 'w-1.5 bg-gray-200'
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => index < sentences.length - 1 && loadSentence(index + 1)}
+          disabled={index === sentences.length - 1}
+          className="text-sm font-semibold text-gray-500 hover:text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Vocabulary Test - freshly generated multiple-choice questions from this
+// lesson's vocabulary list, reshuffled on every attempt (word sample, option
+// order). Unlike the Mini Quiz's fixed answer key, there's no cooldown here -
+// it's built to be retaken any time.
+function VocabularyTest({ vocabulary }: { vocabulary: VocabWord[] }) {
+  const ROUND_SIZE = Math.min(8, vocabulary.length);
+  const [direction, setDirection] = useState<'ar-en' | 'en-ar'>('ar-en');
+  const [phase, setPhase] = useState<'start' | 'question' | 'result'>('start');
+  const [queue, setQueue] = useState<VocabWord[]>([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [options, setOptions] = useState<string[]>([]);
+  const [correctText, setCorrectText] = useState('');
+  const [selected, setSelected] = useState<string | null>(null);
+  const [score, setScore] = useState(0);
+  const [missed, setMissed] = useState<VocabWord[]>([]);
+  const [best, setBest] = useState<number | null>(null);
+  const [attempts, setAttempts] = useState(0);
+
+  function buildQuestion(word: VocabWord, dir: 'ar-en' | 'en-ar') {
+    const distractPool = vocabulary.filter(v => v.arabic !== word.arabic);
+    const distractors = shuffleArray(distractPool).slice(0, Math.min(3, distractPool.length));
+    if (dir === 'ar-en') {
+      setCorrectText(word.english);
+      setOptions(shuffleArray([word.english, ...distractors.map(d => d.english)]));
+    } else {
+      setCorrectText(word.arabic);
+      setOptions(shuffleArray([word.arabic, ...distractors.map(d => d.arabic)]));
+    }
+    setSelected(null);
+  }
+
+  function startTest() {
+    const q = shuffleArray(vocabulary).slice(0, ROUND_SIZE);
+    setQueue(q);
+    setQIndex(0);
+    setScore(0);
+    setMissed([]);
+    buildQuestion(q[0], direction);
+    setPhase('question');
+  }
+
+  function answer(opt: string) {
+    if (selected) return;
+    setSelected(opt);
+    const correct = opt === correctText;
+    const newScore = correct ? score + 1 : score;
+    const newMissed = correct ? missed : [...missed, queue[qIndex]];
+    setScore(newScore);
+    setMissed(newMissed);
+    setTimeout(() => {
+      const next = qIndex + 1;
+      if (next < queue.length) {
+        setQIndex(next);
+        buildQuestion(queue[next], direction);
+      } else {
+        setAttempts(a => a + 1);
+        setBest(b => (b === null ? newScore : Math.max(b, newScore)));
+        setPhase('result');
+      }
+    }, 700);
+  }
+
+  if (vocabulary.length < 4) return null;
+
+  return (
+    <div>
+      {phase === 'start' && (
+        <div>
+          <p className="text-sm text-gray-600 mb-5">
+            Unlike the Mini Quiz above (fixed questions, 10-minute cooldown), this test rebuilds itself from today's vocabulary list every time - new word sample, new option order. Come back and try it as often as you like.
+          </p>
+          <div className="flex gap-3 mb-6">
+            <div className="flex-1 bg-cyan-50 rounded-xl px-4 py-3">
+              <p className="text-xl font-bold text-cyan-700">{best === null ? '—' : `${best}/${ROUND_SIZE}`}</p>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Best score</p>
+            </div>
+            <div className="flex-1 bg-cyan-50 rounded-xl px-4 py-3">
+              <p className="text-xl font-bold text-cyan-700">{attempts}</p>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Times tested</p>
+            </div>
+            <div className="flex-1 bg-cyan-50 rounded-xl px-4 py-3">
+              <p className="text-xl font-bold text-cyan-700">{vocabulary.length}</p>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Words in pool</p>
+            </div>
+          </div>
+          <div className="flex justify-center mb-5">
+            <div className="inline-flex bg-gray-50 border border-gray-200 rounded-full p-1">
+              {(['ar-en', 'en-ar'] as const).map(dir => (
+                <button
+                  key={dir}
+                  onClick={() => setDirection(dir)}
+                  className={`text-xs font-semibold px-3.5 py-1.5 rounded-full transition-colors ${direction === dir ? 'bg-cyan-600 text-white' : 'text-gray-500'}`}
+                >
+                  {dir === 'ar-en' ? 'Arabic → English' : 'English → Arabic'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={startTest}
+              className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700"
+            >
+              Start test ({ROUND_SIZE} words)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'question' && queue[qIndex] && (
+        <div>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-cyan-500 rounded-full transition-all duration-300" style={{ width: `${(qIndex / queue.length) * 100}%` }} />
+            </div>
+            <span className="text-xs text-gray-500 whitespace-nowrap">{qIndex + 1} / {queue.length}</span>
+          </div>
+
+          <div className="text-center bg-cyan-50 rounded-2xl py-7 px-5 mb-5">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+              {direction === 'ar-en' ? 'What does this word mean?' : 'Which word means this?'}
+            </p>
+            {direction === 'ar-en' ? (
+              <>
+                <p className="font-arabic text-4xl text-gray-900 mb-1">{queue[qIndex].arabic}</p>
+                <p className="text-sm italic text-cyan-700">{queue[qIndex].transliteration}</p>
+              </>
+            ) : (
+              <p className="text-xl font-semibold text-gray-900">{queue[qIndex].english}</p>
+            )}
+          </div>
+
+          <div className="grid gap-2.5">
+            {options.map((opt, i) => {
+              const isCorrectOption = opt === correctText;
+              const isSelected = opt === selected;
+              let cls = 'border-gray-200 bg-gray-50 hover:border-cyan-300 hover:bg-cyan-50';
+              if (selected) {
+                if (isCorrectOption) cls = 'border-emerald-400 bg-emerald-50';
+                else if (isSelected) cls = 'border-red-400 bg-red-50';
+                else cls = 'border-gray-200 bg-gray-50 opacity-50';
+              }
+              return (
+                <button
+                  key={i}
+                  onClick={() => answer(opt)}
+                  disabled={!!selected}
+                  className={`flex items-center gap-3 text-left px-4 py-3 rounded-xl border-2 transition-all ${cls} ${direction === 'en-ar' ? 'font-arabic text-xl' : 'text-sm font-medium'}`}
+                >
+                  <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {phase === 'result' && (
+        <div className="text-center py-2">
+          <p className={`text-4xl font-bold mb-1 ${score === queue.length ? 'text-emerald-600' : 'text-cyan-700'}`}>{score}/{queue.length}</p>
+          <p className="text-sm text-gray-500 mb-5">
+            {score === queue.length ? 'Perfect run - every word landed.' : score >= queue.length * 0.75 ? 'Strong run. A couple to revisit below.' : 'Good start - worth another pass on the words below.'}
+          </p>
+          {missed.length > 0 && (
+            <div className="text-left bg-gray-50 rounded-xl p-4 mb-5">
+              <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Worth another look</p>
+              {missed.map((m, i) => (
+                <div key={i} className="flex items-center justify-between py-1 text-sm">
+                  <span className="font-arabic text-lg">{m.arabic}</span>
+                  <span className="text-gray-600">{m.english}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setPhase('start')}
+            className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700"
+          >
+            Test again
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3336,6 +3743,19 @@ export default function LessonInsights() {
               </CollapsibleSection>
             )}
 
+            {/* Sentence Builder - reorder practice from today's Key Sentences (not for Quran,
+                where VerseListMemorizer above already covers verse order/memorisation) */}
+            {sentences.length > 0 && !isQuran && (
+              <CollapsibleSection
+                title="Sentence Builder"
+                icon={Shuffle}
+                color="purple"
+                badge={`${sentences.length} sentences`}
+              >
+                <SentenceBuilder sentences={sentences} />
+              </CollapsibleSection>
+            )}
+
             {/* First Word Prompter - only for Quran */}
             {firstWordPrompts.length > 0 && isQuran && (
               <CollapsibleSection
@@ -3394,6 +3814,18 @@ export default function LessonInsights() {
                     <DialogueCard key={i} line={line} />
                   ))}
                 </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Vocabulary Test - retakeable any time, unlike the Mini Quiz's fixed cooldown */}
+            {vocabulary.length >= 4 && (
+              <CollapsibleSection
+                title="Vocabulary Test"
+                icon={Brain}
+                color="cyan"
+                badge={`${vocabulary.length} words`}
+              >
+                <VocabularyTest vocabulary={vocabulary} />
               </CollapsibleSection>
             )}
 
