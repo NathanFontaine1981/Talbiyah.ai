@@ -111,10 +111,10 @@ export default function ArabicProgress() {
         {learnerId ? (
           <ArabicProgressTracker learnerId={learnerId} />
         ) : (
-          <div className="bg-gray-50 rounded-2xl p-8 text-center border border-gray-200">
+          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 text-center border border-gray-700/50">
             <Languages className="w-16 h-16 text-blue-400 mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-semibold text-white mb-2">No Progress Yet</h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-400 mb-6">
               Book your first Arabic lesson to start tracking your progress
             </p>
             <button

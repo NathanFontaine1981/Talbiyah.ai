@@ -1268,6 +1268,9 @@ It should help the student feel like they can open it anytime in their dashboard
 
 * Include at least 10–20 words if possible.
 * Add tashkīl (vowel markings) for every word to help pronunciation.
+* **CRITICAL ACCURACY CHECK**: The tashkīl you write and the transliteration you write MUST represent the exact same vowels, in the same order. Before writing each row, sound the Arabic word out from its tashkīl and confirm it produces the transliteration - if they disagree, the tashkīl is wrong and must be corrected (never adjust the transliteration to match a guessed tashkīl).
+  - ❌ Wrong: مَبْتَلٌّ paired with transliteration "mubtallun" - the fatḥah on the mīm (مَ) reads as "ma-", not "mu-".
+  - ✅ Correct: مُبْتَلٌّ paired with "mubtallun" - ḍammah on the mīm (مُ) reads as "mu-".
 
 ---
 
@@ -1430,7 +1433,8 @@ Example:
 * Keep the tone friendly, encouraging, and easy to follow.
 * Do not include Qur'an or Hadith unless the Arabic lesson was based on them.
 * Always include at least 15 new vocabulary words and 10 quiz questions.
-* **CRITICAL: Every Arabic sentence in tables MUST have a complete English translation. Never leave the English column empty or incomplete.**`;
+* **CRITICAL: Every Arabic sentence in tables MUST have a complete English translation. Never leave the English column empty or incomplete.**
+* **CRITICAL: Tashkīl must match transliteration everywhere in this document** - Key Sentences, Vocabulary, Grammar examples, Conversation Practice, and Pronunciation Practice all pair Arabic text with transliteration. For every single pair, re-check that the diacritics and the transliteration represent identical vowels before finalizing your answer. A mismatched vowel (e.g. fatḥah written where the word is actually pronounced with ḍammah, as in مَبْتَلٌّ vs the correct مُبْتَلٌّ for "mubtallun") is a factual error the student will memorise incorrectly - treat it as seriously as a wrong English translation.`;
 
 // Stream a Claude completion and accumulate the full text. Streaming + running
 // in a background task lets long lessons (45-60+ min) finish without hitting the

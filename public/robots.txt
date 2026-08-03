@@ -1,0 +1,60 @@
+# Talbiyah.ai — robots.txt
+# Standard web crawlers
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /messages
+Disallow: /payment-history
+Disallow: /buy-credits
+Disallow: /checkout
+Disallow: /lesson/
+Disallow: /recording/
+
+# AI assistants and answer engines — explicitly allowed so Talbiyah.ai
+# can be read, summarised, and cited by AI search and chat products.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+Sitemap: https://talbiyah.ai/sitemap.xml

@@ -702,7 +702,7 @@ export default function TeacherTierDashboard() {
               <button
                 onClick={() => setShowApplicationModal(false)}
                 aria-label="Close application modal"
-                className="text-gray-500 hover:text-white transition"
+                className="text-gray-500 hover:text-gray-900 transition"
               >
                 <X className="w-6 h-6" />
               </button>

@@ -88,20 +88,30 @@ async function syncToSupabase(
   }
 }
 
-// Delete a prayer record from Supabase when unchecked
-async function deleteFromSupabase(prayerName: string) {
+// Persist an explicit "missed" record when unchecked. A real status='missed' row
+// (rather than deleting) lets auto-mark tell "explicitly not prayed" apart from
+// "never logged, so auto-mark should fill it in" - every existing reader already
+// treats status==='missed' the same as an absent row, so this changes nothing
+// for anyone with auto-mark off.
+async function syncMissedToSupabase(prayerName: string) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
-      .from('salah_daily_record')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('record_date', getTodayString())
-      .eq('prayer_name', prayerName);
+    await supabase.from('salah_daily_record').upsert(
+      {
+        user_id: user.id,
+        record_date: getTodayString(),
+        prayer_name: prayerName,
+        status: 'missed',
+        location: 'home',
+        sunnah_completed: [],
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,record_date,prayer_name' }
+    );
   } catch (err) {
-    console.error('Failed to delete salah record:', err);
+    console.error('Failed to sync missed salah record:', err);
   }
 }
 
@@ -185,7 +195,7 @@ export function usePrayerTracking() {
       if (!wasCompleted) {
         syncToSupabase(name, status, location, newState.sunnahCompleted);
       } else {
-        deleteFromSupabase(name);
+        syncMissedToSupabase(name);
       }
 
       return newState;

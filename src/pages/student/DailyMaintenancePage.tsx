@@ -25,7 +25,7 @@ import { useSelfLearner } from '../../hooks/useSelfLearner';
 import WordMatchingQuiz from '../../components/WordMatchingQuiz';
 import { SURAH_VOCABULARY, SURAH_THEMES } from './SmartHomeworkPage';
 import { buildPassageList, PassageUnit } from '../../lib/quranPassages';
-import { SURAH_AYAH_COUNTS as FULL_SURAH_AYAH_COUNTS } from '../../lib/quranData';
+import { SURAH_AYAH_COUNTS as FULL_SURAH_AYAH_COUNTS, getMemorizedSurahNumbers } from '../../lib/quranData';
 
 interface SelfAssessment {
   smooth: boolean;
@@ -533,16 +533,24 @@ export default function DailyMaintenancePage() {
       const rotationIndex = learner?.daily_review_rotation_index || 0;
       const salahRotationIndex = learner?.salah_surah_rotation_index || 0;
 
-      // Load memorized surahs sorted by surah_number ascending
-      const { data: trackedSurahs } = await supabase
-        .from('surah_retention_tracker')
-        .select('surah_number')
-        .eq('learner_id', targetLearnerId)
-        .eq('memorization_status', 'memorized')
-        .order('surah_number', { ascending: true });
+      // Load memorized surahs - union of surah_retention_tracker (MemorizationSetupPage
+      // flow) and ayah_progress (the /progress/quran ayah-by-ayah tracker), since a
+      // surah can be marked memorized via either path.
+      const [{ data: trackedSurahs }, { data: ayahProgressData }] = await Promise.all([
+        supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+          .eq('learner_id', targetLearnerId),
+        supabase
+          .from('ayah_progress')
+          .select('surah_number, ayah_number, understanding_complete, fluency_complete, memorization_complete')
+          .eq('learner_id', targetLearnerId),
+      ]);
 
-      const allMemorized = trackedSurahs && trackedSurahs.length > 0
-        ? trackedSurahs.map(s => s.surah_number)
+      const memorizedSurahNumbers = getMemorizedSurahNumbers(ayahProgressData || [], trackedSurahs || []);
+
+      const allMemorized = memorizedSurahNumbers.length > 0
+        ? memorizedSurahNumbers.sort((a, b) => a - b)
         : [1, 112, 113, 114];
 
       setMemorizedSurahs(allMemorized);

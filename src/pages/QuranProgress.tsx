@@ -573,7 +573,7 @@ export default function QuranProgress() {
       </a>
 
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
           <Breadcrumbs
             items={[
               { label: 'Dashboard', path: '/dashboard' },
@@ -582,6 +582,13 @@ export default function QuranProgress() {
             homePath="/dashboard"
             darkMode
           />
+          <button
+            onClick={() => navigate('/quran-reader')}
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-full transition-colors"
+          >
+            <Book className="w-3.5 h-3.5" />
+            Read Full Qur'an
+          </button>
         </div>
       </header>
 

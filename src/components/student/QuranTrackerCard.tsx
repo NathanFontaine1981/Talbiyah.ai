@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useSelfLearner } from '../../hooks/useSelfLearner';
+import { computeSurahCompletionCounts } from '../../lib/quranData';
 import { Book, ChevronRight } from 'lucide-react';
 
 // Compact dashboard version of the Qur'an Progress Tracker's three rings
@@ -47,16 +48,18 @@ export default function QuranTrackerCard() {
     if (!learnerId) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('surah_retention_tracker')
-        .select('memorization_status, fluency_complete, understanding_complete')
-        .eq('learner_id', learnerId);
-      if (cancelled || !data) return;
-      setCounts({
-        understood: data.filter((r) => r.understanding_complete).length,
-        fluent: data.filter((r) => r.fluency_complete).length,
-        memorized: data.filter((r) => r.memorization_status === 'memorized').length,
-      });
+      const [{ data: ayahProgressData }, { data: surahRetentionData }] = await Promise.all([
+        supabase
+          .from('ayah_progress')
+          .select('surah_number, ayah_number, understanding_complete, fluency_complete, memorization_complete')
+          .eq('learner_id', learnerId),
+        supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+          .eq('learner_id', learnerId),
+      ]);
+      if (cancelled) return;
+      setCounts(computeSurahCompletionCounts(ayahProgressData || [], surahRetentionData || []));
     })();
     return () => { cancelled = true; };
   }, [learnerId]);

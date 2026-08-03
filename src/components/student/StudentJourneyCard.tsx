@@ -219,7 +219,7 @@ export default function StudentJourneyCard({ isParent = false }: { isParent?: bo
                   : <Icon className="w-4 h-4 text-emerald-600" />}
               </div>
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-semibold ${isDone ? 'text-emerald-700 dark:text-emerald-300 line-through decoration-emerald-300' : 'text-gray-900 dark:text-white'}`}>
+                <p className={`text-sm font-semibold ${isDone ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
                   {title}
                 </p>
                 {!isDone && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-5">{hook}</p>}

@@ -125,6 +125,101 @@ export function calculateOverallProgress(memorizedCount: number): number {
   return Math.round((memorizedCount / TOTAL_AYAHS) * 100);
 }
 
+export interface AyahProgressRow {
+  surah_number: number;
+  ayah_number: number;
+  understanding_complete: boolean | null;
+  fluency_complete: boolean | null;
+  memorization_complete: boolean | null;
+}
+
+export interface SurahRetentionRow {
+  surah_number: number;
+  memorization_status: string | null;
+  fluency_complete: boolean | null;
+  understanding_complete: boolean | null;
+}
+
+export interface SurahStatus {
+  surahNumber: number;
+  understood: boolean;
+  fluent: boolean;
+  memorized: boolean;
+}
+
+// Mirrors the per-ayah resolution in QuranProgress.tsx's loadProgress(): an ayah
+// is considered done if it has an explicit ayah_progress record for that pillar,
+// falling back to the surah-level flag from surah_retention_tracker otherwise.
+// A surah counts as done for a pillar once every one of its ayahs resolves to done.
+export function computeSurahStatuses(
+  ayahProgressData: AyahProgressRow[],
+  surahRetentionData: SurahRetentionRow[]
+): SurahStatus[] {
+  const memorizedSurahs = new Set<number>();
+  const fluentSurahs = new Set<number>();
+  const understoodSurahs = new Set<number>();
+
+  surahRetentionData.forEach(record => {
+    if (record.memorization_status === 'memorized') memorizedSurahs.add(record.surah_number);
+    if (record.fluency_complete) fluentSurahs.add(record.surah_number);
+    if (record.understanding_complete) understoodSurahs.add(record.surah_number);
+  });
+
+  const ayahRecords = new Map<string, AyahProgressRow>();
+  ayahProgressData.forEach(record => {
+    ayahRecords.set(`${record.surah_number}-${record.ayah_number}`, record);
+  });
+
+  const statuses: SurahStatus[] = [];
+
+  for (const [surahNumberStr, ayahCount] of Object.entries(SURAH_AYAH_COUNTS)) {
+    const surahNumber = Number(surahNumberStr);
+    const isSurahMemorized = memorizedSurahs.has(surahNumber);
+    const isSurahFluent = fluentSurahs.has(surahNumber);
+    const isSurahUnderstood = understoodSurahs.has(surahNumber);
+
+    let allUnderstood = true;
+    let allFluent = true;
+    let allMemorized = true;
+
+    for (let ayahNumber = 1; ayahNumber <= ayahCount; ayahNumber++) {
+      const record = ayahRecords.get(`${surahNumber}-${ayahNumber}`);
+      if (!(record?.understanding_complete || isSurahUnderstood)) allUnderstood = false;
+      if (!(record?.fluency_complete || isSurahFluent)) allFluent = false;
+      if (!(record?.memorization_complete || isSurahMemorized)) allMemorized = false;
+    }
+
+    statuses.push({ surahNumber, understood: allUnderstood, fluent: allFluent, memorized: allMemorized });
+  }
+
+  return statuses;
+}
+
+export function computeSurahCompletionCounts(
+  ayahProgressData: AyahProgressRow[],
+  surahRetentionData: SurahRetentionRow[]
+): { understood: number; fluent: number; memorized: number } {
+  const statuses = computeSurahStatuses(ayahProgressData, surahRetentionData);
+  return {
+    understood: statuses.filter(s => s.understood).length,
+    fluent: statuses.filter(s => s.fluent).length,
+    memorized: statuses.filter(s => s.memorized).length,
+  };
+}
+
+// Union of surahs memorized via surah_retention_tracker (MemorizationSetupPage's
+// setup flow) and surahs where every ayah is individually marked memorized via
+// ayah_progress (the /progress/quran ayah-by-ayah tracker) — the two paths a
+// student can use to mark a surah memorized, which otherwise don't sync.
+export function getMemorizedSurahNumbers(
+  ayahProgressData: AyahProgressRow[],
+  surahRetentionData: SurahRetentionRow[]
+): number[] {
+  return computeSurahStatuses(ayahProgressData, surahRetentionData)
+    .filter(s => s.memorized)
+    .map(s => s.surahNumber);
+}
+
 export interface SurahInfo {
   number: number;
   name: string;

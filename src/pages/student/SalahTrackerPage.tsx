@@ -17,8 +17,11 @@ import {
   Star,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useSalahTrackerSettings } from '../../hooks/useSalahTrackerSettings';
+import { FARD_PRAYERS, buildEffectiveRecords } from '../../lib/prayerAutoMark';
+import SalahAutoMarkSettings from '../../components/salah/SalahAutoMarkSettings';
+import MonthlyPalaceTally from '../../components/salah/MonthlyPalaceTally';
 
-const FARD_PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const PRAYER_NAMES = [...FARD_PRAYERS, 'Qiyam'];
 const MASJID_MULTIPLIER = 27;
 
@@ -28,11 +31,12 @@ interface SalahRecord {
   status: string;
   location: string;
   sunnah_completed: string[];
+  isAuto?: boolean;
 }
 
 interface DaySummary {
   date: string;
-  prayers: Record<string, { status: string; location: string; sunnah: string[] }>;
+  prayers: Record<string, { status: string; location: string; sunnah: string[]; isAuto?: boolean }>;
   prayerCount: number;
   masjidCount: number;
   sunnahCount: number;
@@ -47,6 +51,7 @@ export default function SalahTrackerPage() {
   const [editStatus, setEditStatus] = useState<string>('prayed_on_time');
   const [editLocation, setEditLocation] = useState<string>('home');
   const [saving, setSaving] = useState(false);
+  const { settings, updateSettings } = useSalahTrackerSettings();
 
   useEffect(() => {
     loadAllRecords();
@@ -71,11 +76,21 @@ export default function SalahTrackerPage() {
     }
   }
 
+  const todayStrForAuto = new Date().toISOString().split('T')[0];
+
+  // Fill in auto-marked days (past days only - today is handled live by
+  // PrayerTimeline) on top of real records. When auto-mark is off, this is a
+  // no-op and returns `records` unchanged.
+  const effectiveRecords = useMemo(
+    () => buildEffectiveRecords(records, settings, todayStrForAuto),
+    [records, settings, todayStrForAuto]
+  );
+
   // Group records by date
   const daySummaries = useMemo((): DaySummary[] => {
     const map = new Map<string, DaySummary>();
 
-    for (const r of records) {
+    for (const r of effectiveRecords) {
       if (!map.has(r.record_date)) {
         map.set(r.record_date, {
           date: r.record_date,
@@ -90,6 +105,7 @@ export default function SalahTrackerPage() {
         status: r.status,
         location: r.location,
         sunnah: r.sunnah_completed || [],
+        isAuto: r.isAuto,
       };
       if (r.status !== 'missed') day.prayerCount++;
       if (r.location === 'masjid' && r.status !== 'missed') day.masjidCount++;
@@ -97,7 +113,7 @@ export default function SalahTrackerPage() {
     }
 
     return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
-  }, [records]);
+  }, [effectiveRecords]);
 
   function openEdit(date: string, prayer: string) {
     const dayData = daySummaries.find(d => d.date === date);
@@ -114,26 +130,21 @@ export default function SalahTrackerPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      if (editStatus === 'missed') {
-        await supabase
-          .from('salah_daily_record')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('record_date', editingCell.date)
-          .eq('prayer_name', editingCell.prayer);
-      } else {
-        await supabase.from('salah_daily_record').upsert(
-          {
-            user_id: user.id,
-            record_date: editingCell.date,
-            prayer_name: editingCell.prayer,
-            status: editStatus,
-            location: editLocation,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,record_date,prayer_name' }
-        );
-      }
+      // A real status='missed' row (rather than deleting) is required so an
+      // explicit "not prayed" on an auto-marked day actually overrides it -
+      // deleting would just leave the gap for auto-mark to fill straight back in.
+      await supabase.from('salah_daily_record').upsert(
+        {
+          user_id: user.id,
+          record_date: editingCell.date,
+          prayer_name: editingCell.prayer,
+          status: editStatus,
+          location: editStatus === 'missed' ? 'home' : editLocation,
+          sunnah_completed: editStatus === 'missed' ? [] : undefined,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,record_date,prayer_name' }
+      );
 
       setEditingCell(null);
       await loadAllRecords();
@@ -146,18 +157,18 @@ export default function SalahTrackerPage() {
 
   // Stats
   const stats = useMemo(() => {
-    const totalPrayed = records.filter(r => r.status !== 'missed').length;
-    const masjidPrayed = records.filter(r => r.location === 'masjid' && r.status !== 'missed').length;
+    const totalPrayed = effectiveRecords.filter(r => r.status !== 'missed').length;
+    const masjidPrayed = effectiveRecords.filter(r => r.location === 'masjid' && r.status !== 'missed').length;
     const homePrayed = totalPrayed - masjidPrayed;
-    const onTime = records.filter(r => r.status === 'prayed_on_time').length;
-    const late = records.filter(r => r.status === 'prayed_late').length;
+    const onTime = effectiveRecords.filter(r => r.status === 'prayed_on_time').length;
+    const late = effectiveRecords.filter(r => r.status === 'prayed_late').length;
 
     // Sunnah count
     const allSunnahKeys = new Set<string>();
     const palaceDays: Set<string> = new Set();
     const sunnahByDay = new Map<string, Set<string>>();
 
-    for (const r of records) {
+    for (const r of effectiveRecords) {
       if (r.sunnah_completed) {
         for (const s of r.sunnah_completed) {
           allSunnahKeys.add(`${r.record_date}-${s}`);
@@ -216,7 +227,7 @@ export default function SalahTrackerPage() {
       bestStreak,
       uniqueDays: daySummaries.length,
     };
-  }, [records, daySummaries]);
+  }, [effectiveRecords, daySummaries]);
 
   // Week view
   const weekDays = useMemo(() => {
@@ -280,6 +291,12 @@ export default function SalahTrackerPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Auto-mark settings */}
+        <SalahAutoMarkSettings settings={settings} updateSettings={updateSettings} />
+
+        {/* Monthly targets */}
+        <MonthlyPalaceTally effectiveRecords={effectiveRecords} />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
@@ -409,6 +426,7 @@ export default function SalahTrackerPage() {
 
                 let bgClass = 'bg-gray-100 dark:bg-gray-700/50'; // default
                 let icon = null;
+                const isAuto = !!prayerData?.isAuto;
 
                 if (isFuture) {
                   bgClass = 'bg-gray-50 dark:bg-gray-800/30';
@@ -424,6 +442,10 @@ export default function SalahTrackerPage() {
                       : 'bg-amber-400';
                     icon = <Clock className="w-3 h-3 text-white" />;
                   }
+                  // Auto-marked days get a dashed outline instead of the solid
+                  // confirmed look, so it's always clear what you actually logged
+                  // versus what the app assumed on your behalf.
+                  if (isAuto) bgClass += ' border-2 border-dashed border-white/70 dark:border-gray-900/60';
                 } else if (!isFuture && d.date <= todayStr) {
                   // No record — could be missed or not tracked
                   bgClass = 'bg-red-100 dark:bg-red-900/20';
@@ -436,7 +458,7 @@ export default function SalahTrackerPage() {
                     onClick={() => !isFuture && openEdit(d.date, prayer)}
                     disabled={isFuture}
                     className={`h-7 rounded-md flex items-center justify-center ${bgClass} transition-colors ${!isFuture ? 'cursor-pointer hover:ring-2 hover:ring-blue-400/50 active:scale-95' : ''}`}
-                    title={`${prayer} — ${d.date}${prayerData ? ` (${prayerData.status}, ${prayerData.location})` : ''}`}
+                    title={`${prayer} — ${d.date}${prayerData ? ` (${prayerData.status}, ${prayerData.location}${isAuto ? ', auto-marked' : ''})` : ''}`}
                   >
                     {icon}
                   </button>

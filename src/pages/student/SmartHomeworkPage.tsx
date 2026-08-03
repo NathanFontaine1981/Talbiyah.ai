@@ -27,6 +27,7 @@ import confetti from 'canvas-confetti';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardHeader from '../../components/DashboardHeader';
 import { useSelfLearner } from '../../hooks/useSelfLearner';
+import { getMemorizedSurahNumbers } from '../../lib/quranData';
 import WordMatchingQuiz from '../../components/WordMatchingQuiz';
 import { getFirstWordsForAyahs, FirstWordData } from '../../utils/quranApi';
 
@@ -1258,17 +1259,24 @@ export default function SmartHomeworkPage() {
         })));
       }
 
-      // CUMULATIVE VOCABULARY: Fetch ALL memorized surahs
-      const { data: memorizedSurahs } = await supabase
-        .from('surah_retention_tracker')
-        .select('surah_number')
-        .eq('learner_id', targetLearnerId)
-        .eq('memorization_status', 'memorized');
+      // CUMULATIVE VOCABULARY: Fetch ALL memorized surahs - union of surah_retention_tracker
+      // (MemorizationSetupPage flow) and ayah_progress (the /progress/quran ayah-by-ayah
+      // tracker), since a surah can be marked memorized via either path.
+      const [{ data: trackedSurahs }, { data: ayahProgressData }] = await Promise.all([
+        supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+          .eq('learner_id', targetLearnerId),
+        supabase
+          .from('ayah_progress')
+          .select('surah_number, ayah_number, understanding_complete, fluency_complete, memorization_complete')
+          .eq('learner_id', targetLearnerId),
+      ]);
+
+      const memorizedSurahNumbers = getMemorizedSurahNumbers(ayahProgressData || [], trackedSurahs || []);
 
       // Build list of available surahs (that have vocabulary)
-      const surahsWithVocab = memorizedSurahs
-        ?.filter(s => SURAH_VOCABULARY[s.surah_number])
-        .map(s => s.surah_number) || [];
+      const surahsWithVocab = memorizedSurahNumbers.filter(n => SURAH_VOCABULARY[n]);
 
       // Add default surahs if none memorized
       if (surahsWithVocab.length === 0) {
@@ -1281,10 +1289,10 @@ export default function SmartHomeworkPage() {
       // Build cumulative vocabulary pool from all memorized surahs
       let vocabularyPool: VocabularyWord[] = [];
 
-      if (memorizedSurahs && memorizedSurahs.length > 0) {
-        setMemorizedSurahCount(memorizedSurahs.length);
+      if (memorizedSurahNumbers.length > 0) {
+        setMemorizedSurahCount(memorizedSurahNumbers.length);
 
-        memorizedSurahs.forEach(({ surah_number }) => {
+        memorizedSurahNumbers.forEach(surah_number => {
           const surahVocab = SURAH_VOCABULARY[surah_number];
           if (surahVocab) {
             vocabularyPool = vocabularyPool.concat(

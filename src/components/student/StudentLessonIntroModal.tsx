@@ -7,7 +7,7 @@ interface Step {
   body: string;
 }
 
-const STEPS: Step[] = [
+const QURAN_STEPS: Step[] = [
   {
     icon: Video,
     title: 'It’s a live video lesson',
@@ -35,18 +35,84 @@ const STEPS: Step[] = [
   },
 ];
 
+const ARABIC_STEPS: Step[] = [
+  {
+    icon: Video,
+    title: 'It’s a live video lesson',
+    body: 'You and your teacher meet face-to-face over video. Allow your camera and microphone when your browser asks, so your teacher can see and hear you speak.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Follow along with the materials',
+    body: 'Your teacher can share texts, worksheets, or PDFs on screen. You’ll see them in the lesson — just follow where your teacher points.',
+  },
+  {
+    icon: Mic,
+    title: 'You’ll speak, they’ll guide you',
+    body: 'Your teacher will model new words and sentences, then listen as you repeat. They’ll gently correct your pronunciation and grammar — mistakes are part of learning!',
+  },
+  {
+    icon: MessageCircle,
+    title: 'Ask anything',
+    body: 'Use the chat or just speak up if you don’t understand something. There’s also a homework task at the end to practise before next time.',
+  },
+  {
+    icon: Hand,
+    title: 'Get the most from it',
+    body: 'Find a quiet, clean space and be on time. Come ready to speak Arabic out loud — the more you practise in the lesson, the faster it sticks.',
+  },
+];
+
+const GENERAL_STEPS: Step[] = [
+  {
+    icon: Video,
+    title: 'It’s a live video lesson',
+    body: 'You and your teacher meet face-to-face over video. Allow your camera and microphone when your browser asks, so your teacher can see and hear you.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Follow along with the materials',
+    body: 'Your teacher can share notes, texts, or PDFs on screen. You’ll see them in the lesson — just follow where your teacher points.',
+  },
+  {
+    icon: Mic,
+    title: 'Learn and reflect together',
+    body: 'Your teacher will explain, ask questions, and check your understanding as you go. Speak up if something isn’t clear — that’s how you’ll get the most from the lesson.',
+  },
+  {
+    icon: MessageCircle,
+    title: 'Ask anything',
+    body: 'Use the chat or just speak up if you don’t understand something. There’s also a homework task at the end to practise before next time.',
+  },
+  {
+    icon: Hand,
+    title: 'A little etiquette (adab)',
+    body: 'Find a quiet, clean space, be on time, and come with the intention to learn. Your teacher will begin with Bismillāh.',
+  },
+];
+
+function getStepsForSubject(subjectName?: string | null): Step[] {
+  const name = (subjectName || '').toLowerCase();
+  if (name.includes('quran') || name.includes('qur\'an') || name.includes('tajweed')) return QURAN_STEPS;
+  if (name.includes('arabic')) return ARABIC_STEPS;
+  return GENERAL_STEPS;
+}
+
 export default function StudentLessonIntroModal({
   open,
   onClose,
   teacherName,
+  subjectName,
 }: {
   open: boolean;
   onClose: () => void;
   teacherName?: string | null;
+  subjectName?: string | null;
 }) {
   const [step, setStep] = useState(0);
   if (!open) return null;
 
+  const STEPS = getStepsForSubject(subjectName);
   const isLast = step === STEPS.length - 1;
   const current = STEPS[step];
   const Icon = current.icon;

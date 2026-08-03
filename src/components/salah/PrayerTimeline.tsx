@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle, Home, Building2, Sun, AlertTriangle, Star } from 'lucide-react';
+import { MapPin, Check, Circle, Clock, ChevronDown, ChevronUp, Castle, Home, Building2, Sun, AlertTriangle, Star, X } from 'lucide-react';
 import { usePrayerTimes } from '../../hooks/usePrayerTimes';
 import { usePrayerTracking, SUNNAH_PRAYERS, TOTAL_SUNNAH_RAKAHS, NAFL_PRAYERS } from '../../hooks/usePrayerTracking';
+import { useSalahTrackerSettings } from '../../hooks/useSalahTrackerSettings';
+import { computeTodayAutoMarked, autoMarkedSunnahKeys } from '../../lib/prayerAutoMark';
+import { supabase } from '../../lib/supabaseClient';
 
 interface PrayerTimelineProps {
   variant?: 'light' | 'dark';
@@ -17,11 +20,37 @@ function formatMinutes(mins: number): string {
 
 export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProps) {
   const { prayerTimes, sunrise, location, loading, currentMinutes } = usePrayerTimes();
-  const { completedPrayers, togglePrayer, isPrayerCompleted, toggleSunnah, isSunnahCompleted, sunnahRakahsDone, toggleLocation, getLocation } = usePrayerTracking();
+  const { completedPrayers, togglePrayer, toggleSunnah, isSunnahCompleted, toggleLocation, getLocation } = usePrayerTracking();
+  const { settings } = useSalahTrackerSettings();
   const [showSunnah, setShowSunnah] = useState(false);
   const [showNafl, setShowNafl] = useState(false);
+  const [overriding, setOverriding] = useState<string | null>(null);
 
   const isDark = variant === 'dark';
+
+  async function markNotPrayed(prayerName: string) {
+    setOverriding(prayerName);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('salah_daily_record').upsert(
+        {
+          user_id: user.id,
+          record_date: new Date().toISOString().split('T')[0],
+          prayer_name: prayerName,
+          status: 'missed',
+          location: 'home',
+          sunnah_completed: [],
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,record_date,prayer_name' }
+      );
+      // Reload so the auto-mark computation below sees the real override row
+      window.location.reload();
+    } finally {
+      setOverriding(null);
+    }
+  }
 
   if (loading || prayerTimes.length === 0) {
     return (
@@ -83,6 +112,29 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
     (s) => currentMinutes >= s.start && currentMinutes < s.end
   );
 
+  // Auto-mark: which fard prayers today should read as done because their
+  // window has passed and the setting is on, layered on top of - never
+  // replacing - what's actually been confirmed. Off by default, so this is an
+  // empty set (and everything below behaves exactly as it does today) unless
+  // the user has explicitly turned auto-mark on.
+  const segmentEndByPrayer: Record<string, number> = {};
+  segments.forEach(s => { if (!s.isGap) segmentEndByPrayer[s.name] = s.end; });
+  const todayStr = new Date().toISOString().split('T')[0];
+  const autoMarkedFard = computeTodayAutoMarked(
+    segmentEndByPrayer,
+    currentMinutes,
+    new Set(completedPrayers),
+    settings,
+    todayStr
+  );
+  const autoSunnah = autoMarkedSunnahKeys(settings, autoMarkedFard);
+  const effectiveCompleted = new Set([...completedPrayers, ...autoMarkedFard]);
+  const isSunnahEffective = (key: string) => isSunnahCompleted(key) || autoSunnah.has(key);
+  const effectiveSunnahRakahsDone = SUNNAH_PRAYERS.reduce(
+    (sum, s) => sum + (isSunnahEffective(s.key) ? s.rakahs : 0),
+    0
+  );
+
   // Calculate the position of the "now" marker as a percentage of the full bar
   const getMarkerPercent = (): number | null => {
     if (activeIndex === -1) return null;
@@ -103,7 +155,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
   const getPrayerStatus = (index: number): PrayerStatus => {
     if (segments[index].isGap) return 'future'; // gap segments are neutral
     const name = segments[index].name;
-    if (isPrayerCompleted(name)) return 'completed';
+    if (effectiveCompleted.has(name)) return 'completed';
     if (index === activeIndex) return 'active';
     if (currentMinutes >= segments[index].end) return 'missed';
     return 'future';
@@ -122,7 +174,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
     : null;
 
   // Status message logic
-  const completedCount = completedPrayers.length;
+  const completedCount = effectiveCompleted.size;
   const currentPrayerStatus = activeIndex >= 0 ? getPrayerStatus(activeIndex) : null;
 
   const getStatusMessage = (): string => {
@@ -296,6 +348,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
           const isFuture = status === 'future';
           const loc = getLocation(seg.name);
           const isJumuah = !!seg.displayName && seg.displayName === "Jumu'ah";
+          const isAuto = autoMarkedFard.has(seg.name);
 
           return (
             <div
@@ -322,10 +375,12 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
                         : isDark
                           ? 'bg-slate-800 text-slate-600 cursor-default'
                           : 'bg-teal-50 text-emerald-300 cursor-default'
-                }`}
+                } ${isAuto ? 'ring-2 ring-offset-1 ring-dashed ring-emerald-400/70' : ''}`}
                 aria-label={
                   status === 'completed'
-                    ? `${seg.name} completed — tap to undo`
+                    ? isAuto
+                      ? `${seg.name} auto-marked as prayed — tap to confirm`
+                      : `${seg.name} completed — tap to undo`
                     : isFuture
                       ? `${seg.name} hasn't started yet`
                       : `Mark ${seg.name} as completed`
@@ -340,8 +395,25 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
                 )}
               </button>
 
-              {/* Home / Masjid toggle — only shown when prayer is completed */}
-              {status === 'completed' && (
+              {/* Auto-marked: subtle label + a one-tap override in case this one wasn't actually prayed */}
+              {status === 'completed' && isAuto && (
+                <button
+                  onClick={() => markNotPrayed(seg.name)}
+                  disabled={overriding === seg.name}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium border transition-colors disabled:opacity-50 ${
+                    isDark
+                      ? 'bg-slate-700/40 text-slate-400 border-slate-600/50 hover:border-red-500/50 hover:text-red-400'
+                      : 'bg-emerald-50/60 text-emerald-500 border-emerald-200/60 hover:border-red-300 hover:text-red-500'
+                  }`}
+                  title="Tap if you didn't actually pray this"
+                >
+                  <X className="w-2.5 h-2.5" />
+                  <span className="hidden sm:inline">Auto - not this?</span>
+                </button>
+              )}
+
+              {/* Home / Masjid toggle — only shown when prayer is manually completed */}
+              {status === 'completed' && !isAuto && (
                 isJumuah ? (
                   <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                     isDark
@@ -421,18 +493,18 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
           className="w-full flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
-            <Castle className={`w-4 h-4 ${sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (isDark ? 'text-amber-400' : 'text-amber-500') : isDark ? 'text-amber-500/70' : 'text-amber-600'}`} />
+            <Castle className={`w-4 h-4 ${effectiveSunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (isDark ? 'text-amber-400' : 'text-amber-500') : isDark ? 'text-amber-500/70' : 'text-amber-600'}`} />
             <span className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-gray-900'}`}>
               Sunnah Prayers
             </span>
             <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-              sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
+              effectiveSunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
                 ? isDark ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40' : 'bg-amber-400 text-gray-900'
-                : sunnahRakahsDone > 0
+                : effectiveSunnahRakahsDone > 0
                   ? isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-800'
                   : isDark ? 'bg-slate-700 text-amber-500/60' : 'bg-amber-50 text-amber-700/60'
             }`}>
-              {sunnahRakahsDone}/{TOTAL_SUNNAH_RAKAHS} rak'ahs
+              {effectiveSunnahRakahsDone}/{TOTAL_SUNNAH_RAKAHS} rak'ahs
             </span>
           </div>
           {showSunnah ? (
@@ -445,7 +517,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
         {showSunnah && (
           <div className="mt-3 space-y-2">
             {/* Palace progress */}
-            {sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (
+            {effectiveSunnahRakahsDone === TOTAL_SUNNAH_RAKAHS ? (
               <div className={`text-center py-2.5 px-3 rounded-lg ${isDark ? 'bg-gradient-to-r from-amber-900/40 to-yellow-900/30 border border-amber-600/50' : 'bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300'}`}>
                 <p className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-gray-900'}`}>
                   A palace is being built for you in Paradise today
@@ -460,7 +532,7 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
             {/* Sunnah checkboxes */}
             <div className="grid grid-cols-1 gap-1.5">
               {SUNNAH_PRAYERS.map((sunnah) => {
-                const done = isSunnahCompleted(sunnah.key);
+                const done = isSunnahEffective(sunnah.key);
                 return (
                   <button
                     key={sunnah.key}
@@ -504,11 +576,11 @@ export default function PrayerTimeline({ variant = 'light' }: PrayerTimelineProp
               <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-amber-100'}`}>
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    sunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
+                    effectiveSunnahRakahsDone === TOTAL_SUNNAH_RAKAHS
                       ? 'bg-gradient-to-r from-amber-400 to-yellow-400'
                       : isDark ? 'bg-amber-600' : 'bg-amber-400'
                   }`}
-                  style={{ width: `${(sunnahRakahsDone / TOTAL_SUNNAH_RAKAHS) * 100}%` }}
+                  style={{ width: `${(effectiveSunnahRakahsDone / TOTAL_SUNNAH_RAKAHS) * 100}%` }}
                 />
               </div>
             </div>

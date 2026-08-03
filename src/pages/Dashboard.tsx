@@ -36,8 +36,10 @@ import MyLearningJourneyCard from '../components/MyLearningJourneyCard';
 import StudentJourneyCard from '../components/student/StudentJourneyCard';
 import DailyCompanionCard from '../components/student/DailyCompanionCard';
 import QuranTrackerCard from '../components/student/QuranTrackerCard';
+import AlphabetCard from '../components/student/AlphabetCard';
 import PrayerTimesWidget from '../components/PrayerTimesWidget';
 import PrayerTimeline from '../components/salah/PrayerTimeline';
+import AutoMarkWeeklyNudge from '../components/salah/AutoMarkWeeklyNudge';
 import DashboardHeader from '../components/DashboardHeader';
 import TeacherSessionsCard from '../components/TeacherSessionsCard';
 import TeacherStatsWidget from '../components/TeacherStatsWidget';
@@ -745,6 +747,9 @@ export default function Dashboard() {
               <PrayerTimeline variant="light" />
             </div>
 
+            {/* Weekly check-in for anyone using auto-mark */}
+            <AutoMarkWeeklyNudge />
+
             {/* ===== EXPLORER VIEW ===== */}
             {selectedViewRole === 'Explorer' && (
               <>
@@ -1000,6 +1005,9 @@ export default function Dashboard() {
 
                 {/* Qur'an tracker rings — understood / fluent / memorised */}
                 <QuranTrackerCard />
+
+                {/* Arabic alphabet — for students starting completely from scratch */}
+                <AlphabetCard />
 
                 {/* Your Journey — feature discovery for new students */}
                 <StudentJourneyCard />

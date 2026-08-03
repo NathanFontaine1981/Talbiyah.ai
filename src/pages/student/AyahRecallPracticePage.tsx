@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useSelfLearner } from '../../hooks/useSelfLearner';
+import { getMemorizedSurahNumbers } from '../../lib/quranData';
 import DashboardHeader from '../../components/DashboardHeader';
 import AyahFlashcard from '../../components/games/AyahFlashcard';
 import AyahMultipleChoice from '../../components/games/AyahMultipleChoice';
@@ -168,16 +169,24 @@ export default function AyahRecallPracticePage() {
       setLoading(true);
       setError(null);
 
-      // Load memorized surahs
-      const { data: tracked, error: trackError } = await supabase
-        .from('surah_retention_tracker')
-        .select('surah_number')
-        .eq('learner_id', targetLearnerId)
-        .eq('memorization_status', 'memorized');
+      // Load memorized surahs - union of surah_retention_tracker (MemorizationSetupPage
+      // flow) and ayah_progress (the /progress/quran ayah-by-ayah tracker), since a
+      // surah can be marked memorized via either path.
+      const [{ data: tracked, error: trackError }, { data: ayahProgress, error: ayahError }] = await Promise.all([
+        supabase
+          .from('surah_retention_tracker')
+          .select('surah_number, memorization_status, fluency_complete, understanding_complete')
+          .eq('learner_id', targetLearnerId),
+        supabase
+          .from('ayah_progress')
+          .select('surah_number, ayah_number, understanding_complete, fluency_complete, memorization_complete')
+          .eq('learner_id', targetLearnerId),
+      ]);
 
       if (trackError) throw trackError;
+      if (ayahError) throw ayahError;
 
-      const surahNumbers = (tracked || []).map(t => t.surah_number).sort((a, b) => a - b);
+      const surahNumbers = getMemorizedSurahNumbers(ayahProgress || [], tracked || []).sort((a, b) => a - b);
       setMemorizedSurahs(surahNumbers);
 
       // Also fetch all surah info from API for complete names
