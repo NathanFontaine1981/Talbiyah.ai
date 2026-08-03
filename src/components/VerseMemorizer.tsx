@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, Book, Mic, Brain, Loader, Volume2, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { getAyahAudioUrl } from '../utils/quranApi';
 
 // Clean footnote markers from translation text
 function cleanTranslation(text: string): string {
@@ -99,18 +100,12 @@ export default function VerseMemorizer({
     if (!surahNumber || !ayahNumber) return;
     setIsPlaying(true);
 
-    const audioUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${getAbsoluteAyahNumber(surahNumber, ayahNumber)}.mp3`;
+    const audioUrl = getAyahAudioUrl(surahNumber, ayahNumber);
 
     if (audioRef.current) {
       audioRef.current.src = audioUrl;
       audioRef.current.play().catch(() => setIsPlaying(false));
     }
-  };
-
-  // Calculate absolute ayah number for audio API
-  const getAbsoluteAyahNumber = (surah: number, ayah: number): number => {
-    const surahStarts = [0, 1, 8, 142, 252, 372, 517, 680, 831, 956, 1070, 1178, 1265, 1319, 1371, 1423, 1480, 1573, 1670, 1766, 1846, 1923, 2012, 2085, 2166, 2236, 2326, 2406, 2455, 2520, 2591, 2653, 2708, 2766, 2808, 2853, 2911, 2993, 3066, 3143, 3187, 3253, 3296, 3349, 3395, 3441, 3508, 3563, 3598, 3647, 3690, 3730, 3780, 3844, 3899, 3968, 4024, 4108, 4175, 4218, 4259, 4297, 4333, 4369, 4415, 4452, 4497, 4543, 4591, 4634, 4689, 4716, 4755, 4782, 4810, 4829, 4856, 4907, 4953, 5000, 5053, 5082, 5104, 5140, 5168, 5192, 5210, 5232, 5255, 5280, 5309, 5329, 5352, 5363, 5380, 5390, 5402, 5413, 5421, 5433, 5440, 5452, 5457, 5466, 5471, 5479, 5486, 5491, 5496, 5502, 5507, 5511, 5515];
-    return (surahStarts[surah - 1] || 0) + ayah;
   };
 
   // Toggle a stage completion

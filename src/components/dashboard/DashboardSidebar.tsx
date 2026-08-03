@@ -123,22 +123,38 @@ export default function DashboardSidebar({
       ]
     },
     {
-      title: 'Tools & Resources',
+      title: "Qur'an",
       items: [
-        { icon: Heart, label: 'Daily Athkar', path: '/daily-athkar', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
-        { icon: Sparkles, label: 'Daily Schedule', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
-        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
-        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
-        { icon: BookOpen, label: 'Jummah Guide', path: '/jummah-guide', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
-        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
-        { icon: Home, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
-        { icon: Home, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
-        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: Scroll, label: "Read the Qur'an", path: '/quran-reader', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: BookOpen, label: "Qur'an Tracker", path: '/progress/quran', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Calendar, label: 'Ramadan Planner', path: '/ramadan-planner', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
+      ]
+    },
+    {
+      title: 'Salah',
+      items: [
+        { icon: Moon, label: 'Learn Salah', path: '/salah', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
         { icon: Clock, label: 'Salah Tracker', path: '/salah-tracker', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
-        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+      ]
+    },
+    {
+      title: 'Daily Practice',
+      items: [
+        { icon: Heart, label: 'Daily Athkar', path: '/daily-athkar', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: Sparkles, label: 'Daily Schedule', path: '/daily-review', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Sparkles, label: 'Dua Builder', path: '/dua-builder', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+      ]
+    },
+    {
+      title: 'Community & Guidance',
+      items: [
+        { icon: Compass, label: 'Exploring Islam', path: '/explore', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
         { icon: UserPlus, label: 'Unshakeable Foundations', path: '/new-muslim', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: BookOpen, label: 'Jummah Guide', path: '/jummah-guide', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
+        { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
+        { icon: Library, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
+        { icon: Library, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
+        { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
       ]
     },
     {

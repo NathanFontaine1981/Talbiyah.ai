@@ -5,7 +5,27 @@
  * API Documentation: https://api.quran.com/api/v4
  */
 
+import { SURAH_AYAH_COUNTS } from '../lib/quranData';
+
 const QURAN_API_BASE = 'https://api.quran.com/api/v4';
+
+/**
+ * Strip footnote markers and stray HTML the Quran.com translation API embeds
+ * inline in the text (e.g. superscript footnote reference numbers) so plain
+ * English translation text renders cleanly.
+ */
+export function cleanTranslationText(text: string): string {
+  return text
+    .replace(/<sup[^>]*>.*?<\/sup>/gi, '') // footnote reference markers
+    .replace(/<[^>]*>/g, '') // any remaining HTML tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
 // Types for API responses
 export interface QuranWord {
@@ -104,6 +124,10 @@ export async function getVerses(
       const params = new URLSearchParams({
         language: 'en',
         words: 'true',
+        // `fields` is required to get the verse-level Uthmani text - without it
+        // the API only returns per-word text_uthmani inside `words`, leaving
+        // verse.text_uthmani undefined (this was rendering as blank ayahs).
+        fields: 'text_uthmani,text_simple',
         word_fields: 'text_uthmani,text_simple,translation,transliteration',
         per_page: perPage.toString(),
         page: page.toString(),
@@ -142,12 +166,12 @@ export async function getVerses(
           const translations = translationData.translations || [];
 
           // Map translations to verses by index (translations are in verse order)
-          verses.forEach((verse, index) => {
+          verses.forEach((verse) => {
             // Find the matching translation by verse number (1-indexed)
             const translationIndex = verse.verse_number - 1;
             if (translations[translationIndex]) {
               verse.translations = [{
-                text: translations[translationIndex].text,
+                text: cleanTranslationText(translations[translationIndex].text),
                 resource_name: 'Abdul Haleem'
               }];
             }
@@ -317,12 +341,125 @@ export async function getVerseText(
     return {
       uthmani: verse.text_uthmani,
       simple: verse.text_simple || verse.text_uthmani,
-      translation: verse.translations?.[0]?.text || '',
+      translation: cleanTranslationText(verse.translations?.[0]?.text || ''),
     };
   } catch (error) {
     console.error('Error fetching verse:', error);
     return null;
   }
+}
+
+// Cumulative ayah count before each surah (index = surah - 1) - lets us convert
+// (surah, ayah) into the single absolute ayah number (1-6236) the recitation CDN
+// indexes by. Computed from the verified per-surah ayah counts (SURAH_AYAH_COUNTS,
+// which sums to the correct 6236 total) rather than a second hand-typed table -
+// a previous hand-typed copy of this table was badly wrong from surah 2 onward
+// (it undercounted, totalling 5521 instead of 6236), which silently played the
+// wrong recitation for every surah after Al-Fatihah.
+const SURAH_AYAH_STARTS: number[] = (() => {
+  const starts: number[] = [];
+  let cumulative = 0;
+  for (let surah = 1; surah <= 114; surah++) {
+    starts.push(cumulative);
+    cumulative += SURAH_AYAH_COUNTS[surah] || 0;
+  }
+  return starts;
+})();
+
+/**
+ * Convert a (surah, ayah) pair into the single absolute ayah number (1-6236)
+ * used by recitation audio CDNs that index the whole Qur'an sequentially.
+ */
+export function getAbsoluteAyahNumber(surahNumber: number, ayahNumber: number): number {
+  return (SURAH_AYAH_STARTS[surahNumber - 1] || 0) + ayahNumber;
+}
+
+/**
+ * Recitation audio URL for a single ayah (Alafasy, 128kbps) - same CDN already
+ * used by VerseMemorizer.
+ */
+export function getAyahAudioUrl(surahNumber: number, ayahNumber: number): string {
+  return `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${getAbsoluteAyahNumber(surahNumber, ayahNumber)}.mp3`;
+}
+
+const DEFAULT_TAFSIR_ID = 169; // Ibn Kathir (Abridged) in English - same source used for lesson insights
+
+/**
+ * Get scholarly tafsir (commentary) for a single ayah. HTML from the API is
+ * stripped down to plain text with paragraph breaks preserved.
+ */
+export async function getTafsir(
+  surahNumber: number,
+  ayahNumber: number,
+  tafsirId: number = DEFAULT_TAFSIR_ID
+): Promise<{ text: string; tafsirName: string } | null> {
+  try {
+    const verseKey = `${surahNumber}:${ayahNumber}`;
+    const response = await fetch(`${QURAN_API_BASE}/tafsirs/${tafsirId}/by_ayah/${verseKey}`);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (!data.tafsir?.text) return null;
+
+    const cleanText = data.tafsir.text
+      .replace(/<h2[^>]*>.*?<\/h2>/gi, '')
+      .replace(/<p[^>]*>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return { text: cleanText, tafsirName: data.tafsir.resource_name || 'Ibn Kathir (Abridged)' };
+  } catch (error) {
+    console.error('Error fetching tafsir:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch tajweed-annotated Uthmani text for a whole surah - verified rule markup
+ * straight from Quran.com's own tajweed Mushaf data (the same source their site
+ * uses), not detected/guessed client-side. Returns raw text with
+ * `<tajweed class="rule_name">...</tajweed>` spans plus a `<span class=end>N</span>`
+ * ayah-end marker; callers should transform these rather than trust `<tajweed>`
+ * as a real HTML element.
+ */
+export async function getTajweedVerses(surahNumber: number): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  try {
+    const response = await fetch(`${QURAN_API_BASE}/quran/verses/uthmani_tajweed?chapter_number=${surahNumber}`);
+    if (!response.ok) return map;
+    const data = await response.json();
+    for (const verse of data.verses || []) {
+      const verseNum = parseInt(verse.verse_key?.split(':')[1] || '0', 10);
+      if (verseNum > 0 && verse.text_uthmani_tajweed) {
+        map.set(verseNum, verse.text_uthmani_tajweed);
+      }
+    }
+    return map;
+  } catch (error) {
+    console.error('Error fetching tajweed verses:', error);
+    return map;
+  }
+}
+
+/**
+ * Convert Quran.com's `<tajweed class="rule">` markup into safe `<span>` tags
+ * with a `tajweed-{rule}` class, and its ayah-end `<span class=end>` into a
+ * plain marker span - so the result can go straight into dangerouslySetInnerHTML
+ * without relying on the non-standard `<tajweed>` tag.
+ */
+export function tajweedHtmlToSpans(raw: string): string {
+  return raw
+    .replace(/<tajweed class=(\w+)>/g, '<span class="tajweed-$1">')
+    .replace(/<\/tajweed>/g, '</span>')
+    .replace(/<span class=end>/g, '<span class="tajweed-ayah-end">');
 }
 
 /**
