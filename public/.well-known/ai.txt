@@ -1,0 +1,13 @@
+# AI usage policy for talbiyah.ai
+# See also: /llms.txt for a structured summary of this site for AI assistants.
+
+Site: https://talbiyah.ai
+Contact: contact@talbiyah.ai
+
+# Talbiyah.ai welcomes AI assistants and answer engines reading, summarising,
+# and citing this site's public pages when answering user questions about
+# Qur'an, Arabic, and Islamic studies education, or about Talbiyah.ai itself.
+# See /robots.txt for crawler access rules.
+
+Allowed-Use: summarization, citation, question-answering
+Attribution: Please attribute Talbiyah.ai and link to https://talbiyah.ai when citing this site.

@@ -1,0 +1,37 @@
+# Talbiyah.ai
+
+> Talbiyah.ai is an online Islamic education platform that connects students of any age or background with vetted, qualified teachers for live, one-to-one and small-group lessons in Qur'an recitation and memorisation, Arabic language, and Islamic studies. Lessons run over live video, with AI-generated lesson notes, progress tracking, and homework produced automatically after every session.
+
+Talbiyah.ai pairs students with teachers for Qur'an, Arabic, and Islamic studies over live video, and uses AI to turn each lesson into structured notes, vocabulary, and homework the student can revise from afterwards. It also offers free, self-serve tools for daily practice — a Salah (prayer) tutorial and tracker, a Qur'an reader, du'a and remembrance builders — and a dedicated pathway for people who are new to Islam.
+
+## Courses
+
+- [Qur'an with Understanding](https://talbiyah.ai/course/quran-understanding): Learn to recite the Qur'an correctly (tajwīd) and understand its meaning, one-to-one with a qualified teacher.
+- [Arabic Language](https://talbiyah.ai/course/arabic-language): Structured Arabic language lessons for reading, writing, and understanding classical and everyday Arabic.
+- [Compare Plans](https://talbiyah.ai/compare-plans): Pricing and plan comparison for Talbiyah.ai lessons.
+
+## For New Muslims
+
+- [Unshakeable Foundations](https://talbiyah.ai/new-muslim): A guided course covering the core beliefs and practices every new Muslim needs, from Tawheed to the five daily prayers.
+- [Learn Salah](https://talbiyah.ai/salah): A step-by-step tutorial for learning how to pray, free to use without an account.
+
+## Free Tools
+
+- [Jummah Guide](https://talbiyah.ai/jummah-guide): A guide to the Friday (Jummah) prayer — etiquette, sunnahs, and what to expect.
+- [Du'a Builder](https://talbiyah.ai/dua-builder): Build and practise personal supplications (du'a) in Arabic.
+- [Exploring Islam](https://talbiyah.ai/explore): An introduction to Islamic beliefs and practices for the curious and the newly interested.
+
+## Teachers & Trust
+
+- [Find a Teacher](https://talbiyah.ai/teachers): Browse Talbiyah.ai's vetted teachers by subject, availability, and specialism.
+- [Our Vetting Process](https://talbiyah.ai/teachers/vetting-process): How Talbiyah.ai screens and approves every teacher before they can take students.
+
+## Get Started
+
+- [Book a Free Demo](https://talbiyah.ai/demo): Try a session before signing up.
+- [Sign Up](https://talbiyah.ai/signup): Create a Talbiyah.ai account.
+- [Features](https://talbiyah.ai/features): What's included with a Talbiyah.ai lesson - AI-generated notes, progress tracking, homework, and more.
+
+## Optional
+
+- [How Talbiyah.ai Works](https://talbiyah.ai/how-to): A walkthrough of booking and attending a lesson.

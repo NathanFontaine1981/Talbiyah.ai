@@ -1,0 +1,28 @@
+{
+  "name": "Talbiyah.ai",
+  "url": "https://talbiyah.ai",
+  "description": "Talbiyah.ai is an online Islamic education platform connecting students with vetted, qualified teachers for live one-to-one lessons in Qur'an recitation and memorisation, Arabic language, and Islamic studies. Every lesson produces AI-generated notes, vocabulary, and homework automatically.",
+  "category": "Education",
+  "subcategory": "Islamic education / online tutoring",
+  "audience": "Muslims and new Muslims of any age seeking Qur'an, Arabic, or Islamic studies education; parents booking lessons for children",
+  "offerings": [
+    "One-to-one live video lessons in Qur'an with Understanding (tajwīd and meaning)",
+    "One-to-one live video lessons in Arabic Language",
+    "AI-generated lesson notes, vocabulary, and homework after every class",
+    "Free Salah (prayer) tutorial and tracker",
+    "Free Qur'an reader with translation, tafsir, and audio recitation",
+    "Free du'a builder and Islamic learning tools",
+    "A guided course for new Muslims (Unshakeable Foundations)"
+  ],
+  "keyPages": [
+    { "title": "Home", "url": "https://talbiyah.ai/" },
+    { "title": "Qur'an with Understanding course", "url": "https://talbiyah.ai/course/quran-understanding" },
+    { "title": "Arabic Language course", "url": "https://talbiyah.ai/course/arabic-language" },
+    { "title": "Find a Teacher", "url": "https://talbiyah.ai/teachers" },
+    { "title": "Unshakeable Foundations (new Muslims)", "url": "https://talbiyah.ai/new-muslim" },
+    { "title": "Learn Salah", "url": "https://talbiyah.ai/salah" },
+    { "title": "Compare Plans", "url": "https://talbiyah.ai/compare-plans" }
+  ],
+  "contact": "contact@talbiyah.ai",
+  "lastUpdated": "2026-08-03"
+}
