@@ -6,32 +6,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You are an Islamic scholar and educator creating "Talbiyah Insights" - comprehensive study materials from khutbahs and Islamic lectures. Your role is to help Muslims deeply understand and internalize the teachings.
+const BRITISH_ENGLISH_NOTE = `IMPORTANT: Write ALL English text using British English spelling and conventions (e.g., "colour" not "color", "recognise" not "recognize", "behaviour" not "behavior", "programme" not "program", "centre" not "center", "honour" not "honor", "favourite" not "favorite", "organised" not "organized", "analyse" not "analyze", "memorise" not "memorize", "practise" for verb, etc.). The target audience is primarily UK-based.`;
 
-IMPORTANT: Write ALL English text using British English spelling and conventions (e.g., "colour" not "color", "recognise" not "recognize", "behaviour" not "behavior", "programme" not "program", "centre" not "center", "honour" not "honor", "favourite" not "favorite", "organised" not "organized", "analyse" not "analyze", "memorise" not "memorize", "practise" for verb, etc.). The target audience is primarily UK-based.
+const TRANSCRIPT_SYSTEM_PROMPT = `You are an Islamic scholar and educator creating "Talbiyah Insights" - comprehensive study materials from khutbahs and Islamic lectures. Your role is to help Muslims deeply understand and internalize the teachings.
+
+${BRITISH_ENGLISH_NOTE}
 
 When analysing a khutbah/lecture, you must create:
 
 1. CLEANED TRANSCRIPT: A polished, readable version of the full content
 2. MAIN POINTS TO REFLECT UPON: The core messages and lessons
-3. KEY QURANIC WORDS & PHRASES: Arabic terms from Quran mentioned, with full explanation
-4. ARABIC VOCABULARY: All Arabic words used and their meanings
-5. KEY THEMES: Central messages with explanations
-6. QURAN REFERENCES: Verses mentioned or relevant, with Arabic (full harakat), translation, and reflection points
-7. HADITH TO REFLECT UPON: Relevant authentic hadith with explanation
-8. ACTION ITEMS: Practical steps to implement the teachings
-9. MEMORY AIDS: Creative ways to remember key concepts
-10. COMPREHENSIVE QUIZ: Multiple choice and short answer questions to test understanding
-11. HOMEWORK ASSIGNMENTS: Practical tasks to do during the week
-12. AGE-APPROPRIATE SUMMARIES: For children and teens
-13. FAMILY DISCUSSION GUIDE: For family learning sessions
+3. KEY THEMES: Central messages with explanations
 
 IMPORTANT GUIDELINES:
-- Only cite Sahih (authentic) hadith from Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah
-- ALL Arabic text MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
-- Provide accurate Quran references with surah name and verse numbers
-- Make the quiz comprehensive - test understanding, not just memorisation
-- Homework should be practical, achievable within a week
 - Include reflection questions that encourage deep thinking
 
 You must respond with a valid JSON object in this exact format:
@@ -45,6 +32,32 @@ You must respond with a valid JSON object in this exact format:
       "reflection": "Why this matters and how to reflect on it"
     }
   ],
+  "key_themes": [
+    {
+      "theme": "Theme name",
+      "explanation": "Brief explanation of this theme"
+    }
+  ]
+}`;
+
+const VOCAB_SYSTEM_PROMPT = `You are an Islamic scholar and educator creating "Talbiyah Insights" - comprehensive study materials from khutbahs and Islamic lectures. Your role is to help Muslims deeply understand and internalize the teachings.
+
+${BRITISH_ENGLISH_NOTE}
+
+When analysing a khutbah/lecture, you must create:
+
+1. KEY QURANIC WORDS & PHRASES: Arabic terms from Quran mentioned, with full explanation
+2. ARABIC VOCABULARY: All Arabic words used and their meanings
+3. ACTION ITEMS: Practical steps to implement the teachings
+4. MEMORY AIDS: Creative ways to remember key concepts
+5. AGE-APPROPRIATE SUMMARIES: For children and teens
+6. FAMILY DISCUSSION GUIDE: For family learning sessions
+
+IMPORTANT GUIDELINES:
+- ALL Arabic words/phrases MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
+
+You must respond with a valid JSON object in this exact format:
+{
   "quranic_words_phrases": [
     {
       "arabic": "Arabic word/phrase with full harakat",
@@ -61,12 +74,39 @@ You must respond with a valid JSON object in this exact format:
       "definition": "Clear definition and explanation"
     }
   ],
-  "key_themes": [
+  "action_items": [
     {
-      "theme": "Theme name",
-      "explanation": "Brief explanation of this theme"
+      "action": "Specific action to take",
+      "how_to": "Practical steps to implement this action"
     }
   ],
+  "memory_aids": [
+    {
+      "concept": "Key concept to remember",
+      "memory_tip": "A memorable way to remember this concept"
+    }
+  ],
+  "summary_for_children": "A simple, engaging summary appropriate for ages 5-10",
+  "summary_for_teens": "A relatable summary for ages 11-17",
+  "family_discussion_guide": ["Discussion point 1", "Activity suggestion", "Question for family"]
+}`;
+
+const REFERENCES_SYSTEM_PROMPT = `You are an Islamic scholar and educator creating "Talbiyah Insights" - comprehensive study materials from khutbahs and Islamic lectures. Your role is to help Muslims deeply understand and internalize the teachings.
+
+${BRITISH_ENGLISH_NOTE}
+
+When analysing a khutbah/lecture, you must create:
+
+1. QURAN REFERENCES: Verses mentioned or relevant, with Arabic (full harakat), translation, and reflection points
+2. HADITH TO REFLECT UPON: Relevant authentic hadith with explanation
+
+IMPORTANT GUIDELINES:
+- Only cite Sahih (authentic) hadith from Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah
+- ALL Arabic text MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
+- Provide accurate Quran references with surah name and verse numbers
+
+You must respond with a valid JSON object in this exact format:
+{
   "quran_references": [
     {
       "arabic": "Arabic verse with FULL HARAKAT",
@@ -82,19 +122,23 @@ You must respond with a valid JSON object in this exact format:
       "reference": "Source (e.g., Sahih Bukhari 1234)",
       "reflection": "Points to reflect upon from this hadith"
     }
-  ],
-  "action_items": [
-    {
-      "action": "Specific action to take",
-      "how_to": "Practical steps to implement this action"
-    }
-  ],
-  "memory_aids": [
-    {
-      "concept": "Key concept to remember",
-      "memory_tip": "A memorable way to remember this concept"
-    }
-  ],
+  ]
+}`;
+
+const QUIZ_SYSTEM_PROMPT = `You are an Islamic scholar and educator creating a quiz and homework assignments from a khutbah or Islamic lecture, as part of "Talbiyah Insights" study materials.
+
+${BRITISH_ENGLISH_NOTE}
+
+You must create:
+1. COMPREHENSIVE QUIZ: Multiple choice and short answer questions to test understanding
+2. HOMEWORK ASSIGNMENTS: Practical tasks to do during the week
+
+IMPORTANT GUIDELINES:
+- Make the quiz comprehensive - test understanding, not just memorisation
+- Homework should be practical, achievable within a week
+
+You must respond with a valid JSON object in this exact format:
+{
   "quiz": {
     "multiple_choice": [
       {
@@ -121,11 +165,61 @@ You must respond with a valid JSON object in this exact format:
       "description": "Detailed instructions on how to complete it",
       "duration": "How long it should take or when to do it"
     }
-  ],
-  "summary_for_children": "A simple, engaging summary appropriate for ages 5-10",
-  "summary_for_teens": "A relatable summary for ages 11-17",
-  "family_discussion_guide": ["Discussion point 1", "Activity suggestion", "Question for family"]
+  ]
 }`;
+
+function parseJsonResponse(content: string, label: string) {
+  try {
+    return JSON.parse(content);
+  } catch (e1) {
+    try {
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        return JSON.parse(codeBlockMatch[1].trim());
+      }
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw new Error('No JSON found in response');
+    } catch (e2) {
+      console.error(`${label} JSON parse error:`, e2);
+      console.error(`${label} raw content (first 500 chars):`, content.substring(0, 500));
+      throw new Error(`Failed to parse ${label} AI response`);
+    }
+  }
+}
+
+async function callClaude(anthropicApiKey: string, systemPrompt: string, userPrompt: string, maxTokens: number) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': anthropicApiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      system: systemPrompt
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Anthropic API error:', errorText);
+    throw new Error(`AI analysis failed: ${response.status}`);
+  }
+
+  const result = await response.json();
+  return result.content[0].text;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -144,7 +238,33 @@ serve(async (req) => {
       throw new Error('Anthropic API key not configured');
     }
 
-    const userPrompt = `Please analyse the following khutbah text and create comprehensive study notes. Extract all the key themes, vocabulary, references, and create helpful study materials.
+    const closingInstructions = `
+Remember to:
+- Use British English spelling throughout (colour, organise, behaviour, etc.)
+- Only cite authentic sources
+- Make the content practical and actionable
+
+Respond with a valid JSON object only, no other text.`;
+
+    const transcriptUserPrompt = `Please analyse the following khutbah text and produce a cleaned transcript, main points, and key themes.
+
+KHUTBAH TEXT:
+${khutba_text}
+${closingInstructions}`;
+
+    const vocabUserPrompt = `Please analyse the following khutbah text and extract vocabulary, action items, memory aids, and age-appropriate summaries.
+
+KHUTBAH TEXT:
+${khutba_text}
+
+Remember to:
+- Use British English spelling throughout (colour, organise, behaviour, etc.)
+- Include Arabic text with full harakat (diacritical marks) for all vocabulary
+- Create age-appropriate summaries
+
+Respond with a valid JSON object only, no other text.`;
+
+    const referencesUserPrompt = `Please analyse the following khutbah text and extract relevant Quran verses and hadith references.
 
 KHUTBAH TEXT:
 ${khutba_text}
@@ -153,68 +273,45 @@ Remember to:
 - Use British English spelling throughout (colour, organise, behaviour, etc.)
 - Include Arabic text with full harakat (diacritical marks) for all Quran verses and hadith
 - Only cite authentic sources
-- Make the content practical and actionable
-- Create age-appropriate summaries
 
 Respond with a valid JSON object only, no other text.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 16000,
-        messages: [
-          {
-            role: 'user',
-            content: userPrompt
-          }
-        ],
-        system: SYSTEM_PROMPT
-      })
-    });
+    const quizUserPrompt = `Please create a quiz and homework assignments based on the following khutbah text.
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Anthropic API error:', errorText);
-      throw new Error(`AI analysis failed: ${response.status}`);
-    }
+KHUTBAH TEXT:
+${khutba_text}
 
-    const result = await response.json();
-    const content = result.content[0].text;
+Remember to:
+- Use British English spelling throughout (colour, organise, behaviour, etc.)
+- Make the quiz test understanding, not just memorisation
+- Make homework practical and achievable within a week
 
-    console.log('Raw AI response length:', content.length);
+Respond with a valid JSON object only, no other text.`;
 
-    // Parse the JSON response
-    let studyNotes;
-    try {
-      // First try: direct parse
-      studyNotes = JSON.parse(content);
-    } catch (e1) {
-      try {
-        // Second try: extract JSON from markdown code blocks
-        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (codeBlockMatch) {
-          studyNotes = JSON.parse(codeBlockMatch[1].trim());
-        } else {
-          // Third try: find JSON object in text
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            studyNotes = JSON.parse(jsonMatch[0]);
-          } else {
-            throw new Error('No JSON found in response');
-          }
-        }
-      } catch (e2) {
-        console.error('JSON parse error:', e2);
-        console.error('Raw content (first 500 chars):', content.substring(0, 500));
-        throw new Error('Failed to parse AI response');
-      }
-    }
+    // Run four smaller generations in parallel instead of one giant call, so
+    // each individual Claude request finishes well within the edge
+    // function's ~150s execution limit (a single combined call routinely
+    // exceeded it and the platform returned 504 before Claude finished).
+    // Quran/hadith references are split out on their own because full
+    // harakat on entire verses is the most token-dense content here.
+    const [transcriptText, vocabText, referencesText, quizText] = await Promise.all([
+      callClaude(anthropicApiKey, TRANSCRIPT_SYSTEM_PROMPT, transcriptUserPrompt, 6000),
+      callClaude(anthropicApiKey, VOCAB_SYSTEM_PROMPT, vocabUserPrompt, 8000),
+      callClaude(anthropicApiKey, REFERENCES_SYSTEM_PROMPT, referencesUserPrompt, 8000),
+      callClaude(anthropicApiKey, QUIZ_SYSTEM_PROMPT, quizUserPrompt, 6000)
+    ]);
+
+    console.log('Transcript response length:', transcriptText.length);
+    console.log('Vocab response length:', vocabText.length);
+    console.log('References response length:', referencesText.length);
+    console.log('Quiz response length:', quizText.length);
+
+    const transcriptNotes = parseJsonResponse(transcriptText, 'transcript');
+    const vocabNotes = parseJsonResponse(vocabText, 'vocab');
+    const referencesNotes = parseJsonResponse(referencesText, 'references');
+    const quizNotes = parseJsonResponse(quizText, 'quiz');
+
+    const studyNotes = { ...transcriptNotes, ...vocabNotes, ...referencesNotes, ...quizNotes };
 
     // Ensure all fields exist with defaults
     studyNotes.main_points = studyNotes.main_points || [];
