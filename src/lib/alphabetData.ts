@@ -83,3 +83,96 @@ export const ALPHABET_LETTERS: AlphabetLetter[] = RAW.map((r, i) => ({
 }));
 
 export const TOTAL_LETTERS = ALPHABET_LETTERS.length;
+
+// Tashkeel (harakat) - the diacritical marks placed above/below a letter that
+// tell you how to pronounce it. These 8 marks are universal: the same mark
+// makes the same sound change on every letter, so unlike ALPHABET_LETTERS we
+// don't need a per-letter example word - just letter + mark = combined sound.
+export interface HarakatMark {
+  id: string;
+  mark: string; // the combining diacritic character itself
+  name: string;
+  translit: string; // what it adds to the letter's transliteration
+  sound: string;
+  description: string;
+}
+
+export const HARAKAT_MARKS: HarakatMark[] = [
+  {
+    id: 'fatha',
+    mark: 'َ',
+    name: 'Fatha',
+    translit: 'a',
+    sound: 'a short "a", like the a in "cat"',
+    description: 'A small diagonal stroke above the letter. Opens the mouth slightly.',
+  },
+  {
+    id: 'kasra',
+    mark: 'ِ',
+    name: 'Kasra',
+    translit: 'i',
+    sound: 'a short "i", like the i in "sit"',
+    description: 'A small diagonal stroke below the letter.',
+  },
+  {
+    id: 'damma',
+    mark: 'ُ',
+    name: 'Damma',
+    translit: 'u',
+    sound: 'a short "u", like the u in "put"',
+    description: 'A tiny loop above the letter, like a small waw.',
+  },
+  {
+    id: 'sukun',
+    mark: 'ْ',
+    name: 'Sukun',
+    translit: '',
+    sound: 'no vowel at all - the letter is pronounced on its own, cut off sharply',
+    description: 'A small circle above the letter meaning "stop here, no vowel".',
+  },
+  {
+    id: 'shadda',
+    mark: 'ّ',
+    name: 'Shadda',
+    translit: '(doubled)',
+    sound: 'the letter is doubled/held for a beat, e.g. "bb" rather than "b"',
+    description: 'A small "w" shape above the letter, showing it is doubled. Usually paired with a fatha, kasra or damma.',
+  },
+  {
+    id: 'tanwin_fath',
+    mark: 'ً',
+    name: 'Tanwin Fath',
+    translit: 'an',
+    sound: 'ends the word with an "-an" sound',
+    description: 'Two fathas together - only ever appears at the end of a word.',
+  },
+  {
+    id: 'tanwin_kasr',
+    mark: 'ٍ',
+    name: 'Tanwin Kasr',
+    translit: 'in',
+    sound: 'ends the word with an "-in" sound',
+    description: 'Two kasras together - only ever appears at the end of a word.',
+  },
+  {
+    id: 'tanwin_damm',
+    mark: 'ٌ',
+    name: 'Tanwin Damm',
+    translit: 'un',
+    sound: 'ends the word with an "-un" sound',
+    description: 'Two dammas together - only ever appears at the end of a word.',
+  },
+];
+
+// Combine a letter's isolated glyph with a harakat mark for display, e.g.
+// letterWithHarakat(ALPHABET_LETTERS[1], HARAKAT_MARKS[0]) -> "بَ" (ba)
+export function letterWithHarakat(letter: AlphabetLetter, harakat: HarakatMark): string {
+  return letter.glyph + harakat.mark;
+}
+
+// A short, readable transliteration for a letter+mark combo, e.g. "ba", "bi", "bun"
+export function harakatTranslit(letter: AlphabetLetter, harakat: HarakatMark): string {
+  if (harakat.id === 'sukun') return letter.translit;
+  if (harakat.id === 'shadda') return letter.translit + letter.translit + 'a';
+  return letter.translit + harakat.translit;
+}

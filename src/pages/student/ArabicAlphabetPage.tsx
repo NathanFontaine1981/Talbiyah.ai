@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { useSelfLearner } from '../../hooks/useSelfLearner';
 import DashboardHeader from '../../components/DashboardHeader';
-import { ALPHABET_LETTERS, TOTAL_LETTERS, AlphabetLetter } from '../../lib/alphabetData';
+import { ALPHABET_LETTERS, TOTAL_LETTERS, AlphabetLetter, HARAKAT_MARKS, letterWithHarakat, harakatTranslit } from '../../lib/alphabetData';
 
 function shuffleArray<T>(items: T[]): T[] {
   const result = [...items];
@@ -29,6 +29,8 @@ export default function ArabicAlphabetPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [section, setSection] = useState<'letters' | 'tashkeel'>('letters');
+  const [tashkeelLetterId, setTashkeelLetterId] = useState<number>(1); // default to Bā', a clean connecting letter
 
   const [quiz, setQuiz] = useState<QuizState | null>(null);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
@@ -164,6 +166,32 @@ export default function ArabicAlphabetPage() {
           </div>
         </div>
 
+        {/* Section switcher */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setSection('letters')}
+            className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+              section === 'letters'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400'
+            }`}
+          >
+            1. The 28 Letters
+          </button>
+          <button
+            onClick={() => setSection('tashkeel')}
+            className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+              section === 'tashkeel'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400'
+            }`}
+          >
+            2. Letters with Tashkeel
+          </button>
+        </div>
+
+        {section === 'letters' && (
+        <>
         {/* Letter grid + detail */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
           <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
@@ -303,6 +331,85 @@ export default function ArabicAlphabetPage() {
             )}
           </div>
         </div>
+        </>
+        )}
+
+        {section === 'tashkeel' && (
+          <div className="space-y-6">
+            {/* Intro to the 8 marks */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white">What is tashkeel?</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Small marks placed above or below a letter that tell you exactly how to pronounce it. The same mark
+                  always makes the same sound change, no matter which letter it sits on.
+                </p>
+              </div>
+              <div className="p-6 grid sm:grid-cols-2 gap-3">
+                {HARAKAT_MARKS.map(h => (
+                  <div
+                    key={h.id}
+                    className="flex items-start gap-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-xl p-3.5"
+                  >
+                    <div className="w-14 h-14 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                      <span className="font-arabic text-3xl text-gray-900 dark:text-white">{'ا' + h.mark}</span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900 dark:text-white">{h.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{h.description}</div>
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">{h.sound}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pick a letter, see it with every mark */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Try it on a letter</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pick a letter below to see how each mark changes the way it sounds</p>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-7 sm:grid-cols-9 gap-2 mb-6" dir="rtl">
+                  {ALPHABET_LETTERS.map(L => (
+                    <button
+                      key={L.id}
+                      onClick={() => setTashkeelLetterId(L.id)}
+                      className={`aspect-square rounded-lg border-2 flex items-center justify-center font-arabic text-lg transition-all ${
+                        tashkeelLetterId === L.id
+                          ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400'
+                      }`}
+                    >
+                      {L.glyph}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {HARAKAT_MARKS.map(h => {
+                    const letter = ALPHABET_LETTERS[tashkeelLetterId];
+                    return (
+                      <div
+                        key={h.id}
+                        className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900 rounded-xl p-4 text-center"
+                      >
+                        <div className="font-arabic text-4xl text-gray-900 dark:text-white mb-1">
+                          {letterWithHarakat(letter, h)}
+                        </div>
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{h.name}</div>
+                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          {harakatTranslit(letter, h)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
