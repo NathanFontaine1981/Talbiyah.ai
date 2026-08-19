@@ -14,18 +14,19 @@ ${BRITISH_ENGLISH_NOTE}
 
 When analysing a khutbah/lecture, you must create:
 
-1. CLEANED TRANSCRIPT: A polished, readable version of the full content
-2. MAIN POINTS TO REFLECT UPON: The core messages and lessons
-3. KEY THEMES: Central messages with explanations
+1. A short descriptive title and the speaker's name if mentioned
+2. MAIN POINTS TO REFLECT UPON: The core messages and lessons (AT MOST 5)
+3. KEY THEMES: Central messages with explanations (AT MOST 4)
 
 IMPORTANT GUIDELINES:
+- Do NOT reproduce or quote the full khutbah text - only summarise
 - Include reflection questions that encourage deep thinking
+- Respect the maximum item counts above even for a long or rich khutbah
 
 You must respond with a valid JSON object in this exact format:
 {
   "title": "A descriptive title for the study notes",
   "speaker": "Name of the speaker if mentioned (e.g., Sheikh Mustapha Shaybani)",
-  "cleaned_transcript": "The full khutbah text, cleaned up and polished for easy reading. Fix any grammar issues, add proper punctuation, organise into clear paragraphs, and format any Arabic text or references properly. This should be the complete khutbah content that someone can read through from start to finish.",
   "main_points": [
     {
       "point": "Main point or lesson",
@@ -46,15 +47,16 @@ ${BRITISH_ENGLISH_NOTE}
 
 When analysing a khutbah/lecture, you must create:
 
-1. KEY QURANIC WORDS & PHRASES: Arabic terms from Quran mentioned, with full explanation
-2. ARABIC VOCABULARY: All Arabic words used and their meanings
-3. ACTION ITEMS: Practical steps to implement the teachings
-4. MEMORY AIDS: Creative ways to remember key concepts
+1. KEY QURANIC WORDS & PHRASES: Arabic terms from Quran mentioned, with full explanation (AT MOST 6)
+2. ARABIC VOCABULARY: The most important Arabic words used and their meanings (AT MOST 8)
+3. ACTION ITEMS: Practical steps to implement the teachings (AT MOST 5)
+4. MEMORY AIDS: Creative ways to remember key concepts (AT MOST 4)
 5. AGE-APPROPRIATE SUMMARIES: For children and teens
-6. FAMILY DISCUSSION GUIDE: For family learning sessions
+6. FAMILY DISCUSSION GUIDE: For family learning sessions (AT MOST 5 points)
 
 IMPORTANT GUIDELINES:
 - ALL Arabic words/phrases MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
+- Respect the maximum item counts above even for a long or rich khutbah
 
 You must respond with a valid JSON object in this exact format:
 {
@@ -97,13 +99,14 @@ ${BRITISH_ENGLISH_NOTE}
 
 When analysing a khutbah/lecture, you must create:
 
-1. QURAN REFERENCES: Verses mentioned or relevant, with Arabic (full harakat), translation, and reflection points
-2. HADITH TO REFLECT UPON: Relevant authentic hadith with explanation
+1. QURAN REFERENCES: Verses mentioned or relevant, with Arabic (full harakat), translation, and reflection points (AT MOST 5)
+2. HADITH TO REFLECT UPON: Relevant authentic hadith with explanation (AT MOST 5)
 
 IMPORTANT GUIDELINES:
 - Only cite Sahih (authentic) hadith from Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah
 - ALL Arabic text MUST include FULL HARAKAT (diacritical marks: fatha, kasra, damma, sukun, shadda, tanwin)
 - Provide accurate Quran references with surah name and verse numbers
+- Respect the maximum item counts above even for a long or rich khutbah
 
 You must respond with a valid JSON object in this exact format:
 {
@@ -130,12 +133,13 @@ const QUIZ_SYSTEM_PROMPT = `You are an Islamic scholar and educator creating a q
 ${BRITISH_ENGLISH_NOTE}
 
 You must create:
-1. COMPREHENSIVE QUIZ: Multiple choice and short answer questions to test understanding
-2. HOMEWORK ASSIGNMENTS: Practical tasks to do during the week
+1. QUIZ: AT MOST 5 multiple choice questions, AT MOST 3 short answer questions, and AT MOST 3 reflection questions
+2. HOMEWORK ASSIGNMENTS: Practical tasks to do during the week (AT MOST 3)
 
 IMPORTANT GUIDELINES:
-- Make the quiz comprehensive - test understanding, not just memorisation
+- Test understanding, not just memorisation
 - Homework should be practical, achievable within a week
+- Respect the maximum item counts above even for a long or rich khutbah
 
 You must respond with a valid JSON object in this exact format:
 {
@@ -167,6 +171,17 @@ You must respond with a valid JSON object in this exact format:
     }
   ]
 }`;
+
+function cleanTranscript(text: string) {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .join('\n')
+    .trim();
+}
 
 function parseJsonResponse(content: string, label: string) {
   try {
@@ -246,7 +261,7 @@ Remember to:
 
 Respond with a valid JSON object only, no other text.`;
 
-    const transcriptUserPrompt = `Please analyse the following khutbah text and produce a cleaned transcript, main points, and key themes.
+    const transcriptUserPrompt = `Please analyse the following khutbah text and produce a title, speaker name, main points, and key themes. Do not reproduce the full text back - summarise only.
 
 KHUTBAH TEXT:
 ${khutba_text}
@@ -288,17 +303,22 @@ Remember to:
 
 Respond with a valid JSON object only, no other text.`;
 
-    // Run four smaller generations in parallel instead of one giant call, so
-    // each individual Claude request finishes well within the edge
-    // function's ~150s execution limit (a single combined call routinely
-    // exceeded it and the platform returned 504 before Claude finished).
+    // Run four smaller, capped generations in parallel instead of one giant
+    // open-ended call, so each individual Claude request finishes well
+    // within the edge function's ~150s execution limit regardless of how
+    // long or rich the khutbah is (an open-ended combined call could
+    // generate an unbounded amount of content and routinely exceeded the
+    // limit, with the platform returning 504 before Claude finished).
     // Quran/hadith references are split out on their own because full
-    // harakat on entire verses is the most token-dense content here.
+    // harakat on entire verses is the most token-dense content here. The
+    // cleaned transcript is produced programmatically below rather than by
+    // Claude, since asking it to reproduce the full khutbah text scales
+    // output (and generation time) directly with input length.
     const [transcriptText, vocabText, referencesText, quizText] = await Promise.all([
-      callClaude(anthropicApiKey, TRANSCRIPT_SYSTEM_PROMPT, transcriptUserPrompt, 6000),
-      callClaude(anthropicApiKey, VOCAB_SYSTEM_PROMPT, vocabUserPrompt, 8000),
-      callClaude(anthropicApiKey, REFERENCES_SYSTEM_PROMPT, referencesUserPrompt, 8000),
-      callClaude(anthropicApiKey, QUIZ_SYSTEM_PROMPT, quizUserPrompt, 6000)
+      callClaude(anthropicApiKey, TRANSCRIPT_SYSTEM_PROMPT, transcriptUserPrompt, 3000),
+      callClaude(anthropicApiKey, VOCAB_SYSTEM_PROMPT, vocabUserPrompt, 5000),
+      callClaude(anthropicApiKey, REFERENCES_SYSTEM_PROMPT, referencesUserPrompt, 5000),
+      callClaude(anthropicApiKey, QUIZ_SYSTEM_PROMPT, quizUserPrompt, 4000)
     ]);
 
     console.log('Transcript response length:', transcriptText.length);
@@ -311,7 +331,13 @@ Respond with a valid JSON object only, no other text.`;
     const referencesNotes = parseJsonResponse(referencesText, 'references');
     const quizNotes = parseJsonResponse(quizText, 'quiz');
 
-    const studyNotes = { ...transcriptNotes, ...vocabNotes, ...referencesNotes, ...quizNotes };
+    const studyNotes: any = {
+      ...transcriptNotes,
+      ...vocabNotes,
+      ...referencesNotes,
+      ...quizNotes,
+      cleaned_transcript: cleanTranscript(khutba_text)
+    };
 
     // Ensure all fields exist with defaults
     studyNotes.main_points = studyNotes.main_points || [];
