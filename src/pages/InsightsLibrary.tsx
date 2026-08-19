@@ -20,7 +20,10 @@ import {
   Volume2,
   Pause,
   Play,
-  Coins
+  Coins,
+  Bell,
+  Mail,
+  Check
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { generateTalbiyahInsightsPDF } from '../utils/generateInsightsPDF';
@@ -34,6 +37,9 @@ interface KhutbaInsight {
   insights: any;
   created_at: string;
   created_by: string;
+  notified_dashboard_at: string | null;
+  notified_email_at: string | null;
+  notified_email_count: number | null;
 }
 
 // Token costs for premium features
@@ -112,6 +118,8 @@ export default function InsightsLibrary() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [downloadingPDF, setDownloadingPDF] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [sendingDashboard, setSendingDashboard] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   // TTS playback states
   const [ttsLoading, setTtsLoading] = useState(false);
@@ -217,6 +225,76 @@ export default function InsightsLibrary() {
       toast.error('Error deleting insight: ' + error.message);
     } finally {
       setDeleting(null);
+    }
+  }
+
+  function updateInsightNotifyState(id: string, patch: Partial<KhutbaInsight>) {
+    setInsights(prev => prev.map(i => (i.id === id ? { ...i, ...patch } : i)));
+    setSelectedInsight(prev => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+  }
+
+  async function sendToDashboards(insight: KhutbaInsight) {
+    if (!isAdmin) return;
+    setSendingDashboard(insight.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-khutba-insights`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insight_id: insight.id,
+            title: insight.title,
+            speaker: insight.speaker,
+            notification_type: 'dashboard'
+          })
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || 'Failed to send notifications');
+
+      updateInsightNotifyState(insight.id, { notified_dashboard_at: new Date().toISOString() });
+      toast.success(`Dashboard notification sent to ${result.user_count || 'all'} users!`);
+    } catch (error: any) {
+      console.error('Error sending dashboard notifications:', error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setSendingDashboard(null);
+    }
+  }
+
+  async function sendReflectionEmail(insight: KhutbaInsight) {
+    if (!isAdmin) return;
+    setSendingEmail(insight.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-khutba-insights`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insight_id: insight.id,
+            title: insight.title,
+            speaker: insight.speaker,
+            khutba_date: insight.khutba_date,
+            main_points: insight.insights?.main_points?.slice(0, 3),
+            notification_type: 'email'
+          })
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || 'Failed to send emails');
+
+      updateInsightNotifyState(insight.id, {
+        notified_email_at: new Date().toISOString(),
+        notified_email_count: result.email_count || 0
+      });
+      toast.success(`Reflection emails sent to ${result.email_count || 0} users who opted in!`);
+    } catch (error: any) {
+      console.error('Error sending email notifications:', error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setSendingEmail(null);
     }
   }
 
@@ -697,6 +775,20 @@ export default function InsightsLibrary() {
                       ))}
                     </div>
                   )}
+
+                  {/* Admin: notify status at a glance */}
+                  {isAdmin && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className={`flex items-center px-2 py-0.5 rounded-full ${insight.notified_dashboard_at ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {insight.notified_dashboard_at ? <Check className="w-3 h-3 mr-1" /> : <Bell className="w-3 h-3 mr-1" />}
+                        Dashboards
+                      </span>
+                      <span className={`flex items-center px-2 py-0.5 rounded-full ${insight.notified_email_at ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {insight.notified_email_at ? <Check className="w-3 h-3 mr-1" /> : <Mail className="w-3 h-3 mr-1" />}
+                        Email
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Actions */}
@@ -992,6 +1084,56 @@ export default function InsightsLibrary() {
                 </div>
               )}
             </div>
+
+            {/* Admin: Notify Users (persistent - reflects actual send status from the database) */}
+            {isAdmin && (
+              <div className="px-6 py-4 bg-amber-50 border-t border-amber-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => sendToDashboards(selectedInsight)}
+                  disabled={sendingDashboard === selectedInsight.id}
+                  className={`flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg font-medium transition disabled:opacity-50 ${
+                    selectedInsight.notified_dashboard_at
+                      ? 'bg-blue-50 border border-blue-300 text-blue-700'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {sendingDashboard === selectedInsight.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : selectedInsight.notified_dashboard_at ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Bell className="w-4 h-4" />
+                  )}
+                  <span>
+                    {selectedInsight.notified_dashboard_at
+                      ? `Sent to dashboards ${formatDate(selectedInsight.notified_dashboard_at)} - Resend`
+                      : 'Send to Dashboards'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => sendReflectionEmail(selectedInsight)}
+                  disabled={sendingEmail === selectedInsight.id}
+                  className={`flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg font-medium transition disabled:opacity-50 ${
+                    selectedInsight.notified_email_at
+                      ? 'bg-violet-50 border border-violet-300 text-violet-700'
+                      : 'bg-violet-500 hover:bg-violet-600 text-white'
+                  }`}
+                >
+                  {sendingEmail === selectedInsight.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : selectedInsight.notified_email_at ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Mail className="w-4 h-4" />
+                  )}
+                  <span>
+                    {selectedInsight.notified_email_at
+                      ? `Emailed ${selectedInsight.notified_email_count ?? 0} users ${formatDate(selectedInsight.notified_email_at)} - Resend`
+                      : 'Send Reflection Email'}
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0">
