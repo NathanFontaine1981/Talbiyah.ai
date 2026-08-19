@@ -178,10 +178,10 @@ export default function KhutbaReflections() {
           setUserId(user.id);
           const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('roles')
             .eq('id', user.id)
             .single();
-          setIsAdmin(profile?.role === 'admin');
+          setIsAdmin(!!profile?.roles?.includes('admin'));
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
