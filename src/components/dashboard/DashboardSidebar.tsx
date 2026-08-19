@@ -38,6 +38,7 @@ import {
   Megaphone,
   Clock,
   Heart,
+  Type,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -125,6 +126,7 @@ export default function DashboardSidebar({
     {
       title: "Qur'an",
       items: [
+        { icon: Type, label: 'Arabic Alphabet', path: '/alphabet', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: Scroll, label: "Read the Qur'an", path: '/quran-reader', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: BookOpen, label: "Qur'an Tracker", path: '/progress/quran', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Calendar, label: 'Ramadan Planner', path: '/ramadan-planner', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'], isNew: true },
