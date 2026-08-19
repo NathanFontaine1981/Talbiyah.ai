@@ -67,6 +67,11 @@ Deno.serve(async (req: Request) => {
         console.log("Could not insert notifications:", e);
       }
 
+      await supabase
+        .from('khutba_insights')
+        .update({ notified_dashboard_at: new Date().toISOString() })
+        .eq('id', body.insight_id);
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -109,6 +114,11 @@ Deno.serve(async (req: Request) => {
       }) || [];
 
       if (eligibleUsers.length === 0) {
+        await supabase
+          .from('khutba_insights')
+          .update({ notified_email_at: new Date().toISOString(), notified_email_count: 0 })
+          .eq('id', body.insight_id);
+
         return new Response(
           JSON.stringify({
             success: true,
@@ -222,6 +232,14 @@ Deno.serve(async (req: Request) => {
           console.error("Email batch failed:", emailError);
         }
       }
+
+      await supabase
+        .from('khutba_insights')
+        .update({
+          notified_email_at: new Date().toISOString(),
+          notified_email_count: totalSent
+        })
+        .eq('id', body.insight_id);
 
       return new Response(
         JSON.stringify({
