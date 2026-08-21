@@ -139,6 +139,8 @@ const MemorizationSetupPage = lazy(() => import('./pages/student/MemorizationSet
 const AyahRecallPracticePage = lazy(() => import('./pages/student/AyahRecallPracticePage'));
 const RamadanPlannerPage = lazy(() => import('./pages/student/RamadanPlannerPage'));
 const ArabicAlphabetPage = lazy(() => import('./pages/student/ArabicAlphabetPage'));
+const JourneyPage = lazy(() => import('./pages/student/JourneyPage'));
+const DashboardDiscover = lazy(() => import('./pages/DashboardDiscover'));
 const QuranReader = lazy(() => import('./pages/QuranReader'));
 const SalahTrackerPage = lazy(() => import('./pages/student/SalahTrackerPage'));
 const DailyAthkarPage = lazy(() => import('./pages/student/DailyAthkarPage'));
@@ -608,6 +610,22 @@ function App() {
           element={
             <ProtectedRoute>
               <ArabicAlphabetPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journey"
+          element={
+            <ProtectedRoute>
+              <JourneyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/discover"
+          element={
+            <ProtectedRoute>
+              <DashboardDiscover />
             </ProtectedRoute>
           }
         />
