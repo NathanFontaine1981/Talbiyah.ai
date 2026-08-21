@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, BookOpen, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, BookOpen, PlayCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface Notification {
@@ -145,6 +145,8 @@ export default function NotificationDropdown() {
     switch (type) {
       case 'khutba_insight':
         return <BookOpen className="w-4 h-4 text-emerald-600" />;
+      case 'talbiyah_recommends':
+        return <PlayCircle className="w-4 h-4 text-emerald-600" />;
       default:
         return <Bell className="w-4 h-4 text-blue-600" />;
     }

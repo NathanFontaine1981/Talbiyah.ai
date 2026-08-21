@@ -348,6 +348,11 @@ verify_jwt = false
 # the isAdmin check in the calling React page, not by Supabase auth.
 verify_jwt = false
 
+[functions.notify-talbiyah-recommends]
+# Called directly from the admin UI without a user JWT; access is gated by
+# the isAdmin check in the calling React page, not by Supabase auth.
+verify_jwt = false
+
 [functions.save-khutba-insights]
 # Same as above - called without a user JWT from the admin creation flow.
 verify_jwt = false
