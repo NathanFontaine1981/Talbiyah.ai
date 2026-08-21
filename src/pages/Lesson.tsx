@@ -27,7 +27,8 @@ import {
   ChevronRight,
   ZoomIn,
   ZoomOut,
-  UserX
+  UserX,
+  NotebookText
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -56,6 +57,7 @@ interface LessonData {
   id: string;
   teacher_id: string;
   learner_id: string;
+  subject_id: string;
   teacher_name: string;
   learner_name: string;
   subject_name: string;
@@ -357,6 +359,160 @@ function PdfMaterialsSidebar({ onClose, onPageChange }: { onClose: () => void; o
   );
 }
 
+interface PastStudyNote {
+  id: string;
+  lesson_id: string;
+  title: string | null;
+  summary: string | null;
+  key_topics: string[] | null;
+  vocabulary_used: string[] | null;
+  created_at: string;
+}
+
+// Past Study Notes Sidebar - lets a student and teacher review earlier
+// lesson insights for this subject together, live during the call, instead
+// of the student having to leave the lesson to find them.
+function PastStudyNotesSidebar({
+  learnerId,
+  subjectId,
+  currentLessonId,
+  onClose
+}: {
+  learnerId: string;
+  subjectId: string;
+  currentLessonId: string;
+  onClose: () => void;
+}) {
+  const [notes, setNotes] = useState<PastStudyNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('lesson_insights')
+        .select('id, lesson_id, title, summary, key_topics, vocabulary_used, created_at')
+        .eq('learner_id', learnerId)
+        .eq('subject_id', subjectId)
+        .neq('lesson_id', currentLessonId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (cancelled) return;
+      if (error) {
+        console.error('Error loading past study notes:', error);
+        setNotes([]);
+      } else {
+        setNotes(data || []);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [learnerId, subjectId, currentLessonId]);
+
+  return (
+    <div className="flex-1 flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-white">
+          <NotebookText className="w-5 h-5" />
+          <span className="font-semibold">Past Study Notes</span>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-white/20 rounded transition-colors text-white"
+          title="Close sidebar"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto bg-white">
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Loading...</div>
+        ) : notes.length === 0 ? (
+          <div className="text-center py-12 px-4">
+            <NotebookText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">No past study notes for this subject yet.</p>
+            <p className="text-gray-400 text-xs mt-1">Notes from this lesson will appear here next time.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {notes.map(note => {
+              const isExpanded = expandedId === note.id;
+              return (
+                <div key={note.id} className="p-3">
+                  <button
+                    onClick={() => setExpandedId(isExpanded ? null : note.id)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {note.title || 'Lesson notes'}
+                      </span>
+                      <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                        {new Date(note.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    {note.summary && (
+                      <p className={`text-xs text-gray-500 mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                        {note.summary}
+                      </p>
+                    )}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-2 space-y-2">
+                      {note.key_topics && note.key_topics.length > 0 && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Key topics</p>
+                          <div className="flex flex-wrap gap-1">
+                            {note.key_topics.map((topic, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs rounded-full">
+                                {topic}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {note.vocabulary_used && note.vocabulary_used.length > 0 && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Vocabulary</p>
+                          <div className="flex flex-wrap gap-1">
+                            {note.vocabulary_used.map((word, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full">
+                                {word}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => window.open(`/lesson/${note.lesson_id}/insights`, '_blank')}
+                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                      >
+                        View full notes →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Tip */}
+      <div className="bg-emerald-50 px-4 py-2 text-xs text-emerald-800 border-t border-emerald-100">
+        <p><strong>Tip:</strong> Tap a note to expand it, then talk through it together on the call.</p>
+      </div>
+    </div>
+  );
+}
+
 // Wrapper component that provides HMS context
 export default function Lesson() {
   return (
@@ -389,7 +545,7 @@ function LessonContent() {
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
   const [showPostLessonForm, setShowPostLessonForm] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran' | 'pdf'>('messages');
+  const [sidebarMode, setSidebarMode] = useState<'messages' | 'quran' | 'pdf' | 'notes'>('messages');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [lessonStarted, setLessonStarted] = useState(false);
@@ -541,6 +697,7 @@ function LessonContent() {
           student_room_code,
           teacher_id,
           learner_id,
+          subject_id,
           teacher_profiles!inner(
             user_id,
             profiles!teacher_profiles_user_id_fkey(
@@ -608,6 +765,7 @@ function LessonContent() {
         id: lessonData.id,
         teacher_id: lessonData.teacher_id,
         learner_id: lessonData.learner_id,
+        subject_id: lessonData.subject_id,
         teacher_name: lessonData.teacher_profiles.profiles.full_name || 'Teacher',
         learner_name: lessonData.learners?.name || 'Student',
         subject_name: lessonData.subjects.name,
@@ -1331,6 +1489,27 @@ function LessonContent() {
               </button>
             )}
 
+            {/* Study Notes Toggle Button - review past lesson insights with the teacher */}
+            <button
+              onClick={() => {
+                if (sidebarMode === 'notes') {
+                  setSidebarMode('messages');
+                } else {
+                  setSidebarMode('notes');
+                  setShowMessaging(true);
+                }
+              }}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+                sidebarMode === 'notes'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300'
+              }`}
+              title="Review past study notes with your teacher"
+            >
+              <NotebookText className="w-4 h-4" />
+              <span className="hidden sm:inline">Study Notes</span>
+            </button>
+
             {/* Teacher: End Class Button - ends for everyone */}
             {userRole === 'teacher' && (
               <button
@@ -1488,6 +1667,19 @@ function LessonContent() {
                   <MessageCircle className="w-4 h-4" />
                   Messages
                 </button>
+                <button
+                  onClick={() => setSidebarMode('notes')}
+                  role="tab"
+                  aria-selected={sidebarMode === 'notes'}
+                  className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                    sidebarMode === 'notes'
+                      ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <NotebookText className="w-4 h-4" />
+                  Study Notes
+                </button>
                 {lesson.subject_name.toLowerCase().includes('quran') && (
                   <button
                     onClick={() => setSidebarMode('quran')}
@@ -1575,6 +1767,13 @@ function LessonContent() {
               </div>
             ) : sidebarMode === 'pdf' ? (
               <PdfMaterialsSidebar onClose={() => setShowMessaging(false)} />
+            ) : sidebarMode === 'notes' ? (
+              <PastStudyNotesSidebar
+                learnerId={lesson.learner_id}
+                subjectId={lesson.subject_id}
+                currentLessonId={lesson.id}
+                onClose={() => setShowMessaging(false)}
+              />
             ) : null}
           </div>
         )}
@@ -1592,6 +1791,17 @@ function LessonContent() {
             >
               <MessageCircle className="w-6 h-6" />
               <span className="font-medium hidden sm:inline">Messages</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowMessaging(true);
+                setSidebarMode('notes');
+              }}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-full shadow-lg transition-all flex items-center gap-2"
+              title="Open Study Notes"
+            >
+              <NotebookText className="w-6 h-6" />
+              <span className="font-medium hidden sm:inline">Study Notes</span>
             </button>
             {lesson.subject_name.toLowerCase().includes('quran') && (
               <button
