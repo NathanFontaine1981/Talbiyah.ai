@@ -61,12 +61,14 @@ import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
 import NotificationDropdown from '../components/NotificationDropdown';
 import { isRamadan, getRamadanYear, getRamadanDay, RAMADAN_DAYS } from '../data/ramadanData';
+import { resolveEnabledWidgets, computeIsNewUser } from '../lib/dashboardWidgets';
 
 interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   roles?: string[];
   referral_code?: string | null;
+  dashboard_widgets?: string[] | null;
 }
 
 interface LearnerData {
@@ -247,7 +249,7 @@ export default function Dashboard() {
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, roles, referral_code')
+        .select('full_name, avatar_url, roles, referral_code, dashboard_widgets')
         .eq('id', user.id)
         .single();
 
@@ -352,16 +354,7 @@ export default function Dashboard() {
       setLearner(learnersData?.[0] || null);
 
       // Check if user is new (no lessons completed, account created within last 7 days)
-      const { count: lessonCount } = await supabase
-        .from('lessons')
-        .select('id', { count: 'exact', head: true })
-        .or(`student_id.eq.${user.id},teacher_id.eq.${user.id}`)
-        .eq('status', 'completed');
-
-      const accountAge = user.created_at ?
-        (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24) : 999;
-
-      const userIsNew = (lessonCount === 0 || lessonCount === null) && accountAge < 7;
+      const userIsNew = await computeIsNewUser(supabase, user.id, user.created_at);
       setIsNewUser(userIsNew);
 
       // Show welcome banner if new and hasn't dismissed it
@@ -452,6 +445,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const enabledWidgets = resolveEnabledWidgets(profile?.dashboard_widgets, isNewUser);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
@@ -1000,17 +995,19 @@ export default function Dashboard() {
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (
               <>
-                {/* The Daily Companion — the centrepiece: today's Qur'an plan */}
-                <DailyCompanionCard />
+                {/* Upcoming Sessions — top priority: what's next */}
+                <div className="mb-6">
+                  <UpcomingSessionsCard />
+                </div>
+
+                {/* The Daily Companion — today's Qur'an plan */}
+                {enabledWidgets.has('quran_day') && <DailyCompanionCard />}
 
                 {/* Qur'an tracker rings — understood / fluent / memorised */}
-                <QuranTrackerCard />
+                {enabledWidgets.has('quran_tracker') && <QuranTrackerCard />}
 
                 {/* Arabic alphabet — for students starting completely from scratch */}
-                <AlphabetCard />
-
-                {/* Your Journey — feature discovery for new students */}
-                <StudentJourneyCard />
+                {enabledWidgets.has('alphabet') && <AlphabetCard />}
 
                 {/* Ramadan Planner Banner — front & centre during Ramadan */}
                 {(() => {
@@ -1063,32 +1060,42 @@ export default function Dashboard() {
                 )}
 
                 {/* Your Progress */}
-                <div className="mb-6">
-                  <ProgressOverview />
-                </div>
+                {enabledWidgets.has('progress_overview') && (
+                  <div className="mb-6">
+                    <ProgressOverview />
+                  </div>
+                )}
 
                 {/* Credits & Tokens */}
-                <div className="mb-6 grid md:grid-cols-2 gap-4">
-                  <CreditBalanceWidget />
-                  <TokenBalanceWidget />
-                </div>
-
-                {/* Upcoming Sessions */}
-                <div className="mb-6">
-                  <UpcomingSessionsCard />
-                </div>
+                {enabledWidgets.has('credits') && (
+                  <div className="mb-6 grid md:grid-cols-2 gap-4">
+                    <CreditBalanceWidget />
+                    <TokenBalanceWidget />
+                  </div>
+                )}
 
                 {/* My Learning Journey */}
-                <div className="mb-6">
-                  <MyLearningJourneyCard />
-                </div>
+                {enabledWidgets.has('learning_journey') && (
+                  <div className="mb-6">
+                    <MyLearningJourneyCard />
+                  </div>
+                )}
 
                 {/* Diagnostic Assessment */}
-                {userId && (
+                {userId && enabledWidgets.has('diagnostic') && (
                   <div className="mb-6">
                     <DiagnosticCTACard userId={userId} />
                   </div>
                 )}
+
+                {/* Discover more widgets */}
+                <button
+                  onClick={() => navigate('/dashboard/discover')}
+                  className="w-full mb-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition text-sm font-medium"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Add more to your dashboard
+                </button>
               </>
             )}
 

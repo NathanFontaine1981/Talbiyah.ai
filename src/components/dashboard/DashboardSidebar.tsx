@@ -40,6 +40,7 @@ import {
   Heart,
   Type,
   PlayCircle,
+  Plus,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -89,6 +90,8 @@ export default function DashboardSidebar({
       title: null,
       items: [
         { icon: Home, label: 'Dashboard', path: '/dashboard', active: true, roles: ['Student', 'Teacher', 'Admin', 'Parent', 'Explorer'] },
+        { icon: Sparkles, label: 'Your Journey', path: '/journey', active: false, roles: ['Student'] },
+        { icon: Plus, label: 'Customise Dashboard', path: '/dashboard/discover', active: false, roles: ['Student'] },
         { icon: HelpCircle, label: 'How To', path: '/how-to', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
       ]
     },
