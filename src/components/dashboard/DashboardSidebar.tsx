@@ -39,6 +39,7 @@ import {
   Clock,
   Heart,
   Type,
+  PlayCircle,
 } from 'lucide-react';
 import TalbiyahLogo from '../TalbiyahLogo';
 
@@ -156,6 +157,7 @@ export default function DashboardSidebar({
         { icon: Mic, label: 'Khutbah Creator', path: '/khutba-creator', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin'] },
         { icon: Library, label: 'Khutbah Reflections', path: '/insights-library', active: false, roles: ['Student', 'Parent', 'Teacher'] },
         { icon: Library, label: 'Khutbah Reflections', path: '/khutba-reflections', active: false, roles: ['Admin'] },
+        { icon: PlayCircle, label: 'Talbiyah Recommends', path: '/talbiyah-recommends', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'], isNew: true },
         { icon: Lightbulb, label: 'Suggestions', path: '/suggestions', active: false, roles: ['Student', 'Parent', 'Teacher', 'Admin', 'Explorer'] },
       ]
     },

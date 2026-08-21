@@ -96,6 +96,7 @@ const JanazahPractice = lazy(() => import('./pages/JanazahPractice'));
 const VettingProcess = lazy(() => import('./pages/VettingProcess'));
 const KhutbaReflections = lazy(() => import('./pages/KhutbaReflections'));
 const InsightsLibrary = lazy(() => import('./pages/InsightsLibrary'));
+const TalbiyahRecommends = lazy(() => import('./pages/TalbiyahRecommends'));
 const ReferralInfo = lazy(() => import('./pages/ReferralInfo'));
 
 // Explore & New Muslim pages (public)
@@ -911,6 +912,14 @@ function App() {
           element={
             <ProtectedRoute>
               <InsightsLibrary />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/talbiyah-recommends"
+          element={
+            <ProtectedRoute>
+              <TalbiyahRecommends />
             </ProtectedRoute>
           }
         />
