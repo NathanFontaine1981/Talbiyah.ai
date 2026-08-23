@@ -261,6 +261,28 @@ function extractSurahInfoFromAIContent(content: string): { surahName?: string; s
   return null;
 }
 
+// Compress a sorted list of ayah numbers into range notation, e.g.
+// [1,2,3,4,7,8,9] -> "1-4, 7-9", for a compact memorisation-progress prompt hint.
+function formatAyahRanges(ayahNumbers: number[]): string {
+  if (ayahNumbers.length === 0) return '';
+  const ranges: string[] = [];
+  let start = ayahNumbers[0];
+  let prev = ayahNumbers[0];
+  for (let i = 1; i <= ayahNumbers.length; i++) {
+    const current = ayahNumbers[i];
+    if (current === prev + 1) {
+      prev = current;
+      continue;
+    }
+    ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+    if (current !== undefined) {
+      start = current;
+      prev = current;
+    }
+  }
+  return ranges.join(', ');
+}
+
 interface VerifiedVerse {
   ayahNumber: number;
   verseKey: string;
@@ -1608,6 +1630,12 @@ Deno.serve(async (req: Request) => {
     let firstWordPrompterSection = '';
     let versesCoveredSection = '';
     let tafsirSection = '';
+    // Structured surah/ayah info for this insight, set once the AI identifies what was
+    // actually taught (below). Stored on detailed_insights so the frontend can query it
+    // directly instead of regexing the title - see PastStudyNotesSidebar in Lesson.tsx.
+    let resolvedSurahNumber: number | undefined;
+    let resolvedAyahStart: number | undefined;
+    let resolvedAyahEnd: number | undefined;
 
     const subjectLower = subject.toLowerCase();
 
@@ -1694,6 +1722,37 @@ Make the notes detailed, educational, and easy to revise.`;
     // This makes generation reliable even when metadata is missing or inaccurate
     console.log(`Phase 1: Skipping pre-fetch, will fetch Quran.com data AFTER Claude analysis for reliability`);
 
+    // If the booking already tells us which surah this is, look up which ayat this
+    // student has already memorised so the AI doesn't re-teach them from scratch on
+    // every lesson of the same surah - it's asked to acknowledge and move past them.
+    let memorisedAyahContext = '';
+    if (isQuranLesson && metadata.surah_number) {
+      try {
+        const { data: lessonForProgress } = await supabase
+          .from('lessons')
+          .select('learner_id')
+          .eq('id', lesson_id)
+          .single();
+
+        if (lessonForProgress?.learner_id) {
+          const { data: memorisedRows, error: memorisedError } = await supabase
+            .from('ayah_progress')
+            .select('ayah_number')
+            .eq('learner_id', lessonForProgress.learner_id)
+            .eq('surah_number', metadata.surah_number)
+            .eq('memorization_complete', true)
+            .order('ayah_number', { ascending: true });
+
+          if (!memorisedError && memorisedRows && memorisedRows.length > 0) {
+            const ayahNumbers = memorisedRows.map((r: { ayah_number: number }) => r.ayah_number);
+            memorisedAyahContext = `\n\nSTUDENT'S MEMORISATION PROGRESS ON THIS SURAH: Ayat ${formatAyahRanges(ayahNumbers)} are already memorised by this student from earlier lessons. Don't re-explain their meaning from scratch as if this were the first time - briefly acknowledge what's already known (e.g. "building on ayat X-Y which you've already memorised") and put your depth into ayat that are new or still being learned this lesson.`;
+          }
+        }
+      } catch (progressError) {
+        console.error('Error fetching ayah_progress for memorisation context:', progressError);
+      }
+    }
+
     // Build user prompt based on subject type
     let userPrompt = `Generate Talbiyah Insights for this ${subject} lesson:
 
@@ -1726,6 +1785,7 @@ CRITICAL INSTRUCTIONS:
 5. NOTE: Scholarly tafsir from Ibn Kathir will be automatically appended from Quran.com API - you don't need to generate comprehensive tafsir
 6. Your role is to capture the LESSON EXPERIENCE - the teacher's explanations, examples, and discussions
 7. IMPORTANT: Clearly state the Surah name/number and Ayat range at the beginning so we can fetch verified verse data
+${memorisedAyahContext}
 
 TRANSCRIPT:
 ${transcript}
@@ -1776,6 +1836,9 @@ Generate the insights following the exact format specified in the system prompt.
         }
 
         const actualSurahNumber = actualSurahInfo.surahNumber;
+        resolvedSurahNumber = actualSurahNumber;
+        resolvedAyahStart = startAyah;
+        resolvedAyahEnd = endAyah;
         console.log(`Fetching verified Quran data for AI-identified Surah ${actualSurahNumber}, Ayat ${startAyah}-${endAyah}...`);
 
         try {
@@ -2016,6 +2079,15 @@ Generate the insights following the exact format specified in the system prompt.
       metadata: metadata,
       generated_at: new Date().toISOString(),
     };
+
+    // Structured surah/ayah range for this insight (as opposed to only being embedded
+    // in title/content text) - lets the frontend query surah continuity and per-ayah
+    // memorisation progress directly. See PastStudyNotesSidebar in src/pages/Lesson.tsx.
+    if (resolvedSurahNumber) {
+      detailedInsightsData.surah_number = resolvedSurahNumber;
+      detailedInsightsData.ayah_start = resolvedAyahStart;
+      detailedInsightsData.ayah_end = resolvedAyahEnd;
+    }
 
     // Add verified Quran data if available
     if (isQuranLesson && verifiedVerses.length > 0) {
