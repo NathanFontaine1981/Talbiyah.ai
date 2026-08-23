@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
   BookOpen, Users, Heart, CheckCircle2, LogIn, LogOut, ArrowRight,
   Target, Mail, Lock, Loader2, Menu, X, Compass, GraduationCap,
@@ -97,6 +98,16 @@ export default function HomeLandingV2() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      <Helmet>
+        <title>Talbiyah.ai - Islamic Learning Platform</title>
+        <meta name="description" content="Build your foundations, master the Quran, learn Arabic - all in one place. Live one-to-one lessons with vetted teachers, AI-generated study notes, and progress tracking after every class." />
+        <link rel="canonical" href="https://talbiyah.ai/" />
+        <meta property="og:title" content="Talbiyah.ai - Islamic Learning Platform" />
+        <meta property="og:description" content="Build your foundations, master the Quran, learn Arabic - all in one place. Live one-to-one lessons with vetted teachers, AI-generated study notes, and progress tracking after every class." />
+        <meta property="og:url" content="https://talbiyah.ai/" />
+        <meta name="twitter:title" content="Talbiyah.ai - Islamic Learning Platform" />
+        <meta name="twitter:description" content="Build your foundations, master the Quran, learn Arabic - all in one place. Live one-to-one lessons with vetted teachers, AI-generated study notes, and progress tracking after every class." />
+      </Helmet>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-white focus:rounded-lg"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -60,6 +61,16 @@ export default function HowToPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
+      <Helmet>
+        <title>How It Works - Talbiyah.ai</title>
+        <meta name="description" content="Step-by-step guides for getting started and using Talbiyah.ai - booking lessons, live classes, AI-generated study notes, and progress tracking." />
+        <link rel="canonical" href="https://talbiyah.ai/how-to" />
+        <meta property="og:title" content="How It Works - Talbiyah.ai" />
+        <meta property="og:description" content="Step-by-step guides for getting started and using Talbiyah.ai - booking lessons, live classes, AI-generated study notes, and progress tracking." />
+        <meta property="og:url" content="https://talbiyah.ai/how-to" />
+        <meta name="twitter:title" content="How It Works - Talbiyah.ai" />
+        <meta name="twitter:description" content="Step-by-step guides for getting started and using Talbiyah.ai - booking lessons, live classes, AI-generated study notes, and progress tracking." />
+      </Helmet>
       {/* Subtle decorative background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-100/30 rounded-full blur-3xl" />

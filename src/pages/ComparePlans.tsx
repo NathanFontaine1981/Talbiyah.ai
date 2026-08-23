@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { addRole } from '../utils/roleHelpers';
@@ -100,6 +101,16 @@ export default function ComparePlans() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Helmet>
+        <title>Plans & Pricing - Talbiyah.ai</title>
+        <meta name="description" content="Compare Talbiyah.ai plans and pricing for live one-to-one Qur'an, Arabic, and Islamic studies lessons with vetted, qualified teachers." />
+        <link rel="canonical" href="https://talbiyah.ai/compare-plans" />
+        <meta property="og:title" content="Plans & Pricing - Talbiyah.ai" />
+        <meta property="og:description" content="Compare Talbiyah.ai plans and pricing for live one-to-one Qur'an, Arabic, and Islamic studies lessons with vetted, qualified teachers." />
+        <meta property="og:url" content="https://talbiyah.ai/compare-plans" />
+        <meta name="twitter:title" content="Plans & Pricing - Talbiyah.ai" />
+        <meta name="twitter:description" content="Compare Talbiyah.ai plans and pricing for live one-to-one Qur'an, Arabic, and Islamic studies lessons with vetted, qualified teachers." />
+      </Helmet>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         <button
           onClick={() => navigate(-1)}

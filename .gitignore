@@ -58,6 +58,9 @@ fetch-*.mjs
 import-*.mjs
 manually-*.mjs
 *.mjs
+# Required by `npm run build`'s postbuild step (package.json) - must stay tracked
+# or Netlify's build breaks on a fresh clone.
+!scripts/prerender.mjs
 
 # Duplicate files
 * 2.*

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
   Sparkles, BookOpen, Video, Gamepad2, Languages, GraduationCap,
   Trophy, Users, Briefcase, Heart, ArrowRight, CheckCircle2,
@@ -80,6 +81,16 @@ export default function Features() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      <Helmet>
+        <title>Features - Talbiyah.ai</title>
+        <meta name="description" content="Everything included with Talbiyah.ai: live one-to-one Qur'an, Arabic, and Islamic studies lessons, AI-generated study notes after every class, progress tracking, and vetted teachers." />
+        <link rel="canonical" href="https://talbiyah.ai/features" />
+        <meta property="og:title" content="Features - Talbiyah.ai" />
+        <meta property="og:description" content="Everything included with Talbiyah.ai: live one-to-one Qur'an, Arabic, and Islamic studies lessons, AI-generated study notes after every class, progress tracking, and vetted teachers." />
+        <meta property="og:url" content="https://talbiyah.ai/features" />
+        <meta name="twitter:title" content="Features - Talbiyah.ai" />
+        <meta name="twitter:description" content="Everything included with Talbiyah.ai: live one-to-one Qur'an, Arabic, and Islamic studies lessons, AI-generated study notes after every class, progress tracking, and vetted teachers." />
+      </Helmet>
       {/* Skip to Main Content - Accessibility */}
       <a
         href="#main-content"
