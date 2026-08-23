@@ -87,6 +87,15 @@ function startStaticServer() {
           filePath = path.join(filePath, 'index.html');
           stat = await fsp.stat(filePath).catch(() => null);
         }
+        if (!stat && !path.extname(urlPath)) {
+          // Netlify's clean-URL resolution: /compare-plans -> compare-plans.html.
+          const htmlPath = path.join(DIST_DIR, `${urlPath.replace(/\/+$/, '')}.html`);
+          const htmlStat = await fsp.stat(htmlPath).catch(() => null);
+          if (htmlStat) {
+            filePath = htmlPath;
+            stat = htmlStat;
+          }
+        }
         if (!stat) {
           // SPA fallback, mirrors netlify.toml's "/* -> /index.html" redirect.
           filePath = path.join(DIST_DIR, 'index.html');
@@ -112,8 +121,14 @@ function startStaticServer() {
 
 function outputPathFor(route) {
   if (route === '/') return path.join(DIST_DIR, 'index.html');
+  // Flat file (dist/compare-plans.html), not dist/compare-plans/index.html -
+  // Netlify serves /compare-plans -> compare-plans.html directly with no
+  // redirect. A directory+index.html instead gets an automatic 301 to add
+  // the trailing slash (confirmed against the real deployed site), which
+  // works but adds a hop and mismatches the no-trailing-slash URLs already
+  // in sitemap.xml/robots.txt/internal links.
   const clean = route.replace(/^\/+|\/+$/g, '');
-  return path.join(DIST_DIR, clean, 'index.html');
+  return path.join(DIST_DIR, `${clean}.html`);
 }
 
 async function snapshotRoute(browser, route) {
