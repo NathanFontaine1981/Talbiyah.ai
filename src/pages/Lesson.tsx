@@ -41,6 +41,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 import { supabase } from '../lib/supabaseClient';
+import { SURAHS_DATA } from '../lib/quranData';
 import QuickLessonFeedback from '../components/QuickLessonFeedback';
 import DetailedTeacherRating from '../components/DetailedTeacherRating';
 import LessonMessaging from '../components/messaging/LessonMessaging';
@@ -367,6 +368,33 @@ interface PastStudyNote {
   key_topics: string[] | null;
   vocabulary_used: string[] | null;
   created_at: string;
+  detailed_insights: { surah_number?: number; ayah_start?: number; ayah_end?: number } | null;
+}
+
+// A run of consecutive past lessons that covered the exact same ayah range
+// (e.g. three weeks in a row revising ayat 1-16 while working toward
+// memorisation). We only surface the latest one by default - nobody needs
+// to re-read the same tafsir summary N times.
+interface NoteGroup {
+  key: string;
+  notes: PastStudyNote[];
+}
+
+function groupNotesByAyahRange(notes: PastStudyNote[]): NoteGroup[] {
+  const groups: NoteGroup[] = [];
+  for (const note of notes) {
+    const di = note.detailed_insights;
+    const key = di?.surah_number && di?.ayah_start != null
+      ? `${di.surah_number}:${di.ayah_start}-${di.ayah_end ?? di.ayah_start}`
+      : `note:${note.id}`;
+    const previous = groups[groups.length - 1];
+    if (previous && previous.key === key && !key.startsWith('note:')) {
+      previous.notes.push(note);
+    } else {
+      groups.push({ key, notes: [note] });
+    }
+  }
+  return groups;
 }
 
 // Past Study Notes Sidebar - lets a student and teacher review earlier
@@ -386,6 +414,8 @@ function PastStudyNotesSidebar({
   const [notes, setNotes] = useState<PastStudyNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
+  const [memorised, setMemorised] = useState<{ surahNumber: number; count: number; total: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -393,7 +423,7 @@ function PastStudyNotesSidebar({
       setLoading(true);
       const { data, error } = await supabase
         .from('lesson_insights')
-        .select('id, lesson_id, title, summary, key_topics, vocabulary_used, created_at')
+        .select('id, lesson_id, title, summary, key_topics, vocabulary_used, created_at, detailed_insights')
         .eq('learner_id', learnerId)
         .eq('subject_id', subjectId)
         .neq('lesson_id', currentLessonId)
@@ -404,13 +434,35 @@ function PastStudyNotesSidebar({
       if (error) {
         console.error('Error loading past study notes:', error);
         setNotes([]);
-      } else {
-        setNotes(data || []);
+        setLoading(false);
+        return;
       }
+
+      const loadedNotes = (data || []) as PastStudyNote[];
+      setNotes(loadedNotes);
       setLoading(false);
+
+      // Surah continuity (memorisation counter) - use the most recent note
+      // that actually carries a structured surah number. Older insight rows
+      // predate this field and just won't show a counter.
+      const surahNumber = loadedNotes.find(n => n.detailed_insights?.surah_number)?.detailed_insights?.surah_number;
+      const totalAyahs = surahNumber ? SURAHS_DATA.find(s => s.number === surahNumber)?.ayahCount : undefined;
+      if (surahNumber && totalAyahs) {
+        const { count, error: progressError } = await supabase
+          .from('ayah_progress')
+          .select('id', { count: 'exact', head: true })
+          .eq('learner_id', learnerId)
+          .eq('surah_number', surahNumber)
+          .eq('memorization_complete', true);
+        if (!cancelled && !progressError) {
+          setMemorised({ surahNumber, count: count || 0, total: totalAyahs });
+        }
+      }
     })();
     return () => { cancelled = true; };
   }, [learnerId, subjectId, currentLessonId]);
+
+  const noteGroups = groupNotesByAyahRange(notes);
 
   return (
     <div className="flex-1 flex flex-col h-full">
@@ -429,6 +481,28 @@ function PastStudyNotesSidebar({
         </button>
       </div>
 
+      {/* Live memorisation progress - only appears once a note carries a
+          structured surah number (see detailed_insights.surah_number) */}
+      {memorised && (
+        <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-3">
+          <div className="flex items-center justify-between text-xs text-emerald-800 mb-1.5">
+            <span className="font-semibold">
+              {(() => {
+                const surahName = SURAHS_DATA.find(s => s.number === memorised.surahNumber)?.name;
+                return surahName ? `Surah ${surahName}` : 'This surah';
+              })()}
+            </span>
+            <span>{memorised.count} of {memorised.total} ayat memorised</span>
+          </div>
+          <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-600 rounded-full transition-all"
+              style={{ width: `${Math.min(100, Math.round((memorised.count / memorised.total) * 100))}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto bg-white">
         {loading ? (
@@ -441,10 +515,13 @@ function PastStudyNotesSidebar({
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {notes.map(note => {
+            {noteGroups.map(group => {
+              const note = group.notes[0];
+              const earlierCount = group.notes.length - 1;
               const isExpanded = expandedId === note.id;
+              const isGroupExpanded = expandedGroupKey === group.key;
               return (
-                <div key={note.id} className="p-3">
+                <div key={group.key} className="p-3">
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : note.id)}
                     className="w-full text-left"
@@ -463,6 +540,28 @@ function PastStudyNotesSidebar({
                       </p>
                     )}
                   </button>
+
+                  {earlierCount > 0 && (
+                    <button
+                      onClick={() => setExpandedGroupKey(isGroupExpanded ? null : group.key)}
+                      className="mt-1.5 text-[11px] text-gray-400 hover:text-gray-600"
+                    >
+                      {isGroupExpanded ? 'Hide' : `+ ${earlierCount} earlier ${earlierCount === 1 ? 'lesson' : 'lessons'} on these same ayat`}
+                    </button>
+                  )}
+                  {isGroupExpanded && (
+                    <div className="mt-1.5 pl-3 border-l-2 border-gray-100 space-y-1">
+                      {group.notes.slice(1).map(earlierNote => (
+                        <button
+                          key={earlierNote.id}
+                          onClick={() => window.open(`/lesson/${earlierNote.lesson_id}/insights`, '_blank')}
+                          className="block text-[11px] text-gray-400 hover:text-emerald-600"
+                        >
+                          {new Date(earlierNote.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} →
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {isExpanded && (
                     <div className="mt-2 space-y-2">
