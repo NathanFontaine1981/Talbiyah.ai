@@ -31,6 +31,7 @@ import {
   Square,
   ImageIcon,
   Printer,
+  RefreshCw,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '../../lib/supabaseClient';
@@ -49,6 +50,7 @@ interface CourseSession {
   audio_url: string | null;
   teaching_plan: string | null;
   teaching_plan_generated_at: string | null;
+  updated_at: string | null;
 }
 
 interface CourseInsight {
@@ -167,7 +169,7 @@ export default function CourseTeacherDashboard() {
       // Fetch sessions
       const { data: sessionsData } = await supabase
         .from('course_sessions')
-        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url, teaching_plan, teaching_plan_generated_at')
+        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url, teaching_plan, teaching_plan_generated_at, updated_at')
         .eq('group_session_id', courseData.id)
         .order('session_number', { ascending: true });
 
@@ -961,6 +963,10 @@ export default function CourseTeacherDashboard() {
             const insight = getInsightForSession(session.id);
             const isGenerating = generatingId === session.id || session.status === 'generating';
             const isNotifying = notifyingId === insight?.id;
+            const stuckMinutes = session.status === 'generating' && session.updated_at
+              ? Math.floor((Date.now() - new Date(session.updated_at).getTime()) / 60000)
+              : 0;
+            const isStuckGenerating = session.status === 'generating' && stuckMinutes >= 3;
 
             return (
               <div
@@ -1165,6 +1171,32 @@ export default function CourseTeacherDashboard() {
                         <Sparkles className="w-3.5 h-3.5" />
                       )}
                       {session.status === 'published' ? 'Regenerate' : 'Generate Insights'}
+                    </button>
+                  )}
+
+                  {/* Retry stuck generation — status stays 'generating' forever if the
+                      AI call hangs or the function times out mid-stream, with no
+                      other affordance to recover. Re-invoking is safe: it doesn't
+                      check current status and inserts/updates course_insights either way. */}
+                  {session.status === 'generating' && (
+                    <button
+                      onClick={() => generateInsights(session.id)}
+                      disabled={generatingId === session.id}
+                      title={isStuckGenerating
+                        ? `Stuck generating for ${stuckMinutes} min — click to retry`
+                        : 'Still generating — click if this looks stuck'}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors disabled:opacity-50 ${
+                        isStuckGenerating
+                          ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {generatingId === session.id ? (
+                        <Loader className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                      {isStuckGenerating ? `Retry (stuck ${stuckMinutes}m)` : 'Retry if stuck'}
                     </button>
                   )}
 
