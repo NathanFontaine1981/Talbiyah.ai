@@ -27,6 +27,10 @@ import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { useCourseNotesAccess } from '../../hooks/useCourseNotesAccess';
 import { COURSE_NOTES_PRICING } from '../../constants/courseNotesPricing';
+import CheadleMasjidCommunityWidget from '../../components/CheadleMasjidCommunityWidget';
+
+// "Revert Unshakeable Foundations" — the weekly Dawra course held at Cheadle Masjid
+const CHEADLE_MASJID_COURSE_ID = 'a154368c-3bf1-495c-8c7f-069572c1f794';
 
 interface CourseSession {
   id: string;
@@ -544,6 +548,13 @@ export default function CoursePage() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Cheadle Masjid WhatsApp community groups */}
+        {course.id === CHEADLE_MASJID_COURSE_ID && userId && (isEnrolled || isTeacher) && (
+          <div className="mb-6">
+            <CheadleMasjidCommunityWidget userId={userId} />
           </div>
         )}
 
