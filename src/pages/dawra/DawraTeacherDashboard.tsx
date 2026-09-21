@@ -35,10 +35,12 @@ import {
   Download,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { useBrowserRecording } from '../../hooks/useBrowserRecording';
 import { useTeachingPlan } from '../../hooks/useTeachingPlan';
+import TeachingPlanCueSheet, { CUE_SHEET_CSS, type TeachingPlanData } from '../../components/dawra/TeachingPlanCueSheet';
 
 interface CourseSession {
   id: string;
@@ -50,6 +52,7 @@ interface CourseSession {
   transcript: string | null;
   audio_url: string | null;
   teaching_plan: string | null;
+  teaching_plan_json: TeachingPlanData | null;
   teaching_plan_generated_at: string | null;
   updated_at: string | null;
 }
@@ -170,7 +173,7 @@ export default function CourseTeacherDashboard() {
       // Fetch sessions
       const { data: sessionsData } = await supabase
         .from('course_sessions')
-        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url, teaching_plan, teaching_plan_generated_at, updated_at')
+        .select('id, session_number, title, session_date, status, live_status, transcript, audio_url, teaching_plan, teaching_plan_json, teaching_plan_generated_at, updated_at')
         .eq('group_session_id', courseData.id)
         .order('session_number', { ascending: true });
 
@@ -443,6 +446,24 @@ export default function CourseTeacherDashboard() {
     } finally {
       setTranscribingAudio(false);
     }
+  }
+
+  function printTeachingPlanJson(plan: TeachingPlanData, sessionTitle: string) {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const markup = renderToStaticMarkup(<TeachingPlanCueSheet plan={plan} />);
+    win.document.write(`
+      <html><head><title>Teaching Plan - ${sessionTitle}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #F7F5EE; }
+        ${CUE_SHEET_CSS}
+        @media print { body { margin: 20px; background: white; } }
+      </style></head><body>
+      ${markup}
+      </body></html>
+    `);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
   }
 
   function printTeachingPlan(plan: string, sessionTitle: string) {
@@ -1119,13 +1140,13 @@ export default function CourseTeacherDashboard() {
                       if (showTeachingPlanSession !== session.id) teachingPlan.clearImages();
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                      session.teaching_plan
+                      (session.teaching_plan || session.teaching_plan_json)
                         ? 'border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
-                    {session.teaching_plan ? 'View Plan' : 'Teaching Plan'}
+                    {(session.teaching_plan || session.teaching_plan_json) ? 'View Plan' : 'Teaching Plan'}
                   </button>
 
                   {/* Record Audio */}
@@ -1314,7 +1335,7 @@ export default function CourseTeacherDashboard() {
                 {/* Teaching plan section */}
                 {showTeachingPlanSession === session.id && (
                   <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
-                    {!session.teaching_plan ? (
+                    {!session.teaching_plan && !session.teaching_plan_json ? (
                       <>
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Upload book pages to generate a teaching plan
@@ -1374,14 +1395,16 @@ export default function CourseTeacherDashboard() {
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Teaching Plan</h4>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => printTeachingPlan(session.teaching_plan!, session.title || `Session ${session.session_number}`)}
+                              onClick={() => session.teaching_plan_json
+                                ? printTeachingPlanJson(session.teaching_plan_json, session.title || `Session ${session.session_number}`)
+                                : printTeachingPlan(session.teaching_plan!, session.title || `Session ${session.session_number}`)}
                               className="flex items-center gap-1 px-2.5 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                               <Printer className="w-3 h-3" /> Print
                             </button>
                             <button
                               onClick={async () => {
-                                await supabase.from('course_sessions').update({ teaching_plan: null, teaching_plan_generated_at: null }).eq('id', session.id);
+                                await supabase.from('course_sessions').update({ teaching_plan: null, teaching_plan_json: null, teaching_plan_generated_at: null }).eq('id', session.id);
                                 fetchData();
                               }}
                               className="flex items-center gap-1 px-2.5 py-1 text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -1390,8 +1413,14 @@ export default function CourseTeacherDashboard() {
                             </button>
                           </div>
                         </div>
-                        <div className="prose prose-sm dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800 rounded-xl p-4 max-h-[600px] overflow-y-auto">
-                          <ReactMarkdown>{session.teaching_plan}</ReactMarkdown>
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 max-h-[600px] overflow-y-auto">
+                          {session.teaching_plan_json ? (
+                            <TeachingPlanCueSheet plan={session.teaching_plan_json} />
+                          ) : (
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                              <ReactMarkdown>{session.teaching_plan}</ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
