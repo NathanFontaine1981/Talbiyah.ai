@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getHMSManagementToken } from "../_shared/hms.ts";
+import { transcribeWithGemini } from "../_shared/gemini.ts";
 
 // This function handles 100ms webhooks - must be publicly accessible
 // Security is handled via x-webhook-secret header validation
@@ -554,10 +555,15 @@ Deno.serve(async (req: Request) => {
 
           console.log("Course session recording saved, live_status -> ended, status -> recording");
 
-          // Auto-transcribe using ElevenLabs and generate insights
+          // Auto-transcribe using Gemini (falls back to ElevenLabs) and generate insights
           console.log("Auto-transcribing course session recording...");
           try {
-            const courseAutoTranscript = await transcribeWithElevenLabs(recordingUrl);
+            let courseAutoTranscript = await transcribeWithGemini(recordingUrl, null);
+            let courseTranscriptSource = 'gemini';
+            if (!courseAutoTranscript) {
+              courseAutoTranscript = await transcribeWithElevenLabs(recordingUrl);
+              courseTranscriptSource = 'elevenlabs';
+            }
 
             if (courseAutoTranscript && courseAutoTranscript.length > 100) {
               console.log("Course auto-transcription successful, length:", courseAutoTranscript.length);
@@ -566,7 +572,7 @@ Deno.serve(async (req: Request) => {
                 .from("course_sessions")
                 .update({
                   transcript: courseAutoTranscript,
-                  transcript_source: 'elevenlabs',
+                  transcript_source: courseTranscriptSource,
                   status: 'transcript_added',
                   updated_at: new Date().toISOString(),
                 })
@@ -886,24 +892,23 @@ Deno.serve(async (req: Request) => {
                                 subjectLower.includes('arabic') || subjectLower.includes('tajweed') ||
                                 subjectLower.includes('tajwid') || subjectLower.includes('hifz');
 
-        // Determine if lesson is "long" (>35 min) - these need special handling
+        // ElevenLabs buffers the whole file into memory, so it's still only
+        // safe for lessons under ~35min. Gemini streams the upload, so it
+        // handles any length itself (with its own internal safety cap).
         const isLongLesson = lesson.duration_minutes && lesson.duration_minutes > 35;
 
         if (isArabicContent && recordingUrl) {
-          if (isLongLesson) {
-            // Long lessons: Use the 100ms transcript we already have (no file download = no memory issues)
-            console.log(`Long Arabic lesson (${lesson.duration_minutes} min) - using 100ms transcript (already fetched, no memory pressure)...`);
-            // transcriptText already contains 100ms transcript if available, keep it
+          console.log("Arabic/Quran content detected - using Gemini as PRIMARY transcription...");
+          let arabicPrimaryTranscript = await transcribeWithGemini(recordingUrl, lesson.duration_minutes);
+          if (!arabicPrimaryTranscript && !isLongLesson) {
+            console.log("Gemini failed or empty, trying ElevenLabs...");
+            arabicPrimaryTranscript = await transcribeWithElevenLabs(recordingUrl);
+          }
+          if (arabicPrimaryTranscript && arabicPrimaryTranscript.length > 100) {
+            console.log("Using specialized Arabic transcript, length:", arabicPrimaryTranscript.length);
+            transcriptText = arabicPrimaryTranscript;
           } else {
-            // Short lessons: Use ElevenLabs (best Arabic quality)
-            console.log("Arabic/Quran content detected - using ElevenLabs Scribe as PRIMARY transcription...");
-            const elevenLabsTranscript = await transcribeWithElevenLabs(recordingUrl);
-            if (elevenLabsTranscript && elevenLabsTranscript.length > 100) {
-              console.log("Using ElevenLabs transcript (best for Arabic), length:", elevenLabsTranscript.length);
-              transcriptText = elevenLabsTranscript;
-            } else {
-              console.log("ElevenLabs failed or empty, falling back to 100ms transcript");
-            }
+            console.log("No specialized Arabic transcript available, falling back to 100ms transcript");
           }
         }
 
@@ -1015,20 +1020,16 @@ Deno.serve(async (req: Request) => {
                               subjectLower.includes('arabic') || subjectLower.includes('tajweed') ||
                               subjectLower.includes('tajwid') || subjectLower.includes('hifz');
 
-      // Determine if lesson is "long" (>35 min)
+      // ElevenLabs buffers the whole file into memory, so it's still only
+      // safe for lessons under ~35min. Gemini streams the upload, so it
+      // handles any length itself (with its own internal safety cap).
       const isLongLesson = lesson.duration_minutes && lesson.duration_minutes > 35;
 
       if (isArabicContent) {
-        let arabicTranscript: string | null = null;
-
-        if (isLongLesson) {
-          // Long lessons: Skip ElevenLabs to avoid memory issues
-          // The 100ms transcript should be available via webhook/API
-          console.log(`No 100ms transcript, long lesson (${lesson.duration_minutes} min) - cannot use ElevenLabs (memory limits), skipping...`);
-          // Don't try ElevenLabs for long lessons - it will hit memory limits
-        } else {
-          // Short lessons: Use ElevenLabs (best Arabic quality)
-          console.log("No 100ms transcript available, trying ElevenLabs Scribe for Arabic content...");
+        console.log("No 100ms transcript available, trying Gemini for Arabic content...");
+        let arabicTranscript: string | null = await transcribeWithGemini(recordingUrl, lesson.duration_minutes);
+        if (!arabicTranscript && !isLongLesson) {
+          console.log("Gemini failed or empty, trying ElevenLabs...");
           arabicTranscript = await transcribeWithElevenLabs(recordingUrl);
         }
 
