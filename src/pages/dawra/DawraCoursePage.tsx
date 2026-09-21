@@ -85,7 +85,8 @@ export default function CoursePage() {
 
   const [userGender, setUserGender] = useState<string | null>(null);
 
-  const { hasAccess: hasNotesAccess, notesPricePounds, isTeacherOrAdmin: isNotesAdmin } = useCourseNotesAccess(course?.id || null);
+  const { hasAccess: hasNotesAccess, notesPricePounds, isTeacherOrAdmin: isNotesAdmin, discountPercent: notesDiscountPercent } = useCourseNotesAccess(course?.id || null);
+  const notesAreFree = notesDiscountPercent === 100;
 
   useEffect(() => {
     fetchCourse();
@@ -370,11 +371,20 @@ export default function CoursePage() {
                   </p>
                 </div>
                 <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3">
-                  <p className="text-xs text-emerald-200 uppercase tracking-wider font-medium mb-1">Study Notes Add-on</p>
-                  <p className="text-xl font-bold">
-                    £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} <span className="text-sm font-normal text-emerald-200">one-off</span>
-                  </p>
-                  <p className="text-xs text-emerald-200 mt-0.5">Session 1 free, then unlock all remaining</p>
+                  <p className="text-xs text-emerald-200 uppercase tracking-wider font-medium mb-1">Study Notes</p>
+                  {notesAreFree ? (
+                    <>
+                      <p className="text-xl font-bold">Free</p>
+                      <p className="text-xs text-emerald-200 mt-0.5">Included for every session</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xl font-bold">
+                        £{COURSE_NOTES_PRICING.flatPrice.toFixed(2)} <span className="text-sm font-normal text-emerald-200">one-off</span>
+                      </p>
+                      <p className="text-xs text-emerald-200 mt-0.5">Session 1 free, then unlock all remaining</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -425,7 +435,9 @@ export default function CoursePage() {
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {course.total_sessions ? `${course.total_sessions} sessions` : 'Ongoing'}
-                  {' · '}Study notes available as optional add-on (£{COURSE_NOTES_PRICING.flatPrice.toFixed(2)})
+                  {notesAreFree
+                    ? ' · Study notes included free'
+                    : ` · Study notes available as optional add-on (£${COURSE_NOTES_PRICING.flatPrice.toFixed(2)})`}
                 </p>
               </div>
               <button

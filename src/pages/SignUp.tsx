@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { validateEmail } from '../utils/emailValidation';
 import { validatePassword, getStrengthColor, getStrengthTextColor } from '../utils/passwordValidation';
 
+// "Revert Unshakeable Foundations" — the weekly Dawra course held at Cheadle Masjid
+const CHEADLE_MASJID_COURSE_ID = 'a154368c-3bf1-495c-8c7f-069572c1f794';
+
 export default function SignUp() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,6 +95,7 @@ export default function SignUp() {
   const [passwordStrength, setPasswordStrength] = useState<ReturnType<typeof validatePassword> | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [helpNeeded, setHelpNeeded] = useState('');
+  const [attendsCheadleMasjid, setAttendsCheadleMasjid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -265,7 +269,8 @@ export default function SignUp() {
             phone: fullPhoneNumber,
             selected_role: selectedRole,
             referral_code: referralCode.trim() || null,
-            help_needed: helpNeeded.trim() || null
+            help_needed: helpNeeded.trim() || null,
+            attends_cheadle_masjid: attendsCheadleMasjid
           }
         }
       });
@@ -362,10 +367,18 @@ export default function SignUp() {
                 user_role: selectedRole,
                 signup_time: new Date().toISOString(),
                 referral_code: referralCode.trim() || null,
-                help_needed: helpNeeded.trim() || null
+                help_needed: helpNeeded.trim() || null,
+                attends_cheadle_masjid: attendsCheadleMasjid
               }
             }
-          })
+          }),
+          // Cheadle Masjid attendees are auto-enrolled (via the handle_new_user DB trigger)
+          // in "Unshakeable Foundations" — send them the course welcome email too
+          ...(attendsCheadleMasjid ? [
+            supabase.functions.invoke('send-enrollment-welcome', {
+              body: { group_session_id: CHEADLE_MASJID_COURSE_ID, student_id: data.user.id }
+            })
+          ] : [])
         ]).then(results => {
           results.forEach((result, index) => {
             if (result.status === 'rejected') {
@@ -946,6 +959,25 @@ export default function SignUp() {
             </details>
             </>
             )}
+
+            {/* Cheadle Masjid attendance / auto-enrol */}
+            <div className="flex items-start space-x-3 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <input
+                type="checkbox"
+                id="cheadleMasjid"
+                checked={attendsCheadleMasjid}
+                onChange={(e) => setAttendsCheadleMasjid(e.target.checked)}
+                className="mt-1 w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
+              />
+              <label htmlFor="cheadleMasjid" className="text-sm text-gray-700">
+                <span className="font-medium">I attend Cheadle Masjid</span>
+                <p className="text-gray-500 mt-1">
+                  You'll be automatically enrolled in Unshakeable Foundations — the weekly course held
+                  at Cheadle Masjid. You'll get study notes after every session and can join the lesson
+                  online even on weeks you can't make it in person.
+                </p>
+              </label>
+            </div>
 
             {/* Terms and Privacy Consent */}
             <div className="flex items-start space-x-3">

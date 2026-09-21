@@ -51,6 +51,7 @@ export default function TeacherManagement() {
   const [approvedTeachers, setApprovedTeachers] = useState<TeacherApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [invitingCallId, setInvitingCallId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Bookable subjects: the 3 available subjects, and each teacher's current selection
@@ -183,6 +184,32 @@ export default function TeacherManagement() {
       console.error('Error fetching teachers:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function inviteToOnboardingCall(teacher: TeacherApplication) {
+    setInvitingCallId(teacher.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-onboarding-call', {
+        body: { teacher_id: teacher.user_id },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to create onboarding call');
+
+      toast.success(
+        data.email_sent
+          ? `Room created and emailed to ${teacher.full_name}`
+          : `Room created — email failed, share this link manually: ${data.teacher_join_url}`,
+        { duration: 8000 }
+      );
+
+      // Open the admin's join link straight away so you can jump on immediately.
+      window.open(data.admin_join_url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast.error('Failed to invite to onboarding call: ' + err.message);
+    } finally {
+      setInvitingCallId(null);
     }
   }
 
@@ -613,6 +640,22 @@ export default function TeacherManagement() {
                     <span>WhatsApp</span>
                   </a>
                 )}
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inviteToOnboardingCall(teacher);
+                  }}
+                  disabled={invitingCallId === teacher.id}
+                  className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg font-medium transition flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {invitingCallId === teacher.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Video className="w-4 h-4" />
+                  )}
+                  <span>Invite to Onboarding Call</span>
+                </button>
 
                 {teacher.status === 'pending_approval' && (
                   <>

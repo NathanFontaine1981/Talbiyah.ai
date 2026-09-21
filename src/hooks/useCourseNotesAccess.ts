@@ -45,6 +45,14 @@ export function useCourseNotesAccess(groupSessionId: string | null): CourseNotes
         setDiscountPercent(course.notes_discount_percent || 0);
         setHasDiscountCode(!!course.notes_discount_code);
 
+        // Fully sponsored course (e.g. funded community classes) — notes are free
+        // for everyone, no code needed and no price ever shown.
+        if (course.notes_discount_percent === 100) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
         const isOwner = user.id === course.teacher_id || user.id === course.created_by;
         if (isOwner) {
           setIsTeacherOrAdmin(true);

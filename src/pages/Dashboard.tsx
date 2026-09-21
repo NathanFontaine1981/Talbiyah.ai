@@ -56,6 +56,7 @@ import {
 } from '../components/progress';
 import ThemeToggle from '../components/ThemeToggle';
 import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
+import CheadleMasjidCommunityWidget from '../components/CheadleMasjidCommunityWidget';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
@@ -1056,6 +1057,13 @@ export default function Dashboard() {
                 {userId && (
                   <div className="mb-6">
                     <ConnectReferrerWidget userId={userId} />
+                  </div>
+                )}
+
+                {/* Cheadle Masjid Community - Only shows for masjid attendees */}
+                {userId && (
+                  <div className="mb-6">
+                    <CheadleMasjidCommunityWidget userId={userId} />
                   </div>
                 )}
 
