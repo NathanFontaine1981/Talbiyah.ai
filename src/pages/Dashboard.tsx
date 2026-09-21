@@ -57,6 +57,7 @@ import {
 import ThemeToggle from '../components/ThemeToggle';
 import ConnectReferrerWidget from '../components/ConnectReferrerWidget';
 import CheadleMasjidCommunityWidget from '../components/CheadleMasjidCommunityWidget';
+import RevertsClassWidget from '../components/RevertsClassWidget';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import CompleteProfileModal from '../components/CompleteProfileModal';
 import { DashboardSidebar, MobileBottomNav } from '../components/dashboard';
@@ -1060,7 +1061,14 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Cheadle Masjid Community - Only shows for masjid attendees */}
+                {/* Reverts Unshakeable Foundations - Only shows for enrolled students/teacher */}
+                {userId && (
+                  <div className="mb-6">
+                    <RevertsClassWidget userId={userId} />
+                  </div>
+                )}
+
+                {/* Cheadle Masjid Community - Only shows for masjid attendees/enrolled students */}
                 {userId && (
                   <div className="mb-6">
                     <CheadleMasjidCommunityWidget userId={userId} />

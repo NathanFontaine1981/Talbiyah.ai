@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, ExternalLink, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+// "Revert Unshakeable Foundations" — the weekly Dawra course held at Cheadle Masjid
+const CHEADLE_MASJID_COURSE_ID = 'a154368c-3bf1-495c-8c7f-069572c1f794';
+
 interface CheadleMasjidCommunityWidgetProps {
   userId: string;
 }
@@ -24,13 +27,38 @@ export default function CheadleMasjidCommunityWidget({ userId }: CheadleMasjidCo
 
   async function load() {
     try {
+      // Eligible if flagged at sign-up, actually enrolled in the course, or the teacher/owner —
+      // covers everyone who "signs up to that course" even if they enrolled directly on the
+      // course page rather than through the sign-up checkbox.
       const { data: profile } = await supabase
         .from('profiles')
         .select('attends_cheadle_masjid')
         .eq('id', userId)
         .single();
 
-      if (!profile?.attends_cheadle_masjid) {
+      let eligible = !!profile?.attends_cheadle_masjid;
+
+      if (!eligible) {
+        const { data: course } = await supabase
+          .from('group_sessions')
+          .select('teacher_id, created_by')
+          .eq('id', CHEADLE_MASJID_COURSE_ID)
+          .single();
+
+        if (course && (userId === course.teacher_id || userId === course.created_by)) {
+          eligible = true;
+        } else {
+          const { data: enrollment } = await supabase
+            .from('group_session_participants')
+            .select('id')
+            .eq('group_session_id', CHEADLE_MASJID_COURSE_ID)
+            .eq('student_id', userId)
+            .maybeSingle();
+          eligible = !!enrollment;
+        }
+      }
+
+      if (!eligible) {
         setEligible(false);
         setLoading(false);
         return;
