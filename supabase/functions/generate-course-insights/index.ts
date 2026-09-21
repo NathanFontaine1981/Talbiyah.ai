@@ -181,38 +181,25 @@ After complex concepts, include recap moments
 ### 5. CHECKING FOR UNDERSTANDING
 Include checkpoints throughout
 
-FORMATTING:
+OUTPUT: you will call the emit_teaching_plan tool with the full plan — do not
+write markdown, write directly into that tool's structured fields instead.
 
-**OPENING HOOK (2-3 MIN)**
-[Detailed scenario with exact wording]
+CRITICAL — page discipline (this is the whole point of this teaching plan):
+- Every "book" cue MUST carry the real page number(s) visible in the page images provided, and the exact "from" quote (where reading starts) and "to" quote (the exact line reading stops at — this becomes the stop marker).
+- Use action "open" for the very first book cue of the session, "resume" when reading continues on the SAME page after a script cue, and "turn_page" when the page number changes.
+- A "stop" cue's line must be copied verbatim from the book text — the teacher glances at it mid-sentence and needs the exact wording, not a paraphrase.
+- Never invent a page number. If you cannot tell which page a passage is on from the images, use your best reading of the visible page number printed on that image.
 
-**PAGE [X] - [SECTION TITLE] ([X] MIN)**
+Each teaching section (a block of book cues + stop cues + script cues) should map to one continuous chunk of the chapter — start a new section when the topic/theme shifts, not on every single stop.
 
-🛑 STOP #[N]: After "[exact line from book]"
+Within a script cue's beats, use these kinds:
+- "ask": a discussion question, with expected answers as options
+- "key": the core teaching point to land (mark emphasis)
+- "scenario": a full, detailed, specific story/analogy in the teacher's own voice
+- "do": a physical/interactive instruction (show of hands, turn to neighbour, etc.)
+- "recap": a short summary before moving on (use sparingly, only after complex concepts)
 
-❓ QUESTION: "[Exact question to ask]"
-Expected answers: [List possible responses]
-
-💡 SCENARIO: "[Title of scenario]"
-[Full detailed scenario with exact wording]
-
-✓ KEY POINT: "[Main teaching point]"
-[Explanation/clarification]
-
-🎯 INTERACTIVE: "[What students do]"
-[Exact instructions]
-
-📝 RECAP: "[Summary prompt]"
-[What to review]
-
-**WRAP-UP & ISHA BREAK (3-5 MIN)**
-[Quick recap, one reflection question, transition to prayer]
-
-**AFTER FOOD DISCUSSION (10-15 MIN)**
-[5-7 deeper discussion questions for informal conversation]
-
-**HOMEWORK/ACTION STEPS**
-[3-5 practical things to do this week]
+Also produce: a flight_plan overview (time/page/section/lead for the whole session, for a quick-glance table), the opening hook, wrap-up, Isha break note, after-food discussion questions, homework/action steps, and teacher notes (what to do if a stop runs long, if the room goes quiet, and any sensitivities to watch for this specific content).
 
 TONE & STYLE:
 
@@ -264,6 +251,116 @@ CHECKLIST:
 - Balance between Nathan and Kareem
 - Mix of challenge and encouragement
 - Connection to new Muslim experience`;
+
+// Structured "cue sheet" schema — book/stop/script cues in reading order, forced
+// via tool_choice so the teaching plan always has real page numbers and exact
+// stop lines rather than freeform prose a teacher has to hunt through mid-class.
+const TEACHING_PLAN_TOOL = {
+  name: "emit_teaching_plan",
+  description: "Emit the structured, page-accurate teaching plan for this session.",
+  input_schema: {
+    type: "object",
+    required: ["session_title", "book_reference", "page_range", "flight_plan", "opening_hook", "sections", "wrap_up", "isha_break", "after_food_discussion", "homework", "teacher_notes"],
+    properties: {
+      session_title: { type: "string" },
+      book_reference: { type: "string", description: "e.g. 'Islamic Studies Book 4, Chapter 2'" },
+      page_range: { type: "string", description: "e.g. '57–65'" },
+      flight_plan: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["time", "page", "section", "lead"],
+          properties: {
+            time: { type: "string" },
+            page: { type: "string", description: "page number, or '—' for non-book segments" },
+            section: { type: "string" },
+            lead: { type: "string" },
+          },
+        },
+      },
+      opening_hook: {
+        type: "object",
+        required: ["lead", "duration", "beats"],
+        properties: {
+          lead: { type: "string" },
+          duration: { type: "string" },
+          beats: { type: "array", items: { type: "string" } },
+        },
+      },
+      sections: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["title", "cues"],
+          properties: {
+            title: { type: "string" },
+            cues: {
+              type: "array",
+              items: {
+                type: "object",
+                required: ["type"],
+                properties: {
+                  type: { type: "string", enum: ["book", "stop", "script"] },
+                  action: { type: "string", enum: ["open", "resume", "turn_page"], description: "book cues only" },
+                  page: { type: "string", description: "book/stop cues only — the real page number" },
+                  reader: { type: "string", description: "book cues only — who reads (Nathan/Kareem)" },
+                  from_quote: { type: "string", description: "book cues only — exact opening words" },
+                  to_quote: { type: "string", description: "book cues only — exact words reading stops at" },
+                  number: { type: "integer", description: "stop cues only — sequential stop number" },
+                  line: { type: "string", description: "stop cues only — exact verbatim line to stop at" },
+                  lead: { type: "string", description: "script cues only — who runs it (Nathan/Kareem)" },
+                  beats: {
+                    type: "array",
+                    description: "script cues only",
+                    items: {
+                      type: "object",
+                      required: ["kind", "label", "text"],
+                      properties: {
+                        kind: { type: "string", enum: ["ask", "key", "scenario", "do", "recap"] },
+                        label: { type: "string" },
+                        text: { type: "string" },
+                        options: { type: "array", items: { type: "string" }, description: "ask beats only — expected answers" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      wrap_up: {
+        type: "object",
+        required: ["lead", "time", "beats"],
+        properties: {
+          lead: { type: "string" },
+          time: { type: "string" },
+          beats: { type: "array", items: { type: "string" } },
+        },
+      },
+      isha_break: { type: "string" },
+      after_food_discussion: { type: "array", items: { type: "string" } },
+      homework: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["title", "text"],
+          properties: { title: { type: "string" }, text: { type: "string" } },
+        },
+      },
+      teacher_notes: {
+        type: "object",
+        required: ["if_long", "if_quiet", "sensitivities"],
+        properties: {
+          if_long: { type: "string" },
+          if_quiet: { type: "string" },
+          sensitivities: { type: "array", items: { type: "string" } },
+        },
+      },
+      closing_dua: { type: "string" },
+    },
+  },
+};
 
 // Call Claude with streaming and accumulate the full text response.
 // Streaming is required for large max_tokens (>~16K) to avoid HTTP timeouts.
@@ -482,6 +579,8 @@ Deno.serve(async (req: Request) => {
           temperature: 0.4,
           system: TEACHING_PLAN_PROMPT,
           messages: [{ role: "user", content: messageContent }],
+          tools: [TEACHING_PLAN_TOOL],
+          tool_choice: { type: "tool", name: "emit_teaching_plan" },
         }),
       });
 
@@ -495,7 +594,8 @@ Deno.serve(async (req: Request) => {
       }
 
       const data = await response.json();
-      const generatedPlan = data.content?.[0]?.text;
+      const toolUse = data.content?.find((b: any) => b.type === "tool_use" && b.name === "emit_teaching_plan");
+      const generatedPlan = toolUse?.input;
 
       if (!generatedPlan) {
         return new Response(
@@ -507,11 +607,13 @@ Deno.serve(async (req: Request) => {
       const processingTime = Date.now() - startTime;
       console.log(`Teaching plan generated in ${processingTime}ms, saving...`);
 
-      // Save teaching plan to course_sessions
+      // Save the structured plan; clear the legacy free-text column so the
+      // frontend's "has a plan" check prefers this one.
       const { error: saveError } = await supabase
         .from("course_sessions")
         .update({
-          teaching_plan: generatedPlan,
+          teaching_plan_json: generatedPlan,
+          teaching_plan: null,
           teaching_plan_generated_at: new Date().toISOString(),
         })
         .eq("id", course_session_id);
