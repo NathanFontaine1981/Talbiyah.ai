@@ -430,6 +430,80 @@ async function streamClaudeText(params: {
   return { text, stopReason };
 }
 
+// Same streaming approach as streamClaudeText, but for a forced tool call —
+// accumulates the tool's partial_json deltas and parses the result at the end.
+// Non-streaming tool calls block on the full generation before anything comes
+// back, which is exactly what was timing out on longer sessions (session 37).
+async function streamClaudeTool(params: {
+  apiKey: string;
+  model: string;
+  maxTokens: number;
+  temperature: number;
+  system: string;
+  userContent: unknown;
+  tool: { name: string; description: string; input_schema: unknown };
+}): Promise<{ input: any; stopReason: string | null }> {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": params.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      temperature: params.temperature,
+      stream: true,
+      system: params.system,
+      messages: [{ role: "user", content: params.userContent }],
+      tools: [params.tool],
+      tool_choice: { type: "tool", name: params.tool.name },
+    }),
+  });
+
+  if (!resp.ok || !resp.body) {
+    const errorText = await resp.text().catch(() => "no body");
+    throw new Error(`Claude API error (${resp.status}): ${errorText}`);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let jsonBuffer = "";
+  let stopReason: string | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      let evt: any;
+      try {
+        evt = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      if (evt.type === "content_block_delta" && evt.delta?.type === "input_json_delta") {
+        jsonBuffer += evt.delta.partial_json ?? "";
+      } else if (evt.type === "message_delta" && evt.delta?.stop_reason) {
+        stopReason = evt.delta.stop_reason;
+      } else if (evt.type === "error") {
+        throw new Error(`Claude stream error: ${JSON.stringify(evt.error)}`);
+      }
+    }
+  }
+
+  if (!jsonBuffer) return { input: null, stopReason };
+  return { input: JSON.parse(jsonBuffer), stopReason };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -566,36 +640,25 @@ Deno.serve(async (req: Request) => {
         })),
       ];
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicApiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
+      let generatedPlan: any;
+      try {
+        const result = await streamClaudeTool({
+          apiKey: anthropicApiKey,
           model: "claude-sonnet-4-6",
-          max_tokens: 16384,
+          maxTokens: 16384,
           temperature: 0.4,
           system: TEACHING_PLAN_PROMPT,
-          messages: [{ role: "user", content: messageContent }],
-          tools: [TEACHING_PLAN_TOOL],
-          tool_choice: { type: "tool", name: "emit_teaching_plan" },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Claude API error (teaching plan):", errorText);
+          userContent: messageContent,
+          tool: TEACHING_PLAN_TOOL,
+        });
+        generatedPlan = result.input;
+      } catch (err: any) {
+        console.error("Claude API error (teaching plan):", err?.message || err);
         return new Response(
-          JSON.stringify({ error: "Failed to generate teaching plan", details: errorText }),
+          JSON.stringify({ error: "Failed to generate teaching plan", details: err?.message || String(err) }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
-      const data = await response.json();
-      const toolUse = data.content?.find((b: any) => b.type === "tool_use" && b.name === "emit_teaching_plan");
-      const generatedPlan = toolUse?.input;
 
       if (!generatedPlan) {
         return new Response(
