@@ -67,3 +67,9 @@ test('subjects name only the supplied children', () => {
   assert.equal(notesEmailSubject({ kind: 'publish', childNames: ['Alif', 'Ba'] }), 'Class notes for Alif and Ba');
   assert.equal(notesEmailSubject({ kind: 'update', childNames: ['Alif'] }), 'Class notes for Alif (updated)');
 });
+
+test('email declares UTF-8 so Arabic survives clients that guess the charset', () => {
+  const mail = publishedNotesEmail({ summary: `Say ${BISMILLAH}`, portalUrl: 'https://talbiyah.ai/madrasa/family' });
+  assert.match(mail.html, /<meta charset="utf-8">/i);
+  assert.match(mail.html, /<meta name="viewport"/);
+});
