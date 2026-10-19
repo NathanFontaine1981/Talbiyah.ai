@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { CalendarCheck, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { ukToday } from '../../lib/madrasaFunctions';
@@ -13,9 +13,19 @@ const hhmm = (t: string) => t.slice(0, 5);
 export default function MadrasaHome() {
   const [classes, setClasses] = useState<ClassRowT[] | null>(null);
   const [today, setToday] = useState<TodayRow[]>([]);
+  const [isParentOnly, setIsParentOnly] = useState(false);
 
   useEffect(() => {
     (async () => {
+      // Parents (no organisation role) belong in the family portal, not the teacher home.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: member } = await supabase.from('madrasa_org_members').select('role').eq('user_id', user.id).limit(1);
+        if (!member?.length) {
+          const { data: kids } = await supabase.from('learners').select('id').eq('parent_id', user.id).limit(1);
+          if (kids?.length) { setIsParentOnly(true); return; }
+        }
+      }
       const [c, t] = await Promise.all([
         supabase.from('madrasa_classes').select('id, name, age_band, syllabus_reference, org:madrasa_organisations(name)').order('name'),
         supabase.from('madrasa_sessions').select('id, class_id, start_time, end_time, status').eq('session_date', ukToday()).order('start_time'),
@@ -24,6 +34,8 @@ export default function MadrasaHome() {
       setToday((t.data ?? []) as TodayRow[]);
     })();
   }, []);
+
+  if (isParentOnly) return <Navigate to="/madrasa/family" replace />;
 
   const nameOf = (id: string) => classes?.find((c) => c.id === id)?.name ?? 'Class';
 

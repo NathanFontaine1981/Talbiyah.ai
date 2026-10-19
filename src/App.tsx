@@ -49,6 +49,7 @@ import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import MadrasaDashboardGate from './components/madrasa/MadrasaDashboardGate';
+import RememberReturn from './components/madrasa/RememberReturn';
 
 // Lazy loaded pages - heavy components loaded on demand
 const ChooseCourse = lazy(() => import('./pages/ChooseCourse'));
@@ -65,6 +66,7 @@ const BookSession = lazy(() => import('./pages/BookSession'));
 const MadrasaHome = lazy(() => import('./pages/madrasa/MadrasaHome'));
 const MadrasaClassPage = lazy(() => import('./pages/madrasa/MadrasaClassPage'));
 const MadrasaSessionPage = lazy(() => import('./pages/madrasa/MadrasaSessionPage'));
+const MadrasaFamilyPage = lazy(() => import('./pages/madrasa/MadrasaFamilyPage'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
 const BuyCredits = lazy(() => import('./pages/BuyCredits'));
@@ -369,25 +371,41 @@ function App() {
         <Route
           path="/madrasa"
           element={
-            <ProtectedRoute skipOnboardingCheck>
-              <MadrasaHome />
-            </ProtectedRoute>
+            <RememberReturn>
+              <ProtectedRoute skipOnboardingCheck>
+                <MadrasaHome />
+              </ProtectedRoute>
+            </RememberReturn>
+          }
+        />
+        <Route
+          path="/madrasa/family"
+          element={
+            <RememberReturn>
+              <ProtectedRoute skipOnboardingCheck>
+                <MadrasaFamilyPage />
+              </ProtectedRoute>
+            </RememberReturn>
           }
         />
         <Route
           path="/madrasa/sessions/:sessionId"
           element={
-            <ProtectedRoute skipOnboardingCheck>
-              <MadrasaSessionPage />
-            </ProtectedRoute>
+            <RememberReturn>
+              <ProtectedRoute skipOnboardingCheck>
+                <MadrasaSessionPage />
+              </ProtectedRoute>
+            </RememberReturn>
           }
         />
         <Route
           path="/madrasa/classes/:classId"
           element={
-            <ProtectedRoute skipOnboardingCheck>
-              <MadrasaClassPage />
-            </ProtectedRoute>
+            <RememberReturn>
+              <ProtectedRoute skipOnboardingCheck>
+                <MadrasaClassPage />
+              </ProtectedRoute>
+            </RememberReturn>
           }
         />
         <Route

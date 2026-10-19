@@ -27,8 +27,10 @@ export function firstSentence(parentNotes: string): string {
   return line.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").trim();
 }
 
-export function publishedNotesEmail(args: { summary: string; portalUrl: string; childFirstName?: string; className?: string }) {
-  const hi = args.childFirstName ? `Notes for ${escapeHtml(args.childFirstName)} are ready` : "New class notes are ready";
+export function publishedNotesEmail(args: { summary: string; portalUrl: string; childFirstName?: string; className?: string; updated?: boolean }) {
+  const hi = args.updated
+    ? (args.childFirstName ? `Notes for ${escapeHtml(args.childFirstName)} have been updated` : "Class notes have been updated")
+    : (args.childFirstName ? `Notes for ${escapeHtml(args.childFirstName)} are ready` : "New class notes are ready");
   const html = `<!doctype html><html><body style="margin:0;background:#f6f7f9;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;padding:28px;">
@@ -41,4 +43,20 @@ ${args.className ? `<p style="margin:0 0 16px;color:#6b7280;font-size:14px;">${e
 </td></tr></table></td></tr></table></body></html>`;
   const text = `${hi}\n\n${args.summary}\n\nRead the full notes: ${args.portalUrl}`;
   return { html, text };
+}
+
+/** Reserved/test domains: never send real mail there (bounces hurt the sending domain's reputation). */
+export function isTestAddress(email: string): boolean {
+  return /@(example\.(com|org|net)|[^@]+\.(test|invalid|localhost|example))$/i.test(email.trim());
+}
+
+export function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+export function notesEmailSubject(args: { kind: "publish" | "update"; childNames: string[] }): string {
+  const who = joinNames(args.childNames);
+  const base = who ? `Class notes for ${who}` : "New class notes";
+  return args.kind === "update" ? `${base} (updated)` : base;
 }

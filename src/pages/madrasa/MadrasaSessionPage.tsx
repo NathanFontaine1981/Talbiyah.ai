@@ -21,6 +21,7 @@ interface Materials {
   generated_at: string | null;
   edited_at: string | null;
   published_at: string | null;
+  parents_notified_at: string | null;
 }
 
 const MAX_UNITS = 3;
@@ -67,7 +68,7 @@ export default function MadrasaSessionPage() {
 
   const loadMaterials = useCallback(async (id: string) => {
     const { data } = await supabase.from('madrasa_session_materials')
-      .select('status, parent_notes, homework, teacher_activities, generation_checks, generated_at, edited_at, published_at')
+      .select('status, parent_notes, homework, teacher_activities, generation_checks, generated_at, edited_at, published_at, parents_notified_at')
       .eq('session_id', id).maybeSingle();
     const m = (data as Materials | null) ?? null;
     setMaterials(m);
@@ -171,7 +172,7 @@ export default function MadrasaSessionPage() {
       .update({ parent_notes: notes, homework, edited_at: new Date().toISOString() }).eq('session_id', session.id);
     if (error) { toast.error(error.message); return; }
     await loadMaterials(session.id);
-    toast.success('Changes saved');
+    toast.success(published ? 'Changes saved. Parents see the update in their portal; they were not emailed.' : 'Changes saved');
   };
 
   const publish = async () => {
@@ -182,8 +183,22 @@ export default function MadrasaSessionPage() {
     setPublishing(false);
     if (error) { toast.error(error.message); return; }
     setConfirmPublish(false);
+    await notify(false);
     await loadMaterials(session.id);
-    toast.success('Published. Parents can now see these notes in their portal.');
+  };
+
+  // Email parents a short summary + portal link. Without force it is idempotent: nobody is emailed twice
+  // for the same lesson. force = the teacher explicitly chose "notify parents again" after an edit.
+  const notify = async (force: boolean) => {
+    if (!session) return;
+    const { data, error } = await supabase.functions.invoke('madrasa-notify-parents', { body: { session_id: session.id, force } });
+    if (error || !data) { toast.error('The notes are published, but the email could not be sent. You can try again from this page.'); return; }
+    const d = data as { sent: number; skipped_test_address: number; already_emailed: number; errors: number };
+    if (d.errors > 0) { toast.error(`The notes are published. ${d.errors} email${d.errors === 1 ? '' : 's'} could not be sent.`); return; }
+    const parts = [`Published. ${d.sent} parent${d.sent === 1 ? '' : 's'} emailed.`];
+    if (d.skipped_test_address) parts.push(`${d.skipped_test_address} test address${d.skipped_test_address === 1 ? '' : 'es'} skipped.`);
+    if (d.already_emailed && !d.sent) parts.splice(0, 1, 'Published. Parents were already emailed about this lesson, so no new email was sent.');
+    toast.success(parts.join(' '));
   };
 
   // -------------------------------------------------------------- finish lesson
@@ -311,12 +326,12 @@ export default function MadrasaSessionPage() {
             {([['notes', 'Parent notes'], ['homework', 'Homework'], ['activities', 'Teacher activities (only you)']] as const).map(([k, label]) => (
               <button key={k} onClick={() => setTab(k)} className={`min-h-11 rounded-lg px-4 text-sm font-medium ${tab === k ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>{label}</button>
             ))}
-            {tab !== 'activities' && !published && (
+            {tab !== 'activities' && (
               <button onClick={() => setEditing((e) => !e)} className="ml-auto min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">{editing ? 'Preview' : 'Edit'}</button>
             )}
           </div>
 
-          {tab === 'activities' ? <ActivityCards activities={materials.teacher_activities} /> : editing && !published ? (
+          {tab === 'activities' ? <ActivityCards activities={materials.teacher_activities} /> : editing ? (
             <textarea value={tab === 'notes' ? notes : homework} onChange={(e) => (tab === 'notes' ? setNotes(e.target.value) : setHomework(e.target.value))}
               rows={22} dir="auto" className="w-full rounded-lg border border-gray-300 p-3 font-mono text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" />
           ) : (
@@ -325,6 +340,21 @@ export default function MadrasaSessionPage() {
             </div>
           )}
 
+          {published && (
+            <div className="mt-5 space-y-3 border-t border-gray-200 pt-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={saveEdits} disabled={!dirty} className={`${btn} border border-emerald-600 text-emerald-700 hover:bg-emerald-50`}>Save changes</button>
+                {dirty && <span className="text-sm text-amber-700">You have unsaved changes.</span>}
+              </div>
+              <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                {materials?.parents_notified_at ? `Parents were emailed on ${new Date(materials.parents_notified_at).toLocaleString('en-GB')}. ` : 'Parents have not been emailed yet. '}
+                Changes you save appear in the parent portal straight away, but parents are <strong>not</strong> emailed again unless you choose to.
+              </p>
+              <button onClick={() => setAsk({ message: 'Email the parents again to say these notes have been updated?', yes: 'Notify parents again', run: () => { void notify(true); } })} disabled={dirty}
+                className={`${btn} border border-gray-300 text-gray-800 hover:bg-gray-50`}>Notify parents again</button>
+              {!materials?.parents_notified_at && <button onClick={() => void notify(false)} disabled={dirty} className={`${btn} ml-3 bg-emerald-600 text-white hover:bg-emerald-700`}>Send the first email</button>}
+            </div>
+          )}
           {!published && (
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-4">
               <button onClick={saveEdits} disabled={!dirty} className={`${btn} border border-emerald-600 text-emerald-700 hover:bg-emerald-50`}>Save changes</button>
@@ -364,7 +394,7 @@ export default function MadrasaSessionPage() {
               <h3 className="text-lg font-semibold text-gray-900">Publish to parents?</h3>
               <button onClick={() => setConfirmPublish(false)} className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100" aria-label="Close"><X className="h-5 w-5" /></button>
             </div>
-            <p className="mb-3 text-gray-700">The parent notes and homework will be visible to the parents of the {roster.length} {roster.length === 1 ? 'child' : 'children'} in this class. Teacher activities stay private.</p>
+            <p className="mb-3 text-gray-700">The parent notes and homework will be visible to the parents of the {roster.length} {roster.length === 1 ? 'child' : 'children'} in this class. Teacher activities stay private. Each parent gets one short email with a link, and no one is emailed twice for the same lesson.</p>
             {checks.warnings.length > 0 && <p className="mb-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-800">There {checks.warnings.length === 1 ? 'is 1 warning' : `are ${checks.warnings.length} warnings`} above. Have you dealt with {checks.warnings.length === 1 ? 'it' : 'them'}?</p>}
             <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3">
               <input type="checkbox" className="mt-0.5 h-6 w-6 accent-emerald-600" checked={checkedArabic} onChange={(e) => setCheckedArabic(e.target.checked)} />

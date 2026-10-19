@@ -52,3 +52,18 @@ test('app and email implementations find the same Arabic runs', () => {
     assert.deepEqual(fromEmail, fromApp, t);
   }
 });
+
+import { isTestAddress, joinNames, notesEmailSubject } from '../supabase/functions/_shared/madrasaEmail.ts';
+
+test('test addresses are never emailed; real ones are', () => {
+  for (const e of ['a@example.com', 'a@EXAMPLE.org', 'x@foo.test', 'x@bar.invalid']) assert.equal(isTestAddress(e), true, e);
+  for (const e of ['mum@gmail.com', 'a@talbiyah.ai', 'a@examplecorp.com']) assert.equal(isTestAddress(e), false, e);
+});
+
+test('subjects name only the supplied children', () => {
+  assert.equal(joinNames(['Alif']), 'Alif');
+  assert.equal(joinNames(['Alif', 'Ba']), 'Alif and Ba');
+  assert.equal(joinNames(['A', 'B', 'C']), 'A, B and C');
+  assert.equal(notesEmailSubject({ kind: 'publish', childNames: ['Alif', 'Ba'] }), 'Class notes for Alif and Ba');
+  assert.equal(notesEmailSubject({ kind: 'update', childNames: ['Alif'] }), 'Class notes for Alif (updated)');
+});
