@@ -202,7 +202,7 @@ export function toUpsertPayload(classId: string, rows: UnitDraft[]) {
 }
 
 /** Format a stored citation for display: "Book 3, pp. 12–15". */
-export function formatCitation(u: Pick<UnitDraft, 'book_reference' | 'page_from' | 'page_to'>): string {
+export function formatCitation(u: { book_reference: string | null; page_from: number | null; page_to: number | null }): string {
   const pages =
     u.page_from === null ? '' : u.page_to === null || u.page_to === u.page_from ? `p. ${u.page_from}` : `pp. ${u.page_from}–${u.page_to}`;
   return [u.book_reference, pages].filter(Boolean).join(', ');

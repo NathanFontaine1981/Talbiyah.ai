@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, ClipboardPaste, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ClipboardPaste, Lightbulb, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import { formatCitation, type SavedUnit } from '../../lib/madrasaUnits';
 import UnitEditor from './UnitEditor';
 import UnitPasteImporter from './UnitPasteImporter';
+import UnitPrepModal from './UnitPrepModal';
 
 interface Props {
   classId: string;
@@ -15,6 +16,7 @@ export default function SchemeOfWork({ classId, canEdit }: Props) {
   const [units, setUnits] = useState<SavedUnit[] | null>(null);
   const [editing, setEditing] = useState<SavedUnit | 'new' | null>(null);
   const [pasting, setPasting] = useState(false);
+  const [prepping, setPrepping] = useState<SavedUnit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -92,6 +94,7 @@ export default function SchemeOfWork({ classId, canEdit }: Props) {
                 <div className="flex shrink-0 gap-1">
                   <button onClick={() => swap(u, units[i - 1])} disabled={i === 0} className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30" aria-label={`Move unit ${u.unit_number} up`}><ArrowUp className="h-4 w-4" /></button>
                   <button onClick={() => swap(u, units[i + 1])} disabled={i === units.length - 1} className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30" aria-label={`Move unit ${u.unit_number} down`}><ArrowDown className="h-4 w-4" /></button>
+                  <button onClick={() => setPrepping(u)} className="flex h-11 w-11 items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50" aria-label={`Prep activities for unit ${u.unit_number}`} title="Prep activity ideas"><Lightbulb className="h-4 w-4" /></button>
                   <button onClick={() => setEditing(u)} className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100" aria-label={`Edit unit ${u.unit_number}`}><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => setConfirmDelete(u.id)} className="flex h-11 w-11 items-center justify-center rounded-lg text-red-600 hover:bg-red-50" aria-label={`Delete unit ${u.unit_number}`}><Trash2 className="h-4 w-4" /></button>
                 </div>
@@ -110,6 +113,7 @@ export default function SchemeOfWork({ classId, canEdit }: Props) {
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+      {prepping && <UnitPrepModal unit={prepping} onClose={() => setPrepping(null)} />}
       {pasting && (
         <UnitPasteImporter
           classId={classId}

@@ -48,6 +48,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
+import MadrasaDashboardGate from './components/madrasa/MadrasaDashboardGate';
 
 // Lazy loaded pages - heavy components loaded on demand
 const ChooseCourse = lazy(() => import('./pages/ChooseCourse'));
@@ -63,6 +64,7 @@ const Welcome = lazy(() => import('./pages/Welcome'));
 const BookSession = lazy(() => import('./pages/BookSession'));
 const MadrasaHome = lazy(() => import('./pages/madrasa/MadrasaHome'));
 const MadrasaClassPage = lazy(() => import('./pages/madrasa/MadrasaClassPage'));
+const MadrasaSessionPage = lazy(() => import('./pages/madrasa/MadrasaSessionPage'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
 const BuyCredits = lazy(() => import('./pages/BuyCredits'));
@@ -326,7 +328,9 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <MadrasaDashboardGate>
+                <Dashboard />
+              </MadrasaDashboardGate>
             </ProtectedRoute>
           }
         />
@@ -367,6 +371,14 @@ function App() {
           element={
             <ProtectedRoute skipOnboardingCheck>
               <MadrasaHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/madrasa/sessions/:sessionId"
+          element={
+            <ProtectedRoute skipOnboardingCheck>
+              <MadrasaSessionPage />
             </ProtectedRoute>
           }
         />

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import SchemeOfWork from '../../components/madrasa/SchemeOfWork';
+import SessionsPanel from '../../components/madrasa/SessionsPanel';
 
 interface ClassRow {
   id: string;
@@ -94,6 +95,7 @@ export default function MadrasaClassPage() {
         )}
       </header>
 
+      <SessionsPanel classId={cls.id} schedule={cls.schedule} canEdit={canEdit} />
       <SchemeOfWork classId={cls.id} canEdit={canEdit} />
     </div>
   );
