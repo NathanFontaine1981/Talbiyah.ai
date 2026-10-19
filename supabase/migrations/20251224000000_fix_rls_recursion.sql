@@ -1,0 +1,28 @@
+-- ============================================
+-- FIX RLS RECURSION ISSUES
+-- ============================================
+-- ALREADY APPLIED VIA SUPABASE MANAGEMENT API ON 2024-12-24
+-- This migration fixes 500 errors caused by RLS policy recursion
+-- where policies on learners/lessons reference each other creating loops
+--
+-- The fix creates SECURITY DEFINER helper functions that bypass RLS:
+-- - public.is_admin() - checks if user has admin role
+-- - public.is_teacher() - checks if user has teacher profile
+-- - public.get_teacher_profile_id() - gets user's teacher profile ID
+-- - public.get_user_learner_ids() - gets learner IDs for parent
+-- - public.can_access_lesson(uuid) - checks lesson access
+-- - public.get_teacher_student_ids() - gets learner IDs for teacher's students
+--
+-- Tables fixed:
+-- - learners
+-- - lessons
+-- - lesson_messages
+-- - lesson_insights
+-- - lesson_details
+-- - student_teacher_relationships
+-- - diagnostic_assessments
+--
+-- This migration is already applied and kept for documentation purposes.
+-- ============================================
+
+-- Empty migration - changes already applied via management API
