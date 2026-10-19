@@ -11,6 +11,9 @@ import { firstSentence, isTestAddress, notesEmailSubject, publishedNotesEmail } 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+// Where the email's "Read the full notes" link points. Per-environment config, no code change to flip:
+//   branch preview : supabase secrets set MADRASA_PORTAL_BASE_URL=https://feat-madrasa--talbiyah.netlify.app
+//   production     : supabase secrets set MADRASA_PORTAL_BASE_URL=https://talbiyah.ai   (or unset it: that is the default)
 const BASE_URL = (Deno.env.get("MADRASA_PORTAL_BASE_URL") ?? "https://talbiyah.ai").replace(/\/+$/, "");
 
 Deno.serve(async (req: Request) => {
@@ -125,5 +128,5 @@ Deno.serve(async (req: Request) => {
     await db.from("madrasa_session_materials").update({ parents_notified_at: new Date().toISOString() }).eq("session_id", session.id);
   }
   const count = (s: string) => results.filter((r) => r.status === s).length;
-  return json({ kind, dry_run: body.dry_run === true, sent: count("sent"), already_emailed: count("already_emailed"), skipped_test_address: count("skipped_test_address"), errors: count("error"), no_email: count("no_email"), results });
+  return json({ kind, dry_run: body.dry_run === true, portal_base_url: BASE_URL, sent: count("sent"), already_emailed: count("already_emailed"), skipped_test_address: count("skipped_test_address"), errors: count("error"), no_email: count("no_email"), results });
 });
