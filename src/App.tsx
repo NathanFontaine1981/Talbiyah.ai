@@ -61,6 +61,8 @@ const Teachers = lazy(() => import('./pages/Teachers'));
 const TeacherProfile = lazy(() => import('./pages/TeacherProfile'));
 const Welcome = lazy(() => import('./pages/Welcome'));
 const BookSession = lazy(() => import('./pages/BookSession'));
+const MadrasaHome = lazy(() => import('./pages/madrasa/MadrasaHome'));
+const MadrasaClassPage = lazy(() => import('./pages/madrasa/MadrasaClassPage'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
 const BuyCredits = lazy(() => import('./pages/BuyCredits'));
@@ -357,6 +359,22 @@ function App() {
           element={
             <ProtectedRoute>
               <GroupClasses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/madrasa"
+          element={
+            <ProtectedRoute skipOnboardingCheck>
+              <MadrasaHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/madrasa/classes/:classId"
+          element={
+            <ProtectedRoute skipOnboardingCheck>
+              <MadrasaClassPage />
             </ProtectedRoute>
           }
         />
