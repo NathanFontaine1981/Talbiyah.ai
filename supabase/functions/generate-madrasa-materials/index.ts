@@ -172,6 +172,7 @@ Deno.serve(async (req: Request) => {
         ai_model: r.model,
         generated_at: now,
         edited_at: null,
+        generation_checks: r.checks,
       }, { onConflict: "session_id" });
       if (error) throw error;
       return json({ saved: true, kind: "session_draft", attempts: r.attempts, checks: r.checks, emphasis_redactions: redactions, output: r.output });

@@ -67,6 +67,7 @@ Read the age band carefully and pitch everything to it:
 - Ages 9-11: fuller sentences, a little "why" and cause-and-effect, short discussion and team challenges of 10-15 minutes, light writing.
 - Ages 12 and over: respectful, more reflective, real-life situations, discussion and short written responses.
 Use words a child of that age would use. Explain any new word the first time it appears.
+Vocabulary and concepts must sit at the lower edge of the stated age band. Avoid abstract financial or legal terms (for example savings, debt, obligation, ruling, exempt) for under-9s unless each is glossed in one child-friendly phrase.
 
 WHAT TO PRODUCE
 Return JSON matching the schema, containing only the sections requested.
@@ -79,7 +80,7 @@ parent_notes (markdown, about 200-320 words, written for a busy parent who may n
 
 homework (markdown, about 80-150 words): exactly ONE at-home activity, 10-15 minutes.
 - It may need ONLY the child's own book, plain paper and a pen or pencil, and a parent. Nothing to print, buy, cut out or look up online, and no screens.
-- Give: a one-line "Goal", 3-5 numbered steps, what the parent's job is, and what the child can show or tell the teacher next lesson.
+- Give: a one-line "Goal", then 2-4 numbered steps (never more than 4), numbered 1. 2. 3. 4. in order starting at 1, then what the parent's job is, and what the child can show or tell the teacher next lesson.
 - Do not tell the child to read, copy or answer questions from the book. "Look back through the pages from this lesson together" is fine; describing or quoting those pages is not.
 
 teacher_activities: exactly 3 or 4 original interactive classroom activities for the topic and the age band, giving real variety (for example one game, one drill or call-and-response, one role-play or acting, one discussion, movement or drawing activity). For each: a short title; a type (game, drill, role-play, discussion, movement, art, quiz); duration in minutes; materials (only ordinary classroom items: whiteboard, paper, pens, cards the teacher can make in two minutes; use [] if none); how_to_run as 3-6 clear steps; learning_point (one sentence on what the children should take away); extension (one way to stretch quicker children or support those who need it). These are your own ideas: never adapted from any published teacher's guide.`;
@@ -161,6 +162,11 @@ export function untashkeeledArabic(text: string): string[] {
   return out;
 }
 
+/** Numbers of lines that start a numbered list item ("1." or "2)"), in the order they appear. */
+export function numberedSteps(text: string): number[] {
+  return [...text.matchAll(/^\s*(\d+)[.)]\s/gm)].map((m) => Number(m[1]));
+}
+
 export function checkOutput(out: MaterialsOutput, units: UnitInput[], sections: Section[]): Checks {
   const hard: string[] = [];
   const warnings: string[] = [];
@@ -179,6 +185,11 @@ export function checkOutput(out: MaterialsOutput, units: UnitInput[], sections: 
     if (units.every((u) => !citationFor(u)) && /\bbook\s*\d|\bpp?\.\s*\d/i.test(notes)) {
       hard.push("parent_notes mentions a book or pages although no citation was supplied");
     }
+    const talk = notes.split("### Talk about it at home")[1];
+    if (talk) {
+      const qs = numberedSteps(talk.split("\n\n")[0] ?? talk);
+      if (qs.some((n, i) => n !== i + 1)) warnings.push(`"Talk about it at home" questions are not numbered from 1 in order (found ${qs.join(", ")})`);
+    }
     const headings = ["What we covered", "Key ideas", "Talk about it at home"];
     for (const h of headings) if (!notes.includes(`### ${h}`)) warnings.push(`parent_notes is missing the "${h}" section`);
   }
@@ -186,6 +197,10 @@ export function checkOutput(out: MaterialsOutput, units: UnitInput[], sections: 
   if (sections.includes("homework")) {
     const hw = (out.homework ?? "").trim();
     if (!hw) hard.push("homework is empty");
+    const steps = numberedSteps(hw);
+    if (hw && steps.length < 2) hard.push("homework needs 2-4 numbered steps");
+    else if (steps.length > 4) hard.push(`homework has ${steps.length} numbered steps; the maximum is 4`);
+    else if (steps.some((n, i) => n !== i + 1)) hard.push(`homework steps must be numbered 1, 2, 3... in order (found ${steps.join(", ")})`);
     if (/\b(print|printout|printable|youtube|google|website|online|screen|app\b|scissors|glue|worksheet)\b/i.test(hw)) {
       warnings.push("homework may need something other than the child's book, paper and a parent");
     }

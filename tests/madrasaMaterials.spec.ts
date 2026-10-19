@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildUserPrompt, checkOutput, citationFor, outputSchema, redactNames, untashkeeledArabic,
+  buildUserPrompt, checkOutput, citationFor, numberedSteps, outputSchema, redactNames, untashkeeledArabic, SYSTEM_PROMPT,
 } from '../supabase/functions/_shared/madrasaMaterials.ts';
 
 const unit = { title: 'Wudu', description: 'steps', book_reference: 'Book 3', page_from: 10, page_to: 15 };
 const act = (type: string) => ({ title: 't', type, duration_minutes: 8, materials: [], how_to_run: ['a'], learning_point: 'l', extension: 'e' });
 const good = {
   parent_notes: 'Today your child learned wudu.\n\n### What we covered\nx\n### Key ideas\ny\n### Talk about it at home\nz\n\nThis was covered in class from Book 3, pp. 10–15.',
-  homework: 'Draw the steps on plain paper with a parent.',
+  homework: '**Goal:** Draw.\n\n1. Fold paper.\n2. Draw the steps.\n3. Show a parent.',
   teacher_activities: [act('game'), act('drill'), act('role-play')],
 };
 
@@ -66,4 +66,21 @@ test('model prompt carries only age band, topics, citation and emphasis', () => 
 test('schema only requires the requested sections', () => {
   assert.deepEqual(outputSchema(['teacher_activities']).required, ['teacher_activities']);
   assert.deepEqual(Object.keys(outputSchema(['parent_notes', 'homework']).properties as object), ['parent_notes', 'homework']);
+});
+
+test('homework numbering: 2-4 steps, starting at 1, sequential', () => {
+  const s = ['parent_notes', 'homework', 'teacher_activities'] as const;
+  const hw = (h: string) => checkOutput({ ...good, homework: h }, [unit], [...s]).hard.join();
+  assert.equal(hw('1. a\n2. b'), '');
+  assert.match(hw('2. a\n3. b\n4. c'), /numbered 1, 2, 3.*found 2, 3, 4/);           // the Zakat bug: began at step 2
+  assert.match(hw('1. a\n2. b\n3. c\n4. d\n5. e'), /5 numbered steps; the maximum is 4/);
+  assert.match(hw('1. a\n3. b'), /in order \(found 1, 3\)/);
+  assert.match(hw('Just do some drawing with a parent.'), /needs 2-4 numbered steps/);
+  assert.deepEqual(numberedSteps('Goal\n1. a\n  2) b\nnot 3. x'), [1, 2]);
+});
+
+test('prompt carries the lower-edge age rule and the 4-step cap', () => {
+  assert.match(SYSTEM_PROMPT, /lower edge of the stated age band/);
+  assert.match(SYSTEM_PROMPT, /under-9s unless each is glossed in one child-friendly phrase/);
+  assert.match(SYSTEM_PROMPT, /never more than 4/);
 });
