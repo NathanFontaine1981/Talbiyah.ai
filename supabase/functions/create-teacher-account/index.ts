@@ -41,11 +41,18 @@ Deno.serve(async (req: Request) => {
     // Check caller has Admin role
     const { data: callerProfile } = await supabase
       .from("profiles")
-      .select("roles")
+      .select("roles, is_admin")
       .eq("id", caller.id)
       .single();
 
-    if (!callerProfile?.roles?.includes("Admin")) {
+    // Roles are stored lowercase ('admin'); compare case-insensitively and honour profiles.is_admin
+    // so real admins aren't rejected (this used to check for a capitalised "Admin").
+    const callerRoles: string[] = Array.isArray(callerProfile?.roles) ? callerProfile.roles : [];
+    const callerIsAdmin =
+      callerProfile?.is_admin === true ||
+      callerRoles.some((r) => (r ?? "").toLowerCase() === "admin");
+
+    if (!callerIsAdmin) {
       return new Response(
         JSON.stringify({ error: "Only admins can create teacher accounts" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
