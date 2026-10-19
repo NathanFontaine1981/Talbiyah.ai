@@ -46,6 +46,8 @@ setup-*.sh
 *deploy*.sh
 *run*.mjs
 *.sql
+# ...but migrations are the source of truth for the production schema: always track them
+!supabase/migrations/*.sql
 *.html
 *diagnostic*.mjs
 add-*.mjs
