@@ -37,6 +37,10 @@ BEGIN
     v_referral_code := upper(substring(md5(random()::text) from 1 for 6));
   END IF;
 
+  -- TODO(phone-parsing): the greedy ^(\+\d{1,3}) split mis-parses UNSPACED numbers: '+447000000001'
+  -- becomes country code '+447' / number '000000001'. It only works when the signup form sends
+  -- '+44 7000000001' (with a space). Affects every signup path that sends an unspaced number.
+  -- Needs its own focused change (match against a known country-code list) with tests. Not fixed here.
   v_raw_phone := NEW.raw_user_meta_data->>'phone';
   IF v_raw_phone IS NOT NULL AND v_raw_phone != '' THEN
     v_country_code := (regexp_match(v_raw_phone, '^(\+\d{1,3})'))[1];
