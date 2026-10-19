@@ -43,11 +43,18 @@ serve(async (req) => {
 
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("roles")
+      .select("roles, is_admin")
       .eq("id", user.id)
       .single();
 
-    if (!profile?.roles?.includes("Admin")) {
+    // Roles are stored lowercase ('admin'); compare case-insensitively and honour profiles.is_admin
+    // (this used to check for a capitalised "Admin", which rejected real admins).
+    const callerRoles: string[] = Array.isArray(profile?.roles) ? profile.roles : [];
+    const callerIsAdmin =
+      profile?.is_admin === true ||
+      callerRoles.some((r) => (r ?? "").toLowerCase() === "admin");
+
+    if (!callerIsAdmin) {
       throw new Error("Admin access required");
     }
 
