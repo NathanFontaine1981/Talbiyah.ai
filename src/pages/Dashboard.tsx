@@ -997,6 +997,13 @@ export default function Dashboard() {
             {/* ===== STUDENT VIEW ===== */}
             {selectedViewRole === 'Student' && (
               <>
+                {/* Reverts Unshakeable Foundations - first thing for CMA-enrolled students (renders nothing otherwise) */}
+                {userId && (
+                  <div className="mb-6">
+                    <RevertsClassWidget userId={userId} />
+                  </div>
+                )}
+
                 {/* Upcoming Sessions — top priority: what's next */}
                 <div className="mb-6">
                   <UpcomingSessionsCard />
@@ -1058,13 +1065,6 @@ export default function Dashboard() {
                 {userId && (
                   <div className="mb-6">
                     <ConnectReferrerWidget userId={userId} />
-                  </div>
-                )}
-
-                {/* Reverts Unshakeable Foundations - Only shows for enrolled students/teacher */}
-                {userId && (
-                  <div className="mb-6">
-                    <RevertsClassWidget userId={userId} />
                   </div>
                 )}
 

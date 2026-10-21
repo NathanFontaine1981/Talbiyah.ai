@@ -96,6 +96,7 @@ export default function SignUp() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [helpNeeded, setHelpNeeded] = useState('');
   const [attendsCheadleMasjid, setAttendsCheadleMasjid] = useState(false);
+  const [masjidAnswered, setMasjidAnswered] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -219,6 +220,11 @@ export default function SignUp() {
 
     if (!authForm.fullName.trim()) {
       setAuthError('Please enter your full name');
+      return;
+    }
+
+    if (!masjidAnswered) {
+      setAuthError('Please let us know whether you are affiliated with Cheadle Masjid');
       return;
     }
 
@@ -960,24 +966,35 @@ export default function SignUp() {
             </>
             )}
 
-            {/* Cheadle Masjid attendance / auto-enrol */}
-            <div className="flex items-start space-x-3 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <input
-                type="checkbox"
-                id="cheadleMasjid"
-                checked={attendsCheadleMasjid}
-                onChange={(e) => setAttendsCheadleMasjid(e.target.checked)}
-                className="mt-1 w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
-              />
-              <label htmlFor="cheadleMasjid" className="text-sm text-gray-700">
-                <span className="font-medium">I attend Cheadle Masjid</span>
-                <p className="text-gray-500 mt-1">
-                  You'll be automatically enrolled in Unshakeable Foundations — the weekly course held
-                  at Cheadle Masjid. You'll get study notes after every session and can join the lesson
-                  online even on weeks you can't make it in person.
-                </p>
-              </label>
-            </div>
+            {/* Cheadle Masjid affiliation / auto-enrol */}
+            <fieldset className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <legend className="sr-only">Cheadle Masjid affiliation</legend>
+              <p className="text-sm font-medium text-gray-800">
+                Are you affiliated with Cheadle Masjid (CMA)?
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                If yes, you'll be automatically enrolled in Unshakeable Foundations — the weekly course held
+                at Cheadle Masjid. You'll get study notes after every session and can join the lesson
+                online even on weeks you can't make it in person.
+              </p>
+              <div className="flex gap-6 mt-3">
+                {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map(({ label, value }) => (
+                  <label key={label} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cheadleMasjid"
+                      checked={masjidAnswered && attendsCheadleMasjid === value}
+                      onChange={() => {
+                        setAttendsCheadleMasjid(value);
+                        setMasjidAnswered(true);
+                      }}
+                      className="w-4 h-4 text-emerald-500 border-gray-300 focus:ring-emerald-500"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
             {/* Terms and Privacy Consent */}
             <div className="flex items-start space-x-3">

@@ -142,7 +142,7 @@ export default function CoursePage() {
           id, name, description, slug, poster_url, location,
           delivery_mode, is_public, start_date, end_date, schedule_day,
           schedule_time, duration_minutes, current_participants, max_participants,
-          teacher_id, created_by, gender_restriction, is_free, price_per_session, total_sessions,
+          teacher_id, created_by, co_teacher_ids, gender_restriction, is_free, price_per_session, total_sessions,
           teacher:profiles!group_sessions_teacher_id_fkey (full_name, avatar_url)
         `)
         .eq('slug', slug)
@@ -187,7 +187,7 @@ export default function CoursePage() {
 
       // Check if user is teacher/admin and get gender
       if (user) {
-        const isOwner = user.id === courseData.teacher_id || user.id === courseData.created_by;
+        const isOwner = user.id === courseData.teacher_id || user.id === courseData.created_by || (courseData.co_teacher_ids || []).includes(user.id);
         const { data: profile } = await supabase.from('profiles').select('role, gender').eq('id', user.id).single();
         if (isOwner || profile?.role === 'admin') {
           setIsTeacher(true);
