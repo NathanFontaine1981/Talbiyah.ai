@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Calendar, Radio, ArrowRight, MapPin } from 'lucide-react';
+import { BookOpen, Calendar, Radio, ArrowRight, MapPin, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 
 // "Revert Unshakeable Foundations" — the weekly Dawra course held at Cheadle Masjid
@@ -30,6 +31,9 @@ export default function RevertsClassWidget({ userId }: RevertsClassWidgetProps) 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [eligible, setEligible] = useState(false);
+  const [invite, setInvite] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const dismissKey = `reverts-class-invite-dismissed:${userId}`;
   const [course, setCourse] = useState<CourseInfo | null>(null);
   const [nextSession, setNextSession] = useState<NextSession | null>(null);
 
@@ -64,6 +68,13 @@ export default function RevertsClassWidget({ userId }: RevertsClassWidgetProps) 
       }
 
       if (!isTeacherOrOwner && !isEnrolled) {
+        // Not enrolled yet: offer a one-tap join (unless they've said it's not for them)
+        let dismissed = false;
+        try { dismissed = localStorage.getItem(dismissKey) === '1'; } catch { /* storage unavailable */ }
+        if (!dismissed) {
+          setCourse(course);
+          setInvite(true);
+        }
         setLoading(false);
         return;
       }
@@ -87,6 +98,69 @@ export default function RevertsClassWidget({ userId }: RevertsClassWidgetProps) 
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleJoin() {
+    setJoining(true);
+    try {
+      const { error } = await supabase
+        .from('group_session_participants')
+        .insert({ group_session_id: CHEADLE_MASJID_COURSE_ID, student_id: userId });
+
+      if (error && error.code !== '23505') throw error;
+
+      if (!error) {
+        toast.success('You\'re enrolled! Welcome to the course.');
+        supabase.functions.invoke('send-enrollment-welcome', {
+          body: { group_session_id: CHEADLE_MASJID_COURSE_ID, student_id: userId },
+        }).catch((e) => console.error('Welcome email failed:', e));
+      }
+
+      setInvite(false);
+      setLoading(true);
+      await load();
+    } catch (err: any) {
+      toast.error('Could not enrol: ' + err.message);
+    } finally {
+      setJoining(false);
+    }
+  }
+
+  function handleDismiss() {
+    try { localStorage.setItem(dismissKey, '1'); } catch { /* storage unavailable */ }
+    setInvite(false);
+  }
+
+  if (!loading && invite && course) {
+    return (
+      <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-800/20 border border-teal-200 dark:border-teal-700 rounded-2xl p-5">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-teal-500/20">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-gray-900 dark:text-white">Do you attend Cheadle Masjid?</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Join {course.name} — {course.schedule_day}s at {course.schedule_time?.slice(0, 5)}, free, with study notes after every session.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleJoin}
+          disabled={joining}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold rounded-xl transition mb-2"
+        >
+          {joining && <Loader2 className="w-4 h-4 animate-spin" />}
+          Join the class
+        </button>
+        <button
+          onClick={handleDismiss}
+          className="w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
+        >
+          Not for me
+        </button>
+      </div>
+    );
   }
 
   if (loading || !eligible || !course) {

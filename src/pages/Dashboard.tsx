@@ -750,6 +750,13 @@ export default function Dashboard() {
             {/* ===== EXPLORER VIEW ===== */}
             {selectedViewRole === 'Explorer' && (
               <>
+                {/* Reverts Unshakeable Foundations - enrolled card, or a one-tap join invite */}
+                {userId && (
+                  <div className="mb-6">
+                    <RevertsClassWidget userId={userId} />
+                  </div>
+                )}
+
                 {/* Personalised welcome */}
                 <div className="mb-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute inset-0 opacity-10">
