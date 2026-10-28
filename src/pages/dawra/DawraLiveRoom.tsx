@@ -27,6 +27,13 @@ export default function CourseLiveRoom() {
   const [isTeacher, setIsTeacher] = useState(false);
   const [userName, setUserName] = useState('Student');
   const [userId, setUserId] = useState<string>('');
+  // Unique per browser tab/mount. 100ms force-disconnects an existing peer when
+  // another joins with the same user_id, so a bare user.id let a second tab, a
+  // phone+laptop, or a transient reconnect evict the live session — the "kept
+  // getting kicked out" bug. A random nonce keeps every connection distinct.
+  // (Recordings/transcripts key off the display name, not this id, so speaker
+  // attribution is unaffected.)
+  const [joinNonce] = useState(() => Math.random().toString(36).slice(2, 10));
 
   useEffect(() => {
     loadSession();
@@ -193,7 +200,7 @@ export default function CourseLiveRoom() {
           roomCode={roomCode}
           options={{
             userName: userName,
-            userId: userId || `user_${Date.now()}`,
+            userId: `${userId || 'guest'}_${joinNonce}`,
             endpoints: {
               roomLayout: 'https://api.100ms.live/v2/layouts/ui'
             },
