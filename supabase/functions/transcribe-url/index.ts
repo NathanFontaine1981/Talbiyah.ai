@@ -28,14 +28,12 @@ Deno.serve(async (req: Request) => {
     // @ts-ignore
     EdgeRuntime.waitUntil((async () => {
       try {
-        console.log("[transcribe-url] Downloading audio...");
-        const audioResp = await fetch(audio_url);
-        if (!audioResp.ok) { console.error("[transcribe-url] Download failed:", audioResp.status); return; }
-        const audioBlob = await audioResp.blob();
-        console.log(`[transcribe-url] Downloaded ${(audioBlob.size / 1024 / 1024).toFixed(1)}MB`);
-
+        // Transcribe directly from the URL — ElevenLabs fetches it server-side, so we
+        // never buffer the file in memory. Fixes "Memory limit exceeded" on long
+        // (200MB+) course recordings. source_url supersedes the deprecated cloud_storage_url.
+        console.log("[transcribe-url] Transcribing via source_url (no local download)...");
         const formData = new FormData();
-        formData.append("file", audioBlob, "lesson.mp4");
+        formData.append("source_url", audio_url);
         formData.append("model_id", "scribe_v1");
 
         console.log("[transcribe-url] Sending to ElevenLabs...");
