@@ -14,6 +14,7 @@ interface GenerateCourseInsightsRequest {
   mode?: "study_notes" | "teaching_plan";
   images?: { base64: string; media_type: string }[];
   image_urls?: string[];
+  skip_notify?: boolean;
 }
 
 const COURSE_INSIGHT_PROMPT = `You are an expert Islamic studies note-taker and curriculum designer. Your role is to produce comprehensive, beautifully structured study notes from a course (intensive course) session transcript.
@@ -512,7 +513,7 @@ Deno.serve(async (req: Request) => {
   const startTime = Date.now();
 
   try {
-    const { course_session_id, mode = "study_notes", images, image_urls }: GenerateCourseInsightsRequest = await req.json();
+    const { course_session_id, mode = "study_notes", images, image_urls, skip_notify }: GenerateCourseInsightsRequest = await req.json();
 
     if (!course_session_id) {
       return new Response(
@@ -936,8 +937,8 @@ Generate the study notes following the exact format specified in the system prom
 
     console.log(`Course insight saved successfully: ${savedInsight.id}`);
 
-    // Auto-notify enrolled students (fire and forget)
-    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-course-insights`, {
+    // Auto-notify enrolled students (fire and forget) — skipped when skip_notify is set
+    if (!skip_notify) fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-course-insights`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
