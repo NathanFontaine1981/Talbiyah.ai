@@ -231,6 +231,7 @@ export default function Teachers() {
           teacher_type,
           independent_rate,
           payment_collection,
+          is_accepting_bookings,
           profiles!teacher_profiles_user_id_fkey (
             full_name,
             gender,
@@ -265,6 +266,11 @@ export default function Teachers() {
 
       const teachersData = profilesData
         ?.filter((teacher: any) => {
+          // Respect the teacher's "Available/Unavailable" toggle: a teacher who has
+          // turned off bookings (is_accepting_bookings === false) is hidden from the
+          // booking list even if they still have saved availability slots. Null is
+          // treated as accepting, matching the default used elsewhere.
+          if (teacher.is_accepting_bookings === false) return false;
           const hasAvailability = teachersWithAvailability.has(teacher.id);
           return hasAvailability && teachersMap.has(teacher.id);
         })
